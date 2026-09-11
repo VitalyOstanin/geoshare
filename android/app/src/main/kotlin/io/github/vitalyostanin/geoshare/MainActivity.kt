@@ -18,9 +18,13 @@ import androidx.compose.ui.Modifier
 import androidx.credentials.CredentialManager
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.lifecycleScope
+import io.github.vitalyostanin.geoshare.auth.AuthState
 import io.github.vitalyostanin.geoshare.auth.SignInController
 import io.github.vitalyostanin.geoshare.auth.SignInScreen
 import io.github.vitalyostanin.geoshare.log.AppLog
+import io.github.vitalyostanin.geoshare.map.KeepWatching
+import io.github.vitalyostanin.geoshare.map.MapScreen
+import io.github.vitalyostanin.geoshare.map.rememberMemberPositions
 import io.github.vitalyostanin.geoshare.permission.PermissionStep
 import io.github.vitalyostanin.geoshare.permission.devicePermissions
 import io.github.vitalyostanin.geoshare.permission.nextPermissionStep
@@ -69,18 +73,36 @@ class MainActivity : ComponentActivity() {
                     val state by signIn.state.collectAsStateWithLifecycle()
                     var sharingOn by remember { mutableStateOf(sharing.enabled) }
 
-                    SignInScreen(
-                        state = state,
-                        sharing = sharingOn,
-                        permissionNotice = permissionNotice,
-                        onSharingChange = { wanted ->
-                            sharingOn = wanted
-                            applySharing(wanted)
-                        },
-                        onOpenSettings = ::openApplicationSettings,
-                        onSignIn = { lifecycleScope.launch { signIn.signIn(this@MainActivity) } },
-                        onSignOut = { lifecycleScope.launch { signIn.signOut() } },
-                    )
+                    when (val current = state) {
+                        // Signed in, the map is the application; the sign-in
+                        // screen has nothing left to say.
+                        is AuthState.SignedIn -> {
+                            val positions by rememberMemberPositions()
+
+                            KeepWatching(current.memberId)
+
+                            MapScreen(
+                                positions = positions,
+                                ownMemberId = current.memberId,
+                                sharing = sharingOn,
+                                permissionNotice = permissionNotice,
+                                onSharingChange = { wanted ->
+                                    sharingOn = wanted
+                                    applySharing(wanted)
+                                },
+                                onOpenSettings = ::openApplicationSettings,
+                                onSignOut = { lifecycleScope.launch { signIn.signOut() } },
+                            )
+                        }
+
+                        else ->
+                            SignInScreen(
+                                state = current,
+                                onSignIn = {
+                                    lifecycleScope.launch { signIn.signIn(this@MainActivity) }
+                                },
+                            )
+                    }
                 }
             }
         }

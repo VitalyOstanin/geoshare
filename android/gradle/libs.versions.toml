@@ -21,6 +21,9 @@ playServicesLocation = "21.4.0"
 # Google option that turns the chosen account into an identity token.
 credentials = "1.6.0"
 googleid = "1.2.0"
+# The map background. Draws OpenStreetMap tiles itself, so the application
+# needs no map key and no payment method behind one.
+osmdroid = "6.1.20"
 junit = "4.13.2"
 googleServices = "4.5.0"
 ktlintPlugin = "14.2.0"
@@ -51,6 +54,8 @@ play-services-location = { module = "com.google.android.gms:play-services-locati
 androidx-credentials = { module = "androidx.credentials:credentials", version.ref = "credentials" }
 androidx-credentials-play-services-auth = { module = "androidx.credentials:credentials-play-services-auth", version.ref = "credentials" }
 googleid = { module = "com.google.android.libraries.identity.googleid:googleid", version.ref = "googleid" }
+
+osmdroid-android = { module = "org.osmdroid:osmdroid-android", version.ref = "osmdroid" }
 
 kotlinx-coroutines-android = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-android", version.ref = "coroutines" }
 # Awaits a Play Services Task from a coroutine; Firebase returns those.

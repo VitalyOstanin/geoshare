@@ -2,15 +2,12 @@ package io.github.vitalyostanin.geoshare.auth
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -18,24 +15,15 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import io.github.vitalyostanin.geoshare.R
-import io.github.vitalyostanin.geoshare.permission.PermissionStep
 
 /**
- * The whole application until the map arrives: either the way in, or who is
- * already in.
+ * The way in, and nothing else.
+ *
+ * What a signed-in member sees is the map; this screen is what stands in its
+ * place until there is an account behind it.
  */
 @Composable
-fun SignInScreen(
-    state: AuthState,
-    sharing: Boolean,
-    /** The permission the member has to grant on the settings screen, if any. */
-    permissionNotice: PermissionStep?,
-    onSharingChange: (Boolean) -> Unit,
-    onOpenSettings: () -> Unit,
-    onSignIn: () -> Unit,
-    onSignOut: () -> Unit,
-    modifier: Modifier = Modifier,
-) {
+fun SignInScreen(state: AuthState, onSignIn: () -> Unit, modifier: Modifier = Modifier) {
     Column(
         modifier = modifier.fillMaxSize().padding(24.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp, Alignment.CenterVertically),
@@ -51,15 +39,9 @@ fun SignInScreen(
 
             is AuthState.SignedOut -> SignedOut(failure = state.failure, onSignIn = onSignIn)
 
-            is AuthState.SignedIn ->
-                SignedIn(
-                    state = state,
-                    sharing = sharing,
-                    permissionNotice = permissionNotice,
-                    onSharingChange = onSharingChange,
-                    onOpenSettings = onOpenSettings,
-                    onSignOut = onSignOut,
-                )
+            // The caller shows the map instead of this screen; the branch is
+            // here because the state is a closed set, not because it happens.
+            is AuthState.SignedIn -> Unit
         }
     }
 }
@@ -86,67 +68,6 @@ private fun SignedOut(failure: SignInFailure?, onSignIn: () -> Unit) {
             textAlign = TextAlign.Center,
         )
     }
-}
-
-@Composable
-private fun SignedIn(
-    state: AuthState.SignedIn,
-    sharing: Boolean,
-    permissionNotice: PermissionStep?,
-    onSharingChange: (Boolean) -> Unit,
-    onOpenSettings: () -> Unit,
-    onSignOut: () -> Unit,
-) {
-    Text(
-        text = stringResource(
-            R.string.signed_in_as,
-            state.displayName ?: stringResource(R.string.signed_in_nameless),
-        ),
-        style = MaterialTheme.typography.bodyLarge,
-        textAlign = TextAlign.Center,
-    )
-
-    // The member id is what the position documents are named after, so it is
-    // worth seeing until there is a map to look at instead.
-    Text(
-        text = stringResource(R.string.member_id, state.memberId),
-        style = MaterialTheme.typography.bodySmall,
-        textAlign = TextAlign.Center,
-    )
-
-    Row(
-        horizontalArrangement = Arrangement.spacedBy(12.dp),
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        Text(text = stringResource(R.string.sharing_action))
-
-        Switch(checked = sharing, onCheckedChange = onSharingChange)
-    }
-
-    // Shown once the system has stopped asking: from there on the answer is
-    // changed on the settings screen, and saying so beats an inert switch.
-    if (sharing && permissionNotice != null) {
-        Text(
-            text = stringResource(permissionMessage(permissionNotice)),
-            style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.error,
-            textAlign = TextAlign.Center,
-        )
-
-        TextButton(onClick = onOpenSettings) {
-            Text(text = stringResource(R.string.permission_open_settings))
-        }
-    }
-
-    TextButton(onClick = onSignOut) {
-        Text(text = stringResource(R.string.sign_out_action))
-    }
-}
-
-private fun permissionMessage(step: PermissionStep): Int = when (step) {
-    PermissionStep.Location -> R.string.permission_location_needed
-    PermissionStep.Notifications -> R.string.permission_notifications_needed
-    PermissionStep.BackgroundLocation -> R.string.permission_background_needed
 }
 
 private fun failureMessage(failure: SignInFailure): Int = when (failure) {

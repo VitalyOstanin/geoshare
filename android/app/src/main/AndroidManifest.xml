@@ -2,6 +2,9 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
 
     <uses-permission android:name="android.permission.INTERNET" />
+    <!-- The map library asks whether there is a connection before it goes
+         looking for a tile it has no copy of. -->
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
 
     <!-- The position itself. The background one is asked for separately, and
          is what lets the service start after a restart rather than only while
