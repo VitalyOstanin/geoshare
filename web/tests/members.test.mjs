@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 
-import { colourIndex, orderedForNavigation, shortName } from '../public/lib/members.js';
+import { colourIndex, memberName, orderedForNavigation, shortName } from '../public/lib/members.js';
 
 const positionOf = (memberId) => ({ memberId, latitude: 60, longitude: 30 });
 const idsOf = (positions) => positions.map((position) => position.memberId);
@@ -34,4 +34,19 @@ test('the colour index matches the one the Android client takes', () => {
 
 test('a name is the first characters of the id', () => {
     assert.equal(shortName('u7ExampleOwnerUid00000000000'), 'E9WyZT');
+});
+
+// The same four cases the Android client checks, so that a member is called
+// the same thing on the phone and on the laptop.
+test('a member is called what their profile says', () => {
+    assert.equal(memberName({ displayName: 'Ann', photoUrl: null }, 'her', false), 'Ann');
+});
+
+test('a member without a profile is called by the start of their id', () => {
+    assert.equal(memberName(undefined, 'u7ExampleOwnerUid00000000000', false), 'E9WyZT');
+});
+
+test('our own entry says "you", profile or not', () => {
+    assert.equal(memberName({ displayName: 'Ann', photoUrl: null }, 'me', true), 'You');
+    assert.equal(memberName(undefined, 'me', true), 'You');
 });

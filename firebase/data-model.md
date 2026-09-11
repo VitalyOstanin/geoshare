@@ -5,13 +5,33 @@ fix overwrites the previous one, which keeps both storage and read counts flat.
 
 ```
 groups/{groupId}                  members: [uid, ...]
-groups/{groupId}/members/{uid}    display name, marker colour
+groups/{groupId}/members/{uid}    what a member says about themselves
 groups/{groupId}/positions/{uid}  last known position
 groups/{groupId}/watch/{uid}      viewing marker
 ```
 
-`groups/{groupId}/members` is not written by any client yet: members are told apart
-by their id, and the colour is computed from it on both sides.
+The group document is the roster and no client may write it; membership is edited
+from the console. A member's own document under it is the opposite: they write it
+and nobody else does.
+
+## members/{uid}
+
+| Field         | Type      | Meaning                                                  |
+|---------------|-----------|----------------------------------------------------------|
+| `displayName` | string    | What the member is called on the other screens             |
+| `photoUrl`    | string    | The account picture, as the provider hosts it; null without one |
+| `updatedAt`   | timestamp | When the profile was last written; set by the server itself |
+
+Both values come from the account the member signed in with, and neither client
+uploads an image: the picture is the address the provider already serves. A client
+writes the document only when what the account says differs from what is stored,
+because names change about never and the free tier counts every write.
+
+The marker colour is not stored. It is computed from the id on both sides, so that
+a member keeps their colour whether or not they have ever signed in.
+
+A member with no profile is drawn under the first characters of their id, which is
+what both clients showed before profiles existed.
 
 ## positions/{uid}
 

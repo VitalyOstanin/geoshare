@@ -85,8 +85,9 @@ data class MapFocus(val memberId: String, val request: Int)
 @Composable
 fun MemberMap(
     positions: List<MemberPosition>,
+    /** What to write on each marker, by member id; the screen works the fallbacks out. */
+    names: Map<String, String>,
     ownMemberId: String,
-    ownName: String,
     now: Instant,
     /** The member the panel asked to look at, if one has been asked for. */
     focus: MapFocus?,
@@ -131,7 +132,7 @@ fun MemberMap(
     }
 
     AndroidView(factory = { holder.view }, modifier = modifier) { _ ->
-        holder.show(positions, ownMemberId, ownName, now)
+        holder.show(positions, names, ownMemberId, now)
         holder.lookAt(focus)
     }
 }
@@ -181,8 +182,8 @@ private class MapHolder(val view: MapView) {
     private val icons = mutableSetOf<String>()
 
     private var members: List<MemberPosition> = emptyList()
+    private var names: Map<String, String> = emptyMap()
     private var ownMemberId: String = ""
-    private var ownName: String = ""
     private var now: Instant = Instant.EPOCH
 
     /** The last request acted on, so that an unchanged one does not move the map again. */
@@ -231,10 +232,15 @@ private class MapHolder(val view: MapView) {
         }
     }
 
-    fun show(positions: List<MemberPosition>, ownMemberId: String, ownName: String, now: Instant) {
+    fun show(
+        positions: List<MemberPosition>,
+        names: Map<String, String>,
+        ownMemberId: String,
+        now: Instant,
+    ) {
         members = positions
+        this.names = names
         this.ownMemberId = ownMemberId
-        this.ownName = ownName
         this.now = now
 
         draw()
@@ -273,13 +279,7 @@ private class MapHolder(val view: MapView) {
 
         val features =
             members.map { position ->
-                val name =
-                    if (position.memberId == ownMemberId) {
-                        ownName
-                    } else {
-                        shortName(position.memberId)
-                    }
-
+                val name = names[position.memberId] ?: shortName(position.memberId)
                 val stale = isStale(position.knownAt, now)
                 val icon = iconName(position.memberId, name, stale)
 

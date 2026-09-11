@@ -141,3 +141,170 @@ offers the applications it has rather than a fixed list. Sending a position
 outside the group is also the one place where a member passes on where somebody
 else is, so it is worth deciding whether that is offered for everybody or only
 for oneself.
+
+## What a stranger would have to do to use this
+
+Everything is one household's: the group is the constant `family` in both
+clients, the project keys arrive as files kept out of the repository, and the
+roster is an array in the group document that no client may write, so it is
+edited by hand in the Firebase console. Somebody who installs a published build
+has no way to say where their positions go, who they are shared with, or how a
+second phone joins them.
+
+Three separate questions sit behind that.
+
+**Whose storage.** Either each household runs its own Firebase project, or
+everybody writes into one project the author pays for. Their own project keeps
+the positions and the bill with the person they belong to, and it is what a
+free tier can carry at all; it costs a setup the application has to walk
+somebody through — creating the project, deploying the rules, handing the
+configuration over — and it moves the start of Firebase out of the build and
+into a screen, because the configuration is no longer known when the build is
+made. One shared project needs no code at all and is the worse of the two:
+other people's positions land in an account that is mine, the free tier runs
+out, and the bill that follows has a card behind it.
+
+Settled: each household runs its own project. The application therefore may
+not assume it knows its project when it is built.
+
+**Making that first run bearable.** Creating a project, turning on sign-in and
+the database, deploying the rules and copying the configuration out is a dozen
+steps in a console that fights back. A script the person runs once on a
+computer can do all of it through the Firebase command line — the project, the
+rules, registering the application and reading its configuration back are all
+commands, as this project's own setup showed — and finish by printing the
+configuration as a code the phone reads. It costs a script to write and keep
+working, and it asks for a computer and a terminal, which not everybody who
+would install this has. Worth having as the offered path, with the manual steps
+written down as the fallback.
+
+**Who is above whom.** The person who creates the project owns it: they read
+the whole database from the console without the rules applying, edit the rules,
+see every account that signed in, and can delete the whole thing. Nobody else
+can, and the only way to level that is inviting a second owner into the project
+itself, which is the console work this is meant to avoid. Inside the
+application the imbalance is removable: a list of the group's administrators in
+the group document, and a rule letting those on it change the roster, puts
+inviting and removing in more than one pair of hands. Worth deciding alongside
+the invitation code, since both write to the same document.
+
+Standing above the users is not itself unusual — the large map applications
+have the same shape, and their server sees everything their users hand it. What
+differs is who stands there. Theirs is a company, a stranger to everybody and
+equally far from each of them; ours is one of the members, who is also being
+looked at by the rest. In a household that is the arrangement people want: the
+project belongs to the parent. Among people who met on a trip it means one of
+them reads the others' history from a console. So the thing to build is not an
+attempt to level the two, it is telling members whose storage they are in:
+the application knows which account owns the project, and saying so is what
+lets somebody join on terms they understand.
+
+**The signing fingerprint, which the setup cannot skip.** Signing in with a
+Google account only works if the project has been told the fingerprint of the
+build doing the asking; ours was told the debug one when sign-in was built. A
+household running its own project therefore has to register the application in
+it with the fingerprint of the published build before anybody can sign in at
+all. The fingerprint is the same for every installation of a given release, so
+it can simply be printed in the instructions, but the step remains, and it
+belongs in whatever script or walkthrough does the first run.
+
+**How a group is joined.** Settled: an invitation code carried in the
+application. The first member creates the group and hands out a code; the
+person invited enters it and adds themselves to the roster. It is the form that
+works for somebody who will never open a console, and it is what makes removing
+somebody possible at all. Whether the rules alone can allow the joining write —
+one that may only append the caller's own id, against an invitation document
+that has to exist and not have expired — is the piece to establish against the
+emulator before anything is designed on top of it, because the alternative is a
+cloud function, and those are not free.
+
+What joins is a member, meaning an account, not a phone: the code is spent by
+the person who enters it, and whatever devices they sign in on come with them.
+That raises a question the single-household build never had to answer. One
+account signed in on two phones writes into one position document, and the last
+write wins, so the two take turns overwriting each other. Either that is
+declared acceptable — the phone in somebody's pocket is one phone, and the
+spare in a drawer writes nothing — or a position is kept per device under its
+member, which changes the document model, the subscriptions and what a marker
+means when one person is in two places.
+
+What two phones on one account do today, in full:
+
+- The position document is overwritten by whichever phone wrote last, and the
+  marker jumps between two places while looking freshly written both times, so
+  nothing on screen explains the jump.
+- Neither phone knows what the other wrote: the write filter compares a fix
+  against the last one this phone wrote, not against what the database holds,
+  so both write on their own schedule and the group pays twice the writes.
+- The viewing marker is one document as well. Closing the map on one phone
+  deletes it for both, and the other members drop out of their fast mode until
+  the phone still looking pushes the marker forward again, up to a minute later.
+- The profile is written once per phone, since each remembers separately what
+  it has had accepted. The content is identical, so this one is harmless.
+
+Wanted instead: every device of a member drawn on the map. The case is an
+ordinary one — a parent hands their old phone to a child for the afternoon and
+goes out with the new one, and both are worth seeing at once. That means a
+position per device rather than per member: a device identity that survives a
+restart, a document under the member for each one, markers that carry the
+device as well as the person, and a viewing marker that one device cannot
+withdraw on another's behalf. The card and the panel then have to say which
+device they are showing, and a member with one phone must not end up reading
+its name anywhere. Worth weighing against the simpler answer for that same
+case: give the child their own account on the old phone, which the group
+already supports.
+
+When: straight after the beta, before anything else is built on top. This is a
+change to the shape of the documents, and the longer the clients, the rules and
+the page keep assuming one position per member, the more there is to unpick —
+every subscription, every marker and every card reads that assumption today.
+
+**More than one group at a time.** A person is in a family and also in, say, a
+group of people on a walking trip. Those are different groups with different
+members, and both want the same position. With a project per household the
+groups do not merely sit side by side — they sit in different projects
+entirely, so the phone would hold several configurations, sign in against each
+of them, and write the same fix once per group. The battery cost multiplies by
+the number of groups, and so does the number of places a position is stored.
+Several groups inside one project is the cheaper shape, but then somebody's
+project holds people who have nothing to do with them.
+
+**Why any of this is hard: the free tier.** The awkwardness above is not in the
+idea of sharing a position, it is in having no storage of our own. A service
+with a global store, the way the large map applications have, would know each
+person once: a position is written once, and permission is granted person to
+person — this one may see me, that one may not — with a group being no more
+than a name for a list. Because storage has to be somebody's free Firebase
+project instead, identity is scoped to the project, and permission has to be
+granted per group and per member both, once in every project a person belongs
+to. That is the constraint to keep in view when weighing the item above about
+exchanging positions without Firebase: what a store of our own would buy is
+exactly this.
+
+**Who may see a position.** Settled: a member names the readers one by one, and
+each permission may carry an expiry. Everyone in the group is not the same as
+everyone who may watch — a group of people on a trip is not a household — and a
+permission that runs out on its own is what lets somebody be visible for the
+walk and not for the week after it.
+
+That decision costs more than the switch it replaces, and the costs are worth
+stating before it is built:
+
+- The permission has to live where a rule can read it without paying for a
+  second document. Inside the position document is that place: a field mapping
+  a reader to when their permission ends, with the absence of an end meaning
+  indefinite. A separate permissions document would be a `get` on every read,
+  and reads are the quota that runs out first.
+- Subscribing to the whole positions collection stops working. A collection
+  listener is refused outright when a single document in it is out of reach,
+  so both clients have to subscribe per member instead, walking the roster.
+  That is one listener per member rather than one for the group.
+- An expiry that passes turns a working listener into a permission error rather
+  than into an empty result, and both clients have to read that as "no longer
+  shared" rather than as a failure to report.
+- Both clients need the screen where the permissions are given, which is a list
+  of members, a switch each and a choice of how long.
+
+None of this is worth building before the two phones work. It is worth deciding
+before the storage is designed any further, since the first question decides
+whether a client may assume it knows its project at build time.

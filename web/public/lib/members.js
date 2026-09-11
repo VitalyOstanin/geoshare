@@ -49,3 +49,17 @@ export function colourIndex(memberId) {
 export function shortName(memberId) {
     return memberId.slice(0, 6);
 }
+
+/**
+ * What a member is called on screen.
+ *
+ * A member who has not signed in since profiles existed has no name to show,
+ * and the first characters of the id are what told them apart before.
+ */
+export function memberName(profile, memberId, own) {
+    if (own) {
+        return 'You';
+    }
+
+    return profile?.displayName ?? shortName(memberId);
+}

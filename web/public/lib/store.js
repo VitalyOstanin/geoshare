@@ -16,6 +16,7 @@ import {
     doc,
     getFirestore,
     onSnapshot,
+    serverTimestamp,
     setDoc,
 } from 'https://www.gstatic.com/firebasejs/12.19.0/firebase-firestore.js';
 import { firebaseConfig } from '../firebase-config.js';
@@ -93,6 +94,70 @@ function positionOf(document) {
         mode: data.mode ?? null,
         batteryPercent: typeof data.batteryPercent === 'number' ? data.batteryPercent : null,
     };
+}
+
+/**
+ * Who the members are, as they say so themselves.
+ *
+ * Names change about never, so this costs one read per member and then
+ * nothing; keeping it a subscription rather than a single read is what lets a
+ * member who renames their account stop being called by the old name without
+ * anybody reloading the page.
+ */
+export function watchProfiles(onProfiles, onError) {
+    return onSnapshot(
+        collection(store, 'groups', GROUP, 'members'),
+        (snapshot) => onProfiles(new Map(snapshot.docs.map(profileOf).filter(Boolean))),
+        onError,
+    );
+}
+
+function profileOf(document) {
+    const data = document.data();
+
+    // A profile without a name says nothing the id does not already say, and
+    // both clients fall back to the id on their own.
+    if (typeof data.displayName !== 'string' || data.displayName.trim() === '') {
+        return null;
+    }
+
+    return [
+        document.id,
+        {
+            memberId: document.id,
+            displayName: data.displayName,
+            photoUrl: typeof data.photoUrl === 'string' && data.photoUrl !== '' ? data.photoUrl : null,
+        },
+    ];
+}
+
+/**
+ * Says who this viewer is, when the account says something the group has not
+ * been told.
+ *
+ * Skipped when the stored profile already matches: a name changes about never,
+ * and the free tier counts every write.
+ */
+export function publishProfile(member, known, onError) {
+    const displayName = member.name?.trim();
+
+    if (!displayName) {
+        return Promise.resolve();
+    }
+
+    const photoUrl = member.picture ?? null;
+
+    if (known && known.displayName === displayName && known.photoUrl === photoUrl) {
+        return Promise.resolve();
+    }
+
+    return setDoc(doc(store, 'groups', GROUP, 'members', member.memberId), {
+        displayName,
+        // Written as a field rather than left out, so that an account that
+        // loses its picture loses it on the other screens too.
+        photoUrl,
+        updatedAt: serverTimestamp(),
+    }).catch(onError);
 }
 
 /**

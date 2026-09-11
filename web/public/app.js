@@ -2,8 +2,16 @@
 
 import { ageText, isStale, positionAge } from './lib/age.js';
 import { centreOnce, createMap, lookAt, remeasure, showMembers } from './lib/map.js';
-import { memberColour, orderedForNavigation, shortName } from './lib/members.js';
-import { keepWatching, leave, signIn, watchPositions, watchSignIn } from './lib/store.js';
+import { memberColour, memberName, orderedForNavigation } from './lib/members.js';
+import {
+    keepWatching,
+    leave,
+    publishProfile,
+    signIn,
+    watchPositions,
+    watchProfiles,
+    watchSignIn,
+} from './lib/store.js';
 
 /** How often the ages on screen are recounted. Half a minute keeps "5 minutes ago" honest. */
 const AGE_TICK_MS = 30 * 1000;
@@ -27,8 +35,13 @@ const elements = {
 const state = {
     member: null,
     positions: [],
+    // Null until the first answer arrives, which is what tells "nobody has a
+    // profile" apart from "the answer is still on its way". Writing before it
+    // lands would put the same profile in again on every visit.
+    profiles: null,
     view: null,
     stopPositions: null,
+    stopProfiles: null,
     stopWatching: null,
 };
 
@@ -95,12 +108,22 @@ function start() {
         render();
     }, () => {});
 
+    state.stopProfiles ??= watchProfiles((profiles) => {
+        state.profiles = profiles;
+        publishProfile(state.member, profiles.get(state.member.memberId), () => {});
+        render();
+    }, () => {});
+
     state.stopWatching ??= keepWatching(state.member.memberId, () => {});
 }
 
 function stop() {
     state.stopPositions?.();
     state.stopPositions = null;
+
+    state.stopProfiles?.();
+    state.stopProfiles = null;
+    state.profiles = null;
 
     state.stopWatching?.();
     state.stopWatching = null;
@@ -141,7 +164,7 @@ function render() {
 
     const now = Date.now();
 
-    showMembers(state.view, state.positions, state.member.memberId, now);
+    showMembers(state.view, state.positions, names(), state.member.memberId, now);
     centreOnce(state.view, state.positions, state.member.memberId);
 
     elements.members.replaceChildren(
@@ -151,9 +174,27 @@ function render() {
     );
 }
 
-function memberEntry(position, now) {
-    const own = position.memberId === state.member.memberId;
+/**
+ * What every member on screen is called, worked out once per drawing.
+ *
+ * One's own marker says "you" rather than one's own name: the name is on the
+ * account button already, and the page exists to answer where everybody else
+ * is.
+ */
+function names() {
+    return new Map(
+        state.positions.map((position) => [
+            position.memberId,
+            memberName(
+                state.profiles?.get(position.memberId),
+                position.memberId,
+                position.memberId === state.member.memberId,
+            ),
+        ]),
+    );
+}
 
+function memberEntry(position, now) {
     const entry = document.createElement('button');
     entry.className = 'member';
     entry.addEventListener('click', () => lookAt(state.view, position));
@@ -164,7 +205,11 @@ function memberEntry(position, now) {
 
     const name = document.createElement('span');
     name.className = 'name';
-    name.textContent = own ? 'You' : shortName(position.memberId);
+    name.textContent = memberName(
+        state.profiles?.get(position.memberId),
+        position.memberId,
+        position.memberId === state.member.memberId,
+    );
 
     const age = document.createElement('span');
     age.className = isStale(position.knownAt, now) ? 'age stale' : 'age';

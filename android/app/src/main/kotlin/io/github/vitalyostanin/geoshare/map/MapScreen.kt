@@ -54,6 +54,8 @@ private val LIST_MAX_HEIGHT = 220.dp
 @Composable
 fun MapScreen(
     positions: List<MemberPosition>,
+    /** What each member calls themselves, by member id; absent until they sign in. */
+    profiles: Map<String, MemberProfile>,
     ownMemberId: String,
     ownDisplayName: String?,
     ownPictureUrl: String?,
@@ -75,6 +77,18 @@ fun MapScreen(
     // showing the one from when it was opened would quietly go stale.
     val opened = positions.firstOrNull { it.memberId == openedMemberId }
     val ownName = stringResource(R.string.map_member_you)
+    // Worked out here rather than inside the map: the fallbacks come from the
+    // resources, and the map draws pictures, not strings from a resource file.
+    val names =
+        positions.associate { position ->
+            position.memberId to
+                memberName(
+                    profile = profiles[position.memberId],
+                    memberId = position.memberId,
+                    own = position.memberId == ownMemberId,
+                    ownName = ownName,
+                )
+        }
 
     // A tap is a request to look at somebody, not a state: tapping the same
     // member twice has to bring the map back both times, and the counter is
@@ -88,8 +102,8 @@ fun MapScreen(
         Box(modifier = Modifier.fillMaxWidth().weight(1f)) {
             MemberMap(
                 positions = positions,
+                names = names,
                 ownMemberId = ownMemberId,
-                ownName = ownName,
                 now = now,
                 focus = focus,
                 onSelect = { memberId -> openedMemberId = memberId },
@@ -106,7 +120,7 @@ fun MapScreen(
             if (opened != null) {
                 MemberDetail(
                     member = opened,
-                    own = opened.memberId == ownMemberId,
+                    name = names[opened.memberId] ?: shortName(opened.memberId),
                     now = now,
                     onClose = { openedMemberId = null },
                     modifier = Modifier.align(Alignment.BottomCenter).padding(12.dp),
@@ -125,7 +139,7 @@ fun MapScreen(
         } else {
             MemberButtons(
                 members = members,
-                ownMemberId = ownMemberId,
+                names = names,
                 now = now,
                 showAll = showAll,
                 onSelect = ::lookAt,
@@ -149,7 +163,7 @@ fun MapScreen(
 @Composable
 private fun MemberButtons(
     members: List<MemberPosition>,
-    ownMemberId: String,
+    names: Map<String, String>,
     now: Instant,
     showAll: Boolean,
     onSelect: (String) -> Unit,
@@ -165,7 +179,7 @@ private fun MemberButtons(
         shown.forEach { member ->
             MemberButton(
                 member = member,
-                own = member.memberId == ownMemberId,
+                name = names[member.memberId] ?: shortName(member.memberId),
                 now = now,
                 onSelect = onSelect,
                 modifier = Modifier.weight(1f),
@@ -187,7 +201,7 @@ private fun MemberButtons(
             items(rest, key = { it.memberId }) { member ->
                 MemberRow(
                     member = member,
-                    own = member.memberId == ownMemberId,
+                    name = names[member.memberId] ?: shortName(member.memberId),
                     now = now,
                     onSelect = onSelect,
                 )
@@ -199,7 +213,7 @@ private fun MemberButtons(
 @Composable
 private fun MemberButton(
     member: MemberPosition,
-    own: Boolean,
+    name: String,
     now: Instant,
     onSelect: (String) -> Unit,
     modifier: Modifier = Modifier,
@@ -217,7 +231,7 @@ private fun MemberButton(
                 MemberDot(memberId = member.memberId)
 
                 Text(
-                    text = memberName(member.memberId, own),
+                    text = name,
                     style = MaterialTheme.typography.bodyMedium,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
@@ -260,7 +274,7 @@ private fun MoreButton(
 @Composable
 private fun MemberRow(
     member: MemberPosition,
-    own: Boolean,
+    name: String,
     now: Instant,
     onSelect: (String) -> Unit,
 ) {
@@ -277,7 +291,7 @@ private fun MemberRow(
 
         Column(modifier = Modifier.weight(1f)) {
             Text(
-                text = memberName(member.memberId, own),
+                text = name,
                 style = MaterialTheme.typography.bodyLarge,
             )
 
@@ -320,11 +334,6 @@ private fun AgeText(member: MemberPosition, now: Instant) {
     )
 }
 
-/** Until members carry names of their own, the first characters of the id tell them apart. */
-@Composable
-private fun memberName(memberId: String, own: Boolean): String =
-    if (own) stringResource(R.string.map_member_you) else shortName(memberId)
-
 /**
  * What the card says once a marker is tapped.
  *
@@ -335,7 +344,7 @@ private fun memberName(memberId: String, own: Boolean): String =
 @Composable
 private fun MemberDetail(
     member: MemberPosition,
-    own: Boolean,
+    name: String,
     now: Instant,
     onClose: () -> Unit,
     modifier: Modifier = Modifier,
@@ -350,7 +359,7 @@ private fun MemberDetail(
                 MemberDot(memberId = member.memberId)
 
                 Text(
-                    text = memberName(member.memberId, own),
+                    text = name,
                     style = MaterialTheme.typography.titleMedium,
                     modifier = Modifier.weight(1f).padding(start = 8.dp),
                 )

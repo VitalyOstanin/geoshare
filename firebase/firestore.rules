@@ -15,8 +15,30 @@ service cloud.firestore {
       allow write: if false;
 
       match /members/{uid} {
+        // What a member says about themselves: the name and the picture their
+        // account carries, so that a marker can name a person rather than the
+        // first characters of an account id. Membership itself is the array in
+        // the group document, which stays out of every client's reach, so
+        // writing one's own profile grants nothing.
+        function profileShape() {
+          return request.resource.data.keys().hasOnly(['displayName', 'photoUrl', 'updatedAt']) &&
+                 request.resource.data.displayName is string &&
+                 request.resource.data.displayName.size() <= 100 &&
+                 (!('photoUrl' in request.resource.data) ||
+                  request.resource.data.photoUrl == null ||
+                  (request.resource.data.photoUrl is string &&
+                   request.resource.data.photoUrl.size() <= 500));
+        }
+
+        function isOwner() {
+          return isMember() && request.auth.uid == uid;
+        }
+
         allow read: if isMember();
-        allow write: if false;
+        // Stated apart from the delete: a deletion carries no document to
+        // check the shape of, and a single write rule would refuse every one.
+        allow create, update: if isOwner() && profileShape();
+        allow delete: if isOwner();
       }
 
       match /positions/{uid} {

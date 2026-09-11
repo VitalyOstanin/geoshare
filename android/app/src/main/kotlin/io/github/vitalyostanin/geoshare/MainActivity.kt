@@ -24,7 +24,9 @@ import io.github.vitalyostanin.geoshare.auth.SignInScreen
 import io.github.vitalyostanin.geoshare.log.AppLog
 import io.github.vitalyostanin.geoshare.map.KeepWatching
 import io.github.vitalyostanin.geoshare.map.MapScreen
+import io.github.vitalyostanin.geoshare.map.PublishProfile
 import io.github.vitalyostanin.geoshare.map.rememberMemberPositions
+import io.github.vitalyostanin.geoshare.map.rememberMemberProfiles
 import io.github.vitalyostanin.geoshare.permission.PermissionStep
 import io.github.vitalyostanin.geoshare.permission.devicePermissions
 import io.github.vitalyostanin.geoshare.permission.nextPermissionStep
@@ -78,11 +80,19 @@ class MainActivity : ComponentActivity() {
                         // screen has nothing left to say.
                         is AuthState.SignedIn -> {
                             val positions by rememberMemberPositions()
+                            val profiles by rememberMemberProfiles()
 
                             KeepWatching(current.memberId)
 
+                            PublishProfile(
+                                memberId = current.memberId,
+                                displayName = current.displayName,
+                                pictureUrl = current.pictureUrl,
+                            )
+
                             MapScreen(
                                 positions = positions,
+                                profiles = profiles.orEmpty(),
                                 ownMemberId = current.memberId,
                                 ownDisplayName = current.displayName,
                                 ownPictureUrl = current.pictureUrl,

@@ -24,6 +24,12 @@ const positionOf = (db, uid) => doc(db, `groups/${GROUP}/positions/${uid}`);
 const watchOf = (db, uid) => doc(db, `groups/${GROUP}/watch/${uid}`);
 const memberOf = (db, uid) => doc(db, `groups/${GROUP}/members/${uid}`);
 
+const someProfile = (name) => ({
+    displayName: name,
+    photoUrl: "https://lh3.googleusercontent.com/a/example",
+    updatedAt: new Date(),
+});
+
 const somePosition = {
     lat: 60.93,
     lon: 4.34,
@@ -54,8 +60,8 @@ beforeEach(async () => {
         const db = context.firestore();
 
         await setDoc(doc(db, `groups/${GROUP}`), { members: [ALICE, BOB] });
-        await setDoc(memberOf(db, ALICE), { name: "Alice", colour: "#1e88e5" });
-        await setDoc(memberOf(db, BOB), { name: "Bob", colour: "#43a047" });
+        await setDoc(memberOf(db, ALICE), someProfile("Alice"));
+        await setDoc(memberOf(db, BOB), someProfile("Bob"));
         await setDoc(positionOf(db, BOB), somePosition);
     });
 });
@@ -128,21 +134,93 @@ describe("watch", () => {
     });
 });
 
-describe("membership", () => {
-    it("a member reads the roster", async () => {
+describe("profiles", () => {
+    it("a member reads another member's profile", async () => {
         const db = testEnv.authenticatedContext(ALICE).firestore();
 
         await assertSucceeds(getDoc(memberOf(db, BOB)));
     });
 
-    // The roster and the group document are maintained from the console. A
-    // phone that could edit them could add itself to the group.
-    it("a member cannot edit the roster", async () => {
+    it("a member writes their own profile", async () => {
         const db = testEnv.authenticatedContext(ALICE).firestore();
 
-        await assertFails(setDoc(memberOf(db, ALICE), { name: "Someone else" }));
+        await assertSucceeds(setDoc(memberOf(db, ALICE), someProfile("Alice")));
     });
 
+    // A name on a marker is a name somebody else reads, so the account it
+    // describes has to be the account that wrote it.
+    it("a member cannot write another member's profile", async () => {
+        const db = testEnv.authenticatedContext(ALICE).firestore();
+
+        await assertFails(setDoc(memberOf(db, BOB), someProfile("Not Bob")));
+    });
+
+    // What both clients actually write for an account with no picture: the
+    // field is there and empty, so that losing a picture loses it everywhere.
+    it("a picture written as nothing is accepted", async () => {
+        const db = testEnv.authenticatedContext(ALICE).firestore();
+
+        await assertSucceeds(
+            setDoc(memberOf(db, ALICE), {
+                displayName: "Alice",
+                photoUrl: null,
+                updatedAt: new Date(),
+            }),
+        );
+    });
+
+    it("an account without a picture still has a profile", async () => {
+        const db = testEnv.authenticatedContext(ALICE).firestore();
+
+        await assertSucceeds(
+            setDoc(memberOf(db, ALICE), { displayName: "Alice", updatedAt: new Date() }),
+        );
+    });
+
+    // The page and the phone read these fields and show them; a document that
+    // carries anything else is a document neither client asked for.
+    it("a profile with a field of its own is refused", async () => {
+        const db = testEnv.authenticatedContext(ALICE).firestore();
+
+        await assertFails(
+            setDoc(memberOf(db, ALICE), { ...someProfile("Alice"), colour: "#000000" }),
+        );
+    });
+
+    it("a name too long for a marker is refused", async () => {
+        const db = testEnv.authenticatedContext(ALICE).firestore();
+
+        await assertFails(setDoc(memberOf(db, ALICE), someProfile("A".repeat(101))));
+    });
+
+    it("a picture address too long to be one is refused", async () => {
+        const db = testEnv.authenticatedContext(ALICE).firestore();
+
+        await assertFails(
+            setDoc(memberOf(db, ALICE), {
+                displayName: "Alice",
+                photoUrl: `https://example.com/${"a".repeat(500)}`,
+                updatedAt: new Date(),
+            }),
+        );
+    });
+
+    it("a member clears their own profile", async () => {
+        const db = testEnv.authenticatedContext(ALICE).firestore();
+
+        await assertSucceeds(deleteDoc(memberOf(db, ALICE)));
+    });
+
+    it("a stranger reads no profile", async () => {
+        const db = testEnv.authenticatedContext(STRANGER).firestore();
+
+        await assertFails(getDoc(memberOf(db, BOB)));
+    });
+});
+
+describe("membership", () => {
+    // The group document is the roster, and it is maintained from the console.
+    // A phone that could edit it could add itself to the group.
     it("a member cannot add anybody to the group", async () => {
         const db = testEnv.authenticatedContext(ALICE).firestore();
 

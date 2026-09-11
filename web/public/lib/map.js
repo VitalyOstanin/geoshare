@@ -64,14 +64,19 @@ export function createMap(element) {
  * own element, and replacing it on every update would close a detail bubble
  * the viewer had just opened.
  */
-export function showMembers(view, positions, ownMemberId, now) {
+export function showMembers(view, positions, names, ownMemberId, now) {
     const seen = new Set();
 
     for (const position of positions) {
         seen.add(position.memberId);
 
         const own = position.memberId === ownMemberId;
-        const entry = view.markers.get(position.memberId) ?? addMarker(view, position, own);
+        const name = names.get(position.memberId) ?? shortName(position.memberId);
+        const entry = view.markers.get(position.memberId) ?? addMarker(view, position, name);
+
+        // A member who signs in for the first time gets a name where the id
+        // used to be, and the label is drawn once when the marker is made.
+        entry.label.textContent = name;
 
         entry.marker.setLngLat([position.longitude, position.latitude]);
         entry.dot.style.background = isStale(position.knownAt, now)
@@ -79,7 +84,7 @@ export function showMembers(view, positions, ownMemberId, now) {
             : memberColour(position.memberId);
         // The name never changes, but the age does, and the bubble is where a
         // viewer looks to find out how much to trust the dot.
-        entry.popup.setDOMContent(detail(position, own, now));
+        entry.popup.setDOMContent(detail(position, name, now));
     }
 
     for (const [memberId, entry] of view.markers) {
@@ -90,7 +95,7 @@ export function showMembers(view, positions, ownMemberId, now) {
     }
 }
 
-function addMarker(view, position, own) {
+function addMarker(view, position, name) {
     const element = document.createElement('div');
     element.className = 'member-marker';
 
@@ -98,7 +103,7 @@ function addMarker(view, position, own) {
     // own says somebody is there, not who.
     const label = document.createElement('span');
     label.className = 'member-label';
-    label.textContent = name(position, own);
+    label.textContent = name;
 
     const dot = document.createElement('span');
     dot.className = 'member-dot';
@@ -118,7 +123,7 @@ function addMarker(view, position, own) {
         .setPopup(popup)
         .addTo(view.map);
 
-    const entry = { marker, popup, dot };
+    const entry = { marker, popup, dot, label };
 
     view.markers.set(position.memberId, entry);
 
@@ -133,10 +138,6 @@ function closeOthers(view, memberId) {
     }
 }
 
-function name(position, own) {
-    return own ? 'You' : shortName(position.memberId);
-}
-
 /**
  * What the bubble says once the viewer asks.
  *
@@ -147,12 +148,12 @@ function name(position, own) {
  * Built as elements rather than as text, so that a member id — written by
  * whoever holds the account — has no way of being read as markup.
  */
-function detail(position, own, now) {
+function detail(position, name, now) {
     const card = document.createElement('div');
     card.className = 'detail';
 
     const heading = document.createElement('h2');
-    heading.textContent = name(position, own);
+    heading.textContent = name;
 
     const table = document.createElement('table');
 

@@ -46,4 +46,31 @@ class MemberOrderTest {
             idsOf(orderedForNavigation(listOf(positionOf("me")), ownMemberId = "me")),
         )
     }
+
+    // The same four cases the web page checks, so that a member is called the
+    // same thing on the phone and on the laptop.
+    @Test
+    fun `a member is called what their profile says`() {
+        val profile =
+            MemberProfile(memberId = "her", displayName = "Ann", pictureUrl = null)
+
+        assertEquals("Ann", memberName(profile, "her", own = false, ownName = "You"))
+    }
+
+    @Test
+    fun `a member without a profile is called by the start of their id`() {
+        assertEquals(
+            "E9WyZT",
+            memberName(null, "u7ExampleOwnerUid00000000000", own = false, ownName = "You"),
+        )
+    }
+
+    @Test
+    fun `our own marker says what the screen calls us, profile or not`() {
+        val profile =
+            MemberProfile(memberId = "me", displayName = "Ann", pictureUrl = null)
+
+        assertEquals("You", memberName(profile, "me", own = true, ownName = "You"))
+        assertEquals("You", memberName(null, "me", own = true, ownName = "You"))
+    }
 }

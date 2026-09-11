@@ -4,6 +4,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.State
 import androidx.compose.runtime.remember
+import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -22,6 +23,59 @@ fun rememberMemberPositions(): State<List<MemberPosition>> {
     val positions = remember { memberPositions() }
 
     return positions.collectAsStateWithLifecycle(initialValue = emptyList())
+}
+
+/**
+ * The profiles, collected alongside the positions.
+ *
+ * Separate from the positions rather than joined to them: a member who has not
+ * written a position yet still has a name, and a position without a profile is
+ * still a place to draw. Null until the first answer arrives, which is what
+ * tells "nobody has a profile" apart from "the answer is still on its way".
+ */
+@Composable
+fun rememberMemberProfiles(): State<Map<String, MemberProfile>?> {
+    val profiles = remember { memberProfiles() }
+
+    return profiles.collectAsStateWithLifecycle(initialValue = null)
+}
+
+/**
+ * Tells the group who this member is, when the account says something this
+ * phone has not had accepted yet.
+ *
+ * What was accepted is remembered on the phone rather than read back out of
+ * the subscription: a write shows up there before the server has taken it and
+ * disappears again if the server refuses, and a client that answered the
+ * disappearance with another write would keep doing so for as long as the
+ * screen was up.
+ *
+ * Tried again on every return to the screen, because the first attempt can be
+ * refused for a reason that goes away without the application hearing about
+ * it — a member added to the group a minute after they first signed in is
+ * exactly that case, and without the retry they would stay nameless until the
+ * next launch.
+ */
+@Composable
+fun PublishProfile(memberId: String, displayName: String?, pictureUrl: String?) {
+    // An account with no name of its own has nothing to say about itself that
+    // the id does not already say, so nothing is written.
+    val name = displayName?.takeIf { it.isNotBlank() } ?: return
+    val context = LocalContext.current
+    val published = remember(context) { PublishedProfile(context) }
+    val owner = LocalLifecycleOwner.current
+
+    LaunchedEffect(memberId, name, pictureUrl, owner) {
+        owner.repeatOnLifecycle(Lifecycle.State.RESUMED) {
+            if (published.matches(memberId, name, pictureUrl)) {
+                return@repeatOnLifecycle
+            }
+
+            if (publishProfile(memberId = memberId, displayName = name, pictureUrl = pictureUrl)) {
+                published.remember(memberId, name, pictureUrl)
+            }
+        }
+    }
 }
 
 /**
