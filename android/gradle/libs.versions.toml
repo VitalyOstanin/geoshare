@@ -1,0 +1,52 @@
+# Library versions. The toolchain versions — SDK, JDK, Gradle — are in
+# tools/versions.env instead, because the container image needs them too.
+#
+# Every version here was taken from the artefact repository at the time it was
+# added, not from an example. Check before bumping rather than after.
+
+[versions]
+agp = "9.4.0"
+kotlin = "2.4.20"
+composeBom = "2026.09.00"
+coreKtx = "1.19.0"
+activityCompose = "1.13.0"
+lifecycle = "2.11.0"
+coroutines = "1.11.0"
+firebaseBom = "34.19.0"
+playServicesLocation = "21.4.0"
+junit = "4.13.2"
+ktlintPlugin = "14.2.0"
+# The ktlint the plugin runs, rather than whichever one it defaults to: the
+# rules change between releases and the check has to fail the same way
+# everywhere.
+ktlint = "1.8.0"
+
+[libraries]
+androidx-core-ktx = { module = "androidx.core:core-ktx", version.ref = "coreKtx" }
+androidx-activity-compose = { module = "androidx.activity:activity-compose", version.ref = "activityCompose" }
+androidx-lifecycle-runtime-compose = { module = "androidx.lifecycle:lifecycle-runtime-compose", version.ref = "lifecycle" }
+androidx-lifecycle-service = { module = "androidx.lifecycle:lifecycle-service", version.ref = "lifecycle" }
+
+compose-bom = { module = "androidx.compose:compose-bom", version.ref = "composeBom" }
+compose-material3 = { module = "androidx.compose.material3:material3" }
+compose-ui = { module = "androidx.compose.ui:ui" }
+compose-ui-tooling = { module = "androidx.compose.ui:ui-tooling" }
+compose-ui-tooling-preview = { module = "androidx.compose.ui:ui-tooling-preview" }
+
+firebase-bom = { module = "com.google.firebase:firebase-bom", version.ref = "firebaseBom" }
+firebase-firestore = { module = "com.google.firebase:firebase-firestore" }
+firebase-auth = { module = "com.google.firebase:firebase-auth" }
+
+play-services-location = { module = "com.google.android.gms:play-services-location", version.ref = "playServicesLocation" }
+
+kotlinx-coroutines-android = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-android", version.ref = "coroutines" }
+kotlinx-coroutines-test = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-test", version.ref = "coroutines" }
+junit = { module = "junit:junit", version.ref = "junit" }
+
+[plugins]
+# Kotlin support is built into AGP from 9.0 onwards, so there is no
+# kotlin-android plugin here; the Kotlin version below is what the Compose
+# plugin pins.
+android-application = { id = "com.android.application", version.ref = "agp" }
+kotlin-compose = { id = "org.jetbrains.kotlin.plugin.compose", version.ref = "kotlin" }
+ktlint = { id = "org.jlleitschuh.gradle.ktlint", version.ref = "ktlintPlugin" }

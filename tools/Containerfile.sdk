@@ -1,0 +1,60 @@
+# Build environment for the Android application.
+#
+# Keeps build-only tooling off the host: the SDK, the platform and the build
+# tools are several gigabytes that nothing but a build needs.
+#
+# Built by tools/lib.sh, which passes the versions from tools/versions.env;
+# none of the arguments has a default, so a build that omits one fails instead
+# of pinning a version nobody wrote down.
+ARG JDK_VERSION
+FROM docker.io/library/eclipse-temurin:${JDK_VERSION}-jdk
+
+ARG ANDROID_PLATFORM
+ARG ANDROID_BUILD_TOOLS
+ARG CMDLINE_TOOLS_RELEASE
+ARG CMDLINE_TOOLS_SHA256
+
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends unzip curl ca-certificates git \
+    && rm -rf /var/lib/apt/lists/*
+
+ENV ANDROID_HOME=/opt/android-sdk
+ENV ANDROID_SDK_ROOT=/opt/android-sdk
+
+# sdkmanager insists on living in cmdline-tools/latest; unpacked anywhere else
+# it fails to resolve its own location.
+RUN curl -fsSL -o /tmp/tools.zip \
+        "https://dl.google.com/android/repository/commandlinetools-linux-${CMDLINE_TOOLS_RELEASE}_latest.zip" \
+    && echo "${CMDLINE_TOOLS_SHA256}  /tmp/tools.zip" | sha256sum -c - \
+    && mkdir -p "${ANDROID_HOME}/cmdline-tools" \
+    && unzip -q /tmp/tools.zip -d "${ANDROID_HOME}/cmdline-tools" \
+    && mv "${ANDROID_HOME}/cmdline-tools/cmdline-tools" "${ANDROID_HOME}/cmdline-tools/latest" \
+    && rm /tmp/tools.zip
+
+ENV PATH="${ANDROID_HOME}/cmdline-tools/latest/bin:${ANDROID_HOME}/platform-tools:${PATH}"
+
+# The platform is the one android/app/build.gradle.kts compiles against — both
+# read tools/versions.env, so the image cannot ship a platform the build does
+# not ask for. platform-tools carries adb.
+RUN yes | sdkmanager --licenses > /dev/null \
+    && sdkmanager --install "platform-tools" \
+        "platforms;${ANDROID_PLATFORM}" "build-tools;${ANDROID_BUILD_TOOLS}" \
+    && rm -rf "${ANDROID_HOME}/.temp"
+
+# Gradle itself comes from the wrapper the project commits; this copy exists
+# only to generate that wrapper the first time.
+ARG GRADLE_VERSION
+ARG GRADLE_SHA256
+RUN curl -fsSL -o /tmp/gradle.zip \
+        "https://services.gradle.org/distributions/gradle-${GRADLE_VERSION}-bin.zip" \
+    && echo "${GRADLE_SHA256}  /tmp/gradle.zip" | sha256sum -c - \
+    && unzip -q /tmp/gradle.zip -d /opt \
+    && rm /tmp/gradle.zip
+ENV PATH="/opt/gradle-${GRADLE_VERSION}/bin:${PATH}"
+
+# A writable home for the Gradle cache; the build mounts a volume over it so
+# dependencies survive between runs.
+ENV GRADLE_USER_HOME=/gradle
+RUN mkdir -p /gradle && chmod 777 /gradle
+
+WORKDIR /src

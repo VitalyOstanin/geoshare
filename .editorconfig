@@ -1,0 +1,16 @@
+# The Kotlin style, read by ktlint and by the IDE alike.
+#
+# intellij_idea rather than ktlint_official: the two differ mostly in where a
+# call chain is broken, and ktlint_official puts every chain of three calls on
+# four lines of its own.
+
+root = true
+
+[*.{kt,kts}]
+ktlint_code_style = intellij_idea
+# Compose names a function after what it draws, in the case a class would be
+# in. The rule would rename every screen in the application.
+ktlint_function_naming_ignore_when_annotated_with = Composable
+max_line_length = 100
+indent_size = 4
+insert_final_newline = true
