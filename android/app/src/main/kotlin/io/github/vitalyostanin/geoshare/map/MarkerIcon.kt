@@ -33,10 +33,17 @@ private const val MARKER_BORDER_DP = 3f
  * ordered by the database and can change, and a member whose colour changes
  * under them is worse than an arbitrary colour that stays.
  */
-fun memberColour(memberId: String): Int = MEMBER_COLOURS[
-    abs(memberId.hashCode()) %
-        MEMBER_COLOURS.size,
-]
+fun memberColour(memberId: String): Int = MEMBER_COLOURS[colourIndex(memberId)]
+
+/**
+ * The index the colour is taken at, which is where the two clients have to
+ * agree; the web page repeats this arithmetic.
+ *
+ * The remainder is taken before the sign is dropped, not after: the hash of a
+ * string can be the smallest negative integer there is, and that one has no
+ * positive counterpart to take.
+ */
+fun colourIndex(memberId: String): Int = abs(memberId.hashCode() % MEMBER_COLOURS.size)
 
 /**
  * A dot rather than a pin.
