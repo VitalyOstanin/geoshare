@@ -1,0 +1,33 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    match /groups/{groupId} {
+      function groupMembers() {
+        return get(/databases/$(database)/documents/groups/$(groupId)).data.members;
+      }
+
+      function isMember() {
+        return request.auth != null && request.auth.uid in groupMembers();
+      }
+
+      allow read: if isMember();
+      allow write: if false;
+
+      match /members/{uid} {
+        allow read: if isMember();
+        allow write: if false;
+      }
+
+      match /positions/{uid} {
+        allow read: if isMember();
+        allow write: if isMember() && request.auth.uid == uid;
+      }
+
+      match /watch/{uid} {
+        allow read: if isMember();
+        allow write: if isMember() && request.auth.uid == uid;
+      }
+    }
+  }
+}
