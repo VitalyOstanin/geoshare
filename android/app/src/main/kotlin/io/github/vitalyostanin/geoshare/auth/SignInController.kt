@@ -1,7 +1,6 @@
 package io.github.vitalyostanin.geoshare.auth
 
 import android.content.Context
-import android.util.Log
 import androidx.credentials.ClearCredentialStateRequest
 import androidx.credentials.CredentialManager
 import androidx.credentials.CustomCredential
@@ -10,6 +9,7 @@ import com.google.android.libraries.identity.googleid.GetGoogleIdOption
 import com.google.android.libraries.identity.googleid.GoogleIdTokenCredential
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.GoogleAuthProvider
+import io.github.vitalyostanin.geoshare.log.AppLog
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -48,7 +48,7 @@ class SignInController(
                 if (user == null) {
                     AuthState.SignedOut()
                 } else {
-                    Log.i(TAG, "signed in as ${user.uid}")
+                    AppLog.i(TAG, "signed in as ${user.uid}")
                     AuthState.SignedIn(memberId = user.uid, displayName = user.displayName)
                 }
         }
@@ -83,7 +83,7 @@ class SignInController(
         } catch (error: Exception) {
             val failure = classifySignInFailure(error)
 
-            Log.w(TAG, "sign-in failed as $failure", error)
+            AppLog.w(TAG, "sign-in failed as $failure", error)
             current.value = AuthState.SignedOut(failure)
         }
     }
@@ -102,7 +102,7 @@ class SignInController(
         } catch (error: Exception) {
             // The session is already gone; a provider that would not forget the
             // account only means one extra tap next time.
-            Log.w(TAG, "could not clear the stored credential state", error)
+            AppLog.w(TAG, "could not clear the stored credential state", error)
         }
     }
 
