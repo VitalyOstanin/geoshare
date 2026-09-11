@@ -96,3 +96,48 @@ are the ones it supports against what can be produced for a chosen area and how
 large the result is. The point is the case where the connection is gone but the
 last known positions are not — knowing where somebody was is of little use
 without a map to place it on.
+
+## A say in where the position comes from
+
+The phone takes whatever the fused provider hands it. There is no way to tell
+it to distrust a source, and no way to correct one that is consistently off:
+a satellite fix indoors can be hundreds of metres out while the network fix
+beside it is right, and both arrive looking equally certain.
+
+Worth having: a setting that says which sources count, a rule that drops a fix
+whose accuracy is worse than a threshold, and a correction applied to a source
+known to be biased. The raw provider can be asked for one source at a time,
+which is what makes any of this possible; the fused one cannot.
+
+## Members that merge into one dot when zoomed out
+
+Two members a few hundred metres apart become one dot on a city-wide view, and
+their labels land on top of each other. The map draws every marker at its own
+point and nothing groups them.
+
+What map applications do instead: group the markers that overlap into one that
+carries the count, and split them again on the way in. The rules worth settling
+are when a group forms, what it says, and what tapping it does — zoom to the
+group, or list its members. Until then the labels could at least be hidden at
+low zoom, which stops the pile-up without hiding anyone.
+
+## Taking a position somewhere else
+
+The card shows a member's coordinates and that is all that can be done with
+them. Reading the pair off the screen and typing it into another application
+is the only way to get a route to it, and typing a coordinate by hand is the
+step where it becomes a different place.
+
+Worth having on both clients: copying the pair to the clipboard, opening it in
+whichever map application the reader would rather use, and sending it on to
+somebody who is not in the group at all. Google Maps, Yandex Maps and the rest
+are reached by a link with the coordinates in it; the phone can hand the same
+point to whatever is installed, a messenger included, and the page has the
+browser's own share for that.
+
+The pieces to settle are which destinations are offered, what the copied and
+sent text looks like — a bare pair, a link, or both — and whether the phone
+offers the applications it has rather than a fixed list. Sending a position
+outside the group is also the one place where a member passes on where somebody
+else is, so it is worth deciding whether that is offered for everybody or only
+for oneself.
