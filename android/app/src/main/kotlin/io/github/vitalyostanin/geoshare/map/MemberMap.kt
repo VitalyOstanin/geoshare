@@ -1,6 +1,7 @@
 package io.github.vitalyostanin.geoshare.map
 
 import android.content.Context
+import android.graphics.Bitmap
 import android.graphics.RectF
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
@@ -33,12 +34,23 @@ private const val START_ZOOM = 15.0
 /** How far around a tap a marker still counts as the one that was meant. */
 private const val TOUCH_RADIUS_DP = 18f
 
+/**
+ * How close two pins have to come before they are drawn as one.
+ *
+ * A little less than the width of a pin: at that distance the heads already
+ * overlap, and the labels above them have been unreadable for a while.
+ */
+private const val CLUSTER_RADIUS_DP = 44f
+
 private const val MEMBER_SOURCE = "members"
 private const val MEMBER_LAYER = "members"
 
-/** The name of the drawing a point wears, and who the point is. */
+/** The name of the drawing a point wears, and who is standing at it. */
 private const val ICON_PROPERTY = "icon"
-private const val MEMBER_PROPERTY = "member"
+private const val MEMBERS_PROPERTY = "members"
+
+/** What the ids of a group are joined with; an account id has no comma in it. */
+private const val MEMBERS_SEPARATOR = ","
 
 /**
  * A style with nothing in it but the tiles, the same document the page loads.
@@ -87,12 +99,20 @@ fun MemberMap(
     positions: List<MemberPosition>,
     /** What to write on each marker, by member id; the screen works the fallbacks out. */
     names: Map<String, String>,
+    /** The account pictures, by member id; a member without one is drawn with their initial. */
+    faces: Map<String, Bitmap>,
     ownMemberId: String,
     now: Instant,
+    /** What is written above a pin that stands for several members at once. */
+    groupLabel: (Int) -> String,
     /** The member the panel asked to look at, if one has been asked for. */
     focus: MapFocus?,
     /** Called with the member whose marker was tapped. */
     onSelect: (String) -> Unit,
+    /** Called with everybody under a marker that stands for more than one member. */
+    onSelectGroup: (List<String>) -> Unit,
+    /** Called when a tap lands on the map itself rather than on a marker. */
+    onDismiss: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val context = LocalContext.current
@@ -102,6 +122,9 @@ fun MemberMap(
     // listener it was handed, and the first one would go on calling whatever
     // the screen wanted at that moment.
     holder.onSelect = onSelect
+    holder.onSelectGroup = onSelectGroup
+    holder.onDismiss = onDismiss
+    holder.groupLabel = groupLabel
 
     val lifecycleOwner = LocalLifecycleOwner.current
 
@@ -132,7 +155,7 @@ fun MemberMap(
     }
 
     AndroidView(factory = { holder.view }, modifier = modifier) { _ ->
-        holder.show(positions, names, ownMemberId, now)
+        holder.show(positions, names, faces, ownMemberId, now)
         holder.lookAt(focus)
     }
 }
@@ -158,11 +181,10 @@ private fun memberLayer(): SymbolLayer = SymbolLayer(MEMBER_LAYER, MEMBER_SOURCE
         // tidy — which is to say it would hide a person.
         PropertyFactory.iconAllowOverlap(true),
         PropertyFactory.iconIgnorePlacement(true),
-        // The drawing hangs by its bottom edge and is then pushed down by the
-        // distance from that edge up to the dot, which leaves the dot on the
-        // position and the label above it.
+        // The drawing hangs by its bottom edge, and the bottom edge is the
+        // point of the pin: the member is where the point is, and everything
+        // else in the drawing stands above them.
         PropertyFactory.iconAnchor(Property.ICON_ANCHOR_BOTTOM),
-        PropertyFactory.iconOffset(arrayOf(0f, MARKER_ANCHOR_DP)),
     )
 
 /**
@@ -183,6 +205,7 @@ private class MapHolder(val view: MapView) {
 
     private var members: List<MemberPosition> = emptyList()
     private var names: Map<String, String> = emptyMap()
+    private var faces: Map<String, Bitmap> = emptyMap()
     private var ownMemberId: String = ""
     private var now: Instant = Instant.EPOCH
 
@@ -202,6 +225,12 @@ private class MapHolder(val view: MapView) {
 
     var onSelect: (String) -> Unit = {}
 
+    var onSelectGroup: (List<String>) -> Unit = {}
+
+    var onDismiss: () -> Unit = {}
+
+    var groupLabel: (Int) -> String = { count -> count.toString() }
+
     init {
         view.getMapAsync { ready ->
             map = ready
@@ -217,6 +246,13 @@ private class MapHolder(val view: MapView) {
             }
 
             ready.addOnMapClickListener { point -> select(ready, point) }
+
+            // Which members cover each other is a question about the screen,
+            // so the answer changes with every zoom: a group that was one pin
+            // has to come apart once the map is close enough to tell them
+            // apart. Redrawn when the map stops rather than while it moves,
+            // because regrouping under a moving finger reads as flicker.
+            ready.addOnCameraIdleListener { draw() }
 
             ready.setStyle(Style.Builder().fromJson(STYLE_JSON)) { loaded ->
                 loaded.addSource(GeoJsonSource(MEMBER_SOURCE))
@@ -235,11 +271,13 @@ private class MapHolder(val view: MapView) {
     fun show(
         positions: List<MemberPosition>,
         names: Map<String, String>,
+        faces: Map<String, Bitmap>,
         ownMemberId: String,
         now: Instant,
     ) {
         members = positions
         this.names = names
+        this.faces = faces
         this.ownMemberId = ownMemberId
         this.now = now
 
@@ -276,30 +314,40 @@ private class MapHolder(val view: MapView) {
 
     private fun draw() {
         val loaded = style ?: return
+        val ready = map ?: return
+
+        val density = view.context.resources.displayMetrics.density
+        val placed =
+            members.map { position ->
+                val screen =
+                    ready.projection.toScreenLocation(
+                        LatLng(position.latitude, position.longitude),
+                    )
+
+                PlacedMember(position.memberId, screen.x.toDouble(), screen.y.toDouble())
+            }
+
+        val positions = members.associateBy { it.memberId }
+        val radius = (CLUSTER_RADIUS_DP * density).toDouble()
 
         val features =
-            members.map { position ->
-                val name = names[position.memberId] ?: shortName(position.memberId)
-                val stale = isStale(position.knownAt, now)
-                val icon = iconName(position.memberId, name, stale)
+            clusterMembers(placed, radius).mapNotNull { cluster ->
+                val group = cluster.memberIds.mapNotNull { positions[it] }
 
-                if (icons.add(icon)) {
-                    loaded.addImage(
-                        icon,
-                        markerIcon(
-                            context = view.context,
-                            name = name,
-                            colour = memberColour(position.memberId),
-                            stale = stale,
-                        ),
-                    )
+                if (group.isEmpty()) {
+                    return@mapNotNull null
                 }
 
                 Feature
-                    .fromGeometry(Point.fromLngLat(position.longitude, position.latitude))
+                    .fromGeometry(
+                        Point.fromLngLat(centreLongitude(group), centreLatitude(group)),
+                    )
                     .apply {
-                        addStringProperty(ICON_PROPERTY, icon)
-                        addStringProperty(MEMBER_PROPERTY, position.memberId)
+                        addStringProperty(ICON_PROPERTY, icon(loaded, group))
+                        addStringProperty(
+                            MEMBERS_PROPERTY,
+                            group.joinToString(MEMBERS_SEPARATOR) { it.memberId },
+                        )
                     }
             }
 
@@ -309,6 +357,78 @@ private class MapHolder(val view: MapView) {
 
         centre()
     }
+
+    /**
+     * The drawing one marker wears, handed to the style the first time it is
+     * asked for.
+     *
+     * Kept by name rather than redrawn every tick: the ages on the labels move
+     * slowly, and most ticks want exactly the drawings the style already has.
+     */
+    private fun icon(loaded: Style, group: List<MemberPosition>): String {
+        val name = iconName(group)
+
+        if (icons.add(name)) {
+            loaded.addImage(name, drawing(group))
+        }
+
+        return name
+    }
+
+    private fun drawing(group: List<MemberPosition>): Bitmap {
+        val single = group.singleOrNull()
+
+        if (single != null) {
+            return markerIcon(
+                context = view.context,
+                name = label(single),
+                colour = memberColour(single.memberId),
+                stale = isStale(single.knownAt, now),
+                face = faces[single.memberId],
+            )
+        }
+
+        val shown = group.take(facesShown(group.size))
+        val rest = group.size - shown.size
+
+        return groupIcon(
+            context = view.context,
+            label = groupLabel(group.size),
+            faces =
+            shown.map { position ->
+                PinFace(
+                    picture = faces[position.memberId],
+                    initial = memberInitial(label(position)),
+                    colour = memberColour(position.memberId),
+                    stale = isStale(position.knownAt, now),
+                )
+            },
+            // A plus and a number, which is the same in every language the
+            // labels above the pins could be written in.
+            counter = if (rest > 0) "+$rest" else null,
+        )
+    }
+
+    /**
+     * The name a drawing is kept under.
+     *
+     * Everything the drawing depends on is in the name, so a group that gains
+     * a member, or a member whose label, colour or picture changes, gets a new
+     * drawing rather than the old one under a name that no longer describes
+     * it. A picture appears as whether there is one: a member has at most one
+     * at a time, and it arrives once.
+     */
+    private fun iconName(group: List<MemberPosition>): String = group.joinToString(
+        separator = MEMBERS_SEPARATOR,
+        prefix = if (group.size == 1) "member:" else "group:",
+    ) { position ->
+        val face = faces[position.memberId] != null
+
+        "${position.memberId}:${label(position)}:${isStale(position.knownAt, now)}:$face"
+    }
+
+    private fun label(position: MemberPosition): String =
+        names[position.memberId] ?: shortName(position.memberId)
 
     private fun centre() {
         val ready = map ?: return
@@ -352,23 +472,73 @@ private class MapHolder(val view: MapView) {
                 MEMBER_LAYER,
             )
 
-        val member =
+        val group =
             touched
-                .firstNotNullOfOrNull { it.getStringProperty(MEMBER_PROPERTY) }
-                ?: return false
+                .firstNotNullOfOrNull { it.getStringProperty(MEMBERS_PROPERTY) }
+                ?.split(MEMBERS_SEPARATOR)
+                ?.filter { it.isNotEmpty() }
+                .orEmpty()
 
-        onSelect(member)
+        if (group.isEmpty()) {
+            // Tapping the map away from everybody is how a map is told that
+            // whatever was open is no longer being looked at. Dragging the map
+            // is not a tap and does not reach this, so a card survives being
+            // moved out from under.
+            onDismiss()
+
+            return false
+        }
+
+        val single = group.singleOrNull()
+
+        if (single != null) {
+            onSelect(single)
+        } else {
+            // A marker standing for several members cannot open a card: which
+            // of them was meant is a question only the viewer can answer.
+            onSelectGroup(group)
+        }
 
         return true
     }
 }
 
 /**
- * The name a drawing is kept under.
+ * Where a marker for several members is put: the middle of the people under it.
  *
- * Everything the drawing depends on is in the name, so a member whose label or
- * colour changes gets a new drawing rather than the old one under a name that
- * no longer describes it.
+ * The middle rather than one of them, because the marker stands for all of
+ * them; putting it on the first id would move the whole group whenever that
+ * member walked off.
  */
-private fun iconName(memberId: String, name: String, stale: Boolean): String =
-    "member:$memberId:$name:$stale"
+private fun centreLatitude(group: List<MemberPosition>): Double =
+    group.sumOf { it.latitude } / group.size
+
+/**
+ * The same middle, along the other axis.
+ *
+ * Longitudes are averaged as offsets from the first member rather than
+ * outright: on a map of the whole world two members either side of the date
+ * line are a few pixels apart, and their longitudes are half a globe apart as
+ * numbers.
+ */
+private fun centreLongitude(group: List<MemberPosition>): Double {
+    val first = group.first().longitude
+    val offset = group.sumOf { wrapDegrees(it.longitude - first) } / group.size
+
+    return wrapDegrees(first + offset)
+}
+
+/** The same angle, written as the turn of at most half a circle either way. */
+private fun wrapDegrees(degrees: Double): Double {
+    var value = degrees
+
+    while (value > 180.0) {
+        value -= 360.0
+    }
+
+    while (value < -180.0) {
+        value += 360.0
+    }
+
+    return value
+}

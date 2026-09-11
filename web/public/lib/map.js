@@ -12,11 +12,33 @@ import {
     Popup,
 } from 'https://cdn.jsdelivr.net/npm/maplibre-gl@6.9.0/dist/maplibre-gl.mjs';
 
-import { STALE_COLOUR, memberColour, shortName } from './members.js';
+import { STALE_COLOUR, memberColour, memberInitial, pictureAddress, shortName } from './members.js';
 import { ageText, isStale, positionAge, timeText } from './age.js';
+import { clusterMembers, facesShown } from './clusters.js';
 
 /** Close enough to tell which street somebody is on, without hunting for them. */
 const START_ZOOM = 15;
+
+/**
+ * How close two pins have to come before they are drawn as one.
+ *
+ * A little less than the width of a pin: at that distance the heads already
+ * overlap, and the labels above them have been unreadable for a while.
+ */
+const CLUSTER_RADIUS = 44;
+
+/**
+ * The colour a group of members wears.
+ *
+ * Deliberately none of the member colours: a wide pin in somebody's own colour
+ * would read as that member standing there with the others tucked behind them.
+ */
+const GROUP_COLOUR = '#5c6bc0';
+
+/** The head of a pin, the step between its faces, and the inset of the first one. */
+const PIN_HEAD = 48;
+const FACE_STEP = 28;
+const FACE_INSET = 6;
 
 /**
  * A style with nothing in it but the tiles.
@@ -53,7 +75,20 @@ export function createMap(element) {
 
     map.addControl(new NavigationControl({ showCompass: false }));
 
-    return { map, markers: new Map(), centred: false };
+    const view = { map, markers: new Map(), centred: false, last: null };
+
+    // Which members cover each other is a question about the screen, so the
+    // answer changes with every zoom: a group that was one pin has to come
+    // apart once the map is close enough to tell them apart. Redrawn when the
+    // map stops rather than while it moves, because regrouping under a moving
+    // finger reads as flicker.
+    map.on('moveend', () => {
+        if (view.last) {
+            draw(view, view.last);
+        }
+    });
+
+    return view;
 }
 
 /**
@@ -63,76 +98,338 @@ export function createMap(element) {
  * Kept rather than redrawn, unlike the Android side: a marker here carries its
  * own element, and replacing it on every update would close a detail bubble
  * the viewer had just opened.
+ *
+ * What a marker stands for is a group of members rather than one member: two
+ * people in one flat are one pin at every zoom the map has, and two markers
+ * there would cover each other's labels.
  */
-export function showMembers(view, positions, names, ownMemberId, now) {
+export function showMembers(view, positions, names, faces, ownMemberId, now) {
+    // Held so that the map can redraw itself when it is moved: grouping is
+    // about the screen, and the screen changes without the positions doing so.
+    view.last = { positions, names, faces, now };
+
+    draw(view, view.last);
+}
+
+function draw(view, { positions, names, faces, now }) {
+    const placed = positions.map((position) => {
+        const point = view.map.project([position.longitude, position.latitude]);
+
+        return { memberId: position.memberId, x: point.x, y: point.y };
+    });
+
+    const byId = new Map(positions.map((position) => [position.memberId, position]));
     const seen = new Set();
 
-    for (const position of positions) {
-        seen.add(position.memberId);
+    for (const cluster of clusterMembers(placed, CLUSTER_RADIUS)) {
+        const group = cluster.map((memberId) => byId.get(memberId)).filter(Boolean);
 
-        const own = position.memberId === ownMemberId;
-        const name = names.get(position.memberId) ?? shortName(position.memberId);
-        const entry = view.markers.get(position.memberId) ?? addMarker(view, position, name);
+        if (group.length === 0) {
+            continue;
+        }
 
-        // A member who signs in for the first time gets a name where the id
-        // used to be, and the label is drawn once when the marker is made.
-        entry.label.textContent = name;
+        // The members in it are what a marker is: a group that gains or loses
+        // one is a different marker, drawn with a different number of faces.
+        const key = cluster.join(',');
 
-        entry.marker.setLngLat([position.longitude, position.latitude]);
-        entry.dot.style.background = isStale(position.knownAt, now)
-            ? STALE_COLOUR
-            : memberColour(position.memberId);
-        // The name never changes, but the age does, and the bubble is where a
-        // viewer looks to find out how much to trust the dot.
-        entry.popup.setDOMContent(detail(position, name, now));
+        seen.add(key);
+
+        const entry = view.markers.get(key) ?? addMarker(view, key, group);
+
+        entry.members = group;
+        entry.marker.setLngLat([centreLongitude(group), centreLatitude(group)]);
+
+        showPin(entry, names, faces, now);
+        showPopup(entry, names, now);
     }
 
-    for (const [memberId, entry] of view.markers) {
-        if (!seen.has(memberId)) {
+    for (const [key, entry] of view.markers) {
+        if (!seen.has(key)) {
             entry.marker.remove();
-            view.markers.delete(memberId);
+            view.markers.delete(key);
         }
     }
 }
 
-function addMarker(view, position, name) {
+function addMarker(view, key, group) {
     const element = document.createElement('div');
     element.className = 'member-marker';
 
-    // The label is always up, the way a place name is on a map: a dot on its
+    // The label is always up, the way a place name is on a map: a pin on its
     // own says somebody is there, not who.
     const label = document.createElement('span');
     label.className = 'member-label';
-    label.textContent = name;
 
-    const dot = document.createElement('span');
-    dot.className = 'member-dot';
+    // A pin rather than a dot, and a face inside it: the point at the bottom
+    // is the position, so the face can be this large without covering the
+    // place the member actually is. The same shape the phone draws.
+    const pin = document.createElement('span');
+    pin.className = 'member-pin';
 
-    element.append(label, dot);
+    const body = document.createElement('span');
+    body.className = 'pin-body';
 
+    const point = document.createElement('span');
+    point.className = 'pin-point';
+
+    pin.append(body, point);
+
+    const circles = circleCount(group.length);
+
+    // The head is a capsule, so it can be widened to hold the faces and keep
+    // the round ends a single member has.
+    pin.style.width = `${PIN_HEAD + FACE_STEP * (circles - 1)}px`;
+
+    const faces = [];
+
+    for (let index = 0; index < circles; index += 1) {
+        const face = document.createElement('span');
+
+        face.className = 'pin-face';
+        face.style.left = `${FACE_INSET + FACE_STEP * index}px`;
+        pin.append(face);
+        faces.push(face);
+    }
+
+    element.append(label, pin);
+
+    // Closing on a click elsewhere on the map is the library's own default,
+    // and it is what the phone does too: a tap away from everybody means the
+    // card is no longer being looked at.
     const popup = new Popup({ offset: 16, closeButton: true });
 
     // One bubble at a time, the way a map shows one place at a time: the
     // library leaves every popup it opens open, and a second tap would
     // otherwise leave the first member's card hanging over the map.
-    popup.on('open', () => closeOthers(view, position.memberId));
+    popup.on('open', () => closeOthers(view, key));
     // Placed before it is added: a marker with nowhere to be cannot be put on
     // a map, and the caller sets the position again on every update anyway.
-    const marker = new Marker({ element })
-        .setLngLat([position.longitude, position.latitude])
+    // Hung by its bottom edge, which is the point of the pin: the member is
+    // where the point is, and everything else stands above them.
+    const marker = new Marker({ element, anchor: 'bottom' })
+        .setLngLat([centreLongitude(group), centreLatitude(group)])
         .setPopup(popup)
         .addTo(view.map);
 
-    const entry = { marker, popup, dot, label };
+    const entry = { marker, popup, pin, faces, label, members: group, openedMemberId: null };
 
-    view.markers.set(position.memberId, entry);
+    view.markers.set(key, entry);
 
     return entry;
 }
 
-function closeOthers(view, memberId) {
+/** How many circles a pin has: one per face, and one more for the count if any are left out. */
+function circleCount(count) {
+    const shown = facesShown(count);
+
+    return count > shown ? shown + 1 : shown;
+}
+
+/** What the marker looks like: its colour, its label and the faces in it. */
+function showPin(entry, names, faces, now) {
+    const group = entry.members;
+
+    if (group.length === 1) {
+        const member = group[0];
+        const name = nameOf(member, names);
+        const stale = isStale(member.knownAt, now);
+        const colour = stale ? STALE_COLOUR : memberColour(member.memberId);
+
+        entry.label.textContent = name;
+        entry.pin.style.setProperty('--pin', colour);
+        entry.pin.classList.toggle('stale', stale);
+        showFace(entry.faces[0], faces.get(member.memberId), name, colour);
+
+        return;
+    }
+
+    // Grey only when everybody under the marker has gone quiet: one member
+    // still reporting is a reason to trust the marker.
+    const stale = group.every((member) => isStale(member.knownAt, now));
+
+    entry.label.textContent = groupLabel(group.length);
+    entry.pin.style.setProperty('--pin', stale ? STALE_COLOUR : GROUP_COLOUR);
+    entry.pin.classList.toggle('stale', stale);
+
+    const shown = group.slice(0, facesShown(group.length));
+
+    shown.forEach((member, index) => {
+        const name = nameOf(member, names);
+        const old = isStale(member.knownAt, now);
+        const face = entry.faces[index];
+
+        showFace(face, faces.get(member.memberId), name, old ? STALE_COLOUR : memberColour(member.memberId));
+        face.classList.toggle('stale', old);
+    });
+
+    const counter = entry.faces[shown.length];
+
+    if (counter) {
+        // A plus and a number, which is the same in every language the labels
+        // above the pins could be written in.
+        counter.className = 'pin-face more';
+        counter.style.backgroundImage = '';
+        counter.textContent = `+${group.length - shown.length}`;
+    }
+}
+
+/**
+ * The face inside a pin: the account picture, or the letter that stands in for
+ * it.
+ *
+ * Set as a background rather than as an image element, so that a portrait of
+ * any shape is cropped to the circle instead of being squeezed into it.
+ */
+function showFace(face, pictureUrl, name, colour) {
+    const picture = pictureAddress(pictureUrl);
+
+    if (picture) {
+        // Quoted through the JSON encoder rather than by hand: the address is
+        // written by whoever holds the account, and this is what keeps a quote
+        // in it from ending the CSS string early.
+        face.style.backgroundImage = `url(${JSON.stringify(picture)})`;
+        face.textContent = '';
+
+        return;
+    }
+
+    face.style.backgroundImage = '';
+    face.style.color = colour;
+    face.textContent = memberInitial(name);
+}
+
+/** What a marker for several members writes above itself. */
+function groupLabel(count) {
+    return count === 1 ? '1 member' : `${count} members`;
+}
+
+/**
+ * What the bubble holds: one member's card, or the list of who is standing
+ * under a marker that covers several of them.
+ *
+ * Which of the group was meant is a question only the viewer can answer, so
+ * the list comes first and the card is one click further in. The choice lives
+ * on the marker rather than in the bubble, so that a tick that redraws the
+ * bubble does not throw the viewer back to the list.
+ */
+function showPopup(entry, names, now) {
+    const group = entry.members;
+
+    if (group.length === 1) {
+        entry.popup.setDOMContent(detail(group[0], nameOf(group[0], names), now));
+
+        return;
+    }
+
+    const chosen = group.find((member) => member.memberId === entry.openedMemberId);
+
+    if (!chosen) {
+        entry.popup.setDOMContent(groupList(entry, names, now));
+
+        return;
+    }
+
+    const card = detail(chosen, nameOf(chosen, names), now);
+    const back = document.createElement('button');
+
+    back.type = 'button';
+    back.className = 'group-back';
+    back.textContent = 'Back to the list';
+    back.addEventListener('click', () => {
+        entry.openedMemberId = null;
+        showPopup(entry, names, now);
+    });
+
+    card.prepend(back);
+    entry.popup.setDOMContent(card);
+}
+
+/** The members under one marker, as rows that open their cards. */
+function groupList(entry, names, now) {
+    const list = document.createElement('div');
+
+    list.className = 'group';
+
+    const heading = document.createElement('h2');
+
+    heading.textContent = groupLabel(entry.members.length);
+    list.append(heading);
+
+    for (const member of entry.members) {
+        const row = document.createElement('button');
+
+        row.type = 'button';
+        row.className = 'group-row';
+
+        const dot = document.createElement('span');
+
+        dot.className = 'group-dot';
+        dot.style.background = isStale(member.knownAt, now)
+            ? STALE_COLOUR
+            : memberColour(member.memberId);
+
+        const name = document.createElement('span');
+
+        name.className = 'group-name';
+        name.textContent = nameOf(member, names);
+
+        const age = document.createElement('span');
+
+        age.className = 'group-age';
+        age.textContent = ageText(positionAge(member.knownAt, now));
+
+        row.append(dot, name, age);
+        row.addEventListener('click', () => {
+            entry.openedMemberId = member.memberId;
+            showPopup(entry, names, now);
+        });
+
+        list.append(row);
+    }
+
+    return list;
+}
+
+function nameOf(member, names) {
+    return names.get(member.memberId) ?? shortName(member.memberId);
+}
+
+/**
+ * Where a marker for several members is put: the middle of the people under it.
+ *
+ * The middle rather than one of them, because the marker stands for all of
+ * them; putting it on the first id would move the whole group whenever that
+ * member walked off.
+ */
+function centreLatitude(group) {
+    return group.reduce((total, member) => total + member.latitude, 0) / group.length;
+}
+
+/**
+ * The same middle, along the other axis.
+ *
+ * Longitudes are averaged as offsets from the first member rather than
+ * outright: on a map of the whole world two members either side of the date
+ * line are a few pixels apart, and their longitudes are half a globe apart as
+ * numbers.
+ */
+function centreLongitude(group) {
+    const first = group[0].longitude;
+    const offset =
+        group.reduce((total, member) => total + wrapDegrees(member.longitude - first), 0) /
+        group.length;
+
+    return wrapDegrees(first + offset);
+}
+
+/** The same angle, written as the turn of at most half a circle either way. */
+function wrapDegrees(degrees) {
+    return ((((degrees + 180) % 360) + 360) % 360) - 180;
+}
+
+function closeOthers(view, key) {
     for (const [other, entry] of view.markers) {
-        if (other !== memberId && entry.popup.isOpen()) {
+        if (other !== key && entry.popup.isOpen()) {
             entry.popup.remove();
         }
     }
@@ -211,9 +508,22 @@ export function lookAt(view, position) {
         zoom: Math.max(view.map.getZoom(), START_ZOOM),
     });
 
-    const entry = view.markers.get(position.memberId);
+    const entry = [...view.markers.values()].find((marker) =>
+        marker.members.some((member) => member.memberId === position.memberId));
 
-    if (entry && !entry.popup.isOpen()) {
+    if (!entry) {
+        return;
+    }
+
+    // A member asked for by name opens their own card even when the marker
+    // stands for several: the question was about them, not about the place.
+    entry.openedMemberId = entry.members.length > 1 ? position.memberId : null;
+
+    if (view.last) {
+        showPopup(entry, view.last.names, view.last.now);
+    }
+
+    if (!entry.popup.isOpen()) {
         entry.marker.togglePopup();
     }
 }

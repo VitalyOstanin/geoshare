@@ -164,7 +164,7 @@ function render() {
 
     const now = Date.now();
 
-    showMembers(state.view, state.positions, names(), state.member.memberId, now);
+    showMembers(state.view, state.positions, names(), faces(), state.member.memberId, now);
     centreOnce(state.view, state.positions, state.member.memberId);
 
     elements.members.replaceChildren(
@@ -191,6 +191,23 @@ function names() {
                 position.memberId === state.member.memberId,
             ),
         ]),
+    );
+}
+
+/**
+ * Where every member's picture is, for those who have one.
+ *
+ * The pin draws it; a member without a picture, or one whose profile has not
+ * arrived, is drawn with the first letter of their name instead.
+ */
+function faces() {
+    return new Map(
+        state.positions
+            .map((position) => [
+                position.memberId,
+                state.profiles?.get(position.memberId)?.photoUrl,
+            ])
+            .filter(([, pictureUrl]) => pictureUrl),
     );
 }
 

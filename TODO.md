@@ -109,17 +109,18 @@ whose accuracy is worse than a threshold, and a correction applied to a source
 known to be biased. The raw provider can be asked for one source at a time,
 which is what makes any of this possible; the fused one cannot.
 
-## Members that merge into one dot when zoomed out
+## Sideways, and not only upright
 
-Two members a few hundred metres apart become one dot on a city-wide view, and
-their labels land on top of each other. The map draws every marker at its own
-point and nothing groups them.
+Nothing fixes the orientation, so the screen turns with the phone, and the
+layout is a column: the map above, the panel of members below. Turned
+sideways that panel takes a third of what is left of the height, the detail
+card for one member has nowhere to open, and the map is reduced to a strip.
 
-What map applications do instead: group the markers that overlap into one that
-carries the count, and split them again on the way in. The rules worth settling
-are when a group forms, what it says, and what tapping it does — zoom to the
-group, or list its members. Until then the labels could at least be hidden at
-low zoom, which stops the pile-up without hiding anyone.
+Worth settling as a layout rather than a lock: the panel alongside the map
+rather than under it when the window is wider than it is tall, with the same
+parts in it. The page has the same question on a laptop, where the window is
+always wider than tall, so whatever shape is chosen is worth choosing for both
+clients at once.
 
 ## Taking a position somewhere else
 

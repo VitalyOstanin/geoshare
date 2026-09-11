@@ -25,6 +25,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
@@ -72,11 +73,28 @@ fun MapScreen(
     var focus by remember { mutableStateOf<MapFocus?>(null) }
     var showAll by remember { mutableStateOf(false) }
     var openedMemberId by remember { mutableStateOf<String?>(null) }
+    // The members under one marker, held by id for the same reason a single
+    // member is: the list keeps arriving, and the card has to follow it.
+    var openedGroup by remember { mutableStateOf<List<String>>(emptyList()) }
     var settingsOpen by remember { mutableStateOf(false) }
     // Held by id rather than by value: the position keeps arriving, and a card
     // showing the one from when it was opened would quietly go stale.
     val opened = positions.firstOrNull { it.memberId == openedMemberId }
+    val group =
+        openedGroup.mapNotNull { memberId ->
+            positions.firstOrNull { it.memberId == memberId }
+        }
     val ownName = stringResource(R.string.map_member_you)
+    // Read through the resources rather than through a composable, because the
+    // map asks for this text while it is drawing, with a count it works out
+    // itself from the members standing together.
+    val resources = LocalContext.current.resources
+    val groupLabel = { count: Int ->
+        resources.getQuantityString(R.plurals.map_group_count, count, count)
+    }
+    // Loaded here rather than inside the map: the map draws bitmaps, and
+    // fetching a picture is the screen's business, not the drawing's.
+    val faces = rememberMemberFaces(profiles)
     // Worked out here rather than inside the map: the fallbacks come from the
     // resources, and the map draws pictures, not strings from a resource file.
     val names =
@@ -96,6 +114,7 @@ fun MapScreen(
     fun lookAt(memberId: String) {
         focus = MapFocus(memberId = memberId, request = (focus?.request ?: 0) + 1)
         openedMemberId = memberId
+        openedGroup = emptyList()
     }
 
     Column(modifier = modifier.fillMaxSize()) {
@@ -103,10 +122,23 @@ fun MapScreen(
             MemberMap(
                 positions = positions,
                 names = names,
+                faces = faces,
                 ownMemberId = ownMemberId,
                 now = now,
+                groupLabel = groupLabel,
                 focus = focus,
-                onSelect = { memberId -> openedMemberId = memberId },
+                onSelect = { memberId ->
+                    openedMemberId = memberId
+                    openedGroup = emptyList()
+                },
+                onSelectGroup = { memberIds ->
+                    openedMemberId = null
+                    openedGroup = memberIds
+                },
+                onDismiss = {
+                    openedMemberId = null
+                    openedGroup = emptyList()
+                },
                 modifier = Modifier.fillMaxSize(),
             )
 
@@ -123,6 +155,18 @@ fun MapScreen(
                     name = names[opened.memberId] ?: shortName(opened.memberId),
                     now = now,
                     onClose = { openedMemberId = null },
+                    modifier = Modifier.align(Alignment.BottomCenter).padding(12.dp),
+                )
+            } else if (group.size > 1) {
+                GroupDetail(
+                    members = group,
+                    names = names,
+                    now = now,
+                    onSelect = { memberId ->
+                        openedMemberId = memberId
+                        openedGroup = emptyList()
+                    },
+                    onClose = { openedGroup = emptyList() },
                     modifier = Modifier.align(Alignment.BottomCenter).padding(12.dp),
                 )
             }
@@ -332,6 +376,58 @@ private fun AgeText(member: MemberPosition, now: Instant) {
         },
         maxLines = 1,
     )
+}
+
+/**
+ * Who is standing under a marker that stands for several members.
+ *
+ * A list rather than a stack of cards: which of the members was meant is a
+ * question only the viewer can answer, and answering it is one more tap.
+ */
+@Composable
+private fun GroupDetail(
+    members: List<MemberPosition>,
+    names: Map<String, String>,
+    now: Instant,
+    onSelect: (String) -> Unit,
+    onClose: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    Surface(
+        modifier = modifier.fillMaxWidth(),
+        shape = MaterialTheme.shapes.large,
+        tonalElevation = 4.dp,
+    ) {
+        Column(modifier = Modifier.padding(start = 16.dp, top = 8.dp, end = 8.dp, bottom = 8.dp)) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Text(
+                    text =
+                    pluralStringResource(
+                        R.plurals.map_group_count,
+                        members.size,
+                        members.size,
+                    ),
+                    style = MaterialTheme.typography.titleMedium,
+                    modifier = Modifier.weight(1f),
+                )
+
+                TextButton(onClick = onClose) {
+                    Text(text = stringResource(R.string.map_detail_close))
+                }
+            }
+
+            LazyColumn(modifier = Modifier.fillMaxWidth().heightIn(max = LIST_MAX_HEIGHT)) {
+                items(members, key = { it.memberId }) { member ->
+                    MemberRow(
+                        member = member,
+                        name = names[member.memberId] ?: shortName(member.memberId),
+                        now = now,
+                        onSelect = onSelect,
+                    )
+                }
+            }
+        }
+    }
 }
 
 /**

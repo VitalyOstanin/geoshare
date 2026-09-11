@@ -63,3 +63,35 @@ export function memberName(profile, memberId, own) {
 
     return profile?.displayName ?? shortName(memberId);
 }
+
+/**
+ * The letter that stands in for a member without a picture.
+ *
+ * The name is what the group calls them, so its first letter is what they are
+ * recognised by; the same rule the phone follows, so a member looks the same
+ * on both clients.
+ */
+export function memberInitial(name) {
+    return [...name.trim()].slice(0, 1).join('').toUpperCase();
+}
+
+/**
+ * The address of a member's picture, or nothing.
+ *
+ * A profile is written by the member it describes, so the address in it is
+ * whatever they put there; only the two schemes a picture can be fetched over
+ * are drawn, and anything else leaves the marker with its initial.
+ */
+export function pictureAddress(pictureUrl) {
+    if (!pictureUrl) {
+        return null;
+    }
+
+    try {
+        const address = new URL(pictureUrl);
+
+        return address.protocol === 'https:' || address.protocol === 'http:' ? address.href : null;
+    } catch {
+        return null;
+    }
+}

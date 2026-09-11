@@ -112,13 +112,127 @@ button {
     white-space: nowrap;
 }
 
-.member-dot {
-    width: 1.1rem;
-    height: 1.1rem;
-    border-radius: 50%;
-    /* The white ring is what keeps the dot visible over a dark road or a
+/* The pin: a head with a point under it, and a face inside the head. The
+   point is the position, which is why the face can be this large. A marker
+   that stands for several members is the same pin with a wider head, and its
+   width is set on the element itself. */
+.member-pin {
+    position: relative;
+    width: 48px;
+    height: 70px;
+}
+
+.member-pin.stale {
+    opacity: 0.85;
+}
+
+.pin-body {
+    position: absolute;
+    inset: 0 0 22px 0;
+    /* A capsule rather than a circle: widened to hold several faces it keeps
+       the round ends, where an oval would flatten. At the width of a single
+       face the two are the same shape. */
+    border-radius: 999px;
+    background: var(--pin, #1e88e5);
+    /* The white edge is what keeps the pin visible over a dark road or a
        green park. */
-    box-shadow: 0 0 0 3px #ffffff;
+    box-shadow: 0 0 0 2px #ffffff, 0 1px 4px rgba(0, 0, 0, 0.35);
+}
+
+/* The point reaches eight pixels up into the head, so that the two read as
+   one shape rather than as a triangle hung under a circle. */
+.pin-point {
+    position: absolute;
+    left: 50%;
+    bottom: 0;
+    width: 20px;
+    height: 30px;
+    margin-left: -10px;
+    background: var(--pin, #1e88e5);
+    clip-path: polygon(0 0, 100% 0, 50% 100%);
+}
+
+.pin-face {
+    position: absolute;
+    left: 6px;
+    top: 6px;
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    background-color: #ffffff;
+    background-size: cover;
+    background-position: center;
+    box-shadow: 0 0 0 2px #ffffff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.05rem;
+    font-weight: 600;
+}
+
+.member-pin.stale .pin-face,
+.pin-face.stale {
+    filter: grayscale(1);
+}
+
+/* The count of the members a group has no room for: the colour of the head,
+   so that it reads as part of the marker rather than as another face. */
+.pin-face.more {
+    color: var(--pin, #5c6bc0);
+    font-size: 0.95rem;
+    font-weight: 700;
+}
+
+/* The list of who is standing under one marker. A row is a button: which of
+   them was meant is a question only the viewer can answer. */
+.group h2 {
+    margin: 0 0 0.4rem;
+    font-size: 1rem;
+}
+
+.group-row {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    width: 100%;
+    padding: 0.35rem 0.2rem;
+    border: 0;
+    border-top: 1px solid rgba(0, 0, 0, 0.08);
+    background: none;
+    font: inherit;
+    text-align: left;
+    cursor: pointer;
+}
+
+.group-row:hover {
+    background: rgba(0, 0, 0, 0.04);
+}
+
+.group-dot {
+    width: 0.7rem;
+    height: 0.7rem;
+    border-radius: 50%;
+    flex: none;
+}
+
+.group-name {
+    flex: 1;
+    white-space: nowrap;
+}
+
+.group-age {
+    opacity: 0.7;
+    white-space: nowrap;
+}
+
+.group-back {
+    margin-bottom: 0.4rem;
+    padding: 0;
+    border: 0;
+    background: none;
+    color: #1e88e5;
+    font: inherit;
+    cursor: pointer;
 }
 
 .detail h2 {

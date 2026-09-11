@@ -42,6 +42,11 @@
     <string name="map_more">More</string>
     <string name="map_more_hide">Hide</string>
 
+    <plurals name="map_group_count">
+        <item quantity="one">%1$d member</item>
+        <item quantity="other">%1$d members</item>
+    </plurals>
+
     <plurals name="map_more_count">
         <item quantity="one">%1$d member</item>
         <item quantity="other">%1$d members</item>

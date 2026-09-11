@@ -1,7 +1,14 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 
-import { colourIndex, memberName, orderedForNavigation, shortName } from '../public/lib/members.js';
+import {
+    colourIndex,
+    memberInitial,
+    memberName,
+    orderedForNavigation,
+    pictureAddress,
+    shortName,
+} from '../public/lib/members.js';
 
 const positionOf = (memberId) => ({ memberId, latitude: 60, longitude: 30 });
 const idsOf = (positions) => positions.map((position) => position.memberId);
@@ -49,4 +56,31 @@ test('a member without a profile is called by the start of their id', () => {
 test('our own entry says "you", profile or not', () => {
     assert.equal(memberName({ displayName: 'Ann', photoUrl: null }, 'me', true), 'You');
     assert.equal(memberName(undefined, 'me', true), 'You');
+});
+
+// The initial is what a member without a picture is drawn as, and the phone
+// takes it the same way; these are the cases where the two could drift apart.
+test('the initial is the first letter of the name, in capitals', () => {
+    assert.equal(memberInitial('Ann'), 'A');
+    assert.equal(memberInitial('  oona  '), 'O');
+});
+
+test('a name with nothing in it leaves no initial', () => {
+    assert.equal(memberInitial('   '), '');
+});
+
+// A profile is written by the member it describes, so an address in it can be
+// anything at all; only a fetchable picture reaches the marker.
+test('a picture is drawn when its address can be fetched', () => {
+    assert.equal(
+        pictureAddress('https://lh3.googleusercontent.com/a/example'),
+        'https://lh3.googleusercontent.com/a/example',
+    );
+});
+
+test('an address in any other scheme draws no picture', () => {
+    assert.equal(pictureAddress('javascript:alert(1)'), null);
+    assert.equal(pictureAddress('file:///etc/passwd'), null);
+    assert.equal(pictureAddress('not an address'), null);
+    assert.equal(pictureAddress(null), null);
 });
