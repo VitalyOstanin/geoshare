@@ -3,19 +3,55 @@
 // The same background the Android screen draws, so that a position looks the
 // same wherever it is looked at.
 
-import { STALE_COLOUR, memberColour } from './members.js';
-import { isStale } from './age.js';
+// Named exports only: the module has no default, and the parts used here are
+// the map, a marker, its bubble and the zoom buttons.
+import {
+    Map as MapLibre,
+    Marker,
+    NavigationControl,
+    Popup,
+} from 'https://cdn.jsdelivr.net/npm/maplibre-gl@6.9.0/dist/maplibre-gl.mjs';
+
+import { STALE_COLOUR, memberColour, shortName } from './members.js';
+import { ageText, isStale, positionAge, timeText } from './age.js';
 
 /** Close enough to tell which street somebody is on, without hunting for them. */
 const START_ZOOM = 15;
 
-const TILES = 'https://tile.openstreetmap.org/{z}/{x}/{y}.png';
-const ATTRIBUTION = '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors';
+/**
+ * A style with nothing in it but the tiles.
+ *
+ * The library is built for vector tiles and takes a style document rather than
+ * a layer; this is that document with one raster source, which is how it draws
+ * the same tiles the phones do.
+ */
+const STYLE = {
+    version: 8,
+    sources: {
+        osm: {
+            type: 'raster',
+            tiles: ['https://tile.openstreetmap.org/{z}/{x}/{y}.png'],
+            tileSize: 256,
+            maxzoom: 19,
+            attribution: '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+        },
+    },
+    layers: [{ id: 'osm', type: 'raster', source: 'osm' }],
+};
 
 export function createMap(element) {
-    const map = L.map(element, { zoomControl: true }).setView([0, 0], 2);
+    const map = new MapLibre({
+        container: element,
+        style: STYLE,
+        center: [0, 0],
+        zoom: 1,
+        // Nothing here is drawn in three dimensions, and a map that rotates
+        // under a finger is a map the viewer then has to straighten.
+        pitchWithRotate: false,
+        dragRotate: false,
+    });
 
-    L.tileLayer(TILES, { maxZoom: 19, attribution: ATTRIBUTION }).addTo(map);
+    map.addControl(new NavigationControl({ showCompass: false }));
 
     return { map, markers: new Map(), centred: false };
 }
@@ -24,44 +60,111 @@ export function createMap(element) {
  * Moves the markers that moved, adds the ones that appeared and removes the
  * ones that went away.
  *
- * Kept rather than redrawn, unlike the Android side: a Leaflet marker carries
- * its own element, and replacing it on every update would restart the CSS
- * transition that makes a moving member look like they are moving.
+ * Kept rather than redrawn, unlike the Android side: a marker here carries its
+ * own element, and replacing it on every update would close a detail bubble
+ * the viewer had just opened.
  */
-export function showMembers(view, positions, now) {
+export function showMembers(view, positions, ownMemberId, now) {
     const seen = new Set();
 
     for (const position of positions) {
         seen.add(position.memberId);
 
-        const colour = isStale(position.knownAt, now) ? STALE_COLOUR : memberColour(position.memberId);
-        const existing = view.markers.get(position.memberId);
+        const own = position.memberId === ownMemberId;
+        const entry = view.markers.get(position.memberId) ?? addMarker(view, position, own);
 
-        if (existing) {
-            existing.setLatLng([position.latitude, position.longitude]);
-            existing.setStyle({ fillColor: colour });
-        } else {
-            view.markers.set(
-                position.memberId,
-                L.circleMarker([position.latitude, position.longitude], {
-                    radius: 9,
-                    // The white ring is what keeps the dot visible over a dark
-                    // road or a green park.
-                    color: '#ffffff',
-                    weight: 3,
-                    fillColor: colour,
-                    fillOpacity: 1,
-                }).addTo(view.map),
-            );
-        }
+        entry.marker.setLngLat([position.longitude, position.latitude]);
+        entry.dot.style.background = isStale(position.knownAt, now)
+            ? STALE_COLOUR
+            : memberColour(position.memberId);
+        // The name never changes, but the age does, and the bubble is where a
+        // viewer looks to find out how much to trust the dot.
+        entry.popup.setDOMContent(detail(position, own, now));
     }
 
-    for (const [memberId, marker] of view.markers) {
+    for (const [memberId, entry] of view.markers) {
         if (!seen.has(memberId)) {
-            marker.remove();
+            entry.marker.remove();
             view.markers.delete(memberId);
         }
     }
+}
+
+function addMarker(view, position, own) {
+    const element = document.createElement('div');
+    element.className = 'member-marker';
+
+    // The label is always up, the way a place name is on a map: a dot on its
+    // own says somebody is there, not who.
+    const label = document.createElement('span');
+    label.className = 'member-label';
+    label.textContent = name(position, own);
+
+    const dot = document.createElement('span');
+    dot.className = 'member-dot';
+
+    element.append(label, dot);
+
+    const popup = new Popup({ offset: 16, closeButton: true });
+    // Placed before it is added: a marker with nowhere to be cannot be put on
+    // a map, and the caller sets the position again on every update anyway.
+    const marker = new Marker({ element })
+        .setLngLat([position.longitude, position.latitude])
+        .setPopup(popup)
+        .addTo(view.map);
+
+    const entry = { marker, popup, dot };
+
+    view.markers.set(position.memberId, entry);
+
+    return entry;
+}
+
+function name(position, own) {
+    return own ? 'You' : shortName(position.memberId);
+}
+
+/**
+ * What the bubble says once the viewer asks.
+ *
+ * Everything the position document carries beyond the two coordinates: when it
+ * was taken, how the phone was collecting at the time and how much battery it
+ * had left, which together answer "why is this old" without a second question.
+ *
+ * Built as elements rather than as text, so that a member id — written by
+ * whoever holds the account — has no way of being read as markup.
+ */
+function detail(position, own, now) {
+    const card = document.createElement('div');
+    card.className = 'detail';
+
+    const heading = document.createElement('h2');
+    heading.textContent = name(position, own);
+
+    const table = document.createElement('table');
+
+    const rows = [
+        ['Last seen', ageText(positionAge(position.knownAt, now))],
+        ['At', timeText(position.knownAt)],
+        ['Mode', position.mode ?? 'unknown'],
+        ['Battery', position.batteryPercent === null ? 'unknown' : `${position.batteryPercent}%`],
+        ['Position', `${position.latitude.toFixed(5)}, ${position.longitude.toFixed(5)}`],
+    ];
+
+    for (const [title, value] of rows) {
+        const row = document.createElement('tr');
+        const head = document.createElement('th');
+        const cell = document.createElement('td');
+
+        head.textContent = title;
+        cell.textContent = value;
+        row.append(head, cell);
+        table.append(row);
+    }
+
+    card.append(heading, table);
+
+    return card;
 }
 
 /**
@@ -82,11 +185,26 @@ export function centreOnce(view, positions, ownMemberId) {
     }
 
     view.centred = true;
-    view.map.setView([start.latitude, start.longitude], START_ZOOM);
+    view.map.jumpTo({ center: [start.longitude, start.latitude], zoom: START_ZOOM });
 }
 
+/** Takes the map to one member and opens their detail, the way tapping a place does. */
 export function lookAt(view, position) {
-    // Flown to rather than set, because the viewer asked to be taken
+    // Flown to rather than jumped to, because the viewer asked to be taken
     // somewhere and the way there says how far it was.
-    view.map.flyTo([position.latitude, position.longitude], Math.max(view.map.getZoom(), START_ZOOM));
+    view.map.flyTo({
+        center: [position.longitude, position.latitude],
+        zoom: Math.max(view.map.getZoom(), START_ZOOM),
+    });
+
+    const entry = view.markers.get(position.memberId);
+
+    if (entry && !entry.popup.isOpen()) {
+        entry.marker.togglePopup();
+    }
+}
+
+/** The map measures its element when it is created, and the sign-in screen hides it. */
+export function remeasure(view) {
+    view.map.resize();
 }

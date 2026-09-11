@@ -40,6 +40,11 @@ export function isStale(knownAt, now) {
     return now - knownAt >= STALE_AFTER_MS;
 }
 
+/** The moment itself, for the detail a viewer opens rather than for the list. */
+export function timeText(millis) {
+    return new Date(millis).toLocaleString();
+}
+
 /** English only for now; the wording is the only part that a translation touches. */
 export function ageText(age) {
     if (age.unit === 'justNow') {

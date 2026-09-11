@@ -1,7 +1,7 @@
 // The page: sign in, then everyone on a map with a panel to jump between them.
 
 import { ageText, isStale, positionAge } from './lib/age.js';
-import { centreOnce, createMap, lookAt, showMembers } from './lib/map.js';
+import { centreOnce, createMap, lookAt, remeasure, showMembers } from './lib/map.js';
 import { memberColour, orderedForNavigation, shortName } from './lib/members.js';
 import { keepWatching, leave, signIn, watchPositions, watchSignIn } from './lib/store.js';
 
@@ -63,9 +63,9 @@ function start() {
         state.view = createMap(elements.map);
     }
 
-    // Leaflet measures the element when it is created, and until the sign-in
+    // The map measures its element when it is created, and until the sign-in
     // screen goes away that measurement is of a hidden box.
-    state.view.map.invalidateSize();
+    remeasure(state.view);
 
     state.stopPositions ??= watchPositions((positions) => {
         state.positions = positions;
@@ -96,7 +96,7 @@ function render() {
 
     const now = Date.now();
 
-    showMembers(state.view, state.positions, now);
+    showMembers(state.view, state.positions, state.member.memberId, now);
     centreOnce(state.view, state.positions, state.member.memberId);
 
     elements.members.replaceChildren(
