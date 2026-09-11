@@ -21,4 +21,9 @@
     <string name="sharing_notification_title">Sharing your position</string>
     <string name="sharing_notification_text">The family can see where you are.</string>
     <string name="sharing_notification_stop">Stop</string>
+
+    <string name="permission_location_needed">Sharing needs access to this phone\'s position. Allow it in the application settings.</string>
+    <string name="permission_notifications_needed">Allow notifications, so that a running service can say so.</string>
+    <string name="permission_background_needed">To keep sharing while the application is closed, set the location access to \"Allow all the time\" in the application settings.</string>
+    <string name="permission_open_settings">Open the settings</string>
 </resources>

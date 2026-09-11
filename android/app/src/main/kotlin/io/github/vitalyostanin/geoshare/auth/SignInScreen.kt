@@ -18,6 +18,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import io.github.vitalyostanin.geoshare.R
+import io.github.vitalyostanin.geoshare.permission.PermissionStep
 
 /**
  * The whole application until the map arrives: either the way in, or who is
@@ -27,7 +28,10 @@ import io.github.vitalyostanin.geoshare.R
 fun SignInScreen(
     state: AuthState,
     sharing: Boolean,
+    /** The permission the member has to grant on the settings screen, if any. */
+    permissionNotice: PermissionStep?,
     onSharingChange: (Boolean) -> Unit,
+    onOpenSettings: () -> Unit,
     onSignIn: () -> Unit,
     onSignOut: () -> Unit,
     modifier: Modifier = Modifier,
@@ -51,7 +55,9 @@ fun SignInScreen(
                 SignedIn(
                     state = state,
                     sharing = sharing,
+                    permissionNotice = permissionNotice,
                     onSharingChange = onSharingChange,
+                    onOpenSettings = onOpenSettings,
                     onSignOut = onSignOut,
                 )
         }
@@ -86,7 +92,9 @@ private fun SignedOut(failure: SignInFailure?, onSignIn: () -> Unit) {
 private fun SignedIn(
     state: AuthState.SignedIn,
     sharing: Boolean,
+    permissionNotice: PermissionStep?,
     onSharingChange: (Boolean) -> Unit,
+    onOpenSettings: () -> Unit,
     onSignOut: () -> Unit,
 ) {
     Text(
@@ -115,9 +123,30 @@ private fun SignedIn(
         Switch(checked = sharing, onCheckedChange = onSharingChange)
     }
 
+    // Shown once the system has stopped asking: from there on the answer is
+    // changed on the settings screen, and saying so beats an inert switch.
+    if (sharing && permissionNotice != null) {
+        Text(
+            text = stringResource(permissionMessage(permissionNotice)),
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.error,
+            textAlign = TextAlign.Center,
+        )
+
+        TextButton(onClick = onOpenSettings) {
+            Text(text = stringResource(R.string.permission_open_settings))
+        }
+    }
+
     TextButton(onClick = onSignOut) {
         Text(text = stringResource(R.string.sign_out_action))
     }
+}
+
+private fun permissionMessage(step: PermissionStep): Int = when (step) {
+    PermissionStep.Location -> R.string.permission_location_needed
+    PermissionStep.Notifications -> R.string.permission_notifications_needed
+    PermissionStep.BackgroundLocation -> R.string.permission_background_needed
 }
 
 private fun failureMessage(failure: SignInFailure): Int = when (failure) {
