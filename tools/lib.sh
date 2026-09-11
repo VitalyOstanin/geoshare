@@ -12,6 +12,12 @@ source "${REPO_ROOT}/tools/versions.env"
 
 # The tag carries the version the image was built for, so a bump to
 # versions.env asks for a new image instead of silently reusing the old one.
+#
+# Overridable, because another project on the same machine may already carry a
+# compatible image — the same platform and build tools — and building a second
+# copy of several gigabytes to run one task is not worth it:
+#
+#   SDK_IMAGE=localhost/other-sdk:37 tools/lint.sh --format
 readonly SDK_IMAGE="${SDK_IMAGE:-localhost/geoshare-sdk:${ANDROID_COMPILE_SDK}-jdk${JDK_VERSION}}"
 
 # A proxy listening on the host loopback is unreachable from a container on

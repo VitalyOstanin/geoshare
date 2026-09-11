@@ -1,6 +1,21 @@
 #!/usr/bin/env bash
-# Formatting and the Android lint, the pair a change has to pass before it is
-# pushed.
+# The checks of the Kotlin half: the formatting and the Android lint.
+#
+#   tools/lint.sh            # check
+#   tools/lint.sh --format   # rewrite what the formatter can fix
+#
+# The formatting pass rewrites files in the tree, so it only makes sense
+# where the tree lives. The queue passes no arguments through, which is why
+# it is a flag here rather than an action of its own.
+#
+# Report: android/app/build/reports/lint-results-debug.html
 set -euo pipefail
 
-exec "$(dirname "${BASH_SOURCE[0]}")/gradle.sh" ktlintCheck lintDebug "$@"
+if [[ "${1:-}" == "--format" ]]; then
+    shift
+    set -- ktlintFormat "$@"
+else
+    set -- ktlintCheck lintDebug "$@"
+fi
+
+exec "$(dirname "${BASH_SOURCE[0]}")/gradle.sh" "$@"
