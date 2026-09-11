@@ -16,5 +16,10 @@ sealed interface AuthState {
     /** The chooser is open, or the token is being exchanged. */
     data object SigningIn : AuthState
 
-    data class SignedIn(val memberId: String, val displayName: String?) : AuthState
+    data class SignedIn(
+        val memberId: String,
+        val displayName: String?,
+        /** The account picture, as the provider hosts it; absent for an account without one. */
+        val pictureUrl: String?,
+    ) : AuthState
 }

@@ -37,7 +37,15 @@ const auth = getAuth(app);
 const store = getFirestore(app);
 
 export function watchSignIn(onChange) {
-    return onAuthStateChanged(auth, (user) => onChange(user && { memberId: user.uid, name: user.displayName }));
+    return onAuthStateChanged(auth, (user) =>
+        onChange(
+            user && {
+                memberId: user.uid,
+                name: user.displayName,
+                picture: user.photoURL,
+            },
+        ),
+    );
 }
 
 export function signIn() {

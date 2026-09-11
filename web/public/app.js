@@ -15,6 +15,12 @@ const elements = {
     map: document.querySelector('#map'),
     panel: document.querySelector('#panel'),
     members: document.querySelector('#members'),
+    account: document.querySelector('#account'),
+    accountButton: document.querySelector('#account-button'),
+    accountPicture: document.querySelector('#account-picture'),
+    accountInitial: document.querySelector('#account-initial'),
+    accountMenu: document.querySelector('#account-menu'),
+    accountName: document.querySelector('#account-name'),
     signOutButton: document.querySelector('#sign-out-button'),
 };
 
@@ -42,6 +48,20 @@ elements.signInButton.addEventListener('click', async () => {
 
 elements.signOutButton.addEventListener('click', () => leave());
 
+elements.accountButton.addEventListener('click', (event) => {
+    event.stopPropagation();
+    showMenu(elements.accountMenu.hidden);
+});
+
+// Anywhere else means "not that": the menu is a corner of the map, and the map
+// is what the viewer came for.
+document.addEventListener('click', () => showMenu(false));
+
+function showMenu(open) {
+    elements.accountMenu.hidden = !open;
+    elements.accountButton.setAttribute('aria-expanded', String(open));
+}
+
 watchSignIn((member) => {
     state.member = member;
 
@@ -58,6 +78,9 @@ function start() {
     elements.signIn.hidden = true;
     elements.map.hidden = false;
     elements.panel.hidden = false;
+    elements.account.hidden = false;
+
+    showAccount(state.member);
 
     if (!state.view) {
         state.view = createMap(elements.map);
@@ -87,6 +110,28 @@ function stop() {
     elements.signIn.hidden = false;
     elements.map.hidden = true;
     elements.panel.hidden = true;
+    elements.account.hidden = true;
+    showMenu(false);
+}
+
+/**
+ * The account picture, or the first letter of the name when there is none.
+ *
+ * The picture is hosted by whoever the account is with; a load that fails
+ * leaves the letter showing rather than an empty circle.
+ */
+function showAccount(member) {
+    elements.accountName.textContent = member.name ?? 'Signed in';
+    elements.accountInitial.textContent = (member.name ?? '?').slice(0, 1).toUpperCase();
+
+    elements.accountPicture.hidden = !member.picture;
+
+    if (member.picture) {
+        elements.accountPicture.src = member.picture;
+        elements.accountPicture.onerror = () => {
+            elements.accountPicture.hidden = true;
+        };
+    }
 }
 
 function render() {

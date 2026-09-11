@@ -24,6 +24,9 @@ googleid = "1.2.0"
 # The map background. Draws OpenStreetMap tiles itself, so the application
 # needs no map key and no payment method behind one.
 osmdroid = "6.1.20"
+# Loads the account picture into the map screen. Two artefacts: the Compose
+# entry point and the network layer it fetches through.
+coil = "3.6.2"
 junit = "4.13.2"
 googleServices = "4.5.0"
 ktlintPlugin = "14.2.0"
@@ -56,6 +59,9 @@ androidx-credentials-play-services-auth = { module = "androidx.credentials:crede
 googleid = { module = "com.google.android.libraries.identity.googleid:googleid", version.ref = "googleid" }
 
 osmdroid-android = { module = "org.osmdroid:osmdroid-android", version.ref = "osmdroid" }
+
+coil-compose = { module = "io.coil-kt.coil3:coil-compose", version.ref = "coil" }
+coil-network-okhttp = { module = "io.coil-kt.coil3:coil-network-okhttp", version.ref = "coil" }
 
 kotlinx-coroutines-android = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-android", version.ref = "coroutines" }
 # Awaits a Play Services Task from a coroutine; Firebase returns those.

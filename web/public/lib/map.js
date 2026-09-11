@@ -106,6 +106,11 @@ function addMarker(view, position, own) {
     element.append(label, dot);
 
     const popup = new Popup({ offset: 16, closeButton: true });
+
+    // One bubble at a time, the way a map shows one place at a time: the
+    // library leaves every popup it opens open, and a second tap would
+    // otherwise leave the first member's card hanging over the map.
+    popup.on('open', () => closeOthers(view, position.memberId));
     // Placed before it is added: a marker with nowhere to be cannot be put on
     // a map, and the caller sets the position again on every update anyway.
     const marker = new Marker({ element })
@@ -118,6 +123,14 @@ function addMarker(view, position, own) {
     view.markers.set(position.memberId, entry);
 
     return entry;
+}
+
+function closeOthers(view, memberId) {
+    for (const [other, entry] of view.markers) {
+        if (other !== memberId && entry.popup.isOpen()) {
+            entry.popup.remove();
+        }
+    }
 }
 
 function name(position, own) {

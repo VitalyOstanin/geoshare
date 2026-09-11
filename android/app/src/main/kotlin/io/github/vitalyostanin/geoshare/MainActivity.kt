@@ -84,6 +84,8 @@ class MainActivity : ComponentActivity() {
                             MapScreen(
                                 positions = positions,
                                 ownMemberId = current.memberId,
+                                ownDisplayName = current.displayName,
+                                ownPictureUrl = current.pictureUrl,
                                 sharing = sharingOn,
                                 permissionNotice = permissionNotice,
                                 onSharingChange = { wanted ->

@@ -20,9 +20,22 @@
 
         <div id="map" hidden></div>
 
+        <!-- The way into everything that is not the map: who is signed in,
+             and where to change it. -->
+        <div id="account" hidden>
+            <button id="account-button" type="button" aria-haspopup="menu" aria-expanded="false">
+                <img id="account-picture" alt="" hidden />
+                <span id="account-initial"></span>
+            </button>
+
+            <div id="account-menu" role="menu" hidden>
+                <p id="account-name"></p>
+                <button id="sign-out-button" type="button" role="menuitem">Sign out</button>
+            </div>
+        </div>
+
         <section id="panel" hidden>
             <div id="members"></div>
-            <button id="sign-out-button" type="button">Sign out</button>
         </section>
 
         <script type="module" src="app.js"></script>

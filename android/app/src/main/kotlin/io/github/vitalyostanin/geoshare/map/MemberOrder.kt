@@ -16,3 +16,8 @@ fun orderedForNavigation(
     ownMemberId: String,
 ): List<MemberPosition> =
     positions.sortedWith(compareBy({ it.memberId == ownMemberId }, { it.memberId }))
+
+/** Enough characters of an id to tell two members apart at a glance. */
+fun shortName(memberId: String): String = memberId.take(SHORT_ID_LENGTH)
+
+private const val SHORT_ID_LENGTH = 6

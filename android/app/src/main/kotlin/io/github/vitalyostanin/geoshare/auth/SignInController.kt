@@ -49,7 +49,11 @@ class SignInController(
                     AuthState.SignedOut()
                 } else {
                     AppLog.i(TAG, "signed in as ${user.uid}")
-                    AuthState.SignedIn(memberId = user.uid, displayName = user.displayName)
+                    AuthState.SignedIn(
+                        memberId = user.uid,
+                        displayName = user.displayName,
+                        pictureUrl = user.photoUrl?.toString(),
+                    )
                 }
         }
 

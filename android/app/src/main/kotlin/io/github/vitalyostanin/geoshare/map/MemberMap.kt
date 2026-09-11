@@ -41,9 +41,12 @@ data class MapFocus(val memberId: String, val request: Int)
 fun MemberMap(
     positions: List<MemberPosition>,
     ownMemberId: String,
+    ownName: String,
     now: Instant,
     /** The member the panel asked to look at, if one has been asked for. */
     focus: MapFocus?,
+    /** Called with the member whose marker was tapped. */
+    onSelect: (String) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val context = LocalContext.current
@@ -81,7 +84,7 @@ fun MemberMap(
     }
 
     AndroidView(factory = { map }, modifier = modifier) { view ->
-        showMarkers(view, positions, now)
+        showMarkers(view, positions, ownMemberId, ownName, now, onSelect)
 
         val start = positions.firstOrNull { it.memberId == ownMemberId } ?: positions.firstOrNull()
 
@@ -136,23 +139,41 @@ private fun createMap(context: Context): MapView {
  * marker list and the position list from drifting apart, which is the failure
  * that would show a member somewhere they no longer are.
  */
-private fun showMarkers(map: MapView, positions: List<MemberPosition>, now: Instant) {
+private fun showMarkers(
+    map: MapView,
+    positions: List<MemberPosition>,
+    ownMemberId: String,
+    ownName: String,
+    now: Instant,
+    onSelect: (String) -> Unit,
+) {
     map.overlays.clear()
 
     positions.forEach { position ->
+        val name = if (position.memberId == ownMemberId) ownName else shortName(position.memberId)
+
+        val drawn =
+            markerIcon(
+                context = map.context,
+                name = name,
+                colour = memberColour(position.memberId),
+                stale = isStale(position.knownAt, now),
+            )
+
         val marker =
             Marker(map).apply {
                 this.position = GeoPoint(position.latitude, position.longitude)
-                setAnchor(Marker.ANCHOR_CENTER, Marker.ANCHOR_CENTER)
-                icon =
-                    markerIcon(
-                        context = map.context,
-                        colour = memberColour(position.memberId),
-                        stale = isStale(position.knownAt, now),
-                    )
-                // The ages are spelled out in the list below the map, where
-                // they can be read without tapping anything.
+                setAnchor(Marker.ANCHOR_CENTER, drawn.anchorV)
+                icon = drawn.drawable
+                // The bubble is a card of our own below the map rather than
+                // the library's window: it is the one place the details are
+                // laid out, and the panel opens the same card.
                 setInfoWindow(null)
+                setOnMarkerClickListener { _, _ ->
+                    onSelect(position.memberId)
+
+                    true
+                }
             }
 
         map.overlays.add(marker)

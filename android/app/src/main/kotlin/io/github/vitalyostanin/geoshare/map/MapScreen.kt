@@ -2,6 +2,7 @@ package io.github.vitalyostanin.geoshare.map
 
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
@@ -13,7 +14,6 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
-import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -33,12 +33,12 @@ import io.github.vitalyostanin.geoshare.R
 import io.github.vitalyostanin.geoshare.permission.PermissionStep
 import kotlinx.coroutines.delay
 import java.time.Instant
+import java.time.ZoneId
+import java.time.format.DateTimeFormatter
+import java.time.format.FormatStyle
 
 /** How often the ages on screen are recounted. Half a minute keeps "5 minutes ago" honest. */
 private const val AGE_TICK_MILLIS = 30_000L
-
-/** Enough characters of an id to tell two members apart at a glance. */
-private const val SHORT_ID_LENGTH = 6
 
 /** As much of the screen as the full list may take before it starts scrolling instead. */
 private val LIST_MAX_HEIGHT = 220.dp
@@ -55,6 +55,8 @@ private val LIST_MAX_HEIGHT = 220.dp
 fun MapScreen(
     positions: List<MemberPosition>,
     ownMemberId: String,
+    ownDisplayName: String?,
+    ownPictureUrl: String?,
     sharing: Boolean,
     /** The permission the member has to grant on the settings screen, if any. */
     permissionNotice: PermissionStep?,
@@ -67,22 +69,50 @@ fun MapScreen(
     val members = orderedForNavigation(positions, ownMemberId)
     var focus by remember { mutableStateOf<MapFocus?>(null) }
     var showAll by remember { mutableStateOf(false) }
+    var openedMemberId by remember { mutableStateOf<String?>(null) }
+    var settingsOpen by remember { mutableStateOf(false) }
+    // Held by id rather than by value: the position keeps arriving, and a card
+    // showing the one from when it was opened would quietly go stale.
+    val opened = positions.firstOrNull { it.memberId == openedMemberId }
+    val ownName = stringResource(R.string.map_member_you)
 
     // A tap is a request to look at somebody, not a state: tapping the same
     // member twice has to bring the map back both times, and the counter is
     // what makes the second tap a change the map can see.
     fun lookAt(memberId: String) {
         focus = MapFocus(memberId = memberId, request = (focus?.request ?: 0) + 1)
+        openedMemberId = memberId
     }
 
     Column(modifier = modifier.fillMaxSize()) {
-        MemberMap(
-            positions = positions,
-            ownMemberId = ownMemberId,
-            now = now,
-            focus = focus,
-            modifier = Modifier.fillMaxWidth().weight(1f),
-        )
+        Box(modifier = Modifier.fillMaxWidth().weight(1f)) {
+            MemberMap(
+                positions = positions,
+                ownMemberId = ownMemberId,
+                ownName = ownName,
+                now = now,
+                focus = focus,
+                onSelect = { memberId -> openedMemberId = memberId },
+                modifier = Modifier.fillMaxSize(),
+            )
+
+            AccountButton(
+                displayName = ownDisplayName,
+                pictureUrl = ownPictureUrl,
+                onClick = { settingsOpen = true },
+                modifier = Modifier.align(Alignment.TopEnd).padding(12.dp),
+            )
+
+            if (opened != null) {
+                MemberDetail(
+                    member = opened,
+                    own = opened.memberId == ownMemberId,
+                    now = now,
+                    onClose = { openedMemberId = null },
+                    modifier = Modifier.align(Alignment.BottomCenter).padding(12.dp),
+                )
+            }
+        }
 
         HorizontalDivider()
 
@@ -102,15 +132,16 @@ fun MapScreen(
                 onToggleAll = { showAll = !showAll },
             )
         }
+    }
 
-        HorizontalDivider()
-
-        Controls(
+    if (settingsOpen) {
+        SettingsScreen(
             sharing = sharing,
             permissionNotice = permissionNotice,
             onSharingChange = onSharingChange,
             onOpenSettings = onOpenSettings,
             onSignOut = onSignOut,
+            onClose = { settingsOpen = false },
         )
     }
 }
@@ -289,48 +320,96 @@ private fun AgeText(member: MemberPosition, now: Instant) {
     )
 }
 
+/** Until members carry names of their own, the first characters of the id tell them apart. */
 @Composable
-private fun Controls(
-    sharing: Boolean,
-    permissionNotice: PermissionStep?,
-    onSharingChange: (Boolean) -> Unit,
-    onOpenSettings: () -> Unit,
-    onSignOut: () -> Unit,
+private fun memberName(memberId: String, own: Boolean): String =
+    if (own) stringResource(R.string.map_member_you) else shortName(memberId)
+
+/**
+ * What the card says once a marker is tapped.
+ *
+ * Everything the position document carries beyond the two coordinates: when it
+ * was taken, how the phone was collecting at the time and how much battery it
+ * had left, which together answer "why is this old" without a second question.
+ */
+@Composable
+private fun MemberDetail(
+    member: MemberPosition,
+    own: Boolean,
+    now: Instant,
+    onClose: () -> Unit,
+    modifier: Modifier = Modifier,
 ) {
-    Row(
-        modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp),
-        horizontalArrangement = Arrangement.spacedBy(12.dp),
-        verticalAlignment = Alignment.CenterVertically,
+    Surface(
+        modifier = modifier.fillMaxWidth(),
+        shape = MaterialTheme.shapes.large,
+        tonalElevation = 4.dp,
     ) {
-        Text(text = stringResource(R.string.sharing_action), modifier = Modifier.weight(1f))
+        Column(modifier = Modifier.padding(start = 16.dp, top = 8.dp, end = 8.dp, bottom = 12.dp)) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                MemberDot(memberId = member.memberId)
 
-        Switch(checked = sharing, onCheckedChange = onSharingChange)
+                Text(
+                    text = memberName(member.memberId, own),
+                    style = MaterialTheme.typography.titleMedium,
+                    modifier = Modifier.weight(1f).padding(start = 8.dp),
+                )
 
-        TextButton(onClick = onSignOut) {
-            Text(text = stringResource(R.string.sign_out_action))
-        }
-    }
+                // A word rather than an icon: the icon packs are a dependency
+                // of their own, and this is the only one the screen needs.
+                TextButton(onClick = onClose) {
+                    Text(text = stringResource(R.string.map_detail_close))
+                }
+            }
 
-    // Shown once the system has stopped asking: from there on the answer is
-    // changed on the settings screen, and saying so beats an inert switch.
-    if (sharing && permissionNotice != null) {
-        Text(
-            text = stringResource(permissionMessage(permissionNotice)),
-            style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.error,
-            modifier = Modifier.padding(horizontal = 16.dp),
-        )
-
-        TextButton(onClick = onOpenSettings, modifier = Modifier.padding(horizontal = 8.dp)) {
-            Text(text = stringResource(R.string.permission_open_settings))
+            DetailRow(R.string.map_detail_last_seen, ageText(positionAge(member.knownAt, now)))
+            DetailRow(R.string.map_detail_at, momentText(member.knownAt))
+            DetailRow(
+                R.string.map_detail_mode,
+                member.mode ?: stringResource(R.string.map_detail_unknown),
+            )
+            DetailRow(
+                R.string.map_detail_battery,
+                member.batteryPercent
+                    ?.let { stringResource(R.string.map_battery, it) }
+                    ?: stringResource(R.string.map_detail_unknown),
+            )
+            DetailRow(
+                R.string.map_detail_position,
+                stringResource(R.string.map_detail_coordinates, member.latitude, member.longitude),
+            )
         }
     }
 }
 
-/** Until members carry names of their own, the first characters of the id tell them apart. */
 @Composable
-private fun memberName(memberId: String, own: Boolean): String =
-    if (own) stringResource(R.string.map_member_you) else memberId.take(SHORT_ID_LENGTH)
+private fun DetailRow(name: Int, value: String) {
+    Row(
+        modifier = Modifier.fillMaxWidth().padding(vertical = 2.dp),
+        horizontalArrangement = Arrangement.spacedBy(12.dp),
+    ) {
+        Text(
+            text = stringResource(name),
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+
+        Text(text = value, style = MaterialTheme.typography.bodyMedium)
+    }
+}
+
+/** The moment itself, for the card a member opens rather than for the buttons. */
+@Composable
+private fun momentText(moment: Instant): String {
+    val format =
+        remember {
+            DateTimeFormatter
+                .ofLocalizedDateTime(FormatStyle.MEDIUM, FormatStyle.SHORT)
+                .withZone(ZoneId.systemDefault())
+        }
+
+    return format.format(moment)
+}
 
 @Composable
 private fun ageText(age: PositionAge): String = when (age) {
@@ -357,10 +436,4 @@ private fun currentTime() = produceState(initialValue = Instant.now()) {
         delay(AGE_TICK_MILLIS)
         value = Instant.now()
     }
-}
-
-private fun permissionMessage(step: PermissionStep): Int = when (step) {
-    PermissionStep.Location -> R.string.permission_location_needed
-    PermissionStep.Notifications -> R.string.permission_notifications_needed
-    PermissionStep.BackgroundLocation -> R.string.permission_background_needed
 }
