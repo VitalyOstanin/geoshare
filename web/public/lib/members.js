@@ -10,7 +10,15 @@ export function orderedForNavigation(positions, ownMemberId) {
     return [...positions].sort((left, right) => {
         const own = Number(left.memberId === ownMemberId) - Number(right.memberId === ownMemberId);
 
-        return own !== 0 ? own : left.memberId.localeCompare(right.memberId);
+        if (own !== 0) {
+            return own;
+        }
+
+        const member = left.memberId.localeCompare(right.memberId);
+
+        // The phones of one member follow each other, and keep their places
+        // between two glances at the panel.
+        return member !== 0 ? member : left.positionId.localeCompare(right.positionId);
     });
 }
 

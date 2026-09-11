@@ -1,14 +1,20 @@
 # Document model
 
-One document per member per collection. History is deliberately not kept: each new
-fix overwrites the previous one, which keeps both storage and read counts flat.
+One document per member for what a member is, and one per phone for what a phone
+does. History is deliberately not kept: each new fix overwrites the previous one,
+which keeps both storage and read counts flat.
 
 ```
-groups/{groupId}                  members: [uid, ...]
-groups/{groupId}/members/{uid}    what a member says about themselves
-groups/{groupId}/positions/{uid}  last known position
-groups/{groupId}/watch/{uid}      viewing marker
+groups/{groupId}                            members: [uid, ...]
+groups/{groupId}/members/{uid}              what a member says about themselves
+groups/{groupId}/positions/{uid}.{deviceId} last known position of one phone
+groups/{groupId}/watch/{uid}.{deviceId}     viewing marker of one phone
 ```
+
+The id of a position is the account and the phone joined by a dot. The rules read
+the part before the dot, so a member writes only their own documents; the readers
+group the markers by the `memberId` inside, which is what gives a phone its
+owner's colour, face and name.
 
 The group document is the roster and no client may write it; membership is edited
 from the console. A member's own document under it is the opposite: they write it
@@ -33,10 +39,12 @@ a member keeps their colour whether or not they have ever signed in.
 A member with no profile is drawn under the first characters of their id, which is
 what both clients showed before profiles existed.
 
-## positions/{uid}
+## positions/{uid}.{deviceId}
 
 | Field            | Type      | Meaning                                                  |
 |------------------|-----------|----------------------------------------------------------|
+| `memberId`       | string    | The account the phone is signed in with; the rules require it to be the writer |
+| `deviceName`     | string    | What the phone calls itself, shown when a member has more than one on the map |
 | `latitude`       | number    | Degrees                                                   |
 | `longitude`      | number    | Degrees                                                   |
 | `takenAt`        | timestamp | When the fix was taken, by the clock of the phone         |
@@ -53,11 +61,18 @@ A write happens when the position moved at least 75 metres from the last written
 one, or 10 minutes passed without a write. Jitter therefore produces no writes and
 wakes no subscribers.
 
-## watch/{uid}
+One document per phone rather than per member, because a member can carry two: a
+second phone used to overwrite the first, and the marker showed whichever of them
+wrote last. The identifier of a phone is made up on first use and kept in the
+application's own storage, so reinstalling makes a new one and leaves the old
+document to age on screen until it is deleted.
 
-| Field   | Type      | Meaning                                               |
-|---------|-----------|--------------------------------------------------------|
-| `until` | timestamp | Marker is ignored once this moment has passed           |
+## watch/{uid}.{deviceId}
+
+| Field      | Type      | Meaning                                            |
+|------------|-----------|-----------------------------------------------------|
+| `memberId` | string    | The account looking; the rules require it to be the writer |
+| `until`    | timestamp | Marker is ignored once this moment has passed        |
 
 The viewer sets `until` three minutes ahead and refreshes it every minute. Leaving
 the map deletes the document; a crash or a lost connection lets the marker expire
@@ -65,7 +80,11 @@ on its own, so the viewing mode never sticks. The extra minute over the refresh 
 what keeps one failed write from dropping the phones out of their fast mode.
 
 A phone ignores its own marker: answering it would mean keeping the receiver on
-for its own map.
+for its own map. Only its own, not every marker of its account: a member looking
+at the map on one phone is somebody the other phone should be fresh for.
+
+The browser claims under a name it keeps in the storage of the browser itself, so
+a reload leaves one marker rather than a trail of them.
 
 ## Collection modes
 

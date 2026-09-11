@@ -21,7 +21,8 @@ private const val TAG = "geoshare.watch"
  * messages: the write lands on this phone in about a second.
  */
 fun watchersUntil(
-    memberId: String,
+    /** The document this phone writes its own marker into, which is the one to ignore. */
+    ownWatchId: String,
     store: FirebaseFirestore = FirebaseFirestore.getInstance(),
 ): Flow<List<Instant>> = callbackFlow {
     val subscription =
@@ -42,8 +43,10 @@ fun watchersUntil(
                         .orEmpty()
                         // Our own marker says nothing about who is looking
                         // at us; answering it would keep the phone awake
-                        // for its own map.
-                        .filter { it.id != memberId }
+                        // for its own map. Only this phone's marker is
+                        // dropped: the member's other phone looking at the
+                        // map is somebody to be fresh for.
+                        .filter { it.id != ownWatchId }
                         .mapNotNull { it.getTimestamp("until") }
                         .map { Instant.ofEpochSecond(it.seconds, it.nanoseconds.toLong()) }
 

@@ -10,19 +10,25 @@ import {
     shortName,
 } from '../public/lib/members.js';
 
-const positionOf = (memberId) => ({ memberId, latitude: 60, longitude: 30 });
-const idsOf = (positions) => positions.map((position) => position.memberId);
+// One position per phone: the id is the account and the phone joined by a dot.
+const positionOf = (memberId, device = 'phone') => ({
+    positionId: `${memberId}.${device}`,
+    memberId,
+    latitude: 60,
+    longitude: 30,
+});
+const idsOf = (positions) => positions.map((position) => position.positionId);
 
 test('the other members come before our own entry', () => {
     const order = orderedForNavigation([positionOf('me'), positionOf('her')], 'me');
 
-    assert.deepEqual(idsOf(order), ['her', 'me']);
+    assert.deepEqual(idsOf(order), ['her.phone', 'me.phone']);
 });
 
 test('the others keep the same places whatever order they arrive in', () => {
     const members = [positionOf('c'), positionOf('a'), positionOf('b')];
 
-    assert.deepEqual(idsOf(orderedForNavigation(members, 'me')), ['a', 'b', 'c']);
+    assert.deepEqual(idsOf(orderedForNavigation(members, 'me')), ['a.phone', 'b.phone', 'c.phone']);
     assert.deepEqual(
         idsOf(orderedForNavigation(members, 'me')),
         idsOf(orderedForNavigation([...members].reverse(), 'me')),
@@ -83,4 +89,20 @@ test('an address in any other scheme draws no picture', () => {
     assert.equal(pictureAddress('file:///etc/passwd'), null);
     assert.equal(pictureAddress('not an address'), null);
     assert.equal(pictureAddress(null), null);
+});
+
+// The same rule the Android panel follows: a member carrying two phones has
+// them next to each other, in the same places at every glance.
+test('the phones of one member keep their places', () => {
+    const members = [positionOf('a', 'two'), positionOf('b'), positionOf('a', 'one')];
+
+    assert.deepEqual(idsOf(orderedForNavigation(members, 'me')), [
+        'a.one',
+        'a.two',
+        'b.phone',
+    ]);
+    assert.deepEqual(
+        idsOf(orderedForNavigation(members, 'me')),
+        idsOf(orderedForNavigation([...members].reverse(), 'me')),
+    );
 });

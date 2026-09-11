@@ -1,28 +1,28 @@
 package io.github.vitalyostanin.geoshare.map
 
 /**
- * A member as the map has placed them: who they are, and where on the screen
- * their pin has come out.
+ * A marker as the map has placed it: which position it stands for, and where
+ * on the screen its pin has come out.
  *
  * Screen coordinates rather than degrees, because whether two pins cover one
  * another is a question about the drawing and not about the ground: two people
  * in one flat are one pin at every zoom, and the same two are far apart once
  * the map is close enough.
  */
-data class PlacedMember(val memberId: String, val x: Double, val y: Double)
+data class PlacedMember(val id: String, val x: Double, val y: Double)
 
 /**
- * Members whose pins would land on top of each other, as the one thing that
+ * Positions whose pins would land on top of each other, as the one thing that
  * gets drawn for them.
  *
  * The first id is the one the group is gathered around; the rest follow in the
  * order their ids sort in, which is what keeps the faces in a group from
  * swapping places between two ticks.
  */
-data class MemberCluster(val memberIds: List<String>)
+data class MemberCluster(val ids: List<String>)
 
 /**
- * Gathers the members whose pins overlap.
+ * Gathers the positions whose pins overlap.
  *
  * Anchored rather than chained: a member joins the group they are within reach
  * of, and a third one further along starts a group of their own instead of
@@ -36,24 +36,24 @@ data class MemberCluster(val memberIds: List<String>)
  * redraw itself for nothing.
  */
 fun clusterMembers(placed: List<PlacedMember>, radius: Double): List<MemberCluster> {
-    val ordered = placed.sortedBy { it.memberId }
+    val ordered = placed.sortedBy { it.id }
     val taken = mutableSetOf<String>()
     val clusters = mutableListOf<MemberCluster>()
 
     for (anchor in ordered) {
-        if (!taken.add(anchor.memberId)) {
+        if (!taken.add(anchor.id)) {
             continue
         }
 
-        val group = mutableListOf(anchor.memberId)
+        val group = mutableListOf(anchor.id)
 
         for (other in ordered) {
-            if (other.memberId in taken || !within(anchor, other, radius)) {
+            if (other.id in taken || !within(anchor, other, radius)) {
                 continue
             }
 
-            taken.add(other.memberId)
-            group.add(other.memberId)
+            taken.add(other.id)
+            group.add(other.id)
         }
 
         clusters.add(MemberCluster(group))

@@ -86,11 +86,11 @@ fun PublishProfile(memberId: String, displayName: String?, pictureUrl: String?) 
  * would hold every other phone in its fifteen-second mode for nothing.
  */
 @Composable
-fun KeepWatching(memberId: String) {
+fun KeepWatching(memberId: String, deviceId: String) {
     val owner = LocalLifecycleOwner.current
 
-    LaunchedEffect(memberId, owner) {
-        val writer = WatchWriter(memberId)
+    LaunchedEffect(memberId, deviceId, owner) {
+        val writer = WatchWriter(memberId, deviceId)
 
         owner.repeatOnLifecycle(Lifecycle.State.RESUMED) {
             try {

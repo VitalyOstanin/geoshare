@@ -31,6 +31,7 @@ import io.github.vitalyostanin.geoshare.permission.PermissionStep
 import io.github.vitalyostanin.geoshare.permission.devicePermissions
 import io.github.vitalyostanin.geoshare.permission.nextPermissionStep
 import io.github.vitalyostanin.geoshare.permission.permissionOf
+import io.github.vitalyostanin.geoshare.service.DeviceIdentity
 import io.github.vitalyostanin.geoshare.service.SharingService
 import io.github.vitalyostanin.geoshare.service.SharingSetting
 import io.github.vitalyostanin.geoshare.service.refusalToStart
@@ -40,6 +41,9 @@ import kotlinx.coroutines.launch
 class MainActivity : ComponentActivity() {
     private lateinit var signIn: SignInController
     private lateinit var sharing: SharingSetting
+
+    /** Which phone this is, so that a member carrying two is two markers rather than one. */
+    private lateinit var device: DeviceIdentity
 
     /** The step the member has to finish on the settings screen, if any. */
     private var permissionNotice by mutableStateOf<PermissionStep?>(null)
@@ -68,6 +72,7 @@ class MainActivity : ComponentActivity() {
             )
 
         sharing = SharingSetting(this)
+        device = DeviceIdentity(this)
 
         setContent {
             MaterialTheme {
@@ -82,7 +87,7 @@ class MainActivity : ComponentActivity() {
                             val positions by rememberMemberPositions()
                             val profiles by rememberMemberProfiles()
 
-                            KeepWatching(current.memberId)
+                            KeepWatching(current.memberId, device.id)
 
                             PublishProfile(
                                 memberId = current.memberId,

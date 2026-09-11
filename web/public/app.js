@@ -164,34 +164,53 @@ function render() {
 
     const now = Date.now();
 
-    showMembers(state.view, state.positions, names(), faces(), state.member.memberId, now);
+    const labels = names();
+
+    showMembers(state.view, state.positions, labels, faces(), state.member.memberId, now);
     centreOnce(state.view, state.positions, state.member.memberId);
 
     elements.members.replaceChildren(
         ...orderedForNavigation(state.positions, state.member.memberId).map((position) =>
-            memberEntry(position, now),
+            memberEntry(position, labels, now),
         ),
     );
 }
 
 /**
- * What every member on screen is called, worked out once per drawing.
+ * What every marker on screen is called, worked out once per drawing.
  *
  * One's own marker says "you" rather than one's own name: the name is on the
  * account button already, and the page exists to answer where everybody else
  * is.
+ *
+ * A member carrying two phones gets two markers, and a pair of markers with
+ * the same name says nothing about which phone is where; the name of the
+ * phone is added only then, because most members have one.
  */
 function names() {
+    const carried = new Map();
+
+    for (const position of state.positions) {
+        carried.set(position.memberId, (carried.get(position.memberId) ?? 0) + 1);
+    }
+
     return new Map(
-        state.positions.map((position) => [
-            position.memberId,
-            memberName(
-                state.profiles?.get(position.memberId),
-                position.memberId,
-                position.memberId === state.member.memberId,
-            ),
-        ]),
+        state.positions.map((position) => [position.positionId, nameOf(position, carried)]),
     );
+}
+
+function nameOf(position, carried) {
+    const name = memberName(
+        state.profiles?.get(position.memberId),
+        position.memberId,
+        position.memberId === state.member.memberId,
+    );
+
+    if ((carried.get(position.memberId) ?? 1) > 1 && position.deviceName) {
+        return `${name} · ${position.deviceName}`;
+    }
+
+    return name;
 }
 
 /**
@@ -211,7 +230,7 @@ function faces() {
     );
 }
 
-function memberEntry(position, now) {
+function memberEntry(position, labels, now) {
     const entry = document.createElement('button');
     entry.className = 'member';
     entry.addEventListener('click', () => lookAt(state.view, position));
@@ -222,11 +241,7 @@ function memberEntry(position, now) {
 
     const name = document.createElement('span');
     name.className = 'name';
-    name.textContent = memberName(
-        state.profiles?.get(position.memberId),
-        position.memberId,
-        position.memberId === state.member.memberId,
-    );
+    name.textContent = labels.get(position.positionId) ?? position.memberId;
 
     const age = document.createElement('span');
     age.className = isStale(position.knownAt, now) ? 'age stale' : 'age';

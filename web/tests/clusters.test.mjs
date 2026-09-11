@@ -3,7 +3,7 @@ import { test } from 'node:test';
 
 import { clusterMembers, facesShown } from '../public/lib/clusters.js';
 
-const at = (memberId, x, y) => ({ memberId, x, y });
+const at = (id, x, y) => ({ id, x, y });
 
 // The same expectations the Android client checks: the two clients group the
 // same members the same way, or a family standing together would be one marker

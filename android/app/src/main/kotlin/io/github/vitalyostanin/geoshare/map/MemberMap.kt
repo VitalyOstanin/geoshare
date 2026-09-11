@@ -45,11 +45,11 @@ private const val CLUSTER_RADIUS_DP = 44f
 private const val MEMBER_SOURCE = "members"
 private const val MEMBER_LAYER = "members"
 
-/** The name of the drawing a point wears, and who is standing at it. */
+/** The name of the drawing a point wears, and which positions are standing at it. */
 private const val ICON_PROPERTY = "icon"
 private const val MEMBERS_PROPERTY = "members"
 
-/** What the ids of a group are joined with; an account id has no comma in it. */
+/** What the ids of a group are joined with; a position id has no comma in it. */
 private const val MEMBERS_SEPARATOR = ","
 
 /**
@@ -86,7 +86,7 @@ private val STYLE_JSON =
  * the first one the map may have been dragged away, and the member expects the
  * button to bring it back.
  */
-data class MapFocus(val memberId: String, val request: Int)
+data class MapFocus(val positionId: String, val request: Int)
 
 /**
  * The members on an OpenStreetMap background.
@@ -97,7 +97,7 @@ data class MapFocus(val memberId: String, val request: Int)
 @Composable
 fun MemberMap(
     positions: List<MemberPosition>,
-    /** What to write on each marker, by member id; the screen works the fallbacks out. */
+    /** What to write on each marker, by position id; the screen works the fallbacks out. */
     names: Map<String, String>,
     /** The account pictures, by member id; a member without one is drawn with their initial. */
     faces: Map<String, Bitmap>,
@@ -107,9 +107,9 @@ fun MemberMap(
     groupLabel: (Int) -> String,
     /** The member the panel asked to look at, if one has been asked for. */
     focus: MapFocus?,
-    /** Called with the member whose marker was tapped. */
+    /** Called with the position whose marker was tapped. */
     onSelect: (String) -> Unit,
-    /** Called with everybody under a marker that stands for more than one member. */
+    /** Called with every position under a marker that stands for more than one. */
     onSelectGroup: (List<String>) -> Unit,
     /** Called when a tap lands on the map itself rather than on a marker. */
     onDismiss: () -> Unit,
@@ -290,7 +290,7 @@ private class MapHolder(val view: MapView) {
         }
 
         val ready = map ?: return
-        val member = members.firstOrNull { it.memberId == focus.memberId } ?: return
+        val member = members.firstOrNull { it.positionId == focus.positionId } ?: return
 
         focused = focus.request
 
@@ -324,15 +324,15 @@ private class MapHolder(val view: MapView) {
                         LatLng(position.latitude, position.longitude),
                     )
 
-                PlacedMember(position.memberId, screen.x.toDouble(), screen.y.toDouble())
+                PlacedMember(position.positionId, screen.x.toDouble(), screen.y.toDouble())
             }
 
-        val positions = members.associateBy { it.memberId }
+        val positions = members.associateBy { it.positionId }
         val radius = (CLUSTER_RADIUS_DP * density).toDouble()
 
         val features =
             clusterMembers(placed, radius).mapNotNull { cluster ->
-                val group = cluster.memberIds.mapNotNull { positions[it] }
+                val group = cluster.ids.mapNotNull { positions[it] }
 
                 if (group.isEmpty()) {
                     return@mapNotNull null
@@ -346,7 +346,7 @@ private class MapHolder(val view: MapView) {
                         addStringProperty(ICON_PROPERTY, icon(loaded, group))
                         addStringProperty(
                             MEMBERS_PROPERTY,
-                            group.joinToString(MEMBERS_SEPARATOR) { it.memberId },
+                            group.joinToString(MEMBERS_SEPARATOR) { it.positionId },
                         )
                     }
             }
@@ -424,11 +424,11 @@ private class MapHolder(val view: MapView) {
     ) { position ->
         val face = faces[position.memberId] != null
 
-        "${position.memberId}:${label(position)}:${isStale(position.knownAt, now)}:$face"
+        "${position.positionId}:${label(position)}:${isStale(position.knownAt, now)}:$face"
     }
 
     private fun label(position: MemberPosition): String =
-        names[position.memberId] ?: shortName(position.memberId)
+        names[position.positionId] ?: shortName(position.memberId)
 
     private fun centre() {
         val ready = map ?: return

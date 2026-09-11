@@ -57,7 +57,12 @@ private fun positionOf(document: DocumentSnapshot): MemberPosition? {
     }
 
     return MemberPosition(
-        memberId = document.id,
+        positionId = document.id,
+        // Written into the document by the phone that wrote the position. A
+        // document from before positions were kept per phone has no such
+        // field, and there the whole id is the account.
+        memberId = document.getString("memberId") ?: document.id.substringBefore('.'),
+        deviceName = document.getString("deviceName"),
         latitude = latitude,
         longitude = longitude,
         takenAt = Instant.ofEpochSecond(takenAt.seconds, takenAt.nanoseconds.toLong()),

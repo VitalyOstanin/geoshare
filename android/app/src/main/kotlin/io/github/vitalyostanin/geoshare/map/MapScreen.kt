@@ -72,17 +72,17 @@ fun MapScreen(
     val members = orderedForNavigation(positions, ownMemberId)
     var focus by remember { mutableStateOf<MapFocus?>(null) }
     var showAll by remember { mutableStateOf(false) }
-    var openedMemberId by remember { mutableStateOf<String?>(null) }
-    // The members under one marker, held by id for the same reason a single
-    // member is: the list keeps arriving, and the card has to follow it.
+    var openedPositionId by remember { mutableStateOf<String?>(null) }
+    // The positions under one marker, held by id for the same reason a single
+    // one is: the list keeps arriving, and the card has to follow it.
     var openedGroup by remember { mutableStateOf<List<String>>(emptyList()) }
     var settingsOpen by remember { mutableStateOf(false) }
     // Held by id rather than by value: the position keeps arriving, and a card
     // showing the one from when it was opened would quietly go stale.
-    val opened = positions.firstOrNull { it.memberId == openedMemberId }
+    val opened = positions.firstOrNull { it.positionId == openedPositionId }
     val group =
-        openedGroup.mapNotNull { memberId ->
-            positions.firstOrNull { it.memberId == memberId }
+        openedGroup.mapNotNull { positionId ->
+            positions.firstOrNull { it.positionId == positionId }
         }
     val ownName = stringResource(R.string.map_member_you)
     // Read through the resources rather than through a composable, because the
@@ -97,23 +97,35 @@ fun MapScreen(
     val faces = rememberMemberFaces(profiles)
     // Worked out here rather than inside the map: the fallbacks come from the
     // resources, and the map draws pictures, not strings from a resource file.
+    // A member carrying two phones gets two markers, and a pair of markers with
+    // the same name on them says nothing about which phone is where; the name
+    // of the phone is added only then, because most members have one.
+    val carried = positions.groupingBy { it.memberId }.eachCount()
     val names =
         positions.associate { position ->
-            position.memberId to
+            val name =
                 memberName(
                     profile = profiles[position.memberId],
                     memberId = position.memberId,
                     own = position.memberId == ownMemberId,
                     ownName = ownName,
                 )
+            val device = position.deviceName
+
+            position.positionId to
+                if (carried.getOrDefault(position.memberId, 1) > 1 && !device.isNullOrBlank()) {
+                    "$name · $device"
+                } else {
+                    name
+                }
         }
 
     // A tap is a request to look at somebody, not a state: tapping the same
     // member twice has to bring the map back both times, and the counter is
     // what makes the second tap a change the map can see.
-    fun lookAt(memberId: String) {
-        focus = MapFocus(memberId = memberId, request = (focus?.request ?: 0) + 1)
-        openedMemberId = memberId
+    fun lookAt(positionId: String) {
+        focus = MapFocus(positionId = positionId, request = (focus?.request ?: 0) + 1)
+        openedPositionId = positionId
         openedGroup = emptyList()
     }
 
@@ -127,16 +139,16 @@ fun MapScreen(
                 now = now,
                 groupLabel = groupLabel,
                 focus = focus,
-                onSelect = { memberId ->
-                    openedMemberId = memberId
+                onSelect = { positionId ->
+                    openedPositionId = positionId
                     openedGroup = emptyList()
                 },
-                onSelectGroup = { memberIds ->
-                    openedMemberId = null
-                    openedGroup = memberIds
+                onSelectGroup = { positionIds ->
+                    openedPositionId = null
+                    openedGroup = positionIds
                 },
                 onDismiss = {
-                    openedMemberId = null
+                    openedPositionId = null
                     openedGroup = emptyList()
                 },
                 modifier = Modifier.fillMaxSize(),
@@ -152,9 +164,9 @@ fun MapScreen(
             if (opened != null) {
                 MemberDetail(
                     member = opened,
-                    name = names[opened.memberId] ?: shortName(opened.memberId),
+                    name = names[opened.positionId] ?: shortName(opened.memberId),
                     now = now,
-                    onClose = { openedMemberId = null },
+                    onClose = { openedPositionId = null },
                     modifier = Modifier.align(Alignment.BottomCenter).padding(12.dp),
                 )
             } else if (group.size > 1) {
@@ -162,8 +174,8 @@ fun MapScreen(
                     members = group,
                     names = names,
                     now = now,
-                    onSelect = { memberId ->
-                        openedMemberId = memberId
+                    onSelect = { positionId ->
+                        openedPositionId = positionId
                         openedGroup = emptyList()
                     },
                     onClose = { openedGroup = emptyList() },
@@ -223,7 +235,7 @@ private fun MemberButtons(
         shown.forEach { member ->
             MemberButton(
                 member = member,
-                name = names[member.memberId] ?: shortName(member.memberId),
+                name = names[member.positionId] ?: shortName(member.memberId),
                 now = now,
                 onSelect = onSelect,
                 modifier = Modifier.weight(1f),
@@ -242,10 +254,10 @@ private fun MemberButtons(
 
     if (showAll && rest.isNotEmpty()) {
         LazyColumn(modifier = Modifier.fillMaxWidth().heightIn(max = LIST_MAX_HEIGHT)) {
-            items(rest, key = { it.memberId }) { member ->
+            items(rest, key = { it.positionId }) { member ->
                 MemberRow(
                     member = member,
-                    name = names[member.memberId] ?: shortName(member.memberId),
+                    name = names[member.positionId] ?: shortName(member.memberId),
                     now = now,
                     onSelect = onSelect,
                 )
@@ -263,7 +275,7 @@ private fun MemberButton(
     modifier: Modifier = Modifier,
 ) {
     Surface(
-        modifier = modifier.clickable { onSelect(member.memberId) },
+        modifier = modifier.clickable { onSelect(member.positionId) },
         shape = MaterialTheme.shapes.medium,
         tonalElevation = 2.dp,
     ) {
@@ -326,7 +338,7 @@ private fun MemberRow(
         modifier =
         Modifier
             .fillMaxWidth()
-            .clickable { onSelect(member.memberId) }
+            .clickable { onSelect(member.positionId) }
             .padding(horizontal = 16.dp, vertical = 8.dp),
         horizontalArrangement = Arrangement.spacedBy(12.dp),
         verticalAlignment = Alignment.CenterVertically,
@@ -417,10 +429,10 @@ private fun GroupDetail(
             }
 
             LazyColumn(modifier = Modifier.fillMaxWidth().heightIn(max = LIST_MAX_HEIGHT)) {
-                items(members, key = { it.memberId }) { member ->
+                items(members, key = { it.positionId }) { member ->
                     MemberRow(
                         member = member,
-                        name = names[member.memberId] ?: shortName(member.memberId),
+                        name = names[member.positionId] ?: shortName(member.memberId),
                         now = now,
                         onSelect = onSelect,
                     )

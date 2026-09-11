@@ -115,10 +115,10 @@ function draw(view, { positions, names, faces, now }) {
     const placed = positions.map((position) => {
         const point = view.map.project([position.longitude, position.latitude]);
 
-        return { memberId: position.memberId, x: point.x, y: point.y };
+        return { id: position.positionId, x: point.x, y: point.y };
     });
 
-    const byId = new Map(positions.map((position) => [position.memberId, position]));
+    const byId = new Map(positions.map((position) => [position.positionId, position]));
     const seen = new Set();
 
     for (const cluster of clusterMembers(placed, CLUSTER_RADIUS)) {
@@ -128,8 +128,8 @@ function draw(view, { positions, names, faces, now }) {
             continue;
         }
 
-        // The members in it are what a marker is: a group that gains or loses
-        // one is a different marker, drawn with a different number of faces.
+        // The positions in it are what a marker is: a group that gains or
+        // loses one is a different marker, with a different number of faces.
         const key = cluster.join(',');
 
         seen.add(key);
@@ -211,7 +211,7 @@ function addMarker(view, key, group) {
         .setPopup(popup)
         .addTo(view.map);
 
-    const entry = { marker, popup, pin, faces, label, members: group, openedMemberId: null };
+    const entry = { marker, popup, pin, faces, label, members: group, openedPositionId: null };
 
     view.markers.set(key, entry);
 
@@ -321,7 +321,7 @@ function showPopup(entry, names, now) {
         return;
     }
 
-    const chosen = group.find((member) => member.memberId === entry.openedMemberId);
+    const chosen = group.find((member) => member.positionId === entry.openedPositionId);
 
     if (!chosen) {
         entry.popup.setDOMContent(groupList(entry, names, now));
@@ -336,7 +336,7 @@ function showPopup(entry, names, now) {
     back.className = 'group-back';
     back.textContent = 'Back to the list';
     back.addEventListener('click', () => {
-        entry.openedMemberId = null;
+        entry.openedPositionId = null;
         showPopup(entry, names, now);
     });
 
@@ -380,7 +380,7 @@ function groupList(entry, names, now) {
 
         row.append(dot, name, age);
         row.addEventListener('click', () => {
-            entry.openedMemberId = member.memberId;
+            entry.openedPositionId = member.positionId;
             showPopup(entry, names, now);
         });
 
@@ -391,7 +391,7 @@ function groupList(entry, names, now) {
 }
 
 function nameOf(member, names) {
-    return names.get(member.memberId) ?? shortName(member.memberId);
+    return names.get(member.positionId) ?? shortName(member.memberId);
 }
 
 /**
@@ -509,7 +509,7 @@ export function lookAt(view, position) {
     });
 
     const entry = [...view.markers.values()].find((marker) =>
-        marker.members.some((member) => member.memberId === position.memberId));
+        marker.members.some((member) => member.positionId === position.positionId));
 
     if (!entry) {
         return;
@@ -517,7 +517,7 @@ export function lookAt(view, position) {
 
     // A member asked for by name opens their own card even when the marker
     // stands for several: the question was about them, not about the place.
-    entry.openedMemberId = entry.members.length > 1 ? position.memberId : null;
+    entry.openedPositionId = entry.members.length > 1 ? position.positionId : null;
 
     if (view.last) {
         showPopup(entry, view.last.names, view.last.now);

@@ -41,14 +41,39 @@ service cloud.firestore {
         allow delete: if isOwner();
       }
 
-      match /positions/{uid} {
+      match /positions/{positionId} {
+        // One document per phone rather than per member: a member with two
+        // phones had them overwriting each other's position, and which of the
+        // two the marker showed depended on which wrote last.
+        //
+        // The id is the account and the phone joined by a dot, so a member
+        // reaches only their own documents whatever their phones are called.
+        // The owner is repeated inside the document, because that is what the
+        // readers group the markers by.
+        function ownsPosition() {
+          return isMember() && positionId.split('\\.')[0] == request.auth.uid;
+        }
+
         allow read: if isMember();
-        allow write: if isMember() && request.auth.uid == uid;
+        allow create, update: if ownsPosition() &&
+                                 request.resource.data.memberId == request.auth.uid;
+        // Stated apart from the write: a deletion carries no document whose
+        // owner could be checked.
+        allow delete: if ownsPosition();
       }
 
-      match /watch/{uid} {
+      match /watch/{watchId} {
+        // Also per phone: a member looking at the map on one phone should not
+        // clear the marker their other phone had just written, and a phone
+        // ignores only its own marker rather than every marker of its account.
+        function ownsWatch() {
+          return isMember() && watchId.split('\\.')[0] == request.auth.uid;
+        }
+
         allow read: if isMember();
-        allow write: if isMember() && request.auth.uid == uid;
+        allow create, update: if ownsWatch() &&
+                                 request.resource.data.memberId == request.auth.uid;
+        allow delete: if ownsWatch();
       }
     }
   }

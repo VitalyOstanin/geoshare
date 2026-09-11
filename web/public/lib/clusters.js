@@ -14,7 +14,7 @@
 export const PIN_MAX_CIRCLES = 3;
 
 /**
- * Gathers the members whose pins overlap.
+ * Gathers the positions whose pins overlap.
  *
  * Anchored rather than chained: a member joins the group they are within reach
  * of, and a third one further along starts a group of their own instead of
@@ -27,30 +27,30 @@ export const PIN_MAX_CIRCLES = 3;
  * same places have to produce the same groups every tick, or the map would
  * redraw itself for nothing.
  *
- * @param placed members with the screen point their pin came out at
+ * @param placed positions with the screen point their pin came out at
  * @param radius how close two pins have to come to be drawn as one
  */
 export function clusterMembers(placed, radius) {
-    const ordered = [...placed].sort((one, other) => compareIds(one.memberId, other.memberId));
+    const ordered = [...placed].sort((one, other) => compareIds(one.id, other.id));
     const taken = new Set();
     const clusters = [];
 
     for (const anchor of ordered) {
-        if (taken.has(anchor.memberId)) {
+        if (taken.has(anchor.id)) {
             continue;
         }
 
-        taken.add(anchor.memberId);
+        taken.add(anchor.id);
 
-        const group = [anchor.memberId];
+        const group = [anchor.id];
 
         for (const other of ordered) {
-            if (taken.has(other.memberId) || !within(anchor, other, radius)) {
+            if (taken.has(other.id) || !within(anchor, other, radius)) {
                 continue;
             }
 
-            taken.add(other.memberId);
-            group.push(other.memberId);
+            taken.add(other.id);
+            group.push(other.id);
         }
 
         clusters.push(group);

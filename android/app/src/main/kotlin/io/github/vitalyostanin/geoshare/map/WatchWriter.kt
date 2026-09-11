@@ -4,6 +4,7 @@ import com.google.firebase.Timestamp
 import com.google.firebase.firestore.FirebaseFirestore
 import io.github.vitalyostanin.geoshare.log.AppLog
 import io.github.vitalyostanin.geoshare.service.GROUP
+import io.github.vitalyostanin.geoshare.service.positionId
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.tasks.await
@@ -33,14 +34,17 @@ val WATCH_REFRESH: Duration = Duration.ofMinutes(1)
  */
 class WatchWriter(
     private val memberId: String,
+    deviceId: String,
     private val store: FirebaseFirestore = FirebaseFirestore.getInstance(),
 ) {
+    // Per phone rather than per member: leaving the map on one phone must not
+    // withdraw the claim the same member's other phone had just made.
     private val document =
         store
             .collection("groups")
             .document(GROUP)
             .collection("watch")
-            .document(memberId)
+            .document(positionId(memberId, deviceId))
 
     /**
      * Keeps the claim alive until the caller stops it.
@@ -54,7 +58,7 @@ class WatchWriter(
             val until = Timestamp(Date(System.currentTimeMillis() + WATCH_AHEAD.toMillis()))
 
             try {
-                document.set(mapOf("until" to until)).await()
+                document.set(mapOf("memberId" to memberId, "until" to until)).await()
             } catch (cancellation: CancellationException) {
                 throw cancellation
             } catch (error: Exception) {

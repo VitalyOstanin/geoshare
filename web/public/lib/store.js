@@ -33,6 +33,9 @@ const GROUP = 'family';
 const WATCH_AHEAD_MS = 3 * 60 * 1000;
 const WATCH_REFRESH_MS = 60 * 1000;
 
+/** Where this browser keeps the name it watches under, so a reload keeps one marker. */
+const DEVICE_KEY = 'geoshare.device';
+
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const store = getFirestore(app);
@@ -84,7 +87,13 @@ function positionOf(document) {
     }
 
     return {
-        memberId: document.id,
+        // One document per phone: the id is the account and the phone joined
+        // by a dot, and the owner is repeated inside. A document from before
+        // positions were kept per phone has no owner field, and there the
+        // whole id is the account.
+        positionId: document.id,
+        memberId: typeof data.memberId === 'string' ? data.memberId : document.id.split('.')[0],
+        deviceName: typeof data.deviceName === 'string' ? data.deviceName : null,
         latitude: data.latitude,
         longitude: data.longitude,
         takenAt: data.takenAt.toMillis(),
@@ -104,6 +113,33 @@ function positionOf(document) {
  * member who renames their account stop being called by the old name without
  * anybody reloading the page.
  */
+/**
+ * What this browser calls itself when it claims to be looking.
+ *
+ * Made up once and kept, so that a reload does not leave a second marker
+ * behind; a browser that clears its storage simply gets a new name, and the
+ * marker it left expires on its own within minutes.
+ */
+function deviceName() {
+    try {
+        const kept = window.localStorage.getItem(DEVICE_KEY);
+
+        if (kept) {
+            return kept;
+        }
+
+        const made = crypto.randomUUID();
+
+        window.localStorage.setItem(DEVICE_KEY, made);
+
+        return made;
+    } catch {
+        // Storage can be refused outright — a private window, a browser set to
+        // block it — and a claim under a fresh name every time still works.
+        return crypto.randomUUID();
+    }
+}
+
 export function watchProfiles(onProfiles, onError) {
     return onSnapshot(
         collection(store, 'groups', GROUP, 'members'),
@@ -168,10 +204,16 @@ export function publishProfile(member, known, onError) {
  * covers a tab closed by a crash or a laptop lid.
  */
 export function keepWatching(memberId, onError) {
-    const marker = doc(store, 'groups', GROUP, 'watch', memberId);
+    // Per browser rather than per account, the way the phones claim per phone:
+    // closing the page here must not withdraw the claim a phone of the same
+    // account had just made.
+    const marker = doc(store, 'groups', GROUP, 'watch', `${memberId}.${deviceName()}`);
 
     const push = () =>
-        setDoc(marker, { until: Timestamp.fromMillis(Date.now() + WATCH_AHEAD_MS) }).catch(onError);
+        setDoc(marker, {
+            memberId,
+            until: Timestamp.fromMillis(Date.now() + WATCH_AHEAD_MS),
+        }).catch(onError);
 
     push();
 

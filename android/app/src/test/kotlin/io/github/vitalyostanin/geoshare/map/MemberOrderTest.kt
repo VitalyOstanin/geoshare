@@ -5,15 +5,18 @@ import org.junit.Test
 import java.time.Instant
 
 class MemberOrderTest {
-    private fun positionOf(memberId: String): MemberPosition = MemberPosition(
-        memberId = memberId,
-        latitude = 61.0,
-        longitude = 4.0,
-        takenAt = Instant.parse("2026-09-11T12:00:00Z"),
-        writtenAt = null,
-        mode = null,
-        batteryPercent = null,
-    )
+    private fun positionOf(memberId: String, device: String = "phone"): MemberPosition =
+        MemberPosition(
+            positionId = "$memberId.$device",
+            memberId = memberId,
+            deviceName = null,
+            latitude = 61.0,
+            longitude = 4.0,
+            takenAt = Instant.parse("2026-09-11T12:00:00Z"),
+            writtenAt = null,
+            mode = null,
+            batteryPercent = null,
+        )
 
     private fun idsOf(order: List<MemberPosition>): List<String> = order.map { it.memberId }
 
@@ -72,5 +75,22 @@ class MemberOrderTest {
 
         assertEquals("You", memberName(profile, "me", own = true, ownName = "You"))
         assertEquals("You", memberName(null, "me", own = true, ownName = "You"))
+    }
+
+    // The same rule the web page follows: a member carrying two phones has
+    // them next to each other, in the same places at every glance.
+    @Test
+    fun `the phones of one member keep their places`() {
+        val members =
+            listOf(positionOf("a", "two"), positionOf("b"), positionOf("a", "one"))
+
+        assertEquals(
+            listOf("a.one", "a.two", "b.phone"),
+            orderedForNavigation(members, ownMemberId = "me").map { it.positionId },
+        )
+        assertEquals(
+            orderedForNavigation(members, ownMemberId = "me").map { it.positionId },
+            orderedForNavigation(members.reversed(), ownMemberId = "me").map { it.positionId },
+        )
     }
 }

@@ -20,8 +20,10 @@ const STRANGER = "stranger-uid";
 
 let testEnv;
 
-const positionOf = (db, uid) => doc(db, `groups/${GROUP}/positions/${uid}`);
-const watchOf = (db, uid) => doc(db, `groups/${GROUP}/watch/${uid}`);
+// One document per phone: the id is the account and the phone joined by a dot.
+const positionOf = (db, uid, device = "phone") =>
+    doc(db, `groups/${GROUP}/positions/${uid}.${device}`);
+const watchOf = (db, uid, device = "phone") => doc(db, `groups/${GROUP}/watch/${uid}.${device}`);
 const memberOf = (db, uid) => doc(db, `groups/${GROUP}/members/${uid}`);
 
 const someProfile = (name) => ({
@@ -29,6 +31,10 @@ const someProfile = (name) => ({
     photoUrl: "https://lh3.googleusercontent.com/a/example",
     updatedAt: new Date(),
 });
+
+const positionFrom = (uid) => ({ ...somePosition, memberId: uid });
+
+const watchFrom = (uid) => ({ memberId: uid, until: new Date() });
 
 const somePosition = {
     lat: 60.93,
@@ -62,7 +68,7 @@ beforeEach(async () => {
         await setDoc(doc(db, `groups/${GROUP}`), { members: [ALICE, BOB] });
         await setDoc(memberOf(db, ALICE), someProfile("Alice"));
         await setDoc(memberOf(db, BOB), someProfile("Bob"));
-        await setDoc(positionOf(db, BOB), somePosition);
+        await setDoc(positionOf(db, BOB), positionFrom(BOB));
     });
 });
 
@@ -76,13 +82,39 @@ describe("positions", () => {
     it("a member writes their own position", async () => {
         const db = testEnv.authenticatedContext(ALICE).firestore();
 
-        await assertSucceeds(setDoc(positionOf(db, ALICE), somePosition));
+        await assertSucceeds(setDoc(positionOf(db, ALICE), positionFrom(ALICE)));
+    });
+
+    // The case the whole change is for: one account on two phones, each
+    // writing where it is without touching the other's document.
+    it("a member writes a position for each of their phones", async () => {
+        const db = testEnv.authenticatedContext(ALICE).firestore();
+
+        await assertSucceeds(setDoc(positionOf(db, ALICE, "one"), positionFrom(ALICE)));
+        await assertSucceeds(setDoc(positionOf(db, ALICE, "two"), positionFrom(ALICE)));
+    });
+
+    // A document whose whole id is the account, naming no owner, is what the
+    // builds before the change wrote. Such a document would be a second marker
+    // for a member whose phones already write one each, so it is refused.
+    it("a position in the shape of the older builds is refused", async () => {
+        const db = testEnv.authenticatedContext(ALICE).firestore();
+
+        await assertFails(setDoc(doc(db, `groups/${GROUP}/positions/${ALICE}`), somePosition));
     });
 
     it("a member cannot write another member's position", async () => {
         const db = testEnv.authenticatedContext(ALICE).firestore();
 
-        await assertFails(setDoc(positionOf(db, BOB), somePosition));
+        await assertFails(setDoc(positionOf(db, BOB), positionFrom(BOB)));
+    });
+
+    // The owner is what the readers group by, so a document may not claim an
+    // owner other than the account that wrote it.
+    it("a member cannot sign their position with another member's name", async () => {
+        const db = testEnv.authenticatedContext(ALICE).firestore();
+
+        await assertFails(setDoc(positionOf(db, ALICE), positionFrom(BOB)));
     });
 
     it("a stranger reads nothing", async () => {
@@ -100,7 +132,7 @@ describe("positions", () => {
     it("a stranger cannot write a position of their own", async () => {
         const db = testEnv.authenticatedContext(STRANGER).firestore();
 
-        await assertFails(setDoc(positionOf(db, STRANGER), somePosition));
+        await assertFails(setDoc(positionOf(db, STRANGER), positionFrom(STRANGER)));
     });
 });
 
@@ -108,7 +140,26 @@ describe("watch", () => {
     it("a member marks themselves as watching", async () => {
         const db = testEnv.authenticatedContext(ALICE).firestore();
 
-        await assertSucceeds(setDoc(watchOf(db, ALICE), { until: new Date() }));
+        await assertSucceeds(setDoc(watchOf(db, ALICE), watchFrom(ALICE)));
+    });
+
+    // A member looking at the map on one phone must not clear the marker the
+    // other phone of the same account had just written.
+    it("each phone of a member marks itself", async () => {
+        const db = testEnv.authenticatedContext(ALICE).firestore();
+
+        await assertSucceeds(setDoc(watchOf(db, ALICE, "one"), watchFrom(ALICE)));
+        await assertSucceeds(setDoc(watchOf(db, ALICE, "two"), watchFrom(ALICE)));
+    });
+
+    // The same shape the builds before the change wrote: the whole id is the
+    // account and no owner is named.
+    it("a marker in the shape of the older builds is refused", async () => {
+        const db = testEnv.authenticatedContext(ALICE).firestore();
+
+        await assertFails(
+            setDoc(doc(db, `groups/${GROUP}/watch/${ALICE}`), { until: new Date() }),
+        );
     });
 
     it("a member reads another member's marker", async () => {
@@ -120,7 +171,7 @@ describe("watch", () => {
     it("a member cannot forge another member's marker", async () => {
         const db = testEnv.authenticatedContext(ALICE).firestore();
 
-        await assertFails(setDoc(watchOf(db, BOB), { until: new Date() }));
+        await assertFails(setDoc(watchOf(db, BOB), watchFrom(BOB)));
     });
 
     // Closing the map deletes the marker, so the delete has to pass the same
@@ -128,7 +179,7 @@ describe("watch", () => {
     it("a member clears their own marker", async () => {
         const db = testEnv.authenticatedContext(ALICE).firestore();
 
-        await setDoc(watchOf(db, ALICE), { until: new Date() });
+        await setDoc(watchOf(db, ALICE), watchFrom(ALICE));
 
         await assertSucceeds(deleteDoc(watchOf(db, ALICE)));
     });

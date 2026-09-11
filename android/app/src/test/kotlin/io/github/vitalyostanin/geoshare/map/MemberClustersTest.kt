@@ -18,7 +18,7 @@ class MemberClustersTest {
                 radius = 40.0,
             )
 
-        assertEquals(listOf(listOf("a"), listOf("b")), clusters.map { it.memberIds })
+        assertEquals(listOf(listOf("a"), listOf("b")), clusters.map { it.ids })
     }
 
     @Test
@@ -33,7 +33,7 @@ class MemberClustersTest {
                 radius = 40.0,
             )
 
-        assertEquals(listOf(listOf("a", "b", "c")), clusters.map { it.memberIds })
+        assertEquals(listOf(listOf("a", "b", "c")), clusters.map { it.ids })
     }
 
     // The list arrives from the database in whatever order it was written in,
@@ -49,11 +49,11 @@ class MemberClustersTest {
 
         assertEquals(
             listOf(listOf("a", "b", "c")),
-            clusterMembers(placed, radius = 40.0).map { it.memberIds },
+            clusterMembers(placed, radius = 40.0).map { it.ids },
         )
         assertEquals(
             listOf(listOf("a", "b", "c")),
-            clusterMembers(placed.reversed(), radius = 40.0).map { it.memberIds },
+            clusterMembers(placed.reversed(), radius = 40.0).map { it.ids },
         )
     }
 
@@ -72,7 +72,7 @@ class MemberClustersTest {
                 radius = 40.0,
             )
 
-        assertEquals(listOf(listOf("a", "b"), listOf("c")), clusters.map { it.memberIds })
+        assertEquals(listOf(listOf("a", "b"), listOf("c")), clusters.map { it.ids })
     }
 
     @Test

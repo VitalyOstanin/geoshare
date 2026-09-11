@@ -14,17 +14,25 @@ const val GROUP = "family"
 /**
  * Where this phone says it is.
  *
- * One document per member, overwritten in place: the history is not kept, so
+ * One document per phone, overwritten in place: the history is not kept, so
  * the space a member takes does not grow, and a reader always gets the latest
  * position with a single read.
+ *
+ * Per phone rather than per member, because a member can carry two: they used
+ * to write into one document, and the marker showed whichever of them wrote
+ * last. The owner is written into the document as well, since that is what the
+ * readers group the markers by.
  */
 class PositionWriter(
     private val memberId: String,
+    private val device: DeviceIdentity,
     private val store: FirebaseFirestore = FirebaseFirestore.getInstance(),
 ) {
     suspend fun write(fix: Fix, mode: CollectionMode, batteryPercent: Int) {
         val position =
             mapOf(
+                "memberId" to memberId,
+                "deviceName" to device.name,
                 "latitude" to fix.latitude,
                 "longitude" to fix.longitude,
                 "takenAt" to Timestamp(Date.from(fix.takenAt)),
@@ -39,7 +47,7 @@ class PositionWriter(
             .collection("groups")
             .document(GROUP)
             .collection("positions")
-            .document(memberId)
+            .document(positionId(memberId, device.id))
             .set(position)
             .await()
     }

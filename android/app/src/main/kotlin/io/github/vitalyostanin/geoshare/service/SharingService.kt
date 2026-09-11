@@ -93,13 +93,14 @@ class SharingService : LifecycleService() {
             return
         }
 
-        val writer = PositionWriter(memberId)
+        val device = DeviceIdentity(this)
+        val writer = PositionWriter(memberId, device)
 
         collection =
             lifecycleScope.launch {
                 var last: Fix? = null
 
-                modes(memberId).collectLatest { mode ->
+                modes(memberId, device).collectLatest { mode ->
                     AppLog.i(TAG, "collecting in mode $mode")
 
                     val spec = requestSpec(mode)
@@ -135,7 +136,7 @@ class SharingService : LifecycleService() {
      * battery, which are looked at on a timer. Repeats are dropped, so a review
      * that finds the same mode does not interrupt the collection.
      */
-    private fun modes(memberId: String): Flow<CollectionMode> {
+    private fun modes(memberId: String, device: DeviceIdentity): Flow<CollectionMode> {
         val reviews =
             flow {
                 while (true) {
@@ -144,7 +145,8 @@ class SharingService : LifecycleService() {
                 }
             }
 
-        val watchers = watchersUntil(memberId).onStart { emit(emptyList()) }
+        val watchers =
+            watchersUntil(positionId(memberId, device.id)).onStart { emit(emptyList()) }
 
         return combine(watchers, reviews) { untils, _ -> currentMode(untils) }
             .distinctUntilChanged()
