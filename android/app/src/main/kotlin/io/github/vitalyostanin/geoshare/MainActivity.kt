@@ -3,32 +3,56 @@ package io.github.vitalyostanin.geoshare
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
-import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
-import androidx.compose.ui.Alignment
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.res.stringResource
+import androidx.credentials.CredentialManager
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.lifecycle.lifecycleScope
+import io.github.vitalyostanin.geoshare.auth.SignInController
+import io.github.vitalyostanin.geoshare.auth.SignInScreen
+import kotlinx.coroutines.launch
 
 class MainActivity : ComponentActivity() {
+    private lateinit var signIn: SignInController
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+
+        signIn =
+            SignInController(
+                // Written into the resources by the google-services plugin,
+                // out of the same file that names the project.
+                serverClientId = getString(R.string.default_web_client_id),
+                credentials = CredentialManager.create(this),
+            )
+
         setContent {
             MaterialTheme {
                 Surface(modifier = Modifier.fillMaxSize()) {
-                    Placeholder()
+                    val state by signIn.state.collectAsStateWithLifecycle()
+
+                    SignInScreen(
+                        state = state,
+                        onSignIn = { lifecycleScope.launch { signIn.signIn(this@MainActivity) } },
+                        onSignOut = { lifecycleScope.launch { signIn.signOut() } },
+                    )
                 }
             }
         }
     }
-}
 
-@Composable
-private fun Placeholder() {
-    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-        Text(text = stringResource(R.string.placeholder))
+    // The session is watched only while the screen is up: nothing else in the
+    // application reads it yet, and the service will keep its own watch.
+    override fun onStart() {
+        super.onStart()
+        signIn.start()
+    }
+
+    override fun onStop() {
+        signIn.stop()
+        super.onStop()
     }
 }

@@ -14,6 +14,10 @@ lifecycle = "2.11.0"
 coroutines = "1.11.0"
 firebaseBom = "34.19.0"
 playServicesLocation = "21.4.0"
+# Sign-in: the chooser the system shows, its Play Services backend and the
+# Google option that turns the chosen account into an identity token.
+credentials = "1.6.0"
+googleid = "1.2.0"
 junit = "4.13.2"
 googleServices = "4.5.0"
 ktlintPlugin = "14.2.0"
@@ -40,7 +44,13 @@ firebase-auth = { module = "com.google.firebase:firebase-auth" }
 
 play-services-location = { module = "com.google.android.gms:play-services-location", version.ref = "playServicesLocation" }
 
+androidx-credentials = { module = "androidx.credentials:credentials", version.ref = "credentials" }
+androidx-credentials-play-services-auth = { module = "androidx.credentials:credentials-play-services-auth", version.ref = "credentials" }
+googleid = { module = "com.google.android.libraries.identity.googleid:googleid", version.ref = "googleid" }
+
 kotlinx-coroutines-android = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-android", version.ref = "coroutines" }
+# Awaits a Play Services Task from a coroutine; Firebase returns those.
+kotlinx-coroutines-play-services = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-play-services", version.ref = "coroutines" }
 kotlinx-coroutines-test = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-test", version.ref = "coroutines" }
 junit = { module = "junit:junit", version.ref = "junit" }
 

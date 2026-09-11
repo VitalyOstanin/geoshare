@@ -47,6 +47,15 @@ android {
         // Off by default since AGP 9; the application is Compose-only.
         compose = true
     }
+
+    testOptions {
+        // The stub platform the JVM tests compile against throws on every
+        // framework call, and the Firebase exception constructors reach
+        // TextUtils to check their own message. Nothing here tests the
+        // platform, so a default answer costs nothing and lets the tests use
+        // the real exception types instead of stand-ins.
+        unitTests.isReturnDefaultValues = true
+    }
 }
 
 dependencies {
@@ -55,6 +64,7 @@ dependencies {
     implementation(libs.androidx.lifecycle.runtime.compose)
     implementation(libs.androidx.lifecycle.service)
     implementation(libs.kotlinx.coroutines.android)
+    implementation(libs.kotlinx.coroutines.play.services)
 
     implementation(platform(libs.compose.bom))
     implementation(libs.compose.ui)
@@ -70,6 +80,10 @@ dependencies {
     implementation(libs.firebase.auth)
 
     implementation(libs.play.services.location)
+
+    implementation(libs.androidx.credentials)
+    implementation(libs.androidx.credentials.play.services.auth)
+    implementation(libs.googleid)
 
     testImplementation(libs.junit)
     testImplementation(libs.kotlinx.coroutines.test)
