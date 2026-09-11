@@ -1,0 +1,18 @@
+#!/usr/bin/env bash
+# The tests of the page's own logic: the age of a position and the order of
+# the members. No browser and no network — the parts that talk to Firebase are
+# covered by the rules tests instead.
+#
+#   tools/web-test.sh
+set -euo pipefail
+
+source "$(dirname "${BASH_SOURCE[0]}")/lib.sh"
+
+ensure_firebase_image
+
+# The image is the one the rules tests use: a Node runtime is all this needs,
+# and a second image for one command would be a second thing to keep current.
+exec podman run --rm "${limit_args[@]}" \
+    -v "${REPO_ROOT}:/src:z" -w /src/web \
+    "${FIREBASE_IMAGE}" \
+    npm test

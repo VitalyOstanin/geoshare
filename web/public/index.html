@@ -1,0 +1,31 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1" />
+        <title>Geoshare</title>
+        <!-- Nothing to show yet, and an empty one is quieter than a 404 on
+             every load. Replaced when the application gets its icon. -->
+        <link rel="icon" href="data:," />
+        <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+        <link rel="stylesheet" href="styles.css" />
+    </head>
+    <body>
+        <section id="sign-in">
+            <h1>Geoshare</h1>
+            <p>Sign in with the Google account the family shares positions under.</p>
+            <button id="sign-in-button" type="button">Sign in with Google</button>
+            <p id="sign-in-error" class="error"></p>
+        </section>
+
+        <div id="map" hidden></div>
+
+        <section id="panel" hidden>
+            <div id="members"></div>
+            <button id="sign-out-button" type="button">Sign out</button>
+        </section>
+
+        <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+        <script type="module" src="app.js"></script>
+    </body>
+</html>

@@ -14,6 +14,8 @@ local.properties
 # Carries the project identifier, which is not the repository's business
 .firebaserc
 google-services.json
+# The same for the page: written by tools/web-config.sh, names the project
+web/public/firebase-config.js
 firebase-debug.log
 
 # Editors
