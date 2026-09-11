@@ -5,8 +5,6 @@ import android.graphics.Bitmap
 import android.graphics.Canvas
 import android.graphics.Color
 import android.graphics.Paint
-import android.graphics.drawable.BitmapDrawable
-import android.graphics.drawable.Drawable
 import android.util.TypedValue
 import kotlin.math.abs
 
@@ -35,6 +33,20 @@ private val LABEL_BACKGROUND = Color.argb(0xEB, 0xFF, 0xFF, 0xFF)
 private val LABEL_TEXT_COLOUR = Color.rgb(0x20, 0x20, 0x20)
 
 /**
+ * How far the middle of the dot sits above the bottom of the drawing.
+ *
+ * The layer hangs the drawing by its bottom edge, and the member is at the dot
+ * rather than at that edge; this is the difference. It follows from the size
+ * of the dot alone and not from the text, so the layer states it once instead
+ * of carrying it on every point.
+ *
+ * The number is in the units a style offset is written in, and those are the
+ * same length as a density-independent pixel: the drawing is made at the
+ * screen's density and handed over carrying it.
+ */
+const val MARKER_ANCHOR_DP = (MARKER_DIAMETER_DP + MARKER_BORDER_DP * 2) / 2f
+
+/**
  * The colour of one member, the same one every time.
  *
  * Taken from the id rather than from the position in the list: the list is
@@ -60,8 +72,12 @@ fun colourIndex(memberId: String): Int = abs(memberId.hashCode() % MEMBER_COLOUR
  * colour and the name, and one drawing routine is less to keep in step than a
  * file per member plus a grey copy of each. The name is always up, the way a
  * place name is on a map: a dot on its own says somebody is there, not who.
+ *
+ * The text is part of the drawing rather than a label of its own because the
+ * background is raster tiles: a style without a glyph server has no letters to
+ * set a text layer in.
  */
-fun markerIcon(context: Context, name: String, colour: Int, stale: Boolean): MarkerIcon {
+fun markerIcon(context: Context, name: String, colour: Int, stale: Boolean): Bitmap {
     val diameter = dpToPx(context, MARKER_DIAMETER_DP)
     val border = dpToPx(context, MARKER_BORDER_DP)
     val dotSize = diameter + border * 2
@@ -82,7 +98,18 @@ fun markerIcon(context: Context, name: String, colour: Int, stale: Boolean): Mar
     val width = maxOf(labelWidth, dotSize)
     val height = labelHeight + gap + dotSize
 
-    val bitmap = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888)
+    // Handed the screen's metrics rather than left at the default: the library
+    // reads the density off the bitmap to work out how many of its own pixels
+    // the drawing covers, and a bitmap that claims the baseline density comes
+    // out as many times too large as the screen is dense.
+    val bitmap =
+        Bitmap.createBitmap(
+            context.resources.displayMetrics,
+            width,
+            height,
+            Bitmap.Config.ARGB_8888,
+        )
+
     val canvas = Canvas(bitmap)
     val middle = width / 2f
 
@@ -116,22 +143,8 @@ fun markerIcon(context: Context, name: String, colour: Int, stale: Boolean): Mar
 
     canvas.drawCircle(middle, dotCentre, diameter / 2f, paint)
 
-    // The dot sits on the position, and the label above it; an icon anchored
-    // by its own middle would put the member half a label north of where they
-    // are.
-    return MarkerIcon(
-        drawable = BitmapDrawable(context.resources, bitmap),
-        anchorV = dotCentre / height,
-    )
+    return bitmap
 }
-
-/**
- * The drawing and where its point is.
- *
- * The vertical anchor is part of the icon rather than a constant next to it:
- * it follows from the height of the label, which follows from the text size.
- */
-data class MarkerIcon(val drawable: Drawable, val anchorV: Float)
 
 private fun dpToPx(context: Context, dp: Float): Int = TypedValue
     .applyDimension(TypedValue.COMPLEX_UNIT_DIP, dp, context.resources.displayMetrics)

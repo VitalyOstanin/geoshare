@@ -31,6 +31,15 @@ android {
         targetSdk = 36
         versionCode = appVersionCode
         versionName = appVersionName
+
+        ndk {
+            // The map draws in native code, and the library ships that code
+            // for four architectures at about twelve megabytes each. Both
+            // phones and the emulator are 64-bit, and nothing 32-bit runs the
+            // Android this application asks for, so half of them are weight
+            // without a reader.
+            abiFilters += listOf("arm64-v8a", "x86_64")
+        }
     }
 
     buildTypes {
@@ -88,7 +97,7 @@ dependencies {
     implementation(libs.androidx.credentials.play.services.auth)
     implementation(libs.googleid)
 
-    implementation(libs.osmdroid.android)
+    implementation(libs.maplibre.android)
 
     implementation(libs.coil.compose)
     implementation(libs.coil.network.okhttp)
