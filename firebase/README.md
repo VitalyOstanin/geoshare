@@ -19,7 +19,7 @@ the emulator.
 
 ## Setting the project up
 
-Steps 1 to 4 happen in the console and are done once.
+Done once; the project this repository talks to already exists.
 
 1. Create a project. It is also a Google Cloud project, and the account that
    creates it owns both.
@@ -32,7 +32,13 @@ Steps 1 to 4 happen in the console and are done once.
    authorised sign-in domains from the start — a domain of our own would have to
    be added there by hand.
 5. Register the Android application and put the `google-services.json` it hands
-   out into `android/app/`. The file is deliberately not in the repository.
+   out into `android/app/`. The file is deliberately not in the repository. The
+   console's own wizard is hard to reach; the command line does the same:
+
+   ```
+   firebase apps:create ANDROID <name> --package-name <package>
+   firebase apps:sdkconfig ANDROID <app id> --out android/app/google-services.json
+   ```
 6. Once both phones have signed in, create `groups/family` with a `members`
    array holding their account identifiers. The rules read that array, so until
    it exists nobody can read anything.
@@ -47,8 +53,12 @@ firebase login
 firebase deploy --only firestore:rules --project <project-id>
 ```
 
-The project identifier is not committed: `.firebaserc` is ignored, so the
-`--project` argument carries it.
+On a machine with no browser of its own, `firebase login --no-localhost` prints
+a link and then exits; the code that link hands back goes into a second command,
+`firebase login <code>`, rather than into the first one's input.
+
+The project identifier is not committed: `.firebaserc` is ignored, so either the
+`--project` argument carries it or `firebase use --add` writes it locally.
 
 ## Checking the rules
 

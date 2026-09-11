@@ -11,6 +11,8 @@ local.properties
 
 # Firebase
 .firebase/
+# Carries the project identifier, which is not the repository's business
+.firebaserc
 google-services.json
 firebase-debug.log
 

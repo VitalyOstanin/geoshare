@@ -15,6 +15,7 @@ coroutines = "1.11.0"
 firebaseBom = "34.19.0"
 playServicesLocation = "21.4.0"
 junit = "4.13.2"
+googleServices = "4.5.0"
 ktlintPlugin = "14.2.0"
 # The ktlint the plugin runs, rather than whichever one it defaults to: the
 # rules change between releases and the check has to fail the same way
@@ -49,4 +50,8 @@ junit = { module = "junit:junit", version.ref = "junit" }
 # plugin pins.
 android-application = { id = "com.android.application", version.ref = "agp" }
 kotlin-compose = { id = "org.jetbrains.kotlin.plugin.compose", version.ref = "kotlin" }
+# Reads google-services.json and turns it into the resources the Firebase
+# libraries look up at runtime. Needs that file, which is why it only
+# appears alongside it.
+google-services = { id = "com.google.gms.google-services", version.ref = "googleServices" }
 ktlint = { id = "org.jlleitschuh.gradle.ktlint", version.ref = "ktlintPlugin" }
