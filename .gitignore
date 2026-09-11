@@ -18,3 +18,6 @@ firebase-debug.log
 .idea/
 *.iml
 .DS_Store
+
+# Node
+node_modules/

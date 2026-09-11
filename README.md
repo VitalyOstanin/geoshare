@@ -9,7 +9,8 @@ phone only samples location often while somebody is actually looking at the map.
 
 ## Status
 
-Design accepted, implementation not started.
+Under construction. The application builds and the collection modes are
+decided and tested; nothing sends a position yet.
 
 ## Layout
 
@@ -18,10 +19,11 @@ Design accepted, implementation not started.
 | `android/`   | Kotlin and Compose application, Gradle build                 |
 | `web/`       | Map page deployed to Firebase Hosting                        |
 | `extension/` | Browser extension, built on top of the web map (later)       |
-| `firebase/`  | Security rules, indexes, document model                      |
+| `firebase/`  | Security rules, indexes, document model, rules tests          |
 | `tools/`     | Build and test entry points                                  |
 
-Directories appear as the corresponding part is implemented.
+Directories appear as the corresponding part is implemented. Setting the
+Firebase project up is described in [firebase/README.md](firebase/README.md).
 
 ## How it works
 

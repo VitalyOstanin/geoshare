@@ -1,0 +1,31 @@
+# Build environment for the security rules tests.
+#
+# Keeps the Firebase command line and the emulator off the host: the emulator
+# is a Java program, and the only thing here that needs a JVM.
+#
+# Built by tools/lib.sh, which passes the versions from tools/versions.env.
+ARG NODE_VERSION
+FROM docker.io/library/node:${NODE_VERSION}-trixie-slim
+
+# The Firestore emulator runs on the JVM; nothing else in the image does.
+# Named rather than taken from default-jre: firebase-tools refuses to start
+# the emulator on anything before 21, and the default on the previous Debian
+# is 17.
+ARG FIREBASE_JRE_VERSION
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends \
+        "openjdk-${FIREBASE_JRE_VERSION}-jre-headless" ca-certificates \
+    && rm -rf /var/lib/apt/lists/*
+
+ARG FIREBASE_TOOLS_VERSION
+RUN npm install -g "firebase-tools@${FIREBASE_TOOLS_VERSION}"
+
+# The emulator itself is downloaded on first use. Doing it here means a test
+# run needs nothing from the network beyond its own dependencies, and that the
+# emulator version is pinned along with the command line that fetched it.
+RUN firebase setup:emulators:firestore
+
+# The npm cache lives in a volume, so the dependencies survive between runs.
+ENV npm_config_cache=/npm
+
+WORKDIR /src

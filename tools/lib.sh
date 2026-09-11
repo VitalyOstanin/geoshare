@@ -20,6 +20,10 @@ source "${REPO_ROOT}/tools/versions.env"
 #   SDK_IMAGE=localhost/other-sdk:37 tools/lint.sh --format
 readonly SDK_IMAGE="${SDK_IMAGE:-localhost/geoshare-sdk:${ANDROID_COMPILE_SDK}-jdk${JDK_VERSION}}"
 
+# The image the rules tests run in. Overridable for the same reason as the one
+# above.
+readonly FIREBASE_IMAGE="${FIREBASE_IMAGE:-localhost/geoshare-firebase:${FIREBASE_TOOLS_VERSION}-jre${FIREBASE_JRE_VERSION}}"
+
 # A proxy listening on the host loopback is unreachable from a container on
 # its own network, which is why every run and every build below shares the
 # host's. HTTP_PROXY is set from the same value: curl and apt pick the
@@ -52,4 +56,17 @@ ensure_sdk_image() {
         --build-arg "GRADLE_VERSION=${GRADLE_VERSION}" \
         --build-arg "GRADLE_SHA256=${GRADLE_SHA256}" \
         -t "${SDK_IMAGE}" -f "${REPO_ROOT}/tools/Containerfile.sdk" "${REPO_ROOT}/tools"
+}
+
+ensure_firebase_image() {
+    if podman image exists "${FIREBASE_IMAGE}"; then
+        return 0
+    fi
+
+    echo "==> building ${FIREBASE_IMAGE}"
+    podman build --network host "${proxy_build_args[@]}" \
+        --build-arg "NODE_VERSION=${NODE_VERSION}" \
+        --build-arg "FIREBASE_TOOLS_VERSION=${FIREBASE_TOOLS_VERSION}" \
+        --build-arg "FIREBASE_JRE_VERSION=${FIREBASE_JRE_VERSION}" \
+        -t "${FIREBASE_IMAGE}" -f "${REPO_ROOT}/tools/Containerfile.firebase" "${REPO_ROOT}/tools"
 }
