@@ -2,11 +2,13 @@ package io.github.vitalyostanin.geoshare.auth
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -24,6 +26,8 @@ import io.github.vitalyostanin.geoshare.R
 @Composable
 fun SignInScreen(
     state: AuthState,
+    sharing: Boolean,
+    onSharingChange: (Boolean) -> Unit,
     onSignIn: () -> Unit,
     onSignOut: () -> Unit,
     modifier: Modifier = Modifier,
@@ -43,7 +47,13 @@ fun SignInScreen(
 
             is AuthState.SignedOut -> SignedOut(failure = state.failure, onSignIn = onSignIn)
 
-            is AuthState.SignedIn -> SignedIn(state = state, onSignOut = onSignOut)
+            is AuthState.SignedIn ->
+                SignedIn(
+                    state = state,
+                    sharing = sharing,
+                    onSharingChange = onSharingChange,
+                    onSignOut = onSignOut,
+                )
         }
     }
 }
@@ -73,7 +83,12 @@ private fun SignedOut(failure: SignInFailure?, onSignIn: () -> Unit) {
 }
 
 @Composable
-private fun SignedIn(state: AuthState.SignedIn, onSignOut: () -> Unit) {
+private fun SignedIn(
+    state: AuthState.SignedIn,
+    sharing: Boolean,
+    onSharingChange: (Boolean) -> Unit,
+    onSignOut: () -> Unit,
+) {
     Text(
         text = stringResource(
             R.string.signed_in_as,
@@ -90,6 +105,15 @@ private fun SignedIn(state: AuthState.SignedIn, onSignOut: () -> Unit) {
         style = MaterialTheme.typography.bodySmall,
         textAlign = TextAlign.Center,
     )
+
+    Row(
+        horizontalArrangement = Arrangement.spacedBy(12.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Text(text = stringResource(R.string.sharing_action))
+
+        Switch(checked = sharing, onCheckedChange = onSharingChange)
+    }
 
     TextButton(onClick = onSignOut) {
         Text(text = stringResource(R.string.sign_out_action))

@@ -14,4 +14,11 @@
     <string name="signed_in_nameless">this account</string>
     <string name="member_id">Member id: %1$s</string>
     <string name="sign_out_action">Sign out</string>
+
+    <string name="sharing_action">Share my position</string>
+    <string name="sharing_channel_name">Position sharing</string>
+    <string name="sharing_channel_description">Shown while your position is being shared with the family.</string>
+    <string name="sharing_notification_title">Sharing your position</string>
+    <string name="sharing_notification_text">The family can see where you are.</string>
+    <string name="sharing_notification_stop">Stop</string>
 </resources>
