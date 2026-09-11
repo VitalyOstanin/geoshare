@@ -19,9 +19,13 @@ import io.github.vitalyostanin.geoshare.log.AppLog
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
-import kotlinx.coroutines.isActive
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.flow.onStart
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.withTimeoutOrNull
 import java.time.Duration
 import java.time.Instant
 import java.time.LocalTime
@@ -95,38 +99,55 @@ class SharingService : LifecycleService() {
             lifecycleScope.launch {
                 var last: Fix? = null
 
-                // Something to show straight away, before the scheduled
-                // request has had a chance to batch anything.
-                val first = currentMode().let { mode -> firstPosition(mode)?.let { it to mode } }
+                modes(memberId).collectLatest { mode ->
+                    AppLog.i(TAG, "collecting in mode $mode")
 
-                if (first != null && writeQuietly(writer, first.first, first.second)) {
-                    last = first.first
-                }
-
-                while (isActive) {
-                    val mode = currentMode()
                     val spec = requestSpec(mode)
 
                     if (spec == null) {
-                        AppLog.i(TAG, "mode $mode asks for nothing")
-                        delay(MODE_REVIEW.toMillis())
-
-                        continue
+                        // Nothing to ask for; the next mode will arrive on its
+                        // own, and until then the receiver stays off.
+                        return@collectLatest
                     }
 
-                    AppLog.i(TAG, "collecting in mode $mode")
+                    // Entering a mode is news: somebody started looking, or the
+                    // night ended. Neither should wait for the next batch.
+                    firstPosition(mode)?.let { fix ->
+                        if (shouldWrite(last, fix) && writeQuietly(writer, fix, mode)) {
+                            last = fix
+                        }
+                    }
 
-                    withTimeoutOrNull(MODE_REVIEW.toMillis()) {
-                        positionUpdates(this@SharingService, spec).collect { fix ->
-                            if (shouldWrite(last, fix)) {
-                                if (writeQuietly(writer, fix, mode)) {
-                                    last = fix
-                                }
-                            }
+                    positionUpdates(this@SharingService, spec).collect { fix ->
+                        if (shouldWrite(last, fix) && writeQuietly(writer, fix, mode)) {
+                            last = fix
                         }
                     }
                 }
             }
+    }
+
+    /**
+     * The mode as it stands, and again whenever it changes.
+     *
+     * Two things move it: the viewers, which arrive through the subscription
+     * within about a second of somebody opening a map, and the clock and the
+     * battery, which are looked at on a timer. Repeats are dropped, so a review
+     * that finds the same mode does not interrupt the collection.
+     */
+    private fun modes(memberId: String): Flow<CollectionMode> {
+        val reviews =
+            flow {
+                while (true) {
+                    emit(Unit)
+                    delay(MODE_REVIEW.toMillis())
+                }
+            }
+
+        val watchers = watchersUntil(memberId).onStart { emit(emptyList()) }
+
+        return combine(watchers, reviews) { untils, _ -> currentMode(untils) }
+            .distinctUntilChanged()
     }
 
     private suspend fun firstPosition(mode: CollectionMode): Fix? {
@@ -164,13 +185,13 @@ class SharingService : LifecycleService() {
         false
     }
 
-    private fun currentMode(): CollectionMode = chooseMode(
+    private fun currentMode(watchers: List<Instant>): CollectionMode = chooseMode(
         CollectionState(
-            // Viewers and the geofence arrive with the subscription; until
-            // then the phone keeps to the standby and night modes.
-            watchersUntil = emptyList(),
+            watchersUntil = watchers,
             now = Instant.now(),
             localTime = LocalTime.now(),
+            // The geofence arrives with the next change; until then the phone
+            // never counts as standing still.
             insideGeofence = false,
             moving = false,
             batteryPercent = batteryPercent(),
