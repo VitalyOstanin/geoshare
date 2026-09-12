@@ -33,8 +33,11 @@ import io.github.vitalyostanin.geoshare.log.AppLog
 import io.github.vitalyostanin.geoshare.map.KeepWatching
 import io.github.vitalyostanin.geoshare.map.MapScreen
 import io.github.vitalyostanin.geoshare.map.PublishProfile
+import io.github.vitalyostanin.geoshare.map.publishSharing
 import io.github.vitalyostanin.geoshare.map.rememberMemberPositions
 import io.github.vitalyostanin.geoshare.map.rememberMemberProfiles
+import io.github.vitalyostanin.geoshare.map.rememberOwnSharedWith
+import io.github.vitalyostanin.geoshare.map.withShare
 import io.github.vitalyostanin.geoshare.permission.PermissionStep
 import io.github.vitalyostanin.geoshare.permission.devicePermissions
 import io.github.vitalyostanin.geoshare.permission.nextPermissionStep
@@ -47,6 +50,7 @@ import io.github.vitalyostanin.geoshare.service.darkWanted
 import io.github.vitalyostanin.geoshare.service.refusalToStart
 import io.github.vitalyostanin.geoshare.service.startConditions
 import kotlinx.coroutines.launch
+import java.time.Instant
 
 class MainActivity : ComponentActivity() {
     private lateinit var signIn: SignInController
@@ -113,6 +117,7 @@ class MainActivity : ComponentActivity() {
                         is AuthState.SignedIn -> {
                             val profiles by rememberMemberProfiles()
                             val positions by rememberMemberPositions(profiles)
+                            val sharedWith by rememberOwnSharedWith(current.memberId)
 
                             KeepWatching(current.memberId, device.id)
 
@@ -132,6 +137,7 @@ class MainActivity : ComponentActivity() {
                                 sharing = sharingOn,
                                 permissionNotice = permissionNotice,
                                 theme = theme,
+                                sharedWith = sharedWith,
                                 onSharingChange = { wanted ->
                                     sharingOn = wanted
                                     applySharing(wanted)
@@ -139,6 +145,24 @@ class MainActivity : ComponentActivity() {
                                 onThemeChange = { wanted ->
                                     theme = wanted
                                     appearance.choice = wanted
+                                },
+                                // Written into the profile, and left to be
+                                // read back: the phones of a member share the
+                                // same permissions, so the answer has to come
+                                // from where all of them look for it.
+                                onShare = { readerId, span ->
+                                    lifecycleScope.launch {
+                                        publishSharing(
+                                            memberId = current.memberId,
+                                            sharedWith =
+                                            withShare(
+                                                sharedWith = sharedWith,
+                                                readerId = readerId,
+                                                span = span,
+                                                now = Instant.now(),
+                                            ),
+                                        )
+                                    }
                                 },
                                 onOpenSettings = ::openApplicationSettings,
                                 onSignOut = { lifecycleScope.launch { signIn.signOut() } },

@@ -87,10 +87,11 @@ suspend fun publishSharing(
             .document(GROUP)
             .collection("members")
             .document(memberId)
-            // Merged, and the whole field replaced: a permission taken away is
-            // a key that has to disappear, which merging a map does not do on
-            // its own.
-            .set(mapOf("sharedWith" to written), SetOptions.merge())
+            // The field named rather than merged: a plain merge joins the two
+            // maps key by key, and a permission taken away would survive its
+            // own removal. Naming the field replaces it whole and leaves the
+            // rest of the profile — the name, the picture, the phones — alone.
+            .set(mapOf("sharedWith" to written), SetOptions.mergeFields("sharedWith"))
             .await()
 
         AppLog.i(TAG, "the permissions of $memberId are now published")

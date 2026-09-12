@@ -11,6 +11,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.repeatOnLifecycle
 import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.withContext
+import java.time.Instant
 
 /**
  * The positions, collected only while a screen of ours is up.
@@ -43,6 +44,20 @@ fun rememberMemberProfiles(): State<Map<String, MemberProfile>?> {
     val profiles = remember { memberProfiles() }
 
     return profiles.collectAsStateWithLifecycle(initialValue = null)
+}
+
+/**
+ * The permissions this member has given, collected while a screen is up.
+ *
+ * Read back out of the database rather than held on this phone: they are set
+ * on whichever phone the member has to hand, and the screen has to show what
+ * the other one wrote.
+ */
+@Composable
+fun rememberOwnSharedWith(memberId: String): State<Map<String, Instant>> {
+    val permissions = remember(memberId) { ownSharedWith(memberId) }
+
+    return permissions.collectAsStateWithLifecycle(initialValue = emptyMap())
 }
 
 /**

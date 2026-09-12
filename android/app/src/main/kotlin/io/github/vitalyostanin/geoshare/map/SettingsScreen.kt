@@ -6,6 +6,8 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.HorizontalDivider
@@ -26,6 +28,7 @@ import androidx.compose.ui.unit.dp
 import io.github.vitalyostanin.geoshare.R
 import io.github.vitalyostanin.geoshare.permission.PermissionStep
 import io.github.vitalyostanin.geoshare.service.ThemeChoice
+import java.time.Instant
 
 /**
  * Everything that is not the map.
@@ -41,15 +44,24 @@ fun SettingsScreen(
     permissionNotice: PermissionStep?,
     /** What the application is painted in, as the member last asked for it. */
     theme: ThemeChoice,
+    /** Everyone with a profile, so that the permissions can be given by name. */
+    profiles: Map<String, MemberProfile>,
+    ownMemberId: String,
+    /** The permissions this member has given, by the member each was given to. */
+    sharedWith: Map<String, Instant>,
     onSharingChange: (Boolean) -> Unit,
     onThemeChange: (ThemeChoice) -> Unit,
+    onShare: (String, ShareSpan) -> Unit,
     onOpenSettings: () -> Unit,
     onSignOut: () -> Unit,
     onClose: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     Surface(modifier = modifier.fillMaxSize()) {
-        Column {
+        // Scrolled rather than fitted: the permissions are one row per member,
+        // and a group large enough to need them is large enough to run off a
+        // phone screen.
+        Column(modifier = Modifier.verticalScroll(rememberScrollState())) {
             Row(
                 modifier = Modifier.fillMaxWidth().padding(start = 16.dp, top = 8.dp, end = 8.dp),
                 verticalAlignment = Alignment.CenterVertically,
@@ -95,6 +107,17 @@ fun SettingsScreen(
                     Text(text = stringResource(R.string.permission_open_settings))
                 }
             }
+
+            HorizontalDivider()
+
+            VisibilitySection(
+                profiles = profiles,
+                ownMemberId = ownMemberId,
+                sharedWith = sharedWith,
+                onShare = onShare,
+            )
+
+            HorizontalDivider()
 
             AppearanceRow(theme = theme, onThemeChange = onThemeChange)
 

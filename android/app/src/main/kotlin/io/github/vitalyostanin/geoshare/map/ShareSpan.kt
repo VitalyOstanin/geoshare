@@ -57,3 +57,21 @@ fun spanOf(until: Instant?, now: Instant): ShareSpan? = when {
     until.isAfter(ENDLESS_FROM) -> ShareSpan.Forever
     else -> null
 }
+
+/**
+ * The permissions as they stand once one reader has been given a span.
+ *
+ * A permission taken away is a key that disappears rather than a moment
+ * written in the past: the field is replaced whole on every write, and a key
+ * nobody reads is one no rule has to weigh.
+ */
+fun withShare(
+    sharedWith: Map<String, Instant>,
+    readerId: String,
+    span: ShareSpan,
+    now: Instant,
+): Map<String, Instant> {
+    val until = shareUntil(span, now) ?: return sharedWith - readerId
+
+    return sharedWith + (readerId to until)
+}

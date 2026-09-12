@@ -1,10 +1,16 @@
 #!/usr/bin/env bash
 # Starts the stand-in database and sign-in the emulator talks to.
 #
-# Both are Firebase emulators under a project id starting with "demo-", so
-# nothing here reaches the real project and no credentials are involved. They
-# listen on the host, which is what the Android emulator's 10.0.2.2 resolves
-# to, and the rules they enforce are the ones in the repository.
+# Both are Firebase emulators started under a project id beginning with
+# "demo-", so no credentials are involved and nothing here can reach the real
+# project. They listen on the host, which is what the Android emulator's
+# 10.0.2.2 resolves to, and the rules they enforce are the ones in the
+# repository.
+#
+# The database inside them is keyed by the project the phone asks about, which
+# is the one named in google-services.json rather than the one the emulators
+# were started under: redirecting the library changes the host it calls, not
+# the project. That is the name the seed writes under.
 #
 #   tools/run-services.sh            # start, wait, then fill with stand-in data
 #   tools/run-services.sh --stop     # stop them
