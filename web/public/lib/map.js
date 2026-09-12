@@ -573,7 +573,7 @@ export function lookAt(view, position) {
     entry.openedPositionId = entry.members.length > 1 ? position.positionId : null;
 
     if (view.last) {
-        showPopup(entry, view.last.names, view.last.now);
+        showPopup(entry, view.last.names, view.last.faces, view.last.now);
     }
 
     if (!entry.popup.isOpen()) {
