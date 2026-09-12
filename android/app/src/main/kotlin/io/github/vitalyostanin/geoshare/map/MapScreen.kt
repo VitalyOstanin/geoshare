@@ -34,6 +34,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.ColorFilter
+import androidx.compose.ui.graphics.ColorMatrix
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.layout.ContentScale
@@ -63,6 +65,9 @@ private const val HALF_LIT = 0.5f
 
 /** The circle a card carries: large enough for a face, small enough for a strip of cards. */
 private val FACE_SIZE = 22.dp
+
+/** What takes the colour out of the picture of a member whose position is old. */
+private val GREYSCALE = ColorFilter.colorMatrix(ColorMatrix().apply { setToSaturation(0f) })
 
 /** As much of the screen as the full list may take before it starts scrolling instead. */
 private val LIST_MAX_HEIGHT = 220.dp
@@ -347,7 +352,12 @@ private fun MemberButton(
                 horizontalArrangement = Arrangement.spacedBy(6.dp),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
-                MemberFace(memberId = member.memberId, name = name, picture = face)
+                MemberFace(
+                    memberId = member.memberId,
+                    name = name,
+                    picture = face,
+                    stale = isStale(member.knownAt, now),
+                )
 
                 Text(
                     text = name,
@@ -418,7 +428,12 @@ private fun MemberRow(
         horizontalArrangement = Arrangement.spacedBy(12.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        MemberFace(memberId = member.memberId, name = name, picture = face)
+        MemberFace(
+            memberId = member.memberId,
+            name = name,
+            picture = face,
+            stale = isStale(member.knownAt, now),
+        )
 
         Column(modifier = Modifier.weight(1f)) {
             Text(
@@ -477,8 +492,11 @@ private fun batteryColour(charging: Boolean): Color = when {
  * recognisably one member; the ring is what the coloured dot used to say.
  */
 @Composable
-private fun MemberFace(memberId: String, name: String, picture: Bitmap?) {
-    val colour = Color(memberColour(memberId))
+private fun MemberFace(memberId: String, name: String, picture: Bitmap?, stale: Boolean) {
+    // Grey the moment the position is old, picture and all: the marker on the
+    // map fades the same way, and a card in full colour beside a faded pin
+    // reads as a member who is there right now.
+    val colour = if (stale) Color(STALE_COLOUR) else Color(memberColour(memberId))
 
     Box(
         modifier =
@@ -502,6 +520,7 @@ private fun MemberFace(memberId: String, name: String, picture: Bitmap?) {
                 // a reader of the screen has not been told already.
                 contentDescription = null,
                 contentScale = ContentScale.Crop,
+                colorFilter = if (stale) GREYSCALE else null,
                 modifier = Modifier.fillMaxSize().clip(CircleShape),
             )
         }
@@ -604,7 +623,12 @@ private fun MemberDetail(
     ) {
         Column(modifier = Modifier.padding(start = 16.dp, top = 8.dp, end = 8.dp, bottom = 12.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
-                MemberFace(memberId = member.memberId, name = name, picture = face)
+                MemberFace(
+                    memberId = member.memberId,
+                    name = name,
+                    picture = face,
+                    stale = isStale(member.knownAt, now),
+                )
 
                 Column(modifier = Modifier.weight(1f).padding(start = 8.dp)) {
                     Text(text = name, style = MaterialTheme.typography.titleMedium)

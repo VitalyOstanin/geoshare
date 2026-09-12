@@ -25,7 +25,7 @@ private val MEMBER_COLOURS =
     )
 
 /** What an old position fades to, matching the grey the list writes its age in. */
-private val STALE_COLOUR = Color.rgb(0x9E, 0x9E, 0x9E)
+val STALE_COLOUR = Color.rgb(0x9E, 0x9E, 0x9E)
 
 /**
  * The colour a group of members wears.
