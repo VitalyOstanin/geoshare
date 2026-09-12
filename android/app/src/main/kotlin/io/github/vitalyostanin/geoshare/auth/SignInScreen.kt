@@ -15,6 +15,8 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import io.github.vitalyostanin.geoshare.R
+import io.github.vitalyostanin.geoshare.service.STAND_IN_ACCOUNTS
+import io.github.vitalyostanin.geoshare.service.StandInServices
 
 /**
  * The way in, and nothing else.
@@ -23,7 +25,12 @@ import io.github.vitalyostanin.geoshare.R
  * place until there is an account behind it.
  */
 @Composable
-fun SignInScreen(state: AuthState, onSignIn: () -> Unit, modifier: Modifier = Modifier) {
+fun SignInScreen(
+    state: AuthState,
+    onSignIn: () -> Unit,
+    onSignInAsStandIn: (String) -> Unit,
+    modifier: Modifier = Modifier,
+) {
     Column(
         modifier = modifier.fillMaxSize().padding(24.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp, Alignment.CenterVertically),
@@ -37,7 +44,12 @@ fun SignInScreen(state: AuthState, onSignIn: () -> Unit, modifier: Modifier = Mo
                 Text(text = stringResource(R.string.sign_in_running))
             }
 
-            is AuthState.SignedOut -> SignedOut(failure = state.failure, onSignIn = onSignIn)
+            is AuthState.SignedOut ->
+                SignedOut(
+                    failure = state.failure,
+                    onSignIn = onSignIn,
+                    onSignInAsStandIn = onSignInAsStandIn,
+                )
 
             // The caller shows the map instead of this screen; the branch is
             // here because the state is a closed set, not because it happens.
@@ -47,7 +59,11 @@ fun SignInScreen(state: AuthState, onSignIn: () -> Unit, modifier: Modifier = Mo
 }
 
 @Composable
-private fun SignedOut(failure: SignInFailure?, onSignIn: () -> Unit) {
+private fun SignedOut(
+    failure: SignInFailure?,
+    onSignIn: () -> Unit,
+    onSignInAsStandIn: (String) -> Unit,
+) {
     Text(
         text = stringResource(R.string.sign_in_explanation),
         style = MaterialTheme.typography.bodyLarge,
@@ -56,6 +72,16 @@ private fun SignedOut(failure: SignInFailure?, onSignIn: () -> Unit) {
 
     Button(onClick = onSignIn) {
         Text(text = stringResource(R.string.sign_in_action))
+    }
+
+    // Only while this build talks to the emulators, where there is no Google
+    // account to choose and the stand-in household is what there is.
+    if (StandInServices.inUse) {
+        for (account in STAND_IN_ACCOUNTS) {
+            Button(onClick = { onSignInAsStandIn(account) }) {
+                Text(text = account.substringBefore('@'))
+            }
+        }
     }
 
     // A dismissed chooser is the user saying "not now"; answering it with an

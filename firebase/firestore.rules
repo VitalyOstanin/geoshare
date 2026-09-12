@@ -21,13 +21,18 @@ service cloud.firestore {
         // the group document, which stays out of every client's reach, so
         // writing one's own profile grants nothing.
         function profileShape() {
-          return request.resource.data.keys().hasOnly(['displayName', 'photoUrl', 'updatedAt']) &&
+          return request.resource.data.keys()
+                   .hasOnly(['displayName', 'photoUrl', 'updatedAt', 'sharedWith', 'devices']) &&
                  request.resource.data.displayName is string &&
                  request.resource.data.displayName.size() <= 100 &&
                  (!('photoUrl' in request.resource.data) ||
                   request.resource.data.photoUrl == null ||
                   (request.resource.data.photoUrl is string &&
-                   request.resource.data.photoUrl.size() <= 500));
+                   request.resource.data.photoUrl.size() <= 500)) &&
+                 (!('sharedWith' in request.resource.data) ||
+                  request.resource.data.sharedWith is map) &&
+                 (!('devices' in request.resource.data) ||
+                  request.resource.data.devices is list);
         }
 
         function isOwner() {
@@ -54,7 +59,30 @@ service cloud.firestore {
           return isMember() && positionId.split('\\.')[0] == request.auth.uid;
         }
 
-        allow read: if isMember();
+        // Being in the group is not the same as being allowed to watch: the
+        // owner names their readers one by one, and each permission carries
+        // the moment it runs out. The permission is a field of this document
+        // rather than a document of its own, because a rule that reads
+        // another document pays for a read on every marker drawn.
+        //
+        // Read through the defaults rather than by indexing: a document
+        // without the field, or a reader without a permission in it, has to
+        // come out as a plain refusal and not as an error.
+        function permission() {
+          return resource.data.get('sharedWith', {}).get(request.auth.uid, null);
+        }
+
+        function mayRead() {
+          return permission() != null && permission() > request.time;
+        }
+
+        // One document at a time, and no listing of the collection. A query is
+        // allowed only when its own filters prove the rule, and an expiry
+        // compared against the server's clock cannot be proved by anything a
+        // client sends. So a reader walks the roster instead: the profile of a
+        // member names their devices, and each of those is a document read by
+        // name.
+        allow get: if isMember() && (ownsPosition() || mayRead());
         allow create, update: if ownsPosition() &&
                                  request.resource.data.memberId == request.auth.uid;
         // Stated apart from the write: a deletion carries no document whose

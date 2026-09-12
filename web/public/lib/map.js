@@ -41,11 +41,13 @@ const FACE_STEP = 28;
 const FACE_INSET = 6;
 
 /**
- * A style with nothing in it but the tiles.
+ * The tiles, in the two shades a browser asks for.
  *
- * The library is built for vector tiles and takes a style document rather than
- * a layer; this is that document with one raster source, which is how it draws
- * the same tiles the phones do.
+ * A tile is a picture drawn on the server, so its colours cannot be changed
+ * here: a dark map is a different set of tiles rather than a setting. The
+ * light ones are the ones the phones draw; the dark ones are Carto's rendering
+ * of the same OpenStreetMap data, which is what makes the page at night as
+ * readable as the rest of it.
  */
 const STYLE = {
     version: 8,
@@ -75,6 +77,13 @@ export function createMap(element) {
 
     map.addControl(new NavigationControl({ showCompass: false }));
 
+    // A tile that does not arrive, a style that cannot be read: the library
+    // keeps those to itself unless somebody listens, and the page then shows
+    // an empty map with nothing said anywhere about why.
+    map.on('error', (event) => {
+        console.error('map:', event.error?.message ?? event.error ?? event);
+    });
+
     const view = { map, markers: new Map(), centred: false, last: null };
 
     // Which members cover each other is a question about the screen, so the
@@ -88,7 +97,33 @@ export function createMap(element) {
         }
     });
 
+    // The way a dialog is dismissed everywhere else: the card covers the map,
+    // and reaching for the small cross is the long way round. Listened for on
+    // the document rather than on the map element, because the card takes the
+    // focus when it opens and the map no longer has it.
+    document.addEventListener('keydown', (event) => {
+        if (event.key !== 'Escape') {
+            return;
+        }
+
+        closeCards(view);
+    });
+
     return view;
+}
+
+/** Closes whatever card is open, and says whether there was one. */
+function closeCards(view) {
+    let closed = false;
+
+    for (const entry of view.markers.values()) {
+        if (entry.popup.isOpen()) {
+            entry.popup.remove();
+            closed = true;
+        }
+    }
+
+    return closed;
 }
 
 /**
@@ -140,7 +175,7 @@ function draw(view, { positions, names, faces, now }) {
         entry.marker.setLngLat([centreLongitude(group), centreLatitude(group)]);
 
         showPin(entry, names, faces, now);
-        showPopup(entry, names, now);
+        showPopup(entry, names, faces, now);
     }
 
     for (const [key, entry] of view.markers) {
@@ -312,11 +347,11 @@ function groupLabel(count) {
  * on the marker rather than in the bubble, so that a tick that redraws the
  * bubble does not throw the viewer back to the list.
  */
-function showPopup(entry, names, now) {
+function showPopup(entry, names, faces, now) {
     const group = entry.members;
 
     if (group.length === 1) {
-        entry.popup.setDOMContent(detail(group[0], nameOf(group[0], names), now));
+        entry.popup.setDOMContent(detail(group[0], nameOf(group[0], names), faces, now));
 
         return;
     }
@@ -324,12 +359,12 @@ function showPopup(entry, names, now) {
     const chosen = group.find((member) => member.positionId === entry.openedPositionId);
 
     if (!chosen) {
-        entry.popup.setDOMContent(groupList(entry, names, now));
+        entry.popup.setDOMContent(groupList(entry, names, faces, now));
 
         return;
     }
 
-    const card = detail(chosen, nameOf(chosen, names), now);
+    const card = detail(chosen, nameOf(chosen, names), faces, now);
     const back = document.createElement('button');
 
     back.type = 'button';
@@ -337,7 +372,7 @@ function showPopup(entry, names, now) {
     back.textContent = 'Back to the list';
     back.addEventListener('click', () => {
         entry.openedPositionId = null;
-        showPopup(entry, names, now);
+        showPopup(entry, names, faces, now);
     });
 
     card.prepend(back);
@@ -345,7 +380,7 @@ function showPopup(entry, names, now) {
 }
 
 /** The members under one marker, as rows that open their cards. */
-function groupList(entry, names, now) {
+function groupList(entry, names, faces, now) {
     const list = document.createElement('div');
 
     list.className = 'group';
@@ -381,7 +416,7 @@ function groupList(entry, names, now) {
         row.append(dot, name, age);
         row.addEventListener('click', () => {
             entry.openedPositionId = member.positionId;
-            showPopup(entry, names, now);
+            showPopup(entry, names, faces, now);
         });
 
         list.append(row);
@@ -445,12 +480,38 @@ function closeOthers(view, key) {
  * Built as elements rather than as text, so that a member id — written by
  * whoever holds the account — has no way of being read as markup.
  */
-function detail(position, name, now) {
+function detail(position, name, faces, now) {
     const card = document.createElement('div');
     card.className = 'detail';
 
-    const heading = document.createElement('h2');
-    heading.textContent = name;
+    // The same face the marker carries, so that a card opened from the panel
+    // is recognisably the person whose pin is on the map.
+    const heading = document.createElement('div');
+
+    heading.className = 'detail-head';
+
+    const face = document.createElement('span');
+
+    face.className = 'detail-face';
+    showFace(face, faces.get(position.memberId), name, memberColour(position.memberId));
+
+    const titles = document.createElement('div');
+    const title = document.createElement('h2');
+
+    title.textContent = name;
+    titles.append(title);
+
+    // Only when the name does not carry it already: a member with one phone
+    // has no use for its model, and a member with two has it in their name.
+    if (position.deviceName && !name.includes(position.deviceName)) {
+        const device = document.createElement('span');
+
+        device.className = 'detail-device';
+        device.textContent = position.deviceName;
+        titles.append(device);
+    }
+
+    heading.append(face, titles);
 
     const table = document.createElement('table');
 

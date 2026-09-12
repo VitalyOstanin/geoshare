@@ -84,8 +84,8 @@ class MainActivity : ComponentActivity() {
                         // Signed in, the map is the application; the sign-in
                         // screen has nothing left to say.
                         is AuthState.SignedIn -> {
-                            val positions by rememberMemberPositions()
                             val profiles by rememberMemberProfiles()
+                            val positions by rememberMemberPositions(profiles)
 
                             KeepWatching(current.memberId, device.id)
 
@@ -93,6 +93,7 @@ class MainActivity : ComponentActivity() {
                                 memberId = current.memberId,
                                 displayName = current.displayName,
                                 pictureUrl = current.pictureUrl,
+                                deviceId = device.id,
                             )
 
                             MapScreen(
@@ -117,6 +118,9 @@ class MainActivity : ComponentActivity() {
                                 state = current,
                                 onSignIn = {
                                     lifecycleScope.launch { signIn.signIn(this@MainActivity) }
+                                },
+                                onSignInAsStandIn = { account ->
+                                    lifecycleScope.launch { signIn.signInAsStandIn(account) }
                                 },
                             )
                     }

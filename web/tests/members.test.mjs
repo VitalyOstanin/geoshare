@@ -7,6 +7,7 @@ import {
     memberName,
     orderedForNavigation,
     pictureAddress,
+    positionDocuments,
     shortName,
 } from '../public/lib/members.js';
 
@@ -105,4 +106,30 @@ test('the phones of one member keep their places', () => {
         idsOf(orderedForNavigation(members, 'me')),
         idsOf(orderedForNavigation([...members].reverse(), 'me')),
     );
+});
+
+const profileWith = (memberId, devices) => [
+    memberId,
+    { memberId, displayName: memberId, photoUrl: null, devices },
+];
+
+test('a document is named for every device of every member', () => {
+    const profiles = new Map([profileWith('alice', ['one', 'two']), profileWith('bob', ['phone'])]);
+
+    assert.deepEqual(positionDocuments(profiles), ['alice.one', 'alice.two', 'bob.phone']);
+});
+
+// A member who has signed in but never written a position has no device in
+// their profile yet, and there is nothing to subscribe to for them.
+test('a member without devices is left out', () => {
+    assert.deepEqual(positionDocuments(new Map([profileWith('alice', [])])), []);
+});
+
+// The list decides whether the subscriptions are rebuilt, so the same group in
+// a different order has to come out the same.
+test('the documents do not depend on the order the devices arrived in', () => {
+    const one = positionDocuments(new Map([profileWith('alice', ['two', 'one'])]));
+    const other = positionDocuments(new Map([profileWith('alice', ['one', 'two'])]));
+
+    assert.deepEqual(one, other);
 });

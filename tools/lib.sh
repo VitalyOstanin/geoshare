@@ -24,6 +24,15 @@ readonly SDK_IMAGE="${SDK_IMAGE:-localhost/geoshare-sdk:${ANDROID_COMPILE_SDK}-j
 # above.
 readonly FIREBASE_IMAGE="${FIREBASE_IMAGE:-localhost/geoshare-firebase:${FIREBASE_TOOLS_VERSION}-jre${FIREBASE_JRE_VERSION}}"
 
+# The SDK image plus a system image, which is what an emulator needs and a
+# build does not.
+readonly EMULATOR_IMAGE="${EMULATOR_IMAGE:-localhost/geoshare-emulator:${ANDROID_EMULATOR_API}}"
+
+# The containers the two halves of a try-out run in: the emulator itself, and
+# the stand-in database and sign-in it talks to.
+readonly EMULATOR_NAME="${EMULATOR_NAME:-geoshare-emulator}"
+readonly SERVICES_NAME="${SERVICES_NAME:-geoshare-services}"
+
 # A proxy listening on the host loopback is unreachable from a container on
 # its own network, which is why every run and every build below shares the
 # host's. HTTP_PROXY is set from the same value: curl and apt pick the
@@ -56,6 +65,33 @@ ensure_sdk_image() {
         --build-arg "GRADLE_VERSION=${GRADLE_VERSION}" \
         --build-arg "GRADLE_SHA256=${GRADLE_SHA256}" \
         -t "${SDK_IMAGE}" -f "${REPO_ROOT}/tools/Containerfile.sdk" "${REPO_ROOT}/tools"
+}
+
+# The emulator image is the SDK one plus a system image, so the base has to
+# exist before it can be built.
+ensure_emulator_image() {
+    ensure_sdk_image
+
+    if podman image exists "${EMULATOR_IMAGE}"; then
+        return 0
+    fi
+
+    echo "==> building ${EMULATOR_IMAGE}"
+    podman build --network host "${proxy_build_args[@]}" \
+        --build-arg "SDK_IMAGE=${SDK_IMAGE}" \
+        --build-arg "ANDROID_EMULATOR_API=${ANDROID_EMULATOR_API}" \
+        -t "${EMULATOR_IMAGE}" -f "${REPO_ROOT}/tools/Containerfile.emulator" "${REPO_ROOT}/tools"
+}
+
+# adb against the emulator, without requiring the platform tools on the
+# machine running these scripts: where the host has none, the call goes into
+# the emulator container, which carries its own.
+adb_cmd() {
+    if command -v adb > /dev/null 2>&1; then
+        adb "$@"
+    else
+        podman exec "${EMULATOR_NAME}" adb "$@"
+    fi
 }
 
 ensure_firebase_image() {

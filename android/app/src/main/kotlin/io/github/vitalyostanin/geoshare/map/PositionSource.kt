@@ -4,6 +4,7 @@ import com.google.firebase.firestore.DocumentSnapshot
 import com.google.firebase.firestore.FirebaseFirestore
 import io.github.vitalyostanin.geoshare.log.AppLog
 import io.github.vitalyostanin.geoshare.service.GROUP
+import io.github.vitalyostanin.geoshare.service.positionId
 import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.callbackFlow
@@ -12,31 +13,69 @@ import java.time.Instant
 private const val TAG = "geoshare.positions"
 
 /**
+ * Which documents hold the positions of the members whose profiles are known.
+ *
+ * Named one by one rather than asked for as a collection: a permission that
+ * runs out cannot be proved by a query, so the collection of positions is
+ * closed and a reader walks the devices each profile names instead.
+ */
+fun positionDocuments(profiles: Map<String, MemberProfile>): List<String> = profiles.values
+    .flatMap { profile -> profile.devices.map { positionId(profile.memberId, it) } }
+    .sorted()
+
+/**
  * Where the members are, as they say so.
  *
  * A subscription rather than a read on a timer: a member who moves writes a
  * new position, and the marker follows within a second without this phone
  * asking for anything.
+ *
+ * One subscription per document, because that is the only shape the
+ * permissions allow. A document this account may not read answers with a
+ * refusal rather than with nothing, and that refusal is the member saying they
+ * no longer share — so it drops the marker instead of being reported.
  */
 fun memberPositions(
+    documents: List<String>,
     store: FirebaseFirestore = FirebaseFirestore.getInstance(),
 ): Flow<List<MemberPosition>> = callbackFlow {
-    val subscription =
-        store
-            .collection("groups")
-            .document(GROUP)
-            .collection("positions")
-            .addSnapshotListener { snapshot, error ->
+    val known = mutableMapOf<String, MemberPosition>()
+    val positions = store.collection("groups").document(GROUP).collection("positions")
+
+    fun publish() = trySend(known.values.toList())
+
+    val subscriptions =
+        documents.map { id ->
+            positions.document(id).addSnapshotListener { snapshot, error ->
                 if (error != null) {
-                    AppLog.w(TAG, "the positions subscription failed", error)
+                    AppLog.i(TAG, "$id is out of reach: ${error.code}")
+                }
+
+                // A document that is not there is not a complaint: a member
+                // whose profile names a phone they have since reinstalled has
+                // one, and so does every device before its first write.
+                val position =
+                    if (error == null && snapshot?.exists() == true) positionOf(snapshot) else null
+
+                if (position == null) {
+                    if (known.remove(id) != null) {
+                        publish()
+                    }
 
                     return@addSnapshotListener
                 }
 
-                trySend(snapshot?.documents.orEmpty().mapNotNull(::positionOf))
+                known[id] = position
+                publish()
             }
+        }
 
-    awaitClose { subscription.remove() }
+    // Said once at the start, so that a screen with nothing to draw shows an
+    // empty map rather than waiting for an answer that never comes: a member
+    // without devices has no document to subscribe to at all.
+    publish()
+
+    awaitClose { subscriptions.forEach { it.remove() } }
 }
 
 /**

@@ -10,6 +10,7 @@ import com.google.android.libraries.identity.googleid.GoogleIdTokenCredential
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.GoogleAuthProvider
 import io.github.vitalyostanin.geoshare.log.AppLog
+import io.github.vitalyostanin.geoshare.service.STAND_IN_PASSWORD
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -64,6 +65,25 @@ class SignInController(
     fun start() = auth.addAuthStateListener(listener)
 
     fun stop() = auth.removeAuthStateListener(listener)
+
+    /**
+     * Signs in as one of the accounts the stand-in sign-in was filled with.
+     *
+     * Only reachable while this build talks to the emulators: there is no
+     * Google account behind one, and a password is how its sign-in is asked.
+     */
+    suspend fun signInAsStandIn(email: String) {
+        current.value = AuthState.SigningIn
+
+        try {
+            auth.signInWithEmailAndPassword(email, STAND_IN_PASSWORD).await()
+        } catch (cancellation: CancellationException) {
+            throw cancellation
+        } catch (error: Exception) {
+            AppLog.w(TAG, "the stand-in sign-in as $email failed", error)
+            current.value = AuthState.SignedOut(classifySignInFailure(error))
+        }
+    }
 
     /**
      * Asks for an account and exchanges it for a session.

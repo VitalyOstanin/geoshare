@@ -6,6 +6,7 @@ import com.google.firebase.firestore.FirebaseFirestore
 import io.github.vitalyostanin.geoshare.collection.CollectionMode
 import io.github.vitalyostanin.geoshare.collection.Fix
 import kotlinx.coroutines.tasks.await
+import java.time.Instant
 import java.util.Date
 
 /** The one group this build shares within; membership is edited outside the application. */
@@ -28,11 +29,21 @@ class PositionWriter(
     private val device: DeviceIdentity,
     private val store: FirebaseFirestore = FirebaseFirestore.getInstance(),
 ) {
-    suspend fun write(fix: Fix, mode: CollectionMode, batteryPercent: Int) {
+    suspend fun write(
+        fix: Fix,
+        mode: CollectionMode,
+        batteryPercent: Int,
+        sharedWith: Map<String, Instant>,
+    ) {
         val position =
             mapOf(
                 "memberId" to memberId,
                 "deviceName" to device.name,
+                // Copied from the profile rather than decided here: the member
+                // says once who may watch them, and every phone of theirs
+                // repeats it into its own document, which is where a rule can
+                // read it without paying for a second document.
+                "sharedWith" to sharedWith.mapValues { (_, until) -> Timestamp(Date.from(until)) },
                 "latitude" to fix.latitude,
                 "longitude" to fix.longitude,
                 "takenAt" to Timestamp(Date.from(fix.takenAt)),

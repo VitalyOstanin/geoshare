@@ -1,0 +1,40 @@
+# Headless emulator for trying the application without a phone.
+#
+# Split from the SDK image on purpose: the system image alone is well over a
+# gigabyte, and an ordinary build has no use for it.
+#
+# Built by tools/run-emulator.sh, which builds the base image first and passes
+# both arguments from tools/versions.env.
+ARG SDK_IMAGE
+FROM ${SDK_IMAGE}
+
+ARG ANDROID_EMULATOR_API
+ENV API_IMAGE=system-images;android-${ANDROID_EMULATOR_API};google_apis;x86_64
+
+# The emulator binary links against X11 and friends even when told not to open
+# a window: -no-window suppresses the window, not the dependency.
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends \
+        libx11-6 libxcb1 libxdamage1 libxext6 libxfixes3 libxrender1 \
+        libnss3 libpulse0 libgl1 libglu1-mesa libdrm2 libgbm1 \
+    && rm -rf /var/lib/apt/lists/*
+
+# google_apis rather than the plain image: the sign-in screen and the map both
+# reach for Play services, and without them the application stops at its first
+# screen.
+RUN sdkmanager --install "emulator" "${API_IMAGE}" \
+    && rm -rf "${ANDROID_HOME}/.temp"
+
+ENV PATH="${ANDROID_HOME}/emulator:${PATH}"
+ENV ANDROID_AVD_HOME=/avd
+
+# Baked into the image rather than created at run time: the device never
+# varies, and creating it on every run costs a minute of nothing.
+RUN mkdir -p /avd \
+    && echo no | avdmanager create avd -n phone -k "${API_IMAGE}" -d pixel_6 \
+    && chmod -R 777 /avd
+
+# swiftshader_indirect renders on the CPU: there is no GPU to pass through, and
+# the host must not be asked for one.
+CMD ["emulator", "-avd", "phone", "-no-window", "-no-audio", "-no-boot-anim", \
+     "-gpu", "swiftshader_indirect", "-no-snapshot"]

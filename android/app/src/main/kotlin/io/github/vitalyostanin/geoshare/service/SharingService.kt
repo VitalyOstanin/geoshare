@@ -16,6 +16,7 @@ import io.github.vitalyostanin.geoshare.collection.Fix
 import io.github.vitalyostanin.geoshare.collection.chooseMode
 import io.github.vitalyostanin.geoshare.collection.shouldWrite
 import io.github.vitalyostanin.geoshare.log.AppLog
+import io.github.vitalyostanin.geoshare.map.ownSharedWith
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
@@ -42,6 +43,14 @@ private const val TAG = "geoshare.service"
  */
 class SharingService : LifecycleService() {
     private var collection: Job? = null
+
+    /**
+     * Who this member lets read their position, as the profile last said.
+     * Empty until the first answer arrives, which means a position written in
+     * that first moment is readable by nobody — the next one, a few seconds
+     * later, carries the permissions.
+     */
+    private var sharedWith: Map<String, Instant> = emptyMap()
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         super.onStartCommand(intent, flags, startId)
@@ -95,6 +104,8 @@ class SharingService : LifecycleService() {
 
         val device = DeviceIdentity(this)
         val writer = PositionWriter(memberId, device)
+
+        lifecycleScope.launch { ownSharedWith(memberId).collect { sharedWith = it } }
 
         collection =
             lifecycleScope.launch {
@@ -175,7 +186,7 @@ class SharingService : LifecycleService() {
         fix: Fix,
         mode: CollectionMode,
     ): Boolean = try {
-        writer.write(fix, mode, batteryPercent())
+        writer.write(fix, mode, batteryPercent(), sharedWith)
         AppLog.i(TAG, "wrote a position taken at ${fix.takenAt}")
 
         true

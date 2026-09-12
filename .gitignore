@@ -17,6 +17,8 @@ google-services.json
 # The same for the page: written by tools/web-config.sh, names the project
 web/public/firebase-config.js
 firebase-debug.log
+# Written where the emulator is started from
+firestore-debug.log
 
 # Editors
 .idea/

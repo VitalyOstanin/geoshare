@@ -17,10 +17,15 @@ import kotlinx.coroutines.withContext
  *
  * A subscription costs the other phones nothing, but it does hold a connection
  * open, and there is no one to show a moved marker to behind a dark screen.
+ *
+ * Driven by the profiles, because they are what names the documents to read:
+ * a member who picks up a second phone adds it to their profile, and the
+ * subscriptions are rebuilt around the new list.
  */
 @Composable
-fun rememberMemberPositions(): State<List<MemberPosition>> {
-    val positions = remember { memberPositions() }
+fun rememberMemberPositions(profiles: Map<String, MemberProfile>?): State<List<MemberPosition>> {
+    val documents = remember(profiles) { positionDocuments(profiles.orEmpty()) }
+    val positions = remember(documents) { memberPositions(documents) }
 
     return positions.collectAsStateWithLifecycle(initialValue = emptyList())
 }
@@ -57,7 +62,7 @@ fun rememberMemberProfiles(): State<Map<String, MemberProfile>?> {
  * next launch.
  */
 @Composable
-fun PublishProfile(memberId: String, displayName: String?, pictureUrl: String?) {
+fun PublishProfile(memberId: String, displayName: String?, pictureUrl: String?, deviceId: String) {
     // An account with no name of its own has nothing to say about itself that
     // the id does not already say, so nothing is written.
     val name = displayName?.takeIf { it.isNotBlank() } ?: return
@@ -65,14 +70,22 @@ fun PublishProfile(memberId: String, displayName: String?, pictureUrl: String?) 
     val published = remember(context) { PublishedProfile(context) }
     val owner = LocalLifecycleOwner.current
 
-    LaunchedEffect(memberId, name, pictureUrl, owner) {
+    LaunchedEffect(memberId, name, pictureUrl, deviceId, owner) {
         owner.repeatOnLifecycle(Lifecycle.State.RESUMED) {
-            if (published.matches(memberId, name, pictureUrl)) {
+            if (published.matches(memberId, name, pictureUrl, deviceId)) {
                 return@repeatOnLifecycle
             }
 
-            if (publishProfile(memberId = memberId, displayName = name, pictureUrl = pictureUrl)) {
-                published.remember(memberId, name, pictureUrl)
+            val accepted =
+                publishProfile(
+                    memberId = memberId,
+                    displayName = name,
+                    pictureUrl = pictureUrl,
+                    deviceId = deviceId,
+                )
+
+            if (accepted) {
+                published.remember(memberId, name, pictureUrl, deviceId)
             }
         }
     }

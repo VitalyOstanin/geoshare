@@ -68,13 +68,43 @@ export function leave() {
  * A subscription rather than a read on a timer: a member who moves writes a
  * new position, and the marker follows within a second without the page
  * asking for anything.
+ *
+ * One subscription per document, because that is the only shape the
+ * permissions allow. A document this account may not read answers with a
+ * refusal rather than with nothing, and that refusal is the member saying they
+ * no longer share — so it drops the marker instead of being reported.
  */
-export function watchPositions(onPositions, onError) {
-    return onSnapshot(
-        collection(store, 'groups', GROUP, 'positions'),
-        (snapshot) => onPositions(snapshot.docs.map(positionOf).filter(Boolean)),
-        onError,
+export function watchPositions(documents, onPositions) {
+    const known = new Map();
+    const publish = () => onPositions([...known.values()]);
+
+    const stops = documents.map((id) =>
+        onSnapshot(
+            doc(store, 'groups', GROUP, 'positions', id),
+            (snapshot) => {
+                const position = snapshot.exists() ? positionOf(snapshot) : null;
+
+                if (position) {
+                    known.set(id, position);
+                } else if (!known.delete(id)) {
+                    return;
+                }
+
+                publish();
+            },
+            () => {
+                if (known.delete(id)) {
+                    publish();
+                }
+            },
+        ),
     );
+
+    // Said once at the start, so that a group with nothing to draw shows an
+    // empty map rather than waiting for an answer that never comes.
+    publish();
+
+    return () => stops.forEach((stop) => stop());
 }
 
 function positionOf(document) {
@@ -163,6 +193,9 @@ function profileOf(document) {
             memberId: document.id,
             displayName: data.displayName,
             photoUrl: typeof data.photoUrl === 'string' && data.photoUrl !== '' ? data.photoUrl : null,
+            // The phones this member carries: the positions cannot be listed,
+            // so this is how the page learns which documents to read.
+            devices: Array.isArray(data.devices) ? data.devices.filter((one) => typeof one === 'string') : [],
         },
     ];
 }
@@ -187,13 +220,20 @@ export function publishProfile(member, known, onError) {
         return Promise.resolve();
     }
 
-    return setDoc(doc(store, 'groups', GROUP, 'members', member.memberId), {
-        displayName,
-        // Written as a field rather than left out, so that an account that
-        // loses its picture loses it on the other screens too.
-        photoUrl,
-        updatedAt: serverTimestamp(),
-    }).catch(onError);
+    return setDoc(
+        doc(store, 'groups', GROUP, 'members', member.memberId),
+        {
+            displayName,
+            // Written as a field rather than left out, so that an account that
+            // loses its picture loses it on the other screens too.
+            photoUrl,
+            updatedAt: serverTimestamp(),
+        },
+        // Merged rather than replacing the document: the permissions and the
+        // phones of this member live there too, and neither is this write's
+        // business.
+        { merge: true },
+    ).catch(onError);
 }
 
 /**

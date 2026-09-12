@@ -6,6 +6,7 @@ private const val FILE = "profile"
 private const val KEY_MEMBER = "member"
 private const val KEY_NAME = "name"
 private const val KEY_PICTURE = "picture"
+private const val KEY_DEVICE = "device"
 
 /**
  * What this phone has already told the group about its member.
@@ -19,18 +20,24 @@ class PublishedProfile(context: Context) {
     private val store = context.getSharedPreferences(FILE, Context.MODE_PRIVATE)
 
     /** True when the account says exactly what was last accepted for it. */
-    fun matches(memberId: String, displayName: String, pictureUrl: String?): Boolean =
-        store.getString(KEY_MEMBER, null) == memberId &&
-            store.getString(KEY_NAME, null) == displayName &&
-            store.getString(KEY_PICTURE, null) == pictureUrl
+    fun matches(
+        memberId: String,
+        displayName: String,
+        pictureUrl: String?,
+        deviceId: String,
+    ): Boolean = store.getString(KEY_MEMBER, null) == memberId &&
+        store.getString(KEY_NAME, null) == displayName &&
+        store.getString(KEY_PICTURE, null) == pictureUrl &&
+        store.getString(KEY_DEVICE, null) == deviceId
 
     /** Called once the server has accepted the write, not before. */
-    fun remember(memberId: String, displayName: String, pictureUrl: String?) {
+    fun remember(memberId: String, displayName: String, pictureUrl: String?, deviceId: String) {
         store
             .edit()
             .putString(KEY_MEMBER, memberId)
             .putString(KEY_NAME, displayName)
             .putString(KEY_PICTURE, pictureUrl)
+            .putString(KEY_DEVICE, deviceId)
             .apply()
     }
 }

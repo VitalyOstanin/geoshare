@@ -2,7 +2,12 @@
 
 import { ageText, isStale, positionAge } from './lib/age.js';
 import { centreOnce, createMap, lookAt, remeasure, showMembers } from './lib/map.js';
-import { memberColour, memberName, orderedForNavigation } from './lib/members.js';
+import {
+    memberColour,
+    memberName,
+    orderedForNavigation,
+    positionDocuments,
+} from './lib/members.js';
 import {
     keepWatching,
     leave,
@@ -41,6 +46,10 @@ const state = {
     profiles: null,
     view: null,
     stopPositions: null,
+    // The documents the current position subscriptions cover, joined into one
+    // string: the profiles change for reasons that leave the devices alone,
+    // and rebuilding the subscriptions for those would cost a read each time.
+    positionDocuments: null,
     stopProfiles: null,
     stopWatching: null,
 };
@@ -103,23 +112,47 @@ function start() {
     // screen goes away that measurement is of a hidden box.
     remeasure(state.view);
 
-    state.stopPositions ??= watchPositions((positions) => {
-        state.positions = positions;
-        render();
-    }, () => {});
-
     state.stopProfiles ??= watchProfiles((profiles) => {
         state.profiles = profiles;
         publishProfile(state.member, profiles.get(state.member.memberId), () => {});
+        followPositions(profiles);
         render();
     }, () => {});
 
     state.stopWatching ??= keepWatching(state.member.memberId, () => {});
 }
 
+/**
+ * Subscribes to the positions the profiles point at, and again whenever they
+ * point somewhere else.
+ *
+ * The positions are read a document at a time, so the list of documents is
+ * what a subscription is made of: a member who picks up a second phone adds it
+ * to their profile, and this is what notices.
+ */
+function followPositions(profiles) {
+    const documents = positionDocuments(profiles);
+    const wanted = documents.join(',');
+
+    // The profiles change for reasons that have nothing to do with the
+    // devices — a renamed account, a new picture — and rebuilding every
+    // subscription for those would cost a read each time.
+    if (wanted === state.positionDocuments) {
+        return;
+    }
+
+    state.stopPositions?.();
+    state.positionDocuments = wanted;
+    state.stopPositions = watchPositions(documents, (positions) => {
+        state.positions = positions;
+        render();
+    });
+}
+
 function stop() {
     state.stopPositions?.();
     state.stopPositions = null;
+    state.positionDocuments = null;
 
     state.stopProfiles?.();
     state.stopProfiles = null;

@@ -11,7 +11,16 @@ import {
     assertSucceeds,
     initializeTestEnvironment,
 } from "@firebase/rules-unit-testing";
-import { deleteDoc, doc, getDoc, setDoc } from "firebase/firestore";
+import {
+    collection,
+    deleteDoc,
+    doc,
+    getDoc,
+    getDocs,
+    query,
+    setDoc,
+    where,
+} from "firebase/firestore";
 
 const GROUP = "family";
 const ALICE = "alice-uid";
@@ -32,7 +41,18 @@ const someProfile = (name) => ({
     updatedAt: new Date(),
 });
 
-const positionFrom = (uid) => ({ ...somePosition, memberId: uid });
+// A permission without an end, written as a date far enough away to read as
+// never: the rules compare a timestamp, and a missing value would be a case of
+// its own in every one of them.
+const FOREVER = new Date("9999-12-31T00:00:00Z");
+const LONG_OVER = new Date("2020-01-01T00:00:00Z");
+
+// A position carries the permissions to read it: who may, and until when.
+const positionFrom = (uid, readers = { [ALICE]: FOREVER }) => ({
+    ...somePosition,
+    memberId: uid,
+    sharedWith: readers,
+});
 
 const watchFrom = (uid) => ({ memberId: uid, until: new Date() });
 
@@ -115,6 +135,55 @@ describe("positions", () => {
         const db = testEnv.authenticatedContext(ALICE).firestore();
 
         await assertFails(setDoc(positionOf(db, ALICE), positionFrom(BOB)));
+    });
+
+    // The point of the permissions: the roster says who is in the household,
+    // and the owner says which of them may watch.
+    it("a member cannot read a position not shared with them", async () => {
+        const db = testEnv.authenticatedContext(ALICE).firestore();
+
+        await testEnv.withSecurityRulesDisabled(async (context) => {
+            await setDoc(positionOf(context.firestore(), BOB), positionFrom(BOB, {}));
+        });
+
+        await assertFails(getDoc(positionOf(db, BOB)));
+    });
+
+    // What an expiry is for: the permission ends on its own, without the owner
+    // having to remember to withdraw it.
+    it("a member cannot read a position whose permission has run out", async () => {
+        const db = testEnv.authenticatedContext(ALICE).firestore();
+
+        await testEnv.withSecurityRulesDisabled(async (context) => {
+            await setDoc(
+                positionOf(context.firestore(), BOB),
+                positionFrom(BOB, { [ALICE]: LONG_OVER }),
+            );
+        });
+
+        await assertFails(getDoc(positionOf(db, BOB)));
+    });
+
+    // The owner needs no permission of their own, and a build that has not
+    // written one yet still shows its own phone on the map.
+    it("a member reads their own position without a permission", async () => {
+        const db = testEnv.authenticatedContext(ALICE).firestore();
+
+        await setDoc(positionOf(db, ALICE), positionFrom(ALICE, {}));
+
+        await assertSucceeds(getDoc(positionOf(db, ALICE)));
+    });
+
+    // How both clients have to read the map: a document at a time, by name.
+    // A query is allowed only when its own filters prove the rule, and an
+    // expiry weighed against the server's clock cannot be proved by anything
+    // a client sends, so the collection itself stays closed.
+    it("a member cannot read the collection of positions", async () => {
+        const db = testEnv.authenticatedContext(ALICE).firestore();
+        const positions = collection(db, `groups/${GROUP}/positions`);
+
+        await assertFails(getDocs(positions));
+        await assertFails(getDocs(query(positions, where("memberId", "==", BOB))));
     });
 
     it("a stranger reads nothing", async () => {
@@ -200,6 +269,33 @@ describe("profiles", () => {
 
     // A name on a marker is a name somebody else reads, so the account it
     // describes has to be the account that wrote it.
+    // Where the permissions are kept: the phone reads them from here and
+    // copies them into every position it writes, so a new phone of the same
+    // member shares with the same people without being told again.
+    it("a profile carries who the member shares with", async () => {
+        const db = testEnv.authenticatedContext(ALICE).firestore();
+
+        await assertSucceeds(
+            setDoc(memberOf(db, ALICE), {
+                ...someProfile("Alice"),
+                sharedWith: { [BOB]: FOREVER },
+            }),
+        );
+    });
+
+    // Which documents to read a member's positions from: the collection cannot
+    // be listed, so the profile is where a reader learns what a member carries.
+    it("a profile names the devices of the member", async () => {
+        const db = testEnv.authenticatedContext(ALICE).firestore();
+
+        await assertSucceeds(
+            setDoc(memberOf(db, ALICE), {
+                ...someProfile("Alice"),
+                devices: ["one", "two"],
+            }),
+        );
+    });
+
     it("a member cannot write another member's profile", async () => {
         const db = testEnv.authenticatedContext(ALICE).firestore();
 

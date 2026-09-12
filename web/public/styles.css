@@ -3,6 +3,25 @@
 :root {
     color-scheme: light dark;
     font-family: system-ui, sans-serif;
+
+    /* The surfaces the page paints itself: the label over a marker, the card,
+       the round account button. The page's own background and text come from
+       the browser through color-scheme above, but anything drawn over the map
+       has to state its colours, and a white card over a dark map at night is a
+       lamp in the face. */
+    --surface: rgba(255, 255, 255, 0.95);
+    --on-surface: #202020;
+    --link: #1e88e5;
+    --edge: rgba(128, 128, 128, 0.4);
+}
+
+@media (prefers-color-scheme: dark) {
+    :root {
+        --surface: rgba(40, 40, 46, 0.95);
+        --on-surface: #ececed;
+        --link: #90caf9;
+        --edge: rgba(160, 160, 170, 0.35);
+    }
 }
 
 /* A display of its own outranks what `hidden` asks for, and the panel has
@@ -101,10 +120,10 @@ button {
 }
 
 .member-label {
-    background: rgba(255, 255, 255, 0.92);
+    background: var(--surface);
     border-radius: 0.5rem;
     box-shadow: 0 1px 4px rgba(0, 0, 0, 0.3);
-    color: #202020;
+    color: var(--on-surface);
     font-size: 0.8rem;
     font-weight: 600;
     padding: 0.1rem 0.4rem;
@@ -230,13 +249,41 @@ button {
     padding: 0;
     border: 0;
     background: none;
-    color: #1e88e5;
+    color: var(--link);
     font: inherit;
     cursor: pointer;
 }
 
+/* The face the marker carries, repeated on the card: a card opened from the
+   panel should be recognisably the person whose pin is on the map. */
+.detail-head {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    margin-bottom: 0.5rem;
+}
+
+.detail-face {
+    width: 2.5rem;
+    height: 2.5rem;
+    flex: none;
+    border-radius: 50%;
+    background-color: var(--surface);
+    background-size: cover;
+    background-position: center;
+    display: grid;
+    place-items: center;
+    font-weight: 700;
+}
+
+.detail-device {
+    display: block;
+    font-size: 0.8rem;
+    opacity: 0.7;
+}
+
 .detail h2 {
-    margin: 0 0 0.4rem;
+    margin: 0;
     font-size: 1rem;
 }
 
@@ -271,8 +318,8 @@ button {
     padding: 0;
     border-radius: 50%;
     border: 1px solid rgba(128, 128, 128, 0.4);
-    background: rgba(255, 255, 255, 0.95);
-    color: #202020;
+    background: var(--surface);
+    color: var(--on-surface);
     font-weight: 600;
     overflow: hidden;
     display: grid;
@@ -314,4 +361,49 @@ button {
     background: transparent;
     color: inherit;
     text-align: left;
+}
+
+/* The library paints its bubble and its little triangle white, which is the
+   one surface on the page it does not ask anybody about. */
+.maplibregl-popup-content {
+    background: var(--surface);
+    color: var(--on-surface);
+}
+
+.maplibregl-popup-close-button {
+    color: inherit;
+}
+
+.maplibregl-popup-anchor-top .maplibregl-popup-tip,
+.maplibregl-popup-anchor-top-left .maplibregl-popup-tip,
+.maplibregl-popup-anchor-top-right .maplibregl-popup-tip {
+    border-bottom-color: var(--surface);
+}
+
+.maplibregl-popup-anchor-bottom .maplibregl-popup-tip,
+.maplibregl-popup-anchor-bottom-left .maplibregl-popup-tip,
+.maplibregl-popup-anchor-bottom-right .maplibregl-popup-tip {
+    border-top-color: var(--surface);
+}
+
+.maplibregl-popup-anchor-left .maplibregl-popup-tip {
+    border-right-color: var(--surface);
+}
+
+.maplibregl-popup-anchor-right .maplibregl-popup-tip {
+    border-left-color: var(--surface);
+}
+
+/* A tile is a picture drawn light on somebody else's server, so a dark map is
+   either a different set of tiles or this: the picture turned over and its
+   hues put back where they were. The markers and the cards are elements of the
+   page rather than part of the canvas, so none of them is touched.
+
+   The alternative was a ready-made dark style. The renderings that need no key
+   either stamp the map with a demand for one or, in the case of the free
+   vector styles tried here, never finish loading in the browser. */
+@media (prefers-color-scheme: dark) {
+    .maplibregl-canvas {
+        filter: invert(1) hue-rotate(180deg) brightness(0.92) contrast(0.95);
+    }
 }

@@ -55,6 +55,9 @@ android {
     buildFeatures {
         // Off by default since AGP 9; the application is Compose-only.
         compose = true
+        // Only for DEBUG, which is what keeps the stand-in services out of a
+        // published build.
+        buildConfig = true
     }
 
     testOptions {

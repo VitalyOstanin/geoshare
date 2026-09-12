@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- The stand-in services speak plain HTTP, and the address the emulator
+     reaches the host by is 10.0.2.2. Nothing else is allowed to: a debug
+     build that talked to the real services in the clear would be a worse
+     thing than an inconvenient one. -->
+<network-security-config>
+    <domain-config cleartextTrafficPermitted="true">
+        <domain includeSubdomains="false">10.0.2.2</domain>
+    </domain-config>
+</network-security-config>

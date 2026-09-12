@@ -39,6 +39,15 @@
     <string name="map_account_nameless">?</string>
     <string name="settings_title">Settings</string>
     <string name="settings_close">Done</string>
+    <string name="visibility_title">Who sees where I am</string>
+    <string name="visibility_empty">Nobody else has signed in yet.</string>
+    <string name="visibility_none">not shared</string>
+    <string name="visibility_hour">for an hour</string>
+    <string name="visibility_eight_hours">for eight hours</string>
+    <string name="visibility_day">for a day</string>
+    <string name="visibility_forever">with no end</string>
+    <!-- A permission given earlier, counting down: %1$s is a time of day. -->
+    <string name="visibility_until">until %1$s</string>
     <string name="map_more">More</string>
     <string name="map_more_hide">Hide</string>
 

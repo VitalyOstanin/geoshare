@@ -30,7 +30,7 @@
         "headers": [
           {
             "key": "Cache-Control",
-            "value": "max-age=3600"
+            "value": "no-cache"
           }
         ]
       }
@@ -43,6 +43,9 @@
   "emulators": {
     "firestore": {
       "port": 8080
+    },
+    "auth": {
+      "port": 9099
     },
     "singleProjectMode": true,
     "ui": {

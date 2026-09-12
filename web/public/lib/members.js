@@ -103,3 +103,17 @@ export function pictureAddress(pictureUrl) {
         return null;
     }
 }
+
+/**
+ * Which documents hold the positions of the members whose profiles are known.
+ *
+ * Named one by one rather than asked for as a collection: a member says who
+ * may read their position and until when, and a permission with an expiry is
+ * not something a query can prove, so the collection of positions is closed
+ * and a reader walks the devices each profile names instead.
+ */
+export function positionDocuments(profiles) {
+    return [...profiles.values()]
+        .flatMap((profile) => profile.devices.map((device) => `${profile.memberId}.${device}`))
+        .sort();
+}
