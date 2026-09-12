@@ -145,7 +145,7 @@ function start() {
     showAccount(state.member);
 
     if (!state.view) {
-        state.view = createMap(elements.map);
+        state.view = createMap(elements.map, render);
     }
 
     // The map measures its element when it is created, and until the sign-in
@@ -243,9 +243,13 @@ function render() {
     showMembers(state.view, state.positions, labels, pictures, state.member.memberId, now);
     centreOnce(state.view, state.positions, state.member.memberId);
 
+    // Whoever the open card is about is marked in the panel, so that a card
+    // over the map and a card in the strip are visibly the same member.
+    const shown = shownPositions(state.view);
+
     elements.members.replaceChildren(
         ...orderedForNavigation(state.positions, state.member.memberId).map((position) =>
-            memberEntry(position, labels, pictures, now),
+            memberEntry(position, labels, pictures, shown, now),
         ),
     );
 }
@@ -304,9 +308,9 @@ function faces() {
     );
 }
 
-function memberEntry(position, labels, pictures, now) {
+function memberEntry(position, labels, pictures, shown, now) {
     const entry = document.createElement('button');
-    entry.className = 'member';
+    entry.className = shown.has(position.positionId) ? 'member shown' : 'member';
     entry.addEventListener('click', () => lookAt(state.view, position));
 
     const stale = isStale(position.knownAt, now);

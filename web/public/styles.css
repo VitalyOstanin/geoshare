@@ -135,6 +135,12 @@ body {
 /* The face on a card in the panel and on a row of a group: the same picture
    the pin carries, ringed in the colour of that pin so that a card and a
    marker read as one member. */
+/* The card of the member whose bubble is open on the map. */
+.member.shown {
+    border-color: var(--link);
+    box-shadow: 0 0 0 1px var(--link);
+}
+
 .member-face {
     width: 1.6rem;
     height: 1.6rem;

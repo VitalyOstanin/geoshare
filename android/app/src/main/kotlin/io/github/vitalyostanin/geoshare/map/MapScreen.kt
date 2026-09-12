@@ -1,6 +1,7 @@
 package io.github.vitalyostanin.geoshare.map
 
 import android.graphics.Bitmap
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -227,6 +228,11 @@ fun MapScreen(
                 members = members,
                 names = names,
                 faces = faces,
+                // Whoever the open card is about: one member, or everybody
+                // under a marker whose list is showing.
+                openCards =
+                openedPositionId?.let { setOf(it) }
+                    ?: group.map { it.positionId }.toSet(),
                 now = now,
                 showAll = showAll,
                 onSelect = ::lookAt,
@@ -259,6 +265,8 @@ private fun MemberButtons(
     names: Map<String, String>,
     /** The account pictures, by member id; a member without one gets their initial. */
     faces: Map<String, Bitmap>,
+    /** The positions whose card is open, marked in the strip. */
+    openCards: Set<String>,
     now: Instant,
     showAll: Boolean,
     onSelect: (String) -> Unit,
@@ -277,6 +285,7 @@ private fun MemberButtons(
                 member = member,
                 name = names[member.positionId] ?: shortName(member.memberId),
                 face = faces[member.memberId],
+                shown = member.positionId in openCards,
                 now = now,
                 onSelect = onSelect,
                 modifier = Modifier.weight(1f),
@@ -313,6 +322,8 @@ private fun MemberButton(
     member: MemberPosition,
     name: String,
     face: Bitmap?,
+    /** Whether the card over the map is about this member. */
+    shown: Boolean,
     now: Instant,
     onSelect: (String) -> Unit,
     modifier: Modifier = Modifier,
@@ -320,7 +331,16 @@ private fun MemberButton(
     Surface(
         modifier = modifier.clickable { onSelect(member.positionId) },
         shape = MaterialTheme.shapes.medium,
-        tonalElevation = 2.dp,
+        // Raised and outlined rather than merely tinted: the strip stands on a
+        // surface of its own, and a tint alone was not the difference between
+        // the member being looked at and the rest.
+        tonalElevation = if (shown) 8.dp else 2.dp,
+        border =
+        if (shown) {
+            BorderStroke(width = 2.dp, color = MaterialTheme.colorScheme.primary)
+        } else {
+            null
+        },
     ) {
         Column(modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp)) {
             Row(

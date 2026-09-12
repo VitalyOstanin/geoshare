@@ -65,7 +65,12 @@ const STYLE = {
     layers: [{ id: 'osm', type: 'raster', source: 'osm' }],
 };
 
-export function createMap(element) {
+/**
+ * @param element where the map is drawn
+ * @param onCardChange called whenever a card opens, closes or changes who it
+ *        is about, so that the panel can mark the card being looked at
+ */
+export function createMap(element, onCardChange = () => {}) {
     const map = new MapLibre({
         container: element,
         style: STYLE,
@@ -90,7 +95,7 @@ export function createMap(element) {
         console.error('map:', event.error?.message ?? event.error ?? event);
     });
 
-    const view = { map, markers: new Map(), centred: false, last: null };
+    const view = { map, markers: new Map(), centred: false, last: null, onCardChange };
 
     // Which members cover each other is a question about the screen, so the
     // answer changes with every zoom: a group that was one pin has to come
@@ -242,21 +247,43 @@ function addMarker(view, key, group) {
     // than that ran out over the edge of the bubble instead of widening it.
     // The stylesheet is what stops it growing past the window.
     const popup = new Popup({ offset: 16, closeButton: true, maxWidth: 'none' });
+    // Held before the handlers, which reach into it, and before the marker,
+    // which is added to it once it is on the map.
+    const entry = {
+        marker: null,
+        popup,
+        pin,
+        faces,
+        label,
+        members: group,
+        openedPositionId: null,
+        // Carried on the entry rather than read off the view, because the rows
+        // of a group list are built with the entry alone in hand.
+        onCardChange: view.onCardChange,
+    };
 
     // One bubble at a time, the way a map shows one place at a time: the
     // library leaves every popup it opens open, and a second tap would
     // otherwise leave the first member's card hanging over the map.
-    popup.on('open', () => closeOthers(view, key));
+    popup.on('open', () => {
+        closeOthers(view, key);
+        entry.onCardChange();
+    });
+    // The panel marks whoever the open card is about, and a card closed by the
+    // cross, by Escape or by a tap on the map leaves nobody marked.
+    popup.on('close', () => {
+        entry.openedPositionId = null;
+        entry.onCardChange();
+    });
+
     // Placed before it is added: a marker with nowhere to be cannot be put on
     // a map, and the caller sets the position again on every update anyway.
     // Hung by its bottom edge, which is the point of the pin: the member is
     // where the point is, and everything else stands above them.
-    const marker = new Marker({ element, anchor: 'bottom' })
+    entry.marker = new Marker({ element, anchor: 'bottom' })
         .setLngLat([centreLongitude(group), centreLatitude(group)])
         .setPopup(popup)
         .addTo(view.map);
-
-    const entry = { marker, popup, pin, faces, label, members: group, openedPositionId: null };
 
     view.markers.set(key, entry);
 
@@ -318,6 +345,20 @@ function showPin(entry, names, faces, now) {
     }
 }
 
+/**
+ * What is left in the phone, written green while it is filling: a low
+ * percentage on a charger and the same one off it mean opposite things, and
+ * the colour says which without taking any room on the card.
+ */
+export function batteryText(position, into = document.createElement('span')) {
+    into.replaceChildren();
+    into.classList.toggle('charging', position.charging && position.batteryPercent !== null);
+    into.textContent =
+        position.batteryPercent === null ? 'unknown' : `${position.batteryPercent}%`;
+
+    return into;
+}
+
 /** What a marker for several members writes above itself. */
 function groupLabel(count) {
     return count === 1 ? '1 member' : `${count} members`;
@@ -367,6 +408,28 @@ function showPopup(entry, names, faces, now) {
     entry.popup.setDOMContent(card);
 }
 
+/**
+ * Whose cards are open, as position ids.
+ *
+ * A card about one member names that member; a list of who stands under one
+ * marker names all of them, because the viewer is looking at the group.
+ */
+export function shownPositions(view) {
+    for (const entry of view.markers.values()) {
+        if (!entry.popup.isOpen()) {
+            continue;
+        }
+
+        return new Set(
+            entry.openedPositionId === null
+                ? entry.members.map((member) => member.positionId)
+                : [entry.openedPositionId],
+        );
+    }
+
+    return new Set();
+}
+
 /** The members under one marker, as rows that open their cards. */
 function groupList(entry, names, faces, now) {
     const list = document.createElement('div');
@@ -410,6 +473,7 @@ function groupList(entry, names, faces, now) {
         row.addEventListener('click', () => {
             entry.openedPositionId = member.positionId;
             showPopup(entry, names, faces, now);
+            entry.onCardChange();
         });
 
         list.append(row);
