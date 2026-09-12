@@ -1,5 +1,9 @@
 package io.github.vitalyostanin.geoshare.map
 
+import android.graphics.Bitmap
+import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -9,8 +13,10 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
@@ -24,7 +30,10 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.asImageBitmap
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
@@ -41,6 +50,9 @@ import java.time.format.FormatStyle
 
 /** How often the ages on screen are recounted. Half a minute keeps "5 minutes ago" honest. */
 private const val AGE_TICK_MILLIS = 30_000L
+
+/** The circle a card carries: large enough for a face, small enough for a strip of cards. */
+private val FACE_SIZE = 22.dp
 
 /** As much of the screen as the full list may take before it starts scrolling instead. */
 private val LIST_MAX_HEIGHT = 220.dp
@@ -172,6 +184,7 @@ fun MapScreen(
                 MemberDetail(
                     member = opened,
                     name = names[opened.positionId] ?: shortName(opened.memberId),
+                    face = faces[opened.memberId],
                     now = now,
                     onClose = { openedPositionId = null },
                     modifier = Modifier.align(Alignment.BottomCenter).padding(12.dp),
@@ -180,6 +193,7 @@ fun MapScreen(
                 GroupDetail(
                     members = group,
                     names = names,
+                    faces = faces,
                     now = now,
                     onSelect = { positionId ->
                         openedPositionId = positionId
@@ -203,6 +217,7 @@ fun MapScreen(
             MemberButtons(
                 members = members,
                 names = names,
+                faces = faces,
                 now = now,
                 showAll = showAll,
                 onSelect = ::lookAt,
@@ -233,6 +248,8 @@ fun MapScreen(
 private fun MemberButtons(
     members: List<MemberPosition>,
     names: Map<String, String>,
+    /** The account pictures, by member id; a member without one gets their initial. */
+    faces: Map<String, Bitmap>,
     now: Instant,
     showAll: Boolean,
     onSelect: (String) -> Unit,
@@ -250,6 +267,7 @@ private fun MemberButtons(
             MemberButton(
                 member = member,
                 name = names[member.positionId] ?: shortName(member.memberId),
+                face = faces[member.memberId],
                 now = now,
                 onSelect = onSelect,
                 modifier = Modifier.weight(1f),
@@ -272,6 +290,7 @@ private fun MemberButtons(
                 MemberRow(
                     member = member,
                     name = names[member.positionId] ?: shortName(member.memberId),
+                    face = faces[member.memberId],
                     now = now,
                     onSelect = onSelect,
                 )
@@ -284,6 +303,7 @@ private fun MemberButtons(
 private fun MemberButton(
     member: MemberPosition,
     name: String,
+    face: Bitmap?,
     now: Instant,
     onSelect: (String) -> Unit,
     modifier: Modifier = Modifier,
@@ -298,7 +318,7 @@ private fun MemberButton(
                 horizontalArrangement = Arrangement.spacedBy(6.dp),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
-                MemberDot(memberId = member.memberId)
+                MemberFace(memberId = member.memberId, name = name, picture = face)
 
                 Text(
                     text = name,
@@ -345,6 +365,7 @@ private fun MoreButton(
 private fun MemberRow(
     member: MemberPosition,
     name: String,
+    face: Bitmap?,
     now: Instant,
     onSelect: (String) -> Unit,
 ) {
@@ -357,7 +378,7 @@ private fun MemberRow(
         horizontalArrangement = Arrangement.spacedBy(12.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        MemberDot(memberId = member.memberId)
+        MemberFace(memberId = member.memberId, name = name, picture = face)
 
         Column(modifier = Modifier.weight(1f)) {
             Text(
@@ -378,13 +399,44 @@ private fun MemberRow(
     }
 }
 
+/**
+ * Who a card is about: the picture their account carries, ringed in the colour
+ * their marker wears, or the first letter of their name until the picture
+ * arrives.
+ *
+ * The same drawing the pin on the map has, so that a card and a marker are
+ * recognisably one member; the ring is what the coloured dot used to say.
+ */
 @Composable
-private fun MemberDot(memberId: String) {
-    Text(
-        text = "●",
-        color = Color(memberColour(memberId)),
-        style = MaterialTheme.typography.titleMedium,
-    )
+private fun MemberFace(memberId: String, name: String, picture: Bitmap?) {
+    val colour = Color(memberColour(memberId))
+
+    Box(
+        modifier =
+        Modifier
+            .size(FACE_SIZE)
+            .clip(CircleShape)
+            .background(MaterialTheme.colorScheme.surfaceVariant)
+            .border(width = 2.dp, color = colour, shape = CircleShape),
+        contentAlignment = Alignment.Center,
+    ) {
+        if (picture == null) {
+            Text(
+                text = memberInitial(name),
+                color = colour,
+                style = MaterialTheme.typography.labelLarge,
+            )
+        } else {
+            Image(
+                bitmap = picture.asImageBitmap(),
+                // The name is written next to it, so the picture says nothing
+                // a reader of the screen has not been told already.
+                contentDescription = null,
+                contentScale = ContentScale.Crop,
+                modifier = Modifier.fillMaxSize().clip(CircleShape),
+            )
+        }
+    }
 }
 
 @Composable
@@ -414,6 +466,7 @@ private fun AgeText(member: MemberPosition, now: Instant) {
 private fun GroupDetail(
     members: List<MemberPosition>,
     names: Map<String, String>,
+    faces: Map<String, Bitmap>,
     now: Instant,
     onSelect: (String) -> Unit,
     onClose: () -> Unit,
@@ -447,6 +500,7 @@ private fun GroupDetail(
                     MemberRow(
                         member = member,
                         name = names[member.positionId] ?: shortName(member.memberId),
+                        face = faces[member.memberId],
                         now = now,
                         onSelect = onSelect,
                     )
@@ -467,6 +521,7 @@ private fun GroupDetail(
 private fun MemberDetail(
     member: MemberPosition,
     name: String,
+    face: Bitmap?,
     now: Instant,
     onClose: () -> Unit,
     modifier: Modifier = Modifier,
@@ -478,7 +533,7 @@ private fun MemberDetail(
     ) {
         Column(modifier = Modifier.padding(start = 16.dp, top = 8.dp, end = 8.dp, bottom = 12.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
-                MemberDot(memberId = member.memberId)
+                MemberFace(memberId = member.memberId, name = name, picture = face)
 
                 Text(
                     text = name,
