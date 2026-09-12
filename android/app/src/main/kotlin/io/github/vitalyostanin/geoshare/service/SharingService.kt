@@ -2,6 +2,7 @@ package io.github.vitalyostanin.geoshare.service
 
 import android.content.Context
 import android.content.Intent
+import android.content.IntentFilter
 import android.content.pm.ServiceInfo
 import android.os.BatteryManager
 import androidx.core.app.ServiceCompat
@@ -186,7 +187,7 @@ class SharingService : LifecycleService() {
         fix: Fix,
         mode: CollectionMode,
     ): Boolean = try {
-        writer.write(fix, mode, batteryPercent(), sharedWith)
+        writer.write(fix, mode, batteryPercent(), charging(), sharedWith)
         AppLog.i(TAG, "wrote a position taken at ${fix.takenAt}")
 
         true
@@ -214,6 +215,21 @@ class SharingService : LifecycleService() {
     private fun batteryPercent(): Int = getSystemService<BatteryManager>()
         ?.getIntProperty(BatteryManager.BATTERY_PROPERTY_CAPACITY)
         ?: FULL_BATTERY
+
+    /**
+     * Whether the phone is on a charger, which is what tells a low percentage
+     * that is about to grow from one that is about to run out.
+     *
+     * Read as "plugged into something" rather than through `isCharging`: a
+     * phone that has reached a hundred percent stops charging while the cable
+     * is still in it, and the reader is asking about the cable.
+     */
+    private fun charging(): Boolean {
+        val battery =
+            registerReceiver(null, IntentFilter(Intent.ACTION_BATTERY_CHANGED)) ?: return false
+
+        return battery.getIntExtra(BatteryManager.EXTRA_PLUGGED, 0) != 0
+    }
 
     /**
      * The platform checks the location permission again here and answers a

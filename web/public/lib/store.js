@@ -132,6 +132,9 @@ function positionOf(document) {
         knownAt: (data.writtenAt ?? data.takenAt).toMillis(),
         mode: data.mode ?? null,
         batteryPercent: typeof data.batteryPercent === 'number' ? data.batteryPercent : null,
+        // Absent in what the older builds wrote, which is a phone not known to
+        // be charging rather than a phone known not to be.
+        charging: data.charging === true,
     };
 }
 

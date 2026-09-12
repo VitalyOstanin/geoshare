@@ -2,7 +2,15 @@
 
 import { ageText, isStale, positionAge } from './lib/age.js';
 import { showFace } from './lib/faces.js';
-import { centreOnce, createMap, lookAt, remeasure, showMembers } from './lib/map.js';
+import {
+    batteryText,
+    centreOnce,
+    createMap,
+    lookAt,
+    remeasure,
+    showMembers,
+    shownPositions,
+} from './lib/map.js';
 import {
     memberColour,
     memberName,
@@ -324,7 +332,10 @@ function memberEntry(position, labels, pictures, now) {
 
     const battery = document.createElement('span');
     battery.className = 'battery';
-    battery.textContent = position.batteryPercent === null ? '' : `${position.batteryPercent}%`;
+
+    if (position.batteryPercent !== null) {
+        batteryText(position, battery);
+    }
 
     entry.append(face, name, age, battery);
 

@@ -16,6 +16,9 @@
        dark enough to carry white, the dark theme's is not. */
     --on-link: #ffffff;
     --edge: rgba(128, 128, 128, 0.4);
+    /* A charge that is growing: the one reassuring thing on a card, and the
+       only colour on the page that carries a meaning of its own. */
+    --charging: #2e7d32;
 
     /* The same surfaces at night, named once and switched to in the two
        places below. A media query and an attribute cannot be asked for in one
@@ -25,6 +28,7 @@
     --night-link: #90caf9;
     --night-on-link: #0b1f2e;
     --night-edge: rgba(160, 160, 170, 0.35);
+    --night-charging: #81c784;
 
     /* A tile is a picture drawn light on somebody else's server, so a dark map
        is either a different set of tiles or this: the picture turned over and
@@ -47,6 +51,7 @@
         --link: var(--night-link);
         --on-link: var(--night-on-link);
         --edge: var(--night-edge);
+        --charging: var(--night-charging);
         --canvas-filter: var(--night-canvas);
     }
 }
@@ -59,6 +64,7 @@
     --link: var(--night-link);
     --on-link: var(--night-on-link);
     --edge: var(--night-edge);
+    --charging: var(--night-charging);
     --canvas-filter: var(--night-canvas);
 }
 
@@ -153,6 +159,15 @@ body {
 .battery {
     opacity: 0.7;
     font-size: 0.85em;
+}
+
+/* A charge that is growing, said in the colour of the number itself. Full
+   strength rather than dimmed like the text around it: a dimmed green reads as
+   grey and says nothing. */
+.charging {
+    color: var(--charging);
+    opacity: 1;
+    font-weight: 600;
 }
 
 /* An old position still shows where a member was, and should not read as

@@ -30,6 +30,8 @@ data class MemberPosition(
     val writtenAt: Instant?,
     val mode: String?,
     val batteryPercent: Int?,
+    /** Whether the phone was on a charger; false for the builds that wrote no such field. */
+    val charging: Boolean = false,
 ) {
     /**
      * The moment the age is counted from.

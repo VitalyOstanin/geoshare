@@ -33,6 +33,7 @@ class PositionWriter(
         fix: Fix,
         mode: CollectionMode,
         batteryPercent: Int,
+        charging: Boolean,
         sharedWith: Map<String, Instant>,
     ) {
         val position =
@@ -52,6 +53,11 @@ class PositionWriter(
                 "writtenAt" to FieldValue.serverTimestamp(),
                 "mode" to mode.name,
                 "batteryPercent" to batteryPercent,
+                // A percentage on its own says nothing about which way it is
+                // going: fifteen percent on a charger is a phone about to be
+                // fine, and fifteen percent off one is a phone about to go
+                // quiet.
+                "charging" to charging,
             )
 
         store

@@ -65,6 +65,14 @@
         <item quantity="other">%1$d members</item>
     </plurals>
 
+    <!-- The same ages in the narrow cards of the panel, where a card holds a
+         face, a name and the age on one line. No plural forms: the unit is an
+         abbreviation, which does not decline. -->
+    <string name="map_age_short_now">now</string>
+    <string name="map_age_short_minutes">%1$d min</string>
+    <string name="map_age_short_hours">%1$d h</string>
+    <string name="map_age_short_days">%1$d d</string>
+
     <plurals name="map_age_minutes">
         <item quantity="one">%1$d minute ago</item>
         <item quantity="other">%1$d minutes ago</item>

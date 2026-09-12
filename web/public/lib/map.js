@@ -14,6 +14,7 @@ import {
 
 import { STALE_COLOUR, memberColour, shortName } from './members.js';
 import { showFace } from './faces.js';
+
 import { ageText, isStale, positionAge, timeText } from './age.js';
 import { clusterMembers, facesShown } from './clusters.js';
 
@@ -511,7 +512,7 @@ function detail(position, name, faces, now) {
         ['Last seen', ageText(positionAge(position.knownAt, now))],
         ['At', timeText(position.knownAt)],
         ['Mode', position.mode ?? 'unknown'],
-        ['Battery', position.batteryPercent === null ? 'unknown' : `${position.batteryPercent}%`],
+        ['Battery', batteryText(position)],
         ['Position', `${position.latitude.toFixed(5)}, ${position.longitude.toFixed(5)}`],
     ];
 
@@ -521,7 +522,15 @@ function detail(position, name, faces, now) {
         const cell = document.createElement('td');
 
         head.textContent = title;
-        cell.textContent = value;
+
+        // A value is either text or a piece of the page: the charge carries a
+        // bolt of its own colour, everything else is a line of characters.
+        if (value instanceof Node) {
+            cell.append(value);
+        } else {
+            cell.textContent = value;
+        }
+
         row.append(head, cell);
         table.append(row);
     }

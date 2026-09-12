@@ -111,5 +111,6 @@ private fun positionOf(document: DocumentSnapshot): MemberPosition? {
             ?.let { Instant.ofEpochSecond(it.seconds, it.nanoseconds.toLong()) },
         mode = document.getString("mode"),
         batteryPercent = document.getLong("batteryPercent")?.toInt(),
+        charging = document.getBoolean("charging") ?: false,
     )
 }

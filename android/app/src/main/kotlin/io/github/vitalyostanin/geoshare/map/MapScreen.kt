@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
@@ -33,6 +34,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asImageBitmap
+import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.pluralStringResource
@@ -50,6 +52,13 @@ import java.time.format.FormatStyle
 
 /** How often the ages on screen are recounted. Half a minute keeps "5 minutes ago" honest. */
 private const val AGE_TICK_MILLIS = 30_000L
+
+/** Green for a charge that is growing, one shade for a pale surface and one for a dark one. */
+private val CHARGING_DAY = Color(0xFF2E7D32)
+private val CHARGING_NIGHT = Color(0xFF81C784)
+
+/** Above this a surface counts as pale, below it as dark. */
+private const val HALF_LIT = 0.5f
 
 /** The circle a card carries: large enough for a face, small enough for a strip of cards. */
 private val FACE_SIZE = 22.dp
@@ -328,7 +337,18 @@ private fun MemberButton(
                 )
             }
 
-            AgeText(member = member, now = now)
+            // The age on the left and the charge against the right edge: the
+            // charges then line up down the strip and can be compared at a
+            // glance, which is what they are there for.
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                AgeText(member = member, now = now, short = true)
+
+                BatteryText(member = member)
+            }
         }
     }
 }
@@ -389,14 +409,43 @@ private fun MemberRow(
             AgeText(member = member, now = now)
         }
 
-        member.batteryPercent?.let { percent ->
-            Text(
-                text = stringResource(R.string.map_battery, percent),
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
-        }
+        BatteryText(member = member)
     }
+}
+
+/**
+ * What is left in the phone, and whether it is filling or emptying.
+ *
+ * Shown on every card rather than only in the one that opens: a marker an hour
+ * old is explained by a phone at five percent, and that is the question asked
+ * while looking at the panel, not after tapping into it.
+ */
+@Composable
+private fun BatteryText(member: MemberPosition) {
+    val percent = member.batteryPercent ?: return
+
+    Text(
+        text = stringResource(R.string.map_battery, percent),
+        style = MaterialTheme.typography.bodySmall,
+        color = batteryColour(member.charging),
+    )
+}
+
+/**
+ * The colour a charge is written in: green while the phone is on a charger.
+ *
+ * The colour rather than a mark next to the number: a percentage that is
+ * growing is the reassuring case, and saying so in the number itself costs the
+ * card no room at all.
+ *
+ * Dark green on a pale surface, pale green on a dark one; which of the two is
+ * in front is answered by the surface the theme paints.
+ */
+@Composable
+private fun batteryColour(charging: Boolean): Color = when {
+    !charging -> MaterialTheme.colorScheme.onSurfaceVariant
+    MaterialTheme.colorScheme.surface.luminance() < HALF_LIT -> CHARGING_NIGHT
+    else -> CHARGING_DAY
 }
 
 /**
@@ -440,9 +489,11 @@ private fun MemberFace(memberId: String, name: String, picture: Bitmap?) {
 }
 
 @Composable
-private fun AgeText(member: MemberPosition, now: Instant) {
+private fun AgeText(member: MemberPosition, now: Instant, short: Boolean = false) {
+    val age = positionAge(member.knownAt, now)
+
     Text(
-        text = ageText(positionAge(member.knownAt, now)),
+        text = if (short) shortAgeText(age) else ageText(age),
         style = MaterialTheme.typography.bodySmall,
         // Grey is the whole point of the stale mark: an old position still
         // shows where the member was, and should not read as where they are.
@@ -554,12 +605,23 @@ private fun MemberDetail(
                 R.string.map_detail_mode,
                 member.mode ?: stringResource(R.string.map_detail_unknown),
             )
-            DetailRow(
-                R.string.map_detail_battery,
-                member.batteryPercent
-                    ?.let { stringResource(R.string.map_battery, it) }
-                    ?: stringResource(R.string.map_detail_unknown),
-            )
+            DetailRow(R.string.map_detail_battery) {
+                val percent = member.batteryPercent
+
+                Text(
+                    text =
+                    percent
+                        ?.let { stringResource(R.string.map_battery, it) }
+                        ?: stringResource(R.string.map_detail_unknown),
+                    style = MaterialTheme.typography.bodyMedium,
+                    color =
+                    if (percent != null && member.charging) {
+                        batteryColour(charging = true)
+                    } else {
+                        MaterialTheme.colorScheme.onSurface
+                    },
+                )
+            }
             DetailRow(
                 R.string.map_detail_position,
                 stringResource(R.string.map_detail_coordinates, member.latitude, member.longitude),
@@ -570,9 +632,18 @@ private fun MemberDetail(
 
 @Composable
 private fun DetailRow(name: Int, value: String) {
+    DetailRow(name) {
+        Text(text = value, style = MaterialTheme.typography.bodyMedium)
+    }
+}
+
+/** The same row when the value is more than one piece of text, as a charge is. */
+@Composable
+private fun DetailRow(name: Int, value: @Composable RowScope.() -> Unit) {
     Row(
         modifier = Modifier.fillMaxWidth().padding(vertical = 2.dp),
         horizontalArrangement = Arrangement.spacedBy(12.dp),
+        verticalAlignment = Alignment.CenterVertically,
     ) {
         Text(
             text = stringResource(name),
@@ -580,7 +651,7 @@ private fun DetailRow(name: Int, value: String) {
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
 
-        Text(text = value, style = MaterialTheme.typography.bodyMedium)
+        value()
     }
 }
 
@@ -603,6 +674,21 @@ private fun ageText(age: PositionAge): String = when (age) {
     is PositionAge.Minutes -> pluralAge(R.plurals.map_age_minutes, age.count)
     is PositionAge.Hours -> pluralAge(R.plurals.map_age_hours, age.count)
     is PositionAge.Days -> pluralAge(R.plurals.map_age_days, age.count)
+}
+
+/**
+ * The same age in as few characters as it can be said in.
+ *
+ * A card of the panel holds a face, a name and an age across a third of a
+ * phone; written out in full the age lost its last word to the edge of the
+ * card, which reads as a broken card rather than as a short one.
+ */
+@Composable
+private fun shortAgeText(age: PositionAge): String = when (age) {
+    PositionAge.JustNow -> stringResource(R.string.map_age_short_now)
+    is PositionAge.Minutes -> stringResource(R.string.map_age_short_minutes, age.count)
+    is PositionAge.Hours -> stringResource(R.string.map_age_short_hours, age.count)
+    is PositionAge.Days -> stringResource(R.string.map_age_short_days, age.count)
 }
 
 @Composable
