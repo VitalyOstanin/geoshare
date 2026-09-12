@@ -236,7 +236,11 @@ function addMarker(view, key, group) {
     // Closing on a click elsewhere on the map is the library's own default,
     // and it is what the phone does too: a tap away from everybody means the
     // card is no longer being looked at.
-    const popup = new Popup({ offset: 16, closeButton: true });
+    // The width is left to the card rather than kept at the library's 240
+    // pixels: the rows are a label and a value on one line, and a value wider
+    // than that ran out over the edge of the bubble instead of widening it.
+    // The stylesheet is what stops it growing past the window.
+    const popup = new Popup({ offset: 16, closeButton: true, maxWidth: 'none' });
 
     // One bubble at a time, the way a map shows one place at a time: the
     // library leaves every popup it opens open, and a second tap would
@@ -376,24 +380,29 @@ function groupList(entry, names, faces, now) {
         row.type = 'button';
         row.className = 'group-row';
 
-        const dot = document.createElement('span');
+        const stale = isStale(member.knownAt, now);
+        const colour = stale ? STALE_COLOUR : memberColour(member.memberId);
+        const label = nameOf(member, names);
 
-        dot.className = 'group-dot';
-        dot.style.background = isStale(member.knownAt, now)
-            ? STALE_COLOUR
-            : memberColour(member.memberId);
+        // The same circle the panel and the pin carry, so that one member is
+        // one drawing wherever they are named.
+        const face = document.createElement('span');
+
+        face.className = stale ? 'member-face stale' : 'member-face';
+        face.style.setProperty('--ring', colour);
+        showFace(face, faces.get(member.memberId), label, colour);
 
         const name = document.createElement('span');
 
         name.className = 'group-name';
-        name.textContent = nameOf(member, names);
+        name.textContent = label;
 
         const age = document.createElement('span');
 
         age.className = 'group-age';
         age.textContent = ageText(positionAge(member.knownAt, now));
 
-        row.append(dot, name, age);
+        row.append(face, name, age);
         row.addEventListener('click', () => {
             entry.openedPositionId = member.positionId;
             showPopup(entry, names, faces, now);

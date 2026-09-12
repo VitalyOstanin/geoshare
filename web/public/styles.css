@@ -126,8 +126,9 @@ body {
     white-space: nowrap;
 }
 
-/* The face on a card in the panel: the same picture the pin carries, ringed in
-   the colour of that pin so that the card and the marker read as one member. */
+/* The face on a card in the panel and on a row of a group: the same picture
+   the pin carries, ringed in the colour of that pin so that a card and a
+   marker read as one member. */
 .member-face {
     width: 1.6rem;
     height: 1.6rem;
@@ -287,16 +288,11 @@ button {
     background: rgba(0, 0, 0, 0.04);
 }
 
-.group-dot {
-    width: 0.7rem;
-    height: 0.7rem;
-    border-radius: 50%;
-    flex: none;
-}
-
 .group-name {
     flex: 1;
-    white-space: nowrap;
+    /* Folded rather than run out of the bubble: a member carrying two phones
+       has the name of the phone in their label, which is long. */
+    overflow-wrap: anywhere;
 }
 
 .group-age {
@@ -305,12 +301,18 @@ button {
 }
 
 .group-back {
+    display: block;
+    /* Kept on one line: the bubble widens to its content, and a link cut in
+       half reads as a broken card rather than as a way back. */
+    white-space: nowrap;
+    /* Clear of the close button, which sits over the corner of the card. */
+    padding-right: 1.5rem;
     margin-bottom: 0.4rem;
-    padding: 0;
     border: 0;
     background: none;
     color: var(--link);
     font: inherit;
+    text-align: left;
     cursor: pointer;
 }
 
@@ -345,6 +347,7 @@ button {
 .detail h2 {
     margin: 0;
     font-size: 1rem;
+    overflow-wrap: anywhere;
 }
 
 .detail table {
@@ -360,7 +363,9 @@ button {
 }
 
 .detail td {
-    white-space: nowrap;
+    /* Folded only when there is no room: the values are short, and a pair of
+       coordinates reads worse broken across two lines than kept on one. */
+    overflow-wrap: anywhere;
 }
 
 /* The corner control sits over the map rather than beside it: the map is the
@@ -428,6 +433,28 @@ button {
 .maplibregl-popup-content {
     background: var(--surface);
     color: var(--on-surface);
+    /* The bubble widens to its card and stops at the window: a long name or a
+       date written out in full has to fold rather than leave the surface. */
+    max-width: min(22rem, 80vw);
+    /* Rounded, lifted and edged like the panel below it; the library's own
+       bubble is a square white box with a hairline shadow, which over a map
+       reads as part of the map rather than as a card on top of it. */
+    border-radius: 0.75rem;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.35);
+    padding: 0.75rem 0.9rem;
+}
+
+/* Away from the text and large enough to hit on a phone. */
+.maplibregl-popup-close-button {
+    width: 1.75rem;
+    height: 1.75rem;
+    border-radius: 50%;
+    font-size: 1.1rem;
+    line-height: 1;
+}
+
+.maplibregl-popup-close-button:hover {
+    background: rgba(128, 128, 128, 0.2);
 }
 
 .maplibregl-popup-close-button {
