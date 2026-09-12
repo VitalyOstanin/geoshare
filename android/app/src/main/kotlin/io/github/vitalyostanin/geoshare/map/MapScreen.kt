@@ -238,8 +238,9 @@ private fun MemberButtons(
     onSelect: (String) -> Unit,
     onToggleAll: () -> Unit,
 ) {
-    val shown = members.take(MEMBERS_SHOWN)
-    val rest = members.drop(MEMBERS_SHOWN)
+    val onStrip = membersOnTheStrip(members.size)
+    val shown = members.take(onStrip)
+    val rest = members.drop(onStrip)
 
     Row(
         modifier = Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 8.dp),

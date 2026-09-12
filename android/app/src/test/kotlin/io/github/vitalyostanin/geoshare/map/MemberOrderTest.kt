@@ -93,4 +93,21 @@ class MemberOrderTest {
             orderedForNavigation(members.reversed(), ownMemberId = "me").map { it.positionId },
         )
     }
+
+    @Test
+    fun `a panel with room to spare shows everybody`() {
+        assertEquals(1, membersOnTheStrip(1))
+        assertEquals(2, membersOnTheStrip(2))
+    }
+
+    @Test
+    fun `the last member is shown rather than a button holding them`() {
+        assertEquals(3, membersOnTheStrip(3))
+    }
+
+    @Test
+    fun `a longer roster keeps the button for the rest`() {
+        assertEquals(2, membersOnTheStrip(4))
+        assertEquals(2, membersOnTheStrip(9))
+    }
 }

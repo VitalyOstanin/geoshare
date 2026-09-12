@@ -4,6 +4,15 @@ package io.github.vitalyostanin.geoshare.map
 const val MEMBERS_SHOWN = 2
 
 /**
+ * How many positions the panel shows as buttons of their own.
+ *
+ * The button that opens the rest takes the room of a member, so a single
+ * member left behind it is shown instead of it: the row costs the same, and
+ * the member is reached without the press that opens the list.
+ */
+fun membersOnTheStrip(count: Int): Int = if (count <= MEMBERS_SHOWN + 1) count else MEMBERS_SHOWN
+
+/**
  * The order the positions are offered in.
  *
  * The other members come first because the panel exists to jump to them; one's
