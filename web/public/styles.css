@@ -312,8 +312,18 @@ button {
     background: none;
     color: var(--link);
     font: inherit;
+    font-size: 0.9rem;
     text-align: left;
     cursor: pointer;
+}
+
+/* The browser's own focus ring is a heavy black box around a line of text,
+   and a click leaves it standing; this is the same promise in the colour of
+   the link it belongs to. */
+.group-back:focus-visible {
+    outline: 2px solid var(--link);
+    outline-offset: 2px;
+    border-radius: 0.3rem;
 }
 
 /* The face the marker carries, repeated on the card: a card opened from the

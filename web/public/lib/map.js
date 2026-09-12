@@ -353,7 +353,10 @@ function showPopup(entry, names, faces, now) {
 
     back.type = 'button';
     back.className = 'group-back';
-    back.textContent = 'Back to the list';
+    // The arrow says which way the button goes before the words are read; an
+    // arrow written as a character rather than drawn, because a set of icons
+    // is a dependency of its own and this is the only one the page needs.
+    back.textContent = '← Back to the list';
     back.addEventListener('click', () => {
         entry.openedPositionId = null;
         showPopup(entry, names, faces, now);
