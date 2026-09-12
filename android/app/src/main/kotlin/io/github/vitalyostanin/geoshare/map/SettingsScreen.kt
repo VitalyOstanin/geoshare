@@ -1,6 +1,7 @@
 package io.github.vitalyostanin.geoshare.map
 
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
@@ -146,19 +147,23 @@ private fun AppearanceRow(theme: ThemeChoice, onThemeChange: (ThemeChoice) -> Un
     ) {
         Text(text = stringResource(R.string.appearance_title), modifier = Modifier.weight(1f))
 
-        TextButton(onClick = { open = true }) {
-            Text(text = stringResource(themeLabel(theme)))
-        }
+        // Anchored to the button, as on the reader rows: a menu declared
+        // beside it opens at the start of the row instead, over the label.
+        Box {
+            TextButton(onClick = { open = true }) {
+                Text(text = stringResource(themeLabel(theme)))
+            }
 
-        DropdownMenu(expanded = open, onDismissRequest = { open = false }) {
-            for (choice in ThemeChoice.entries) {
-                DropdownMenuItem(
-                    text = { Text(text = stringResource(themeLabel(choice))) },
-                    onClick = {
-                        open = false
-                        onThemeChange(choice)
-                    },
-                )
+            DropdownMenu(expanded = open, onDismissRequest = { open = false }) {
+                for (choice in ThemeChoice.entries) {
+                    DropdownMenuItem(
+                        text = { Text(text = stringResource(themeLabel(choice))) },
+                        onClick = {
+                            open = false
+                            onThemeChange(choice)
+                        },
+                    )
+                }
             }
         }
     }

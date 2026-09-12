@@ -1,6 +1,7 @@
 package io.github.vitalyostanin.geoshare.map
 
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -24,8 +25,14 @@ import java.time.Instant
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 
-/** The time of day a permission ends, in the form the phone writes times in. */
-private val ENDS_AT: DateTimeFormatter = DateTimeFormatter.ofPattern("HH:mm")
+/**
+ * When a permission ends: the day as well as the time.
+ *
+ * The longest span is a day, so a permission given in the evening runs out
+ * tomorrow, and an hour alone would read as one that ends this morning. The
+ * year is left out: nothing here reaches one.
+ */
+private val ENDS_AT: DateTimeFormatter = DateTimeFormatter.ofPattern("d MMM HH:mm")
 
 /**
  * Who may watch this member, and for how long.
@@ -89,19 +96,25 @@ private fun ReaderRow(reader: MemberProfile, until: Instant?, onShare: (ShareSpa
     ) {
         Text(text = reader.displayName, modifier = Modifier.weight(1f))
 
-        TextButton(onClick = { open = true }) {
-            Text(text = standingText(until))
-        }
+        // The list is anchored to the button rather than to the row: a menu
+        // placed beside the button opens at the start of the row instead,
+        // over the names, and which reader is being changed stops being
+        // obvious at exactly the moment it matters.
+        Box {
+            TextButton(onClick = { open = true }) {
+                Text(text = standingText(until))
+            }
 
-        DropdownMenu(expanded = open, onDismissRequest = { open = false }) {
-            for (span in ShareSpan.entries) {
-                DropdownMenuItem(
-                    text = { Text(text = stringResource(spanLabel(span))) },
-                    onClick = {
-                        open = false
-                        onShare(span)
-                    },
-                )
+            DropdownMenu(expanded = open, onDismissRequest = { open = false }) {
+                for (span in ShareSpan.entries) {
+                    DropdownMenuItem(
+                        text = { Text(text = stringResource(spanLabel(span))) },
+                        onClick = {
+                            open = false
+                            onShare(span)
+                        },
+                    )
+                }
             }
         }
     }
