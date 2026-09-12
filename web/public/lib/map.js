@@ -75,7 +75,11 @@ export function createMap(element) {
         dragRotate: false,
     });
 
-    map.addControl(new NavigationControl({ showCompass: false }));
+    // Down in the far corner rather than the near one: the account button
+    // sits at the top right, and the two of them overlapped there — the
+    // library places its controls at the very edge, under a button the page
+    // draws over the map.
+    map.addControl(new NavigationControl({ showCompass: false }), 'bottom-right');
 
     // A tile that does not arrive, a style that cannot be read: the library
     // keeps those to itself unless somebody listens, and the page then shows

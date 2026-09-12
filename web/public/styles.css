@@ -439,6 +439,30 @@ button {
     border-left-color: var(--surface);
 }
 
+/* The zoom buttons: white by the library's own stylesheet, and placed in the
+   same corner as the account button, so in a dark theme a white edge showed
+   from under the round picture. Painted with the page's surface, and the
+   glyphs inside them are images the library ships black — inverted rather than
+   replaced, which would mean carrying the icons ourselves. */
+.maplibregl-ctrl-group {
+    background: var(--surface);
+    box-shadow: 0 0 0 1px var(--edge);
+}
+
+.maplibregl-ctrl-group button + button {
+    border-top-color: var(--edge);
+}
+
+@media (prefers-color-scheme: dark) {
+    :root:not([data-theme='light']) .maplibregl-ctrl-icon {
+        filter: invert(1);
+    }
+}
+
+:root[data-theme='dark'] .maplibregl-ctrl-icon {
+    filter: invert(1);
+}
+
 /* Set by whichever of the two blocks at the top of this file is in force, and
    absent the rest of the time. */
 .maplibregl-canvas {
