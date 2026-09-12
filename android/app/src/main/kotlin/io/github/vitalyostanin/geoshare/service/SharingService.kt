@@ -1,5 +1,6 @@
 package io.github.vitalyostanin.geoshare.service
 
+import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
@@ -46,6 +47,31 @@ class SharingService : LifecycleService() {
     private var collection: Job? = null
 
     /**
+     * Everything a write outside the collection loop needs: where the phone
+     * was last seen to be, how it was collecting at the time and what writes
+     * its documents. Held on the service because the cable is pulled at a
+     * moment the loop is not looking.
+     */
+    private var writer: PositionWriter? = null
+    private var lastFix: Fix? = null
+    private var lastMode: CollectionMode = CollectionMode.Standby
+
+    /**
+     * The cable going in or coming out, written down at once.
+     *
+     * Waiting for the next fix would leave a phone reading "12%" for the
+     * fifteen minutes it is already filling up, which is the case the reader
+     * most wants told.
+     */
+    private val power =
+        object : BroadcastReceiver() {
+            override fun onReceive(context: Context, intent: Intent) {
+                AppLog.i(TAG, "power changed: ${intent.action}")
+                writeWherePossible()
+            }
+        }
+
+    /**
      * Who this member lets read their position, as the profile last said.
      * Empty until the first answer arrives, which means a position written in
      * that first moment is readable by nobody — the next one, a few seconds
@@ -78,8 +104,28 @@ class SharingService : LifecycleService() {
 
     override fun onDestroy() {
         collection?.cancel()
+        runCatching { unregisterReceiver(power) }
         AppLog.i(TAG, "stopped")
         super.onDestroy()
+    }
+
+    /**
+     * A position written because something other than the position changed.
+     *
+     * A fresh fix is asked for first, so that the marker does not become young
+     * again while carrying an old place; the last known one is written when
+     * the provider has nothing to give.
+     */
+    private fun writeWherePossible() {
+        val writer = writer ?: return
+
+        lifecycleScope.launch {
+            val fix = firstPosition(lastMode) ?: lastFix ?: return@launch
+
+            if (writeQuietly(writer, fix, lastMode)) {
+                lastFix = fix
+            }
+        }
     }
 
     /**
@@ -106,14 +152,26 @@ class SharingService : LifecycleService() {
         val device = DeviceIdentity(this)
         val writer = PositionWriter(memberId, device)
 
+        this.writer = writer
+
+        ContextCompat.registerReceiver(
+            this,
+            power,
+            IntentFilter().apply {
+                addAction(Intent.ACTION_POWER_CONNECTED)
+                addAction(Intent.ACTION_POWER_DISCONNECTED)
+            },
+            // Only the system sends these, and nothing else may reach in.
+            ContextCompat.RECEIVER_NOT_EXPORTED,
+        )
+
         lifecycleScope.launch { ownSharedWith(memberId).collect { sharedWith = it } }
 
         collection =
             lifecycleScope.launch {
-                var last: Fix? = null
-
                 modes(memberId, device).collectLatest { mode ->
                     AppLog.i(TAG, "collecting in mode $mode")
+                    lastMode = mode
 
                     val spec = requestSpec(mode)
 
@@ -126,14 +184,14 @@ class SharingService : LifecycleService() {
                     // Entering a mode is news: somebody started looking, or the
                     // night ended. Neither should wait for the next batch.
                     firstPosition(mode)?.let { fix ->
-                        if (shouldWrite(last, fix) && writeQuietly(writer, fix, mode)) {
-                            last = fix
+                        if (shouldWrite(lastFix, fix) && writeQuietly(writer, fix, mode)) {
+                            lastFix = fix
                         }
                     }
 
                     positionUpdates(this@SharingService, spec).collect { fix ->
-                        if (shouldWrite(last, fix) && writeQuietly(writer, fix, mode)) {
-                            last = fix
+                        if (shouldWrite(lastFix, fix) && writeQuietly(writer, fix, mode)) {
+                            lastFix = fix
                         }
                     }
                 }
