@@ -8,6 +8,7 @@ import {
     orderedForNavigation,
     positionDocuments,
 } from './lib/members.js';
+import { applyTheme, readTheme, writeTheme } from './lib/theme.js';
 import {
     keepWatching,
     leave,
@@ -35,6 +36,7 @@ const elements = {
     accountMenu: document.querySelector('#account-menu'),
     accountName: document.querySelector('#account-name'),
     signOutButton: document.querySelector('#sign-out-button'),
+    themeButtons: document.querySelectorAll('#theme-choice button'),
 };
 
 const state = {
@@ -78,6 +80,35 @@ elements.accountButton.addEventListener('click', (event) => {
 // Anywhere else means "not that": the menu is a corner of the map, and the map
 // is what the viewer came for.
 document.addEventListener('click', () => showMenu(false));
+
+// Inside the menu is not anywhere else: the theme buttons live there, and a
+// menu that shuts on the first press hides the change it was pressed for.
+elements.accountMenu.addEventListener('click', (event) => event.stopPropagation());
+
+/**
+ * What the page is painted in. Kept here rather than in the account: it
+ * answers for the screen the map is read on, not for the member reading it.
+ */
+let theme = readTheme();
+
+applyTheme(theme);
+showTheme();
+
+for (const button of elements.themeButtons) {
+    button.addEventListener('click', () => {
+        theme = button.dataset.theme;
+
+        applyTheme(theme);
+        writeTheme(theme);
+        showTheme();
+    });
+}
+
+function showTheme() {
+    for (const button of elements.themeButtons) {
+        button.setAttribute('aria-pressed', String(button.dataset.theme === theme));
+    }
+}
 
 function showMenu(open) {
     elements.accountMenu.hidden = !open;

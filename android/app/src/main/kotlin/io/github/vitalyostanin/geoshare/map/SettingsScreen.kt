@@ -6,6 +6,8 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
@@ -13,12 +15,17 @@ import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import io.github.vitalyostanin.geoshare.R
 import io.github.vitalyostanin.geoshare.permission.PermissionStep
+import io.github.vitalyostanin.geoshare.service.ThemeChoice
 
 /**
  * Everything that is not the map.
@@ -32,7 +39,10 @@ fun SettingsScreen(
     sharing: Boolean,
     /** The permission the member has to grant on the settings screen, if any. */
     permissionNotice: PermissionStep?,
+    /** What the application is painted in, as the member last asked for it. */
+    theme: ThemeChoice,
     onSharingChange: (Boolean) -> Unit,
+    onThemeChange: (ThemeChoice) -> Unit,
     onOpenSettings: () -> Unit,
     onSignOut: () -> Unit,
     onClose: () -> Unit,
@@ -86,6 +96,8 @@ fun SettingsScreen(
                 }
             }
 
+            AppearanceRow(theme = theme, onThemeChange = onThemeChange)
+
             HorizontalDivider()
 
             TextButton(onClick = onSignOut, modifier = Modifier.padding(horizontal = 8.dp)) {
@@ -93,6 +105,46 @@ fun SettingsScreen(
             }
         }
     }
+}
+
+/**
+ * The theme, as one row of the list rather than a row of buttons: the screen
+ * is a list of "what" and "how it stands", and the answer is read far more
+ * often than it is changed.
+ */
+@Composable
+private fun AppearanceRow(theme: ThemeChoice, onThemeChange: (ThemeChoice) -> Unit) {
+    var open by remember { mutableStateOf(false) }
+
+    Row(
+        modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 4.dp),
+        horizontalArrangement = Arrangement.spacedBy(12.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Text(text = stringResource(R.string.appearance_title), modifier = Modifier.weight(1f))
+
+        TextButton(onClick = { open = true }) {
+            Text(text = stringResource(themeLabel(theme)))
+        }
+
+        DropdownMenu(expanded = open, onDismissRequest = { open = false }) {
+            for (choice in ThemeChoice.entries) {
+                DropdownMenuItem(
+                    text = { Text(text = stringResource(themeLabel(choice))) },
+                    onClick = {
+                        open = false
+                        onThemeChange(choice)
+                    },
+                )
+            }
+        }
+    }
+}
+
+private fun themeLabel(choice: ThemeChoice): Int = when (choice) {
+    ThemeChoice.Light -> R.string.appearance_light
+    ThemeChoice.Dark -> R.string.appearance_dark
+    ThemeChoice.System -> R.string.appearance_system
 }
 
 internal fun permissionMessage(step: PermissionStep): Int = when (step) {

@@ -9,6 +9,23 @@
         <link rel="icon" href="data:," />
         <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/maplibre-gl@6.9.0/dist/maplibre-gl.css" />
         <link rel="stylesheet" href="styles.css" />
+
+        <!-- The theme has to be on the element before the page is first
+             painted, and a module runs after that: a white flash on the way
+             into a dark map is the one thing the setting exists to avoid.
+             Hence the key spelled out here as well as in lib/theme.js. -->
+        <script>
+            try {
+                const theme = localStorage.getItem('geoshare.theme');
+
+                if (theme === 'light' || theme === 'dark') {
+                    document.documentElement.dataset.theme = theme;
+                }
+            } catch {
+                // A browser keeping no site data has no answer to read, and
+                // the system's own is what the page falls back to anyway.
+            }
+        </script>
     </head>
     <body>
         <section id="sign-in">
@@ -30,6 +47,18 @@
 
             <div id="account-menu" role="menu" hidden>
                 <p id="account-name"></p>
+
+                <p id="theme-label">Appearance</p>
+
+                <!-- Three buttons rather than a list: the whole choice is
+                     three words long, and which one is on now should be
+                     readable without opening anything. -->
+                <div id="theme-choice" role="group" aria-labelledby="theme-label">
+                    <button type="button" data-theme="light" aria-pressed="false">Light</button>
+                    <button type="button" data-theme="dark" aria-pressed="false">Dark</button>
+                    <button type="button" data-theme="system" aria-pressed="false">System</button>
+                </div>
+
                 <button id="sign-out-button" type="button" role="menuitem">Sign out</button>
             </div>
         </div>

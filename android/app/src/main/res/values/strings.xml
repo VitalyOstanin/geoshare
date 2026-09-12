@@ -39,6 +39,10 @@
     <string name="map_account_nameless">?</string>
     <string name="settings_title">Settings</string>
     <string name="settings_close">Done</string>
+    <string name="appearance_title">Appearance</string>
+    <string name="appearance_light">Light</string>
+    <string name="appearance_dark">Dark</string>
+    <string name="appearance_system">System</string>
     <string name="visibility_title">Who sees where I am</string>
     <string name="visibility_empty">Nobody else has signed in yet.</string>
     <string name="visibility_none">not shared</string>

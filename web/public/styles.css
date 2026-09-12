@@ -12,16 +12,61 @@
     --surface: rgba(255, 255, 255, 0.95);
     --on-surface: #202020;
     --link: #1e88e5;
+    /* What is written on the filled button: the light theme's link colour is
+       dark enough to carry white, the dark theme's is not. */
+    --on-link: #ffffff;
     --edge: rgba(128, 128, 128, 0.4);
+
+    /* The same surfaces at night, named once and switched to in the two
+       places below. A media query and an attribute cannot be asked for in one
+       selector, so the switch is stated twice; the colours are not. */
+    --night-surface: rgba(40, 40, 46, 0.95);
+    --night-on-surface: #ececed;
+    --night-link: #90caf9;
+    --night-on-link: #0b1f2e;
+    --night-edge: rgba(160, 160, 170, 0.35);
+
+    /* A tile is a picture drawn light on somebody else's server, so a dark map
+       is either a different set of tiles or this: the picture turned over and
+       its hues put back where they were. The markers and the cards are
+       elements of the page rather than part of the canvas, so none of them is
+       touched.
+
+       The alternative was a ready-made dark style. The renderings that need no
+       key either stamp the map with a demand for one or, in the case of the
+       free vector styles tried here, never finish loading in the browser. */
+    --night-canvas: invert(1) hue-rotate(180deg) brightness(0.92) contrast(0.95);
 }
 
+/* Dark because the system is, which is what a viewer who has said nothing
+   gets. Said out loud to mean light, the attribute stops this. */
 @media (prefers-color-scheme: dark) {
-    :root {
-        --surface: rgba(40, 40, 46, 0.95);
-        --on-surface: #ececed;
-        --link: #90caf9;
-        --edge: rgba(160, 160, 170, 0.35);
+    :root:not([data-theme="light"]) {
+        --surface: var(--night-surface);
+        --on-surface: var(--night-on-surface);
+        --link: var(--night-link);
+        --on-link: var(--night-on-link);
+        --edge: var(--night-edge);
+        --canvas-filter: var(--night-canvas);
     }
+}
+
+/* Dark because the viewer said so, whatever the system is set to. */
+:root[data-theme="dark"] {
+    color-scheme: dark;
+    --surface: var(--night-surface);
+    --on-surface: var(--night-on-surface);
+    --link: var(--night-link);
+    --on-link: var(--night-on-link);
+    --edge: var(--night-edge);
+    --canvas-filter: var(--night-canvas);
+}
+
+/* Light because the viewer said so: the one line the browser needs to stop
+   answering the system on its own, for the page background and the form
+   controls it paints itself. */
+:root[data-theme="light"] {
+    color-scheme: light;
 }
 
 /* A display of its own outranks what `hidden` asks for, and the panel has
@@ -394,16 +439,48 @@ button {
     border-left-color: var(--surface);
 }
 
-/* A tile is a picture drawn light on somebody else's server, so a dark map is
-   either a different set of tiles or this: the picture turned over and its
-   hues put back where they were. The markers and the cards are elements of the
-   page rather than part of the canvas, so none of them is touched.
+/* Set by whichever of the two blocks at the top of this file is in force, and
+   absent the rest of the time. */
+.maplibregl-canvas {
+    filter: var(--canvas-filter, none);
+}
 
-   The alternative was a ready-made dark style. The renderings that need no key
-   either stamp the map with a demand for one or, in the case of the free
-   vector styles tried here, never finish loading in the browser. */
-@media (prefers-color-scheme: dark) {
-    .maplibregl-canvas {
-        filter: invert(1) hue-rotate(180deg) brightness(0.92) contrast(0.95);
-    }
+/* The choice of theme, in the account menu: a row of three, of which one is
+   on. A press changes the page under the menu, which is why the menu stays
+   open while they are used. */
+#theme-label {
+    margin: 0 0.4rem 0.35rem;
+    font-size: 0.8rem;
+    opacity: 0.7;
+}
+
+#theme-choice {
+    display: flex;
+    margin: 0 0.1rem 0.6rem;
+    border: 1px solid var(--edge);
+    border-radius: 0.5rem;
+    overflow: hidden;
+}
+
+/* Against the rule above that gives every button in the menu the full width:
+   these three share one. */
+#account-menu #theme-choice button {
+    flex: 1;
+    width: auto;
+    padding: 0.35rem 0.2rem;
+    border-radius: 0;
+    text-align: center;
+    font-size: 0.78rem;
+}
+
+#theme-choice button + button {
+    border-left: 1px solid var(--edge);
+}
+
+#theme-choice button[aria-pressed="true"] {
+    background: var(--link);
+    /* The filled button is the one surface on the page whose text colour is
+       set rather than inherited, and the two themes set it differently. */
+    color: var(--on-link);
+    font-weight: 600;
 }

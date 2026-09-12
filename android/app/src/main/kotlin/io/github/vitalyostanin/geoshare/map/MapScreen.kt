@@ -32,6 +32,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import io.github.vitalyostanin.geoshare.R
 import io.github.vitalyostanin.geoshare.permission.PermissionStep
+import io.github.vitalyostanin.geoshare.service.ThemeChoice
 import kotlinx.coroutines.delay
 import java.time.Instant
 import java.time.ZoneId
@@ -63,7 +64,10 @@ fun MapScreen(
     sharing: Boolean,
     /** The permission the member has to grant on the settings screen, if any. */
     permissionNotice: PermissionStep?,
+    /** What the application is painted in, as the member last asked for it. */
+    theme: ThemeChoice,
     onSharingChange: (Boolean) -> Unit,
+    onThemeChange: (ThemeChoice) -> Unit,
     onOpenSettings: () -> Unit,
     onSignOut: () -> Unit,
     modifier: Modifier = Modifier,
@@ -208,7 +212,9 @@ fun MapScreen(
         SettingsScreen(
             sharing = sharing,
             permissionNotice = permissionNotice,
+            theme = theme,
             onSharingChange = onSharingChange,
+            onThemeChange = onThemeChange,
             onOpenSettings = onOpenSettings,
             onSignOut = onSignOut,
             onClose = { settingsOpen = false },

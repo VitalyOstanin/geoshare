@@ -1,20 +1,28 @@
 package io.github.vitalyostanin.geoshare
 
 import android.content.Intent
+import android.content.res.Configuration
+import android.graphics.drawable.ColorDrawable
 import android.net.Uri
 import android.os.Bundle
 import android.provider.Settings
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
+import androidx.compose.material3.darkColorScheme
+import androidx.compose.material3.lightColorScheme
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.toArgb
+import androidx.core.view.WindowCompat
 import androidx.credentials.CredentialManager
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.lifecycleScope
@@ -34,6 +42,8 @@ import io.github.vitalyostanin.geoshare.permission.permissionOf
 import io.github.vitalyostanin.geoshare.service.DeviceIdentity
 import io.github.vitalyostanin.geoshare.service.SharingService
 import io.github.vitalyostanin.geoshare.service.SharingSetting
+import io.github.vitalyostanin.geoshare.service.ThemeSetting
+import io.github.vitalyostanin.geoshare.service.darkWanted
 import io.github.vitalyostanin.geoshare.service.refusalToStart
 import io.github.vitalyostanin.geoshare.service.startConditions
 import kotlinx.coroutines.launch
@@ -41,6 +51,9 @@ import kotlinx.coroutines.launch
 class MainActivity : ComponentActivity() {
     private lateinit var signIn: SignInController
     private lateinit var sharing: SharingSetting
+
+    /** What the member asked the application to be painted in. */
+    private lateinit var appearance: ThemeSetting
 
     /** Which phone this is, so that a member carrying two is two markers rather than one. */
     private lateinit var device: DeviceIdentity
@@ -73,9 +86,23 @@ class MainActivity : ComponentActivity() {
 
         sharing = SharingSetting(this)
         device = DeviceIdentity(this)
+        appearance = ThemeSetting(this)
+
+        // Before anything is drawn: the window is what shows while the screen
+        // is still being built, and a white flash on the way into a dark map
+        // is what the setting exists to avoid.
+        paintWindow(darkWanted(appearance.choice, systemIsDark()))
 
         setContent {
-            MaterialTheme {
+            var theme by remember { mutableStateOf(appearance.choice) }
+            val dark = darkWanted(theme, isSystemInDarkTheme())
+
+            // The window stays behind the screen for the whole session: it is
+            // what the system animates to and from, and what shows around a
+            // screen that does not fill it.
+            LaunchedEffect(dark) { paintWindow(dark) }
+
+            MaterialTheme(colorScheme = if (dark) darkColorScheme() else lightColorScheme()) {
                 Surface(modifier = Modifier.fillMaxSize()) {
                     val state by signIn.state.collectAsStateWithLifecycle()
                     var sharingOn by remember { mutableStateOf(sharing.enabled) }
@@ -104,9 +131,14 @@ class MainActivity : ComponentActivity() {
                                 ownPictureUrl = current.pictureUrl,
                                 sharing = sharingOn,
                                 permissionNotice = permissionNotice,
+                                theme = theme,
                                 onSharingChange = { wanted ->
                                     sharingOn = wanted
                                     applySharing(wanted)
+                                },
+                                onThemeChange = { wanted ->
+                                    theme = wanted
+                                    appearance.choice = wanted
                                 },
                                 onOpenSettings = ::openApplicationSettings,
                                 onSignOut = { lifecycleScope.launch { signIn.signOut() } },
@@ -186,6 +218,29 @@ class MainActivity : ComponentActivity() {
             AppLog.i(TAG, "not starting the service: $refusal")
         }
     }
+
+    /**
+     * Paints the window, and tells the system bars what they are standing on.
+     *
+     * The bars draw over the screen rather than beside it, so their icons are
+     * dark on a light application and light on a dark one; nothing else knows
+     * which of the two this is.
+     */
+    private fun paintWindow(dark: Boolean) {
+        val scheme = if (dark) darkColorScheme() else lightColorScheme()
+
+        window.setBackgroundDrawable(ColorDrawable(scheme.background.toArgb()))
+
+        WindowCompat.getInsetsController(window, window.decorView).apply {
+            isAppearanceLightStatusBars = !dark
+            isAppearanceLightNavigationBars = !dark
+        }
+    }
+
+    /** What the system is set to, read outside Compose. */
+    private fun systemIsDark(): Boolean =
+        resources.configuration.uiMode and Configuration.UI_MODE_NIGHT_MASK ==
+            Configuration.UI_MODE_NIGHT_YES
 
     private fun openApplicationSettings() {
         startActivity(
