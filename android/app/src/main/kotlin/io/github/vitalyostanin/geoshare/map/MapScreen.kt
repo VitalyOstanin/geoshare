@@ -606,11 +606,23 @@ private fun MemberDetail(
             Row(verticalAlignment = Alignment.CenterVertically) {
                 MemberFace(memberId = member.memberId, name = name, picture = face)
 
-                Text(
-                    text = name,
-                    style = MaterialTheme.typography.titleMedium,
-                    modifier = Modifier.weight(1f).padding(start = 8.dp),
-                )
+                Column(modifier = Modifier.weight(1f).padding(start = 8.dp)) {
+                    Text(text = name, style = MaterialTheme.typography.titleMedium)
+
+                    // Which phone this is, the way the web page says it, and
+                    // only when the name does not carry it already: a member
+                    // with two phones has the model in their name, and a
+                    // member with one has it nowhere else.
+                    val device = member.deviceName
+
+                    if (!device.isNullOrBlank() && !name.contains(device)) {
+                        Text(
+                            text = device,
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                    }
+                }
 
                 // A word rather than an icon: the icon packs are a dependency
                 // of their own, and this is the only one the screen needs.
