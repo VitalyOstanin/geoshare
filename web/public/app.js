@@ -1,6 +1,7 @@
 // The page: sign in, then everyone on a map with a panel to jump between them.
 
 import { ageText, isStale, positionAge } from './lib/age.js';
+import { showFace } from './lib/faces.js';
 import { centreOnce, createMap, lookAt, remeasure, showMembers } from './lib/map.js';
 import {
     memberColour,
@@ -229,13 +230,14 @@ function render() {
     const now = Date.now();
 
     const labels = names();
+    const pictures = faces();
 
-    showMembers(state.view, state.positions, labels, faces(), state.member.memberId, now);
+    showMembers(state.view, state.positions, labels, pictures, state.member.memberId, now);
     centreOnce(state.view, state.positions, state.member.memberId);
 
     elements.members.replaceChildren(
         ...orderedForNavigation(state.positions, state.member.memberId).map((position) =>
-            memberEntry(position, labels, now),
+            memberEntry(position, labels, pictures, now),
         ),
     );
 }
@@ -294,28 +296,37 @@ function faces() {
     );
 }
 
-function memberEntry(position, labels, now) {
+function memberEntry(position, labels, pictures, now) {
     const entry = document.createElement('button');
     entry.className = 'member';
     entry.addEventListener('click', () => lookAt(state.view, position));
 
-    const dot = document.createElement('span');
-    dot.className = 'dot';
-    dot.style.background = memberColour(position.memberId);
+    const stale = isStale(position.knownAt, now);
+    const colour = memberColour(position.memberId);
+    const label = labels.get(position.positionId) ?? position.memberId;
+
+    // The same face the pin on the map carries, ringed in the colour of that
+    // pin: a card and a marker then say the same thing about the same member,
+    // and the colour the dot used to carry is not lost.
+    const face = document.createElement('span');
+
+    face.className = stale ? 'member-face stale' : 'member-face';
+    face.style.setProperty('--ring', colour);
+    showFace(face, pictures.get(position.memberId), label, colour);
 
     const name = document.createElement('span');
     name.className = 'name';
-    name.textContent = labels.get(position.positionId) ?? position.memberId;
+    name.textContent = label;
 
     const age = document.createElement('span');
-    age.className = isStale(position.knownAt, now) ? 'age stale' : 'age';
+    age.className = stale ? 'age stale' : 'age';
     age.textContent = ageText(positionAge(position.knownAt, now));
 
     const battery = document.createElement('span');
     battery.className = 'battery';
     battery.textContent = position.batteryPercent === null ? '' : `${position.batteryPercent}%`;
 
-    entry.append(dot, name, age, battery);
+    entry.append(face, name, age, battery);
 
     return entry;
 }

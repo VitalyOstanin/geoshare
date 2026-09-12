@@ -126,11 +126,26 @@ body {
     white-space: nowrap;
 }
 
-.dot {
-    width: 0.7rem;
-    height: 0.7rem;
+/* The face on a card in the panel: the same picture the pin carries, ringed in
+   the colour of that pin so that the card and the marker read as one member. */
+.member-face {
+    width: 1.6rem;
+    height: 1.6rem;
+    flex: none;
     border-radius: 50%;
-    box-shadow: 0 0 0 2px #ffffff;
+    background-color: var(--surface);
+    background-size: cover;
+    background-position: center;
+    box-shadow: 0 0 0 2px var(--ring, #ffffff);
+    display: grid;
+    place-items: center;
+    font-size: 0.8rem;
+    font-weight: 700;
+}
+
+/* Grey like the pin of a member who has gone quiet. */
+.member-face.stale {
+    filter: grayscale(1);
 }
 
 .age,

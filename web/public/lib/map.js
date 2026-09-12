@@ -12,7 +12,8 @@ import {
     Popup,
 } from 'https://cdn.jsdelivr.net/npm/maplibre-gl@6.9.0/dist/maplibre-gl.mjs';
 
-import { STALE_COLOUR, memberColour, memberInitial, pictureAddress, shortName } from './members.js';
+import { STALE_COLOUR, memberColour, shortName } from './members.js';
+import { showFace } from './faces.js';
 import { ageText, isStale, positionAge, timeText } from './age.js';
 import { clusterMembers, facesShown } from './clusters.js';
 
@@ -310,31 +311,6 @@ function showPin(entry, names, faces, now) {
         counter.style.backgroundImage = '';
         counter.textContent = `+${group.length - shown.length}`;
     }
-}
-
-/**
- * The face inside a pin: the account picture, or the letter that stands in for
- * it.
- *
- * Set as a background rather than as an image element, so that a portrait of
- * any shape is cropped to the circle instead of being squeezed into it.
- */
-function showFace(face, pictureUrl, name, colour) {
-    const picture = pictureAddress(pictureUrl);
-
-    if (picture) {
-        // Quoted through the JSON encoder rather than by hand: the address is
-        // written by whoever holds the account, and this is what keeps a quote
-        // in it from ending the CSS string early.
-        face.style.backgroundImage = `url(${JSON.stringify(picture)})`;
-        face.textContent = '';
-
-        return;
-    }
-
-    face.style.backgroundImage = '';
-    face.style.color = colour;
-    face.textContent = memberInitial(name);
 }
 
 /** What a marker for several members writes above itself. */
