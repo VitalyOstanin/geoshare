@@ -95,10 +95,19 @@ fun MapScreen(
     theme: ThemeChoice,
     /** The permissions this member has given, by the member each was given to. */
     sharedWith: Map<String, Instant>,
+    /** Whether the phone leaves the application out of its battery saving. */
+    batteryUnrestricted: Boolean,
+    /** Whether this phone has a startup list of its own to open. */
+    startupScreen: Boolean,
+    /** Whether the member says that list is already set. */
+    startupSet: Boolean,
     onSharingChange: (Boolean) -> Unit,
     onThemeChange: (ThemeChoice) -> Unit,
     onShare: (String, ShareSpan) -> Unit,
     onOpenSettings: () -> Unit,
+    onAllowBattery: () -> Unit,
+    onOpenStartup: () -> Unit,
+    onStartupSetChange: (Boolean) -> Unit,
     onSignOut: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -254,10 +263,16 @@ fun MapScreen(
             profiles = profiles,
             ownMemberId = ownMemberId,
             sharedWith = sharedWith,
+            batteryUnrestricted = batteryUnrestricted,
+            startupScreen = startupScreen,
+            startupSet = startupSet,
             onSharingChange = onSharingChange,
             onThemeChange = onThemeChange,
             onShare = onShare,
             onOpenSettings = onOpenSettings,
+            onAllowBattery = onAllowBattery,
+            onOpenStartup = onOpenStartup,
+            onStartupSetChange = onStartupSetChange,
             onSignOut = onSignOut,
             onClose = { settingsOpen = false },
         )

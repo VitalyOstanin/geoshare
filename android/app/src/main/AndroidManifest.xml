@@ -18,6 +18,23 @@
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
     <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
 
+    <!-- Asked for in a dialog of the system's own: a phone that stops the
+         service while nobody is looking at the screen stops answering the
+         other members, whose fast collecting arrives over a subscription. -->
+    <uses-permission android:name="android.permission.REQUEST_IGNORE_BATTERY_OPTIMIZATIONS" />
+
+    <!-- The manufacturers' own startup lists, which are what the phone reads
+         rather than the setting above. Named here because a package that is
+         not asked for cannot be seen at all from Android 11 onwards, and the
+         settings row has to know whether this phone has such a screen. -->
+    <queries>
+        <package android:name="com.hihonor.systemmanager" />
+        <package android:name="com.huawei.systemmanager" />
+        <package android:name="com.miui.securitycenter" />
+        <package android:name="com.coloros.safecenter" />
+        <package android:name="com.vivo.permissionmanager" />
+    </queries>
+
     <application
         android:name=".GeoshareApplication"
         android:allowBackup="false"

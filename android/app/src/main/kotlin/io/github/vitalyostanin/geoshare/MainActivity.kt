@@ -39,9 +39,14 @@ import io.github.vitalyostanin.geoshare.map.rememberMemberProfiles
 import io.github.vitalyostanin.geoshare.map.rememberOwnSharedWith
 import io.github.vitalyostanin.geoshare.map.withShare
 import io.github.vitalyostanin.geoshare.permission.PermissionStep
+import io.github.vitalyostanin.geoshare.permission.batteryExemptionRequest
+import io.github.vitalyostanin.geoshare.permission.batteryExemptionWanted
+import io.github.vitalyostanin.geoshare.permission.batteryUnrestricted
 import io.github.vitalyostanin.geoshare.permission.devicePermissions
 import io.github.vitalyostanin.geoshare.permission.nextPermissionStep
 import io.github.vitalyostanin.geoshare.permission.permissionOf
+import io.github.vitalyostanin.geoshare.permission.startupScreen
+import io.github.vitalyostanin.geoshare.service.BackgroundWorkSetting
 import io.github.vitalyostanin.geoshare.service.DeviceIdentity
 import io.github.vitalyostanin.geoshare.service.SharingService
 import io.github.vitalyostanin.geoshare.service.SharingSetting
@@ -62,6 +67,12 @@ class MainActivity : ComponentActivity() {
     /** Which phone this is, so that a member carrying two is two markers rather than one. */
     private lateinit var device: DeviceIdentity
 
+    /** What the member has answered about letting the application keep running. */
+    private lateinit var backgroundWork: BackgroundWorkSetting
+
+    /** How the phone stands on restricting us, read again every time the screen comes up. */
+    private var batteryFree by mutableStateOf(false)
+
     /** The step the member has to finish on the settings screen, if any. */
     private var permissionNotice by mutableStateOf<PermissionStep?>(null)
 
@@ -75,6 +86,13 @@ class MainActivity : ComponentActivity() {
     private val askPermission =
         registerForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) {
             continueSharingSetup()
+        }
+
+    // The answer arrives as a closed dialog rather than as a result: the
+    // system tells nobody what was pressed, and the state is read back.
+    private val askBattery =
+        registerForActivityResult(ActivityResultContracts.StartActivityForResult()) {
+            batteryFree = batteryUnrestricted(this)
         }
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -91,6 +109,8 @@ class MainActivity : ComponentActivity() {
         sharing = SharingSetting(this)
         device = DeviceIdentity(this)
         appearance = ThemeSetting(this)
+        backgroundWork = BackgroundWorkSetting(this)
+        batteryFree = batteryUnrestricted(this)
 
         // Before anything is drawn: the window is what shows while the screen
         // is still being built, and a white flash on the way into a dark map
@@ -110,6 +130,7 @@ class MainActivity : ComponentActivity() {
                 Surface(modifier = Modifier.fillMaxSize()) {
                     val state by signIn.state.collectAsStateWithLifecycle()
                     var sharingOn by remember { mutableStateOf(sharing.enabled) }
+                    var startupSet by remember { mutableStateOf(backgroundWork.startupSet) }
 
                     when (val current = state) {
                         // Signed in, the map is the application; the sign-in
@@ -138,6 +159,9 @@ class MainActivity : ComponentActivity() {
                                 permissionNotice = permissionNotice,
                                 theme = theme,
                                 sharedWith = sharedWith,
+                                batteryUnrestricted = batteryFree,
+                                startupScreen = startupScreen(this@MainActivity) != null,
+                                startupSet = startupSet,
                                 onSharingChange = { wanted ->
                                     sharingOn = wanted
                                     applySharing(wanted)
@@ -165,6 +189,12 @@ class MainActivity : ComponentActivity() {
                                     }
                                 },
                                 onOpenSettings = ::openApplicationSettings,
+                                onAllowBattery = ::askBatteryExemption,
+                                onOpenStartup = ::openStartupScreen,
+                                onStartupSetChange = { set ->
+                                    startupSet = set
+                                    backgroundWork.startupSet = set
+                                },
                                 onSignOut = { lifecycleScope.launch { signIn.signOut() } },
                             )
                         }
@@ -218,6 +248,7 @@ class MainActivity : ComponentActivity() {
         if (step == null) {
             permissionNotice = null
             startSharingService()
+            askBatteryExemptionOnce()
 
             return
         }
@@ -266,6 +297,52 @@ class MainActivity : ComponentActivity() {
         resources.configuration.uiMode and Configuration.UI_MODE_NIGHT_MASK ==
             Configuration.UI_MODE_NIGHT_YES
 
+    /**
+     * Asks once, and only once, for the phone to stop restricting us.
+     *
+     * Made where the permissions end rather than at startup: a member who has
+     * just allowed the position is being asked about the same thing, and a
+     * member who shares nothing has nothing to be interrupted.
+     */
+    private fun askBatteryExemptionOnce() {
+        val wanted =
+            batteryExemptionWanted(
+                sharing = sharing.enabled,
+                unrestricted = batteryFree,
+                askedBefore = backgroundWork.batteryAsked,
+            )
+
+        if (!wanted) {
+            return
+        }
+
+        backgroundWork.batteryAsked = true
+        askBatteryExemption()
+    }
+
+    private fun askBatteryExemption() {
+        askBattery.launch(batteryExemptionRequest(this))
+    }
+
+    /**
+     * Opens the manufacturer's own startup list.
+     *
+     * The row that calls this is shown only when such a screen was found, so
+     * the absent case is a phone whose screen went away between the two, and
+     * the application settings are the nearest thing left.
+     */
+    private fun openStartupScreen() {
+        val screen = startupScreen(this)
+
+        if (screen == null) {
+            openApplicationSettings()
+
+            return
+        }
+
+        startActivity(screen)
+    }
+
     private fun openApplicationSettings() {
         startActivity(
             Intent(
@@ -282,6 +359,7 @@ class MainActivity : ComponentActivity() {
         signIn.start()
         // Coming back from the settings screen is the usual way a permission
         // changes, and nothing tells the application about it.
+        batteryFree = batteryUnrestricted(this)
         continueSharingSetup()
     }
 

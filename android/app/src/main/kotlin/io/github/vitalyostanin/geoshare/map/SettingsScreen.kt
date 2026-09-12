@@ -50,10 +50,19 @@ fun SettingsScreen(
     ownMemberId: String,
     /** The permissions this member has given, by the member each was given to. */
     sharedWith: Map<String, Instant>,
+    /** Whether the phone leaves the application out of its battery saving. */
+    batteryUnrestricted: Boolean,
+    /** Whether this phone has a startup list of its own to open. */
+    startupScreen: Boolean,
+    /** Whether the member says that list is already set. */
+    startupSet: Boolean,
     onSharingChange: (Boolean) -> Unit,
     onThemeChange: (ThemeChoice) -> Unit,
     onShare: (String, ShareSpan) -> Unit,
     onOpenSettings: () -> Unit,
+    onAllowBattery: () -> Unit,
+    onOpenStartup: () -> Unit,
+    onStartupSetChange: (Boolean) -> Unit,
     onSignOut: () -> Unit,
     onClose: () -> Unit,
     modifier: Modifier = Modifier,
@@ -120,6 +129,17 @@ fun SettingsScreen(
 
             HorizontalDivider()
 
+            BackgroundWorkSection(
+                batteryUnrestricted = batteryUnrestricted,
+                startupScreen = startupScreen,
+                startupSet = startupSet,
+                onAllowBattery = onAllowBattery,
+                onOpenStartup = onOpenStartup,
+                onStartupSetChange = onStartupSetChange,
+            )
+
+            HorizontalDivider()
+
             AppearanceRow(theme = theme, onThemeChange = onThemeChange)
 
             HorizontalDivider()
@@ -129,6 +149,78 @@ fun SettingsScreen(
             }
         }
     }
+}
+
+/**
+ * What stands between the service and the phone that would rather it stopped.
+ *
+ * Two rows that are not the same kind of thing. The battery restriction is a
+ * state the system will answer for, so the row says how it stands and offers
+ * to change it. The manufacturer's startup list cannot be read by anyone, so
+ * that row is a reminder with a way to the screen and a mark the member sets
+ * themselves once they have been there.
+ */
+@Composable
+private fun BackgroundWorkSection(
+    batteryUnrestricted: Boolean,
+    startupScreen: Boolean,
+    startupSet: Boolean,
+    onAllowBattery: () -> Unit,
+    onOpenStartup: () -> Unit,
+    onStartupSetChange: (Boolean) -> Unit,
+) {
+    Text(
+        text = stringResource(R.string.background_title),
+        style = MaterialTheme.typography.titleMedium,
+        modifier = Modifier.padding(start = 16.dp, top = 8.dp, end = 16.dp),
+    )
+
+    Row(
+        modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 4.dp),
+        horizontalArrangement = Arrangement.spacedBy(12.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Text(text = stringResource(R.string.background_battery), modifier = Modifier.weight(1f))
+
+        if (batteryUnrestricted) {
+            Text(
+                text = stringResource(R.string.background_battery_lifted),
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        } else {
+            TextButton(onClick = onAllowBattery) {
+                Text(text = stringResource(R.string.background_battery_allow))
+            }
+        }
+    }
+
+    if (!startupScreen) {
+        return
+    }
+
+    Row(
+        modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 4.dp),
+        horizontalArrangement = Arrangement.spacedBy(12.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Text(text = stringResource(R.string.background_startup), modifier = Modifier.weight(1f))
+
+        TextButton(onClick = onOpenStartup) {
+            Text(text = stringResource(R.string.background_startup_open))
+        }
+
+        Switch(checked = startupSet, onCheckedChange = onStartupSetChange)
+    }
+
+    // Said under the row rather than in a dialog: it explains why this one row
+    // is answered by hand while everything above it answers itself.
+    Text(
+        text = stringResource(R.string.background_startup_explained),
+        style = MaterialTheme.typography.bodySmall,
+        color = MaterialTheme.colorScheme.onSurfaceVariant,
+        modifier = Modifier.padding(start = 16.dp, end = 16.dp, bottom = 8.dp),
+    )
 }
 
 /**

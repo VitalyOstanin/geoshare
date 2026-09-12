@@ -39,6 +39,14 @@
     <string name="map_account_nameless">?</string>
     <string name="settings_title">Settings</string>
     <string name="settings_close">Done</string>
+    <string name="background_title">Background work</string>
+    <string name="background_battery">Battery restriction</string>
+    <string name="background_battery_lifted">Lifted</string>
+    <string name="background_battery_allow">Allow</string>
+    <string name="background_startup">Startup list of the phone</string>
+    <string name="background_startup_open">Open</string>
+    <string name="background_startup_done">Set</string>
+    <string name="background_startup_explained">The phone keeps its own list of applications allowed to start. Nothing can read it, so mark it yourself once it is set.</string>
     <string name="appearance_title">Appearance</string>
     <string name="appearance_light">Light</string>
     <string name="appearance_dark">Dark</string>
