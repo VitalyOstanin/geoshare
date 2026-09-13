@@ -19,6 +19,7 @@ import {
     getDocs,
     query,
     serverTimestamp,
+    arrayUnion,
     setDoc,
     updateDoc,
     where,
@@ -720,6 +721,21 @@ describe('joining a group', () => {
 
         await assertSucceeds(setDoc(claimOf(db, STRANGER), { code: CODE }));
         await assertSucceeds(join(db, [ALICE, BOB, STRANGER]));
+    });
+
+    // The one that decides how the application writes it: a person outside the
+    // group cannot read the group document, so they cannot send the roster
+    // they are adding themselves to. Asking the server to append instead
+    // leaves the rule comparing the same two lists.
+    it('somebody joining need not know who is already on the roster', async () => {
+        await plantAnAdministrator();
+        await plantAnInvitation();
+
+        const db = testEnv.authenticatedContext(STRANGER).firestore();
+
+        await assertFails(getDoc(groupDoc(db)));
+        await assertSucceeds(setDoc(claimOf(db, STRANGER), { code: CODE }));
+        await assertSucceeds(updateDoc(groupDoc(db), { members: arrayUnion(STRANGER) }));
     });
 
     it('somebody holding no code at all is refused', async () => {

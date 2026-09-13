@@ -168,6 +168,19 @@ fun SettingsScreen(
 
             HorizontalDivider()
 
+            GroupSection(
+                roster = settings.roster,
+                ownMemberId = ownMemberId,
+                profiles = profiles,
+                invitation = settings.invitation,
+                onFoundGroup = actions.onFoundGroup,
+                onMakeInvitation = actions.onMakeInvitation,
+                onJoinGroup = actions.onJoinGroup,
+                onRemoveMember = actions.onRemoveMember,
+            )
+
+            HorizontalDivider()
+
             VisibilitySection(
                 profiles = profiles,
                 ownMemberId = ownMemberId,

@@ -1,5 +1,6 @@
 package io.github.vitalyostanin.geoshare.map
 
+import io.github.vitalyostanin.geoshare.membership.Roster
 import io.github.vitalyostanin.geoshare.permission.PermissionStep
 import io.github.vitalyostanin.geoshare.service.LanguageChoice
 import io.github.vitalyostanin.geoshare.service.ThemeChoice
@@ -32,6 +33,10 @@ data class SettingsState(
     val startupScreen: Boolean,
     /** Whether the member says that list is already set. */
     val startupSet: Boolean,
+    /** Who is in the group, or nothing when this account cannot see a roster. */
+    val roster: Roster?,
+    /** The invitation code just made, held until the screen is left. */
+    val invitation: String?,
 )
 
 /** What the settings screen can ask for, as one value, and for the same reason. */
@@ -46,5 +51,9 @@ data class SettingsActions(
     val onAllowBattery: () -> Unit,
     val onOpenStartup: () -> Unit,
     val onStartupSetChange: (Boolean) -> Unit,
+    val onFoundGroup: () -> Unit,
+    val onMakeInvitation: () -> Unit,
+    val onJoinGroup: (String) -> Unit,
+    val onRemoveMember: (String) -> Unit,
     val onSignOut: () -> Unit,
 )

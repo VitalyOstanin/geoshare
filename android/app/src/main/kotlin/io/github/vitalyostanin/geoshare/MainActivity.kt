@@ -40,6 +40,7 @@ import io.github.vitalyostanin.geoshare.map.PublishProfile
 import io.github.vitalyostanin.geoshare.map.SettingsActions
 import io.github.vitalyostanin.geoshare.map.SettingsState
 import io.github.vitalyostanin.geoshare.map.publishSharing
+import io.github.vitalyostanin.geoshare.map.rememberGroupRoster
 import io.github.vitalyostanin.geoshare.map.rememberMemberGrants
 import io.github.vitalyostanin.geoshare.map.rememberMemberPositions
 import io.github.vitalyostanin.geoshare.map.rememberMemberProfiles
@@ -64,10 +65,15 @@ import io.github.vitalyostanin.geoshare.service.SharingService
 import io.github.vitalyostanin.geoshare.service.SharingSetting
 import io.github.vitalyostanin.geoshare.service.ThemeSetting
 import io.github.vitalyostanin.geoshare.service.darkWanted
+import io.github.vitalyostanin.geoshare.service.foundGroup
+import io.github.vitalyostanin.geoshare.service.joinGroup
 import io.github.vitalyostanin.geoshare.service.languageChosen
 import io.github.vitalyostanin.geoshare.service.languageTag
+import io.github.vitalyostanin.geoshare.service.makeInvitation
 import io.github.vitalyostanin.geoshare.service.refusalToStart
+import io.github.vitalyostanin.geoshare.service.removeFromGroup
 import io.github.vitalyostanin.geoshare.service.startConditions
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.launch
 import java.time.Instant
 
@@ -195,6 +201,12 @@ class MainActivity : AppCompatActivity() {
                             val grants by rememberMemberGrants(profiles)
                             val onTheMap by rememberMemberPositions(grants)
                             val sharedWith by rememberOwnSharedWith(current.memberId)
+                            val roster by rememberGroupRoster()
+                            // Kept on the screen rather than in the database:
+                            // the code is written where nobody may read it
+                            // back, this phone included, so the only copy to
+                            // show is the one just made.
+                            var invitation by remember { mutableStateOf<String?>(null) }
 
                             KeepWatching(current.memberId, device.id)
 
@@ -231,6 +243,8 @@ class MainActivity : AppCompatActivity() {
                                     startupScreen = startupAvailable,
                                     startupSet = startupSet,
                                     jumpsFiltered = jumpsFiltered,
+                                    roster = roster,
+                                    invitation = invitation,
                                 ),
                                 actions =
                                 SettingsActions(
@@ -284,6 +298,43 @@ class MainActivity : AppCompatActivity() {
                                     onStartupSetChange = { set ->
                                         startupSet = set
                                         backgroundWork.startupSet = set
+                                    },
+                                    // Refused when a group already exists,
+                                    // which is the answer to the question the
+                                    // screen cannot ask: a phone outside a
+                                    // group cannot read the roster, so it
+                                    // cannot tell an empty household from one
+                                    // it is not in.
+                                    onFoundGroup = {
+                                        lifecycleScope.launch {
+                                            withGroup("found a group") {
+                                                foundGroup(current.memberId)
+                                            }
+                                        }
+                                    },
+                                    onMakeInvitation = {
+                                        lifecycleScope.launch {
+                                            withGroup("made an invitation") {
+                                                invitation =
+                                                    makeInvitation(current.memberId)
+                                            }
+                                        }
+                                    },
+                                    onJoinGroup = { code ->
+                                        lifecycleScope.launch {
+                                            withGroup("joined a group") {
+                                                joinGroup(current.memberId, code)
+                                            }
+                                        }
+                                    },
+                                    onRemoveMember = { memberId ->
+                                        lifecycleScope.launch {
+                                            withGroup("removed a member") {
+                                                roster?.let {
+                                                    removeFromGroup(it, memberId)
+                                                }
+                                            }
+                                        }
                                     },
                                     onSignOut = { lifecycleScope.launch { signIn.signOut() } },
                                 ),
@@ -472,6 +523,24 @@ class MainActivity : AppCompatActivity() {
      * the absent case is a phone whose screen went away between the two, and
      * the application settings are the nearest thing left.
      */
+    // A write to the group, and what happens when the rules refuse it. They
+    // refuse for reasons the screen could not have ruled out: founding a group
+    // that already exists, a code that has run out, a member somebody else
+    // removed a moment ago. None of them is a fault of this phone, so the
+    // refusal is written down and the screen goes on showing what the roster
+    // actually says.
+    private suspend fun withGroup(done: String, write: suspend () -> Unit) {
+        try {
+            write()
+
+            AppLog.i(TAG, done)
+        } catch (cancellation: CancellationException) {
+            throw cancellation
+        } catch (refusal: Exception) {
+            AppLog.w(TAG, "the group was left as it was: $done", refusal)
+        }
+    }
+
     private fun openStartupScreen() {
         val screen = startupScreen(this)
 

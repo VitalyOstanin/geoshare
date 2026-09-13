@@ -37,6 +37,42 @@ fun watchOf(store: FirebaseFirestore): CollectionReference =
 fun grantsOf(store: FirebaseFirestore): CollectionReference =
     groupDocument(store).collection("grants")
 
+/**
+ * The invitations of the group: one document per code, named by the code.
+ *
+ * Nobody reads this collection, the application included. The rules read it
+ * while they weigh somebody joining, and a rule reads without the caller's
+ * permission; a client that could read it would hold every code of the group.
+ */
+fun invitationsOf(store: FirebaseFirestore): CollectionReference =
+    groupDocument(store).collection("invitations")
+
+/**
+ * Where the person joining puts the code they are holding.
+ *
+ * A rule cannot be told anything except through the database: the write it
+ * weighs is the roster, and a code has nowhere to ride in it.
+ */
+fun joinsOf(store: FirebaseFirestore): CollectionReference =
+    groupDocument(store).collection("joins")
+
+/** The fields of the group document itself. */
+object GroupField {
+    const val MEMBERS = "members"
+    const val ADMINS = "admins"
+}
+
+/** The fields of an invitation. */
+object InvitationField {
+    const val CREATED_BY = "createdBy"
+    const val EXPIRES_AT = "expiresAt"
+}
+
+/** The one field of a claim to be holding a code. */
+object JoinField {
+    const val CODE = "code"
+}
+
 /** The fields of a position document, as the writer and the reader both call them. */
 object PositionField {
     const val MEMBER_ID = "memberId"

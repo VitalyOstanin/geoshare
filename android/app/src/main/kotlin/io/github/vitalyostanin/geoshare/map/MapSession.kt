@@ -10,6 +10,8 @@ import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.repeatOnLifecycle
 import io.github.vitalyostanin.geoshare.collection.Watcher
+import io.github.vitalyostanin.geoshare.membership.Roster
+import io.github.vitalyostanin.geoshare.service.groupRoster
 import io.github.vitalyostanin.geoshare.service.positionId
 import io.github.vitalyostanin.geoshare.service.watchers
 import kotlinx.coroutines.NonCancellable
@@ -77,6 +79,22 @@ fun rememberMemberProfiles(): State<Map<String, MemberProfile>?> {
     val profiles = remember { memberProfiles() }
 
     return profiles.collectAsStateWithLifecycle(initialValue = null)
+}
+
+/**
+ * The roster, collected while a screen is up.
+ *
+ * Nothing arrives for somebody outside the group, and nothing arrives before
+ * the group is made: the document is closed to everybody not on it, and a
+ * document that does not exist has nothing to send. Both come out as no
+ * roster at all, which is why the screen offers founding a group and entering
+ * a code side by side — from here the two cannot be told apart.
+ */
+@Composable
+fun rememberGroupRoster(): State<Roster?> {
+    val roster = remember { groupRoster() }
+
+    return roster.collectAsStateWithLifecycle(initialValue = null)
 }
 
 /**
