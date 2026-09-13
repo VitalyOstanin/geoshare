@@ -32,6 +32,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import io.github.vitalyostanin.geoshare.R
 import io.github.vitalyostanin.geoshare.permission.PermissionStep
+import io.github.vitalyostanin.geoshare.service.LanguageChoice
 import io.github.vitalyostanin.geoshare.service.ThemeChoice
 import java.time.Instant
 
@@ -136,6 +137,8 @@ fun SettingsScreen(
             HorizontalDivider()
 
             AppearanceRow(theme = settings.theme, onThemeChange = actions.onThemeChange)
+
+            LanguageRow(language = settings.language, onLanguageChange = actions.onLanguageChange)
 
             HorizontalDivider()
 
@@ -265,6 +268,51 @@ private fun AppearanceRow(theme: ThemeChoice, onThemeChange: (ThemeChoice) -> Un
             }
         }
     }
+}
+
+/**
+ * The language the application is read in.
+ *
+ * Beside the theme rather than on a screen of its own: both are answers about
+ * this phone rather than about the member, and both are given once. A phone
+ * running Android 13 or later offers the same choice in its own settings, and
+ * either place changes the other.
+ */
+@Composable
+private fun LanguageRow(language: LanguageChoice, onLanguageChange: (LanguageChoice) -> Unit) {
+    var open by remember { mutableStateOf(false) }
+
+    Row(
+        modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 4.dp),
+        horizontalArrangement = Arrangement.spacedBy(12.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Text(text = stringResource(R.string.language_title), modifier = Modifier.weight(1f))
+
+        Box {
+            TextButton(onClick = { open = true }) {
+                Text(text = stringResource(languageLabel(language)))
+            }
+
+            DropdownMenu(expanded = open, onDismissRequest = { open = false }) {
+                for (choice in LanguageChoice.entries) {
+                    DropdownMenuItem(
+                        text = { Text(text = stringResource(languageLabel(choice))) },
+                        onClick = {
+                            open = false
+                            onLanguageChange(choice)
+                        },
+                    )
+                }
+            }
+        }
+    }
+}
+
+private fun languageLabel(choice: LanguageChoice): Int = when (choice) {
+    LanguageChoice.Russian -> R.string.language_russian
+    LanguageChoice.English -> R.string.language_english
+    LanguageChoice.System -> R.string.language_system
 }
 
 private fun themeLabel(choice: ThemeChoice): Int = when (choice) {

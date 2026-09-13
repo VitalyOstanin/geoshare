@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name">Geoshare</string>
+    <!-- The name of the application, which is the same in every language. -->
+    <string name="app_name" translatable="false">Geoshare</string>
 
     <string name="sign_in_explanation">Sign in with the Google account the family shares positions under.</string>
     <string name="sign_in_action">Sign in with Google</string>
@@ -25,18 +26,19 @@
     <string name="permission_open_settings">Open the settings</string>
     <string name="map_nobody_yet">Nobody has shared a position yet.</string>
     <string name="map_member_you">You</string>
-    <string name="map_battery">%1$d%%</string>
+    <!-- Nothing but a number and a sign; the same line in every language. -->
+    <string name="map_battery" translatable="false">%1$d%%</string>
     <string name="map_age_just_now">just now</string>
     <string name="map_detail_last_seen">Last seen</string>
     <string name="map_detail_at">At</string>
     <string name="map_detail_mode">Mode</string>
     <string name="map_detail_battery">Battery</string>
     <string name="map_detail_position">Position</string>
-    <string name="map_detail_coordinates">%1$.5f, %2$.5f</string>
+    <string name="map_detail_coordinates" translatable="false">%1$.5f, %2$.5f</string>
     <string name="map_detail_unknown">unknown</string>
     <string name="map_detail_close">Close</string>
     <string name="map_open_settings">Settings</string>
-    <string name="map_account_nameless">?</string>
+    <string name="map_account_nameless" translatable="false">?</string>
     <string name="settings_title">Settings</string>
     <string name="settings_close">Close</string>
     <string name="background_title">Background work</string>
@@ -51,6 +53,13 @@
     <string name="appearance_light">Light</string>
     <string name="appearance_dark">Dark</string>
     <string name="appearance_system">System</string>
+    <!-- The language of the application, which a phone before Android 13 has
+         nowhere else to set. The two named languages say so in their own
+         words: a member looking for theirs reads it before anything else. -->
+    <string name="language_title">Language</string>
+    <string name="language_russian">Русский</string>
+    <string name="language_english">English</string>
+    <string name="language_system">System</string>
     <string name="visibility_title">Who sees where I am</string>
     <string name="visibility_empty">Nobody else has signed in yet.</string>
     <string name="visibility_none">not shared</string>

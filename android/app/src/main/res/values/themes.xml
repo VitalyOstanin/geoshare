@@ -1,4 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <style name="Theme.Geoshare" parent="android:Theme.Material.Light.NoActionBar" />
+    <!-- An AppCompat theme because the activity is an AppCompat one, and the
+         activity is an AppCompat one because that is what applies the language
+         a member picks on phones before Android 13. The window itself is
+         painted from the screen's own colours, so what this theme decides is
+         what shows for the moment before the first frame. -->
+    <style name="Theme.Geoshare" parent="Theme.AppCompat.DayNight.NoActionBar" />
 </resources>

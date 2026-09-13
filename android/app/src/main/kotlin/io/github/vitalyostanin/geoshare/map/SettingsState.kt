@@ -1,6 +1,7 @@
 package io.github.vitalyostanin.geoshare.map
 
 import io.github.vitalyostanin.geoshare.permission.PermissionStep
+import io.github.vitalyostanin.geoshare.service.LanguageChoice
 import io.github.vitalyostanin.geoshare.service.ThemeChoice
 import java.time.Instant
 
@@ -19,6 +20,8 @@ data class SettingsState(
     val permissionNotice: PermissionStep?,
     /** What the application is painted in, as the member last asked for it. */
     val theme: ThemeChoice,
+    /** What language it is read in, as the member last asked for it. */
+    val language: LanguageChoice,
     /** The permissions this member has given, by the member each was given to. */
     val sharedWith: Map<String, Instant>,
     /** Whether the phone leaves the application out of its battery saving. */
@@ -33,6 +36,7 @@ data class SettingsState(
 data class SettingsActions(
     val onSharingChange: (Boolean) -> Unit,
     val onThemeChange: (ThemeChoice) -> Unit,
+    val onLanguageChange: (LanguageChoice) -> Unit,
     val onShare: (String, ShareSpan) -> Unit,
     val onOpenSettings: () -> Unit,
     val onAllowBattery: () -> Unit,

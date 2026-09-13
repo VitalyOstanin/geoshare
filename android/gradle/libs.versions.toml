@@ -9,6 +9,10 @@ agp = "9.4.0"
 kotlin = "2.4.20"
 composeBom = "2026.09.00"
 coreKtx = "1.19.0"
+# The activity is an AppCompat one for one reason: the language a member picks
+# inside the application is applied through AppCompatDelegate, and below
+# Android 13 that is the only way the choice reaches the screens at all.
+appcompat = "1.8.0"
 activityCompose = "1.13.0"
 lifecycle = "2.11.0"
 # Not used directly: Play Services pulls in a fragment old enough that the
@@ -38,6 +42,7 @@ ktlint = "1.8.0"
 
 [libraries]
 androidx-core-ktx = { module = "androidx.core:core-ktx", version.ref = "coreKtx" }
+androidx-appcompat = { module = "androidx.appcompat:appcompat", version.ref = "appcompat" }
 androidx-activity-compose = { module = "androidx.activity:activity-compose", version.ref = "activityCompose" }
 androidx-lifecycle-runtime-compose = { module = "androidx.lifecycle:lifecycle-runtime-compose", version.ref = "lifecycle" }
 androidx-lifecycle-service = { module = "androidx.lifecycle:lifecycle-service", version.ref = "lifecycle" }

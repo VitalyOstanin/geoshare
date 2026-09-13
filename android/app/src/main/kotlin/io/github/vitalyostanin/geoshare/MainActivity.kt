@@ -7,10 +7,11 @@ import android.graphics.drawable.ColorDrawable
 import android.net.Uri
 import android.os.Bundle
 import android.provider.Settings
-import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.appcompat.app.AppCompatActivity
+import androidx.appcompat.app.AppCompatDelegate
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.MaterialTheme
@@ -24,6 +25,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.toArgb
+import androidx.core.os.LocaleListCompat
 import androidx.core.view.WindowCompat
 import androidx.credentials.CredentialManager
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -56,16 +58,24 @@ import io.github.vitalyostanin.geoshare.permission.permissionOf
 import io.github.vitalyostanin.geoshare.permission.startupScreen
 import io.github.vitalyostanin.geoshare.service.BackgroundWorkSetting
 import io.github.vitalyostanin.geoshare.service.DeviceIdentity
+import io.github.vitalyostanin.geoshare.service.LanguageChoice
 import io.github.vitalyostanin.geoshare.service.SharingService
 import io.github.vitalyostanin.geoshare.service.SharingSetting
 import io.github.vitalyostanin.geoshare.service.ThemeSetting
 import io.github.vitalyostanin.geoshare.service.darkWanted
+import io.github.vitalyostanin.geoshare.service.languageChosen
+import io.github.vitalyostanin.geoshare.service.languageTag
 import io.github.vitalyostanin.geoshare.service.refusalToStart
 import io.github.vitalyostanin.geoshare.service.startConditions
 import kotlinx.coroutines.launch
 import java.time.Instant
 
-class MainActivity : ComponentActivity() {
+/**
+ * An AppCompat activity for one reason: the language a member picks inside the
+ * application is applied through AppCompatDelegate, and on a phone before
+ * Android 13 that only reaches the screens from an activity of this kind.
+ */
+class MainActivity : AppCompatActivity() {
     private lateinit var signIn: SignInController
     private lateinit var sharing: SharingSetting
 
@@ -154,6 +164,10 @@ class MainActivity : ComponentActivity() {
 
         setContent {
             var theme by remember { mutableStateOf(appearance.choice) }
+            // Read from the platform rather than kept here: the same answer is
+            // given in the phone's own settings from Android 13, and whichever
+            // place it was given in, this is where it is read back from.
+            val language = languageChosen(spokenLanguages().toLanguageTags())
             val dark = darkWanted(theme, isSystemInDarkTheme())
 
             // The window stays behind the screen for the whole session: it is
@@ -205,6 +219,7 @@ class MainActivity : ComponentActivity() {
                                     sharing = sharingOn,
                                     permissionNotice = permissionNotice,
                                     theme = theme,
+                                    language = language,
                                     sharedWith = sharedWith,
                                     batteryUnrestricted = batteryFree,
                                     startupScreen = startupAvailable,
@@ -220,6 +235,11 @@ class MainActivity : ComponentActivity() {
                                         theme = wanted
                                         appearance.choice = wanted
                                     },
+                                    // Handed to the platform and not kept
+                                    // here: it stores the answer, tells the
+                                    // system settings about it and builds the
+                                    // screens again in the new language.
+                                    onLanguageChange = { wanted -> speak(wanted) },
                                     // Written into the grant, and left to be
                                     // read back: the phones of a member share
                                     // the same permissions, so the answer has
@@ -344,6 +364,27 @@ class MainActivity : ComponentActivity() {
             isAppearanceLightStatusBars = !dark
             isAppearanceLightNavigationBars = !dark
         }
+    }
+
+    /** The languages the application was told to speak, empty while it follows the phone. */
+    private fun spokenLanguages(): LocaleListCompat = AppCompatDelegate.getApplicationLocales()
+
+    /**
+     * Says which language to read the application in.
+     *
+     * An empty list is what "follow the phone" is made of, and handing it over
+     * is what takes a member back to the language of their system.
+     */
+    private fun speak(choice: LanguageChoice) {
+        val tag = languageTag(choice)
+        val locales =
+            if (tag == null) {
+                LocaleListCompat.getEmptyLocaleList()
+            } else {
+                LocaleListCompat.forLanguageTags(tag)
+            }
+
+        AppCompatDelegate.setApplicationLocales(locales)
     }
 
     /** What the system is set to, read outside Compose. */

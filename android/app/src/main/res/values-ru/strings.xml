@@ -1,0 +1,141 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- The Russian half of what the application says. The page says the same in
+     web/public/lib/words/ru.js, and the names of the five collection modes are
+     the words a card is read with on both. -->
+<resources>
+    <string name="sign_in_explanation">Войдите в тот аккаунт Google, под которым семья делится своими местами.</string>
+    <string name="sign_in_action">Войти через Google</string>
+    <string name="sign_in_running">Входим…</string>
+    <string name="sign_in_failed_no_account">На телефоне нет аккаунта Google. Добавьте его в настройках телефона и войдите ещё раз.</string>
+    <string name="sign_in_failed_offline">Нет связи. Для входа сеть нужна хотя бы на минуту.</string>
+    <string name="sign_in_failed_misconfigured">Эта сборка не может войти на этом телефоне: сервисы Google её не принимают.</string>
+    <string name="sign_in_failed_unknown">Войти не удалось. Попробуйте ещё раз.</string>
+
+    <string name="sign_out_action">Выйти</string>
+
+    <string name="sharing_action">Делиться своим местом</string>
+    <string name="sharing_channel_name">Передача места</string>
+    <string name="sharing_channel_description">Показывается, пока ваше место передаётся семье.</string>
+    <string name="sharing_notification_title">Передаём ваше место</string>
+    <string name="sharing_notification_text">Семья видит, где вы.</string>
+    <string name="sharing_notification_stop">Остановить</string>
+
+    <string name="permission_location_needed">Чтобы делиться местом, нужен доступ к местоположению телефона. Разрешите его в настройках приложения.</string>
+    <string name="permission_notifications_needed">Разрешите уведомления, чтобы работающая служба могла сказать о себе.</string>
+    <string name="permission_background_needed">Чтобы делиться местом при закрытом приложении, поставьте доступ к местоположению «Разрешить всегда» в настройках приложения.</string>
+    <string name="permission_open_settings">Открыть настройки</string>
+    <string name="map_nobody_yet">Никто ещё не поделился своим местом.</string>
+    <string name="map_member_you">Вы</string>
+    <string name="map_age_just_now">только что</string>
+    <string name="map_detail_last_seen">Обновлено</string>
+    <string name="map_detail_at">Время</string>
+    <string name="map_detail_mode">Режим</string>
+    <string name="map_detail_battery">Заряд</string>
+    <string name="map_detail_position">Координаты</string>
+    <string name="map_detail_unknown">неизвестно</string>
+    <string name="map_detail_close">Закрыть</string>
+    <string name="map_open_settings">Настройки</string>
+    <string name="settings_title">Настройки</string>
+    <string name="settings_close">Закрыть</string>
+    <string name="background_title">Работа в фоне</string>
+    <string name="background_battery">Ограничение батареи</string>
+    <string name="background_battery_lifted">Снято</string>
+    <string name="background_battery_allow">Снять</string>
+    <string name="background_startup">Список автозапуска телефона</string>
+    <string name="background_startup_open">Открыть</string>
+    <string name="background_startup_done">Готово</string>
+    <string name="background_startup_explained">Телефон ведёт собственный список приложений, которым разрешено запускаться. Прочитать его нельзя, поэтому отметьте сами, когда разрешите.</string>
+    <string name="appearance_title">Оформление</string>
+    <string name="appearance_light">Светлое</string>
+    <string name="appearance_dark">Тёмное</string>
+    <string name="appearance_system">Как в системе</string>
+    <string name="language_title">Язык</string>
+    <string name="language_russian">Русский</string>
+    <string name="language_english">English</string>
+    <string name="language_system">Как в системе</string>
+    <string name="visibility_title">Кто видит, где я</string>
+    <string name="visibility_empty">Больше никто ещё не входил.</string>
+    <string name="visibility_none">не показывать</string>
+    <string name="visibility_hour">на час</string>
+    <string name="visibility_eight_hours">на восемь часов</string>
+    <string name="visibility_day">на сутки</string>
+    <string name="visibility_forever">без ограничения</string>
+    <!-- A permission given earlier, counting down: %1$s is a time of day. -->
+    <string name="visibility_until">до %1$s</string>
+
+    <!-- The names of the five ways a phone collects its position. The page
+         names them the same way. -->
+    <string name="mode_idle">На месте</string>
+    <string name="mode_standby">Ожидание</string>
+    <string name="mode_moving">Движение</string>
+    <string name="mode_viewing">Просмотр</string>
+    <string name="mode_night">Ночь</string>
+
+    <string name="mode_help_title">Как телефон определяет своё место</string>
+    <string name="mode_help_intro">Телефон сам выбирает один из этих пяти способов. Открытая у кого-то карта важнее всего остального; в остальное время телефон тратит столько, сколько нужно, чтобы его можно было найти.</string>
+    <string name="mode_help_when">Когда</string>
+    <string name="mode_help_asks">Что делает телефон</string>
+    <string name="mode_help_when_viewing">Кто-то смотрит карту.</string>
+    <string name="mode_help_asks_viewing">Запрашивает самое точное место каждые 15 секунд и записывает его, как только метка сдвинулась бы.</string>
+    <string name="mode_help_when_moving">Телефон заметил ходьбу, бег, велосипед или поездку.</string>
+    <string name="mode_help_asks_moving">Запрашивает каждые 5 минут.</string>
+    <string name="mode_help_when_standby">Телефон не там, где записал место в прошлый раз, и карту никто не смотрит.</string>
+    <string name="mode_help_asks_standby">Запрашивает каждые 15 минут.</string>
+    <string name="mode_help_when_night">С 23:00 до 07:00 или заряд ниже 15 процентов.</string>
+    <string name="mode_help_asks_night">Запрашивает каждые 20 минут самым экономным способом.</string>
+    <string name="mode_help_when_idle">Телефон стоит в 150 метрах от места, которое записал последним.</string>
+    <string name="mode_help_asks_idle">Не запрашивает ничего и повторяет последнее место каждые 25 минут, чтобы карточка не помечалась как устаревшая.</string>
+
+    <!-- Who else has the map open right now: %1$s is the members, by name. -->
+    <string name="map_watching">Карту смотрят: %1$s</string>
+
+    <string name="map_more">Ещё</string>
+    <string name="map_more_hide">Скрыть</string>
+
+    <plurals name="map_group_count">
+        <item quantity="one">%1$d участник</item>
+        <item quantity="few">%1$d участника</item>
+        <item quantity="many">%1$d участников</item>
+        <item quantity="other">%1$d участника</item>
+    </plurals>
+
+    <plurals name="map_out_of_reach">
+        <item quantity="one">%1$d участник сейчас не делится с вами.</item>
+        <item quantity="few">%1$d участника сейчас не делятся с вами.</item>
+        <item quantity="many">%1$d участников сейчас не делятся с вами.</item>
+        <item quantity="other">%1$d участника сейчас не делятся с вами.</item>
+    </plurals>
+
+    <plurals name="map_more_count">
+        <item quantity="one">%1$d участник</item>
+        <item quantity="few">%1$d участника</item>
+        <item quantity="many">%1$d участников</item>
+        <item quantity="other">%1$d участника</item>
+    </plurals>
+
+    <!-- The same ages in the narrow cards of the panel. The units are
+         abbreviations, which do not decline. -->
+    <string name="map_age_short_now">сейчас</string>
+    <string name="map_age_short_minutes">%1$d мин</string>
+    <string name="map_age_short_hours">%1$d ч</string>
+    <string name="map_age_short_days">%1$d д</string>
+
+    <plurals name="map_age_minutes">
+        <item quantity="one">%1$d минуту назад</item>
+        <item quantity="few">%1$d минуты назад</item>
+        <item quantity="many">%1$d минут назад</item>
+        <item quantity="other">%1$d минуты назад</item>
+    </plurals>
+    <plurals name="map_age_hours">
+        <item quantity="one">%1$d час назад</item>
+        <item quantity="few">%1$d часа назад</item>
+        <item quantity="many">%1$d часов назад</item>
+        <item quantity="other">%1$d часа назад</item>
+    </plurals>
+    <plurals name="map_age_days">
+        <item quantity="one">%1$d день назад</item>
+        <item quantity="few">%1$d дня назад</item>
+        <item quantity="many">%1$d дней назад</item>
+        <item quantity="other">%1$d дня назад</item>
+    </plurals>
+</resources>
