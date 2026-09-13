@@ -590,6 +590,15 @@ button {
 
 /* The library paints its bubble and its little triangle white, which is the
    one surface on the page it does not ask anybody about. */
+/* The bubble a marker opens stands above every marker, whatever order the
+   markers are in among themselves: lib/stacking.js hands each one a place
+   between 0 and 9999 by how far down the screen it sits, and without this the
+   marker the card belongs to covers the card. A test holds the two numbers
+   together. */
+.maplibregl-popup {
+    z-index: 10000;
+}
+
 .maplibregl-popup-content {
     background: var(--surface);
     color: var(--on-surface);
@@ -674,13 +683,16 @@ button {
 /* The choice of theme, in the account menu: a row of three, of which one is
    on. A press changes the page under the menu, which is why the menu stays
    open while they are used. */
-#theme-label {
+/* The rows of three the menu is made of: the theme, and the language under
+   it. One set of rules rather than one per row, so that a third choice of the
+   same shape is markup rather than more stylesheet. */
+.choice-label {
     margin: 0 0.4rem 0.35rem;
     font-size: 0.8rem;
     opacity: 0.7;
 }
 
-#theme-choice {
+.choice {
     display: flex;
     margin: 0 0.1rem 0.6rem;
     border: 1px solid var(--edge);
@@ -690,7 +702,7 @@ button {
 
 /* Against the rule above that gives every button in the menu the full width:
    these three share one. */
-#account-menu #theme-choice button {
+#account-menu .choice button {
     flex: 1;
     width: auto;
     padding: 0.35rem 0.2rem;
@@ -699,11 +711,11 @@ button {
     font-size: 0.78rem;
 }
 
-#theme-choice button + button {
+.choice button + button {
     border-left: 1px solid var(--edge);
 }
 
-#theme-choice button[aria-pressed="true"] {
+.choice button[aria-pressed="true"] {
     background: var(--link);
     /* The filled button is the one surface on the page whose text colour is
        set rather than inherited, and the two themes set it differently. */

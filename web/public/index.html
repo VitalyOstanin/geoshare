@@ -30,7 +30,10 @@
     <body>
         <section id="sign-in">
             <h1>Geoshare</h1>
-            <p>Sign in with the Google account the family shares positions under.</p>
+            <!-- The words here are the first paint, and lib/words holds them
+                 too: a viewer reading in the other language gets those as soon
+                 as the modules run. -->
+            <p id="sign-in-explanation">Sign in with the Google account the family shares positions under.</p>
             <button id="sign-in-button" type="button">Sign in with Google</button>
             <p id="sign-in-error" class="error"></p>
         </section>
@@ -48,15 +51,26 @@
             <div id="account-menu" role="menu" hidden>
                 <p id="account-name"></p>
 
-                <p id="theme-label">Appearance</p>
+                <p id="theme-label" class="choice-label">Appearance</p>
 
                 <!-- Three buttons rather than a list: the whole choice is
                      three words long, and which one is on now should be
                      readable without opening anything. -->
-                <div id="theme-choice" role="group" aria-labelledby="theme-label">
+                <div id="theme-choice" class="choice" role="group" aria-labelledby="theme-label">
                     <button type="button" data-theme="light" aria-pressed="false">Light</button>
                     <button type="button" data-theme="dark" aria-pressed="false">Dark</button>
                     <button type="button" data-theme="system" aria-pressed="false">System</button>
+                </div>
+
+                <!-- The same three-button row as the theme above it. The two
+                     named languages say so in their own words, which is what a
+                     viewer looking for theirs reads first. -->
+                <p id="language-label" class="choice-label">Language</p>
+
+                <div id="language-choice" class="choice" role="group" aria-labelledby="language-label">
+                    <button type="button" data-language="ru" aria-pressed="false">Русский</button>
+                    <button type="button" data-language="en" aria-pressed="false">English</button>
+                    <button type="button" data-language="system" aria-pressed="false">System</button>
                 </div>
 
                 <button id="sign-out-button" type="button" role="menuitem">Sign out</button>

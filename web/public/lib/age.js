@@ -4,7 +4,7 @@
 // and an age that disagreed between them would be read as a bug in whichever
 // one the viewer happened to trust less.
 
-import { WORDS } from './words.js';
+import { SPEAKING, WORDS } from './words.js';
 
 /** Past this, a position is old enough that the page says so in grey. */
 export const STALE_AFTER_MS = 30 * 60 * 1000;
@@ -42,9 +42,15 @@ export function isStale(knownAt, now) {
     return now - knownAt >= STALE_AFTER_MS;
 }
 
-/** The moment itself, for the detail a viewer opens rather than for the list. */
+/**
+ * The moment itself, for the detail a viewer opens rather than for the list.
+ *
+ * Written the way the language of the page writes a date rather than the way
+ * the browser does: a page a viewer asked to read in Russian should not put
+ * the month before the day in the one line it gives an exact time on.
+ */
 export function timeText(millis) {
-    return new Date(millis).toLocaleString();
+    return new Date(millis).toLocaleString(SPEAKING);
 }
 
 /** The words come from the one place the page keeps its wording. */

@@ -8,7 +8,14 @@
  * the edge of the world, a map mid-animation — cannot hand the page a number
  * that outranks everything else on it for good.
  */
-const HIGHEST = 9_999;
+/**
+ * The highest place a marker can be given.
+ *
+ * The bubble a marker opens stands above all of them, at a number of its own
+ * in the stylesheet; a marker that could outrank it would cover the card it
+ * opened.
+ */
+export const HIGHEST = 9_999;
 
 /**
  * How high a marker stands in the pile, from where its point is on screen.

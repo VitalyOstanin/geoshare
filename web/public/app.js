@@ -20,7 +20,8 @@ import {
 } from './lib/members.js';
 import { applyTheme, readTheme, writeTheme } from './lib/theme.js';
 import { watchingMembers } from './lib/watchers.js';
-import { WORDS } from './lib/words.js';
+import { readLanguage, writeLanguage } from './lib/language.js';
+import { SPEAKING, WORDS } from './lib/words.js';
 import {
     keepWatching,
     leave,
@@ -38,6 +39,7 @@ const AGE_TICK_MS = 30 * 1000;
 
 const elements = {
     signIn: document.querySelector('#sign-in'),
+    signInExplanation: document.querySelector('#sign-in-explanation'),
     signInButton: document.querySelector('#sign-in-button'),
     signInError: document.querySelector('#sign-in-error'),
     map: document.querySelector('#map'),
@@ -52,7 +54,10 @@ const elements = {
     accountMenu: document.querySelector('#account-menu'),
     accountName: document.querySelector('#account-name'),
     signOutButton: document.querySelector('#sign-out-button'),
+    themeLabel: document.querySelector('#theme-label'),
     themeButtons: document.querySelectorAll('#theme-choice button'),
+    languageLabel: document.querySelector('#language-label'),
+    languageButtons: document.querySelectorAll('#language-choice button'),
 };
 
 const state = {
@@ -170,6 +175,77 @@ function showTheme() {
 function showMenu(open) {
     elements.accountMenu.hidden = !open;
     elements.accountButton.setAttribute('aria-expanded', String(open));
+}
+
+/**
+ * The language the page is read in. The answer is the viewer's, the language
+ * it comes out as is theirs or their browser's, and the two are not the same:
+ * "system" is an answer that follows the browser rather than a language.
+ */
+const language = readLanguage();
+
+sayMarkup();
+showLanguage();
+
+for (const button of elements.languageButtons) {
+    button.addEventListener('click', () => {
+        if (button.dataset.language === language) {
+            return;
+        }
+
+        writeLanguage(button.dataset.language);
+
+        // Loading the page again rather than redrawing it: every word on
+        // screen comes from the dictionary, including the ones the markup was
+        // painted with, and a redraw that misses one corner is worse than the
+        // moment this costs. Nothing is lost — the map is drawn from the
+        // documents, and the subscriptions open again on their own.
+        window.location.reload();
+    });
+}
+
+/**
+ * Says the words of index.html in the language the page settled on.
+ *
+ * The markup is written in English and so is painted in English; this is what
+ * a viewer reading in the other language sees instead, as soon as the modules
+ * have run. The alternative — markup with no words in it — starts the page
+ * blank and fills it in, which is worse for everybody to save a moment for
+ * some.
+ */
+function sayMarkup() {
+    const themes = {
+        light: WORDS.themeLight,
+        dark: WORDS.themeDark,
+        system: WORDS.themeSystem,
+    };
+    const languages = {
+        ru: WORDS.languageRussian,
+        en: WORDS.languageEnglish,
+        system: WORDS.languageSystem,
+    };
+
+    document.documentElement.lang = SPEAKING;
+
+    elements.signInExplanation.textContent = WORDS.signInExplanation;
+    elements.signInButton.textContent = WORDS.signInAction;
+    elements.signOutButton.textContent = WORDS.signOut;
+    elements.themeLabel.textContent = WORDS.appearance;
+    elements.languageLabel.textContent = WORDS.language;
+
+    for (const button of elements.themeButtons) {
+        button.textContent = themes[button.dataset.theme];
+    }
+
+    for (const button of elements.languageButtons) {
+        button.textContent = languages[button.dataset.language];
+    }
+}
+
+function showLanguage() {
+    for (const button of elements.languageButtons) {
+        button.setAttribute('aria-pressed', String(button.dataset.language === language));
+    }
 }
 
 watchSignIn((member) => {
