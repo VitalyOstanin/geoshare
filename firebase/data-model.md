@@ -7,6 +7,7 @@ which keeps both storage and read counts flat.
 ```
 groups/{groupId}                            members: [uid, ...]
 groups/{groupId}/members/{uid}              what a member says about themselves
+groups/{groupId}/grants/{uid}               which phones a member carries, and who may watch
 groups/{groupId}/positions/{uid}.{deviceId} last known position of one phone
 groups/{groupId}/watch/{uid}.{deviceId}     viewing marker of one phone
 ```
@@ -27,19 +28,11 @@ and nobody else does.
 | `displayName` | string    | What the member is called on the other screens             |
 | `photoUrl`    | string    | The account picture, as the provider hosts it; null without one |
 | `updatedAt`   | timestamp | When the profile was last written; set by the server itself |
-| `devices`     | list      | The phones this member carries, at most ten; how a reader learns which documents to read |
-| `sharedWith`  | map       | Who may read this member's position, and until when; at most fifty |
 
-`sharedWith` is where a permission is given and taken back, and the rules read a
-position's permission from here rather than from the position itself. The counts
-are held by the rules because every other client acts on this document: one
-subscription per device named, one document per permission weighed.
-
-Every member of the group can read every profile, so who has allowed whom is not
-private within the group. That is accepted rather than overlooked: a household
-sharing its whereabouts is not a place where the pairs need hiding, and keeping
-the permissions where their owner writes them is what makes a withdrawal take
-effect at once.
+Everybody in the group reads this document, so nothing else belongs in it. Which
+phones a member carries and whom they let watch are answers to "where is this
+person", and they live in the grant below, where only the people concerned can
+read them; the rules refuse a profile carrying any other field.
 
 Both values come from the account the member signed in with, and neither client
 uploads an image: the picture is the address the provider already serves. A client
@@ -51,6 +44,34 @@ a member keeps their colour whether or not they have ever signed in.
 
 A member with no profile is drawn under the first characters of their id, which is
 what both clients showed before profiles existed.
+
+## grants/{uid}
+
+| Field        | Type | Meaning                                                                    |
+|--------------|------|----------------------------------------------------------------------------|
+| `devices`    | list | The phones this member carries, at most ten; how a reader learns which documents to read |
+| `sharedWith` | map  | Who may read this member's position, and until when; at most fifty          |
+
+Read one document at a time and never as a collection: listing it would hand
+every member the whole household's phones, which is what keeping it apart from
+the profile is for. A member reads their own grant, and so does anybody their
+`sharedWith` names while that permission still stands.
+
+`sharedWith` is where a permission is given and taken back, and the rules read a
+position's permission from here rather than from a copy inside the position. A
+copy would be cheaper, but it would only change when the phone writes its next
+position, so a withdrawal would take effect at the phone's convenience -- ten
+minutes for a phone standing still, an hour and a half at night, never at all
+for a phone that is switched off.
+
+A permission carries the moment it runs out, and one meant to last is written as
+a date far enough away to read as never: the rules compare a timestamp, and a
+missing value would be a case of its own in every one of them.
+
+The counts are held by the rules because every other client acts on this
+document: one subscription per device named, one document per permission
+weighed. Rules cannot walk a list, so the size is what can be checked, and both
+clients cut the list to the same number before they subscribe.
 
 ## positions/{uid}.{deviceId}
 
