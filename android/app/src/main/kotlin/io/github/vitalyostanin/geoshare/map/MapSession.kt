@@ -9,6 +9,9 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.repeatOnLifecycle
+import io.github.vitalyostanin.geoshare.collection.Watcher
+import io.github.vitalyostanin.geoshare.service.positionId
+import io.github.vitalyostanin.geoshare.service.watchers
 import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.withContext
 import java.time.Instant
@@ -44,6 +47,21 @@ fun rememberMemberGrants(profiles: Map<String, MemberProfile>?): State<Map<Strin
     val grants = remember(memberIds) { memberGrants(memberIds) }
 
     return grants.collectAsStateWithLifecycle(initialValue = emptyMap())
+}
+
+/**
+ * Who else has the map open, collected while a screen of ours is up.
+ *
+ * The same claims the service reads to decide how hard to work; read here a
+ * second time because the screen wants the members behind them rather than the
+ * moments they run out. Own marker aside — a phone showing this screen is the
+ * one looking — the list is what the strip under the map names.
+ */
+@Composable
+fun rememberWatchers(memberId: String, deviceId: String): State<List<Watcher>> {
+    val looking = remember(memberId, deviceId) { watchers(positionId(memberId, deviceId)) }
+
+    return looking.collectAsStateWithLifecycle(initialValue = emptyList())
 }
 
 /**

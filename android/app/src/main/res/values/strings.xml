@@ -73,6 +73,12 @@
     <string name="mode_viewing">Viewing</string>
     <string name="mode_night">Night</string>
 
+    <!-- Who else has the map open right now: %1$s is the members, listed by
+         name and separated by commas. Named rather than counted, and stated
+         once for the whole household rather than on a card, because one open
+         map puts every phone of the group into the same way of collecting. -->
+    <string name="map_watching">Map open: %1$s</string>
+
     <string name="map_more">More</string>
     <string name="map_more_hide">Hide</string>
 

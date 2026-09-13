@@ -128,7 +128,8 @@ body {
 
 /* What the strip cannot say by being full: nobody yet, nothing reachable, or
    an answer still on its way. */
-#panel-note {
+#panel-note,
+#panel-watching {
     margin: 0;
     padding: 0 0.2rem;
     font-size: 0.85rem;

@@ -41,6 +41,12 @@ export const WORDS = {
     oneMember: '1 member',
     members: (count) => `${count} members`,
 
+    // Who else has the map open right now, named rather than counted, and said
+    // once for the household rather than on a card: one open map puts every
+    // phone of the group into the same way of collecting, so naming it per
+    // member would repeat the same list under every face.
+    mapOpen: (names) => `Map open: ${names.join(', ')}`,
+
     // Ages, which are the only words with a plural in them.
     justNow: 'just now',
     ago: (count, unit) => `${count} ${count === 1 ? unit.slice(0, -1) : unit} ago`,

@@ -34,6 +34,17 @@ const GROUP = 'family';
 const WATCH_REFRESH_MS = 60 * 1000;
 
 /**
+ * How long a claim to be looking is worth, counted from the moment the server
+ * wrote it down.
+ *
+ * The same three minutes the phones add, and for the same reason: the claim
+ * carries when it was made rather than when it ends, so whoever reads it
+ * decides how long to believe it. Longer than the refresh above, so that one
+ * write lost to a bad connection does not drop a viewer off the line.
+ */
+const WATCH_AHEAD_MS = 3 * 60 * 1000;
+
+/**
  * How long a tab nobody touches goes on claiming to be looking.
  *
  * A tab left open on a laptop its owner walked away from holds every phone of
@@ -394,6 +405,39 @@ export function publishProfile(member, known, onError) {
         // here later is not wiped by a client that predates it.
         { merge: true },
     ).catch(onError);
+}
+
+/**
+ * Who else has the map open, as they themselves claim.
+ *
+ * The other half of the collection this page writes into: the phones read it
+ * to decide how hard to work, and the page reads it to say who is looking.
+ * This browser's own marker is dropped — it is the one looking — while another
+ * marker of the same member is kept, because a member watching from a phone as
+ * well is somebody to name.
+ */
+export function watchWatchers(memberId, onWatchers) {
+    const own = `${memberId}.${deviceName()}`;
+
+    return onSnapshot(collection(store, 'groups', GROUP, 'watch'), (snapshot) => {
+        const looking = snapshot.docs
+            .filter((document) => document.id !== own)
+            .map((document) => {
+                const data = document.data();
+                const since = data.since?.toMillis?.();
+
+                // A marker written a moment ago has no server time in it yet:
+                // the field arrives with the write the server confirms.
+                if (!data.memberId || !since) {
+                    return null;
+                }
+
+                return { memberId: data.memberId, until: since + WATCH_AHEAD_MS };
+            })
+            .filter(Boolean);
+
+        onWatchers(looking);
+    });
 }
 
 /** What counts as somebody still being at the screen. */

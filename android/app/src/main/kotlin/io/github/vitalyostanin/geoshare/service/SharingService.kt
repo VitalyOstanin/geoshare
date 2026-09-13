@@ -307,10 +307,11 @@ class SharingService : LifecycleService() {
                 }
             }
 
-        val watchers =
-            watchersUntil(positionId(memberId, device.id)).onStart { emit(emptyList()) }
+        val looking = watchers(positionId(memberId, device.id)).onStart { emit(emptyList()) }
 
-        return combine(watchers, reviews) { untils, _ -> currentMode(untils) }
+        // Who is looking is the screen's business; the service needs only the
+        // moments their claims run out.
+        return combine(looking, reviews) { seen, _ -> currentMode(seen.map { it.until }) }
             .distinctUntilChanged()
     }
 
@@ -374,9 +375,9 @@ class SharingService : LifecycleService() {
         false
     }
 
-    private fun currentMode(watchers: List<Instant>): CollectionMode = chooseMode(
+    private fun currentMode(untils: List<Instant>): CollectionMode = chooseMode(
         CollectionState(
-            watchersUntil = watchers,
+            watchersUntil = untils,
             now = Instant.now(),
             localTime = LocalTime.now(),
             // The geofence arrives with the next change; until then the phone

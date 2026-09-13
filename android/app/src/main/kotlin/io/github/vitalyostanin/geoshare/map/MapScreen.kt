@@ -51,7 +51,9 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import io.github.vitalyostanin.geoshare.R
+import io.github.vitalyostanin.geoshare.collection.Watcher
 import io.github.vitalyostanin.geoshare.collection.modeLabel
+import io.github.vitalyostanin.geoshare.collection.watchingMembers
 import kotlinx.coroutines.delay
 import java.time.Instant
 import java.time.ZoneId
@@ -92,6 +94,8 @@ fun MapScreen(
     outOfReach: Int,
     /** What each member calls themselves, by member id; absent until they sign in. */
     profiles: Map<String, MemberProfile>,
+    /** Who else has the map open, as they themselves claim. */
+    watchers: List<Watcher>,
     ownMemberId: String,
     ownDisplayName: String?,
     ownPictureUrl: String?,
@@ -118,6 +122,20 @@ fun MapScreen(
             positions.firstOrNull { it.positionId == positionId }
         }
     val ownName = stringResource(R.string.map_member_you)
+    // Who else has the map open, named rather than counted. The card used to
+    // carry this as the reason for the mode it was in — "somebody is looking" —
+    // which said that the household was being watched without saying by whom,
+    // and said it on every card at once, because a single open map puts every
+    // phone of the group into the same mode.
+    val lookingNames =
+        watchingMembers(watchers, now).map { member ->
+            memberName(
+                profile = profiles[member],
+                memberId = member,
+                own = member == ownMemberId,
+                ownName = ownName,
+            )
+        }
     // Read through the resources rather than through a composable, because the
     // map asks for this text while it is drawing, with a count it works out
     // itself from the members standing together.
@@ -253,6 +271,18 @@ fun MapScreen(
         }
 
         HorizontalDivider()
+
+        // Above the buttons rather than on a card: an open map is a fact about
+        // the household, not about the member whose card happens to be open,
+        // and a member with no position of their own still watches.
+        if (lookingNames.isNotEmpty()) {
+            Text(
+                text = stringResource(R.string.map_watching, lookingNames.joinToString(", ")),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp),
+            )
+        }
 
         if (members.isEmpty()) {
             Text(

@@ -19,6 +19,7 @@ import {
     positionDocuments,
 } from './lib/members.js';
 import { applyTheme, readTheme, writeTheme } from './lib/theme.js';
+import { watchingMembers } from './lib/watchers.js';
 import { WORDS } from './lib/words.js';
 import {
     keepWatching,
@@ -29,6 +30,7 @@ import {
     watchGrants,
     watchProfiles,
     watchSignIn,
+    watchWatchers,
 } from './lib/store.js';
 
 /** How often the ages on screen are recounted. Half a minute keeps "5 minutes ago" honest. */
@@ -41,6 +43,7 @@ const elements = {
     map: document.querySelector('#map'),
     panel: document.querySelector('#panel'),
     panelNote: document.querySelector('#panel-note'),
+    panelWatching: document.querySelector('#panel-watching'),
     members: document.querySelector('#members'),
     account: document.querySelector('#account'),
     accountButton: document.querySelector('#account-button'),
@@ -75,6 +78,11 @@ const state = {
     // in the household.
     grantMembers: null,
     stopWatching: null,
+    // The claims of the other members to be looking, as they arrived: the
+    // names are worked out again on every draw, because a claim runs out with
+    // the clock rather than with an answer from the database.
+    watchers: [],
+    stopWatchers: null,
     // How many of the documents the profiles name are being refused to us. A
     // refusal is a member no longer sharing, an expired permission or a rule
     // saying no, and the panel should say so rather than quietly lose a face.
@@ -207,6 +215,11 @@ function start() {
     );
 
     state.stopWatching ??= keepWatching(state.member.memberId, () => {});
+
+    state.stopWatchers ??= watchWatchers(state.member.memberId, (watchers) => {
+        state.watchers = watchers;
+        render();
+    });
 }
 
 /**
@@ -285,6 +298,10 @@ function stop() {
     state.stopWatching?.();
     state.stopWatching = null;
 
+    state.stopWatchers?.();
+    state.stopWatchers = null;
+    state.watchers = [];
+
     state.positions = [];
     state.refused = 0;
     state.reachable = true;
@@ -348,6 +365,7 @@ function render() {
     );
 
     showNote();
+    showWatching();
     showStripEdge();
 }
 
@@ -377,6 +395,28 @@ function showNote() {
 
     elements.panelNote.textContent = note;
     elements.panelNote.hidden = note === '';
+}
+
+/**
+ * Who else has the map open, under the strip.
+ *
+ * Said of the household rather than of a member, because one open map puts
+ * every phone of the group into the same way of collecting; and said by name,
+ * because "somebody is looking" leaves the reader wondering which of the
+ * household it was.
+ */
+function showWatching() {
+    const looking = watchingMembers(state.watchers, Date.now());
+    const names = looking.map((memberId) =>
+        memberName(
+            state.profiles?.get(memberId),
+            memberId,
+            memberId === state.member?.memberId,
+        ),
+    );
+
+    elements.panelWatching.textContent = names.length === 0 ? '' : WORDS.mapOpen(names);
+    elements.panelWatching.hidden = names.length === 0;
 }
 
 function noteText() {

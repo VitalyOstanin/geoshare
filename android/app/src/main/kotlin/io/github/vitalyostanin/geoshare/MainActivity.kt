@@ -41,6 +41,7 @@ import io.github.vitalyostanin.geoshare.map.rememberMemberGrants
 import io.github.vitalyostanin.geoshare.map.rememberMemberPositions
 import io.github.vitalyostanin.geoshare.map.rememberMemberProfiles
 import io.github.vitalyostanin.geoshare.map.rememberOwnSharedWith
+import io.github.vitalyostanin.geoshare.map.rememberWatchers
 import io.github.vitalyostanin.geoshare.map.withShare
 import io.github.vitalyostanin.geoshare.permission.PermissionStep
 import io.github.vitalyostanin.geoshare.permission.batteryExemptionRequest
@@ -162,6 +163,10 @@ class MainActivity : ComponentActivity() {
 
                             KeepWatching(current.memberId, device.id)
 
+                            // The other half of the same collection: this
+                            // phone says it is looking, and reads who else is.
+                            val watching by rememberWatchers(current.memberId, device.id)
+
                             PublishProfile(
                                 memberId = current.memberId,
                                 displayName = current.displayName,
@@ -176,6 +181,7 @@ class MainActivity : ComponentActivity() {
                                 // thing as an empty map without one.
                                 outOfReach = onTheMap.outOfReach,
                                 profiles = profiles.orEmpty(),
+                                watchers = watching,
                                 ownMemberId = current.memberId,
                                 ownDisplayName = current.displayName,
                                 ownPictureUrl = current.pictureUrl,
