@@ -134,12 +134,15 @@ class JumpsTest {
 
     // The pair that took the anchor seventy-three kilometres in seventeen
     // seconds: both fixes narrow, both agreeing with each other, and the rule
-    // that caught them the speed rather than the width.
+    // that caught them the speed rather than the width. The place the spoofer
+    // actually used is now caught by the list of false places before the speed
+    // is ever asked about, so the same geometry is mirrored west of the city to
+    // leave this test about the speed rule alone.
     @Test
     fun `a narrow pair far from the anchor cannot confirm each other`() {
         val anchor = fixAt(61.03268, 4.40300, 0, accuracy = 20.0)
-        val first = fixAt(61.42545, 5.44473, 17, accuracy = 7.0)
-        val second = fixAt(61.42291, 5.43726, 34, accuracy = 13.0)
+        val first = fixAt(61.42545, 3.36127, 17, accuracy = 7.0)
+        val second = fixAt(61.42291, 3.36874, 34, accuracy = 13.0)
 
         assertEquals(JumpReason.Speed, whyAJump(anchor, first))
         assertEquals(JumpReason.Speed, whyAJump(anchor, second))

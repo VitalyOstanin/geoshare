@@ -22,6 +22,7 @@ import io.github.vitalyostanin.geoshare.collection.WATCH_AHEAD
 import io.github.vitalyostanin.geoshare.collection.chooseMode
 import io.github.vitalyostanin.geoshare.collection.clockDisagrees
 import io.github.vitalyostanin.geoshare.collection.distanceMetres
+import io.github.vitalyostanin.geoshare.collection.falsePlaceFor
 import io.github.vitalyostanin.geoshare.collection.fenceMoves
 import io.github.vitalyostanin.geoshare.collection.fixesAgree
 import io.github.vitalyostanin.geoshare.collection.impliedSpeedMps
@@ -632,9 +633,9 @@ class SharingService : LifecycleService() {
         val verdict =
             when {
                 jump == null -> ""
-                agreed -> "; a jump ${caughtBy(jump)}, taken because the fix before it agrees"
-                jumps.enabled -> "; a jump ${caughtBy(jump)}, left out"
-                else -> "; a jump ${caughtBy(jump)}, kept because the filter is off"
+                agreed -> "; a jump ${caughtBy(jump, fix)}, taken because the fix before it agrees"
+                jumps.enabled -> "; a jump ${caughtBy(jump, fix)}, left out"
+                else -> "; a jump ${caughtBy(jump, fix)}, kept because the filter is off"
             }
 
         AppLog.i(TAG, "fix $place$width in mode $mode, $since$verdict${aClockApart(fix.takenAt)}")
@@ -677,10 +678,15 @@ class SharingService : LifecycleService() {
     }
 
     /** Says which of the rules caught the fix, in the words of the log. */
-    private fun caughtBy(jump: JumpReason): String = when (jump) {
+    private fun caughtBy(jump: JumpReason, fix: Fix): String = when (jump) {
         JumpReason.Width -> "by the width of the answer"
+
         JumpReason.Speed -> "by the speed it implies"
+
         JumpReason.Contradiction -> "by two places at one time"
+
+        JumpReason.FalsePlace ->
+            "by landing on ${falsePlaceFor(fix)?.named ?: "a place a false signal uses"}"
     }
 
     /**

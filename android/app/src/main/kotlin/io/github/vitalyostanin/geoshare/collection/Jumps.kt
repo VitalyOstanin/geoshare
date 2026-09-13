@@ -55,16 +55,29 @@ enum class JumpReason {
 
     /** Two places carrying one time: the provider contradicting itself. */
     Contradiction,
+
+    /** The answer landed where a false signal is known to put phones. */
+    FalsePlace,
 }
 
 /**
  * Why a fix is a jump rather than a move, or nothing when it is a move.
  *
- * The first fix of a session is never a jump: there is nothing to have jumped
- * from. A fix no wider than the doubt in the two answers put together has not
- * moved at all in any sense worth arguing about.
+ * The known false places are asked about first, and that order is the whole
+ * point of them: every other rule compares a fix with the one before it, so a
+ * phone switched on inside a spoofed area has nothing to catch its first
+ * answer with and takes the lie as its anchor. A place needs no anchor to be
+ * recognised.
+ *
+ * Past that, the first fix of a session is never a jump: there is nothing to
+ * have jumped from. A fix no wider than the doubt in the two answers put
+ * together has not moved at all in any sense worth arguing about.
  */
 fun whyAJump(last: Fix?, next: Fix): JumpReason? {
+    if (falsePlaceFor(next) != null) {
+        return JumpReason.FalsePlace
+    }
+
     if (last == null) {
         return null
     }
@@ -102,6 +115,9 @@ fun fixesAgree(one: Fix, other: Fix): Boolean = whyOutOfReach(one, other) == nul
  * believed as soon as the journey has had time to happen. A width has no such
  * clock — an answer half a kilometre wide stays half a kilometre wide however
  * long the phone waits — which is why agreement is left to overrule that one.
+ *
+ * A known false place is not up for confirmation either, and for the same
+ * reason as the speed: agreement is exactly what a spoofer produces.
  */
 fun mayBeConfirmed(jump: JumpReason): Boolean = jump == JumpReason.Width
 
