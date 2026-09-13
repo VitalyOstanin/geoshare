@@ -197,12 +197,11 @@ override, with the position document carrying no model at all once the first
 exists. Until then the card falls back to what it has: the model, and the
 device id when even that is missing.
 
-Pieces to settle: where the name lives in the profile (a map of device id to
-name, beside the existing `devices` list, with a length limit the rules
-enforce), what the page and the application show when a member has one phone
-(nothing — a single phone needs no name), and whether a name is asked for when
-a second device of the same member first appears rather than being buried in a
-setting.
+Pieces to settle: where the name lives in the grant (a map of device id to
+name, beside the `devices` list, with a length limit the rules enforce), what
+the page and the application show when a member has one phone (nothing — a
+single phone needs no name), and whether a name is asked for when a second
+device of the same member first appears rather than being buried in a setting.
 
 ## What a stranger would have to do to use this
 

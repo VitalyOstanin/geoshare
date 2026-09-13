@@ -35,6 +35,7 @@ const positionOf = (db, uid, device = 'phone') =>
     doc(db, `groups/${GROUP}/positions/${uid}.${device}`);
 const watchOf = (db, uid, device = 'phone') => doc(db, `groups/${GROUP}/watch/${uid}.${device}`);
 const memberOf = (db, uid) => doc(db, `groups/${GROUP}/members/${uid}`);
+const grantOf = (db, uid) => doc(db, `groups/${GROUP}/grants/${uid}`);
 
 const someProfile = (name) => ({
     displayName: name,
@@ -48,11 +49,13 @@ const someProfile = (name) => ({
 const FOREVER = new Date('9999-12-31T00:00:00Z');
 const LONG_OVER = new Date('2020-01-01T00:00:00Z');
 
-// Who this member lets read their position, and until when. Kept in the
-// profile, which is the one place the owner writes it and the one place the
-// rules read it from: a copy inside a position document would go on granting
-// what has been withdrawn until the phone writes again.
-const profileSharing = (name, readers) => ({ ...someProfile(name), sharedWith: readers });
+// Who this member lets read their position, and until when, beside the phones
+// they carry. Kept apart from the profile, which everybody in the group reads:
+// these two answer "where is this person", and only the people given a
+// permission see them. The rules read the permission from here rather than
+// from a copy inside a position document, which would go on granting what has
+// been withdrawn until the phone writes again.
+const someGrant = (readers, devices = ['phone']) => ({ sharedWith: readers, devices });
 
 // The fields both clients actually write, with the names they actually use.
 const somePosition = {
@@ -93,8 +96,10 @@ beforeEach(async () => {
         const db = context.firestore();
 
         await setDoc(doc(db, `groups/${GROUP}`), { members: [ALICE, BOB] });
-        await setDoc(memberOf(db, ALICE), profileSharing('Alice', { [BOB]: FOREVER }));
-        await setDoc(memberOf(db, BOB), profileSharing('Bob', { [ALICE]: FOREVER }));
+        await setDoc(memberOf(db, ALICE), someProfile('Alice'));
+        await setDoc(memberOf(db, BOB), someProfile('Bob'));
+        await setDoc(grantOf(db, ALICE), someGrant({ [BOB]: FOREVER }));
+        await setDoc(grantOf(db, BOB), someGrant({ [ALICE]: FOREVER }));
         await setDoc(positionOf(db, BOB), positionFrom(BOB));
     });
 });
@@ -150,7 +155,7 @@ describe('positions', () => {
         const db = testEnv.authenticatedContext(ALICE).firestore();
 
         await testEnv.withSecurityRulesDisabled(async (context) => {
-            await setDoc(memberOf(context.firestore(), BOB), profileSharing('Bob', {}));
+            await setDoc(grantOf(context.firestore(), BOB), someGrant({}));
         });
 
         await assertFails(getDoc(positionOf(db, BOB)));
@@ -168,7 +173,7 @@ describe('positions', () => {
         await assertSucceeds(getDoc(positionOf(db, BOB)));
 
         await testEnv.withSecurityRulesDisabled(async (context) => {
-            await setDoc(memberOf(context.firestore(), BOB), profileSharing('Bob', {}));
+            await setDoc(grantOf(context.firestore(), BOB), someGrant({}));
         });
 
         await assertFails(getDoc(positionOf(db, BOB)));
@@ -180,10 +185,7 @@ describe('positions', () => {
         const db = testEnv.authenticatedContext(ALICE).firestore();
 
         await testEnv.withSecurityRulesDisabled(async (context) => {
-            await setDoc(
-                memberOf(context.firestore(), BOB),
-                profileSharing('Bob', { [ALICE]: LONG_OVER }),
-            );
+            await setDoc(grantOf(context.firestore(), BOB), someGrant({ [ALICE]: LONG_OVER }));
         });
 
         await assertFails(getDoc(positionOf(db, BOB)));
@@ -195,7 +197,7 @@ describe('positions', () => {
         const db = testEnv.authenticatedContext(ALICE).firestore();
 
         await testEnv.withSecurityRulesDisabled(async (context) => {
-            await setDoc(memberOf(context.firestore(), ALICE), profileSharing('Alice', {}));
+            await setDoc(grantOf(context.firestore(), ALICE), someGrant({}));
         });
 
         await setDoc(positionOf(db, ALICE), positionFrom(ALICE));
@@ -368,15 +370,14 @@ describe('profiles', () => {
         await assertSucceeds(setDoc(memberOf(db, ALICE), someProfile('Alice')));
     });
 
-    // A name on a marker is a name somebody else reads, so the account it
-    // describes has to be the account that wrote it.
-    // Where the permissions are kept: the phone reads them from here and
-    // copies them into every position it writes, so a new phone of the same
-    // member shares with the same people without being told again.
-    it('a profile carries who the member shares with', async () => {
+    // The shape the builds before the split wrote: everybody in the group read
+    // this document, so a member's phones and the people they shared with were
+    // on show to members who had been given nothing. Both now live in the
+    // grant, and the profile refuses them.
+    it('a profile carrying who the member shares with is refused', async () => {
         const db = testEnv.authenticatedContext(ALICE).firestore();
 
-        await assertSucceeds(
+        await assertFails(
             setDoc(memberOf(db, ALICE), {
                 ...someProfile('Alice'),
                 sharedWith: { [BOB]: FOREVER },
@@ -384,12 +385,10 @@ describe('profiles', () => {
         );
     });
 
-    // Which documents to read a member's positions from: the collection cannot
-    // be listed, so the profile is where a reader learns what a member carries.
-    it('a profile names the devices of the member', async () => {
+    it('a profile naming the devices of the member is refused', async () => {
         const db = testEnv.authenticatedContext(ALICE).firestore();
 
-        await assertSucceeds(
+        await assertFails(
             setDoc(memberOf(db, ALICE), {
                 ...someProfile('Alice'),
                 devices: ['one', 'two'],
@@ -435,32 +434,6 @@ describe('profiles', () => {
         );
     });
 
-    // A reader opens one subscription per device named here, and one per
-    // member it shares with is one more document to keep an eye on. A profile
-    // naming thousands of either would put every screen in the group out of
-    // action, so the counts are held to what a household has.
-    it('a profile naming more devices than a member carries is refused', async () => {
-        const db = testEnv.authenticatedContext(ALICE).firestore();
-
-        await assertFails(
-            setDoc(memberOf(db, ALICE), {
-                ...someProfile('Alice'),
-                devices: Array.from({ length: 11 }, (unused, index) => `phone-${index}`),
-            }),
-        );
-    });
-
-    it('a profile sharing with more readers than a household holds is refused', async () => {
-        const db = testEnv.authenticatedContext(ALICE).firestore();
-        const readers = Object.fromEntries(
-            Array.from({ length: 51 }, (unused, index) => [`reader-${index}`, FOREVER]),
-        );
-
-        await assertFails(
-            setDoc(memberOf(db, ALICE), { ...someProfile('Alice'), sharedWith: readers }),
-        );
-    });
-
     it('a name too long for a marker is refused', async () => {
         const db = testEnv.authenticatedContext(ALICE).firestore();
 
@@ -489,6 +462,110 @@ describe('profiles', () => {
         const db = testEnv.authenticatedContext(STRANGER).firestore();
 
         await assertFails(getDoc(memberOf(db, BOB)));
+    });
+});
+
+describe('grants', () => {
+    it('a member writes their own grant', async () => {
+        const db = testEnv.authenticatedContext(ALICE).firestore();
+
+        await assertSucceeds(setDoc(grantOf(db, ALICE), someGrant({ [BOB]: FOREVER })));
+    });
+
+    it('a member reads their own grant', async () => {
+        const db = testEnv.authenticatedContext(ALICE).firestore();
+
+        await assertSucceeds(getDoc(grantOf(db, ALICE)));
+    });
+
+    // What a permission is worth beyond the positions themselves: the reader
+    // learns which phones to subscribe to, because the collection of positions
+    // cannot be listed.
+    it('a reader with a permission reads the grant', async () => {
+        const db = testEnv.authenticatedContext(ALICE).firestore();
+
+        await assertSucceeds(getDoc(grantOf(db, BOB)));
+    });
+
+    // The leak this collection closes: a member of the household who has been
+    // given nothing learns nothing — not how many phones the other carries,
+    // and not who else they share with.
+    it('a member without a permission reads nothing of the grant', async () => {
+        const db = testEnv.authenticatedContext(ALICE).firestore();
+
+        await testEnv.withSecurityRulesDisabled(async (context) => {
+            await setDoc(grantOf(context.firestore(), BOB), someGrant({}));
+        });
+
+        await assertFails(getDoc(grantOf(db, BOB)));
+    });
+
+    it('a permission that has run out reads nothing of the grant', async () => {
+        const db = testEnv.authenticatedContext(ALICE).firestore();
+
+        await testEnv.withSecurityRulesDisabled(async (context) => {
+            await setDoc(grantOf(context.firestore(), BOB), someGrant({ [ALICE]: LONG_OVER }));
+        });
+
+        await assertFails(getDoc(grantOf(db, BOB)));
+    });
+
+    // Listing would hand every member the whole household's phones in one
+    // read, which is exactly what the split was made to prevent.
+    it('a member cannot list the grants', async () => {
+        const db = testEnv.authenticatedContext(ALICE).firestore();
+
+        await assertFails(getDocs(collection(db, `groups/${GROUP}/grants`)));
+    });
+
+    it("a member cannot write another member's grant", async () => {
+        const db = testEnv.authenticatedContext(ALICE).firestore();
+
+        await assertFails(setDoc(grantOf(db, BOB), someGrant({ [ALICE]: FOREVER })));
+    });
+
+    it('a stranger reads no grant', async () => {
+        const db = testEnv.authenticatedContext(STRANGER).firestore();
+
+        await assertFails(getDoc(grantOf(db, BOB)));
+    });
+
+    // A reader opens one subscription per device named here, and one per
+    // member they share with is one more document to keep an eye on. A grant
+    // naming thousands of either would put every screen that may read it out
+    // of action, so the counts are held to what a household has.
+    it('a grant naming more devices than a member carries is refused', async () => {
+        const db = testEnv.authenticatedContext(ALICE).firestore();
+
+        await assertFails(
+            setDoc(grantOf(db, ALICE), {
+                sharedWith: {},
+                devices: Array.from({ length: 11 }, (unused, index) => `phone-${index}`),
+            }),
+        );
+    });
+
+    it('a grant sharing with more readers than a household holds is refused', async () => {
+        const db = testEnv.authenticatedContext(ALICE).firestore();
+        const readers = Object.fromEntries(
+            Array.from({ length: 51 }, (unused, index) => [`reader-${index}`, FOREVER]),
+        );
+
+        await assertFails(setDoc(grantOf(db, ALICE), someGrant(readers)));
+    });
+
+    it('a grant with a field of its own is refused', async () => {
+        const db = testEnv.authenticatedContext(ALICE).firestore();
+
+        await assertFails(
+            setDoc(grantOf(db, ALICE), { ...someGrant({}), note: 'anything' }),
+        );
+    });
+
+    it('a member clears their own grant', async () => {
+        const db = testEnv.authenticatedContext(ALICE).firestore();
+
+        await assertSucceeds(deleteDoc(grantOf(db, ALICE)));
     });
 });
 

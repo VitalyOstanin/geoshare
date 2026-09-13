@@ -111,24 +111,24 @@ export function pictureAddress(pictureUrl) {
 }
 
 /**
- * Which documents hold the positions of the members whose profiles are known.
+ * Which documents hold the positions of the members who let this viewer watch.
  *
  * Named one by one rather than asked for as a collection: a member says who
  * may read their position and until when, and a permission with an expiry is
  * not something a query can prove, so the collection of positions is closed
- * and a reader walks the devices each profile names instead.
+ * and a reader walks the devices each grant names instead.
  */
-export function positionDocuments(profiles) {
-    return [...profiles.values()]
-        .flatMap((profile) =>
-            profile.devices
-                // A subscription each, so a profile naming more phones than a
+export function positionDocuments(grants) {
+    return [...grants.values()]
+        .flatMap((grant) =>
+            grant.devices
+                // A subscription each, so a grant naming more phones than a
                 // person can carry would put this page out of action — and the
-                // profile is written by somebody else. The rules hold the list
+                // grant is written by somebody else. The rules hold the list
                 // to the same number; this is what happens to a document
                 // written before they did.
                 .slice(0, DEVICES_PER_MEMBER)
-                .map((device) => `${profile.memberId}.${device}`),
+                .map((device) => `${grant.memberId}.${device}`),
         )
         .sort(compareIds);
 }

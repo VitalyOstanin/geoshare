@@ -20,25 +20,31 @@ private const val TAG = "geoshare.positions"
 /** How many phones of one member this screen will follow. The rules say the same. */
 private const val DEVICES_PER_MEMBER = 10
 
-/** How long to wait before asking again for a document that was refused. */
-private val RETRY_AFTER: Duration = Duration.ofMinutes(1)
+/**
+ * How long to wait before asking again for a document that was refused.
+ *
+ * Shared with the grants, which are refused for the same reason and come back
+ * the same way: the member hands the permission back, and nothing about that
+ * reaches a client whose subscription has already been turned away.
+ */
+internal val RETRY_AFTER: Duration = Duration.ofMinutes(1)
 
 /**
- * Which documents hold the positions of the members whose profiles are known.
+ * Which documents hold the positions of the members who let this phone watch.
  *
  * Named one by one rather than asked for as a collection: a permission that
  * runs out cannot be proved by a query, so the collection of positions is
- * closed and a reader walks the devices each profile names instead.
+ * closed and a reader walks the devices each grant names instead.
  */
-fun positionDocuments(profiles: Map<String, MemberProfile>): List<String> = profiles.values
-    .flatMap { profile ->
-        profile.devices
-            // A subscription each, and the profile is written by somebody
-            // else: a profile naming more phones than a person can carry would
-            // put this screen out of action. The rules hold the list to the
-            // same number; this is what happens to one written before they did.
+fun positionDocuments(grants: Map<String, MemberGrant>): List<String> = grants.values
+    .flatMap { grant ->
+        grant.devices
+            // A subscription each, and the grant is written by somebody else:
+            // a grant naming more phones than a person can carry would put
+            // this screen out of action. The rules hold the list to the same
+            // number; this is what happens to one written before they did.
             .take(DEVICES_PER_MEMBER)
-            .map { positionId(profile.memberId, it) }
+            .map { positionId(grant.memberId, it) }
     }
     .sorted()
 
@@ -77,8 +83,8 @@ fun memberPositions(
     fun publish() = trySend(MembersInView(known.values.toList(), refused.size))
 
     // A refusal stays a refusal until the member says otherwise, and what they
-    // say does not reach this screen: a permission lives in their profile, and
-    // the profile is the same document it was. So the subscription is made
+    // say does not reach this screen: a permission lives in their grant, which
+    // a refused client cannot read either. So the subscription is made
     // again on a timer, and a permission handed back brings the marker back
     // with it rather than waiting for the screen to be opened afresh.
     fun follow(id: String) {
@@ -102,7 +108,7 @@ fun memberPositions(
                 refused.remove(id)
 
                 // A document that is not there is not a complaint: a member
-                // whose profile names a phone they have since reinstalled has
+                // whose grant names a phone they have since reinstalled has
                 // one, and so does every device before its first write.
                 val position = if (snapshot?.exists() == true) positionOf(snapshot) else null
 
@@ -122,7 +128,8 @@ fun memberPositions(
 
     // Said once at the start, so that a screen with nothing to draw shows an
     // empty map rather than waiting for an answer that never comes: a member
-    // without devices has no document to subscribe to at all.
+    // whose grant this phone may not read has no document to subscribe to at
+    // all.
     publish()
 
     awaitClose { subscriptions.values.forEach { it.remove() } }

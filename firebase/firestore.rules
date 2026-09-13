@@ -20,21 +20,47 @@ service cloud.firestore {
         // first characters of an account id. Membership itself is the array in
         // the group document, which stays out of every client's reach, so
         // writing one's own profile grants nothing.
-        // The sizes are there because every other client reads this document
-        // and acts on it: a reader opens one subscription per device named
-        // here, so a profile naming thousands of devices would put every
-        // screen in the group out of action. Rules cannot walk a list, so the
-        // count is what can be held; the clients cut the list to the same
-        // number before they subscribe.
+        //
+        // Nothing else lives here, because everyone in the group reads this
+        // document: which phones a member carries, and whom they let watch,
+        // are in the grant below, where only the people concerned can see
+        // them.
         function profileShape() {
           return request.resource.data.keys()
-                   .hasOnly(['displayName', 'photoUrl', 'updatedAt', 'sharedWith', 'devices']) &&
+                   .hasOnly(['displayName', 'photoUrl', 'updatedAt']) &&
                  request.resource.data.displayName is string &&
                  request.resource.data.displayName.size() <= 100 &&
                  (!('photoUrl' in request.resource.data) ||
                   request.resource.data.photoUrl == null ||
                   (request.resource.data.photoUrl is string &&
-                   request.resource.data.photoUrl.size() <= 500)) &&
+                   request.resource.data.photoUrl.size() <= 500));
+        }
+
+        function isOwner() {
+          return isMember() && request.auth.uid == uid;
+        }
+
+        allow read: if isMember();
+        // Stated apart from the delete: a deletion carries no document to
+        // check the shape of, and a single write rule would refuse every one.
+        allow create, update: if isOwner() && profileShape();
+        allow delete: if isOwner();
+      }
+
+      match /grants/{uid} {
+        // Whom this member lets watch, and which phones they carry. Both are
+        // answers to "where is this person", so both are kept away from the
+        // members who were not given one: being in the household tells you
+        // that somebody is in it, not how many phones they own or who else
+        // they share with.
+        //
+        // The sizes are there because a reader acts on this document: one
+        // subscription per device named here, so a list of thousands would put
+        // every screen that may read it out of action. Rules cannot walk a
+        // list, so the count is what can be held; the clients cut the list to
+        // the same number before they subscribe.
+        function grantShape() {
+          return request.resource.data.keys().hasOnly(['devices', 'sharedWith']) &&
                  (!('sharedWith' in request.resource.data) ||
                   (request.resource.data.sharedWith is map &&
                    request.resource.data.sharedWith.size() <= 50)) &&
@@ -47,10 +73,21 @@ service cloud.firestore {
           return isMember() && request.auth.uid == uid;
         }
 
-        allow read: if isMember();
-        // Stated apart from the delete: a deletion carries no document to
-        // check the shape of, and a single write rule would refuse every one.
-        allow create, update: if isOwner() && profileShape();
+        // The permission is in the document being read, so weighing it costs
+        // nothing: a reader who has been given one sees the phones to
+        // subscribe to, and the same withdrawal that stops the positions stops
+        // this as well.
+        function mayReadGrant() {
+          return resource != null &&
+                 resource.data.get('sharedWith', {}).get(request.auth.uid, null) != null &&
+                 resource.data.sharedWith[request.auth.uid] > request.time;
+        }
+
+        // One document at a time: listing the collection would hand every
+        // member the whole household's phones, which is the leak this
+        // collection exists to close.
+        allow get: if isMember() && (isOwner() || mayReadGrant());
+        allow create, update: if isOwner() && grantShape();
         allow delete: if isOwner();
       }
 
@@ -71,7 +108,7 @@ service cloud.firestore {
         // owner names their readers one by one, and each permission carries
         // the moment it runs out.
         //
-        // The permission is read from the owner's profile, which is where they
+        // The permission is read from the owner's grant, which is where they
         // write it, and not from a copy inside this document. A copy would be
         // cheaper — a rule that reads another document pays for a read — but a
         // copy only changes when the phone writes its next position, so
@@ -81,11 +118,15 @@ service cloud.firestore {
         // the application. A permission has to stop when it is withdrawn.
         //
         // Read through the defaults rather than by indexing: an owner without
-        // the field, or a reader without a permission in it, has to come out
-        // as a plain refusal and not as an error.
+        // a grant of their own, or a reader without a permission in it, has to
+        // come out as a plain refusal and not as an error.
+        function grant() {
+          return get(/databases/$(database)/documents/groups/$(groupId)/grants/$(positionId.split('\\.')[0]));
+        }
+
         function permission() {
-          return get(/databases/$(database)/documents/groups/$(groupId)/members/$(positionId.split('\\.')[0]))
-                   .data.get('sharedWith', {}).get(request.auth.uid, null);
+          return grant() == null ? null
+                                 : grant().data.get('sharedWith', {}).get(request.auth.uid, null);
         }
 
         function mayRead() {
@@ -133,7 +174,7 @@ service cloud.firestore {
         // One document at a time, and no listing of the collection. A query is
         // allowed only when its own filters prove the rule, and an expiry
         // compared against the server's clock cannot be proved by anything a
-        // client sends. So a reader walks the roster instead: the profile of a
+        // client sends. So a reader walks the roster instead: the grant of a
         // member names their devices, and each of those is a document read by
         // name.
         allow get: if isMember() && (ownsPosition() || mayRead());

@@ -7,15 +7,13 @@ import org.junit.Test
  * Which documents a reader subscribes to.
  *
  * The collection of positions cannot be listed — a permission with an expiry
- * is not something a query can prove — so the profiles are what name the
+ * is not something a query can prove — so the grants are what name the
  * documents, and getting that list wrong means a member silently missing from
  * the map.
  */
 class PositionDocumentsTest {
-    private fun profile(memberId: String, vararg devices: String) = MemberProfile(
+    private fun grant(memberId: String, vararg devices: String) = MemberGrant(
         memberId = memberId,
-        displayName = memberId,
-        pictureUrl = null,
         devices = devices.toList(),
     )
 
@@ -24,8 +22,8 @@ class PositionDocumentsTest {
         val documents =
             positionDocuments(
                 mapOf(
-                    "alice" to profile("alice", "one", "two"),
-                    "bob" to profile("bob", "phone"),
+                    "alice" to grant("alice", "one", "two"),
+                    "bob" to grant("bob", "phone"),
                 ),
             )
 
@@ -33,19 +31,19 @@ class PositionDocumentsTest {
     }
 
     // A member who has signed in but never written a position has no device in
-    // their profile yet, and there is nothing to subscribe to for them.
+    // their grant yet, and there is nothing to subscribe to for them.
     @Test
     fun `a member without devices contributes nothing`() {
-        assertEquals(emptyList<String>(), positionDocuments(mapOf("alice" to profile("alice"))))
+        assertEquals(emptyList<String>(), positionDocuments(mapOf("alice" to grant("alice"))))
     }
 
     // The list drives a remember() in the screen, so the same group in a
     // different order has to come out the same and not rebuild every
     // subscription.
     @Test
-    fun `the order does not depend on how the profiles arrived`() {
-        val one = positionDocuments(mapOf("alice" to profile("alice", "two", "one")))
-        val other = positionDocuments(mapOf("alice" to profile("alice", "one", "two")))
+    fun `the order does not depend on how the grants arrived`() {
+        val one = positionDocuments(mapOf("alice" to grant("alice", "two", "one")))
+        val other = positionDocuments(mapOf("alice" to grant("alice", "one", "two")))
 
         assertEquals(one, other)
     }

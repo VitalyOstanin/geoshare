@@ -3,12 +3,17 @@ package io.github.vitalyostanin.geoshare.map
 import com.google.firebase.Timestamp
 import com.google.firebase.firestore.DocumentSnapshot
 import com.google.firebase.firestore.FirebaseFirestore
+import com.google.firebase.firestore.ListenerRegistration
 import io.github.vitalyostanin.geoshare.log.AppLog
+import io.github.vitalyostanin.geoshare.service.GrantField
 import io.github.vitalyostanin.geoshare.service.ProfileField
+import io.github.vitalyostanin.geoshare.service.grantsOf
 import io.github.vitalyostanin.geoshare.service.membersOf
 import kotlinx.coroutines.channels.awaitClose
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.callbackFlow
+import kotlinx.coroutines.launch
 import java.time.Instant
 
 private const val TAG = "geoshare.profiles"
@@ -59,26 +64,92 @@ private fun profileOf(document: DocumentSnapshot): MemberProfile? {
         memberId = document.id,
         displayName = displayName,
         pictureUrl = document.getString(ProfileField.PHOTO_URL)?.takeIf { it.isNotBlank() },
-        devices =
-        (document.get(ProfileField.DEVICES) as? List<*>).orEmpty().filterIsInstance<String>(),
-        sharedWith = permissionsOf(document),
     )
 }
 
 /**
+ * What each member gives out, as far as this phone is allowed to know.
+ *
+ * One subscription per member rather than one over the collection: the grants
+ * cannot be listed, because listing them would hand the whole household's
+ * phones to a member who was given nothing.
+ *
+ * A member who shares with this phone answers with their phones; one who does
+ * not answers with a refusal, and a refusal is simply an absence here — there
+ * is no marker to drop and nothing to report, since the same member is already
+ * missing from the map. The subscription is made again on a timer, so a
+ * permission handed back arrives without the screen being reopened.
+ */
+fun memberGrants(
+    memberIds: List<String>,
+    store: FirebaseFirestore = FirebaseFirestore.getInstance(),
+): Flow<Map<String, MemberGrant>> = callbackFlow {
+    val known = mutableMapOf<String, MemberGrant>()
+    val subscriptions = mutableMapOf<String, ListenerRegistration>()
+    val grants = grantsOf(store)
+
+    fun publish() = trySend(known.toMap())
+
+    fun follow(memberId: String) {
+        subscriptions[memberId] =
+            grants.document(memberId).addSnapshotListener { snapshot, error ->
+                if (error != null) {
+                    AppLog.i(TAG, "the grant of $memberId is out of reach: ${error.code}")
+                    known.remove(memberId)
+                    publish()
+
+                    launch {
+                        delay(RETRY_AFTER.toMillis())
+                        subscriptions.remove(memberId)?.remove()
+                        follow(memberId)
+                    }
+
+                    return@addSnapshotListener
+                }
+
+                // A member who has not written a grant yet — a phone that has
+                // not been opened since the split — has no document, and that
+                // is not a complaint either.
+                if (snapshot?.exists() != true) {
+                    known.remove(memberId)
+                } else {
+                    known[memberId] = grantOf(snapshot)
+                }
+
+                publish()
+            }
+    }
+
+    memberIds.forEach { follow(it) }
+
+    // Said once, so that a screen with nobody to follow draws an empty map
+    // instead of waiting for an answer that is not coming.
+    publish()
+
+    awaitClose { subscriptions.values.forEach { it.remove() } }
+}
+
+/** A document turns into what its member gives out. */
+private fun grantOf(document: DocumentSnapshot): MemberGrant = MemberGrant(
+    memberId = document.id,
+    devices = (document.get(GrantField.DEVICES) as? List<*>).orEmpty().filterIsInstance<String>(),
+    sharedWith = permissionsOf(document),
+)
+
+/**
  * The permissions this member has given, as they stand.
  *
- * The profile is where they are kept, so that every phone of the member writes
+ * The grant is where they are kept, so that every phone of the member writes
  * the same ones and a phone picked up tomorrow inherits them rather than
- * starting from nothing. The service copies them into each position it writes,
- * because that is where a rule can weigh them without paying for a read.
+ * starting from nothing. The rules read them from the same document, so
+ * withdrawing one takes effect without any phone having to write again.
  */
 fun ownSharedWith(
     memberId: String,
     store: FirebaseFirestore = FirebaseFirestore.getInstance(),
 ): Flow<Map<String, Instant>> = callbackFlow {
     val subscription =
-        membersOf(store)
+        grantsOf(store)
             .document(memberId)
             .addSnapshotListener { snapshot, error ->
                 if (error != null) {
@@ -94,7 +165,7 @@ fun ownSharedWith(
 }
 
 /**
- * The permissions a profile carries: a reader, and the moment their permission
+ * The permissions a grant carries: a reader, and the moment their permission
  * ends.
  *
  * A permission without an end is written as a date far enough away to read as
@@ -102,7 +173,7 @@ fun ownSharedWith(
  * than two.
  */
 private fun permissionsOf(document: DocumentSnapshot): Map<String, Instant> {
-    val stated = document.get(ProfileField.SHARED_WITH) as? Map<*, *> ?: return emptyMap()
+    val stated = document.get(GrantField.SHARED_WITH) as? Map<*, *> ?: return emptyMap()
 
     return stated
         .mapNotNull { (reader, until) ->

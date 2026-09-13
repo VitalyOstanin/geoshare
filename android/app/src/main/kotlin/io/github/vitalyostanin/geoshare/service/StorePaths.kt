@@ -27,6 +27,16 @@ fun membersOf(store: FirebaseFirestore): CollectionReference =
 fun watchOf(store: FirebaseFirestore): CollectionReference =
     groupDocument(store).collection("watch")
 
+/**
+ * What a member gives out: the phones they carry and whom they let watch.
+ *
+ * Apart from the profile because the profile is read by everybody in the
+ * group, and neither of these is the group's business: only the member and the
+ * readers they named can see them.
+ */
+fun grantsOf(store: FirebaseFirestore): CollectionReference =
+    groupDocument(store).collection("grants")
+
 /** The fields of a position document, as the writer and the reader both call them. */
 object PositionField {
     const val MEMBER_ID = "memberId"
@@ -45,6 +55,10 @@ object ProfileField {
     const val DISPLAY_NAME = "displayName"
     const val PHOTO_URL = "photoUrl"
     const val UPDATED_AT = "updatedAt"
+}
+
+/** The fields of what a member gives out. */
+object GrantField {
     const val DEVICES = "devices"
     const val SHARED_WITH = "sharedWith"
 }

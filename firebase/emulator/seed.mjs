@@ -113,7 +113,7 @@ async function write(path, fields) {
 const stringValue = (value) => ({ stringValue: value });
 const timeValue = (value) => ({ timestampValue: value });
 
-/** Who may read this member's positions, and until when. Kept in the profile alone. */
+/** Who may read this member's positions, and until when. Kept in the grant alone. */
 const sharedWith = (readers) => ({
     mapValue: { fields: Object.fromEntries(readers.map((uid) => [uid, timeValue(FOREVER)])) },
 });
@@ -137,6 +137,12 @@ for (const member of MEMBERS) {
         displayName: stringValue(member.name),
         photoUrl: { nullValue: null },
         updatedAt: timeValue(new Date().toISOString()),
+    });
+
+    // Apart from the profile, which everybody in the group reads: who may
+    // watch and which phones they would be watching are for the member and
+    // their readers alone.
+    await write(`groups/${GROUP}/grants/${uid}`, {
         // Everyone else in the household, so that a build pointed at the
         // emulator has something to read on its first launch.
         sharedWith: sharedWith(roster.filter((reader) => reader !== uid)),

@@ -37,6 +37,7 @@ import io.github.vitalyostanin.geoshare.map.PublishProfile
 import io.github.vitalyostanin.geoshare.map.SettingsActions
 import io.github.vitalyostanin.geoshare.map.SettingsState
 import io.github.vitalyostanin.geoshare.map.publishSharing
+import io.github.vitalyostanin.geoshare.map.rememberMemberGrants
 import io.github.vitalyostanin.geoshare.map.rememberMemberPositions
 import io.github.vitalyostanin.geoshare.map.rememberMemberProfiles
 import io.github.vitalyostanin.geoshare.map.rememberOwnSharedWith
@@ -155,7 +156,8 @@ class MainActivity : ComponentActivity() {
                         // screen has nothing left to say.
                         is AuthState.SignedIn -> {
                             val profiles by rememberMemberProfiles()
-                            val onTheMap by rememberMemberPositions(profiles)
+                            val grants by rememberMemberGrants(profiles)
+                            val onTheMap by rememberMemberPositions(grants)
                             val sharedWith by rememberOwnSharedWith(current.memberId)
 
                             KeepWatching(current.memberId, device.id)
@@ -197,7 +199,7 @@ class MainActivity : ComponentActivity() {
                                         theme = wanted
                                         appearance.choice = wanted
                                     },
-                                    // Written into the profile, and left to be
+                                    // Written into the grant, and left to be
                                     // read back: the phones of a member share
                                     // the same permissions, so the answer has
                                     // to come from where all of them look.

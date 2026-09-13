@@ -26,6 +26,7 @@ import {
     publishProfile,
     signIn,
     watchPositions,
+    watchGrants,
     watchProfiles,
     watchSignIn,
 } from './lib/store.js';
@@ -58,6 +59,9 @@ const state = {
     // profile" apart from "the answer is still on its way". Writing before it
     // lands would put the same profile in again on every visit.
     profiles: null,
+    // What the members give out, by member: the phones to subscribe to, and
+    // nothing at all for a member who shares with somebody else.
+    grants: new Map(),
     view: null,
     stopPositions: null,
     // The documents the current position subscriptions cover, joined into one
@@ -65,6 +69,11 @@ const state = {
     // and rebuilding the subscriptions for those would cost a read each time.
     positionDocuments: null,
     stopProfiles: null,
+    stopGrants: null,
+    // The members the current grant subscriptions cover, joined into one
+    // string: a renamed account changes the profiles without changing who is
+    // in the household.
+    grantMembers: null,
     stopWatching: null,
     // How many of the documents the profiles name are being refused to us. A
     // refusal is a member no longer sharing, an expired permission or a rule
@@ -188,7 +197,7 @@ function start() {
             state.profiles = profiles;
             state.reachable = true;
             publishProfile(state.member, profiles.get(state.member.memberId), () => {});
-            followPositions(profiles);
+            followGrants(profiles);
             render();
         },
         () => {
@@ -201,20 +210,46 @@ function start() {
 }
 
 /**
- * Subscribes to the positions the profiles point at, and again whenever they
+ * Subscribes to what each member gives out, and again whenever the household
+ * itself changes.
+ *
+ * The grants cannot be listed, so who to ask about comes from the profiles,
+ * which every member may read. A member who shares with this viewer answers
+ * with their phones; one who does not is simply absent, and the positions
+ * subscription is built from what is left.
+ */
+function followGrants(profiles) {
+    const memberIds = [...profiles.keys()].sort();
+    const wanted = memberIds.join(',');
+
+    if (wanted === state.grantMembers) {
+        return;
+    }
+
+    state.stopGrants?.();
+    state.grantMembers = wanted;
+    state.stopGrants = watchGrants(memberIds, (grants) => {
+        state.grants = grants;
+        followPositions(grants);
+        render();
+    });
+}
+
+/**
+ * Subscribes to the positions the grants point at, and again whenever they
  * point somewhere else.
  *
  * The positions are read a document at a time, so the list of documents is
  * what a subscription is made of: a member who picks up a second phone adds it
- * to their profile, and this is what notices.
+ * to their grant, and this is what notices.
  */
-function followPositions(profiles) {
-    const documents = positionDocuments(profiles);
+function followPositions(grants) {
+    const documents = positionDocuments(grants);
     const wanted = documents.join(',');
 
-    // The profiles change for reasons that have nothing to do with the
-    // devices — a renamed account, a new picture — and rebuilding every
-    // subscription for those would cost a read each time.
+    // The grants change for reasons that have nothing to do with the devices —
+    // a permission given to somebody else — and rebuilding every subscription
+    // for those would cost a read each time.
     if (wanted === state.positionDocuments) {
         return;
     }
@@ -238,6 +273,10 @@ function stop() {
     state.stopPositions?.();
     state.stopPositions = null;
     state.positionDocuments = null;
+    state.stopGrants?.();
+    state.stopGrants = null;
+    state.grantMembers = null;
+    state.grants = new Map();
 
     state.stopProfiles?.();
     state.stopProfiles = null;

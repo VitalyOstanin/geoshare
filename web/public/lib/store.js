@@ -138,7 +138,7 @@ export function watchPositions(documents, onPositions, onRefused) {
 
     // A refused document stays refused until the member says otherwise, and
     // what they say does not reach this page: a permission lives in their
-    // profile, and the profile is the same document it was before. So the
+    // grant, which a refused reader cannot see either. So the
     // subscription is made again on a timer, and a permission handed back
     // brings the marker back with it instead of waiting for a reload.
     const askAgainLater = (id) => {
@@ -277,11 +277,88 @@ function profileOf(document) {
             memberId: document.id,
             displayName: data.displayName,
             photoUrl: typeof data.photoUrl === 'string' && data.photoUrl !== '' ? data.photoUrl : null,
-            // The phones this member carries: the positions cannot be listed,
-            // so this is how the page learns which documents to read.
-            devices: Array.isArray(data.devices) ? data.devices.filter((one) => typeof one === 'string') : [],
         },
     ];
+}
+
+/**
+ * What each member gives out, as far as this viewer is allowed to know.
+ *
+ * One subscription per member rather than one over the collection: the grants
+ * cannot be listed, because listing them would hand the phones of the whole
+ * household to a member who was given nothing. A member who shares with this
+ * viewer answers with their phones; one who does not answers with a refusal,
+ * which is simply an absence here — the same member is already missing from
+ * the map. The subscription is made again on a timer, so a permission handed
+ * back arrives without a reload.
+ */
+export function watchGrants(memberIds, onGrants) {
+    const known = new Map();
+    const stops = new Map();
+    const waiting = new Set();
+    let wanted = true;
+
+    const publish = () => onGrants(new Map(known));
+
+    const follow = (memberId) => {
+        stops.set(
+            memberId,
+            onSnapshot(
+                doc(store, 'groups', GROUP, 'grants', memberId),
+                (snapshot) => {
+                    const devices = snapshot.exists() ? devicesOf(snapshot) : [];
+
+                    known.set(memberId, { memberId, devices });
+                    publish();
+                },
+                () => {
+                    known.delete(memberId);
+                    publish();
+                    askAgainLater(memberId);
+                },
+            ),
+        );
+    };
+
+    const askAgainLater = (memberId) => {
+        stops.get(memberId)?.();
+        stops.delete(memberId);
+
+        if (!wanted) {
+            return;
+        }
+
+        const timer = setTimeout(() => {
+            waiting.delete(timer);
+
+            if (wanted) {
+                follow(memberId);
+            }
+        }, RETRY_AFTER_MS);
+
+        waiting.add(timer);
+    };
+
+    memberIds.forEach(follow);
+
+    // Said once at the start, so that a viewer nobody shares with draws an
+    // empty map rather than waiting for an answer that never comes.
+    publish();
+
+    return () => {
+        wanted = false;
+        waiting.forEach(clearTimeout);
+        waiting.clear();
+        stops.forEach((stop) => stop());
+        stops.clear();
+    };
+}
+
+/** The phones a grant names: the positions cannot be listed, so this is the list to read. */
+function devicesOf(snapshot) {
+    const data = snapshot.data();
+
+    return Array.isArray(data.devices) ? data.devices.filter((one) => typeof one === 'string') : [];
 }
 
 /**
@@ -313,9 +390,8 @@ export function publishProfile(member, known, onError) {
             photoUrl,
             updatedAt: serverTimestamp(),
         },
-        // Merged rather than replacing the document: the permissions and the
-        // phones of this member live there too, and neither is this write's
-        // business.
+        // Merged rather than replacing the document, so that a field added
+        // here later is not wiped by a client that predates it.
         { merge: true },
     ).catch(onError);
 }

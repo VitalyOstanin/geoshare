@@ -19,16 +19,31 @@ import java.time.Instant
  * A subscription costs the other phones nothing, but it does hold a connection
  * open, and there is no one to show a moved marker to behind a dark screen.
  *
- * Driven by the profiles, because they are what names the documents to read:
- * a member who picks up a second phone adds it to their profile, and the
+ * Driven by the grants, because they are what names the documents to read: a
+ * member who picks up a second phone adds it to their grant, and the
  * subscriptions are rebuilt around the new list.
  */
 @Composable
-fun rememberMemberPositions(profiles: Map<String, MemberProfile>?): State<MembersInView> {
-    val documents = remember(profiles) { positionDocuments(profiles.orEmpty()) }
+fun rememberMemberPositions(grants: Map<String, MemberGrant>): State<MembersInView> {
+    val documents = remember(grants) { positionDocuments(grants) }
     val positions = remember(documents) { memberPositions(documents) }
 
     return positions.collectAsStateWithLifecycle(initialValue = MembersInView())
+}
+
+/**
+ * What the members give out, collected while a screen is up.
+ *
+ * Follows the profiles, which is the one list of the household every member
+ * may read: the grants themselves cannot be listed, so who to ask about has to
+ * come from somewhere else.
+ */
+@Composable
+fun rememberMemberGrants(profiles: Map<String, MemberProfile>?): State<Map<String, MemberGrant>> {
+    val memberIds = remember(profiles) { profiles.orEmpty().keys.sorted() }
+    val grants = remember(memberIds) { memberGrants(memberIds) }
+
+    return grants.collectAsStateWithLifecycle(initialValue = emptyMap())
 }
 
 /**
@@ -91,15 +106,19 @@ fun PublishProfile(memberId: String, displayName: String?, pictureUrl: String?, 
                 return@repeatOnLifecycle
             }
 
-            val accepted =
+            // Two documents, because the two are read by different people:
+            // the name and the picture by the whole group, the phone by the
+            // readers this member named. Remembered only when both were taken,
+            // so a phone missing from the list is written again next time.
+            val named =
                 publishProfile(
                     memberId = memberId,
                     displayName = name,
                     pictureUrl = pictureUrl,
-                    deviceId = deviceId,
                 )
+            val listed = publishDevice(memberId = memberId, deviceId = deviceId)
 
-            if (accepted) {
+            if (named && listed) {
                 published.remember(memberId, name, pictureUrl, deviceId)
             }
         }

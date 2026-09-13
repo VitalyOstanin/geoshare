@@ -26,12 +26,12 @@ test('the other members come before our own entry', () => {
     assert.deepEqual(idsOf(order), ['her.phone', 'me.phone']);
 });
 
-test('a profile naming more phones than a person carries is followed only so far', () => {
-    const profiles = new Map([
+test('a grant naming more phones than a person carries is followed only so far', () => {
+    const grants = new Map([
         ['her', { memberId: 'her', devices: Array.from({ length: 30 }, (unused, index) => `p${index}`) }],
     ]);
 
-    assert.equal(positionDocuments(profiles).length, 10);
+    assert.equal(positionDocuments(grants).length, 10);
 });
 
 test('the panel sorts ids the way the phone does, by the characters themselves', () => {
@@ -125,28 +125,25 @@ test('the phones of one member keep their places', () => {
     );
 });
 
-const profileWith = (memberId, devices) => [
-    memberId,
-    { memberId, displayName: memberId, photoUrl: null, devices },
-];
+const grantWith = (memberId, devices) => [memberId, { memberId, devices }];
 
 test('a document is named for every device of every member', () => {
-    const profiles = new Map([profileWith('alice', ['one', 'two']), profileWith('bob', ['phone'])]);
+    const grants = new Map([grantWith('alice', ['one', 'two']), grantWith('bob', ['phone'])]);
 
-    assert.deepEqual(positionDocuments(profiles), ['alice.one', 'alice.two', 'bob.phone']);
+    assert.deepEqual(positionDocuments(grants), ['alice.one', 'alice.two', 'bob.phone']);
 });
 
 // A member who has signed in but never written a position has no device in
-// their profile yet, and there is nothing to subscribe to for them.
+// their grant yet, and there is nothing to subscribe to for them.
 test('a member without devices is left out', () => {
-    assert.deepEqual(positionDocuments(new Map([profileWith('alice', [])])), []);
+    assert.deepEqual(positionDocuments(new Map([grantWith('alice', [])])), []);
 });
 
 // The list decides whether the subscriptions are rebuilt, so the same group in
 // a different order has to come out the same.
 test('the documents do not depend on the order the devices arrived in', () => {
-    const one = positionDocuments(new Map([profileWith('alice', ['two', 'one'])]));
-    const other = positionDocuments(new Map([profileWith('alice', ['one', 'two'])]));
+    const one = positionDocuments(new Map([grantWith('alice', ['two', 'one'])]));
+    const other = positionDocuments(new Map([grantWith('alice', ['one', 'two'])]));
 
     assert.deepEqual(one, other);
 });
