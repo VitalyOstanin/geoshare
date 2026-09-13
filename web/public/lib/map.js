@@ -266,7 +266,26 @@ function addMarker(view, key, group) {
     // pixels: the rows are a label and a value on one line, and a value wider
     // than that ran out over the edge of the bubble instead of widening it.
     // The stylesheet is what stops it growing past the window.
-    const popup = new Popup({ offset: 16, closeButton: true, maxWidth: 'none' });
+    // The bubble opens under the pointer, and the library would put the focus
+    // ring on the first thing in it — the mode, which is written as a link.
+    // A ring drawn around a word nobody asked for reads as a mistake, and the
+    // bubble has no keyboard way in to lose: the pin behind it is a plain div.
+    const popup = new Popup({
+        offset: 16,
+        closeButton: true,
+        maxWidth: 'none',
+        focusAfterOpen: false,
+    });
+
+    // The library gives its close button a multiplication sign and no name,
+    // which is what a reader is told the control is called. Named here, in the
+    // language the rest of the card is read in.
+    popup.on('open', () => {
+        popup
+            .getElement()
+            ?.querySelector('.maplibregl-popup-close-button')
+            ?.setAttribute('aria-label', WORDS.close);
+    });
     // Held before the handlers, which reach into it, and before the marker,
     // which is added to it once it is on the map.
     const entry = {

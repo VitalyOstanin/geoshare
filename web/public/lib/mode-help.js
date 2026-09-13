@@ -84,17 +84,22 @@ export function openModeHelp(document_ = document) {
         dialog.remove();
     };
 
+    // The same cross in the same corner as a member's card: two windows over
+    // one map, closed by one gesture. The word stays as the label a screen
+    // reader says, since a multiplication sign read aloud is not "close".
     const close = document_.createElement('button');
 
-    close.className = 'mode-help-close';
-    close.textContent = WORDS.modeHelpClose;
+    close.className = 'close-cross';
+    close.type = 'button';
+    close.textContent = '\u00d7';
+    close.setAttribute('aria-label', WORDS.close);
     close.addEventListener('click', dismiss);
 
     // The escape key asks to cancel before anything is closed, which is the
     // one chance to hear about it without the event above.
     dialog.addEventListener('cancel', dismiss);
 
-    dialog.append(title, intro, table, close);
+    dialog.append(close, title, intro, table);
     document_.body.append(dialog);
     dialog.showModal();
 

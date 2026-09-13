@@ -40,7 +40,7 @@ export const EN = {
         + 'everything else; the rest of the time it spends as little as it can and still be found.',
     modeHelpWhen: 'When',
     modeHelpAsks: 'What the phone does',
-    modeHelpClose: 'Close',
+    close: 'Close',
     modeWhenViewing: 'Somebody has the map open.',
     modeAsksViewing: 'Asks for the most exact position every 15 seconds, and writes it as soon as '
         + 'the marker would move.',

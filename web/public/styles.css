@@ -475,6 +475,7 @@ button {
 }
 
 .mode-help {
+    position: relative;
     max-width: min(36rem, 92vw);
     border: 1px solid var(--edge);
     border-radius: 0.6rem;
@@ -487,8 +488,10 @@ button {
     background: rgba(0, 0, 0, 0.45);
 }
 
+/* The cross sits in the corner the title would otherwise run into. */
 .mode-help h2 {
     margin: 0 0 0.4rem;
+    padding-right: 1.75rem;
     font-size: 1.05rem;
 }
 
@@ -515,17 +518,6 @@ button {
 .mode-help-name {
     white-space: nowrap;
     opacity: 1;
-}
-
-.mode-help-close {
-    margin-top: 0.9rem;
-    border: 1px solid var(--edge);
-    border-radius: 0.4rem;
-    padding: 0.35rem 0.9rem;
-    background: var(--link);
-    color: var(--on-link);
-    font: inherit;
-    cursor: pointer;
 }
 
 /* The corner control sits over the map rather than beside it: the map is the
@@ -614,20 +606,63 @@ button {
 }
 
 /* Away from the text and large enough to hit on a phone. */
-.maplibregl-popup-close-button {
+/* One cross for both windows over the map: a member's card and the help read
+   as the same kind of thing, and a second way of dismissing one of them would
+   only be something more to find.
+
+   The library leaves its own button in the very corner with the cross sitting
+   on a text baseline, so the round hover area hung over the rounded corner of
+   the card and the cross stood above its own centre. Laid out as a box
+   instead: the circle is inset from the corner, and the cross is centred in it
+   by the box rather than by the line height. */
+.maplibregl-popup-close-button,
+.close-cross {
+    position: absolute;
+    top: 0.4rem;
+    right: 0.4rem;
     width: 1.75rem;
     height: 1.75rem;
+    border: 0;
     border-radius: 50%;
-    font-size: 1.1rem;
-    line-height: 1;
-}
-
-.maplibregl-popup-close-button:hover {
-    background: rgba(128, 128, 128, 0.2);
-}
-
-.maplibregl-popup-close-button {
+    padding: 0;
+    background: none;
     color: inherit;
+    /* The multiplication sign the library writes into the button is a glyph,
+       and a glyph sits on the x-height rather than in the middle of its line,
+       so a button that centres it as text still shows it high of its own
+       circle. Hidden here and drawn below out of two lines, which have no
+       side of their own to lean on. */
+    font-size: 0;
+    cursor: pointer;
+}
+
+.maplibregl-popup-close-button::before,
+.maplibregl-popup-close-button::after,
+.close-cross::before,
+.close-cross::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 0.85rem;
+    height: 1.5px;
+    border-radius: 1px;
+    background: currentcolor;
+}
+
+.maplibregl-popup-close-button::before,
+.close-cross::before {
+    transform: translate(-50%, -50%) rotate(45deg);
+}
+
+.maplibregl-popup-close-button::after,
+.close-cross::after {
+    transform: translate(-50%, -50%) rotate(-45deg);
+}
+
+.maplibregl-popup-close-button:hover,
+.close-cross:hover {
+    background: rgba(128, 128, 128, 0.2);
 }
 
 .maplibregl-popup-anchor-top .maplibregl-popup-tip,
