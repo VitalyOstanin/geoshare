@@ -99,9 +99,40 @@ export function openModeHelp(document_ = document) {
     // one chance to hear about it without the event above.
     dialog.addEventListener('cancel', dismiss);
 
+    // A click on the dark behind the window closes it, the way a tap beside a
+    // sheet does on a phone. The dark is not an element of its own -- it is
+    // the dialog's own backdrop -- so such a click arrives at the dialog
+    // itself, as does a click on the dialog's padding; the point is compared
+    // with the box to tell the two apart.
+    dialog.addEventListener('click', (event) => {
+        if (event.target !== dialog) {
+            return;
+        }
+
+        if (outsideTheBox(dialog.getBoundingClientRect(), event)) {
+            dismiss();
+        }
+    });
+
     dialog.append(close, title, intro, table);
     document_.body.append(dialog);
     dialog.showModal();
 
     return dialog;
+}
+
+/**
+ * Whether a point falls outside a box.
+ *
+ * Kept apart from the dialog so that the arithmetic can be read and tested on
+ * its own: a click on the backdrop and a click on the padding of the window
+ * are the same event with the same target, and only the coordinates tell them
+ * apart. The edge belongs to the box, because a click on the border of a
+ * window is a click on that window.
+ */
+export function outsideTheBox(box, point) {
+    return point.clientX < box.left ||
+        point.clientX > box.right ||
+        point.clientY < box.top ||
+        point.clientY > box.bottom;
 }
