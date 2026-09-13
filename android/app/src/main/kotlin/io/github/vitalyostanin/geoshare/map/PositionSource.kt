@@ -131,15 +131,19 @@ fun memberPositions(
 /**
  * A document turns into a position, or into nothing.
  *
- * A document without coordinates is not a position, and the map is better off
- * leaving the member out than drawing them off the coast of Africa.
+ * A document without usable coordinates is not a position, and the map is
+ * better off leaving the member out than drawing them off the coast of Africa
+ * — or, for a number far outside the globe, than being asked to place a point
+ * that is not on it.
  */
 private fun positionOf(document: DocumentSnapshot): MemberPosition? {
     val latitude = document.getDouble("latitude")
     val longitude = document.getDouble("longitude")
     val takenAt = document.getTimestamp("takenAt")
 
-    if (latitude == null || longitude == null || takenAt == null) {
+    if (latitude == null || longitude == null || takenAt == null ||
+        !placeable(latitude, longitude)
+    ) {
         AppLog.w(TAG, "the position of ${document.id} has no place or time in it")
 
         return null

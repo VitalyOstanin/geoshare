@@ -527,18 +527,3 @@ private fun centreLongitude(group: List<MemberPosition>): Double {
 
     return wrapDegrees(first + offset)
 }
-
-/** The same angle, written as the turn of at most half a circle either way. */
-private fun wrapDegrees(degrees: Double): Double {
-    var value = degrees
-
-    while (value > 180.0) {
-        value -= 360.0
-    }
-
-    while (value < -180.0) {
-        value += 360.0
-    }
-
-    return value
-}
