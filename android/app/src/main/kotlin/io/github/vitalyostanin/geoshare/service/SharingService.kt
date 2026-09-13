@@ -622,7 +622,10 @@ class SharingService : LifecycleService() {
         val width = fix.accuracyMetres?.let { String.format(Locale.ROOT, " ±%.0f m", it) }.orEmpty()
         val since =
             if (last == null) {
-                "the first of this round"
+                // Not necessarily the first fix to arrive: while every answer
+                // is being left out, none of them becomes the position the
+                // next one is measured against.
+                "with no position to measure it from"
             } else {
                 val moved = distanceMetres(last, fix)
                 val speed = impliedSpeedMps(last, fix)
