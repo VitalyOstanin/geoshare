@@ -27,8 +27,11 @@ class RequestSpecTest {
         val spec = requestSpec(CollectionMode.Night)!!
 
         assertEquals(Priority.PRIORITY_LOW_POWER, spec.priority)
-        assertEquals(Duration.ofMinutes(30).toMillis(), spec.intervalMillis)
-        assertEquals(Duration.ofMinutes(90).toMillis(), spec.maxDelayMillis)
+        assertEquals(CollectionMode.Night.interval.toMillis(), spec.intervalMillis)
+        assertEquals(CollectionMode.Night.maxUpdateDelay.toMillis(), spec.maxDelayMillis)
+        // The numbers themselves belong to the mode and are checked there,
+        // against the half hour after which a position is drawn as old; what
+        // this asks is that the request carries them through unchanged.
     }
 
     @Test

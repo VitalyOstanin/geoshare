@@ -16,21 +16,93 @@ enum class Accuracy {
     High,
 }
 
+/** What a still phone is allowed to keep quiet about, in metres and in time. */
+private val ORDINARY_DISTANCE = 75.0
+private val ORDINARY_SILENCE: Duration = Duration.ofMinutes(10)
+
+/**
+ * How hard the phone is working, and how readily it says what it found.
+ *
+ * The two halves belong together. Asking the chip often and then writing
+ * seldom spends the battery of the phone being watched without giving the
+ * watcher anything, which is what the fast mode used to do: a fix every
+ * fifteen seconds, and a marker that moved once a minute at best. And asking
+ * seldom with a long batch window makes a working phone look like a stopped
+ * one, because the position it last wrote goes past [STALE_AFTER] before the
+ * next one is even collected.
+ *
+ * So every mode names both, and [asksAgainWithin] is what ties them to the
+ * grey: a phone in any mode that asks for anything has to have written again
+ * before the half hour is up.
+ */
 enum class CollectionMode(
     val accuracy: Accuracy,
     val interval: Duration,
     /** Batch window: fixes pile up in the chip and arrive together. */
     val maxUpdateDelay: Duration,
+    /** Below this a fix is jitter rather than movement, in this mode. */
+    val writeDistance: Double,
+    /** However still the phone is, in this mode it says so this often. */
+    val writeSilence: Duration,
 ) {
-    /** Inside the geofence around the last position: nothing is requested. */
-    Idle(Accuracy.None, Duration.ZERO, Duration.ZERO),
+    /**
+     * Inside the geofence around the last position: nothing is requested.
+     *
+     * Nothing is written either, which is why this mode is the one that cannot
+     * be held for longer than the grey allows; the geofence is not in place
+     * yet, and when it is, leaving this mode on a timer before the half hour
+     * is up is part of it.
+     */
+    Idle(Accuracy.None, Duration.ZERO, Duration.ZERO, ORDINARY_DISTANCE, ORDINARY_SILENCE),
 
-    Standby(Accuracy.Balanced, Duration.ofMinutes(15), Duration.ofMinutes(45)),
+    Standby(
+        Accuracy.Balanced,
+        Duration.ofMinutes(15),
+        Duration.ofMinutes(10),
+        ORDINARY_DISTANCE,
+        ORDINARY_SILENCE,
+    ),
 
-    Moving(Accuracy.Balanced, Duration.ofMinutes(5), Duration.ofMinutes(15)),
+    Moving(
+        Accuracy.Balanced,
+        Duration.ofMinutes(5),
+        Duration.ofMinutes(5),
+        ORDINARY_DISTANCE,
+        ORDINARY_SILENCE,
+    ),
 
-    /** Somebody has the map open; the only mode that turns the receiver on. */
-    Viewing(Accuracy.High, Duration.ofSeconds(15), Duration.ZERO),
+    /**
+     * Somebody has the map open; the only mode that turns the receiver on.
+     *
+     * Written on the same terms it is collected on: a watcher following
+     * somebody on foot should see the marker move, and twenty-five metres is
+     * about fifteen seconds of walking. Half a minute of complete stillness is
+     * still said out loud, so that "just now" on the card means just now.
+     */
+    Viewing(Accuracy.High, Duration.ofSeconds(15), Duration.ZERO, 25.0, Duration.ofSeconds(30)),
 
-    Night(Accuracy.LowPower, Duration.ofMinutes(30), Duration.ofMinutes(90)),
+    /**
+     * The small hours, when a phone on a bedside table is not news.
+     *
+     * Twenty minutes rather than half an hour: the position has to be written
+     * again before the half hour of [STALE_AFTER] runs out, or a sleeping
+     * household would wake up grey on each other's maps.
+     */
+    Night(
+        Accuracy.LowPower,
+        Duration.ofMinutes(20),
+        Duration.ofMinutes(5),
+        ORDINARY_DISTANCE,
+        ORDINARY_SILENCE,
+    ),
+    ;
+
+    /**
+     * The longest a phone in this mode can go between two positions.
+     *
+     * A round of asking plus the window the answers wait in. A mode that asks
+     * for nothing has no such bound, and answers with nothing.
+     */
+    fun asksAgainWithin(): Duration? =
+        if (accuracy == Accuracy.None) null else interval + maxUpdateDelay
 }

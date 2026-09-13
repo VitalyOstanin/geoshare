@@ -1,16 +1,8 @@
 package io.github.vitalyostanin.geoshare.map
 
+import io.github.vitalyostanin.geoshare.collection.STALE_AFTER
 import java.time.Duration
 import java.time.Instant
-
-/**
- * Past this, a position is old enough that the map says so in grey.
- *
- * Well beyond the standby interval of fifteen minutes, so an ordinary quiet
- * phone never looks broken, and well short of an hour, so a phone that has
- * actually stopped sharing is noticed within one.
- */
-val STALE_AFTER: Duration = Duration.ofMinutes(30)
 
 /**
  * How old a position is, in the unit worth naming.

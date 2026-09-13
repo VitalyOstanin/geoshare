@@ -113,10 +113,35 @@ class SharingService : LifecycleService() {
         lifecycleScope.launch {
             val fix = firstPosition(lastMode) ?: lastFix ?: return@launch
 
-            if (writeQuietly(writer, fix, lastMode)) {
-                lastFix = fix
-            }
+            writeIfWorth(writer, fix, lastMode, always = true)
         }
+    }
+
+    /**
+     * Writes a fix and remembers it, when it is worth writing.
+     *
+     * The one place that decides both, because deciding them in three places
+     * is three places to keep in step. News — the cable going in, a mode
+     * beginning — passes the filter by, since the point of it is to be told
+     * now rather than at the next threshold.
+     */
+    private suspend fun writeIfWorth(
+        writer: PositionWriter,
+        fix: Fix,
+        mode: CollectionMode,
+        always: Boolean = false,
+    ): Boolean {
+        if (!always && !shouldWrite(lastFix, fix, mode)) {
+            return false
+        }
+
+        if (!writeQuietly(writer, fix, mode)) {
+            return false
+        }
+
+        lastFix = fix
+
+        return true
     }
 
     /**
@@ -171,17 +196,17 @@ class SharingService : LifecycleService() {
                     }
 
                     // Entering a mode is news: somebody started looking, or the
-                    // night ended. Neither should wait for the next batch.
+                    // night ended. Neither should wait for the next threshold,
+                    // and a watcher who has just opened the map should see
+                    // where the phone is rather than where it was ten minutes
+                    // ago — which is what the filter would have answered for a
+                    // phone standing still.
                     firstPosition(mode)?.let { fix ->
-                        if (shouldWrite(lastFix, fix) && writeQuietly(writer, fix, mode)) {
-                            lastFix = fix
-                        }
+                        writeIfWorth(writer, fix, mode, always = true)
                     }
 
                     positionUpdates(this@SharingService, spec).collect { fix ->
-                        if (shouldWrite(lastFix, fix) && writeQuietly(writer, fix, mode)) {
-                            lastFix = fix
-                        }
+                        writeIfWorth(writer, fix, mode)
                     }
                 }
             }

@@ -10,29 +10,28 @@ import kotlin.math.sqrt
 
 data class Fix(val latitude: Double, val longitude: Double, val takenAt: Instant)
 
-/** Below this a fix is jitter rather than movement. */
-const val WRITE_DISTANCE_METRES: Double = 75.0
-
-/** However still the phone is, it says so this often. */
-val WRITE_SILENCE: Duration = Duration.ofMinutes(10)
-
 /**
  * Whether a fix is worth a write.
  *
  * Writes are what wake the other side's subscription, so the threshold is not
  * only about the free quota: a phone lying on a table would otherwise keep
  * everyone's screen busy redrawing the same marker.
+ *
+ * The thresholds belong to the mode rather than to this file. A phone asking
+ * the chip four times a minute because somebody is watching should be saying
+ * what it finds on the same terms; a phone asking once a quarter of an hour
+ * should not.
  */
-fun shouldWrite(last: Fix?, next: Fix): Boolean {
+fun shouldWrite(last: Fix?, next: Fix, mode: CollectionMode): Boolean {
     if (last == null) {
         return true
     }
 
-    if (distanceMetres(last, next) >= WRITE_DISTANCE_METRES) {
+    if (distanceMetres(last, next) >= mode.writeDistance) {
         return true
     }
 
-    return Duration.between(last.takenAt, next.takenAt) >= WRITE_SILENCE
+    return Duration.between(last.takenAt, next.takenAt) >= mode.writeSilence
 }
 
 private const val EARTH_RADIUS_METRES = 6_371_000.0

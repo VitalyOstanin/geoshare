@@ -21,31 +21,45 @@ class WriteFilterTest {
 
     @Test
     fun `the first fix is always written`() {
-        assertTrue(shouldWrite(last = null, next = home))
+        assertTrue(shouldWrite(last = null, next = home, mode = CollectionMode.Standby))
     }
 
     @Test
     fun `jitter within the threshold is not written`() {
-        assertFalse(shouldWrite(last = home, next = north(metres = 40.0, afterSeconds = 60)))
+        assertFalse(
+            shouldWrite(
+                last = home,
+                next = north(metres = 40.0, afterSeconds = 60),
+                mode = CollectionMode.Standby,
+            ),
+        )
     }
 
     @Test
     fun `a move past the threshold is written`() {
-        assertTrue(shouldWrite(last = home, next = north(metres = 80.0, afterSeconds = 60)))
+        assertTrue(
+            shouldWrite(
+                last = home,
+                next = north(metres = 80.0, afterSeconds = 60),
+                mode = CollectionMode.Standby,
+            ),
+        )
     }
 
     @Test
     fun `silence is broken on schedule even standing still`() {
-        val next = home.copy(takenAt = start.plus(WRITE_SILENCE))
+        val next = home.copy(takenAt = start.plus(CollectionMode.Standby.writeSilence))
 
-        assertTrue(shouldWrite(last = home, next = next))
+        assertTrue(shouldWrite(last = home, next = next, mode = CollectionMode.Standby))
     }
 
     @Test
     fun `just short of the silence window nothing is written`() {
-        val next = home.copy(takenAt = start.plus(WRITE_SILENCE).minusSeconds(1))
+        val next = home.copy(
+            takenAt = start.plus(CollectionMode.Standby.writeSilence).minusSeconds(1),
+        )
 
-        assertFalse(shouldWrite(last = home, next = next))
+        assertFalse(shouldWrite(last = home, next = next, mode = CollectionMode.Standby))
     }
 
     @Test
