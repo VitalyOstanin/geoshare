@@ -231,6 +231,13 @@ button {
     flex-direction: column;
     align-items: center;
     cursor: pointer;
+    /* The box is as wide as the name written above the pin, which reaches well
+       past anything drawn in it. Two members standing a pin apart each had the
+       other's empty margin lying over their own pin, and a click there opened
+       the neighbour's card. Only what is drawn takes a click; the click still
+       reaches the marker itself, because it comes up from the part that was
+       hit. */
+    pointer-events: none;
 }
 
 .member-label {
@@ -243,6 +250,7 @@ button {
     padding: 0.1rem 0.4rem;
     margin-bottom: 0.2rem;
     white-space: nowrap;
+    pointer-events: auto;
 }
 
 /* The pin: a head with a point under it, and a face inside the head. The
@@ -253,6 +261,7 @@ button {
     position: relative;
     width: 48px;
     height: 70px;
+    pointer-events: auto;
 }
 
 .member-pin.stale {
