@@ -108,6 +108,12 @@ fun standingStill(context: Context, centres: Flow<Fix?>): Flow<Boolean> = callba
 
             client
                 .addGeofences(fenceAround(centre), delivery)
+                // Said out loud because nothing else marks it: a fence that
+                // was never put up and one the phone has simply not crossed
+                // yet look exactly alike in the log otherwise.
+                .addOnSuccessListener {
+                    AppLog.i(TAG, "a fence now stands around the last position")
+                }
                 .addOnFailureListener { error ->
                     AppLog.w(TAG, "could not put a fence around the last position", error)
                 }
