@@ -94,6 +94,22 @@ and dragged: up for closer, down for further. The library zooms on a double tap
 already; the held-and-dragged part is a gesture of our own over the map view,
 and it is the half that matters, since it is the one that works one-handed.
 
+## A control that fits everybody on screen
+
+Moving the map onto one member is a tap; seeing all of them at once is not.
+The buttons frame one position, and the rest is pinching and dragging until
+the furthest marker comes into view — which is the thing wanted most often
+before leaving the house: is everybody where they should be.
+
+What is needed is a control that frames the positions this member is allowed
+to read, all of them, with room around the edges: the readable ones and no
+others, since a member whose position is refused has no marker to frame and
+zooming out to nothing would be the only honest alternative. One member
+readable means the frame is that one marker at a sensible zoom rather than a
+point at maximum. Both clients want it, and both libraries can do it — the
+work is deciding where the control sits and what it does when nothing is
+readable at all.
+
 ## The battery level on the member buttons
 
 The full list shows how much battery a member has left; the two buttons in the
