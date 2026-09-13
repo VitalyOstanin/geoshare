@@ -36,6 +36,16 @@ import java.time.LocalTime
 private const val TAG = "geoshare.service"
 
 /**
+ * A position as it goes into the document: where the phone was, and whether
+ * the cable was in it at the moment that was decided.
+ *
+ * The pair rather than the fix alone, because the same place written with the
+ * cable newly in is a different document, while the same place written with
+ * nothing changed is not.
+ */
+private data class Written(val fix: Fix, val charging: Boolean)
+
+/**
  * The part of the application that keeps running: it holds the position up to
  * date while nothing of ours is on screen.
  *
@@ -81,6 +91,16 @@ class SharingService : LifecycleService() {
     private var writer: PositionWriter? = null
     private var lastFix: Fix? = null
     private var lastMode: CollectionMode = CollectionMode.Standby
+
+    /**
+     * What the last write actually put in the document.
+     *
+     * Kept beside the fix because a write that passes the filter by has to be
+     * told apart from a repeat of itself: the same place with the cable in the
+     * same state is the document the database already holds, and the quota is
+     * counted in writes rather than in changes.
+     */
+    private var lastWritten: Written? = null
 
     /**
      * The cable going in or coming out, written down at once.
@@ -142,17 +162,24 @@ class SharingService : LifecycleService() {
     /**
      * A position written because something other than the position changed.
      *
-     * A fresh fix is asked for first, so that the marker does not become young
-     * again while carrying an old place; the last known one is written when
-     * the provider has nothing to give.
+     * What changed is the cable, not the place, so the known position goes
+     * first and goes at once: asking the provider first would leave the reader
+     * looking at "12%" for the half minute the phone is already filling up,
+     * which is the case this exists for.
+     *
+     * The fresh fix follows when the provider answers, and only if it has
+     * somewhere new to report — the same fix a second time would be the same
+     * document written twice.
      */
     private fun writeWherePossible() {
         val writer = writer ?: return
 
         lifecycleScope.launch {
-            val fix = firstPosition(lastMode) ?: lastFix ?: return@launch
+            lastFix?.let { known -> writeIfWorth(writer, known, lastMode, always = true) }
 
-            writeIfWorth(writer, fix, lastMode, always = true)
+            firstPosition(lastMode)?.let { fresh ->
+                writeIfWorth(writer, fresh, lastMode, always = true)
+            }
         }
     }
 
@@ -174,11 +201,22 @@ class SharingService : LifecycleService() {
             return false
         }
 
-        if (!writeQuietly(writer, fix, mode)) {
+        // Read once and carried into the write: asking twice would let the
+        // cable come out between the two answers, and then the document would
+        // disagree with what was decided here.
+        val written = Written(fix, charging())
+
+        // News passes the filter by; a repeat of itself is not news.
+        if (written == lastWritten) {
+            return false
+        }
+
+        if (!writeQuietly(writer, written, mode)) {
             return false
         }
 
         lastFix = fix
+        lastWritten = written
 
         return true
     }
@@ -321,11 +359,11 @@ class SharingService : LifecycleService() {
      */
     private suspend fun writeQuietly(
         writer: PositionWriter,
-        fix: Fix,
+        written: Written,
         mode: CollectionMode,
     ): Boolean = try {
-        writer.write(fix, mode, batteryPercent(), charging())
-        AppLog.i(TAG, "wrote a position taken at ${fix.takenAt}")
+        writer.write(written.fix, mode, batteryPercent(), written.charging)
+        AppLog.i(TAG, "wrote a position taken at ${written.fix.takenAt}")
 
         true
     } catch (cancellation: CancellationException) {
