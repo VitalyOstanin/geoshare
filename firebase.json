@@ -1,5 +1,6 @@
 {
   "hosting": {
+    "target": "page",
     "public": "web/public",
     "ignore": [
       "**/.*",
