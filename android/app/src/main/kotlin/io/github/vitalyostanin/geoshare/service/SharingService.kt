@@ -17,10 +17,12 @@ import io.github.vitalyostanin.geoshare.collection.CollectionState
 import io.github.vitalyostanin.geoshare.collection.Fix
 import io.github.vitalyostanin.geoshare.collection.WATCH_AHEAD
 import io.github.vitalyostanin.geoshare.collection.chooseMode
+import io.github.vitalyostanin.geoshare.collection.rescueAfter
 import io.github.vitalyostanin.geoshare.collection.shouldWrite
 import io.github.vitalyostanin.geoshare.log.AppLog
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.collectLatest
@@ -101,6 +103,15 @@ class SharingService : LifecycleService() {
      * counted in writes rather than in changes.
      */
     private var lastWritten: Written? = null
+
+    /**
+     * When the provider last said anything at all.
+     *
+     * Kept apart from [lastFix], which is the last position written down: a fix
+     * the filter dropped is still the provider answering, and what the rescue
+     * below watches for is silence rather than stillness.
+     */
+    private var heardAt: Instant = Instant.now()
 
     /**
      * The cable going in or coming out, written down at once.
@@ -283,8 +294,14 @@ class SharingService : LifecycleService() {
                         writeIfWorth(writer, fix, mode, always = true)
                     }
 
-                    positionUpdates(this@SharingService, spec).collect { fix ->
-                        writeIfWorth(writer, fix, mode)
+                    coroutineScope {
+                        heardAt = Instant.now()
+                        launch { rescueWhileSilent(writer, mode) }
+
+                        positionUpdates(this@SharingService, spec).collect { fix ->
+                            heardAt = Instant.now()
+                            writeIfWorth(writer, fix, mode)
+                        }
                     }
                 }
             }
@@ -344,15 +361,61 @@ class SharingService : LifecycleService() {
     private suspend fun firstPosition(mode: CollectionMode): Fix? {
         val priority = requestSpec(mode)?.priority ?: return null
 
-        return try {
-            currentPosition(this, priority)
-        } catch (cancellation: CancellationException) {
-            throw cancellation
-        } catch (error: Exception) {
-            AppLog.w(TAG, "no position to start from", error)
+        return positionNow(priority)
+    }
 
-            null
+    /**
+     * Asks another way while the provider says nothing.
+     *
+     * The subscription is the only thing that normally writes anything, and it
+     * can go quiet for reasons the service has no way of hearing about: the
+     * fast mode asks the satellites alone, and a phone on a desk indoors gets
+     * no answer from them at all. The card then goes grey on everybody else's
+     * map while this service is running perfectly well, which is the one
+     * failure that looks exactly like the application being broken.
+     *
+     * So the silence is measured, and past [rescueAfter] the phone asks once
+     * with a coarser accuracy — the network answer, a hundred metres wide, is
+     * worth more than an exact one nobody ever hears. The write goes through
+     * whatever the filter would have said: what is being reported is not a new
+     * place but the fact that the phone is still there to report it.
+     */
+    private suspend fun rescueWhileSilent(writer: PositionWriter, mode: CollectionMode) {
+        val silence = rescueAfter(mode) ?: return
+        val priority = rescuePriority(mode) ?: return
+
+        while (true) {
+            val quiet = Duration.between(heardAt, Instant.now())
+
+            if (quiet < silence) {
+                delay((silence - quiet).toMillis())
+
+                continue
+            }
+
+            AppLog.w(TAG, "nothing heard for $quiet in mode $mode; asking a cheaper way")
+
+            // Counted from the asking rather than from an answer, so that a
+            // rescue which finds nothing either waits its turn like the rest
+            // instead of turning into a loop.
+            heardAt = Instant.now()
+
+            positionNow(priority)?.let { fix -> writeIfWorth(writer, fix, mode, always = true) }
         }
+    }
+
+    /**
+     * One position, asked for now; a provider that will not answer is not a
+     * reason to stop collecting, and the next round asks again.
+     */
+    private suspend fun positionNow(priority: Int): Fix? = try {
+        currentPosition(this, priority)
+    } catch (cancellation: CancellationException) {
+        throw cancellation
+    } catch (error: Exception) {
+        AppLog.w(TAG, "the provider gave no position", error)
+
+        null
     }
 
     /**

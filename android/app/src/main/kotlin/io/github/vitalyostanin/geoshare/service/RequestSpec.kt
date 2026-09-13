@@ -3,6 +3,7 @@ package io.github.vitalyostanin.geoshare.service
 import com.google.android.gms.location.Priority
 import io.github.vitalyostanin.geoshare.collection.Accuracy
 import io.github.vitalyostanin.geoshare.collection.CollectionMode
+import io.github.vitalyostanin.geoshare.collection.rescueAccuracy
 
 /**
  * What to ask the position provider for, in its own terms.
@@ -23,17 +24,25 @@ data class RequestSpec(
 
 /** The request for a mode, or null for a mode that asks for nothing. */
 fun requestSpec(mode: CollectionMode): RequestSpec? {
-    val priority =
-        when (mode.accuracy) {
-            Accuracy.None -> return null
-            Accuracy.LowPower -> Priority.PRIORITY_LOW_POWER
-            Accuracy.Balanced -> Priority.PRIORITY_BALANCED_POWER_ACCURACY
-            Accuracy.High -> Priority.PRIORITY_HIGH_ACCURACY
-        }
+    val priority = priorityFor(mode.accuracy) ?: return null
 
     return RequestSpec(
         priority = priority,
         intervalMillis = mode.interval.toMillis(),
         maxDelayMillis = mode.maxUpdateDelay.toMillis(),
     )
+}
+
+/**
+ * What a rescue asks the provider for, or null for a mode that asks for
+ * nothing and so has nothing to rescue.
+ */
+fun rescuePriority(mode: CollectionMode): Int? = priorityFor(rescueAccuracy(mode))
+
+/** Play Services' name for an accuracy, or null where it asks for nothing. */
+private fun priorityFor(accuracy: Accuracy): Int? = when (accuracy) {
+    Accuracy.None -> null
+    Accuracy.LowPower -> Priority.PRIORITY_LOW_POWER
+    Accuracy.Balanced -> Priority.PRIORITY_BALANCED_POWER_ACCURACY
+    Accuracy.High -> Priority.PRIORITY_HIGH_ACCURACY
 }
