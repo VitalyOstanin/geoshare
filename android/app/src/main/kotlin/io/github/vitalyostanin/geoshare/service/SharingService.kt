@@ -15,8 +15,10 @@ import com.google.firebase.auth.FirebaseAuth
 import io.github.vitalyostanin.geoshare.collection.CollectionMode
 import io.github.vitalyostanin.geoshare.collection.CollectionState
 import io.github.vitalyostanin.geoshare.collection.Fix
+import io.github.vitalyostanin.geoshare.collection.IDLE_REPEAT
 import io.github.vitalyostanin.geoshare.collection.WATCH_AHEAD
 import io.github.vitalyostanin.geoshare.collection.chooseMode
+import io.github.vitalyostanin.geoshare.collection.fenceMoves
 import io.github.vitalyostanin.geoshare.collection.rescueAfter
 import io.github.vitalyostanin.geoshare.collection.shouldWrite
 import io.github.vitalyostanin.geoshare.log.AppLog
@@ -25,6 +27,7 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.distinctUntilChanged
@@ -112,6 +115,27 @@ class SharingService : LifecycleService() {
      * below watches for is silence rather than stillness.
      */
     private var heardAt: Instant = Instant.now()
+
+    /**
+     * When the last write actually reached the database.
+     *
+     * Not the same thing as the moment of the fix in it: the quiet mode writes
+     * a position taken half an hour ago on purpose, and what keeps the card
+     * from going grey is when the document was written rather than when the
+     * phone was there.
+     */
+    private var wroteAt: Instant? = null
+
+    /**
+     * The place the fence is drawn around: the last position written that was
+     * far enough from the previous one to be somewhere else.
+     *
+     * A flow rather than a field because the fence is watched by the platform
+     * and has to be moved from here; null until this service has written
+     * anything, which is also the state it comes back to after a restart —
+     * until the first position is written there is nothing to stand still in.
+     */
+    private val fenceCentre = MutableStateFlow<Fix?>(null)
 
     /**
      * The cable going in or coming out, written down at once.
@@ -228,6 +252,33 @@ class SharingService : LifecycleService() {
 
         lastFix = fix
         lastWritten = written
+        wroteAt = Instant.now()
+
+        if (fenceMoves(fenceCentre.value, fix)) {
+            fenceCentre.value = fix
+        }
+
+        return true
+    }
+
+    /**
+     * Says the last position again, exactly as it was.
+     *
+     * Past the filter and past the check for a repeat, both of which exist to
+     * keep the same document from being written twice — which is precisely
+     * what is wanted here. The phone is standing where it was and asking the
+     * provider for nothing; the news is that it is still there to say so.
+     */
+    private suspend fun sayAgain(writer: PositionWriter, mode: CollectionMode): Boolean {
+        val known = lastFix ?: return false
+        val written = Written(known, charging())
+
+        if (!writeQuietly(writer, written, mode)) {
+            return false
+        }
+
+        lastWritten = written
+        wroteAt = Instant.now()
 
         return true
     }
@@ -279,8 +330,11 @@ class SharingService : LifecycleService() {
                     val spec = requestSpec(mode)
 
                     if (spec == null) {
-                        // Nothing to ask for; the next mode will arrive on its
-                        // own, and until then the receiver stays off.
+                        // Nothing to ask for, so nothing would be written
+                        // either; the position already known is repeated
+                        // instead, and the next mode arrives on its own.
+                        keepSaying(writer, mode)
+
                         return@collectLatest
                     }
 
@@ -328,8 +382,13 @@ class SharingService : LifecycleService() {
 
         // Who is looking is the screen's business; the service needs only the
         // moments their claims run out.
-        return combine(looking, movement(this), reviews) { seen, moving, _ ->
-            currentMode(seen.map { it.until }, moving)
+        return combine(
+            looking,
+            movement(this),
+            standingStill(this, fenceCentre),
+            reviews,
+        ) { seen, moving, standing, _ ->
+            currentMode(seen.map { it.until }, moving, standing)
         }.distinctUntilChanged()
     }
 
@@ -362,6 +421,34 @@ class SharingService : LifecycleService() {
         val priority = requestSpec(mode)?.priority ?: return null
 
         return positionNow(priority)
+    }
+
+    /**
+     * Repeats the last position while the mode asks for nothing.
+     *
+     * The quiet mode is the one the phone reaches by staying at home, and it
+     * collects nothing at all: without this the household would go grey on
+     * each other's maps every evening, which is the opposite of what standing
+     * still means. Counted from the last write rather than from entering the
+     * mode, because the phone arrives here with a write already behind it.
+     */
+    private suspend fun keepSaying(writer: PositionWriter, mode: CollectionMode) {
+        while (true) {
+            val wrote = wroteAt
+            val quiet = if (wrote == null) IDLE_REPEAT else Duration.between(wrote, Instant.now())
+
+            if (quiet < IDLE_REPEAT) {
+                delay((IDLE_REPEAT - quiet).toMillis())
+
+                continue
+            }
+
+            if (!sayAgain(writer, mode)) {
+                // Nothing written yet to repeat, or the write did not reach
+                // the database. Either way the next round tries again.
+                delay(IDLE_REPEAT.toMillis())
+            }
+        }
     }
 
     /**
@@ -439,14 +526,16 @@ class SharingService : LifecycleService() {
         false
     }
 
-    private fun currentMode(untils: List<Instant>, moving: Boolean): CollectionMode = chooseMode(
+    private fun currentMode(
+        untils: List<Instant>,
+        moving: Boolean,
+        standing: Boolean,
+    ): CollectionMode = chooseMode(
         CollectionState(
             watchersUntil = untils,
             now = Instant.now(),
             localTime = LocalTime.now(),
-            // The geofence arrives with the next change; until then the phone
-            // never counts as standing still.
-            insideGeofence = false,
+            insideGeofence = standing,
             moving = moving,
             batteryPercent = batteryPercent(),
         ),
