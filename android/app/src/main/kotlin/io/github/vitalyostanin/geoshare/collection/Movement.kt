@@ -17,6 +17,22 @@ data class ActivityChange(
 )
 
 /**
+ * What the phone's own sensors say about whether it is going anywhere.
+ *
+ * The answer is carried with a note of whether it is an answer at all: before
+ * the first transition arrives, and where the permission was refused, standing
+ * still is what the modes are told, because the slow mode is the safe one to
+ * be in — but nothing may be concluded from it about a fix. The two cases read
+ * the same and have to be told apart by whoever asks.
+ */
+data class Moving(
+    /** Whether the phone is being carried somewhere. */
+    val going: Boolean,
+    /** Whether the sensors have said so, rather than this being the answer given until they do. */
+    val told: Boolean,
+)
+
+/**
  * Whether the phone counts as moving once these changes have arrived.
  *
  * The end of standing still is not the beginning of going somewhere: the

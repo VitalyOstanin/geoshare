@@ -15,6 +15,7 @@ import com.google.android.gms.location.ActivityTransitionRequest
 import com.google.android.gms.location.ActivityTransitionResult
 import com.google.android.gms.location.DetectedActivity
 import io.github.vitalyostanin.geoshare.collection.ActivityChange
+import io.github.vitalyostanin.geoshare.collection.Moving
 import io.github.vitalyostanin.geoshare.collection.movingAfter
 import io.github.vitalyostanin.geoshare.log.AppLog
 import kotlinx.coroutines.channels.awaitClose
@@ -56,10 +57,10 @@ private val TRAVELLING =
  * and a member who refused is left with everything else working.
  */
 @SuppressLint("MissingPermission")
-fun movement(context: Context): Flow<Boolean> = callbackFlow {
+fun movement(context: Context): Flow<Moving> = callbackFlow {
     if (!allowed(context)) {
         AppLog.i(TAG, "no permission to notice movement; staying with the ordinary modes")
-        send(false)
+        send(Moving(going = false, told = false))
         awaitClose {}
 
         return@callbackFlow
@@ -67,7 +68,7 @@ fun movement(context: Context): Flow<Boolean> = callbackFlow {
 
     var moving = false
 
-    send(false)
+    send(Moving(going = false, told = false))
 
     val receiver =
         object : BroadcastReceiver() {
@@ -85,7 +86,7 @@ fun movement(context: Context): Flow<Boolean> = callbackFlow {
 
                 moving = movingAfter(changes, moving)
                 AppLog.i(TAG, "the phone is ${if (moving) "on the move" else "standing still"}")
-                trySend(moving)
+                trySend(Moving(going = moving, told = true))
             }
         }
 

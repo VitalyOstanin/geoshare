@@ -18,6 +18,8 @@ import io.github.vitalyostanin.geoshare.collection.CollectionState
 import io.github.vitalyostanin.geoshare.collection.Fix
 import io.github.vitalyostanin.geoshare.collection.IDLE_REPEAT
 import io.github.vitalyostanin.geoshare.collection.JumpReason
+import io.github.vitalyostanin.geoshare.collection.Moving
+import io.github.vitalyostanin.geoshare.collection.Trail
 import io.github.vitalyostanin.geoshare.collection.WATCH_AHEAD
 import io.github.vitalyostanin.geoshare.collection.anchorFrom
 import io.github.vitalyostanin.geoshare.collection.chooseMode
@@ -129,6 +131,16 @@ class SharingService : LifecycleService() {
 
     /** When the towers and the Wi-Fi were last asked in place of the satellites. */
     private var askedTheOtherRadiosAt: Instant? = null
+
+    /**
+     * Since when the phone's own sensors say it has not been carried anywhere,
+     * or nothing while it is moving and while they have said nothing yet.
+     *
+     * Kept as the moment the stillness began rather than as a flag, because
+     * what a fix is weighed against is whether the stillness covers the way
+     * from the last position to this one.
+     */
+    private var standingSince: Instant? = null
 
     /** Where this phone keeps being, kept across restarts of the process. */
     private val trailStore by lazy { TrailStore(this) }
@@ -315,7 +327,7 @@ class SharingService : LifecycleService() {
             forgetThePlace()
         }
 
-        val jump = if (trusted) null else whyAJump(lastFix, fix)
+        val jump = if (trusted) null else whyAJump(lastFix, fix, standingSince)
         // A fix left out does not move the last position, and that is how the
         // marker can be left standing somewhere the phone has long left: a
         // wrong last position turns every true fix that follows into a jump.
@@ -510,8 +522,27 @@ class SharingService : LifecycleService() {
             standingStill(this, fenceCentre),
             reviews,
         ) { seen, moving, standing, _ ->
-            currentMode(seen.map { it.until }, moving, standing)
+            noteMovement(moving)
+            currentMode(seen.map { it.until }, moving.going, standing)
         }.distinctUntilChanged()
+    }
+
+    /**
+     * Keeps the moment the phone was last carried anywhere.
+     *
+     * The stillness is dated from the first report of it and left alone by
+     * every report that repeats it: the timer is reviewed on a clock, so the
+     * same answer arrives again every few minutes, and taking the latest of
+     * them would keep the stillness permanently one review old and cover
+     * nothing.
+     */
+    private fun noteMovement(moving: Moving) {
+        standingSince =
+            when {
+                !moving.told -> null
+                moving.going -> null
+                else -> standingSince ?: Instant.now()
+            }
     }
 
     /**
@@ -828,6 +859,8 @@ class SharingService : LifecycleService() {
 
         JumpReason.FalsePlace ->
             "by landing on ${falsePlaceFor(fix)?.named ?: "a place a false signal uses"}"
+
+        JumpReason.Unmoved -> "by the phone never having been carried there"
     }
 
     /**

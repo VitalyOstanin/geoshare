@@ -1,6 +1,7 @@
 package io.github.vitalyostanin.geoshare.collection
 
 import java.time.Duration
+import java.time.Instant
 
 // Telling a move from a jump.
 //
@@ -58,6 +59,9 @@ enum class JumpReason {
 
     /** The answer landed where a false signal is known to put phones. */
     FalsePlace,
+
+    /** The phone's own sensors say it has not been carried anywhere. */
+    Unmoved,
 }
 
 /**
@@ -72,8 +76,14 @@ enum class JumpReason {
  * Past that, the first fix of a session is never a jump: there is nothing to
  * have jumped from. A fix no wider than the doubt in the two answers put
  * together has not moved at all in any sense worth arguing about.
+ *
+ * The sensors are asked last, and only about what the other rules let through:
+ * they answer about the phone rather than about the answer, and a road drawn
+ * slowly enough to pass the speed is still a road the phone was never carried
+ * along. [stillSince] is null wherever there is nothing to ask — the
+ * permission was refused, or the sensors have not reported yet.
  */
-fun whyAJump(last: Fix?, next: Fix): JumpReason? {
+fun whyAJump(last: Fix?, next: Fix, stillSince: Instant? = null): JumpReason? {
     if (falsePlaceFor(next) != null) {
         return JumpReason.FalsePlace
     }
@@ -86,7 +96,9 @@ fun whyAJump(last: Fix?, next: Fix): JumpReason? {
         return JumpReason.Width
     }
 
-    return whyOutOfReach(last, next)
+    whyOutOfReach(last, next)?.let { return it }
+
+    return if (movedWhileStanding(stillSince, last, next)) JumpReason.Unmoved else null
 }
 
 /**
@@ -117,7 +129,9 @@ fun fixesAgree(one: Fix, other: Fix): Boolean = whyOutOfReach(one, other) == nul
  * long the phone waits — which is why agreement is left to overrule that one.
  *
  * A known false place is not up for confirmation either, and for the same
- * reason as the speed: agreement is exactly what a spoofer produces.
+ * reason as the speed: agreement is exactly what a spoofer produces. Neither
+ * is a phone that was never carried anywhere — two answers agreeing about a
+ * place a kilometre away are two answers of the same jammed receiver.
  */
 fun mayBeConfirmed(jump: JumpReason): Boolean = jump == JumpReason.Width
 

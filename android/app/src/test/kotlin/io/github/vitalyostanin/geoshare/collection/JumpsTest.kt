@@ -130,6 +130,7 @@ class JumpsTest {
         assertTrue(mayBeConfirmed(JumpReason.Width))
         assertFalse(mayBeConfirmed(JumpReason.Speed))
         assertFalse(mayBeConfirmed(JumpReason.Contradiction))
+        assertFalse(mayBeConfirmed(JumpReason.Unmoved))
     }
 
     // The pair that took the anchor seventy-three kilometres in seventeen
