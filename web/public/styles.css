@@ -112,6 +112,11 @@ body {
 #map {
     flex: 1;
     min-height: 0;
+    /* The markers inside are piled by where they are on screen, which takes
+       numbers far above the handful the page uses for its own controls. The
+       pile is kept to itself here, so that a marker low on the map cannot
+       climb over the account button or the strip of members. */
+    isolation: isolate;
 }
 
 #panel {

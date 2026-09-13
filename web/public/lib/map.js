@@ -18,6 +18,7 @@ import { showFace } from './faces.js';
 import { ageText, isStale, positionAge, timeText } from './age.js';
 import { clusterMembers, facesShown } from './clusters.js';
 import { openModeHelp } from './mode-help.js';
+import { markerOrder } from './stacking.js';
 import { modeText } from './modes.js';
 import { WORDS } from './words.js';
 
@@ -186,7 +187,15 @@ function draw(view, { positions, names, faces, now }) {
         const entry = view.markers.get(key) ?? addMarker(view, key, group);
 
         entry.members = group;
-        entry.marker.setLngLat([centreLongitude(group), centreLatitude(group)]);
+
+        const at = [centreLongitude(group), centreLatitude(group)];
+
+        entry.marker.setLngLat(at);
+
+        // Restated on every draw rather than once: the pile is an order of
+        // what is on screen, and panning the map changes which member is in
+        // front of which without changing anything about the members.
+        entry.marker.getElement().style.zIndex = markerOrder(view.map.project(at).y);
 
         showPin(entry, names, faces, now);
 
