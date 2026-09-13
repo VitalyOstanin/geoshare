@@ -4,6 +4,9 @@ import { test } from 'node:test';
 
 const stylesheet = () => readFile(new URL('../public/styles.css', import.meta.url), 'utf8');
 
+/** How much space past the button the eye needs to read the gap as one. */
+const VISIBLE_GAP = 0.75;
+
 const rem = (styles, pattern) => {
     const found = styles.match(pattern);
 
@@ -29,6 +32,15 @@ test('the text of a card stops before the cross that closes it', async () => {
     const reach = inset + width - padding;
 
     assert.ok(clear >= reach, `${clear}rem of room leaves the text under ${reach}rem of button`);
+
+    // Not touching is not the same as being clear of it. At a quarter of a rem
+    // -- four pixels -- a name ending against the circle read as one run of
+    // marks with the cross, which is the whole complaint this padding exists
+    // to answer.
+    assert.ok(
+        clear >= reach + VISIBLE_GAP,
+        `${clear}rem leaves only ${(clear - reach).toFixed(2)}rem between the text and the button`,
+    );
 });
 
 // Every line that can run the width of such a window keeps the same distance:

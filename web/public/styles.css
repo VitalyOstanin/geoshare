@@ -46,11 +46,17 @@
     --night-canvas: invert(1) hue-rotate(180deg) brightness(0.92) contrast(0.95);
 
     /* How far the text in a window over the map stays clear of the cross that
-       closes it. The button is inset 0.4rem and is 1.75rem wide, so its circle
-       reaches 1.25rem into the text, and the two lines drawn in it another
-       0.45rem short of that. Anything less than 0.8rem and a long name runs
-       into the cross itself; this leaves a gap the eye reads as deliberate. */
-    --cross-clear: 1.5rem;
+       closes it. The button is inset 0.4rem and is 1.75rem wide, and the
+       window pads its own contents by 0.9rem, so the circle reaches 1.25rem
+       past that padding and into the text; the two lines drawn in the circle
+       stop another 0.45rem short of it.
+
+       A gap has to be seen to be one. At 1.5rem the text stopped four pixels
+       from the circle, and a name ending flush against the cross read as one
+       run of marks rather than as a title and a button. This leaves sixteen
+       pixels to the circle and twenty-three to the cross itself, which is the
+       distance at which the eye stops joining them. */
+    --cross-clear: 2.25rem;
 }
 
 /* Dark because the system is, which is what a viewer who has said nothing
