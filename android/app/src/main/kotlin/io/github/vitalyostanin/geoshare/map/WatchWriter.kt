@@ -1,29 +1,17 @@
 package io.github.vitalyostanin.geoshare.map
 
-import com.google.firebase.Timestamp
+import com.google.firebase.firestore.FieldValue
 import com.google.firebase.firestore.FirebaseFirestore
+import io.github.vitalyostanin.geoshare.collection.WATCH_REFRESH
 import io.github.vitalyostanin.geoshare.log.AppLog
-import io.github.vitalyostanin.geoshare.service.GROUP
+import io.github.vitalyostanin.geoshare.service.WatchField
 import io.github.vitalyostanin.geoshare.service.positionId
+import io.github.vitalyostanin.geoshare.service.watchOf
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.tasks.await
-import java.time.Duration
-import java.util.Date
 
 private const val TAG = "geoshare.watching"
-
-/**
- * How far ahead a viewer claims to be looking.
- *
- * Longer than the refresh below, so that one write lost to a bad connection
- * does not drop the other phones out of their fast mode; short enough that a
- * viewer who disappears without a word stops being one within minutes.
- */
-val WATCH_AHEAD: Duration = Duration.ofMinutes(3)
-
-/** How often the claim is pushed forward while the map is on screen. */
-val WATCH_REFRESH: Duration = Duration.ofMinutes(1)
 
 /**
  * Says that somebody is looking, for as long as somebody is.
@@ -39,12 +27,7 @@ class WatchWriter(
 ) {
     // Per phone rather than per member: leaving the map on one phone must not
     // withdraw the claim the same member's other phone had just made.
-    private val document =
-        store
-            .collection("groups")
-            .document(GROUP)
-            .collection("watch")
-            .document(positionId(memberId, deviceId))
+    private val document = watchOf(store).document(positionId(memberId, deviceId))
 
     /**
      * Keeps the claim alive until the caller stops it.
@@ -55,10 +38,19 @@ class WatchWriter(
      */
     suspend fun keepLooking(): Nothing {
         while (true) {
-            val until = Timestamp(Date(System.currentTimeMillis() + WATCH_AHEAD.toMillis()))
-
             try {
-                document.set(mapOf("memberId" to memberId, "until" to until)).await()
+                // The moment of the claim by the server's clock, not an end by
+                // this phone's: whoever reads it adds the same few minutes, so
+                // a phone whose clock is wrong cannot hold the group longer,
+                // and cannot fail to hold it at all.
+                document
+                    .set(
+                        mapOf(
+                            WatchField.MEMBER_ID to memberId,
+                            WatchField.SINCE to FieldValue.serverTimestamp(),
+                        ),
+                    )
+                    .await()
             } catch (cancellation: CancellationException) {
                 throw cancellation
             } catch (error: Exception) {

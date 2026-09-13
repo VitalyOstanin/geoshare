@@ -10,7 +10,6 @@ import {
     signOut,
 } from 'https://www.gstatic.com/firebasejs/12.19.0/firebase-auth.js';
 import {
-    Timestamp,
     collection,
     deleteDoc,
     doc,
@@ -25,13 +24,33 @@ import { firebaseConfig } from '../firebase-config.js';
 const GROUP = 'family';
 
 /**
- * How far ahead a viewer claims to be looking, and how often the claim is
- * pushed forward. The same pair the Android client uses: a lost connection
- * must not drop the phones out of their fast mode, and a browser tab that
- * disappears must stop being a viewer within minutes.
+ * How often the claim to be looking is pushed forward.
+ *
+ * How long each one is worth is not said here and not said by this page: the
+ * claim carries the moment the server wrote it, and the phone reading it adds
+ * the three minutes both clients agree on. A viewer whose clock is wrong can
+ * then neither hold the group longer nor fail to hold it at all.
  */
-const WATCH_AHEAD_MS = 3 * 60 * 1000;
 const WATCH_REFRESH_MS = 60 * 1000;
+
+/**
+ * How long a tab nobody touches goes on claiming to be looking.
+ *
+ * A tab left open on a laptop its owner walked away from holds every phone of
+ * the group in the fifteen-second mode, which is the most expensive thing the
+ * group does. Fifteen minutes is long enough to watch somebody drive home and
+ * short enough that a forgotten tab stops costing within the hour.
+ */
+const IDLE_AFTER_MS = 15 * 60 * 1000;
+
+/**
+ * How long to wait before asking again for a document that was refused.
+ *
+ * A refusal is usually the member saying they no longer share, but it is also
+ * what an expired permission and a permission not yet granted look like, and
+ * neither of those changes the profiles the subscriptions are built from.
+ */
+const RETRY_AFTER_MS = 60 * 1000;
 
 /** Where this browser keeps the name it watches under, so a reload keeps one marker. */
 const DEVICE_KEY = 'geoshare.device';
@@ -74,45 +93,96 @@ export function leave() {
  * refusal rather than with nothing, and that refusal is the member saying they
  * no longer share — so it drops the marker instead of being reported.
  */
-export function watchPositions(documents, onPositions) {
+export function watchPositions(documents, onPositions, onRefused) {
     const known = new Map();
+    const refused = new Set();
     const publish = () => onPositions([...known.values()]);
+    const stops = new Map();
+    const waiting = new Set();
+    let wanted = true;
 
-    const stops = documents.map((id) =>
-        onSnapshot(
-            doc(store, 'groups', GROUP, 'positions', id),
-            (snapshot) => {
-                const position = snapshot.exists() ? positionOf(snapshot) : null;
+    const sayRefused = () => onRefused?.(refused.size);
 
-                if (position) {
-                    known.set(id, position);
-                } else if (!known.delete(id)) {
-                    return;
-                }
+    const follow = (id) => {
+        stops.set(
+            id,
+            onSnapshot(
+                doc(store, 'groups', GROUP, 'positions', id),
+                (snapshot) => {
+                    const position = snapshot.exists() ? positionOf(snapshot) : null;
 
-                publish();
-            },
-            () => {
-                if (known.delete(id)) {
+                    if (refused.delete(id)) {
+                        sayRefused();
+                    }
+
+                    if (position) {
+                        known.set(id, position);
+                    } else if (!known.delete(id)) {
+                        return;
+                    }
+
                     publish();
-                }
-            },
-        ),
-    );
+                },
+                () => {
+                    if (known.delete(id)) {
+                        publish();
+                    }
+
+                    refused.add(id);
+                    sayRefused();
+                    askAgainLater(id);
+                },
+            ),
+        );
+    };
+
+    // A refused document stays refused until the member says otherwise, and
+    // what they say does not reach this page: a permission lives in their
+    // profile, and the profile is the same document it was before. So the
+    // subscription is made again on a timer, and a permission handed back
+    // brings the marker back with it instead of waiting for a reload.
+    const askAgainLater = (id) => {
+        stops.get(id)?.();
+        stops.delete(id);
+
+        if (!wanted) {
+            return;
+        }
+
+        const timer = setTimeout(() => {
+            waiting.delete(timer);
+
+            if (wanted) {
+                follow(id);
+            }
+        }, RETRY_AFTER_MS);
+
+        waiting.add(timer);
+    };
+
+    documents.forEach(follow);
 
     // Said once at the start, so that a group with nothing to draw shows an
     // empty map rather than waiting for an answer that never comes.
     publish();
 
-    return () => stops.forEach((stop) => stop());
+    return () => {
+        wanted = false;
+        waiting.forEach(clearTimeout);
+        waiting.clear();
+        stops.forEach((stop) => stop());
+        stops.clear();
+    };
 }
 
-function positionOf(document) {
-    const data = document.data();
+function positionOf(snapshot) {
+    const data = snapshot.data();
 
-    // A document without coordinates is not a position, and the map is better
-    // off leaving the member out than drawing them off the coast of Africa.
-    if (typeof data.latitude !== 'number' || typeof data.longitude !== 'number' || !data.takenAt) {
+    // A document without usable coordinates is not a position, and the map is
+    // better off leaving the member out than drawing them off the coast of
+    // Africa — or, for a number far outside the globe, than asking the map to
+    // place a point that is not on it.
+    if (!placeable(data.latitude, -90) || !placeable(data.longitude, -180) || !data.takenAt) {
         return null;
     }
 
@@ -121,8 +191,8 @@ function positionOf(document) {
         // by a dot, and the owner is repeated inside. A document from before
         // positions were kept per phone has no owner field, and there the
         // whole id is the account.
-        positionId: document.id,
-        memberId: typeof data.memberId === 'string' ? data.memberId : document.id.split('.')[0],
+        positionId: snapshot.id,
+        memberId: typeof data.memberId === 'string' ? data.memberId : snapshot.id.split('.')[0],
         deviceName: typeof data.deviceName === 'string' ? data.deviceName : null,
         latitude: data.latitude,
         longitude: data.longitude,
@@ -136,6 +206,17 @@ function positionOf(document) {
         // be charging rather than a phone known not to be.
         charging: data.charging === true,
     };
+}
+
+/**
+ * Whether a coordinate is a number the globe has a place for.
+ *
+ * Written by another member's phone, so it is worth as much as that phone: a
+ * field of the wrong type, an infinity, or a degree count far outside the
+ * globe all reach the clients, and the rules do not stop them.
+ */
+function placeable(degrees, limit) {
+    return typeof degrees === 'number' && Number.isFinite(degrees) && degrees >= limit && degrees <= -limit;
 }
 
 /**
@@ -239,12 +320,26 @@ export function publishProfile(member, known, onError) {
     ).catch(onError);
 }
 
+/** What counts as somebody still being at the screen. */
+const ATTENTION = ['pointerdown', 'pointermove', 'keydown', 'wheel', 'touchstart'];
+
 /**
- * Says that somebody is looking, for as long as this page is.
+ * Says that somebody is looking, for as long as somebody is.
  *
  * Returns the function that stops it. The claim is withdrawn on the way out,
  * but nothing depends on that arriving: it expires on its own, which is what
  * covers a tab closed by a crash or a laptop lid.
+ *
+ * Looking means a visible tab with somebody in front of it. A tab in the
+ * background is not looking — the phones of the group would go on spending
+ * their battery for a window nobody can see — and neither is a tab left open
+ * on a desk for a quarter of an hour. The Android client says the same thing
+ * by tying its claim to the screen being on and the map being in front.
+ *
+ * The claim carries the moment it was written by the server's clock rather
+ * than the moment it runs out by this browser's: the phone that reads it adds
+ * the same three minutes, so a viewer whose clock is wrong cannot hold the
+ * group longer, and cannot fail to hold it at all.
  */
 export function keepWatching(memberId, onError) {
     // Per browser rather than per account, the way the phones claim per phone:
@@ -252,19 +347,59 @@ export function keepWatching(memberId, onError) {
     // account had just made.
     const marker = doc(store, 'groups', GROUP, 'watch', `${memberId}.${deviceName()}`);
 
-    const push = () =>
-        setDoc(marker, {
-            memberId,
-            until: Timestamp.fromMillis(Date.now() + WATCH_AHEAD_MS),
-        }).catch(onError);
+    let timer = null;
+    let touched = Date.now();
 
-    push();
+    const push = () => setDoc(marker, { memberId, since: serverTimestamp() }).catch(onError);
+    const withdraw = () => deleteDoc(marker).catch(onError);
+    const looking = () =>
+        document.visibilityState !== 'hidden' && Date.now() - touched < IDLE_AFTER_MS;
 
-    const timer = setInterval(push, WATCH_REFRESH_MS);
+    const claim = () => {
+        if (timer) {
+            return;
+        }
+
+        push();
+        timer = setInterval(() => (looking() ? push() : release()), WATCH_REFRESH_MS);
+    };
+
+    const release = () => {
+        if (!timer) {
+            return;
+        }
+
+        clearInterval(timer);
+        timer = null;
+        withdraw();
+    };
+
+    const review = () => (looking() ? claim() : release());
+
+    const noticed = () => {
+        touched = Date.now();
+
+        // Only the first move after a pause has anything to do: while the
+        // claim stands, this runs on every pointer event on the page.
+        if (!timer) {
+            review();
+        }
+    };
+
+    document.addEventListener('visibilitychange', review);
+    ATTENTION.forEach((event) => window.addEventListener(event, noticed, { passive: true }));
+
+    review();
 
     return () => {
-        clearInterval(timer);
+        document.removeEventListener('visibilitychange', review);
+        ATTENTION.forEach((event) => window.removeEventListener(event, noticed));
 
-        return deleteDoc(marker).catch(onError);
+        if (timer) {
+            clearInterval(timer);
+            timer = null;
+        }
+
+        return withdraw();
     };
 }

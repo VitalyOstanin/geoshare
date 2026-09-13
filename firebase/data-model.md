@@ -27,6 +27,19 @@ and nobody else does.
 | `displayName` | string    | What the member is called on the other screens             |
 | `photoUrl`    | string    | The account picture, as the provider hosts it; null without one |
 | `updatedAt`   | timestamp | When the profile was last written; set by the server itself |
+| `devices`     | list      | The phones this member carries, at most ten; how a reader learns which documents to read |
+| `sharedWith`  | map       | Who may read this member's position, and until when; at most fifty |
+
+`sharedWith` is where a permission is given and taken back, and the rules read a
+position's permission from here rather than from the position itself. The counts
+are held by the rules because every other client acts on this document: one
+subscription per device named, one document per permission weighed.
+
+Every member of the group can read every profile, so who has allowed whom is not
+private within the group. That is accepted rather than overlooked: a household
+sharing its whereabouts is not a place where the pairs need hiding, and keeping
+the permissions where their owner writes them is what makes a withdrawal take
+effect at once.
 
 Both values come from the account the member signed in with, and neither client
 uploads an image: the picture is the address the provider already serves. A client
@@ -51,15 +64,25 @@ what both clients showed before profiles existed.
 | `writtenAt`      | timestamp | When the server accepted it; set by the server itself     |
 | `mode`           | string    | Collection mode that produced the fix                     |
 | `batteryPercent` | number    | Battery level, percent, for the viewer's context          |
+| `charging`       | boolean   | Whether a cable is in, which says which way the percentage is going |
+
+Who may read the position is not written here. The permissions live in the
+owner's profile, which is where the owner writes them and where the rules read
+them from: a copy kept in this document would go on granting what has been
+taken back until the phone wrote its next position — ten minutes for a phone
+standing still, and never at all for one that is switched off or lost.
 
 A reader counts the age of a position from `writtenAt`, falling back to `takenAt`
 while the server stamp is still on its way: `writtenAt` is the one clock every
 member shares, and a phone minutes off would otherwise show an age nobody can
 explain.
 
-A write happens when the position moved at least 75 metres from the last written
-one, or 10 minutes passed without a write. Jitter therefore produces no writes and
-wakes no subscribers.
+A write happens when the position moved far enough from the last written one, or
+enough time passed without a write — both by the standards of the mode: 75 metres
+or 10 minutes in the quiet modes, 25 metres or 30 seconds while somebody is
+watching. Jitter therefore produces no writes and wakes no subscribers, and the
+mode that spends the battery on frequent fixes is the mode that says what they
+found.
 
 One document per phone rather than per member, because a member can carry two: a
 second phone used to overwrite the first, and the marker showed whichever of them
@@ -72,12 +95,22 @@ document to age on screen until it is deleted.
 | Field      | Type      | Meaning                                            |
 |------------|-----------|-----------------------------------------------------|
 | `memberId` | string    | The account looking; the rules require it to be the writer |
-| `until`    | timestamp | Marker is ignored once this moment has passed        |
+| `since`    | timestamp | When the claim was made; set by the server itself    |
 
-The viewer sets `until` three minutes ahead and refreshes it every minute. Leaving
-the map deletes the document; a crash or a lost connection lets the marker expire
-on its own, so the viewing mode never sticks. The extra minute over the refresh is
-what keeps one failed write from dropping the phones out of their fast mode.
+A claim is worth three minutes from `since`, and the viewer refreshes it every
+minute. The moment comes from the server rather than from the viewer, and the
+rules accept no other: an end named by the viewer would be worth whatever their
+clock said — a clock running slow would never start the fast mode at all, and a
+claim dated years ahead would hold every phone of the group in it for good.
+
+Leaving the map deletes the document; a crash or a lost connection lets the claim
+expire on its own, so the viewing mode never sticks. The extra two minutes over
+the refresh are what keep one failed write from dropping the phones out of their
+fast mode.
+
+A browser claims only while its tab is visible and somebody has touched it within
+the last quarter of an hour: a tab left open on a desk would otherwise hold every
+phone of the group in the most expensive mode there is.
 
 A phone ignores its own marker: answering it would mean keeping the receiver on
 for its own map. Only its own, not every marker of its account: a member looking
@@ -91,10 +124,19 @@ a reload leaves one marker rather than a trail of them.
 | Mode      | Trigger                          | Priority         | Interval   | Batch window |
 |-----------|----------------------------------|------------------|------------|--------------|
 | `Idle`    | Inside the current geofence      | none             | —          | —            |
-| `Standby` | Outside it, nobody watching      | balanced         | 15 min     | 45 min       |
-| `Moving`  | Activity recognised as movement  | balanced         | 5 min      | 15 min       |
-| `Viewing` | A live marker in `watch`         | high accuracy    | 15 s       | none         |
-| `Night`   | 23:00 to 07:00, nobody watching  | low power        | 30 min     | 90 min       |
+| `Standby` | Outside it, nobody watching      | balanced         | 15 min     | 10 min       |
+| `Moving`  | Activity recognised as movement  | balanced         | 5 min      | 5 min        |
+| `Viewing` | A live claim in `watch`          | high accuracy    | 15 s       | none         |
+| `Night`   | 23:00 to 07:00, nobody watching  | low power        | 20 min     | 5 min        |
 
 `Night` is also forced whenever the battery drops below 15 percent. The names are
-written as the phones write them, which is the form the `mode` field carries.
+written as the phones write them, which is the form the `mode` field carries; both
+clients show a phrase of their own in its place on a card.
+
+Asking and waiting together have to come to less than the half hour after which a
+position is drawn as old — otherwise a phone that is working perfectly appears to
+have stopped — and a test holds every mode to that.
+
+`Idle` and `Moving` are not reached yet: the geofence and the movement signal they
+depend on are not implemented, so a phone moves between `Standby`, `Night` and
+`Viewing` only.

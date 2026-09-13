@@ -1,6 +1,7 @@
 package io.github.vitalyostanin.geoshare.service
 
 import com.google.firebase.firestore.FirebaseFirestore
+import io.github.vitalyostanin.geoshare.collection.WATCH_AHEAD
 import io.github.vitalyostanin.geoshare.log.AppLog
 import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.Flow
@@ -12,10 +13,10 @@ private const val TAG = "geoshare.watch"
 /**
  * When the other members stop looking, as they themselves say.
  *
- * Each viewer writes a moment a little way into the future and keeps pushing it
- * forward while the map is open. A phone that goes silent — a dead battery, a
- * closed lid — therefore stops being a viewer on its own, with no message
- * needed to say so.
+ * Each viewer writes down the moment it last said it was looking, by the
+ * server's clock, and keeps saying so while the map is open. A phone that goes
+ * silent — a dead battery, a closed lid — therefore stops being a viewer on
+ * its own, with no message needed to say so.
  *
  * This is the subscription that makes the whole arrangement work without push
  * messages: the write lands on this phone in about a second.
@@ -26,10 +27,7 @@ fun watchersUntil(
     store: FirebaseFirestore = FirebaseFirestore.getInstance(),
 ): Flow<List<Instant>> = callbackFlow {
     val subscription =
-        store
-            .collection("groups")
-            .document(GROUP)
-            .collection("watch")
+        watchOf(store)
             .addSnapshotListener { snapshot, error ->
                 if (error != null) {
                     AppLog.w(TAG, "the watch subscription failed", error)
@@ -47,8 +45,12 @@ fun watchersUntil(
                         // dropped: the member's other phone looking at the
                         // map is somebody to be fresh for.
                         .filter { it.id != ownWatchId }
-                        .mapNotNull { it.getTimestamp("until") }
+                        .mapNotNull { it.getTimestamp(WatchField.SINCE) }
                         .map { Instant.ofEpochSecond(it.seconds, it.nanoseconds.toLong()) }
+                        // The claim says when it was made; how long it is good
+                        // for is this phone's to decide, from a clock both
+                        // sides share.
+                        .map { it.plus(WATCH_AHEAD) }
 
                 trySend(untils)
             }

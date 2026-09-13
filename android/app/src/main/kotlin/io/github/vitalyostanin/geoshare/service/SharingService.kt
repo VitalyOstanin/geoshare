@@ -15,6 +15,7 @@ import com.google.firebase.auth.FirebaseAuth
 import io.github.vitalyostanin.geoshare.collection.CollectionMode
 import io.github.vitalyostanin.geoshare.collection.CollectionState
 import io.github.vitalyostanin.geoshare.collection.Fix
+import io.github.vitalyostanin.geoshare.collection.WATCH_AHEAD
 import io.github.vitalyostanin.geoshare.collection.chooseMode
 import io.github.vitalyostanin.geoshare.collection.shouldWrite
 import io.github.vitalyostanin.geoshare.log.AppLog
@@ -324,8 +325,16 @@ class SharingService : LifecycleService() {
     }
 
     companion object {
-        /** How often the mode is reconsidered while the service runs. */
-        private val MODE_REVIEW: Duration = Duration.ofMinutes(5)
+        /**
+         * How often the mode is reconsidered while the service runs.
+         *
+         * No rarer than a claim to be looking runs out. A viewer who leaves
+         * quietly — a closed lid, a flat battery — writes nothing more, so the
+         * subscription brings no change and the claim simply ages; reviewing
+         * more slowly than it ages would keep the phone in the fifteen-second
+         * mode for minutes after the last watcher was gone.
+         */
+        private val MODE_REVIEW: Duration = WATCH_AHEAD
 
         /** What a phone that will not say counts as, so it is not treated as flat. */
         private const val FULL_BATTERY = 100
