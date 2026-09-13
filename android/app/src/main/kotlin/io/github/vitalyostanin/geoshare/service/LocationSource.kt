@@ -2,6 +2,8 @@ package io.github.vitalyostanin.geoshare.service
 
 import android.annotation.SuppressLint
 import android.content.Context
+import android.location.Location
+import android.os.Build
 import android.os.Looper
 import com.google.android.gms.location.LocationCallback
 import com.google.android.gms.location.LocationRequest
@@ -9,11 +11,14 @@ import com.google.android.gms.location.LocationResult
 import com.google.android.gms.location.LocationServices
 import com.google.android.gms.tasks.CancellationTokenSource
 import io.github.vitalyostanin.geoshare.collection.Fix
+import io.github.vitalyostanin.geoshare.log.AppLog
 import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.callbackFlow
 import kotlinx.coroutines.tasks.await
 import java.time.Instant
+
+private const val TAG = "geoshare.location"
 
 /**
  * Positions as they arrive, for as long as the flow is collected.
@@ -39,6 +44,8 @@ fun positionUpdates(context: Context, spec: RequestSpec): Flow<Fix> = callbackFl
         object : LocationCallback() {
             override fun onLocationResult(result: LocationResult) {
                 result.locations.forEach { location ->
+                    noteIfPretended(location)
+
                     trySend(
                         Fix(
                             latitude = location.latitude,
@@ -75,6 +82,8 @@ suspend fun currentPosition(context: Context, priority: Int): Fix? {
             cancellation.cancel()
         }
 
+    location?.let(::noteIfPretended)
+
     return location?.let {
         Fix(
             latitude = it.latitude,
@@ -82,5 +91,31 @@ suspend fun currentPosition(context: Context, priority: Int): Fix? {
             takenAt = Instant.ofEpochMilli(it.time),
             accuracyMetres = it.accuracy.toDouble(),
         )
+    }
+}
+
+/**
+ * Says so when a position was put there by another application.
+ *
+ * A different thing from the false signal the filters are about: this is the
+ * phone being told where it is by software on it, which anybody can turn on in
+ * the developer settings and which no radio can do. It costs one field to
+ * check and it is the only kind of pretence the platform will admit to.
+ *
+ * Written down rather than acted on. A member who has a mock provider running
+ * knows they have one, and a marker that quietly stopped moving would be worse
+ * than a marker that says where the phone claims to be.
+ */
+private fun noteIfPretended(location: Location) {
+    val pretended =
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            location.isMock
+        } else {
+            @Suppress("DEPRECATION")
+            location.isFromMockProvider
+        }
+
+    if (pretended) {
+        AppLog.w(TAG, "this position was put there by another application, not by the radio")
     }
 }

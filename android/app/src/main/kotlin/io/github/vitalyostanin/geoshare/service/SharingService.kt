@@ -12,6 +12,7 @@ import androidx.core.content.getSystemService
 import androidx.lifecycle.LifecycleService
 import androidx.lifecycle.lifecycleScope
 import com.google.firebase.auth.FirebaseAuth
+import io.github.vitalyostanin.geoshare.collection.CLOCK_TOLERANCE
 import io.github.vitalyostanin.geoshare.collection.CollectionMode
 import io.github.vitalyostanin.geoshare.collection.CollectionState
 import io.github.vitalyostanin.geoshare.collection.Fix
@@ -19,6 +20,7 @@ import io.github.vitalyostanin.geoshare.collection.IDLE_REPEAT
 import io.github.vitalyostanin.geoshare.collection.JumpReason
 import io.github.vitalyostanin.geoshare.collection.WATCH_AHEAD
 import io.github.vitalyostanin.geoshare.collection.chooseMode
+import io.github.vitalyostanin.geoshare.collection.clockDisagrees
 import io.github.vitalyostanin.geoshare.collection.distanceMetres
 import io.github.vitalyostanin.geoshare.collection.fenceMoves
 import io.github.vitalyostanin.geoshare.collection.fixesAgree
@@ -112,6 +114,16 @@ class SharingService : LifecycleService() {
 
     /** Whether the member has asked for the impossible positions to be left out. */
     private val jumps by lazy { JumpFilterSetting(this) }
+
+    /**
+     * What the radio itself says, apart from any position that comes out of it.
+     *
+     * Watched for the whole life of the service rather than around each fix:
+     * the verdict is a comparison of the last ten epochs against the fifty
+     * before them, and a subscription taken out for the moment of a fix would
+     * have nothing to compare against.
+     */
+    private val radio by lazy { RadioWatch(this) }
     private var lastMode: CollectionMode = CollectionMode.Standby
 
     /**
@@ -172,6 +184,7 @@ class SharingService : LifecycleService() {
     override fun onCreate() {
         super.onCreate()
         FirebaseAuth.getInstance().addAuthStateListener(session)
+        radio.start()
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
@@ -205,6 +218,7 @@ class SharingService : LifecycleService() {
 
     override fun onDestroy() {
         FirebaseAuth.getInstance().removeAuthStateListener(session)
+        radio.stop()
         collection?.cancel()
         runCatching { unregisterReceiver(power) }
         AppLog.i(TAG, "stopped")
@@ -623,7 +637,27 @@ class SharingService : LifecycleService() {
                 else -> "; a jump ${caughtBy(jump)}, kept because the filter is off"
             }
 
-        AppLog.i(TAG, "fix $place$width in mode $mode, $since$verdict")
+        AppLog.i(TAG, "fix $place$width in mode $mode, $since$verdict${aClockApart(fix.takenAt)}")
+
+        radio.saying()?.let { AppLog.i(TAG, it) }
+    }
+
+    /**
+     * What to add about the clock of the fix, when there is anything to add.
+     *
+     * A receiver takes its time from the satellites, so a false signal can
+     * carry a false clock, and that shows before the coordinates do. It cannot
+     * stand alone as a verdict — a phone setting its own clock from the same
+     * satellites moves with the lie — but it costs nothing to write down.
+     */
+    private fun aClockApart(takenAt: Instant): String {
+        val now = Instant.now()
+
+        if (!clockDisagrees(takenAt, now, CLOCK_TOLERANCE)) {
+            return ""
+        }
+
+        return "; stamped ${Duration.between(takenAt, now).seconds} s from the phone's own clock"
     }
 
     /**
