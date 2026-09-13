@@ -19,16 +19,20 @@ import io.github.vitalyostanin.geoshare.collection.Fix
 import io.github.vitalyostanin.geoshare.collection.IDLE_REPEAT
 import io.github.vitalyostanin.geoshare.collection.JumpReason
 import io.github.vitalyostanin.geoshare.collection.WATCH_AHEAD
+import io.github.vitalyostanin.geoshare.collection.anchorFrom
 import io.github.vitalyostanin.geoshare.collection.chooseMode
 import io.github.vitalyostanin.geoshare.collection.clockDisagrees
+import io.github.vitalyostanin.geoshare.collection.comingHome
 import io.github.vitalyostanin.geoshare.collection.distanceMetres
 import io.github.vitalyostanin.geoshare.collection.falsePlaceFor
 import io.github.vitalyostanin.geoshare.collection.fenceMoves
 import io.github.vitalyostanin.geoshare.collection.fixesAgree
 import io.github.vitalyostanin.geoshare.collection.impliedSpeedMps
+import io.github.vitalyostanin.geoshare.collection.knows
 import io.github.vitalyostanin.geoshare.collection.mayBeConfirmed
 import io.github.vitalyostanin.geoshare.collection.networkAnswerStands
 import io.github.vitalyostanin.geoshare.collection.otherRadiosAreDue
+import io.github.vitalyostanin.geoshare.collection.remembering
 import io.github.vitalyostanin.geoshare.collection.rescueAfter
 import io.github.vitalyostanin.geoshare.collection.shouldWrite
 import io.github.vitalyostanin.geoshare.collection.whyAJump
@@ -126,6 +130,21 @@ class SharingService : LifecycleService() {
     /** When the towers and the Wi-Fi were last asked in place of the satellites. */
     private var askedTheOtherRadiosAt: Instant? = null
 
+    /** Where this phone keeps being, kept across restarts of the process. */
+    private val trailStore by lazy { TrailStore(this) }
+    private var trail: Trail = Trail()
+
+    /**
+     * The last position this phone was ever sure of, however long ago.
+     *
+     * Apart from [lastFix], which the rules measure against and which an old
+     * position has no business being: what this one is for is having something
+     * true to say again while the satellites are lying and the other radios
+     * have nothing. Said with the time it was taken, so that the age on the
+     * card is the age of the position rather than the age of the writing.
+     */
+    private var lastKnown: Fix? = null
+
     /** Whether the member has asked for the impossible positions to be left out. */
     private val jumps by lazy { JumpFilterSetting(this) }
 
@@ -199,6 +218,16 @@ class SharingService : LifecycleService() {
         super.onCreate()
         FirebaseAuth.getInstance().addAuthStateListener(session)
         radio.start()
+
+        trail = trailStore.read()
+        lastKnown = trail.fixes.lastOrNull()
+        lastFix = anchorFrom(trail, Instant.now())
+
+        AppLog.i(
+            TAG,
+            "the phone remembers ${trail.fixes.size} places it has been" +
+                if (lastFix == null) "" else ", and measures from the last of them",
+        )
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
@@ -299,13 +328,20 @@ class SharingService : LifecycleService() {
                 mayBeConfirmed(jump) &&
                 candidate?.let { fixesAgree(it, fix) } == true
 
+        // The other way out of an anchor that has gone wrong, and the only one
+        // that works against a width or a false place: the phone answering
+        // from somewhere it has been three times over an hour. Those visits
+        // are positions that were written, and while a spoofer runs, nothing
+        // is — so this cannot be arranged by feeding the phone a signal.
+        val home = jump != null && !agreed && comingHome(trail, lastFix, fix)
+
         // Every fix that arrives is written down, whether or not it is written
         // out: what the provider answers where it is being jammed is the thing
         // to be read afterwards, and a filtered log would answer questions
         // about the filter instead.
-        noteFix(fix, mode, jump, agreed, trusted)
+        noteFix(fix, mode, jump, agreed, home, trusted)
 
-        if (jump != null && jumps.enabled && !agreed) {
+        if (jump != null && jumps.enabled && !agreed && !home) {
             candidate = fix
             jumpsInARow += 1
 
@@ -338,6 +374,7 @@ class SharingService : LifecycleService() {
         lastFix = fix
         lastWritten = written
         wroteAt = Instant.now()
+        rememberThePlace(fix)
 
         if (fenceMoves(fenceCentre.value, fix)) {
             fenceCentre.value = fix
@@ -355,7 +392,7 @@ class SharingService : LifecycleService() {
      * provider for nothing; the news is that it is still there to say so.
      */
     private suspend fun sayAgain(writer: PositionWriter, mode: CollectionMode): Boolean {
-        val known = lastFix ?: return false
+        val known = lastFix ?: lastKnown ?: return false
         val written = Written(known, charging())
 
         if (!writeQuietly(writer, written, mode)) {
@@ -688,6 +725,7 @@ class SharingService : LifecycleService() {
         mode: CollectionMode,
         jump: JumpReason?,
         agreed: Boolean,
+        home: Boolean,
         trusted: Boolean,
     ) {
         val last = lastFix
@@ -709,6 +747,7 @@ class SharingService : LifecycleService() {
         val verdict =
             when {
                 jump == null -> ""
+                home -> "; a jump ${caughtBy(jump, fix)}, taken: the phone has been here before"
                 agreed -> "; a jump ${caughtBy(jump, fix)}, taken because the fix before it agrees"
                 jumps.enabled -> "; a jump ${caughtBy(jump, fix)}, left out"
                 else -> "; a jump ${caughtBy(jump, fix)}, kept because the filter is off"
@@ -722,6 +761,26 @@ class SharingService : LifecycleService() {
         AppLog.i(TAG, "fix $place$width in mode $mode, $since$verdict$clock")
 
         radio.saying()?.let { AppLog.i(TAG, it) }
+    }
+
+    /**
+     * Adds a written position to what the phone remembers about itself.
+     *
+     * Written positions only. An answer left out never becomes part of what
+     * counts as familiar, which is what stops an hour of a false signal from
+     * teaching the phone that the lake is where it lives.
+     */
+    private fun rememberThePlace(fix: Fix) {
+        val before = trail.knows(fix)
+
+        lastKnown = fix
+
+        trail = trail.remembering(fix)
+        trailStore.write(trail)
+
+        if (!before && trail.knows(fix)) {
+            AppLog.i(TAG, "this is a place the phone now counts as its own")
+        }
     }
 
     /**
