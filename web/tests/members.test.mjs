@@ -26,6 +26,23 @@ test('the other members come before our own entry', () => {
     assert.deepEqual(idsOf(order), ['her.phone', 'me.phone']);
 });
 
+test('a profile naming more phones than a person carries is followed only so far', () => {
+    const profiles = new Map([
+        ['her', { memberId: 'her', devices: Array.from({ length: 30 }, (unused, index) => `p${index}`) }],
+    ]);
+
+    assert.equal(positionDocuments(profiles).length, 10);
+});
+
+test('the panel sorts ids the way the phone does, by the characters themselves', () => {
+    const members = [positionOf('Zeta'), positionOf('alpha'), positionOf('Beta')];
+
+    assert.deepEqual(
+        idsOf(orderedForNavigation(members, 'me')),
+        ['Beta.phone', 'Zeta.phone', 'alpha.phone'],
+    );
+});
+
 test('the others keep the same places whatever order they arrive in', () => {
     const members = [positionOf('c'), positionOf('a'), positionOf('b')];
 

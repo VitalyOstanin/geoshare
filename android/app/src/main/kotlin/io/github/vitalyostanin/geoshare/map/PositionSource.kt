@@ -137,9 +137,9 @@ fun memberPositions(
  * that is not on it.
  */
 private fun positionOf(document: DocumentSnapshot): MemberPosition? {
-    val latitude = document.getDouble("latitude")
-    val longitude = document.getDouble("longitude")
-    val takenAt = document.getTimestamp("takenAt")
+    val latitude = document.getDouble(PositionField.LATITUDE)
+    val longitude = document.getDouble(PositionField.LONGITUDE)
+    val takenAt = document.getTimestamp(PositionField.TAKEN_AT)
 
     if (latitude == null || longitude == null || takenAt == null ||
         !placeable(latitude, longitude)
@@ -154,17 +154,17 @@ private fun positionOf(document: DocumentSnapshot): MemberPosition? {
         // Written into the document by the phone that wrote the position. A
         // document from before positions were kept per phone has no such
         // field, and there the whole id is the account.
-        memberId = document.getString("memberId") ?: document.id.substringBefore('.'),
-        deviceName = document.getString("deviceName"),
+        memberId = document.getString(PositionField.MEMBER_ID) ?: document.id.substringBefore('.'),
+        deviceName = document.getString(PositionField.DEVICE_NAME),
         latitude = latitude,
         longitude = longitude,
         takenAt = Instant.ofEpochSecond(takenAt.seconds, takenAt.nanoseconds.toLong()),
         writtenAt =
         document
-            .getTimestamp("writtenAt")
+            .getTimestamp(PositionField.WRITTEN_AT)
             ?.let { Instant.ofEpochSecond(it.seconds, it.nanoseconds.toLong()) },
-        mode = document.getString("mode"),
-        batteryPercent = document.getLong("batteryPercent")?.toInt(),
-        charging = document.getBoolean("charging") ?: false,
+        mode = document.getString(PositionField.MODE),
+        batteryPercent = document.getLong(PositionField.BATTERY_PERCENT)?.toInt(),
+        charging = document.getBoolean(PositionField.CHARGING) ?: false,
     )
 }

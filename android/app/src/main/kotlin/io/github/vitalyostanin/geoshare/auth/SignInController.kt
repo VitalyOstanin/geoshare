@@ -16,8 +16,13 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.tasks.await
+import java.security.MessageDigest
+import java.security.SecureRandom
 
 private const val TAG = "geoshare.auth"
+
+/** How much randomness the once-only number carries. */
+private const val NONCE_BYTES = 32
 
 /**
  * The sign-in as the screen sees it: one state to render and two calls to make.
@@ -95,9 +100,14 @@ class SignInController(
         current.value = AuthState.SigningIn
 
         try {
-            val token = requestIdentityToken(context)
+            // One number, made here and used once. The chooser is asked for
+            // a token tied to its digest, and Firebase is handed the number
+            // itself to check the digest against: a token answered for one
+            // sign-in then cannot be presented for another.
+            val nonce = freshNonce()
+            val token = requestIdentityToken(context, digestOf(nonce))
 
-            auth.signInWithCredential(GoogleAuthProvider.getCredential(token, null)).await()
+            auth.signInWithCredential(GoogleAuthProvider.getCredential(token, nonce)).await()
             // The state is not set here: the listener above answers for the
             // session, and it is the same answer after a restart.
         } catch (cancellation: CancellationException) {
@@ -130,7 +140,26 @@ class SignInController(
         }
     }
 
-    private suspend fun requestIdentityToken(context: Context): String {
+    /**
+     * A number used once, made from the platform's own source of randomness
+     * and written as text, because that is what the sign-in takes.
+     */
+    private fun freshNonce(): String {
+        val bytes = ByteArray(NONCE_BYTES)
+
+        SecureRandom().nextBytes(bytes)
+
+        return hex(bytes)
+    }
+
+    /** What goes into the token: the digest, rather than the number itself. */
+    private fun digestOf(nonce: String): String =
+        hex(MessageDigest.getInstance("SHA-256").digest(nonce.toByteArray()))
+
+    private fun hex(bytes: ByteArray): String =
+        bytes.joinToString(separator = "") { byte -> "%02x".format(byte) }
+
+    private suspend fun requestIdentityToken(context: Context, nonce: String): String {
         val option =
             GetGoogleIdOption
                 .Builder()
@@ -139,6 +168,7 @@ class SignInController(
                 // them has authorized this application yet, and filtering by
                 // that would show an empty chooser.
                 .setFilterByAuthorizedAccounts(false)
+                .setNonce(nonce)
                 .build()
 
         val request = GetCredentialRequest.Builder().addCredentialOption(option).build()

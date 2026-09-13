@@ -14,3 +14,14 @@ ktlint_function_naming_ignore_when_annotated_with = Composable
 max_line_length = 100
 indent_size = 4
 insert_final_newline = true
+
+# The JavaScript half: the page and the scripts that seed and test the
+# emulators. The rules that can be checked rather than merely stated live in
+# eslint.config.mjs; these are the ones an editor acts on while typing.
+[*.{js,mjs}]
+indent_style = space
+indent_size = 4
+max_line_length = 100
+quote_type = single
+insert_final_newline = true
+trim_trailing_whitespace = true

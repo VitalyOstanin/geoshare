@@ -3,7 +3,6 @@ package io.github.vitalyostanin.geoshare.service
 import android.os.Build
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
-import io.github.vitalyostanin.geoshare.BuildConfig
 import io.github.vitalyostanin.geoshare.log.AppLog
 
 private const val TAG = "geoshare.standin"
@@ -28,8 +27,13 @@ private val EMULATED_BOARDS = setOf("goldfish", "ranchu")
  * Decided by the device rather than by a setting: an emulator has no Google
  * account to sign in with and no household to belong to, so there is nothing
  * it could usefully do against the real project. A debug build on a phone is
- * untouched, and in a release the check below is a constant the compiler
- * removes.
+ * untouched.
+ *
+ * This file belongs to the debug build alone; the release build has a version
+ * of the same names that does nothing and carries nothing. Kept in the main
+ * sources, the addresses of the test accounts and the password they share went
+ * into every release, where they were unreachable — which is a thing to be
+ * shown rather than argued about.
  */
 object StandInServices {
     /**
@@ -38,7 +42,7 @@ object StandInServices {
      * once it has been used.
      */
     fun apply() {
-        if (!BuildConfig.DEBUG || Build.HARDWARE !in EMULATED_BOARDS) {
+        if (Build.HARDWARE !in EMULATED_BOARDS) {
             return
         }
 

@@ -4,6 +4,8 @@
 // and an age that disagreed between them would be read as a bug in whichever
 // one the viewer happened to trust less.
 
+import { WORDS } from './words.js';
+
 /** Past this, a position is old enough that the page says so in grey. */
 export const STALE_AFTER_MS = 30 * 60 * 1000;
 
@@ -45,13 +47,7 @@ export function timeText(millis) {
     return new Date(millis).toLocaleString();
 }
 
-/** English only for now; the wording is the only part that a translation touches. */
+/** The words come from the one place the page keeps its wording. */
 export function ageText(age) {
-    if (age.unit === 'justNow') {
-        return 'just now';
-    }
-
-    const unit = age.count === 1 ? age.unit.slice(0, -1) : age.unit;
-
-    return `${age.count} ${unit} ago`;
+    return age.unit === 'justNow' ? WORDS.justNow : WORDS.ago(age.count, age.unit);
 }

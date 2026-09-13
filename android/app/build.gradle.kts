@@ -1,3 +1,5 @@
+import java.util.Properties
+
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.compose)
@@ -8,12 +10,19 @@ plugins {
 // them. Written out here as well, they would drift: a compileSdk the image has
 // no platform for fails inside the container, and a build-tools version it
 // does not ship is downloaded again on every run.
+// The file is read by a shell everywhere else, so what is read here has to
+// survive the same things a shell would accept: a comment after a value, the
+// word `export` in front of a name, quotes around a value. Split by hand, each
+// of those became part of the number and the build failed a step later, where
+// the cause was no longer in sight.
 val toolVersions: Map<String, String> =
-    rootProject
-        .file("../tools/versions.env")
-        .readLines()
-        .filter { it.isNotBlank() && !it.startsWith("#") }
-        .associate { line -> line.substringBefore('=').trim() to line.substringAfter('=').trim() }
+    Properties()
+        .apply { rootProject.file("../tools/versions.env").reader().use { load(it) } }
+        .map { (name, value) ->
+            name.toString().removePrefix("export ").trim() to
+                value.toString().substringBefore('#').trim().trim('"', '\'')
+        }
+        .toMap()
 
 val appVersionName: String = providers.gradleProperty("appVersionName").get()
 val appVersionCode: Int = providers.gradleProperty("appVersionCode").get().toInt()
@@ -84,8 +93,6 @@ dependencies {
     implementation(platform(libs.compose.bom))
     implementation(libs.compose.ui)
     implementation(libs.compose.material3)
-    implementation(libs.compose.ui.tooling.preview)
-    debugImplementation(libs.compose.ui.tooling)
 
     // The Firebase libraries compile without google-services.json; the plugin
     // that consumes that file is added together with the file itself, once the
@@ -106,5 +113,4 @@ dependencies {
     implementation(libs.coil.network.okhttp)
 
     testImplementation(libs.junit)
-    testImplementation(libs.kotlinx.coroutines.test)
 }

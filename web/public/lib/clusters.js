@@ -4,6 +4,8 @@
 // The arithmetic is repeated in the Android client: a crowd in one spot should
 // be the same marker whichever client is looking at it.
 
+import { compareIds } from './order.js';
+
 /**
  * How many circles a pin ever has in it.
  *
@@ -75,13 +77,4 @@ function within(anchor, other, radius) {
     const dy = anchor.y - other.y;
 
     return dx * dx + dy * dy <= radius * radius;
-}
-
-/** The order the Kotlin side sorts in, which is the order of the characters themselves. */
-function compareIds(one, other) {
-    if (one === other) {
-        return 0;
-    }
-
-    return one < other ? -1 : 1;
 }

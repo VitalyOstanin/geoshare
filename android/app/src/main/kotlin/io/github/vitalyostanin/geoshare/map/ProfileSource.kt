@@ -4,7 +4,8 @@ import com.google.firebase.Timestamp
 import com.google.firebase.firestore.DocumentSnapshot
 import com.google.firebase.firestore.FirebaseFirestore
 import io.github.vitalyostanin.geoshare.log.AppLog
-import io.github.vitalyostanin.geoshare.service.GROUP
+import io.github.vitalyostanin.geoshare.service.ProfileField
+import io.github.vitalyostanin.geoshare.service.membersOf
 import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.callbackFlow
@@ -24,10 +25,7 @@ fun memberProfiles(
     store: FirebaseFirestore = FirebaseFirestore.getInstance(),
 ): Flow<Map<String, MemberProfile>> = callbackFlow {
     val subscription =
-        store
-            .collection("groups")
-            .document(GROUP)
-            .collection("members")
+        membersOf(store)
             .addSnapshotListener { snapshot, error ->
                 if (error != null) {
                     AppLog.w(TAG, "the profiles subscription failed", error)
@@ -54,13 +52,15 @@ fun memberProfiles(
  * screens fall back to the id on their own, so there is nothing to carry.
  */
 private fun profileOf(document: DocumentSnapshot): MemberProfile? {
-    val displayName = document.getString("displayName")?.takeIf { it.isNotBlank() } ?: return null
+    val displayName =
+        document.getString(ProfileField.DISPLAY_NAME)?.takeIf { it.isNotBlank() } ?: return null
 
     return MemberProfile(
         memberId = document.id,
         displayName = displayName,
-        pictureUrl = document.getString("photoUrl")?.takeIf { it.isNotBlank() },
-        devices = (document.get("devices") as? List<*>).orEmpty().filterIsInstance<String>(),
+        pictureUrl = document.getString(ProfileField.PHOTO_URL)?.takeIf { it.isNotBlank() },
+        devices =
+        (document.get(ProfileField.DEVICES) as? List<*>).orEmpty().filterIsInstance<String>(),
         sharedWith = permissionsOf(document),
     )
 }
@@ -78,10 +78,7 @@ fun ownSharedWith(
     store: FirebaseFirestore = FirebaseFirestore.getInstance(),
 ): Flow<Map<String, Instant>> = callbackFlow {
     val subscription =
-        store
-            .collection("groups")
-            .document(GROUP)
-            .collection("members")
+        membersOf(store)
             .document(memberId)
             .addSnapshotListener { snapshot, error ->
                 if (error != null) {
@@ -105,7 +102,7 @@ fun ownSharedWith(
  * than two.
  */
 private fun permissionsOf(document: DocumentSnapshot): Map<String, Instant> {
-    val stated = document.get("sharedWith") as? Map<*, *> ?: return emptyMap()
+    val stated = document.get(ProfileField.SHARED_WITH) as? Map<*, *> ?: return emptyMap()
 
     return stated
         .mapNotNull { (reader, until) ->

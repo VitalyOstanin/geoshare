@@ -8,13 +8,15 @@
 # this once per working copy, and again if the web app is ever re-registered.
 set -euo pipefail
 
-REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-readonly REPO_ROOT
+# The same place every other script here gets the repository root and the
+# versions from: a copy of either is a copy that stops matching.
+source "$(dirname "${BASH_SOURCE[0]}")/lib.sh"
+
 readonly TARGET="${REPO_ROOT}/web/public/firebase-config.js"
 
 # The one web app of the project. Passed by platform rather than by id, so that
 # this keeps working if the app is registered again under a new one.
-npx --yes firebase-tools@15.30.0 apps:sdkconfig WEB --json |
+npx --yes "firebase-tools@${FIREBASE_TOOLS_VERSION}" apps:sdkconfig WEB --json |
     python3 -c '
 import json, sys
 

@@ -5,7 +5,8 @@ import com.google.firebase.firestore.FieldValue
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.SetOptions
 import io.github.vitalyostanin.geoshare.log.AppLog
-import io.github.vitalyostanin.geoshare.service.GROUP
+import io.github.vitalyostanin.geoshare.service.ProfileField
+import io.github.vitalyostanin.geoshare.service.membersOf
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.tasks.await
 import java.time.Instant
@@ -30,22 +31,19 @@ suspend fun publishProfile(
 ): Boolean {
     val profile =
         buildMap {
-            put("displayName", displayName)
+            put(ProfileField.DISPLAY_NAME, displayName)
             // Written as a field rather than left out, so that an account that
             // loses its picture loses it on the other screens too.
-            put("photoUrl", pictureUrl)
-            put("updatedAt", FieldValue.serverTimestamp())
+            put(ProfileField.PHOTO_URL, pictureUrl)
+            put(ProfileField.UPDATED_AT, FieldValue.serverTimestamp())
             // This phone, added to whatever the other phones of the member
             // have already put there: the readers cannot list the positions,
             // so this list is how they learn which documents to read.
-            put("devices", FieldValue.arrayUnion(deviceId))
+            put(ProfileField.DEVICES, FieldValue.arrayUnion(deviceId))
         }
 
     try {
-        store
-            .collection("groups")
-            .document(GROUP)
-            .collection("members")
+        membersOf(store)
             .document(memberId)
             // Merged rather than replaced: the permissions live in this
             // document too, and they are not this write's business.
@@ -82,16 +80,16 @@ suspend fun publishSharing(
     val written = sharedWith.mapValues { (_, until) -> Timestamp(Date.from(until)) }
 
     try {
-        store
-            .collection("groups")
-            .document(GROUP)
-            .collection("members")
+        membersOf(store)
             .document(memberId)
             // The field named rather than merged: a plain merge joins the two
             // maps key by key, and a permission taken away would survive its
             // own removal. Naming the field replaces it whole and leaves the
             // rest of the profile — the name, the picture, the phones — alone.
-            .set(mapOf("sharedWith" to written), SetOptions.mergeFields("sharedWith"))
+            .set(
+                mapOf(ProfileField.SHARED_WITH to written),
+                SetOptions.mergeFields(ProfileField.SHARED_WITH),
+            )
             .await()
 
         AppLog.i(TAG, "the permissions of $memberId are now published")

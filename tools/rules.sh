@@ -18,7 +18,12 @@ ensure_firebase_image
 # emulator and the tests talk over the container's loopback, and the port it
 # listens on is a popular one — sharing the host's network means a run fails
 # whenever anything else on the machine holds 8080.
-exec podman run --rm "${limit_args[@]}" \
+# The proxy is left out on purpose, and has to be said out loud: podman hands
+# the host's HTTP_PROXY and HTTPS_PROXY to every container unless told not to,
+# and a proxy listening on the host's loopback is nothing at all from inside a
+# container on its own network. npm then fails to reach the registry with a
+# refused connection to an address it was never meant to use.
+exec podman run --rm --http-proxy=false "${limit_args[@]}" \
     -v "${REPO_ROOT}:/src:z" -v "${NPM_VOLUME}:/npm" -w /src \
     "${FIREBASE_IMAGE}" \
     bash -c 'npm --prefix firebase/tests ci \

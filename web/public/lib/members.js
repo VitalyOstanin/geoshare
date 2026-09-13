@@ -1,5 +1,11 @@
 // Who the page lists, and in what order.
 
+import { compareIds } from './order.js';
+import { WORDS } from './words.js';
+
+/** How many phones of one member this page will follow. The rules say the same. */
+const DEVICES_PER_MEMBER = 10;
+
 /**
  * The other members come first: the page exists to answer where they are, and
  * one's own marker is the one already in the middle of the map. Within that,
@@ -14,11 +20,11 @@ export function orderedForNavigation(positions, ownMemberId) {
             return own;
         }
 
-        const member = left.memberId.localeCompare(right.memberId);
+        const member = compareIds(left.memberId, right.memberId);
 
         // The phones of one member follow each other, and keep their places
         // between two glances at the panel.
-        return member !== 0 ? member : left.positionId.localeCompare(right.positionId);
+        return member !== 0 ? member : compareIds(left.positionId, right.positionId);
     });
 }
 
@@ -66,7 +72,7 @@ export function shortName(memberId) {
  */
 export function memberName(profile, memberId, own) {
     if (own) {
-        return 'You';
+        return WORDS.you;
     }
 
     return profile?.displayName ?? shortName(memberId);
@@ -114,6 +120,15 @@ export function pictureAddress(pictureUrl) {
  */
 export function positionDocuments(profiles) {
     return [...profiles.values()]
-        .flatMap((profile) => profile.devices.map((device) => `${profile.memberId}.${device}`))
-        .sort();
+        .flatMap((profile) =>
+            profile.devices
+                // A subscription each, so a profile naming more phones than a
+                // person can carry would put this page out of action — and the
+                // profile is written by somebody else. The rules hold the list
+                // to the same number; this is what happens to a document
+                // written before they did.
+                .slice(0, DEVICES_PER_MEMBER)
+                .map((device) => `${profile.memberId}.${device}`),
+        )
+        .sort(compareIds);
 }
