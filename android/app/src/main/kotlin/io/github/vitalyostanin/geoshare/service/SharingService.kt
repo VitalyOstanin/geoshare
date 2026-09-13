@@ -27,6 +27,8 @@ import io.github.vitalyostanin.geoshare.collection.fenceMoves
 import io.github.vitalyostanin.geoshare.collection.fixesAgree
 import io.github.vitalyostanin.geoshare.collection.impliedSpeedMps
 import io.github.vitalyostanin.geoshare.collection.mayBeConfirmed
+import io.github.vitalyostanin.geoshare.collection.networkAnswerStands
+import io.github.vitalyostanin.geoshare.collection.otherRadiosAreDue
 import io.github.vitalyostanin.geoshare.collection.rescueAfter
 import io.github.vitalyostanin.geoshare.collection.shouldWrite
 import io.github.vitalyostanin.geoshare.collection.whyAJump
@@ -112,6 +114,17 @@ class SharingService : LifecycleService() {
      * agree with it.
      */
     private var candidate: Fix? = null
+
+    /**
+     * How many answers in a row the filter has left out.
+     *
+     * A phone being fed a false signal is answered promptly and wrongly, so
+     * this counts up while the phone looks perfectly healthy and says nothing.
+     */
+    private var jumpsInARow: Int = 0
+
+    /** When the towers and the Wi-Fi were last asked in place of the satellites. */
+    private var askedTheOtherRadiosAt: Instant? = null
 
     /** Whether the member has asked for the impossible positions to be left out. */
     private val jumps by lazy { JumpFilterSetting(this) }
@@ -263,12 +276,17 @@ class SharingService : LifecycleService() {
         fix: Fix,
         mode: CollectionMode,
         always: Boolean = false,
+        // An answer that did not come from the satellites at all, and so has
+        // no business being measured against the rules written for them: the
+        // towers answer in kilometres, and the width rule would throw away the
+        // one source the spoofer cannot reach.
+        trusted: Boolean = false,
     ): Boolean {
         if (jumps.takeForgetRequest()) {
             forgetThePlace()
         }
 
-        val jump = whyAJump(lastFix, fix)
+        val jump = if (trusted) null else whyAJump(lastFix, fix)
         // A fix left out does not move the last position, and that is how the
         // marker can be left standing somewhere the phone has long left: a
         // wrong last position turns every true fix that follows into a jump.
@@ -285,15 +303,19 @@ class SharingService : LifecycleService() {
         // out: what the provider answers where it is being jammed is the thing
         // to be read afterwards, and a filtered log would answer questions
         // about the filter instead.
-        noteFix(fix, mode, jump, agreed)
+        noteFix(fix, mode, jump, agreed, trusted)
 
         if (jump != null && jumps.enabled && !agreed) {
             candidate = fix
+            jumpsInARow += 1
+
+            askTheOtherRadios(writer, mode)
 
             return false
         }
 
         candidate = null
+        jumpsInARow = 0
 
         if (!always && !shouldWrite(lastFix, fix, mode)) {
             return false
@@ -563,6 +585,51 @@ class SharingService : LifecycleService() {
     }
 
     /**
+     * Puts the satellites aside and asks the towers and the Wi-Fi instead.
+     *
+     * Called from the one place a spoofed phone reaches: the branch where an
+     * answer has just been left out. Three left out in a row is the satellites
+     * having stopped being a source of positions, however promptly they keep
+     * answering, and the other radios are the only ones the spoofer cannot
+     * reach. What comes back is written past the filter — the rules it applies
+     * were written for a receiver that answers in metres, and would throw away
+     * a true answer a kilometre wide.
+     *
+     * It also puts the anchor back. That matters as much as the write itself:
+     * with a true position to measure from, the road the spoofer keeps drawing
+     * is seventy kilometres away and is caught by the speed rule again.
+     */
+    private suspend fun askTheOtherRadios(writer: PositionWriter, mode: CollectionMode) {
+        if (!otherRadiosAreDue(jumpsInARow, askedTheOtherRadiosAt, Instant.now())) {
+            return
+        }
+
+        // Counted from the asking, so that an answer that never comes does not
+        // turn into a scan on every fix.
+        askedTheOtherRadiosAt = Instant.now()
+
+        AppLog.w(TAG, "$jumpsInARow answers in a row left out; asking the towers and the Wi-Fi")
+
+        val asked =
+            withTimeoutOrNull(NETWORK_ANSWER_WAIT.toMillis()) {
+                networkPosition(this@SharingService)
+            } ?: lastNetworkPosition(this)
+
+        if (!networkAnswerStands(asked, Instant.now())) {
+            AppLog.w(TAG, "the other radios had nothing to put in its place: ${saying(asked)}")
+
+            return
+        }
+
+        val fix = asked ?: return
+
+        AppLog.i(TAG, "standing on what the other radios say: ${saying(fix)}")
+
+        jumpsInARow = 0
+        writeIfWorth(writer, fix, mode, always = true, trusted = true)
+    }
+
+    /**
      * What the towers and the Wi-Fi have to say when Play Services has nothing.
      *
      * Written down rather than used: the question being answered here is
@@ -616,7 +683,13 @@ class SharingService : LifecycleService() {
      * worth reading later, and the distance and the speed are what tell a walk
      * from an answer given by a jammed receiver.
      */
-    private fun noteFix(fix: Fix, mode: CollectionMode, jump: JumpReason?, agreed: Boolean) {
+    private fun noteFix(
+        fix: Fix,
+        mode: CollectionMode,
+        jump: JumpReason?,
+        agreed: Boolean,
+        trusted: Boolean,
+    ) {
         val last = lastFix
         val place = String.format(Locale.ROOT, "%.5f,%.5f", fix.latitude, fix.longitude)
         val width = fix.accuracyMetres?.let { String.format(Locale.ROOT, " ±%.0f m", it) }.orEmpty()
@@ -641,7 +714,12 @@ class SharingService : LifecycleService() {
                 else -> "; a jump ${caughtBy(jump, fix)}, kept because the filter is off"
             }
 
-        AppLog.i(TAG, "fix $place$width in mode $mode, $since$verdict${aClockApart(fix.takenAt)}")
+        // The clock is asked about the satellites only. An answer from the
+        // towers is handed over seconds after it was taken, and its age would
+        // read as a receiver whose time has been tampered with.
+        val clock = if (trusted) "" else aClockApart(fix.takenAt)
+
+        AppLog.i(TAG, "fix $place$width in mode $mode, $since$verdict$clock")
 
         radio.saying()?.let { AppLog.i(TAG, it) }
     }
@@ -676,6 +754,7 @@ class SharingService : LifecycleService() {
         lastFix = null
         candidate = null
         lastWritten = null
+        jumpsInARow = 0
 
         AppLog.i(TAG, "forgetting the last place, as asked")
     }
