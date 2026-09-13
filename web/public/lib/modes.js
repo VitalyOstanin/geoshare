@@ -5,18 +5,20 @@ import { WORDS } from './words.js';
 /**
  * What each way of collecting is called on a card.
  *
- * The document carries the name of the enumeration entry the phone was in —
- * `Standby`, `Viewing` — which says nothing to whoever opens the card: "Idle"
- * does not explain that the phone asked for nothing because it had not left
- * the place it was. The phrases are repeated in the Android client so that one
- * card reads the same on both.
+ * The document carries the entry the phone was in — `Standby`, `Viewing` — and
+ * the card gives that mode its name rather than a sentence about it. The five
+ * differ by what they ask the receiver for and how often they send, which is a
+ * table to be read once against itself in the help rather than a phrase to be
+ * read again on every card. The names live in the one dictionary the page
+ * translates, and the entry the phone wrote stays the key. The Android client
+ * keeps the same names, so one card reads the same on both.
  */
 const MODE_WORDS = {
-    Idle: 'staying put',
-    Standby: 'checking now and then',
-    Moving: 'on the move',
-    Viewing: 'somebody is looking',
-    Night: 'night, checking rarely',
+    Idle: WORDS.modeIdle,
+    Standby: WORDS.modeStandby,
+    Moving: WORDS.modeMoving,
+    Viewing: WORDS.modeViewing,
+    Night: WORDS.modeNight,
 };
 
 /** The words for a mode, or the mode itself when it is one this build does not know. */

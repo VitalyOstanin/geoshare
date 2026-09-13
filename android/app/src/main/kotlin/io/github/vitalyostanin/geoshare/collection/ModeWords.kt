@@ -6,10 +6,14 @@ import io.github.vitalyostanin.geoshare.R
 /**
  * What each way of collecting is called on a card.
  *
- * The document carries the name of the entry the phone was in — `Standby`,
- * `Viewing` — which says nothing to whoever opens the card: "Idle" does not
- * explain that the phone asked for nothing because it had not left the place
- * it was. The page keeps the same phrases, so one card reads the same on both.
+ * The document carries the entry the phone was in — `Standby`, `Viewing` — and
+ * the card gives that mode its name rather than a sentence about it. The five
+ * differ by what they ask the receiver for and how often they send, which is a
+ * table to be read once against itself in the help rather than a phrase to be
+ * read again on every card. The name goes through the resources, so that a
+ * translation names the modes in its own language while the key stays the
+ * entry the phone wrote. The page keeps the same names, so one card reads the
+ * same on both.
  */
 @StringRes
 fun modeLabel(mode: String?): Int = when (mode) {

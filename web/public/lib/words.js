@@ -18,6 +18,18 @@ export const WORDS = {
     oneMoreRefused: 'One more member is not sharing with you right now.',
     moreRefused: (count) => `${count} more members are not sharing with you right now.`,
 
+    // The names of the five ways a phone collects its position. Names rather
+    // than sentences describing them: what each one asks for and how often it
+    // sends belongs in the help the card opens, where all five can be read
+    // against each other. The document carries the entry of the enumeration,
+    // which is the key of the lookup rather than anything shown, so a
+    // translation names the modes in its own language.
+    modeIdle: 'Idle',
+    modeStandby: 'Standby',
+    modeMoving: 'Moving',
+    modeViewing: 'Viewing',
+    modeNight: 'Night',
+
     // The card a marker opens.
     lastSeen: 'Last seen',
     at: 'At',

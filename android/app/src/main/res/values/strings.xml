@@ -60,13 +60,18 @@
     <string name="visibility_forever">with no end</string>
     <!-- A permission given earlier, counting down: %1$s is a time of day. -->
     <string name="visibility_until">until %1$s</string>
-    <!-- How a phone was collecting, said in words rather than in the name of
-         the enumeration entry the document carries. The page says the same. -->
-    <string name="mode_idle">staying put</string>
-    <string name="mode_standby">checking now and then</string>
-    <string name="mode_moving">on the move</string>
-    <string name="mode_viewing">somebody is looking</string>
-    <string name="mode_night">night, checking rarely</string>
+    <!-- The name of the way a phone was collecting when it wrote the position.
+         A name rather than a sentence describing it: what each one asks for and
+         how often it sends belongs in the help the card opens, where all five
+         can be read against each other. The document carries the entry of the
+         enumeration, which is the key of the lookup rather than anything shown,
+         so a translation names the modes in its own language. The page says the
+         same. -->
+    <string name="mode_idle">Idle</string>
+    <string name="mode_standby">Standby</string>
+    <string name="mode_moving">Moving</string>
+    <string name="mode_viewing">Viewing</string>
+    <string name="mode_night">Night</string>
 
     <string name="map_more">More</string>
     <string name="map_more_hide">Hide</string>

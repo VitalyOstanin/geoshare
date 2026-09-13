@@ -2,12 +2,20 @@ import assert from 'node:assert/strict';
 import { test } from 'node:test';
 
 import { modeText } from '../public/lib/modes.js';
+import { WORDS } from '../public/lib/words.js';
 
-test('every mode a phone writes has words of its own', () => {
+// The English name of a mode is the entry the phone writes, so comparing the
+// two would pass whether the dictionary holds the mode or not: what is checked
+// is that the name came from the dictionary, which is where a translation of
+// it would be.
+test('every mode a phone writes is named by the dictionary', () => {
     const modes = ['Idle', 'Standby', 'Moving', 'Viewing', 'Night'];
 
     for (const mode of modes) {
-        assert.notEqual(modeText(mode), mode, `${mode} is still shown as the machine name`);
+        const named = WORDS[`mode${mode}`];
+
+        assert.ok(named, `${mode} has no name in the dictionary`);
+        assert.equal(modeText(mode), named);
     }
 });
 
