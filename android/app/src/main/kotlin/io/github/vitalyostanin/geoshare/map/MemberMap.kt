@@ -21,6 +21,7 @@ import org.maplibre.android.maps.Style
 import org.maplibre.android.style.expressions.Expression
 import org.maplibre.android.style.layers.Property
 import org.maplibre.android.style.layers.PropertyFactory
+import org.maplibre.android.style.layers.RasterLayer
 import org.maplibre.android.style.layers.SymbolLayer
 import org.maplibre.android.style.sources.GeoJsonSource
 import org.maplibre.geojson.Feature
@@ -44,6 +45,16 @@ private const val CLUSTER_RADIUS_DP = 44f
 
 private const val MEMBER_SOURCE = "members"
 private const val MEMBER_LAYER = "members"
+
+/** The layer the tiles are drawn in, named in the style below. */
+private const val TILE_LAYER = "osm"
+
+/** Half a turn of the colour wheel, which puts back what inverting took. */
+private const val NIGHT_HUE_TURN = 180f
+
+/** Colours at night: a little of both taken out, so the map does not glare. */
+private const val NIGHT_SATURATION = -0.35f
+private const val NIGHT_CONTRAST = -0.15f
 
 /** The name of the drawing a point wears, and which positions are standing at it. */
 private const val ICON_PROPERTY = "icon"
@@ -103,6 +114,8 @@ fun MemberMap(
     faces: Map<String, Bitmap>,
     ownMemberId: String,
     now: Instant,
+    /** Whether the screen around the map is dark, which the tiles follow. */
+    dark: Boolean,
     /** What is written above a pin that stands for several members at once. */
     groupLabel: (Int) -> String,
     /** The member the panel asked to look at, if one has been asked for. */
@@ -155,7 +168,7 @@ fun MemberMap(
     }
 
     AndroidView(factory = { holder.view }, modifier = modifier) { _ ->
-        holder.show(positions, names, faces, ownMemberId, now)
+        holder.show(positions, names, faces, ownMemberId, now, dark)
         holder.lookAt(focus)
     }
 }
@@ -223,6 +236,9 @@ private class MapHolder(val view: MapView) {
 
     private var destroyed = false
 
+    /** Whether the tiles are being drawn for a dark screen. */
+    private var dark = false
+
     var onSelect: (String) -> Unit = {}
 
     var onSelectGroup: (List<String>) -> Unit = {}
@@ -260,6 +276,7 @@ private class MapHolder(val view: MapView) {
 
                 style = loaded
                 icons.clear()
+                paintTiles()
 
                 // Positions can arrive before the style does, and the screen
                 // does not ask again until the next one.
@@ -274,6 +291,7 @@ private class MapHolder(val view: MapView) {
         faces: Map<String, Bitmap>,
         ownMemberId: String,
         now: Instant,
+        dark: Boolean,
     ) {
         members = positions
         this.names = names
@@ -281,7 +299,35 @@ private class MapHolder(val view: MapView) {
         this.ownMemberId = ownMemberId
         this.now = now
 
+        if (dark != this.dark) {
+            this.dark = dark
+            paintTiles()
+        }
+
         draw()
+    }
+
+    /**
+     * The tiles as day or as night.
+     *
+     * The tiles themselves are drawn light on somebody else's server, and the
+     * page solves this by turning its canvas over. Here the same is asked of
+     * the drawing itself: the brightness range is given back to front, which
+     * turns light streets into dark ones, and the hue is put back where it was
+     * so that water stays blue rather than becoming orange. Only the tile
+     * layer is touched — the markers are a layer of their own, and a member's
+     * face is not to be turned inside out.
+     */
+    private fun paintTiles() {
+        val loaded = style ?: return
+
+        loaded.getLayerAs<RasterLayer>(TILE_LAYER)?.setProperties(
+            PropertyFactory.rasterBrightnessMin(if (dark) 1f else 0f),
+            PropertyFactory.rasterBrightnessMax(if (dark) 0f else 1f),
+            PropertyFactory.rasterHueRotate(if (dark) NIGHT_HUE_TURN else 0f),
+            PropertyFactory.rasterSaturation(if (dark) NIGHT_SATURATION else 0f),
+            PropertyFactory.rasterContrast(if (dark) NIGHT_CONTRAST else 0f),
+        )
     }
 
     fun lookAt(focus: MapFocus?) {
@@ -354,6 +400,18 @@ private class MapHolder(val view: MapView) {
         loaded
             .getSourceAs<GeoJsonSource>(MEMBER_SOURCE)
             ?.setGeoJson(FeatureCollection.fromFeatures(features))
+
+        // A drawing is made for a particular set of members standing together,
+        // with their label and their ages in its name, so the set of names
+        // grows with every zoom and every minute. The ones this pass did not
+        // ask for are what the style would otherwise hold on to for the rest
+        // of the session, a bitmap each.
+        val used = features.mapNotNull { it.getStringProperty(ICON_PROPERTY) }.toSet()
+
+        icons.minus(used).forEach { name ->
+            loaded.removeImage(name)
+            icons.remove(name)
+        }
 
         centre()
     }

@@ -17,6 +17,8 @@ import { showFace } from './faces.js';
 
 import { ageText, isStale, positionAge, timeText } from './age.js';
 import { clusterMembers, facesShown } from './clusters.js';
+import { modeText } from './modes.js';
+import { WORDS } from './words.js';
 
 /** Close enough to tell which street somebody is on, without hunting for them. */
 const START_ZOOM = 15;
@@ -186,7 +188,15 @@ function draw(view, { positions, names, faces, now }) {
         entry.marker.setLngLat([centreLongitude(group), centreLatitude(group)]);
 
         showPin(entry, names, faces, now);
-        showPopup(entry, names, faces, now);
+
+        // What the bubble holds is built for the bubble that is open, and for
+        // no other: the card is a heading, a face and five rows, and building
+        // one per marker on every tick is work nobody sees.
+        entry.latest = { names, faces, now };
+
+        if (entry.popup.isOpen()) {
+            showPopup(entry, names, faces, now);
+        }
     }
 
     for (const [key, entry] of view.markers) {
@@ -257,6 +267,9 @@ function addMarker(view, key, group) {
         label,
         members: group,
         openedPositionId: null,
+        // What the last drawing knew, kept for the moment the bubble is opened
+        // between two drawings.
+        latest: null,
         // Carried on the entry rather than read off the view, because the rows
         // of a group list are built with the entry alone in hand.
         onCardChange: view.onCardChange,
@@ -267,6 +280,13 @@ function addMarker(view, key, group) {
     // otherwise leave the first member's card hanging over the map.
     popup.on('open', () => {
         closeOthers(view, key);
+
+        // Filled on the way open rather than kept filled: until it is asked
+        // for, an empty bubble costs nothing.
+        if (entry.latest) {
+            showPopup(entry, entry.latest.names, entry.latest.faces, entry.latest.now);
+        }
+
         entry.onCardChange();
     });
     // The panel marks whoever the open card is about, and a card closed by the
@@ -330,7 +350,9 @@ function showPin(entry, names, faces, now) {
         const old = isStale(member.knownAt, now);
         const face = entry.faces[index];
 
-        showFace(face, faces.get(member.memberId), name, old ? STALE_COLOUR : memberColour(member.memberId));
+        const colour = old ? STALE_COLOUR : memberColour(member.memberId);
+
+        showFace(face, faces.get(member.memberId), name, colour);
         face.classList.toggle('stale', old);
     });
 
@@ -354,14 +376,14 @@ export function batteryText(position, into = document.createElement('span')) {
     into.replaceChildren();
     into.classList.toggle('charging', position.charging && position.batteryPercent !== null);
     into.textContent =
-        position.batteryPercent === null ? 'unknown' : `${position.batteryPercent}%`;
+        position.batteryPercent === null ? WORDS.unknown : `${position.batteryPercent}%`;
 
     return into;
 }
 
 /** What a marker for several members writes above itself. */
 function groupLabel(count) {
-    return count === 1 ? '1 member' : `${count} members`;
+    return count === 1 ? WORDS.oneMember : WORDS.members(count);
 }
 
 /**
@@ -398,7 +420,7 @@ function showPopup(entry, names, faces, now) {
     // The arrow says which way the button goes before the words are read; an
     // arrow written as a character rather than drawn, because a set of icons
     // is a dependency of its own and this is the only one the page needs.
-    back.textContent = '← Back to the list';
+    back.textContent = WORDS.backToList;
     back.addEventListener('click', () => {
         entry.openedPositionId = null;
         showPopup(entry, names, faces, now);
@@ -466,7 +488,7 @@ function groupList(entry, names, faces, now) {
 
         const age = document.createElement('span');
 
-        age.className = 'group-age';
+        age.className = stale ? 'group-age stale' : 'group-age';
         age.textContent = ageText(positionAge(member.knownAt, now));
 
         row.append(face, name, age);
@@ -547,10 +569,16 @@ function detail(position, name, faces, now) {
 
     heading.className = 'detail-head';
 
+    // Old means grey here as well as on the pin and in the strip: a card in
+    // full colour beside a faded pin reads as a member who is there right now.
+    const stale = isStale(position.knownAt, now);
+    const colour = stale ? STALE_COLOUR : memberColour(position.memberId);
+
     const face = document.createElement('span');
 
-    face.className = 'detail-face';
-    showFace(face, faces.get(position.memberId), name, memberColour(position.memberId));
+    face.className = stale ? 'detail-face stale' : 'detail-face';
+    face.style.setProperty('--ring', colour);
+    showFace(face, faces.get(position.memberId), name, colour);
 
     const titles = document.createElement('div');
     const title = document.createElement('h2');
@@ -573,11 +601,11 @@ function detail(position, name, faces, now) {
     const table = document.createElement('table');
 
     const rows = [
-        ['Last seen', ageText(positionAge(position.knownAt, now))],
-        ['At', timeText(position.knownAt)],
-        ['Mode', position.mode ?? 'unknown'],
-        ['Battery', batteryText(position)],
-        ['Position', `${position.latitude.toFixed(5)}, ${position.longitude.toFixed(5)}`],
+        [WORDS.lastSeen, ageText(positionAge(position.knownAt, now))],
+        [WORDS.at, timeText(position.knownAt)],
+        [WORDS.mode, modeText(position.mode)],
+        [WORDS.battery, batteryText(position)],
+        [WORDS.position, `${position.latitude.toFixed(5)}, ${position.longitude.toFixed(5)}`],
     ];
 
     for (const [title, value] of rows) {

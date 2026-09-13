@@ -65,9 +65,16 @@ test('following the system is the absence of a statement', () => {
 });
 
 // The page applies the theme before the first paint, from a script of its own
-// that cannot import this module. The key it reads has to be this one.
+// that cannot import this module. The key it reads has to be this one, and the
+// page has to be the one loading it.
 test('the page reads the theme from the key this module writes', async () => {
+    const boot = await readFile(new URL('../public/boot-theme.js', import.meta.url), 'utf8');
+
+    assert.ok(boot.includes(`'${THEME_KEY}'`));
+});
+
+test('the page loads the script that applies the theme before it is painted', async () => {
     const page = await readFile(new URL('../public/index.html', import.meta.url), 'utf8');
 
-    assert.ok(page.includes(`'${THEME_KEY}'`));
+    assert.ok(page.includes('src="boot-theme.js"'));
 });

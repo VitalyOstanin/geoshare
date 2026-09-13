@@ -53,6 +53,8 @@ fun VisibilitySection(
     ownMemberId: String,
     /** The permissions as they stand, by the member each was given to. */
     sharedWith: Map<String, Instant>,
+    /** The clock the rows are read against, ticking, so a permission ends on screen. */
+    now: Instant,
     onShare: (String, ShareSpan) -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -79,6 +81,7 @@ fun VisibilitySection(
             ReaderRow(
                 reader = reader,
                 until = sharedWith[reader.memberId],
+                now = now,
                 onShare = { span -> onShare(reader.memberId, span) },
             )
         }
@@ -86,7 +89,12 @@ fun VisibilitySection(
 }
 
 @Composable
-private fun ReaderRow(reader: MemberProfile, until: Instant?, onShare: (ShareSpan) -> Unit) {
+private fun ReaderRow(
+    reader: MemberProfile,
+    until: Instant?,
+    now: Instant,
+    onShare: (ShareSpan) -> Unit,
+) {
     var open by remember { mutableStateOf(false) }
 
     Row(
@@ -102,7 +110,7 @@ private fun ReaderRow(reader: MemberProfile, until: Instant?, onShare: (ShareSpa
         // obvious at exactly the moment it matters.
         Box {
             TextButton(onClick = { open = true }) {
-                Text(text = standingText(until))
+                Text(text = standingText(until, now))
             }
 
             DropdownMenu(expanded = open, onDismissRequest = { open = false }) {
@@ -124,26 +132,23 @@ private fun ReaderRow(reader: MemberProfile, until: Instant?, onShare: (ShareSpa
  * What the row says a permission is now.
  *
  * A permission given hours ago is none of the choices any more, so it is shown
- * as the time it ends rather than as the span it was given for.
+ * as the time it ends rather than as the span it was given for. The moment is
+ * handed in rather than read here, so that a permission running out while the
+ * screen is open changes the row instead of waiting for it to be reopened.
  */
 @Composable
-private fun standingText(until: Instant?): String {
-    val now = Instant.now()
+private fun standingText(until: Instant?, now: Instant): String =
+    when (val standing = standingOf(until, now)) {
+        Standing.Endless -> stringResource(R.string.visibility_forever)
 
-    return when (spanOf(until, now)) {
-        ShareSpan.Forever -> stringResource(R.string.visibility_forever)
+        Standing.Never -> stringResource(R.string.visibility_none)
 
-        ShareSpan.None -> stringResource(R.string.visibility_none)
-
-        null ->
+        is Standing.Until ->
             stringResource(
                 R.string.visibility_until,
-                ENDS_AT.format(until?.atZone(ZoneId.systemDefault())),
+                ENDS_AT.format(standing.moment.atZone(ZoneId.systemDefault())),
             )
-
-        else -> stringResource(R.string.visibility_none)
     }
-}
 
 private fun spanLabel(span: ShareSpan): Int = when (span) {
     ShareSpan.None -> R.string.visibility_none

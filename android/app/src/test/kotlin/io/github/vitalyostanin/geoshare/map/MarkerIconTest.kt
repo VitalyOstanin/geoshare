@@ -53,4 +53,16 @@ class MarkerIconTest {
         assertEquals(2, facesShown(4))
         assertEquals(2, facesShown(9))
     }
+
+    // The page takes the first character a reader sees; Java stores an emoji
+    // as two, and half of a pair is not a letter on any screen.
+    @Test
+    fun `a name beginning with a character outside the basic set keeps it whole`() {
+        assertEquals("\uD83D\uDC69", memberInitial("\uD83D\uDC69 Anna"))
+    }
+
+    @Test
+    fun `a name of nothing but spaces leaves the pin without a letter`() {
+        assertEquals("", memberInitial("   "))
+    }
 }

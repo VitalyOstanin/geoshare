@@ -38,7 +38,7 @@
     <string name="map_open_settings">Settings</string>
     <string name="map_account_nameless">?</string>
     <string name="settings_title">Settings</string>
-    <string name="settings_close">Done</string>
+    <string name="settings_close">Close</string>
     <string name="background_title">Background work</string>
     <string name="background_battery">Battery restriction</string>
     <string name="background_battery_lifted">Lifted</string>
@@ -60,12 +60,28 @@
     <string name="visibility_forever">with no end</string>
     <!-- A permission given earlier, counting down: %1$s is a time of day. -->
     <string name="visibility_until">until %1$s</string>
+    <!-- How a phone was collecting, said in words rather than in the name of
+         the enumeration entry the document carries. The page says the same. -->
+    <string name="mode_idle">staying put</string>
+    <string name="mode_standby">checking now and then</string>
+    <string name="mode_moving">on the move</string>
+    <string name="mode_viewing">somebody is looking</string>
+    <string name="mode_night">night, checking rarely</string>
+
     <string name="map_more">More</string>
     <string name="map_more_hide">Hide</string>
 
     <plurals name="map_group_count">
         <item quantity="one">%1$d member</item>
         <item quantity="other">%1$d members</item>
+    </plurals>
+
+    <!-- Members whose position this phone is not allowed to read, or cannot
+         reach: without this the map simply has fewer markers on it, and a
+         refusal looks exactly like a member who is not sharing. -->
+    <plurals name="map_out_of_reach">
+        <item quantity="one">%1$d member is not sharing with you right now.</item>
+        <item quantity="other">%1$d members are not sharing with you right now.</item>
     </plurals>
 
     <plurals name="map_more_count">

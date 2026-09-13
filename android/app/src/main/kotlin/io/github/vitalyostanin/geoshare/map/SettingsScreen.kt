@@ -4,11 +4,15 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.safeDrawing
+import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.Checkbox
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.HorizontalDivider
@@ -40,38 +44,28 @@ import java.time.Instant
  */
 @Composable
 fun SettingsScreen(
-    sharing: Boolean,
-    /** The permission the member has to grant on the settings screen, if any. */
-    permissionNotice: PermissionStep?,
-    /** What the application is painted in, as the member last asked for it. */
-    theme: ThemeChoice,
+    settings: SettingsState,
+    actions: SettingsActions,
     /** Everyone with a profile, so that the permissions can be given by name. */
     profiles: Map<String, MemberProfile>,
     ownMemberId: String,
-    /** The permissions this member has given, by the member each was given to. */
-    sharedWith: Map<String, Instant>,
-    /** Whether the phone leaves the application out of its battery saving. */
-    batteryUnrestricted: Boolean,
-    /** Whether this phone has a startup list of its own to open. */
-    startupScreen: Boolean,
-    /** Whether the member says that list is already set. */
-    startupSet: Boolean,
-    onSharingChange: (Boolean) -> Unit,
-    onThemeChange: (ThemeChoice) -> Unit,
-    onShare: (String, ShareSpan) -> Unit,
-    onOpenSettings: () -> Unit,
-    onAllowBattery: () -> Unit,
-    onOpenStartup: () -> Unit,
-    onStartupSetChange: (Boolean) -> Unit,
-    onSignOut: () -> Unit,
+    /** The clock the screen reads, so that a permission runs out while it is open. */
+    now: Instant,
     onClose: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     Surface(modifier = modifier.fillMaxSize()) {
         // Scrolled rather than fitted: the permissions are one row per member,
         // and a group large enough to need them is large enough to run off a
-        // phone screen.
-        Column(modifier = Modifier.verticalScroll(rememberScrollState())) {
+        // phone screen. The insets are taken inside the scrolling, so that the
+        // title clears the clock and the last row clears the gesture bar
+        // without the scrolled content being cut short of either.
+        Column(
+            modifier =
+            Modifier
+                .verticalScroll(rememberScrollState())
+                .windowInsetsPadding(WindowInsets.safeDrawing),
+        ) {
             Row(
                 modifier = Modifier.fillMaxWidth().padding(start = 16.dp, top = 8.dp, end = 8.dp),
                 verticalAlignment = Alignment.CenterVertically,
@@ -96,22 +90,22 @@ fun SettingsScreen(
             ) {
                 Text(text = stringResource(R.string.sharing_action), modifier = Modifier.weight(1f))
 
-                Switch(checked = sharing, onCheckedChange = onSharingChange)
+                Switch(checked = settings.sharing, onCheckedChange = actions.onSharingChange)
             }
 
             // Shown once the system has stopped asking: from there on the
             // answer is changed on the settings screen, and saying so beats an
             // inert switch.
-            if (sharing && permissionNotice != null) {
+            if (settings.sharing && settings.permissionNotice != null) {
                 Text(
-                    text = stringResource(permissionMessage(permissionNotice)),
+                    text = stringResource(permissionMessage(settings.permissionNotice)),
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.error,
                     modifier = Modifier.padding(horizontal = 16.dp),
                 )
 
                 TextButton(
-                    onClick = onOpenSettings,
+                    onClick = actions.onOpenSettings,
                     modifier = Modifier.padding(horizontal = 8.dp),
                 ) {
                     Text(text = stringResource(R.string.permission_open_settings))
@@ -123,28 +117,32 @@ fun SettingsScreen(
             VisibilitySection(
                 profiles = profiles,
                 ownMemberId = ownMemberId,
-                sharedWith = sharedWith,
-                onShare = onShare,
+                sharedWith = settings.sharedWith,
+                now = now,
+                onShare = actions.onShare,
             )
 
             HorizontalDivider()
 
             BackgroundWorkSection(
-                batteryUnrestricted = batteryUnrestricted,
-                startupScreen = startupScreen,
-                startupSet = startupSet,
-                onAllowBattery = onAllowBattery,
-                onOpenStartup = onOpenStartup,
-                onStartupSetChange = onStartupSetChange,
+                batteryUnrestricted = settings.batteryUnrestricted,
+                startupScreen = settings.startupScreen,
+                startupSet = settings.startupSet,
+                onAllowBattery = actions.onAllowBattery,
+                onOpenStartup = actions.onOpenStartup,
+                onStartupSetChange = actions.onStartupSetChange,
             )
 
             HorizontalDivider()
 
-            AppearanceRow(theme = theme, onThemeChange = onThemeChange)
+            AppearanceRow(theme = settings.theme, onThemeChange = actions.onThemeChange)
 
             HorizontalDivider()
 
-            TextButton(onClick = onSignOut, modifier = Modifier.padding(horizontal = 8.dp)) {
+            TextButton(
+                onClick = actions.onSignOut,
+                modifier = Modifier.padding(horizontal = 8.dp),
+            ) {
                 Text(text = stringResource(R.string.sign_out_action))
             }
         }
@@ -210,7 +208,15 @@ private fun BackgroundWorkSection(
             Text(text = stringResource(R.string.background_startup_open))
         }
 
-        Switch(checked = startupSet, onCheckedChange = onStartupSetChange)
+        // A tick rather than a switch, and a word beside it: the switches on
+        // this screen change what the phone does, and this one only records
+        // that the member has been to a screen nothing here can read.
+        Text(
+            text = stringResource(R.string.background_startup_done),
+            style = MaterialTheme.typography.bodyMedium,
+        )
+
+        Checkbox(checked = startupSet, onCheckedChange = onStartupSetChange)
     }
 
     // Said under the row rather than in a dialog: it explains why this one row

@@ -16,6 +16,9 @@
        dark enough to carry white, the dark theme's is not. */
     --on-link: #ffffff;
     --edge: rgba(128, 128, 128, 0.4);
+    /* What a refusal is written in. Dark red on white; a dark red on a dark
+       card is a word the eye slides off, hence a night value of its own. */
+    --error: #c62828;
     /* A charge that is growing: the one reassuring thing on a card, and the
        only colour on the page that carries a meaning of its own. */
     --charging: #2e7d32;
@@ -28,6 +31,7 @@
     --night-link: #90caf9;
     --night-on-link: #0b1f2e;
     --night-edge: rgba(160, 160, 170, 0.35);
+    --night-error: #ef9a9a;
     --night-charging: #81c784;
 
     /* A tile is a picture drawn light on somebody else's server, so a dark map
@@ -51,6 +55,7 @@
         --link: var(--night-link);
         --on-link: var(--night-on-link);
         --edge: var(--night-edge);
+        --error: var(--night-error);
         --charging: var(--night-charging);
         --canvas-filter: var(--night-canvas);
     }
@@ -64,6 +69,7 @@
     --link: var(--night-link);
     --on-link: var(--night-on-link);
     --edge: var(--night-edge);
+    --error: var(--night-error);
     --charging: var(--night-charging);
     --canvas-filter: var(--night-canvas);
 }
@@ -85,7 +91,12 @@ body {
     margin: 0;
     display: flex;
     flex-direction: column;
+    /* Two heights, the second of which wins where it is understood: on a phone
+       100vh is the window with the address bar gone, so the column stands
+       taller than what is on screen and the panel — the way between members —
+       ends up below the bottom edge with no way to scroll to it. */
     height: 100vh;
+    height: 100dvh;
     /* The account control is placed against the page, and a static body would
        send it to the viewport's corner rather than the map's. */
     position: relative;
@@ -105,10 +116,23 @@ body {
 
 #panel {
     display: flex;
-    align-items: center;
+    /* The note stands above the strip rather than beside it. */
+    flex-direction: column;
+    align-items: stretch;
     gap: 0.5rem;
     padding: 0.5rem;
-    border-top: 1px solid rgba(128, 128, 128, 0.4);
+    /* Clear of the bar a phone draws its gestures on. */
+    padding-bottom: calc(0.5rem + env(safe-area-inset-bottom, 0px));
+    border-top: 1px solid var(--edge);
+}
+
+/* What the strip cannot say by being full: nobody yet, nothing reachable, or
+   an answer still on its way. */
+#panel-note {
+    margin: 0;
+    padding: 0 0.2rem;
+    font-size: 0.85rem;
+    opacity: 0.7;
 }
 
 #members {
@@ -118,12 +142,19 @@ body {
     flex: 1;
 }
 
+/* A strip wider than the window hides whoever is past the right edge, and on a
+   touch screen there is no scrollbar to say so. The fade is the same promise a
+   scrollbar used to make: there is more this way. */
+#members.scrollable {
+    mask-image: linear-gradient(to right, #000 calc(100% - 2rem), transparent);
+}
+
 .member {
     display: flex;
     align-items: center;
     gap: 0.4rem;
     padding: 0.4rem 0.6rem;
-    border: 1px solid rgba(128, 128, 128, 0.4);
+    border: 1px solid var(--edge);
     border-radius: 0.6rem;
     background: transparent;
     color: inherit;
@@ -183,7 +214,7 @@ body {
 }
 
 .error {
-    color: #c62828;
+    color: var(--error);
 }
 
 button {
@@ -298,7 +329,7 @@ button {
     width: 100%;
     padding: 0.35rem 0.2rem;
     border: 0;
-    border-top: 1px solid rgba(0, 0, 0, 0.08);
+    border-top: 1px solid var(--edge);
     background: none;
     font: inherit;
     text-align: left;
@@ -306,7 +337,9 @@ button {
 }
 
 .group-row:hover {
-    background: rgba(0, 0, 0, 0.04);
+    /* Mixed from the text colour rather than laid on in black: on a dark card
+       black over dark adds nothing, and the row stays unmarked. */
+    background: color-mix(in srgb, var(--on-surface) 8%, transparent);
 }
 
 .group-name {
@@ -319,6 +352,11 @@ button {
 .group-age {
     opacity: 0.7;
     white-space: nowrap;
+}
+
+/* The same fading the strip gives an age nobody should read as current. */
+.group-age.stale {
+    opacity: 0.45;
 }
 
 .group-back {
@@ -364,9 +402,17 @@ button {
     background-color: var(--surface);
     background-size: cover;
     background-position: center;
+    /* Ringed in the colour of the pin, as the face in the strip is: one member
+       is one drawing wherever they are named. */
+    box-shadow: 0 0 0 2px var(--ring, #ffffff);
     display: grid;
     place-items: center;
     font-weight: 700;
+}
+
+/* Grey like the pin of a member who has gone quiet. */
+.detail-face.stale {
+    filter: grayscale(1);
 }
 
 .detail-device {
@@ -413,7 +459,7 @@ button {
     height: 2.5rem;
     padding: 0;
     border-radius: 50%;
-    border: 1px solid rgba(128, 128, 128, 0.4);
+    border: 1px solid var(--edge);
     background: var(--surface);
     color: var(--on-surface);
     font-weight: 600;
@@ -441,7 +487,7 @@ button {
     min-width: 12rem;
     padding: 0.5rem;
     border-radius: 0.6rem;
-    border: 1px solid rgba(128, 128, 128, 0.4);
+    border: 1px solid var(--edge);
     background: canvas;
     box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
 }

@@ -34,6 +34,12 @@ class FileLogTest {
 
         log.append('I', "geoshare.app", "started", at = moment)
 
+        // Reading is what waits for the lines already said to reach the file:
+        // the writing itself happens on a thread of the log's own, so that the
+        // callers — all of them on the main thread — are not kept waiting on
+        // the disk.
+        log.read()
+
         assertTrue(File(directory, "current.log").exists())
     }
 

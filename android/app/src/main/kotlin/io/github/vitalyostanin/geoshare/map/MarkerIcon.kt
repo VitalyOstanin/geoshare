@@ -119,7 +119,18 @@ fun faceSize(context: Context): Int = dpToPx(context, FACE_DP)
  * recognised by; an empty name leaves the pin with a face-shaped blank, which
  * is still a pin of their colour.
  */
-fun memberInitial(name: String): String = name.trim().take(1).uppercase()
+fun memberInitial(name: String): String {
+    val trimmed = name.trim()
+
+    if (trimmed.isEmpty()) {
+        return ""
+    }
+
+    // By what a reader sees as one character rather than by what Java stores
+    // as one: a name beginning with an emoji has it written in two units here
+    // and in one on the page, and half of a pair is not a letter at all.
+    return trimmed.substring(0, trimmed.offsetByCodePoints(0, 1)).uppercase()
+}
 
 /**
  * How many of a group's faces are drawn, the rest being left to the counter.

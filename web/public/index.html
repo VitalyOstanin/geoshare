@@ -7,25 +7,25 @@
         <!-- Nothing to show yet, and an empty one is quieter than a 404 on
              every load. Replaced when the application gets its icon. -->
         <link rel="icon" href="data:," />
-        <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/maplibre-gl@6.9.0/dist/maplibre-gl.css" />
+        <!-- Checked against its hash: the file comes from somebody else's
+             server, and whatever it carries runs against a page that is
+             signed in. The module beside it cannot be checked this way — an
+             import has no place to put a hash — and the policy in
+             firebase.json is what holds it to the same one source. -->
+        <link
+            rel="stylesheet"
+            href="https://cdn.jsdelivr.net/npm/maplibre-gl@6.9.0/dist/maplibre-gl.css"
+            integrity="sha384-Q5Blg3vUVAlUKqIPJYz7wGnz40Vwrx4pVuFVicI73+8c/26Zr5hhckfuIiIUflLE"
+            crossorigin="anonymous"
+        />
         <link rel="stylesheet" href="styles.css" />
 
         <!-- The theme has to be on the element before the page is first
              painted, and a module runs after that: a white flash on the way
              into a dark map is the one thing the setting exists to avoid.
-             Hence the key spelled out here as well as in lib/theme.js. -->
-        <script>
-            try {
-                const theme = localStorage.getItem('geoshare.theme');
-
-                if (theme === 'light' || theme === 'dark') {
-                    document.documentElement.dataset.theme = theme;
-                }
-            } catch {
-                // A browser keeping no site data has no answer to read, and
-                // the system's own is what the page falls back to anyway.
-            }
-        </script>
+             A file rather than a few lines written here, so that the page can
+             be served under a policy that allows no inline script at all. -->
+        <script src="boot-theme.js"></script>
     </head>
     <body>
         <section id="sign-in">
@@ -64,6 +64,10 @@
         </div>
 
         <section id="panel" hidden>
+            <!-- One line for everything the strip cannot say by being full:
+                 an answer still on its way, a group where nobody shares yet,
+                 a position the group refuses us, a connection that is gone. -->
+            <p id="panel-note" hidden></p>
             <div id="members"></div>
         </section>
 

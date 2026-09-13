@@ -12,12 +12,14 @@ import {
     shownPositions,
 } from './lib/map.js';
 import {
+    STALE_COLOUR,
     memberColour,
     memberName,
     orderedForNavigation,
     positionDocuments,
 } from './lib/members.js';
 import { applyTheme, readTheme, writeTheme } from './lib/theme.js';
+import { WORDS } from './lib/words.js';
 import {
     keepWatching,
     leave,
@@ -37,6 +39,7 @@ const elements = {
     signInError: document.querySelector('#sign-in-error'),
     map: document.querySelector('#map'),
     panel: document.querySelector('#panel'),
+    panelNote: document.querySelector('#panel-note'),
     members: document.querySelector('#members'),
     account: document.querySelector('#account'),
     accountButton: document.querySelector('#account-button'),
@@ -63,6 +66,13 @@ const state = {
     positionDocuments: null,
     stopProfiles: null,
     stopWatching: null,
+    // How many of the documents the profiles name are being refused to us. A
+    // refusal is a member no longer sharing, an expired permission or a rule
+    // saying no, and the panel should say so rather than quietly lose a face.
+    refused: 0,
+    // Whether the group itself is out of reach: the profiles are what every
+    // other subscription is built from, so their failure is the connection.
+    reachable: true,
 };
 
 elements.signInButton.addEventListener('click', async () => {
@@ -71,13 +81,34 @@ elements.signInButton.addEventListener('click', async () => {
     try {
         await signIn();
     } catch (error) {
-        // A closed popup is the viewer saying "not now"; answering it with an
-        // error message would be arguing.
-        if (error.code !== 'auth/popup-closed-by-user' && error.code !== 'auth/cancelled-popup-request') {
-            elements.signInError.textContent = 'Sign-in did not go through. Try again.';
-        }
+        elements.signInError.textContent = signInTrouble(error);
     }
 });
+
+/**
+ * What to say when signing in did not happen.
+ *
+ * The same four answers the phone gives, because the same four things go
+ * wrong: the viewer changed their mind, the network is not there, this build
+ * is pointed at a project that does not want it, or something else.
+ */
+function signInTrouble(error) {
+    // A closed popup is the viewer saying "not now"; answering it with an
+    // error message would be arguing.
+    if (error.code === 'auth/popup-closed-by-user' || error.code === 'auth/cancelled-popup-request') {
+        return '';
+    }
+
+    if (error.code === 'auth/network-request-failed') {
+        return WORDS.signInOffline;
+    }
+
+    if (error.code === 'auth/unauthorized-domain' || error.code === 'auth/operation-not-allowed') {
+        return WORDS.signInMisconfigured;
+    }
+
+    return WORDS.signInFailed;
+}
 
 elements.signOutButton.addEventListener('click', () => leave());
 
@@ -152,12 +183,19 @@ function start() {
     // screen goes away that measurement is of a hidden box.
     remeasure(state.view);
 
-    state.stopProfiles ??= watchProfiles((profiles) => {
-        state.profiles = profiles;
-        publishProfile(state.member, profiles.get(state.member.memberId), () => {});
-        followPositions(profiles);
-        render();
-    }, () => {});
+    state.stopProfiles ??= watchProfiles(
+        (profiles) => {
+            state.profiles = profiles;
+            state.reachable = true;
+            publishProfile(state.member, profiles.get(state.member.memberId), () => {});
+            followPositions(profiles);
+            render();
+        },
+        () => {
+            state.reachable = false;
+            render();
+        },
+    );
 
     state.stopWatching ??= keepWatching(state.member.memberId, () => {});
 }
@@ -183,10 +221,17 @@ function followPositions(profiles) {
 
     state.stopPositions?.();
     state.positionDocuments = wanted;
-    state.stopPositions = watchPositions(documents, (positions) => {
-        state.positions = positions;
-        render();
-    });
+    state.stopPositions = watchPositions(
+        documents,
+        (positions) => {
+            state.positions = positions;
+            render();
+        },
+        (refused) => {
+            state.refused = refused;
+            render();
+        },
+    );
 }
 
 function stop() {
@@ -202,6 +247,8 @@ function stop() {
     state.stopWatching = null;
 
     state.positions = [];
+    state.refused = 0;
+    state.reachable = true;
 
     elements.signIn.hidden = false;
     elements.map.hidden = true;
@@ -217,7 +264,7 @@ function stop() {
  * leaves the letter showing rather than an empty circle.
  */
 function showAccount(member) {
-    elements.accountName.textContent = member.name ?? 'Signed in';
+    elements.accountName.textContent = member.name ?? WORDS.signedIn;
     elements.accountInitial.textContent = (member.name ?? '?').slice(0, 1).toUpperCase();
 
     elements.accountPicture.hidden = !member.picture;
@@ -232,6 +279,14 @@ function showAccount(member) {
 
 function render() {
     if (!state.member || !state.view) {
+        return;
+    }
+
+    // A tab nobody can see is a tab whose ages nobody reads: the whole panel
+    // and every card would be built again for a hidden window, and the answer
+    // would be stale by the time it is looked at anyway. The redraw on the way
+    // back is what makes this safe.
+    if (document.hidden) {
         return;
     }
 
@@ -252,6 +307,57 @@ function render() {
             memberEntry(position, labels, pictures, shown, now),
         ),
     );
+
+    showNote();
+    showStripEdge();
+}
+
+/**
+ * Says, by fading the right edge, that the strip holds more than it shows.
+ *
+ * Measured rather than guessed: the strip is as wide as the window, and how
+ * many members fit depends on the length of their names.
+ */
+function showStripEdge() {
+    const more = elements.members.scrollWidth > elements.members.clientWidth + 1;
+
+    elements.members.classList.toggle('scrollable', more);
+}
+
+/**
+ * The one line under the strip, for what the strip itself cannot say.
+ *
+ * The order is by how much it matters: a group out of reach explains every
+ * other emptiness, a refusal explains a missing face, and an empty strip on a
+ * reachable group is the honest "nobody yet" the phone shows in the middle of
+ * its map. Waiting is told apart from empty by the profiles never having
+ * arrived.
+ */
+function showNote() {
+    const note = noteText();
+
+    elements.panelNote.textContent = note;
+    elements.panelNote.hidden = note === '';
+}
+
+function noteText() {
+    if (!state.reachable) {
+        return WORDS.unreachable;
+    }
+
+    if (state.profiles === null) {
+        return WORDS.looking;
+    }
+
+    if (state.refused > 0 && state.positions.length === 0) {
+        return WORDS.nobodySharing;
+    }
+
+    if (state.refused > 0) {
+        return state.refused === 1 ? WORDS.oneMoreRefused : WORDS.moreRefused(state.refused);
+    }
+
+    return state.positions.length === 0 ? WORDS.nobodyYet : '';
 }
 
 /**
@@ -314,7 +420,10 @@ function memberEntry(position, labels, pictures, shown, now) {
     entry.addEventListener('click', () => lookAt(state.view, position));
 
     const stale = isStale(position.knownAt, now);
-    const colour = memberColour(position.memberId);
+    // The same expression the pin and the card use, rather than colour here
+    // and a filter in the stylesheet: one rule written two ways is one rule
+    // that can be half-changed.
+    const colour = stale ? STALE_COLOUR : memberColour(position.memberId);
     const label = labels.get(position.positionId) ?? position.memberId;
 
     // The same face the pin on the map carries, ringed in the colour of that
@@ -350,6 +459,34 @@ function memberEntry(position, labels, pictures, shown, now) {
 // worth noticing — is exactly the one whose entry no write would ever refresh.
 setInterval(render, AGE_TICK_MS);
 
+// The strip holds a different number of members at a different width, and the
+// fade at its edge has to follow.
+window.addEventListener('resize', showStripEdge);
+
+// A hidden tab is not redrawn, so the first thing to do on the way back is to
+// catch the ages up with the clock.
+document.addEventListener('visibilitychange', () => {
+    if (!document.hidden) {
+        render();
+    }
+});
+
 // Leaving the claim behind would hold every phone in its fifteen-second mode
-// for a tab nobody has open any more.
-window.addEventListener('pagehide', () => state.stopWatching?.());
+// for a tab nobody has open any more. The field is cleared with it: a page put
+// aside and taken back out again is restored rather than loaded, and the claim
+// has to be made anew — a field still holding the stopped one would keep the
+// page a viewer in name only.
+window.addEventListener('pagehide', () => {
+    state.stopWatching?.();
+    state.stopWatching = null;
+});
+
+// Restored from the back-forward cache, which is what going back to the page
+// does on a phone. Nothing else runs then: the account has not changed, so the
+// sign-in listener stays quiet.
+window.addEventListener('pageshow', () => {
+    if (state.member) {
+        state.stopWatching ??= keepWatching(state.member.memberId, () => {});
+        render();
+    }
+});

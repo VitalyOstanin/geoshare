@@ -8,6 +8,7 @@ import android.os.Bundle
 import android.provider.Settings
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.fillMaxSize
@@ -33,6 +34,8 @@ import io.github.vitalyostanin.geoshare.log.AppLog
 import io.github.vitalyostanin.geoshare.map.KeepWatching
 import io.github.vitalyostanin.geoshare.map.MapScreen
 import io.github.vitalyostanin.geoshare.map.PublishProfile
+import io.github.vitalyostanin.geoshare.map.SettingsActions
+import io.github.vitalyostanin.geoshare.map.SettingsState
 import io.github.vitalyostanin.geoshare.map.publishSharing
 import io.github.vitalyostanin.geoshare.map.rememberMemberPositions
 import io.github.vitalyostanin.geoshare.map.rememberMemberProfiles
@@ -73,6 +76,9 @@ class MainActivity : ComponentActivity() {
     /** How the phone stands on restricting us, read again every time the screen comes up. */
     private var batteryFree by mutableStateOf(false)
 
+    /** Whether this phone has a startup list of its own, asked once at the start. */
+    private var startupAvailable = false
+
     /** The step the member has to finish on the settings screen, if any. */
     private var permissionNotice by mutableStateOf<PermissionStep?>(null)
 
@@ -97,6 +103,18 @@ class MainActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+
+        // Said out loud rather than left to the platform, which from this
+        // target version draws the window under the bars whatever anybody
+        // says. Saying it here is what makes the padding below a decision
+        // instead of a repair.
+        enableEdgeToEdge()
+
+        // Asked once: the answer is the set of applications installed by the
+        // maker of the phone, which does not change while the screen is open,
+        // and asking inside the drawing put five questions to the package
+        // manager on every position that arrived.
+        startupAvailable = startupScreen(this) != null
 
         signIn =
             SignInController(
@@ -137,7 +155,7 @@ class MainActivity : ComponentActivity() {
                         // screen has nothing left to say.
                         is AuthState.SignedIn -> {
                             val profiles by rememberMemberProfiles()
-                            val positions by rememberMemberPositions(profiles)
+                            val onTheMap by rememberMemberPositions(profiles)
                             val sharedWith by rememberOwnSharedWith(current.memberId)
 
                             KeepWatching(current.memberId, device.id)
@@ -150,52 +168,62 @@ class MainActivity : ComponentActivity() {
                             )
 
                             MapScreen(
-                                positions = positions,
+                                positions = onTheMap.positions,
+                                // Those whose position this phone is refused:
+                                // an empty map with a reason is not the same
+                                // thing as an empty map without one.
+                                outOfReach = onTheMap.outOfReach,
                                 profiles = profiles.orEmpty(),
                                 ownMemberId = current.memberId,
                                 ownDisplayName = current.displayName,
                                 ownPictureUrl = current.pictureUrl,
-                                sharing = sharingOn,
-                                permissionNotice = permissionNotice,
-                                theme = theme,
-                                sharedWith = sharedWith,
-                                batteryUnrestricted = batteryFree,
-                                startupScreen = startupScreen(this@MainActivity) != null,
-                                startupSet = startupSet,
-                                onSharingChange = { wanted ->
-                                    sharingOn = wanted
-                                    applySharing(wanted)
-                                },
-                                onThemeChange = { wanted ->
-                                    theme = wanted
-                                    appearance.choice = wanted
-                                },
-                                // Written into the profile, and left to be
-                                // read back: the phones of a member share the
-                                // same permissions, so the answer has to come
-                                // from where all of them look for it.
-                                onShare = { readerId, span ->
-                                    lifecycleScope.launch {
-                                        publishSharing(
-                                            memberId = current.memberId,
-                                            sharedWith =
-                                            withShare(
-                                                sharedWith = sharedWith,
-                                                readerId = readerId,
-                                                span = span,
-                                                now = Instant.now(),
-                                            ),
-                                        )
-                                    }
-                                },
-                                onOpenSettings = ::openApplicationSettings,
-                                onAllowBattery = ::askBatteryExemption,
-                                onOpenStartup = ::openStartupScreen,
-                                onStartupSetChange = { set ->
-                                    startupSet = set
-                                    backgroundWork.startupSet = set
-                                },
-                                onSignOut = { lifecycleScope.launch { signIn.signOut() } },
+                                settings =
+                                SettingsState(
+                                    sharing = sharingOn,
+                                    permissionNotice = permissionNotice,
+                                    theme = theme,
+                                    sharedWith = sharedWith,
+                                    batteryUnrestricted = batteryFree,
+                                    startupScreen = startupAvailable,
+                                    startupSet = startupSet,
+                                ),
+                                actions =
+                                SettingsActions(
+                                    onSharingChange = { wanted ->
+                                        sharingOn = wanted
+                                        applySharing(wanted)
+                                    },
+                                    onThemeChange = { wanted ->
+                                        theme = wanted
+                                        appearance.choice = wanted
+                                    },
+                                    // Written into the profile, and left to be
+                                    // read back: the phones of a member share
+                                    // the same permissions, so the answer has
+                                    // to come from where all of them look.
+                                    onShare = { readerId, span ->
+                                        lifecycleScope.launch {
+                                            publishSharing(
+                                                memberId = current.memberId,
+                                                sharedWith =
+                                                withShare(
+                                                    sharedWith = sharedWith,
+                                                    readerId = readerId,
+                                                    span = span,
+                                                    now = Instant.now(),
+                                                ),
+                                            )
+                                        }
+                                    },
+                                    onOpenSettings = ::openApplicationSettings,
+                                    onAllowBattery = ::askBatteryExemption,
+                                    onOpenStartup = ::openStartupScreen,
+                                    onStartupSetChange = { set ->
+                                        startupSet = set
+                                        backgroundWork.startupSet = set
+                                    },
+                                    onSignOut = { lifecycleScope.launch { signIn.signOut() } },
+                                ),
                             )
                         }
 

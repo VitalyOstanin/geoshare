@@ -42,20 +42,35 @@ fun shareUntil(span: ShareSpan, now: Instant): Instant? = when (span) {
 }
 
 /**
- * Which choice a permission that stands answers to.
+ * How a permission stands, which is not the same set of answers as the spans
+ * it can be given for.
  *
  * A permission that has run out reads as none: it is the same thing to the
  * reader, whose marker is gone either way, and the screen should not offer to
- * end something that has already ended.
+ * end something that has already ended. A permission ending at some point
+ * today is not one of the spans either — it was given hours ago and has been
+ * counting down since — so it carries the moment it ends, and the screen says
+ * that instead.
  *
- * A permission ending at some point today is not one of the choices — it was
- * given hours ago and has been counting down since — so it answers to none of
- * them, and the screen says when it ends instead.
+ * Three answers of its own rather than a span that might be missing: a `when`
+ * over spans had to keep a branch for the three that cannot arrive, which is a
+ * branch nothing can be said about and nothing can test.
  */
-fun spanOf(until: Instant?, now: Instant): ShareSpan? = when {
-    until == null || !until.isAfter(now) -> ShareSpan.None
-    until.isAfter(ENDLESS_FROM) -> ShareSpan.Forever
-    else -> null
+sealed interface Standing {
+    /** Not shared, or shared until a moment that has passed. */
+    data object Never : Standing
+
+    /** Shared with no end named. */
+    data object Endless : Standing
+
+    /** Shared until this moment, which is still ahead. */
+    data class Until(val moment: Instant) : Standing
+}
+
+fun standingOf(until: Instant?, now: Instant): Standing = when {
+    until == null || !until.isAfter(now) -> Standing.Never
+    until.isAfter(ENDLESS_FROM) -> Standing.Endless
+    else -> Standing.Until(until)
 }
 
 /**

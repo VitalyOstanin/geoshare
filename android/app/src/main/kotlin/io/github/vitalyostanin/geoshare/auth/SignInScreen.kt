@@ -2,8 +2,13 @@ package io.github.vitalyostanin.geoshare.auth
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.safeDrawing
+import androidx.compose.foundation.layout.windowInsetsPadding
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
@@ -32,7 +37,17 @@ fun SignInScreen(
     modifier: Modifier = Modifier,
 ) {
     Column(
-        modifier = modifier.fillMaxSize().padding(24.dp),
+        modifier =
+        modifier
+            .fillMaxSize()
+            // Scrolled as well as centred: sideways, on a split screen or at a
+            // large system font, the column stands taller than the window, and
+            // without this the button at the bottom of it cannot be reached.
+            .verticalScroll(rememberScrollState())
+            // Clear of the clock and of the gesture bar: from this target
+            // version the window is drawn under both.
+            .windowInsetsPadding(WindowInsets.safeDrawing)
+            .padding(24.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp, Alignment.CenterVertically),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {

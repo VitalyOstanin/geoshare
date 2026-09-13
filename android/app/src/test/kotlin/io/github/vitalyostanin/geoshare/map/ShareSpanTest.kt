@@ -38,22 +38,25 @@ class ShareSpanTest {
 
     @Test
     fun `a permission without an end reads back as one`() {
-        assertEquals(ShareSpan.Forever, spanOf(FOREVER, now))
+        assertEquals(Standing.Endless, standingOf(FOREVER, now))
     }
 
     // The same thing to the reader either way: the marker is gone, and the
     // screen must not offer to end what has already ended.
     @Test
     fun `a permission that has run out reads as none`() {
-        assertEquals(ShareSpan.None, spanOf(now.minus(Duration.ofMinutes(1)), now))
-        assertEquals(ShareSpan.None, spanOf(null, now))
+        assertEquals(Standing.Never, standingOf(now.minus(Duration.ofMinutes(1)), now))
+        assertEquals(Standing.Never, standingOf(null, now))
     }
 
     // Given hours ago and counting down since: no choice describes it, and the
     // screen says the time it ends rather than naming a span.
     @Test
     fun `a permission part way through answers to no choice`() {
-        assertNull(spanOf(now.plus(Duration.ofMinutes(20)), now))
+        assertEquals(
+            Standing.Until(now.plus(Duration.ofMinutes(20))),
+            standingOf(now.plus(Duration.ofMinutes(20)), now),
+        )
     }
 
     @Test

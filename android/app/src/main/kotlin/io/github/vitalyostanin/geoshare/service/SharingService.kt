@@ -47,6 +47,32 @@ class SharingService : LifecycleService() {
     private var collection: Job? = null
 
     /**
+     * How long the service waits for a session before admitting it has none.
+     *
+     * A service started at boot can be quicker than the restoring of the
+     * signed-in account, and refusing to work because of a second's difference
+     * would mean a phone that shares nothing until somebody opens the
+     * application.
+     */
+    private var sessionWait: Job? = null
+
+    /**
+     * The account, whenever there is one.
+     *
+     * Registered rather than read once: the answer at the moment the service
+     * starts is not the answer a second later, and a service holding up a
+     * notification that says it is sharing has to be either sharing or gone.
+     */
+    private val session =
+        FirebaseAuth.AuthStateListener { auth ->
+            if (auth.currentUser != null) {
+                sessionWait?.cancel()
+                sessionWait = null
+                startCollecting()
+            }
+        }
+
+    /**
      * Everything a write outside the collection loop needs: where the phone
      * was last seen to be, how it was collecting at the time and what writes
      * its documents. Held on the service because the cable is pulled at a
@@ -71,11 +97,22 @@ class SharingService : LifecycleService() {
             }
         }
 
+    override fun onCreate() {
+        super.onCreate()
+        FirebaseAuth.getInstance().addAuthStateListener(session)
+    }
+
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         super.onStartCommand(intent, flags, startId)
 
         if (intent?.action == ACTION_STOP) {
             AppLog.i(TAG, "stopping on request")
+            // The notification and the switch on the settings screen are the
+            // same statement, and stopping through one of them has to turn the
+            // other off: otherwise the switch goes on saying we are sharing,
+            // and the next time the application is opened — or the phone is
+            // restarted — the service starts itself again.
+            SharingSetting(this).enabled = false
             stopSelf()
 
             return START_NOT_STICKY
@@ -95,6 +132,7 @@ class SharingService : LifecycleService() {
     }
 
     override fun onDestroy() {
+        FirebaseAuth.getInstance().removeAuthStateListener(session)
         collection?.cancel()
         runCatching { unregisterReceiver(power) }
         AppLog.i(TAG, "stopped")
@@ -161,7 +199,8 @@ class SharingService : LifecycleService() {
         val memberId = FirebaseAuth.getInstance().currentUser?.uid
 
         if (memberId == null) {
-            AppLog.w(TAG, "no session, nothing to write as")
+            AppLog.w(TAG, "no session yet, waiting for one")
+            awaitSession()
 
             return
         }
@@ -235,6 +274,31 @@ class SharingService : LifecycleService() {
 
         return combine(watchers, reviews) { untils, _ -> currentMode(untils) }
             .distinctUntilChanged()
+    }
+
+    /**
+     * Gives the session a minute to turn up, and stops the service if it does
+     * not.
+     *
+     * Collecting nothing while a notification says a position is being shared
+     * is the one outcome to avoid: it is a promise on the screen with nothing
+     * behind it. The listener starts the collection the moment the account is
+     * restored, and this is what happens when it never is.
+     */
+    private fun awaitSession() {
+        if (sessionWait?.isActive == true) {
+            return
+        }
+
+        sessionWait =
+            lifecycleScope.launch {
+                delay(SESSION_WAIT.toMillis())
+
+                if (FirebaseAuth.getInstance().currentUser == null) {
+                    AppLog.w(TAG, "no session turned up, stopping rather than promising to share")
+                    stopSelf()
+                }
+            }
     }
 
     private suspend fun firstPosition(mode: CollectionMode): Fix? {
@@ -335,6 +399,9 @@ class SharingService : LifecycleService() {
          * mode for minutes after the last watcher was gone.
          */
         private val MODE_REVIEW: Duration = WATCH_AHEAD
+
+        /** How long a freshly started service waits for the account to be restored. */
+        private val SESSION_WAIT: Duration = Duration.ofMinutes(1)
 
         /** What a phone that will not say counts as, so it is not treated as flat. */
         private const val FULL_BATTERY = 100

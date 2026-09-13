@@ -1,6 +1,7 @@
 package io.github.vitalyostanin.geoshare.map
 
 import android.graphics.Bitmap
+import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -8,17 +9,22 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
@@ -45,8 +51,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import io.github.vitalyostanin.geoshare.R
-import io.github.vitalyostanin.geoshare.permission.PermissionStep
-import io.github.vitalyostanin.geoshare.service.ThemeChoice
+import io.github.vitalyostanin.geoshare.collection.modeLabel
 import kotlinx.coroutines.delay
 import java.time.Instant
 import java.time.ZoneId
@@ -83,32 +88,17 @@ private val LIST_MAX_HEIGHT = 220.dp
 @Composable
 fun MapScreen(
     positions: List<MemberPosition>,
+    /** How many members' positions this phone is being refused, if any. */
+    outOfReach: Int,
     /** What each member calls themselves, by member id; absent until they sign in. */
     profiles: Map<String, MemberProfile>,
     ownMemberId: String,
     ownDisplayName: String?,
     ownPictureUrl: String?,
-    sharing: Boolean,
-    /** The permission the member has to grant on the settings screen, if any. */
-    permissionNotice: PermissionStep?,
-    /** What the application is painted in, as the member last asked for it. */
-    theme: ThemeChoice,
-    /** The permissions this member has given, by the member each was given to. */
-    sharedWith: Map<String, Instant>,
-    /** Whether the phone leaves the application out of its battery saving. */
-    batteryUnrestricted: Boolean,
-    /** Whether this phone has a startup list of its own to open. */
-    startupScreen: Boolean,
-    /** Whether the member says that list is already set. */
-    startupSet: Boolean,
-    onSharingChange: (Boolean) -> Unit,
-    onThemeChange: (ThemeChoice) -> Unit,
-    onShare: (String, ShareSpan) -> Unit,
-    onOpenSettings: () -> Unit,
-    onAllowBattery: () -> Unit,
-    onOpenStartup: () -> Unit,
-    onStartupSetChange: (Boolean) -> Unit,
-    onSignOut: () -> Unit,
+    /** Everything the settings screen shows, which the map only carries through. */
+    settings: SettingsState,
+    /** What the settings screen can ask for, likewise. */
+    actions: SettingsActions,
     modifier: Modifier = Modifier,
 ) {
     val now by currentTime()
@@ -172,14 +162,33 @@ fun MapScreen(
         openedGroup = emptyList()
     }
 
+    // The way back out of whatever is open, in the order things were opened
+    // in: the card first, the settings screen after it, and the application
+    // itself only when nothing of ours is left on screen. Without these the
+    // gesture leaves the application from a settings screen, which is not what
+    // anybody means by it.
+    BackHandler(enabled = settingsOpen) { settingsOpen = false }
+    BackHandler(enabled = !settingsOpen && (opened != null || group.isNotEmpty())) {
+        openedPositionId = null
+        openedGroup = emptyList()
+    }
+
     Column(modifier = modifier.fillMaxSize()) {
-        Box(modifier = Modifier.fillMaxWidth().weight(1f)) {
+        BoxWithConstraints(modifier = Modifier.fillMaxWidth().weight(1f)) {
+            // Half the room above the strip: a card is a heading and five
+            // rows, and in a sideways window it would otherwise stand taller
+            // than the map it is a card about.
+            val cardHeight = maxHeight / 2
             MemberMap(
                 positions = positions,
                 names = names,
                 faces = faces,
                 ownMemberId = ownMemberId,
                 now = now,
+                // The tiles follow the screen they are looked at on: a white
+                // map under a dark card at night is a lamp in the face, which
+                // is the reason the page turns its own canvas over.
+                dark = MaterialTheme.colorScheme.surface.luminance() < HALF_LIT,
                 groupLabel = groupLabel,
                 focus = focus,
                 onSelect = { positionId ->
@@ -201,7 +210,13 @@ fun MapScreen(
                 displayName = ownDisplayName,
                 pictureUrl = ownPictureUrl,
                 onClick = { settingsOpen = true },
-                modifier = Modifier.align(Alignment.TopEnd).padding(12.dp),
+                // The map is drawn to the edges of the window on purpose; what
+                // stands over it is not, or the clock is what the member taps.
+                modifier =
+                Modifier
+                    .align(Alignment.TopEnd)
+                    .statusBarsPadding()
+                    .padding(12.dp),
             )
 
             if (opened != null) {
@@ -211,7 +226,11 @@ fun MapScreen(
                     face = faces[opened.memberId],
                     now = now,
                     onClose = { openedPositionId = null },
-                    modifier = Modifier.align(Alignment.BottomCenter).padding(12.dp),
+                    modifier =
+                    Modifier
+                        .align(Alignment.BottomCenter)
+                        .heightIn(max = cardHeight)
+                        .padding(12.dp),
                 )
             } else if (group.size > 1) {
                 GroupDetail(
@@ -224,7 +243,11 @@ fun MapScreen(
                         openedGroup = emptyList()
                     },
                     onClose = { openedGroup = emptyList() },
-                    modifier = Modifier.align(Alignment.BottomCenter).padding(12.dp),
+                    modifier =
+                    Modifier
+                        .align(Alignment.BottomCenter)
+                        .heightIn(max = cardHeight)
+                        .padding(12.dp),
                 )
             }
         }
@@ -233,9 +256,14 @@ fun MapScreen(
 
         if (members.isEmpty()) {
             Text(
-                text = stringResource(R.string.map_nobody_yet),
+                text =
+                if (outOfReach > 0) {
+                    pluralStringResource(R.plurals.map_out_of_reach, outOfReach, outOfReach)
+                } else {
+                    stringResource(R.string.map_nobody_yet)
+                },
                 style = MaterialTheme.typography.bodyMedium,
-                modifier = Modifier.padding(16.dp),
+                modifier = Modifier.navigationBarsPadding().padding(16.dp),
             )
         } else {
             MemberButtons(
@@ -251,29 +279,33 @@ fun MapScreen(
                 showAll = showAll,
                 onSelect = ::lookAt,
                 onToggleAll = { showAll = !showAll },
+                modifier = Modifier.navigationBarsPadding(),
             )
+
+            // A member whose position is refused simply has no marker, which
+            // reads as a member who is not sharing — and so does a phone that
+            // cannot reach the group at all. One line is the difference.
+            if (outOfReach > 0) {
+                Text(
+                    text = pluralStringResource(R.plurals.map_out_of_reach, outOfReach, outOfReach),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier =
+                    Modifier
+                        .navigationBarsPadding()
+                        .padding(horizontal = 16.dp, vertical = 4.dp),
+                )
+            }
         }
     }
 
     if (settingsOpen) {
         SettingsScreen(
-            sharing = sharing,
-            permissionNotice = permissionNotice,
-            theme = theme,
+            settings = settings,
+            actions = actions,
             profiles = profiles,
             ownMemberId = ownMemberId,
-            sharedWith = sharedWith,
-            batteryUnrestricted = batteryUnrestricted,
-            startupScreen = startupScreen,
-            startupSet = startupSet,
-            onSharingChange = onSharingChange,
-            onThemeChange = onThemeChange,
-            onShare = onShare,
-            onOpenSettings = onOpenSettings,
-            onAllowBattery = onAllowBattery,
-            onOpenStartup = onOpenStartup,
-            onStartupSetChange = onStartupSetChange,
-            onSignOut = onSignOut,
+            now = now,
             onClose = { settingsOpen = false },
         )
     }
@@ -291,47 +323,50 @@ private fun MemberButtons(
     showAll: Boolean,
     onSelect: (String) -> Unit,
     onToggleAll: () -> Unit,
+    modifier: Modifier = Modifier,
 ) {
     val onStrip = membersOnTheStrip(members.size)
     val shown = members.take(onStrip)
     val rest = members.drop(onStrip)
 
-    Row(
-        modifier = Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 8.dp),
-        horizontalArrangement = Arrangement.spacedBy(8.dp),
-    ) {
-        shown.forEach { member ->
-            MemberButton(
-                member = member,
-                name = names[member.positionId] ?: shortName(member.memberId),
-                face = faces[member.memberId],
-                shown = member.positionId in openCards,
-                now = now,
-                onSelect = onSelect,
-                modifier = Modifier.weight(1f),
-            )
-        }
-
-        if (rest.isNotEmpty()) {
-            MoreButton(
-                count = rest.size,
-                open = showAll,
-                onToggle = onToggleAll,
-                modifier = Modifier.weight(1f),
-            )
-        }
-    }
-
-    if (showAll && rest.isNotEmpty()) {
-        LazyColumn(modifier = Modifier.fillMaxWidth().heightIn(max = LIST_MAX_HEIGHT)) {
-            items(rest, key = { it.positionId }) { member ->
-                MemberRow(
+    Column(modifier = modifier) {
+        Row(
+            modifier = Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 8.dp),
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
+            shown.forEach { member ->
+                MemberButton(
                     member = member,
                     name = names[member.positionId] ?: shortName(member.memberId),
                     face = faces[member.memberId],
+                    shown = member.positionId in openCards,
                     now = now,
                     onSelect = onSelect,
+                    modifier = Modifier.weight(1f),
                 )
+            }
+
+            if (rest.isNotEmpty()) {
+                MoreButton(
+                    count = rest.size,
+                    open = showAll,
+                    onToggle = onToggleAll,
+                    modifier = Modifier.weight(1f),
+                )
+            }
+        }
+
+        if (showAll && rest.isNotEmpty()) {
+            LazyColumn(modifier = Modifier.fillMaxWidth().heightIn(max = LIST_MAX_HEIGHT)) {
+                items(rest, key = { it.positionId }) { member ->
+                    MemberRow(
+                        member = member,
+                        name = names[member.positionId] ?: shortName(member.memberId),
+                        face = faces[member.memberId],
+                        now = now,
+                        onSelect = onSelect,
+                    )
+                }
             }
         }
     }
@@ -636,7 +671,15 @@ private fun MemberDetail(
         shape = MaterialTheme.shapes.large,
         tonalElevation = 4.dp,
     ) {
-        Column(modifier = Modifier.padding(start = 16.dp, top = 8.dp, end = 8.dp, bottom = 12.dp)) {
+        Column(
+            modifier =
+            Modifier
+                // Bounded by whoever placed it, so that a card is never taller
+                // than the map it stands on; what does not fit is scrolled to
+                // rather than cut off.
+                .verticalScroll(rememberScrollState())
+                .padding(start = 16.dp, top = 8.dp, end = 8.dp, bottom = 12.dp),
+        ) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 MemberFace(
                     memberId = member.memberId,
@@ -672,10 +715,7 @@ private fun MemberDetail(
 
             DetailRow(R.string.map_detail_last_seen, ageText(positionAge(member.knownAt, now)))
             DetailRow(R.string.map_detail_at, momentText(member.knownAt))
-            DetailRow(
-                R.string.map_detail_mode,
-                member.mode ?: stringResource(R.string.map_detail_unknown),
-            )
+            DetailRow(R.string.map_detail_mode, stringResource(modeLabel(member.mode)))
             DetailRow(R.string.map_detail_battery) {
                 val percent = member.batteryPercent
 
