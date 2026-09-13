@@ -311,8 +311,9 @@ class SharingService : LifecycleService() {
 
         // Who is looking is the screen's business; the service needs only the
         // moments their claims run out.
-        return combine(looking, reviews) { seen, _ -> currentMode(seen.map { it.until }) }
-            .distinctUntilChanged()
+        return combine(looking, movement(this), reviews) { seen, moving, _ ->
+            currentMode(seen.map { it.until }, moving)
+        }.distinctUntilChanged()
     }
 
     /**
@@ -375,7 +376,7 @@ class SharingService : LifecycleService() {
         false
     }
 
-    private fun currentMode(untils: List<Instant>): CollectionMode = chooseMode(
+    private fun currentMode(untils: List<Instant>, moving: Boolean): CollectionMode = chooseMode(
         CollectionState(
             watchersUntil = untils,
             now = Instant.now(),
@@ -383,7 +384,7 @@ class SharingService : LifecycleService() {
             // The geofence arrives with the next change; until then the phone
             // never counts as standing still.
             insideGeofence = false,
-            moving = false,
+            moving = moving,
             batteryPercent = batteryPercent(),
         ),
     )

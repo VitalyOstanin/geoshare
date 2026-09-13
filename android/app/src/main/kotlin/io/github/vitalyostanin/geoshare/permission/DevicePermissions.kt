@@ -27,5 +27,16 @@ fun devicePermissions(context: Context): PermissionState = PermissionState(
     ),
 )
 
+/**
+ * Whether the phone may tell us that it is moving.
+ *
+ * Apart from the three above because nothing stops without it: the Moving mode
+ * is an improvement on the ordinary one, so a member who refused shares their
+ * position exactly as before, only without the faster collecting on the way
+ * somewhere.
+ */
+fun movementGranted(context: Context): Boolean =
+    granted(context, Manifest.permission.ACTIVITY_RECOGNITION)
+
 private fun granted(context: Context, permission: String): Boolean =
     ContextCompat.checkSelfPermission(context, permission) == PackageManager.PERMISSION_GRANTED

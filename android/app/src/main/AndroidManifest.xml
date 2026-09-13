@@ -13,6 +13,12 @@
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
     <uses-permission android:name="android.permission.ACCESS_BACKGROUND_LOCATION" />
 
+    <!-- Lets the phone say when its owner started walking or riding, which is
+         what the Moving mode is made of. Counted by a chip that is awake
+         anyway, so it costs nothing like a fix does; refusing it leaves every
+         other mode working. -->
+    <uses-permission android:name="android.permission.ACTIVITY_RECOGNITION" />
+
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_LOCATION" />
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />

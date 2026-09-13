@@ -1,5 +1,6 @@
 package io.github.vitalyostanin.geoshare
 
+import android.Manifest
 import android.content.Intent
 import android.content.res.Configuration
 import android.graphics.drawable.ColorDrawable
@@ -48,6 +49,8 @@ import io.github.vitalyostanin.geoshare.permission.batteryExemptionRequest
 import io.github.vitalyostanin.geoshare.permission.batteryExemptionWanted
 import io.github.vitalyostanin.geoshare.permission.batteryUnrestricted
 import io.github.vitalyostanin.geoshare.permission.devicePermissions
+import io.github.vitalyostanin.geoshare.permission.movementGranted
+import io.github.vitalyostanin.geoshare.permission.movementPermissionWanted
 import io.github.vitalyostanin.geoshare.permission.nextPermissionStep
 import io.github.vitalyostanin.geoshare.permission.permissionOf
 import io.github.vitalyostanin.geoshare.permission.startupScreen
@@ -94,6 +97,18 @@ class MainActivity : ComponentActivity() {
     private val askPermission =
         registerForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) {
             continueSharingSetup()
+        }
+
+    /**
+     * The one request the service can do without.
+     *
+     * Its own launcher rather than the one above, because the answer leads
+     * somewhere else: the three the service needs are asked again until they
+     * are granted, while this one is asked once and then left alone.
+     */
+    private val askMovement =
+        registerForActivityResult(ActivityResultContracts.RequestPermission()) {
+            askBatteryExemptionOnce()
         }
 
     // The answer arrives as a closed dialog rather than as a result: the
@@ -284,7 +299,10 @@ class MainActivity : ComponentActivity() {
         if (step == null) {
             permissionNotice = null
             startSharingService()
-            askBatteryExemptionOnce()
+
+            // Movement first and the battery after it, one dialog at a time:
+            // the second is launched from the answer to the first.
+            askMovementOnce()
 
             return
         }
@@ -332,6 +350,32 @@ class MainActivity : ComponentActivity() {
     private fun systemIsDark(): Boolean =
         resources.configuration.uiMode and Configuration.UI_MODE_NIGHT_MASK ==
             Configuration.UI_MODE_NIGHT_YES
+
+    /**
+     * Asks once for the phone to say when its owner is on the move.
+     *
+     * Refusing costs the Moving mode and nothing else, so a member who says no
+     * is not asked again and is not told anything is wrong. When there is
+     * nothing to ask, the battery request follows straight away — otherwise it
+     * follows the answer.
+     */
+    private fun askMovementOnce() {
+        val wanted =
+            movementPermissionWanted(
+                sharing = sharing.enabled,
+                granted = movementGranted(this),
+                askedBefore = backgroundWork.movementAsked,
+            )
+
+        if (!wanted) {
+            askBatteryExemptionOnce()
+
+            return
+        }
+
+        backgroundWork.movementAsked = true
+        askMovement.launch(Manifest.permission.ACTIVITY_RECOGNITION)
+    }
 
     /**
      * Asks once, and only once, for the phone to stop restricting us.
