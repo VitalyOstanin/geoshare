@@ -23,6 +23,31 @@ Worth doing once a second background is confirmed to be usable without a
 payment method — the choice itself is a setting and a tile source behind it,
 but every candidate carries its own terms, key and attribution.
 
+Paid providers belong in the same choice rather than outside it. Free tiers are
+what this household happens to use, not a property of the design: somebody with
+a key to a paid map should be able to use it, and the better maps over a given
+country are often the paid ones. What that adds beyond a second free source:
+
+- **A key the member supplies.** The key is theirs, not the build's, so it is
+  entered in a setting and kept on the phone rather than compiled in. That also
+  keeps a paid key out of the repository, which a free one can afford to be in.
+- **Terms per provider.** Attribution text, whether tiles may be cached at all
+  and for how long, and whether the key may be used from a page as well as from
+  a phone — each provider answers those differently, and the answers decide
+  what the client may do, not a preference.
+- **A shape that admits more than two.** The tile source is already behind its
+  own object in both clients; a provider then becomes a name, an address
+  template, an attribution line, a caching rule and an optional key, so adding
+  one is data rather than code. That is the part worth designing before the
+  second provider, not after the fifth.
+- **What happens when a key stops working.** A paid key runs out, gets revoked
+  or exceeds its quota, and the map must say so and fall back to a free source
+  rather than drawing an empty grid.
+
+Worth deciding alongside: whether the choice is per client or shared through
+the profile — a key entered on a phone is that phone's, but the preference of
+which provider to draw could reasonably follow the member to the page.
+
 ## A way to exchange positions other than Firebase
 
 Everything rests on one provider: the sign-in, the database, the hosting. The
@@ -142,6 +167,42 @@ offers the applications it has rather than a fixed list. Sending a position
 outside the group is also the one place where a member passes on where somebody
 else is, so it is worth deciding whether that is offered for everybody or only
 for oneself.
+
+## Naming the phones, and who does the naming
+
+A phone calls itself whatever the manufacturer wrote in `Build.MODEL`, and that
+string is written into the position document as `deviceName`. Two phones of one
+model are then indistinguishable — the card says "BVL-N49" twice — and the
+model itself reaches every reader who may see the position, which is a fact
+about somebody's hardware that sharing a position did not have to include.
+
+Wanted: names people choose. Two readings of that, and they are not exclusive:
+
+**The owner names their own phones.** A setting listing this member's devices
+with a name for each, written into the profile beside the device id and read by
+everybody. One name per phone for the whole group, chosen by the person the
+phone belongs to. It is the smaller change and it is what lets `deviceName`
+leave the position document altogether: the model stops being published, and a
+phone is called "the old one" or "work" because somebody said so.
+
+**Each reader names the phones they watch.** The same list, but kept on the
+reading phone and never written to the database: a reader labels the devices of
+the members they watch, and those labels are theirs alone. It costs nothing in
+the data model — it is a local preference keyed by device id — and it answers
+the case the first reading does not: a member who never opens the setting still
+shows two identical names, and the reader can fix that for themselves.
+
+Worth building the first as the published answer and the second as the local
+override, with the position document carrying no model at all once the first
+exists. Until then the card falls back to what it has: the model, and the
+device id when even that is missing.
+
+Pieces to settle: where the name lives in the profile (a map of device id to
+name, beside the existing `devices` list, with a length limit the rules
+enforce), what the page and the application show when a member has one phone
+(nothing — a single phone needs no name), and whether a name is asked for when
+a second device of the same member first appears rather than being buried in a
+setting.
 
 ## What a stranger would have to do to use this
 
