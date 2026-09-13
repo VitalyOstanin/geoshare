@@ -23,6 +23,7 @@ import io.github.vitalyostanin.geoshare.collection.distanceMetres
 import io.github.vitalyostanin.geoshare.collection.fenceMoves
 import io.github.vitalyostanin.geoshare.collection.fixesAgree
 import io.github.vitalyostanin.geoshare.collection.impliedSpeedMps
+import io.github.vitalyostanin.geoshare.collection.mayBeConfirmed
 import io.github.vitalyostanin.geoshare.collection.rescueAfter
 import io.github.vitalyostanin.geoshare.collection.shouldWrite
 import io.github.vitalyostanin.geoshare.collection.whyAJump
@@ -255,10 +256,14 @@ class SharingService : LifecycleService() {
         // A fix left out does not move the last position, and that is how the
         // marker can be left standing somewhere the phone has long left: a
         // wrong last position turns every true fix that follows into a jump.
-        // A second fix that agrees with the one before it is the way out —
-        // jamming throws answers in every direction and they agree with
-        // nothing, whereas a phone that has really moved says so twice.
-        val agreed = jump != null && candidate?.let { fixesAgree(it, fix) } == true
+        // A second fix that agrees with the one before it is the way out of a
+        // width nothing can outlive — and only out of that one, because a
+        // spoofed signal draws a road whose fixes all agree, and against the
+        // speed rule the clock is the way out anyway.
+        val agreed =
+            jump != null &&
+                mayBeConfirmed(jump) &&
+                candidate?.let { fixesAgree(it, fix) } == true
 
         // Every fix that arrives is written down, whether or not it is written
         // out: what the provider answers where it is being jammed is the thing

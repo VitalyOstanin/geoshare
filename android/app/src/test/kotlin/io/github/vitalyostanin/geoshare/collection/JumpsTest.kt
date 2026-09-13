@@ -122,6 +122,31 @@ class JumpsTest {
         assertEquals(JumpReason.Width, whyAJump(one, other))
     }
 
+    // A spoofed signal draws a road: every pair of its fixes agrees, so a rule
+    // that lets agreement overrule the speed hands the anchor over in the time
+    // between two answers. Against the speed the clock is the way out instead.
+    @Test
+    fun `agreement overrules a width and never a speed`() {
+        assertTrue(mayBeConfirmed(JumpReason.Width))
+        assertFalse(mayBeConfirmed(JumpReason.Speed))
+        assertFalse(mayBeConfirmed(JumpReason.Contradiction))
+    }
+
+    // The pair that took the anchor seventy-three kilometres in seventeen
+    // seconds: both fixes narrow, both agreeing with each other, and the rule
+    // that caught them the speed rather than the width.
+    @Test
+    fun `a narrow pair far from the anchor cannot confirm each other`() {
+        val anchor = fixAt(61.03268, 4.40300, 0, accuracy = 20.0)
+        val first = fixAt(61.42545, 5.44473, 17, accuracy = 7.0)
+        val second = fixAt(61.42291, 5.43726, 34, accuracy = 13.0)
+
+        assertEquals(JumpReason.Speed, whyAJump(anchor, first))
+        assertEquals(JumpReason.Speed, whyAJump(anchor, second))
+        assertTrue(fixesAgree(first, second))
+        assertFalse(mayBeConfirmed(whyAJump(anchor, second)!!))
+    }
+
     private fun fixAt(latitude: Double, longitude: Double, second: Long, accuracy: Double? = null) =
         Fix(
             latitude = latitude,

@@ -87,6 +87,24 @@ fun whyAJump(last: Fix?, next: Fix): JumpReason? {
  */
 fun fixesAgree(one: Fix, other: Fix): Boolean = whyOutOfReach(one, other) == null
 
+/**
+ * Whether a second, agreeing fix may overrule the rule that caught the first.
+ *
+ * Only the width rule, and the reason is what a spoofed signal looks like. A
+ * receiver fed a false signal does not jitter: it draws a road, and any two of
+ * its fixes agree with each other perfectly. Letting agreement overrule the
+ * speed rule therefore hands the anchor to the spoofer in the time between two
+ * fixes — seventeen seconds, in the case this was written for, to move the
+ * phone seventy-three kilometres.
+ *
+ * Against the speed rule nothing needs to be done anyway: the speed it
+ * measures falls as the clock runs, so a phone that really did travel is
+ * believed as soon as the journey has had time to happen. A width has no such
+ * clock — an answer half a kilometre wide stays half a kilometre wide however
+ * long the phone waits — which is why agreement is left to overrule that one.
+ */
+fun mayBeConfirmed(jump: JumpReason): Boolean = jump == JumpReason.Width
+
 /** What stands between two fixes once the width of the answer is granted. */
 private fun whyOutOfReach(last: Fix, next: Fix): JumpReason? {
     val doubt = (last.accuracyMetres ?: 0.0) + (next.accuracyMetres ?: 0.0)
