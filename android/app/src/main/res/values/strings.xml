@@ -73,6 +73,25 @@
     <string name="mode_viewing">Viewing</string>
     <string name="mode_night">Night</string>
 
+    <!-- The help the mode on a card opens. All five are described in one place
+         rather than a sentence at a time on the cards: what a mode means is
+         only clear against the other four, and a member reads it once. The page
+         says the same. -->
+    <string name="mode_help_title">How a phone collects its position</string>
+    <string name="mode_help_intro">The phone chooses one of these five by itself. Somebody with the map open outranks everything else; the rest of the time it spends as little as it can and still be found.</string>
+    <string name="mode_help_when">When</string>
+    <string name="mode_help_asks">What the phone does</string>
+    <string name="mode_help_when_viewing">Somebody has the map open.</string>
+    <string name="mode_help_asks_viewing">Asks for the most exact position every 15 seconds, and writes it as soon as the marker would move.</string>
+    <string name="mode_help_when_moving">The phone noticed walking, running, cycling or riding.</string>
+    <string name="mode_help_asks_moving">Asks every 5 minutes.</string>
+    <string name="mode_help_when_standby">Away from where it last wrote, with nobody looking.</string>
+    <string name="mode_help_asks_standby">Asks every 15 minutes.</string>
+    <string name="mode_help_when_night">Between 23:00 and 07:00, or the charge is below 15 per cent.</string>
+    <string name="mode_help_asks_night">Asks every 20 minutes, in the cheapest way it has.</string>
+    <string name="mode_help_when_idle">Settled within 150 metres of the position it last wrote.</string>
+    <string name="mode_help_asks_idle">Asks for nothing at all, and repeats the last position every 25 minutes so the card does not go grey.</string>
+
     <!-- Who else has the map open right now: %1$s is the members, listed by
          name and separated by commas. Named rather than counted, and stated
          once for the whole household rather than on a card, because one open

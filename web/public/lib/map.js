@@ -17,6 +17,7 @@ import { showFace } from './faces.js';
 
 import { ageText, isStale, positionAge, timeText } from './age.js';
 import { clusterMembers, facesShown } from './clusters.js';
+import { openModeHelp } from './mode-help.js';
 import { modeText } from './modes.js';
 import { WORDS } from './words.js';
 
@@ -603,7 +604,7 @@ function detail(position, name, faces, now) {
     const rows = [
         [WORDS.lastSeen, ageText(positionAge(position.knownAt, now))],
         [WORDS.at, timeText(position.knownAt)],
-        [WORDS.mode, modeText(position.mode)],
+        [WORDS.mode, modeButton(position.mode)],
         [WORDS.battery, batteryText(position)],
         [WORDS.position, `${position.latitude.toFixed(5)}, ${position.longitude.toFixed(5)}`],
     ];
@@ -630,6 +631,24 @@ function detail(position, name, faces, now) {
     card.append(heading, table);
 
     return card;
+}
+
+/**
+ * The mode as a thing to press, because a name alone answers nothing.
+ *
+ * "Standby" says what the phone was doing only to somebody who already knows
+ * the five; the help behind it is where they are read against each other, and
+ * a card is the one place a member meets a mode at all.
+ */
+function modeButton(mode) {
+    const button = document.createElement('button');
+
+    button.className = 'mode-help-open';
+    button.type = 'button';
+    button.textContent = modeText(mode);
+    button.addEventListener('click', () => openModeHelp());
+
+    return button;
 }
 
 /**

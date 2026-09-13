@@ -30,6 +30,29 @@ export const WORDS = {
     modeViewing: 'Viewing',
     modeNight: 'Night',
 
+    // The help the mode on a card opens. All five are described in one place
+    // rather than a sentence at a time on the cards: what a mode means is only
+    // clear against the other four, and a member reads it once.
+    modeHelpTitle: 'How a phone collects its position',
+    modeHelpIntro:
+        'The phone chooses one of these five by itself. Somebody with the map open outranks '
+        + 'everything else; the rest of the time it spends as little as it can and still be found.',
+    modeHelpWhen: 'When',
+    modeHelpAsks: 'What the phone does',
+    modeHelpClose: 'Close',
+    modeWhenViewing: 'Somebody has the map open.',
+    modeAsksViewing: 'Asks for the most exact position every 15 seconds, and writes it as soon as '
+        + 'the marker would move.',
+    modeWhenMoving: 'The phone noticed walking, running, cycling or riding.',
+    modeAsksMoving: 'Asks every 5 minutes.',
+    modeWhenStandby: 'Away from where it last wrote, with nobody looking.',
+    modeAsksStandby: 'Asks every 15 minutes.',
+    modeWhenNight: 'Between 23:00 and 07:00, or the charge is below 15 per cent.',
+    modeAsksNight: 'Asks every 20 minutes, in the cheapest way it has.',
+    modeWhenIdle: 'Settled within 150 metres of the position it last wrote.',
+    modeAsksIdle: 'Asks for nothing at all, and repeats the last position every 25 minutes so the '
+        + 'card does not go grey.',
+
     // The card a marker opens.
     lastSeen: 'Last seen',
     at: 'At',

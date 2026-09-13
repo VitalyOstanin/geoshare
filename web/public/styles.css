@@ -455,6 +455,74 @@ button {
     overflow-wrap: anywhere;
 }
 
+/* The mode on a card is a word that opens the help, so it is written as a
+   link rather than as a button: a card of plain values with one push-button in
+   the middle reads as a control that changes something. */
+.mode-help-open {
+    border: 0;
+    padding: 0;
+    background: none;
+    font: inherit;
+    color: var(--link);
+    text-decoration: underline;
+    text-underline-offset: 0.15em;
+    cursor: pointer;
+}
+
+.mode-help {
+    max-width: min(36rem, 92vw);
+    border: 1px solid var(--edge);
+    border-radius: 0.6rem;
+    padding: 1rem;
+    background: var(--surface);
+    color: var(--on-surface);
+}
+
+.mode-help::backdrop {
+    background: rgba(0, 0, 0, 0.45);
+}
+
+.mode-help h2 {
+    margin: 0 0 0.4rem;
+    font-size: 1.05rem;
+}
+
+.mode-help p {
+    margin: 0 0 0.8rem;
+}
+
+.mode-help table {
+    border-collapse: collapse;
+}
+
+.mode-help th,
+.mode-help td {
+    text-align: left;
+    vertical-align: top;
+    padding: 0.25rem 0.6rem 0.25rem 0;
+}
+
+.mode-help th {
+    font-weight: 500;
+    opacity: 0.7;
+}
+
+.mode-help-name {
+    white-space: nowrap;
+    opacity: 1;
+}
+
+.mode-help-close {
+    margin-top: 0.9rem;
+    border: 1px solid var(--edge);
+    border-radius: 0.4rem;
+    padding: 0.35rem 0.9rem;
+    background: var(--link);
+    color: var(--on-link);
+    font: inherit;
+    cursor: pointer;
+}
+
 /* The corner control sits over the map rather than beside it: the map is the
    page, and this is one circle out of it. */
 #account {

@@ -25,6 +25,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
@@ -48,11 +49,13 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import io.github.vitalyostanin.geoshare.R
 import io.github.vitalyostanin.geoshare.collection.Watcher
 import io.github.vitalyostanin.geoshare.collection.modeLabel
+import io.github.vitalyostanin.geoshare.collection.modesExplained
 import io.github.vitalyostanin.geoshare.collection.watchingMembers
 import kotlinx.coroutines.delay
 import java.time.Instant
@@ -745,7 +748,27 @@ private fun MemberDetail(
 
             DetailRow(R.string.map_detail_last_seen, ageText(positionAge(member.knownAt, now)))
             DetailRow(R.string.map_detail_at, momentText(member.knownAt))
-            DetailRow(R.string.map_detail_mode, stringResource(modeLabel(member.mode)))
+            DetailRow(R.string.map_detail_mode) {
+                var helpOpen by remember { mutableStateOf(false) }
+
+                // A name alone answers nothing: "Standby" says what the phone
+                // was doing only to somebody who already knows the five, and a
+                // card is the one place a member meets a mode at all. Written
+                // as a word to press rather than as a button, so that a card of
+                // plain values does not read as a control that changes
+                // something.
+                Text(
+                    text = stringResource(modeLabel(member.mode)),
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.primary,
+                    textDecoration = TextDecoration.Underline,
+                    modifier = Modifier.clickable { helpOpen = true },
+                )
+
+                if (helpOpen) {
+                    ModeHelp(onClose = { helpOpen = false })
+                }
+            }
             DetailRow(R.string.map_detail_battery) {
                 val percent = member.batteryPercent
 
@@ -769,6 +792,57 @@ private fun MemberDetail(
             )
         }
     }
+}
+
+/**
+ * The five ways of collecting, read against each other.
+ *
+ * One place rather than a sentence at a time on the cards: what a mode means
+ * is only clear beside the other four, and a member reads this once. The page
+ * shows the same table.
+ */
+@Composable
+private fun ModeHelp(onClose: () -> Unit) {
+    AlertDialog(
+        onDismissRequest = onClose,
+        confirmButton = {
+            TextButton(onClick = onClose) {
+                Text(text = stringResource(R.string.map_detail_close))
+            }
+        },
+        title = { Text(text = stringResource(R.string.mode_help_title)) },
+        text = {
+            Column(
+                // Five modes with two sentences each outgrow a short screen,
+                // and a dialog clips what does not fit rather than folding it.
+                modifier = Modifier.verticalScroll(rememberScrollState()),
+                verticalArrangement = Arrangement.spacedBy(10.dp),
+            ) {
+                Text(
+                    text = stringResource(R.string.mode_help_intro),
+                    style = MaterialTheme.typography.bodyMedium,
+                )
+
+                modesExplained().forEach { explained ->
+                    Column {
+                        Text(
+                            text = stringResource(explained.name),
+                            style = MaterialTheme.typography.titleSmall,
+                        )
+                        Text(
+                            text = stringResource(explained.whenItHappens),
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                        Text(
+                            text = stringResource(explained.whatItDoes),
+                            style = MaterialTheme.typography.bodyMedium,
+                        )
+                    }
+                }
+            }
+        },
+    )
 }
 
 @Composable
