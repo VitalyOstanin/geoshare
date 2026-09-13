@@ -24,11 +24,11 @@ import java.time.Instant
  * subscriptions are rebuilt around the new list.
  */
 @Composable
-fun rememberMemberPositions(profiles: Map<String, MemberProfile>?): State<List<MemberPosition>> {
+fun rememberMemberPositions(profiles: Map<String, MemberProfile>?): State<MembersInView> {
     val documents = remember(profiles) { positionDocuments(profiles.orEmpty()) }
     val positions = remember(documents) { memberPositions(documents) }
 
-    return positions.collectAsStateWithLifecycle(initialValue = emptyList())
+    return positions.collectAsStateWithLifecycle(initialValue = MembersInView())
 }
 
 /**

@@ -20,6 +20,12 @@ service cloud.firestore {
         // first characters of an account id. Membership itself is the array in
         // the group document, which stays out of every client's reach, so
         // writing one's own profile grants nothing.
+        // The sizes are there because every other client reads this document
+        // and acts on it: a reader opens one subscription per device named
+        // here, so a profile naming thousands of devices would put every
+        // screen in the group out of action. Rules cannot walk a list, so the
+        // count is what can be held; the clients cut the list to the same
+        // number before they subscribe.
         function profileShape() {
           return request.resource.data.keys()
                    .hasOnly(['displayName', 'photoUrl', 'updatedAt', 'sharedWith', 'devices']) &&
@@ -30,9 +36,11 @@ service cloud.firestore {
                   (request.resource.data.photoUrl is string &&
                    request.resource.data.photoUrl.size() <= 500)) &&
                  (!('sharedWith' in request.resource.data) ||
-                  request.resource.data.sharedWith is map) &&
+                  (request.resource.data.sharedWith is map &&
+                   request.resource.data.sharedWith.size() <= 50)) &&
                  (!('devices' in request.resource.data) ||
-                  request.resource.data.devices is list);
+                  (request.resource.data.devices is list &&
+                   request.resource.data.devices.size() <= 10));
         }
 
         function isOwner() {
@@ -61,19 +69,65 @@ service cloud.firestore {
 
         // Being in the group is not the same as being allowed to watch: the
         // owner names their readers one by one, and each permission carries
-        // the moment it runs out. The permission is a field of this document
-        // rather than a document of its own, because a rule that reads
-        // another document pays for a read on every marker drawn.
+        // the moment it runs out.
         //
-        // Read through the defaults rather than by indexing: a document
-        // without the field, or a reader without a permission in it, has to
-        // come out as a plain refusal and not as an error.
+        // The permission is read from the owner's profile, which is where they
+        // write it, and not from a copy inside this document. A copy would be
+        // cheaper — a rule that reads another document pays for a read — but a
+        // copy only changes when the phone writes its next position, so
+        // withdrawing it would take effect at the phone's convenience: ten
+        // minutes for a phone standing still, an hour and a half at night, and
+        // never at all for a phone that is switched off, lost or no longer has
+        // the application. A permission has to stop when it is withdrawn.
+        //
+        // Read through the defaults rather than by indexing: an owner without
+        // the field, or a reader without a permission in it, has to come out
+        // as a plain refusal and not as an error.
         function permission() {
-          return resource.data.get('sharedWith', {}).get(request.auth.uid, null);
+          return get(/databases/$(database)/documents/groups/$(groupId)/members/$(positionId.split('\\.')[0]))
+                   .data.get('sharedWith', {}).get(request.auth.uid, null);
         }
 
         function mayRead() {
           return permission() != null && permission() > request.time;
+        }
+
+        // What a position is allowed to be. Without this a member — or an
+        // account somebody else has got hold of — could put fields of any name
+        // and size into their own documents, up to the megabyte a document
+        // holds, and every other client would fetch them.
+        //
+        // The coordinates are held to the globe: the clients drop a position
+        // outside it, and the rule is what keeps it from being written at all.
+        function positionShape() {
+          return request.resource.data.keys()
+                   .hasOnly(['memberId', 'deviceName', 'latitude', 'longitude',
+                             'takenAt', 'writtenAt', 'mode', 'batteryPercent', 'charging']) &&
+                 request.resource.data.memberId == request.auth.uid &&
+                 request.resource.data.latitude is number &&
+                 request.resource.data.latitude >= -90 &&
+                 request.resource.data.latitude <= 90 &&
+                 request.resource.data.longitude is number &&
+                 request.resource.data.longitude >= -180 &&
+                 request.resource.data.longitude <= 180 &&
+                 request.resource.data.takenAt is timestamp &&
+                 // The moment the server stamped, which is the one clock the
+                 // readers can trust: a phone cannot claim a position is newer
+                 // than it is.
+                 (!('writtenAt' in request.resource.data) ||
+                  request.resource.data.writtenAt == request.time) &&
+                 (!('deviceName' in request.resource.data) ||
+                  (request.resource.data.deviceName is string &&
+                   request.resource.data.deviceName.size() <= 40)) &&
+                 (!('mode' in request.resource.data) ||
+                  (request.resource.data.mode is string &&
+                   request.resource.data.mode.size() <= 20)) &&
+                 (!('batteryPercent' in request.resource.data) ||
+                  (request.resource.data.batteryPercent is int &&
+                   request.resource.data.batteryPercent >= 0 &&
+                   request.resource.data.batteryPercent <= 100)) &&
+                 (!('charging' in request.resource.data) ||
+                  request.resource.data.charging is bool);
         }
 
         // One document at a time, and no listing of the collection. A query is
@@ -83,8 +137,7 @@ service cloud.firestore {
         // member names their devices, and each of those is a document read by
         // name.
         allow get: if isMember() && (ownsPosition() || mayRead());
-        allow create, update: if ownsPosition() &&
-                                 request.resource.data.memberId == request.auth.uid;
+        allow create, update: if ownsPosition() && positionShape();
         // Stated apart from the write: a deletion carries no document whose
         // owner could be checked.
         allow delete: if ownsPosition();
@@ -98,9 +151,20 @@ service cloud.firestore {
           return isMember() && watchId.split('\\.')[0] == request.auth.uid;
         }
 
+        // The claim says when it was made, by the clock of the server, and the
+        // phones add the three minutes themselves. Written the other way round
+        // — an expiry chosen by the viewer — it would be worth whatever that
+        // viewer's clock says: a clock running slow would never start the fast
+        // mode at all, and a claim dated years ahead would hold every phone of
+        // the group in it for good.
+        function watchShape() {
+          return request.resource.data.keys().hasOnly(['memberId', 'since']) &&
+                 request.resource.data.memberId == request.auth.uid &&
+                 request.resource.data.since == request.time;
+        }
+
         allow read: if isMember();
-        allow create, update: if ownsWatch() &&
-                                 request.resource.data.memberId == request.auth.uid;
+        allow create, update: if ownsWatch() && watchShape();
         allow delete: if ownsWatch();
       }
     }
