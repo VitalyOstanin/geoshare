@@ -12,6 +12,8 @@ import io.github.vitalyostanin.geoshare.collection.Epochs
 import io.github.vitalyostanin.geoshare.collection.Interference
 import io.github.vitalyostanin.geoshare.collection.interferenceFrom
 import io.github.vitalyostanin.geoshare.log.AppLog
+import java.time.Duration
+import java.time.Instant
 import java.util.Locale
 
 private const val TAG = "geoshare.radio"
@@ -27,6 +29,9 @@ private const val TAG = "geoshare.radio"
  */
 private const val RECENT_EPOCHS = 10
 private const val EARLIER_EPOCHS = 50
+
+/** How often the watch admits to having nothing, when it has nothing. */
+private val SILENCE_REPORTED_EVERY: Duration = Duration.ofMinutes(5)
 
 /**
  * What the radio is being subjected to, as the receiver's own measures say.
@@ -45,6 +50,7 @@ class RadioWatch(private val context: Context) {
     private val noise = ArrayDeque<Double>()
     private val gain = ArrayDeque<Double>()
 
+    private var saidNothingAt: Instant = Instant.EPOCH
     private var status: GnssStatus.Callback? = null
     private var measurements: GnssMeasurementsEvent.Callback? = null
 
@@ -54,12 +60,17 @@ class RadioWatch(private val context: Context) {
     /**
      * The same, in the words of the log, or nothing when there is nothing to
      * say: a line per fix saying "unknown" would bury the ones that matter.
+     *
+     * Silence is reported too, but rarely. Not every receiver reports its
+     * gain at all, and a verdict that never arrives is indistinguishable from
+     * a radio nobody is interfering with — which is the one thing this must
+     * not be mistaken for. So once in a while it says how much it has.
      */
     fun saying(): String? {
         val verdict = verdict()
 
         if (verdict == Interference.Unknown) {
-            return null
+            return whatIsMissing()
         }
 
         return String.format(
@@ -129,6 +140,21 @@ class RadioWatch(private val context: Context) {
             recent = kept.takeLast(RECENT_EPOCHS).average(),
             earlier = kept.dropLast(RECENT_EPOCHS).average(),
         )
+    }
+
+    private fun whatIsMissing(): String? {
+        val now = Instant.now()
+
+        if (Duration.between(saidNothingAt, now) < SILENCE_REPORTED_EVERY) {
+            return null
+        }
+
+        saidNothingAt = now
+
+        val needed = RECENT_EPOCHS + EARLIER_EPOCHS
+
+        return "the radio has nothing to go on: ${gain.size} epochs of gain, " +
+            "${noise.size} of the satellites, $needed needed of each"
     }
 
     private fun note(into: ArrayDeque<Double>, value: Double) {
