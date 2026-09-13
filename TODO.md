@@ -385,3 +385,36 @@ stating before it is built:
 None of this is worth building before the two phones work. It is worth deciding
 before the storage is designed any further, since the first question decides
 whether a client may assume it knows its project at build time.
+
+## An admin panel for the family
+
+The member who owns the Firebase project is already unlike the others: the
+project is theirs, the quota is theirs, and the rules are written by them. That
+position could carry a screen the other members do not have — on the page and
+in the application both — showing every device in the group and what the
+project knows about it.
+
+The first thing that screen is needed for is a position that has stuck. The
+jump filter anchors on the last believed fix, and where the anchor itself is
+wrong the phone can refuse every honest answer that follows. On the phone this
+is settled by the button that forgets the last place, but the phone is not
+always the one to ask: a child's phone is in a pocket somewhere, and the member
+holding it should not have to be talked through a settings screen. The admin
+should be able to clear the anchor of any device in the group from where they
+are.
+
+What it costs, so that the decision is made with the price in view:
+
+- A command has to reach a phone that is not being used. Today nothing travels
+  towards the phone except what the collection service already reads, so the
+  command is a document the service watches, the admin writes and the phone
+  clears once it has acted. Waking a phone that is not listening is the same
+  unsolved problem as the push item above.
+- The rules have to say who may write such a command, and the answer is not
+  "the project owner" by default: ownership is a billing fact, not a permission
+  Firestore knows about. The admin has to be named in the data like anybody
+  else.
+- A command that reaches into another person's phone is a different thing from
+  sharing a position with them, and it should look like one: the phone says in
+  its log what was asked and by whom, and the screen where the member sees it
+  is not hidden behind a developer setting.
