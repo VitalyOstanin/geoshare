@@ -33,6 +33,45 @@ readonly EMULATOR_IMAGE="${EMULATOR_IMAGE:-localhost/geoshare-emulator:${ANDROID
 readonly EMULATOR_NAME="${EMULATOR_NAME:-geoshare-emulator}"
 readonly SERVICES_NAME="${SERVICES_NAME:-geoshare-services}"
 
+# Both halves share one pod, which is to say one network namespace: the
+# emulator reaches its host at 10.0.2.2, and inside a pod that is the pod's
+# loopback, where the stand-in services listen. Nothing of theirs is published,
+# so a machine already using 8080 for something else — a popular port — is no
+# longer a reason for a run to fail.
+readonly POD_NAME="${POD_NAME:-geoshare}"
+
+# The one port the pod does publish: the adb server inside the emulator
+# container, for a host adb and for an instrumented run in the SDK container.
+# 5038 rather than 5037, because the machine's own adb server usually holds
+# 5037 and the phones plugged into it have to keep working.
+readonly ADB_HOST_PORT="${ADB_HOST_PORT:-5038}"
+readonly ADB_SERVER_SOCKET="${ADB_SERVER_SOCKET:-tcp:127.0.0.1:${ADB_HOST_PORT}}"
+
+ensure_pod() {
+    if podman pod exists "${POD_NAME}"; then
+        return 0
+    fi
+
+    echo "==> creating pod ${POD_NAME}"
+    podman pod create --name "${POD_NAME}" \
+        -p "127.0.0.1:${ADB_HOST_PORT}:5037" > /dev/null
+}
+
+# Called by both --stop paths. A pod outlives the containers in it, and an
+# empty one left behind holds the published port against the next run.
+remove_pod_if_idle() {
+    if ! podman pod exists "${POD_NAME}"; then
+        return 0
+    fi
+
+    if podman container exists "${EMULATOR_NAME}" \
+        || podman container exists "${SERVICES_NAME}"; then
+        return 0
+    fi
+
+    podman pod rm -f "${POD_NAME}" > /dev/null 2>&1 || true
+}
+
 # A proxy listening on the host loopback is unreachable from a container on
 # its own network, which is why every run and every build below shares the
 # host's. HTTP_PROXY is set from the same value: curl and apt pick the
@@ -83,15 +122,11 @@ ensure_emulator_image() {
         -t "${EMULATOR_IMAGE}" -f "${REPO_ROOT}/tools/Containerfile.emulator" "${REPO_ROOT}/tools"
 }
 
-# adb against the emulator, without requiring the platform tools on the
-# machine running these scripts: where the host has none, the call goes into
-# the emulator container, which carries its own.
+# adb against the emulator, run inside its container. The emulator listens on
+# the pod's loopback and nothing outside the pod can reach that, so the call
+# goes where the device is rather than to whatever adb the host has.
 adb_cmd() {
-    if command -v adb > /dev/null 2>&1; then
-        adb "$@"
-    else
-        podman exec "${EMULATOR_NAME}" adb "$@"
-    fi
+    podman exec "${EMULATOR_NAME}" adb "$@"
 }
 
 ensure_firebase_image() {

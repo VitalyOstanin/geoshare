@@ -1,9 +1,13 @@
 #!/usr/bin/env bash
 # Starts the headless emulator and waits until it has finished booting.
 #
-# The container shares the host network, so the emulator's adb port is the
-# host's 5555 and the host adb talks to it directly — install, logcat and
-# screencap all run from outside the container.
+# The container joins the pod named in lib.sh, so the emulator and the stand-in
+# services share one loopback: what the guest calls 10.0.2.2 is the pod, not
+# the machine. Nothing of the emulator is reachable from outside the pod, so
+# the container also runs an adb server bound to every address, and the pod
+# publishes it — install, logcat and screencap then work from the host through
+#
+#   export ADB_SERVER_SOCKET=tcp:127.0.0.1:5038
 #
 #   tools/run-emulator.sh            # start and wait for boot
 #   tools/run-emulator.sh --stop     # stop it
@@ -15,6 +19,7 @@ readonly BOOT_TIMEOUT="${BOOT_TIMEOUT:-300}"
 
 if [[ "${1:-}" == "--stop" ]]; then
     podman rm -f "${EMULATOR_NAME}" > /dev/null 2>&1 || true
+    remove_pod_if_idle
     echo "==> stopped"
     exit 0
 fi
@@ -27,6 +32,7 @@ fi
 # are several gigabytes and tens of minutes, so the build says what it is doing
 # rather than appearing to hang.
 ensure_emulator_image
+ensure_pod
 
 echo "==> starting ${EMULATOR_NAME}"
 # /dev/kvm is what makes this usable: without it qemu refuses to emulate x86_64
@@ -36,18 +42,28 @@ echo "==> starting ${EMULATOR_NAME}"
 # group rather than through an ACL on the current session: rootless podman
 # builds the user namespace without the host's supplementary groups, so the
 # device stays out of reach inside the container.
-podman run -d --rm --name "${EMULATOR_NAME}" --network host \
+#
+# The proxy is left out and has to be said out loud: podman hands the host's
+# HTTPS_PROXY to every container unless told not to, and a proxy on the host
+# loopback is nothing at all from inside a pod.
+podman run -d --rm --name "${EMULATOR_NAME}" --pod "${POD_NAME}" --http-proxy=false \
     --group-add keep-groups --device /dev/kvm "${EMULATOR_IMAGE}" > /dev/null
+
+# Started before anything asks adb a question: a client that finds no server
+# forks one of its own, and that one listens on the loopback alone, leaving the
+# published port answering nothing.
+podman exec -d "${EMULATOR_NAME}" adb -a nodaemon server > /dev/null 2>&1 || true
+sleep 2
 
 echo "==> waiting for boot (up to ${BOOT_TIMEOUT}s)"
 deadline=$((SECONDS + BOOT_TIMEOUT))
-adb_cmd start-server > /dev/null 2>&1 || true
 # -e addresses the emulator explicitly. Plain `adb shell` picks whatever is
 # ready, and while the emulator is still offline that is a phone plugged in.
 while (( SECONDS < deadline )); do
     if [[ "$(adb_cmd -e shell getprop sys.boot_completed 2>/dev/null | tr -d '\r')" == "1" ]]; then
         echo "==> booted after $((SECONDS))s"
         adb_cmd devices
+        echo "==> adb from the host: export ADB_SERVER_SOCKET=${ADB_SERVER_SOCKET}"
         exit 0
     fi
     sleep 5
