@@ -22,6 +22,8 @@
 
     <string name="jumps_title">Отбрасывать невозможные места</string>
     <string name="jumps_explained">Там, где глушат спутники, телефону сообщают место, где он быть не может, и метка прыгает по карте. Так отбрасывается любое место, до которого пришлось бы добираться быстрее 200 км/ч.</string>
+    <string name="jumps_forget">Забыть последнее место</string>
+    <string name="jumps_forgotten">Забыто</string>
 
     <string name="permission_location_needed">Чтобы делиться местом, нужен доступ к местоположению телефона. Разрешите его в настройках приложения.</string>
     <string name="permission_notifications_needed">Разрешите уведомления, чтобы работающая служба могла сказать о себе.</string>

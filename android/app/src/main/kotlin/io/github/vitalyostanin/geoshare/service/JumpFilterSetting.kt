@@ -4,6 +4,7 @@ import android.content.Context
 
 private const val FILE = "collection"
 private const val KEY_JUMPS = "filterJumps"
+private const val KEY_FORGET = "forgetPlace"
 
 /**
  * Whether this phone leaves out the positions it cannot have reached.
@@ -19,4 +20,26 @@ class JumpFilterSetting(context: Context) {
     var enabled: Boolean
         get() = store.getBoolean(KEY_JUMPS, false)
         set(value) = store.edit().putBoolean(KEY_JUMPS, value).apply()
+
+    /**
+     * Asks the collecting service to forget where it thinks the phone is.
+     *
+     * A flag rather than a call: the settings screen and the service are two
+     * processes of the same application that never speak directly, and the
+     * service reads this file for every fix anyway. It lowers the flag itself
+     * once it has forgotten, so the request is spent by the fix that answers
+     * it.
+     */
+    fun askToForget() = store.edit().putBoolean(KEY_FORGET, true).apply()
+
+    /** True once, for the service, if forgetting has been asked for. */
+    fun takeForgetRequest(): Boolean {
+        if (!store.getBoolean(KEY_FORGET, false)) {
+            return false
+        }
+
+        store.edit().putBoolean(KEY_FORGET, false).apply()
+
+        return true
+    }
 }

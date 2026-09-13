@@ -10,7 +10,7 @@ import java.time.Instant
 class JumpsTest {
     @Test
     fun `the first fix of a round has nothing to have jumped from`() {
-        assertFalse(looksLikeAJump(null, fixAt(60.9, 4.3, 0)))
+        assertNull(whyAJump(null, fixAt(60.9, 4.3, 0)))
     }
 
     @Test
@@ -19,7 +19,7 @@ class JumpsTest {
         // Eighty metres of longitude in a minute: a brisk walk.
         val second = fixAt(60.9, 4.3 + 0.0014, 60)
 
-        assertFalse(looksLikeAJump(first, second))
+        assertNull(whyAJump(first, second))
     }
 
     @Test
@@ -28,7 +28,7 @@ class JumpsTest {
         // Two kilometres of latitude in a minute: 120 km/h.
         val second = fixAt(60.9 + 0.018, 4.3, 60)
 
-        assertFalse(looksLikeAJump(first, second))
+        assertNull(whyAJump(first, second))
     }
 
     @Test
@@ -36,7 +36,7 @@ class JumpsTest {
         val first = fixAt(60.9, 4.3, 0)
         val second = fixAt(60.98, 4.56, 15)
 
-        assertTrue(looksLikeAJump(first, second))
+        assertEquals(JumpReason.Speed, whyAJump(first, second))
     }
 
     @Test
@@ -44,7 +44,7 @@ class JumpsTest {
         val first = fixAt(60.9, 4.3, 0, accuracy = 10.0)
         val second = fixAt(60.9, 4.3, 60, accuracy = USELESS_ACCURACY_METRES)
 
-        assertTrue(looksLikeAJump(first, second))
+        assertEquals(JumpReason.Width, whyAJump(first, second))
     }
 
     // Two answers whose doubt overlaps are one place said twice, however far
@@ -54,7 +54,7 @@ class JumpsTest {
         val first = fixAt(60.9, 4.3, 0, accuracy = 60.0)
         val second = fixAt(60.9 + 0.0008, 4.3, 1, accuracy = 60.0)
 
-        assertFalse(looksLikeAJump(first, second))
+        assertNull(whyAJump(first, second))
     }
 
     @Test
@@ -62,7 +62,7 @@ class JumpsTest {
         val first = fixAt(60.9, 4.3, 60, accuracy = 5.0)
         val second = fixAt(60.98, 4.56, 60, accuracy = 5.0)
 
-        assertTrue(looksLikeAJump(first, second))
+        assertEquals(JumpReason.Contradiction, whyAJump(first, second))
     }
 
     @Test
@@ -78,6 +78,48 @@ class JumpsTest {
     @Test
     fun `a clock that does not run forward gives no speed`() {
         assertNull(impliedSpeedMps(fixAt(60.9, 4.3, 60), fixAt(60.9, 4.4, 60)))
+    }
+
+    // The answer that started all this came both too wide and too far at
+    // once. The log names one rule, and the width is the one to name: it is
+    // the provider's own admission, whereas the speed is our arithmetic.
+    @Test
+    fun `a wide answer far away is caught by its width`() {
+        val first = fixAt(60.9, 4.3, 0, accuracy = 30.0)
+        val second = fixAt(60.98, 4.56, 15, accuracy = 528.0)
+
+        assertEquals(JumpReason.Width, whyAJump(first, second))
+    }
+
+    // What lets the marker out of a last position that has gone wrong: two
+    // answers from the same place agree with each other even when neither of
+    // them agrees with where the phone was last believed to be.
+    @Test
+    fun `two fixes from the same place agree`() {
+        val one = fixAt(60.94, 4.31, 0, accuracy = 20.0)
+        val other = fixAt(60.9401, 4.3103, 18, accuracy = 20.0)
+
+        assertTrue(fixesAgree(one, other))
+    }
+
+    @Test
+    fun `answers thrown in opposite directions agree with nothing`() {
+        val one = fixAt(60.94, 4.31, 0, accuracy = 20.0)
+        val other = fixAt(61.02, 4.56, 18, accuracy = 20.0)
+
+        assertFalse(fixesAgree(one, other))
+    }
+
+    // Width is what the provider says about its own answer, not about where
+    // the phone is. Two wide answers from one place still agree, and refusing
+    // them is what leaves a jammed phone standing on the map for good.
+    @Test
+    fun `a pair of wide answers from one place still agree`() {
+        val one = fixAt(60.94, 4.31, 0, accuracy = 700.0)
+        val other = fixAt(60.9401, 4.3103, 18, accuracy = 700.0)
+
+        assertTrue(fixesAgree(one, other))
+        assertEquals(JumpReason.Width, whyAJump(one, other))
     }
 
     private fun fixAt(latitude: Double, longitude: Double, second: Long, accuracy: Double? = null) =

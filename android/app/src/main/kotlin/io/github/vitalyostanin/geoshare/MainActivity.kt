@@ -245,6 +245,12 @@ class MainActivity : AppCompatActivity() {
                                         jumpsFiltered = wanted
                                         jumps.enabled = wanted
                                     },
+                                    // Left in the same store for the service
+                                    // to pick up and spend: the request has
+                                    // to outlive this screen, since the phone
+                                    // may not have a fix to answer it with
+                                    // until minutes from now.
+                                    onForgetPlace = { jumps.askToForget() },
                                     onThemeChange = { wanted ->
                                         theme = wanted
                                         appearance.choice = wanted

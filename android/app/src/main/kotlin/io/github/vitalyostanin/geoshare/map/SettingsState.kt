@@ -38,6 +38,7 @@ data class SettingsState(
 data class SettingsActions(
     val onSharingChange: (Boolean) -> Unit,
     val onJumpsFilteredChange: (Boolean) -> Unit,
+    val onForgetPlace: () -> Unit,
     val onThemeChange: (ThemeChoice) -> Unit,
     val onLanguageChange: (LanguageChoice) -> Unit,
     val onShare: (String, ShareSpan) -> Unit,

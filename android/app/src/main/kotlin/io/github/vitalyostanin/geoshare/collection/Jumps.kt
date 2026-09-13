@@ -43,33 +43,64 @@ fun impliedSpeedMps(last: Fix, next: Fix): Double? {
 }
 
 /**
- * Whether a fix is a jump rather than a move.
+ * What gives a jump away, so that the log says which rule caught the fix
+ * rather than leaving the numbers to be compared by hand.
+ */
+enum class JumpReason {
+    /** The provider put a width on the answer that covers a neighbourhood. */
+    Width,
+
+    /** Reaching the place would have taken a speed no member travels at. */
+    Speed,
+
+    /** Two places carrying one time: the provider contradicting itself. */
+    Contradiction,
+}
+
+/**
+ * Why a fix is a jump rather than a move, or nothing when it is a move.
  *
- * The first fix of a session is never one: there is nothing to have jumped
+ * The first fix of a session is never a jump: there is nothing to have jumped
  * from. A fix no wider than the doubt in the two answers put together has not
  * moved at all in any sense worth arguing about.
  */
-fun looksLikeAJump(last: Fix?, next: Fix): Boolean {
+fun whyAJump(last: Fix?, next: Fix): JumpReason? {
     if (last == null) {
-        return false
+        return null
     }
 
     if ((next.accuracyMetres ?: 0.0) >= USELESS_ACCURACY_METRES) {
-        return true
+        return JumpReason.Width
     }
 
+    return whyOutOfReach(last, next)
+}
+
+/**
+ * Whether two fixes agree about where the phone is.
+ *
+ * How wide the answers are is not asked here, and that is the point: a pair of
+ * wide answers that agree with each other is still the phone saying where it
+ * is. This is what a fix left out has to pass to be believed after all — one
+ * answer nobody can reach is a jump, two answers that agree are a phone that
+ * has moved and a last position that has gone stale.
+ */
+fun fixesAgree(one: Fix, other: Fix): Boolean = whyOutOfReach(one, other) == null
+
+/** What stands between two fixes once the width of the answer is granted. */
+private fun whyOutOfReach(last: Fix, next: Fix): JumpReason? {
     val doubt = (last.accuracyMetres ?: 0.0) + (next.accuracyMetres ?: 0.0)
 
     if (distanceMetres(last, next) <= doubt) {
-        return false
+        return null
     }
 
     // A fix stamped at or before the last one, from somewhere else: two
     // positions at one time is the provider contradicting itself, not a phone
     // that moved.
-    val speed = impliedSpeedMps(last, next) ?: return true
+    val speed = impliedSpeedMps(last, next) ?: return JumpReason.Contradiction
 
-    return speed > PLAUSIBLE_SPEED_MPS
+    return if (speed > PLAUSIBLE_SPEED_MPS) JumpReason.Speed else null
 }
 
 private const val MILLIS_IN_A_SECOND = 1_000.0

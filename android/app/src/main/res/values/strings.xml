@@ -25,6 +25,8 @@
          satellites are being jammed wants that. -->
     <string name="jumps_title">Leave out impossible positions</string>
     <string name="jumps_explained">Where the satellites are jammed, the phone is told it is somewhere it cannot be, and the marker jumps across the map. This leaves out any position that would have taken more than 200 km/h to reach.</string>
+    <string name="jumps_forget">Forget the last place</string>
+    <string name="jumps_forgotten">Forgotten</string>
 
     <string name="permission_location_needed">Sharing needs access to this phone\'s position. Allow it in the application settings.</string>
     <string name="permission_notifications_needed">Allow notifications, so that a running service can say so.</string>

@@ -16,14 +16,16 @@ import io.github.vitalyostanin.geoshare.collection.CollectionMode
 import io.github.vitalyostanin.geoshare.collection.CollectionState
 import io.github.vitalyostanin.geoshare.collection.Fix
 import io.github.vitalyostanin.geoshare.collection.IDLE_REPEAT
+import io.github.vitalyostanin.geoshare.collection.JumpReason
 import io.github.vitalyostanin.geoshare.collection.WATCH_AHEAD
 import io.github.vitalyostanin.geoshare.collection.chooseMode
 import io.github.vitalyostanin.geoshare.collection.distanceMetres
 import io.github.vitalyostanin.geoshare.collection.fenceMoves
+import io.github.vitalyostanin.geoshare.collection.fixesAgree
 import io.github.vitalyostanin.geoshare.collection.impliedSpeedMps
-import io.github.vitalyostanin.geoshare.collection.looksLikeAJump
 import io.github.vitalyostanin.geoshare.collection.rescueAfter
 import io.github.vitalyostanin.geoshare.collection.shouldWrite
+import io.github.vitalyostanin.geoshare.collection.whyAJump
 import io.github.vitalyostanin.geoshare.log.AppLog
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Job
@@ -99,6 +101,12 @@ class SharingService : LifecycleService() {
      */
     private var writer: PositionWriter? = null
     private var lastFix: Fix? = null
+
+    /**
+     * The fix left out just before this one, kept so that the next one can
+     * agree with it.
+     */
+    private var candidate: Fix? = null
 
     /** Whether the member has asked for the impossible positions to be left out. */
     private val jumps by lazy { JumpFilterSetting(this) }
@@ -239,17 +247,32 @@ class SharingService : LifecycleService() {
         mode: CollectionMode,
         always: Boolean = false,
     ): Boolean {
-        val jump = looksLikeAJump(lastFix, fix)
+        if (jumps.takeForgetRequest()) {
+            forgetThePlace()
+        }
+
+        val jump = whyAJump(lastFix, fix)
+        // A fix left out does not move the last position, and that is how the
+        // marker can be left standing somewhere the phone has long left: a
+        // wrong last position turns every true fix that follows into a jump.
+        // A second fix that agrees with the one before it is the way out —
+        // jamming throws answers in every direction and they agree with
+        // nothing, whereas a phone that has really moved says so twice.
+        val agreed = jump != null && candidate?.let { fixesAgree(it, fix) } == true
 
         // Every fix that arrives is written down, whether or not it is written
         // out: what the provider answers where it is being jammed is the thing
         // to be read afterwards, and a filtered log would answer questions
         // about the filter instead.
-        noteFix(fix, mode, jump)
+        noteFix(fix, mode, jump, agreed)
 
-        if (jump && jumps.enabled) {
+        if (jump != null && jumps.enabled && !agreed) {
+            candidate = fix
+
             return false
         }
+
+        candidate = null
 
         if (!always && !shouldWrite(lastFix, fix, mode)) {
             return false
@@ -531,7 +554,7 @@ class SharingService : LifecycleService() {
      * worth reading later, and the distance and the speed are what tell a walk
      * from an answer given by a jammed receiver.
      */
-    private fun noteFix(fix: Fix, mode: CollectionMode, jump: Boolean) {
+    private fun noteFix(fix: Fix, mode: CollectionMode, jump: JumpReason?, agreed: Boolean) {
         val last = lastFix
         val place = String.format(Locale.ROOT, "%.5f,%.5f", fix.latitude, fix.longitude)
         val width = fix.accuracyMetres?.let { String.format(Locale.ROOT, " ±%.0f m", it) }.orEmpty()
@@ -547,12 +570,36 @@ class SharingService : LifecycleService() {
             }
         val verdict =
             when {
-                !jump -> ""
-                jumps.enabled -> "; a jump, left out"
-                else -> "; a jump, kept because the filter is off"
+                jump == null -> ""
+                agreed -> "; a jump ${caughtBy(jump)}, taken because the fix before it agrees"
+                jumps.enabled -> "; a jump ${caughtBy(jump)}, left out"
+                else -> "; a jump ${caughtBy(jump)}, kept because the filter is off"
             }
 
         AppLog.i(TAG, "fix $place$width in mode $mode, $since$verdict")
+    }
+
+    /**
+     * Drops what the phone believes about where it is.
+     *
+     * Asked for from the settings screen, for the case the filter cannot get
+     * out of on its own: a last position far enough from the truth that
+     * nothing plausible reaches it, and a member looking at a marker that has
+     * not moved in an hour.
+     */
+    private fun forgetThePlace() {
+        lastFix = null
+        candidate = null
+        lastWritten = null
+
+        AppLog.i(TAG, "forgetting the last place, as asked")
+    }
+
+    /** Says which of the rules caught the fix, in the words of the log. */
+    private fun caughtBy(jump: JumpReason): String = when (jump) {
+        JumpReason.Width -> "by the width of the answer"
+        JumpReason.Speed -> "by the speed it implies"
+        JumpReason.Contradiction -> "by two places at one time"
     }
 
     /**

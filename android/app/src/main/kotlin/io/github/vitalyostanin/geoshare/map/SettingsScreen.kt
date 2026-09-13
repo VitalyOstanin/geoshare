@@ -37,6 +37,32 @@ import io.github.vitalyostanin.geoshare.service.ThemeChoice
 import java.time.Instant
 
 /**
+ * The way out of a last position that has gone wrong.
+ *
+ * The filter measures every fix against where the phone was last believed to
+ * be, so a last position far enough from the truth turns every true fix into a
+ * jump and the marker stops moving. A second fix agreeing with the one before
+ * it undoes that on its own, but only while fixes keep arriving; this is for
+ * the member who is looking at a marker that has stood still too long.
+ */
+@Composable
+private fun ForgetPlaceRow(onForgetPlace: () -> Unit) {
+    var forgotten by remember { mutableStateOf(false) }
+    val label = if (forgotten) R.string.jumps_forgotten else R.string.jumps_forget
+
+    TextButton(
+        onClick = {
+            forgotten = true
+            onForgetPlace()
+        },
+        enabled = !forgotten,
+        modifier = Modifier.padding(start = 8.dp, bottom = 8.dp),
+    ) {
+        Text(text = stringResource(label))
+    }
+}
+
+/**
  * Everything that is not the map.
  *
  * A screen of its own rather than a strip under the map: sharing is set once
@@ -135,6 +161,10 @@ fun SettingsScreen(
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 modifier = Modifier.padding(start = 16.dp, end = 16.dp, bottom = 8.dp),
             )
+
+            if (settings.jumpsFiltered) {
+                ForgetPlaceRow(onForgetPlace = actions.onForgetPlace)
+            }
 
             HorizontalDivider()
 
