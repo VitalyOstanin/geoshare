@@ -5,7 +5,9 @@ does. History is deliberately not kept: each new fix overwrites the previous one
 which keeps both storage and read counts flat.
 
 ```
-groups/{groupId}                            members: [uid, ...]
+groups/{groupId}                            members: [uid, ...], admins: [uid, ...]
+groups/{groupId}/invitations/{code}         a code that lets one more person in
+groups/{groupId}/joins/{uid}                the code somebody is holding, while they join
 groups/{groupId}/members/{uid}              what a member says about themselves
 groups/{groupId}/grants/{uid}               which phones a member carries, and who may watch
 groups/{groupId}/positions/{uid}.{deviceId} last known position of one phone
@@ -17,9 +19,70 @@ the part before the dot, so a member writes only their own documents; the reader
 group the markers by the `memberId` inside, which is what gives a phone its
 owner's colour, face and name.
 
-The group document is the roster and no client may write it; membership is edited
-from the console. A member's own document under it is the opposite: they write it
-and nobody else does.
+The group document is the roster. A member's own document under it is the
+opposite of the roster: they write it and nobody else does.
+
+## groups/{groupId}
+
+| Field     | Type | Meaning                                                     |
+|-----------|------|-------------------------------------------------------------|
+| `members` | list | Who is in the group; every other rule reads membership here  |
+| `admins`  | list | Who may change the roster; a subset of `members`, never empty |
+
+A group is created by the person who will run it, alone on both lists. After
+that the roster changes in exactly two ways, and the rules allow nothing else:
+
+1. **Somebody joins.** The write adds the caller and only the caller, leaves
+   every other field alone, and is allowed only while an invitation they hold
+   is on file and has not run out.
+2. **An administrator edits it.** They add or remove members and hand the
+   running of the group to another member. The administrators have to stay a
+   non-empty subset of the members, so the last one cannot resign into thin air
+   and somebody outside the group cannot go on running it.
+
+The group document is never deleted: its members, profiles, grants and
+positions would be left behind with nothing to say who may read them.
+
+A household that started before invitations existed has no `admins` field at
+all. Its roster is therefore still edited from the console, which is what the
+rules do when nobody is named: `admins` is read through a default of nothing,
+and nothing is what may change the roster.
+
+## invitations/{code}
+
+| Field       | Type      | Meaning                                     |
+|-------------|-----------|---------------------------------------------|
+| `createdBy` | string    | The administrator who made it                |
+| `expiresAt` | timestamp | When it stops letting anybody in             |
+
+The code is the name of the document rather than a field, so an invitation
+cannot be found except by knowing it. Nobody reads this collection -- not even
+the administrator who made it -- because a reader would hold every code of the
+group. The rules read it, and a rule reads without the caller's permission.
+
+An invitation cannot be edited once it is out, only withdrawn by deleting it:
+editing would let an expiry be pushed out for a code already handed round.
+
+What the rules cannot do is spend a code: a write that adds the caller and a
+write that marks the invitation used are two writes, and nothing makes the
+second follow the first. So a code lets in everybody who has it while it lasts,
+and what holds that down is how long it lasts and the administrator who can
+remove whoever should not be there.
+
+## joins/{uid}
+
+| Field  | Type   | Meaning                              |
+|--------|--------|--------------------------------------|
+| `code` | string | The code this person is holding      |
+
+A rule cannot be told anything except through the database: the write it weighs
+is the roster, and a code has nowhere to ride in it. So the person joining
+writes the code here first, and the rule that weighs their addition to the
+roster reads it from here.
+
+The document is theirs and nobody else's -- reading it would be reading a code,
+writing it would be putting one into somebody's hand -- and its shape is held to
+eight letters and digits, because the rules build a document path out of it.
 
 ## members/{uid}
 

@@ -289,11 +289,28 @@ belongs in whatever script or walkthrough does the first run.
 application. The first member creates the group and hands out a code; the
 person invited enters it and adds themselves to the roster. It is the form that
 works for somebody who will never open a console, and it is what makes removing
-somebody possible at all. Whether the rules alone can allow the joining write —
-one that may only append the caller's own id, against an invitation document
-that has to exist and not have expired — is the piece to establish against the
-emulator before anything is designed on top of it, because the alternative is a
-cloud function, and those are not free.
+somebody possible at all.
+
+Established against the emulator: the rules alone can allow all of it, and no
+cloud function is needed. A group is created by its founder alone on both
+lists; a code is a document named by the code itself, which nobody may read and
+the rules read for everybody; the person joining writes the code into a
+document of their own, and the rule weighing their addition to the roster reads
+it from there, allows the caller's own id and nothing else, and refuses a code
+that was never made or has run out. An administrator adds and removes members
+and hands the group on, while the administrators stay a non-empty subset of the
+members. The document model carries the shapes, and the rules tests cover
+twenty-three cases of it.
+
+What the rules cannot do is spend a code. Adding oneself and marking the
+invitation used are two writes, and nothing makes the second follow the first,
+so a code lets in everybody holding it until it runs out. That is why an
+invitation carries an expiry rather than a count, and why removing a member is
+part of the same piece of work rather than a later one.
+
+Left to build on top of it: the screens. Making a group and showing the code on
+one side, entering a code on the other, and a roster the administrator can
+remove from — in the application, and on the page as far as it can go.
 
 What joins is a member, meaning an account, not a phone: the code is spent by
 the person who enters it, and whatever devices they sign in on come with them.

@@ -3,16 +3,151 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
     match /groups/{groupId} {
+      function groupDocument() {
+        return get(/databases/$(database)/documents/groups/$(groupId));
+      }
+
       function groupMembers() {
-        return get(/databases/$(database)/documents/groups/$(groupId)).data.members;
+        return groupDocument().data.members;
       }
 
       function isMember() {
         return request.auth != null && request.auth.uid in groupMembers();
       }
 
+      // Who may change the roster. Read through the default because the
+      // household that started before this existed has no such field, and its
+      // roster is still the one edited from the console.
+      function groupAdmins() {
+        return groupDocument().data.get('admins', []);
+      }
+
+      function isGroupAdmin() {
+        return request.auth != null && request.auth.uid in groupAdmins();
+      }
+
+      // How many people one group holds. Not a limit anybody is expected to
+      // reach: it is what keeps a stolen code, or a mistake, from growing the
+      // document without end, since a rule cannot walk a list to check it.
+      function rosterFits() {
+        return request.resource.data.members.size() <= 50;
+      }
+
+      // The group is made by the person who will run it, alone on the roster
+      // and alone among its administrators. Nobody can conjure a group with
+      // somebody else already in it.
+      function founding() {
+        return request.auth != null &&
+               request.resource.data.keys().hasOnly(['members', 'admins']) &&
+               request.resource.data.members == [request.auth.uid] &&
+               request.resource.data.admins == [request.auth.uid];
+      }
+
+      // What the person invited does: add themselves, and nothing else.
+      //
+      // The caller is not on the roster yet, so nothing here may ask whether
+      // they are a member. What stands in for that is the invitation: a
+      // document whose name is the code, which only the rules ever read.
+      function joining() {
+        return request.auth != null &&
+               !(request.auth.uid in resource.data.members) &&
+               request.resource.data.diff(resource.data).affectedKeys().hasOnly(['members']) &&
+               request.resource.data.members == resource.data.members.concat([request.auth.uid]) &&
+               rosterFits() &&
+               invitationStands();
+      }
+
+      // The code is handed over by the person invited in a document of their
+      // own, because a rule cannot be told anything except through the
+      // database: the write it weighs is the roster, and a code has nowhere to
+      // ride in it.
+      //
+      // Nothing that is missing is read. A rule that reads a document that is
+      // not there, or builds a path out of a field that is not there, refuses
+      // the write through an evaluation error, and an error refuses the ones
+      // that should have been allowed just as readily: the administrator
+      // editing the roster is weighed against this same line.
+      function claimedCode() {
+        return exists(/databases/$(database)/documents/groups/$(groupId)/joins/$(request.auth.uid))
+                 ? get(/databases/$(database)/documents/groups/$(groupId)/joins/$(request.auth.uid))
+                     .data.get('code', '')
+                 : '';
+      }
+
+      function invitationStands() {
+        return claimedCode() != '' &&
+               exists(/databases/$(database)/documents/groups/$(groupId)/invitations/$(claimedCode())) &&
+               get(/databases/$(database)/documents/groups/$(groupId)/invitations/$(claimedCode()))
+                 .data.expiresAt > request.time;
+      }
+
+      // What an administrator may do: take somebody off the roster, put
+      // somebody on it, hand the running of the group to another member.
+      //
+      // The last administrator cannot resign into thin air — a group whose
+      // roster nobody may change is one that goes back to the console — and
+      // an administrator has to be on the roster, so that leaving the group
+      // takes the power with it.
+      function administering() {
+        return isGroupAdmin() &&
+               request.resource.data.keys().hasOnly(['members', 'admins']) &&
+               rosterFits() &&
+               request.resource.data.admins.size() >= 1 &&
+               request.resource.data.admins.hasOnly(request.resource.data.members);
+      }
+
       allow read: if isMember();
-      allow write: if false;
+      allow create: if founding();
+      allow update: if joining() || administering();
+      // A group is left by being taken off the roster. Deleting the document
+      // would leave its members, profiles, grants and positions behind with
+      // nothing to say who may read them.
+      allow delete: if false;
+
+      match /invitations/{code} {
+        // Nobody reads these, including the people who made them: a reader
+        // could collect the codes of a group and let themselves in. The rules
+        // read them, and a rule reads without the caller's permission.
+        //
+        // The code is the name of the document rather than a field, so an
+        // invitation cannot be found except by knowing it.
+        function invitationShape() {
+          return request.resource.data.keys().hasOnly(['createdBy', 'expiresAt']) &&
+                 request.resource.data.createdBy == request.auth.uid &&
+                 request.resource.data.expiresAt is timestamp;
+        }
+
+        allow read: if false;
+        allow create: if isGroupAdmin() && invitationShape();
+        // Withdrawing an invitation is deleting it; changing one in place
+        // would let an expiry be pushed out for a code already handed round.
+        allow update: if false;
+        allow delete: if isGroupAdmin();
+      }
+
+      match /joins/{uid} {
+        // The code somebody is holding, written where the rules can read it
+        // while they weigh that person's own addition to the roster. It is
+        // their document and nobody else's: reading it would be reading a
+        // code, and writing it would be putting one into somebody's hand.
+        //
+        // The shape is held to what a code looks like because the rules build
+        // a document path out of it. Letters and digits only, and eight of
+        // them: a path cannot be escaped out of, and a typed code is not long.
+        function claimShape() {
+          return request.resource.data.keys().hasOnly(['code']) &&
+                 request.resource.data.code is string &&
+                 request.resource.data.code.matches('^[A-Z2-9]{8}$');
+        }
+
+        function isSelf() {
+          return request.auth != null && request.auth.uid == uid;
+        }
+
+        allow read: if isSelf();
+        allow create, update: if isSelf() && claimShape();
+        allow delete: if isSelf();
+      }
 
       match /members/{uid} {
         // What a member says about themselves: the name and the picture their

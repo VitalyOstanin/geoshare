@@ -126,8 +126,13 @@ for (const member of MEMBERS) {
 
 const roster = MEMBERS.map((member) => uids.get(member.email));
 
+// The first of the three runs the group, so that a build pointed at the
+// emulator can make an invitation and watch somebody use it. A roster with
+// nobody running it is the household that predates invitations, and that one
+// is edited from the console.
 await write(`groups/${GROUP}`, {
     members: { arrayValue: { values: roster.map(stringValue) } },
+    admins: { arrayValue: { values: [stringValue(roster[0])] } },
 });
 
 for (const member of MEMBERS) {
