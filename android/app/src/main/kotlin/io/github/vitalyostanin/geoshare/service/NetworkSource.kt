@@ -8,6 +8,7 @@ import android.location.LocationManager
 import android.os.Bundle
 import android.os.Looper
 import io.github.vitalyostanin.geoshare.collection.Fix
+import io.github.vitalyostanin.geoshare.log.AppLog
 import kotlinx.coroutines.suspendCancellableCoroutine
 import java.time.Instant
 import kotlin.coroutines.resume
@@ -70,13 +71,33 @@ suspend fun networkPosition(context: Context): Fix? = suspendCancellableCoroutin
     )
 }
 
-/** What the platform knows without asking anybody, or nothing when it knows nothing. */
+/**
+ * What the platform knows without asking anybody, or nothing when what it
+ * knows did not come from the towers after all.
+ *
+ * The store is asked for the network provider and answers with whatever it
+ * last put there, which on at least one of these phones is the satellite
+ * answer itself: a position nineteen metres wide, no seconds old, sitting on
+ * the very place the spoofer had been handing out. Such an answer is not a
+ * second opinion, it is the first one again — and the caller writes what comes
+ * back past the jump rules, so it has to be refused here rather than argued
+ * with later.
+ */
 @SuppressLint("MissingPermission")
 fun lastNetworkPosition(context: Context): Fix? {
     val manager = context.getSystemService(LocationManager::class.java) ?: return null
+    val known = manager.getLastKnownLocation(LocationManager.NETWORK_PROVIDER) ?: return null
 
-    return manager.getLastKnownLocation(LocationManager.NETWORK_PROVIDER)?.let(::fixOf)
+    if (known.provider != LocationManager.NETWORK_PROVIDER) {
+        AppLog.i(TAG, "the store answered for the network with a fix from ${known.provider}")
+
+        return null
+    }
+
+    return fixOf(known)
 }
+
+private const val TAG = "geoshare.network"
 
 private fun fixOf(location: Location): Fix = Fix(
     latitude = location.latitude,
