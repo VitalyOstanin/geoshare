@@ -113,6 +113,29 @@ fun SettingsScreen(
                 }
             }
 
+            Row(
+                modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 4.dp),
+                horizontalArrangement = Arrangement.spacedBy(12.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Text(text = stringResource(R.string.jumps_title), modifier = Modifier.weight(1f))
+
+                Switch(
+                    checked = settings.jumpsFiltered,
+                    onCheckedChange = actions.onJumpsFilteredChange,
+                )
+            }
+
+            // Said under the switch rather than left to the title: what it
+            // does is easy to read as "be more accurate", and what it really
+            // does is throw answers away.
+            Text(
+                text = stringResource(R.string.jumps_explained),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.padding(start = 16.dp, end = 16.dp, bottom = 8.dp),
+            )
+
             HorizontalDivider()
 
             VisibilitySection(

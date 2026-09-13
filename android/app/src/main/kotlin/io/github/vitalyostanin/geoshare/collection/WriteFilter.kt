@@ -8,7 +8,20 @@ import kotlin.math.pow
 import kotlin.math.sin
 import kotlin.math.sqrt
 
-data class Fix(val latitude: Double, val longitude: Double, val takenAt: Instant)
+data class Fix(
+    val latitude: Double,
+    val longitude: Double,
+    val takenAt: Instant,
+    /**
+     * How wide the provider says its answer is, in metres, or nothing at all
+     * where it did not say.
+     *
+     * Carried because a position is a claim of two parts — where, and how
+     * sure — and a phone whose satellites are being jammed answers with the
+     * second part telling the truth long after the first has stopped.
+     */
+    val accuracyMetres: Double? = null,
+)
 
 /**
  * Whether a fix is worth a write.

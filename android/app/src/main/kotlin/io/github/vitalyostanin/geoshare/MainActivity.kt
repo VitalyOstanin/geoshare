@@ -58,6 +58,7 @@ import io.github.vitalyostanin.geoshare.permission.permissionOf
 import io.github.vitalyostanin.geoshare.permission.startupScreen
 import io.github.vitalyostanin.geoshare.service.BackgroundWorkSetting
 import io.github.vitalyostanin.geoshare.service.DeviceIdentity
+import io.github.vitalyostanin.geoshare.service.JumpFilterSetting
 import io.github.vitalyostanin.geoshare.service.LanguageChoice
 import io.github.vitalyostanin.geoshare.service.SharingService
 import io.github.vitalyostanin.geoshare.service.SharingSetting
@@ -84,6 +85,9 @@ class MainActivity : AppCompatActivity() {
 
     /** Which phone this is, so that a member carrying two is two markers rather than one. */
     private lateinit var device: DeviceIdentity
+
+    /** Whether the member asked for the positions the phone cannot have reached to be left out. */
+    private lateinit var jumps: JumpFilterSetting
 
     /** What the member has answered about letting the application keep running. */
     private lateinit var backgroundWork: BackgroundWorkSetting
@@ -155,6 +159,7 @@ class MainActivity : AppCompatActivity() {
         device = DeviceIdentity(this)
         appearance = ThemeSetting(this)
         backgroundWork = BackgroundWorkSetting(this)
+        jumps = JumpFilterSetting(this)
         batteryFree = batteryUnrestricted(this)
 
         // Before anything is drawn: the window is what shows while the screen
@@ -180,6 +185,7 @@ class MainActivity : AppCompatActivity() {
                     val state by signIn.state.collectAsStateWithLifecycle()
                     var sharingOn by remember { mutableStateOf(sharing.enabled) }
                     var startupSet by remember { mutableStateOf(backgroundWork.startupSet) }
+                    var jumpsFiltered by remember { mutableStateOf(jumps.enabled) }
 
                     when (val current = state) {
                         // Signed in, the map is the application; the sign-in
@@ -224,12 +230,20 @@ class MainActivity : AppCompatActivity() {
                                     batteryUnrestricted = batteryFree,
                                     startupScreen = startupAvailable,
                                     startupSet = startupSet,
+                                    jumpsFiltered = jumpsFiltered,
                                 ),
                                 actions =
                                 SettingsActions(
                                     onSharingChange = { wanted ->
                                         sharingOn = wanted
                                         applySharing(wanted)
+                                    },
+                                    // Read by the service out of the same
+                                    // store, which is where it looks on every
+                                    // fix that arrives.
+                                    onJumpsFilteredChange = { wanted ->
+                                        jumpsFiltered = wanted
+                                        jumps.enabled = wanted
                                     },
                                     onThemeChange = { wanted ->
                                         theme = wanted

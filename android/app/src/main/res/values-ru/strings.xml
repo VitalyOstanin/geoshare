@@ -20,6 +20,9 @@
     <string name="sharing_notification_text">Семья видит, где вы.</string>
     <string name="sharing_notification_stop">Остановить</string>
 
+    <string name="jumps_title">Отбрасывать невозможные места</string>
+    <string name="jumps_explained">Там, где глушат спутники, телефону сообщают место, где он быть не может, и метка прыгает по карте. Так отбрасывается любое место, до которого пришлось бы добираться быстрее 200 км/ч.</string>
+
     <string name="permission_location_needed">Чтобы делиться местом, нужен доступ к местоположению телефона. Разрешите его в настройках приложения.</string>
     <string name="permission_notifications_needed">Разрешите уведомления, чтобы работающая служба могла сказать о себе.</string>
     <string name="permission_background_needed">Чтобы делиться местом при закрытом приложении, поставьте доступ к местоположению «Разрешить всегда» в настройках приложения.</string>

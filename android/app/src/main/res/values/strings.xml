@@ -20,6 +20,12 @@
     <string name="sharing_notification_text">The family can see where you are.</string>
     <string name="sharing_notification_stop">Stop</string>
 
+    <!-- The filter that leaves out positions the phone cannot have reached.
+         Off unless asked for: it throws answers away, and only somebody whose
+         satellites are being jammed wants that. -->
+    <string name="jumps_title">Leave out impossible positions</string>
+    <string name="jumps_explained">Where the satellites are jammed, the phone is told it is somewhere it cannot be, and the marker jumps across the map. This leaves out any position that would have taken more than 200 km/h to reach.</string>
+
     <string name="permission_location_needed">Sharing needs access to this phone\'s position. Allow it in the application settings.</string>
     <string name="permission_notifications_needed">Allow notifications, so that a running service can say so.</string>
     <string name="permission_background_needed">To keep sharing while the application is closed, set the location access to \"Allow all the time\" in the application settings.</string>

@@ -18,7 +18,10 @@ import io.github.vitalyostanin.geoshare.collection.Fix
 import io.github.vitalyostanin.geoshare.collection.IDLE_REPEAT
 import io.github.vitalyostanin.geoshare.collection.WATCH_AHEAD
 import io.github.vitalyostanin.geoshare.collection.chooseMode
+import io.github.vitalyostanin.geoshare.collection.distanceMetres
 import io.github.vitalyostanin.geoshare.collection.fenceMoves
+import io.github.vitalyostanin.geoshare.collection.impliedSpeedMps
+import io.github.vitalyostanin.geoshare.collection.looksLikeAJump
 import io.github.vitalyostanin.geoshare.collection.rescueAfter
 import io.github.vitalyostanin.geoshare.collection.shouldWrite
 import io.github.vitalyostanin.geoshare.log.AppLog
@@ -37,6 +40,7 @@ import kotlinx.coroutines.launch
 import java.time.Duration
 import java.time.Instant
 import java.time.LocalTime
+import java.util.Locale
 
 private const val TAG = "geoshare.service"
 
@@ -95,6 +99,9 @@ class SharingService : LifecycleService() {
      */
     private var writer: PositionWriter? = null
     private var lastFix: Fix? = null
+
+    /** Whether the member has asked for the impossible positions to be left out. */
+    private val jumps by lazy { JumpFilterSetting(this) }
     private var lastMode: CollectionMode = CollectionMode.Standby
 
     /**
@@ -232,6 +239,18 @@ class SharingService : LifecycleService() {
         mode: CollectionMode,
         always: Boolean = false,
     ): Boolean {
+        val jump = looksLikeAJump(lastFix, fix)
+
+        // Every fix that arrives is written down, whether or not it is written
+        // out: what the provider answers where it is being jammed is the thing
+        // to be read afterwards, and a filtered log would answer questions
+        // about the filter instead.
+        noteFix(fix, mode, jump)
+
+        if (jump && jumps.enabled) {
+            return false
+        }
+
         if (!always && !shouldWrite(lastFix, fix, mode)) {
             return false
         }
@@ -503,6 +522,37 @@ class SharingService : LifecycleService() {
         AppLog.w(TAG, "the provider gave no position", error)
 
         null
+    }
+
+    /**
+     * Writes down a fix as it arrived, beside what it would take to be true.
+     *
+     * A line per fix rather than per write: the ones left out are the ones
+     * worth reading later, and the distance and the speed are what tell a walk
+     * from an answer given by a jammed receiver.
+     */
+    private fun noteFix(fix: Fix, mode: CollectionMode, jump: Boolean) {
+        val last = lastFix
+        val place = String.format(Locale.ROOT, "%.5f,%.5f", fix.latitude, fix.longitude)
+        val width = fix.accuracyMetres?.let { String.format(Locale.ROOT, " ±%.0f m", it) }.orEmpty()
+        val since =
+            if (last == null) {
+                "the first of this round"
+            } else {
+                val moved = distanceMetres(last, fix)
+                val speed = impliedSpeedMps(last, fix)
+                val pace = speed?.let { String.format(Locale.ROOT, "%.1f", it) } ?: "no"
+
+                String.format(Locale.ROOT, "%.0f m from the last at %s m/s", moved, pace)
+            }
+        val verdict =
+            when {
+                !jump -> ""
+                jumps.enabled -> "; a jump, left out"
+                else -> "; a jump, kept because the filter is off"
+            }
+
+        AppLog.i(TAG, "fix $place$width in mode $mode, $since$verdict")
     }
 
     /**

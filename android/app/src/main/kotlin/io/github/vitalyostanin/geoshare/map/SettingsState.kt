@@ -24,6 +24,8 @@ data class SettingsState(
     val language: LanguageChoice,
     /** The permissions this member has given, by the member each was given to. */
     val sharedWith: Map<String, Instant>,
+    /** Whether the phone leaves out the positions it cannot have reached. */
+    val jumpsFiltered: Boolean,
     /** Whether the phone leaves the application out of its battery saving. */
     val batteryUnrestricted: Boolean,
     /** Whether this phone has a startup list of its own to open. */
@@ -35,6 +37,7 @@ data class SettingsState(
 /** What the settings screen can ask for, as one value, and for the same reason. */
 data class SettingsActions(
     val onSharingChange: (Boolean) -> Unit,
+    val onJumpsFilteredChange: (Boolean) -> Unit,
     val onThemeChange: (ThemeChoice) -> Unit,
     val onLanguageChange: (LanguageChoice) -> Unit,
     val onShare: (String, ShareSpan) -> Unit,
