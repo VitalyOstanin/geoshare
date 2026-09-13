@@ -596,7 +596,7 @@ function memberEntry(position, labels, pictures, shown, now) {
 
     const age = document.createElement('span');
     age.className = stale ? 'age stale' : 'age';
-    age.textContent = ageText(positionAge(position.knownAt, now));
+    age.textContent = ageText(positionAge(position.positionAt, now));
 
     const battery = document.createElement('span');
     battery.className = 'battery';

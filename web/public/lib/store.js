@@ -211,6 +211,13 @@ function positionOf(snapshot) {
         // The server stamp is the one clock every member shares; the phone
         // that took the fix may be minutes off.
         knownAt: (data.writtenAt ?? data.takenAt).toMillis(),
+        // How old the position itself is, as opposed to how long ago the phone
+        // last spoke. The two differ whenever a phone says a position again —
+        // which is what a phone does while its satellites are being spoofed
+        // and it has nothing new it believes. Capped at the server stamp,
+        // because the rest of the difference would be somebody's clock rather
+        // than the age of anything.
+        positionAt: Math.min(data.takenAt.toMillis(), (data.writtenAt ?? data.takenAt).toMillis()),
         mode: data.mode ?? null,
         batteryPercent: typeof data.batteryPercent === 'number' ? data.batteryPercent : null,
         // Absent in what the older builds wrote, which is a phone not known to

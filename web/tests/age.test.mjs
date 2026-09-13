@@ -51,3 +51,28 @@ test('one of a unit is spelled without the plural', () => {
     assert.equal(ageText({ unit: 'hours', count: 2 }), '2 hours ago');
     assert.equal(ageText({ unit: 'justNow', count: 0 }), 'just now');
 });
+
+// A phone whose satellites are being spoofed says its last true position
+// again rather than a new false one, so the writing is fresh while the
+// position is not. The card is for the phone being in touch; the age is for
+// the position, and the two must not be taken from the same stamp.
+const positionOf = (takenAt, writtenAt) => Math.min(takenAt, writtenAt);
+
+test('a position said again carries the age of the position, not of the writing', () => {
+    const takenAt = NOW - 40 * MINUTE;
+
+    assert.deepEqual(positionAge(positionOf(takenAt, NOW), NOW), { unit: 'minutes', count: 40 });
+    assert.equal(isStale(NOW, NOW), false);
+});
+
+test('a phone whose clock runs ahead is aged by the server stamp instead', () => {
+    const takenAt = NOW + 10 * MINUTE;
+    const writtenAt = NOW - MINUTE;
+
+    assert.deepEqual(positionAge(positionOf(takenAt, writtenAt), NOW), { unit: 'minutes', count: 1 });
+});
+
+test('a position said again goes stale by the writing, however old the fix', () => {
+    assert.equal(isStale(NOW - STALE_AFTER_MS, NOW), true);
+    assert.equal(isStale(NOW - MINUTE, NOW), false);
+});

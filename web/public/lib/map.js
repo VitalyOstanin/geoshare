@@ -518,7 +518,7 @@ function groupList(entry, names, faces, now) {
         const age = document.createElement('span');
 
         age.className = stale ? 'group-age stale' : 'group-age';
-        age.textContent = ageText(positionAge(member.knownAt, now));
+        age.textContent = ageText(positionAge(member.positionAt, now));
 
         row.append(face, name, age);
         row.addEventListener('click', () => {
@@ -630,7 +630,7 @@ function detail(position, name, faces, now) {
     const table = document.createElement('table');
 
     const rows = [
-        [WORDS.lastSeen, ageText(positionAge(position.knownAt, now))],
+        [WORDS.lastSeen, ageText(positionAge(position.positionAt, now))],
         [WORDS.at, timeText(position.knownAt)],
         [WORDS.mode, modeButton(position.mode)],
         [WORDS.battery, batteryText(position)],
