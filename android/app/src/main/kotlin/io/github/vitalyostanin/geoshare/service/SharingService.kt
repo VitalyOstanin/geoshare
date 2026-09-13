@@ -40,6 +40,7 @@ import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.onStart
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withTimeoutOrNull
 import java.time.Duration
 import java.time.Instant
 import java.time.LocalTime
@@ -534,8 +535,49 @@ class SharingService : LifecycleService() {
             // instead of turning into a loop.
             heardAt = Instant.now()
 
-            positionNow(priority)?.let { fix -> writeIfWorth(writer, fix, mode, always = true) }
+            val fix = positionNow(priority)
+
+            if (fix != null) {
+                writeIfWorth(writer, fix, mode, always = true)
+
+                continue
+            }
+
+            noteWhatTheNetworkKnows()
         }
+    }
+
+    /**
+     * What the towers and the Wi-Fi have to say when Play Services has nothing.
+     *
+     * Written down rather than used: the question being answered here is
+     * whether a phone whose satellites are jammed could be placed by its other
+     * radios at all, and that has to be known before the collection is moved
+     * onto them.
+     */
+    private suspend fun noteWhatTheNetworkKnows() {
+        val asked =
+            withTimeoutOrNull(NETWORK_ANSWER_WAIT.toMillis()) {
+                networkPosition(this@SharingService)
+            }
+        val known = lastNetworkPosition(this)
+
+        AppLog.i(TAG, "the network says ${saying(asked)}, and knew ${saying(known)} before that")
+    }
+
+    /** How a fix reads in the line above, and how its absence reads. */
+    private fun saying(fix: Fix?): String = when (fix) {
+        null -> "nothing"
+
+        else ->
+            String.format(
+                Locale.ROOT,
+                "%.5f,%.5f ±%.0f m, %d s old",
+                fix.latitude,
+                fix.longitude,
+                fix.accuracyMetres ?: 0.0,
+                Duration.between(fix.takenAt, Instant.now()).seconds,
+            )
     }
 
     /**
@@ -699,6 +741,15 @@ class SharingService : LifecycleService() {
 
         /** What a phone that will not say counts as, so it is not treated as flat. */
         private const val FULL_BATTERY = 100
+
+        /**
+         * How long the network is given to answer when Play Services will not.
+         *
+         * A tower answers in seconds and a scan of the Wi-Fi around the phone
+         * takes a few more; half a minute is long enough for both and short
+         * enough to be over before the next round of asking.
+         */
+        private val NETWORK_ANSWER_WAIT: Duration = Duration.ofSeconds(30)
 
         const val ACTION_STOP = "io.github.vitalyostanin.geoshare.STOP"
 
