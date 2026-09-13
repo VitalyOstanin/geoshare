@@ -44,6 +44,13 @@
        key either stamp the map with a demand for one or, in the case of the
        free vector styles tried here, never finish loading in the browser. */
     --night-canvas: invert(1) hue-rotate(180deg) brightness(0.92) contrast(0.95);
+
+    /* How far the text in a window over the map stays clear of the cross that
+       closes it. The button is inset 0.4rem and is 1.75rem wide, so its circle
+       reaches 1.25rem into the text, and the two lines drawn in it another
+       0.45rem short of that. Anything less than 0.8rem and a long name runs
+       into the cross itself; this leaves a gap the eye reads as deliberate. */
+    --cross-clear: 1.5rem;
 }
 
 /* Dark because the system is, which is what a viewer who has said nothing
@@ -334,6 +341,7 @@ button {
    them was meant is a question only the viewer can answer. */
 .group h2 {
     margin: 0 0 0.4rem;
+    padding-right: var(--cross-clear);
     font-size: 1rem;
 }
 
@@ -380,7 +388,7 @@ button {
        half reads as a broken card rather than as a way back. */
     white-space: nowrap;
     /* Clear of the close button, which sits over the corner of the card. */
-    padding-right: 1.5rem;
+    padding-right: var(--cross-clear);
     margin-bottom: 0.4rem;
     border: 0;
     background: none;
@@ -432,12 +440,15 @@ button {
 
 .detail-device {
     display: block;
+    padding-right: var(--cross-clear);
     font-size: 0.8rem;
     opacity: 0.7;
 }
 
 .detail h2 {
     margin: 0;
+    /* Clear of the cross, which stands over the corner of the card. */
+    padding-right: var(--cross-clear);
     font-size: 1rem;
     overflow-wrap: anywhere;
 }
@@ -491,7 +502,7 @@ button {
 /* The cross sits in the corner the title would otherwise run into. */
 .mode-help h2 {
     margin: 0 0 0.4rem;
-    padding-right: 1.75rem;
+    padding-right: var(--cross-clear);
     font-size: 1.05rem;
 }
 
