@@ -62,6 +62,14 @@ enum class JumpReason {
 
     /** The phone's own sensors say it has not been carried anywhere. */
     Unmoved,
+
+    /**
+     * The towers and the Wi-Fi place the phone somewhere else entirely.
+     *
+     * The one rule that does not compare a position with an earlier position,
+     * and so the one a slowly drawn false road does not defeat.
+     */
+    Contradicted,
 }
 
 /**
@@ -82,10 +90,27 @@ enum class JumpReason {
  * slowly enough to pass the speed is still a road the phone was never carried
  * along. [stillSince] is null wherever there is nothing to ask — the
  * permission was refused, or the sensors have not reported yet.
+ *
+ * The other radios are asked before any of that, and before the anchor, for
+ * the same reason the false places are: their answer needs nothing earlier to
+ * be worth something. A phone switched on inside a spoofed area has no anchor,
+ * no sensor history and no list of false places covering a new one — and still
+ * has towers around it that the transmitter never reached. [networkSays] is
+ * null wherever the other radios were not asked or had nothing to say.
  */
-fun whyAJump(last: Fix?, next: Fix, stillSince: Instant? = null): JumpReason? {
+fun whyAJump(
+    last: Fix?,
+    next: Fix,
+    stillSince: Instant? = null,
+    networkSays: Fix? = null,
+    now: Instant = next.takenAt,
+): JumpReason? {
     if (falsePlaceFor(next) != null) {
         return JumpReason.FalsePlace
+    }
+
+    if (secondOpinion(next, networkSays, now)?.disagrees == true) {
+        return JumpReason.Contradicted
     }
 
     if (last == null) {

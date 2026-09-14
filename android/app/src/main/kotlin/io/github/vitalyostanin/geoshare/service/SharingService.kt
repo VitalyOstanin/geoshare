@@ -21,6 +21,7 @@ import io.github.vitalyostanin.geoshare.collection.Fix
 import io.github.vitalyostanin.geoshare.collection.IDLE_REPEAT
 import io.github.vitalyostanin.geoshare.collection.JumpReason
 import io.github.vitalyostanin.geoshare.collection.Moving
+import io.github.vitalyostanin.geoshare.collection.SECOND_OPINION_ASKED_EVERY
 import io.github.vitalyostanin.geoshare.collection.Trail
 import io.github.vitalyostanin.geoshare.collection.WATCH_AHEAD
 import io.github.vitalyostanin.geoshare.collection.anchorFrom
@@ -40,6 +41,7 @@ import io.github.vitalyostanin.geoshare.collection.noteOf
 import io.github.vitalyostanin.geoshare.collection.otherRadiosAreDue
 import io.github.vitalyostanin.geoshare.collection.remembering
 import io.github.vitalyostanin.geoshare.collection.rescueAfter
+import io.github.vitalyostanin.geoshare.collection.secondOpinion
 import io.github.vitalyostanin.geoshare.collection.shouldWrite
 import io.github.vitalyostanin.geoshare.collection.whyAJump
 import io.github.vitalyostanin.geoshare.collection.word
@@ -162,6 +164,16 @@ class SharingService : LifecycleService() {
 
     /** When the towers and the Wi-Fi were last asked in place of the satellites. */
     private var askedTheOtherRadiosAt: Instant? = null
+
+    /**
+     * The last thing the towers and the Wi-Fi said, whoever asked them.
+     *
+     * Kept because it is the one opinion a transmitter drawing a false road
+     * cannot reach, and because the rule that uses it has to run while nothing
+     * looks wrong: a road drawn slowly breaks no other rule, so by the time
+     * another rule fires there would be nothing left to compare.
+     */
+    private var networkSaid: Fix? = null
 
     /**
      * Since when the phone's own sensors say it has not been carried anywhere,
@@ -364,7 +376,12 @@ class SharingService : LifecycleService() {
             forgetThePlace()
         }
 
-        val jump = if (trusted) null else whyAJump(lastFix, fix, standingSince)
+        val jump =
+            if (trusted) {
+                null
+            } else {
+                whyAJump(lastFix, fix, standingSince, networkSaid, Instant.now())
+            }
         // A fix left out does not move the last position, and that is how the
         // marker can be left standing somewhere the phone has long left: a
         // wrong last position turns every true fix that follows into a jump.
@@ -524,6 +541,7 @@ class SharingService : LifecycleService() {
                         launch { rescueWhileSilent(writer, mode) }
                         launch { watchTheSatellites(mode) }
                         launch { noteTheSkyWhileSilent(mode) }
+                        launch { keepASecondOpinion() }
 
                         positionUpdates(this@SharingService, spec).collect { fix ->
                             heardAt = Instant.now()
@@ -693,6 +711,37 @@ class SharingService : LifecycleService() {
     }
 
     /**
+     * Keeps an answer from the towers and the Wi-Fi standing beside the
+     * satellites' own.
+     *
+     * The only rule here that has to run while everything looks right. A
+     * transmitter drawing a false road slowly breaks no other rule — not the
+     * speed, not the width, not the sensors of a phone in a moving car — and
+     * the first moment anything is visibly wrong is the moment the road ends,
+     * hours later. So the second opinion is fetched on a clock rather than on
+     * suspicion, and the cost of that is one scan every
+     * [SECOND_OPINION_ASKED_EVERY].
+     *
+     * What comes back is never written, only compared: an answer from the
+     * towers is worth a district, and the rules that decide what goes in the
+     * document are asked about it elsewhere.
+     */
+    private suspend fun keepASecondOpinion() {
+        while (true) {
+            val asked =
+                withTimeoutOrNull(NETWORK_ANSWER_WAIT.toMillis()) {
+                    networkPosition(this@SharingService)
+                } ?: lastNetworkPosition(this)
+
+            if (asked != null) {
+                networkSaid = asked
+            }
+
+            delay(SECOND_OPINION_ASKED_EVERY.toMillis())
+        }
+    }
+
+    /**
      * Puts the satellites aside and asks the towers and the Wi-Fi instead.
      *
      * Called from the one place a spoofed phone reaches: the branch where an
@@ -730,6 +779,8 @@ class SharingService : LifecycleService() {
         }
 
         val fix = asked ?: return
+
+        networkSaid = fix
 
         AppLog.i(TAG, "standing on what the other radios say: ${saying(fix)}")
 
@@ -1041,6 +1092,25 @@ class SharingService : LifecycleService() {
             "by landing on ${falsePlaceFor(fix)?.named ?: "a place a false signal uses"}"
 
         JumpReason.Unmoved -> "by the phone never having been carried there"
+
+        JumpReason.Contradicted ->
+            "by the other radios placing the phone ${apartFromTheRadios(fix)}"
+    }
+
+    /**
+     * How far the towers and the Wi-Fi put the phone from where the satellites
+     * just put it, for the line that says a fix was left out.
+     */
+    private fun apartFromTheRadios(fix: Fix): String {
+        val said =
+            secondOpinion(fix, networkSaid, Instant.now()) ?: return "somewhere else"
+
+        return String.format(
+            Locale.ROOT,
+            "%.0f m away, against the %.0f m they were allowed",
+            said.apartMetres,
+            said.allowedMetres,
+        )
     }
 
     /**
