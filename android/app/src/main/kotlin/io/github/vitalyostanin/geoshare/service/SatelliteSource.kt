@@ -72,3 +72,32 @@ fun satellitePositions(context: Context): Flow<Fix> = callbackFlow {
 
     awaitClose { manager.removeUpdates(listener) }
 }
+
+/**
+ * What the satellites last said, without asking them anything.
+ *
+ * The store holds whatever the receiver worked out the last time it was on,
+ * and reading it costs nothing at all — no receiver, no battery, no wait. That
+ * makes it the only way to have the satellites' own answer beside the written
+ * one in the modes where the receiver is asleep, which is most of the day.
+ *
+ * What it cannot do is say when. An answer from four hours ago reads exactly
+ * like one from four seconds ago, so the caller is handed the fix with its own
+ * moment in it and decides for itself whether that is recent enough to mean
+ * anything.
+ */
+@SuppressLint("MissingPermission")
+fun lastSatellitePosition(context: Context): Fix? {
+    val manager = context.getSystemService(LocationManager::class.java) ?: return null
+    val known = manager.getLastKnownLocation(LocationManager.GPS_PROVIDER) ?: return null
+
+    // The store answers for the provider that was asked with whatever it last
+    // put there, which on at least one of these phones is another provider's
+    // answer entirely — and an answer from the towers filed under the
+    // satellites is the one thing this must not be mistaken for.
+    if (known.provider != LocationManager.GPS_PROVIDER) {
+        return null
+    }
+
+    return fixOf(known)
+}

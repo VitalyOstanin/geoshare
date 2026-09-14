@@ -209,6 +209,9 @@ class SharingService : LifecycleService() {
     /** When the satellites were last said to disagree with what is written. */
     private var disagreedAt: Instant = Instant.EPOCH
 
+    /** Which of the satellites' answers has already been put in the record. */
+    private var satellitesLastSaid: Duration? = null
+
     /**
      * When the last write actually reached the database.
      *
@@ -765,6 +768,33 @@ class SharingService : LifecycleService() {
     }
 
     /**
+     * The satellites' last answer, put in the record beside the written one.
+     *
+     * Read from the store rather than asked for, so it costs nothing and works
+     * in the modes where the receiver is asleep — which is where the question
+     * matters most, since a phone nobody is watching is a phone whose position
+     * nobody is checking either.
+     *
+     * The same answer is not written twice: the store keeps handing over the
+     * same fix until the receiver works out another one, and a file full of
+     * repeats would hide how often the receiver actually answered.
+     */
+    private fun noteWhatTheSatellitesLastSaid() {
+        val satellites = lastSatellitePosition(this) ?: return
+        val stamp =
+            satellites.sinceBoot ?: satellites.takenAt.toEpochMilli().let(Duration::ofMillis)
+
+        if (stamp == satellitesLastSaid) {
+            return
+        }
+
+        satellitesLastSaid = stamp
+
+        SkyLog.note(satellites.takenAt, satellites)
+        noteTheDisagreement(satellites)
+    }
+
+    /**
      * What the satellites alone say, while the receiver is on anyway.
      *
      * Nothing is written to the database from this and nothing is filtered by
@@ -884,6 +914,7 @@ class SharingService : LifecycleService() {
         // above is one sentence about a minute of averages; this is the sky
         // itself, satellite by satellite, for the questions that come later.
         radio.noteSky(fix.takenAt, fix)
+        noteWhatTheSatellitesLastSaid()
     }
 
     /**
