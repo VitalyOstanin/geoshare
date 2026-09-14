@@ -167,7 +167,9 @@ object SkyLog {
         append(number(clock.biasUncertaintyNanos)).append(',')
         append(number(clock.driftNanosPerSecond)).append(',')
         append(number(clock.driftUncertaintyNanosPerSecond)).append(',')
-        append(clock.discontinuities).append('\n')
+        append(clock.discontinuities).append(',')
+        append(clock.sinceBootNanos?.toString().orEmpty()).append(',')
+        append(number(clock.sinceBootUncertaintyNanos)).append('\n')
     }
 
     private fun StringBuilder.gain(stamp: Long, gain: Gain) {
@@ -208,7 +210,14 @@ object SkyLog {
         append(number(measured.deltaRangeUncertaintyMetres)).append(',')
         append(number(measured.carrierHz)).append(',')
         append(measured.multipath).append(',')
-        append(number(measured.gainDb)).append('\n')
+        append(number(measured.gainDb)).append(',')
+        append(number(measured.snrDb)).append(',')
+        append(measured.codeType.orEmpty()).append(',')
+        append(number(measured.fullInterSignalBiasNanos)).append(',')
+        append(number(measured.fullInterSignalBiasUncertaintyNanos)).append(',')
+        append(number(measured.satelliteInterSignalBiasNanos)).append(',')
+        append(number(measured.satelliteInterSignalBiasUncertaintyNanos)).append(',')
+        append(measured.fullTracking?.let { if (it) "1" else "0" }.orEmpty()).append('\n')
     }
 
     /** A number the way a spreadsheet wants it, or nothing where there is none. */
@@ -226,9 +235,9 @@ object SkyLog {
         """
         # Fix,UnixTimeMillis,Provider,LatitudeDegrees,LongitudeDegrees,AltitudeMeters,SpeedMps,AccuracyMeters,BearingDegrees,TakenAtMillis,SpeedAccuracyMps,BearingAccuracyDegrees,ElapsedRealtimeNanos,VerticalAccuracyMeters,MockLocation,ExtraKeyValuePairs
         # NoFix,UnixTimeMillis,Mode,SilenceMillis
-        # Clock,UnixTimeMillis,TimeNanos,LeapSecond,TimeUncertaintyNanos,FullBiasNanos,BiasNanos,BiasUncertaintyNanos,DriftNanosPerSecond,DriftUncertaintyNanosPerSecond,HardwareClockDiscontinuityCount
+        # Clock,UnixTimeMillis,TimeNanos,LeapSecond,TimeUncertaintyNanos,FullBiasNanos,BiasNanos,BiasUncertaintyNanos,DriftNanosPerSecond,DriftUncertaintyNanosPerSecond,HardwareClockDiscontinuityCount,ElapsedRealtimeNanos,ElapsedRealtimeUncertaintyNanos
         # Agc,UnixTimeMillis,ConstellationType,CarrierFrequencyHz,AgcDb
         # Sat,UnixTimeMillis,ConstellationType,Svid,Cn0DbHz,BasebandCn0DbHz,ElevationDegrees,AzimuthDegrees,CarrierFrequencyHz,UsedInFix,HasEphemerisData,HasAlmanacData
-        # Raw,UnixTimeMillis,ConstellationType,Svid,TimeOffsetNanos,State,ReceivedSvTimeNanos,ReceivedSvTimeUncertaintyNanos,Cn0DbHz,BasebandCn0DbHz,PseudorangeRateMetersPerSecond,PseudorangeRateUncertaintyMetersPerSecond,AccumulatedDeltaRangeState,AccumulatedDeltaRangeMeters,AccumulatedDeltaRangeUncertaintyMeters,CarrierFrequencyHz,MultipathIndicator,AgcDb
+        # Raw,UnixTimeMillis,ConstellationType,Svid,TimeOffsetNanos,State,ReceivedSvTimeNanos,ReceivedSvTimeUncertaintyNanos,Cn0DbHz,BasebandCn0DbHz,PseudorangeRateMetersPerSecond,PseudorangeRateUncertaintyMetersPerSecond,AccumulatedDeltaRangeState,AccumulatedDeltaRangeMeters,AccumulatedDeltaRangeUncertaintyMeters,CarrierFrequencyHz,MultipathIndicator,AgcDb,SnrInDb,CodeType,FullInterSignalBiasNanos,FullInterSignalBiasUncertaintyNanos,SatelliteInterSignalBiasNanos,SatelliteInterSignalBiasUncertaintyNanos,IsFullTracking
         """.trimIndent() + "\n"
 }

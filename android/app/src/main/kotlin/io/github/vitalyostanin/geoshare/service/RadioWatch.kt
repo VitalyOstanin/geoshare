@@ -8,6 +8,7 @@ import android.location.LocationManager
 import android.os.Build
 import android.os.Handler
 import android.os.Looper
+import androidx.annotation.RequiresApi
 import io.github.vitalyostanin.geoshare.collection.Clock
 import io.github.vitalyostanin.geoshare.collection.Constellation
 import io.github.vitalyostanin.geoshare.collection.Counted
@@ -232,7 +233,9 @@ class RadioWatch(private val context: Context) {
             object : GnssMeasurementsEvent.Callback() {
                 override fun onGnssMeasurementsReceived(event: GnssMeasurementsEvent) {
                     clock = clockOf(event)
-                    measured = event.measurements.map(::measurementOf)
+                    val tracking = fullTrackingOf(event)
+
+                    measured = event.measurements.map { measurementOf(it, tracking) }
 
                     val epoch = reported(gainsOf(event))
 
@@ -369,6 +372,9 @@ private fun constellationOf(type: Int): Constellation = when (type) {
     GnssStatus.CONSTELLATION_GLONASS -> Constellation.Glonass
     GnssStatus.CONSTELLATION_GALILEO -> Constellation.Galileo
     GnssStatus.CONSTELLATION_BEIDOU -> Constellation.Beidou
+    GnssStatus.CONSTELLATION_QZSS -> Constellation.Qzss
+    GnssStatus.CONSTELLATION_SBAS -> Constellation.Sbas
+    GnssStatus.CONSTELLATION_IRNSS -> Constellation.Irnss
     else -> Constellation.Other
 }
 
@@ -444,12 +450,30 @@ private fun clockOf(event: GnssMeasurementsEvent): Clock {
             clock.hasDriftUncertaintyNanosPerSecond()
         },
         discontinuities = clock.hardwareClockDiscontinuityCount,
+        sinceBootNanos =
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            clock.elapsedRealtimeNanos.takeIf { clock.hasElapsedRealtimeNanos() }
+        } else {
+            null
+        },
+        sinceBootUncertaintyNanos =
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            clock.elapsedRealtimeUncertaintyNanos.takeIf {
+                clock.hasElapsedRealtimeUncertaintyNanos()
+            }
+        } else {
+            null
+        },
     )
 }
 
 /** One raw measurement, in the terms the rest of this uses. */
 @Suppress("DEPRECATION")
-private fun measurementOf(measured: android.location.GnssMeasurement): Measurement = Measurement(
+private fun measurementOf(
+    measured: android.location.GnssMeasurement,
+    fullTracking: Boolean?,
+    delays: Delays = delaysOf(measured),
+): Measurement = Measurement(
     constellation = constellationOf(measured.constellationType),
     id = measured.svid,
     timeOffsetNanos = measured.timeOffsetNanos,
@@ -473,5 +497,65 @@ private fun measurementOf(measured: android.location.GnssMeasurement): Measureme
     gainDb =
     measured.automaticGainControlLevelDb.takeIf {
         measured.hasAutomaticGainControlLevelDb()
+    },
+    snrDb = measured.snrInDb.takeIf { measured.hasSnrInDb() },
+    codeType = measured.codeType.takeIf { measured.hasCodeType() },
+    fullInterSignalBiasNanos = delays.full,
+    fullInterSignalBiasUncertaintyNanos = delays.fullUncertainty,
+    satelliteInterSignalBiasNanos = delays.satellite,
+    satelliteInterSignalBiasUncertaintyNanos = delays.satelliteUncertainty,
+    fullTracking = fullTracking,
+)
+
+/**
+ * Whether the receiver was asked for everything it can hear, where the
+ * platform says.
+ *
+ * Android 14 and later. Below it the question has no answer at all rather than
+ * a negative one: a receiver may well have been tracking everything, and the
+ * epoch simply does not carry the fact.
+ */
+private fun fullTrackingOf(event: GnssMeasurementsEvent): Boolean? =
+    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
+        event.isFullTracking
+    } else {
+        null
+    }
+
+/**
+ * The delays the receiver applies between one signal and another.
+ *
+ * Four numbers that arrive together or not at all: Android 11 brought the lot,
+ * and below it the epoch does not carry them. Kept as one value so that the
+ * version is asked about once rather than four times.
+ */
+private data class Delays(
+    val full: Double? = null,
+    val fullUncertainty: Double? = null,
+    val satellite: Double? = null,
+    val satelliteUncertainty: Double? = null,
+)
+
+private fun delaysOf(measured: android.location.GnssMeasurement): Delays =
+    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+        reportedDelays(measured)
+    } else {
+        Delays()
+    }
+
+/** The same, on a version that has them, each guarded by its own `has`. */
+@RequiresApi(Build.VERSION_CODES.R)
+private fun reportedDelays(measured: android.location.GnssMeasurement): Delays = Delays(
+    full = measured.fullInterSignalBiasNanos.takeIf {
+        measured.hasFullInterSignalBiasNanos()
+    },
+    fullUncertainty = measured.fullInterSignalBiasUncertaintyNanos.takeIf {
+        measured.hasFullInterSignalBiasUncertaintyNanos()
+    },
+    satellite = measured.satelliteInterSignalBiasNanos.takeIf {
+        measured.hasSatelliteInterSignalBiasNanos()
+    },
+    satelliteUncertainty = measured.satelliteInterSignalBiasUncertaintyNanos.takeIf {
+        measured.hasSatelliteInterSignalBiasUncertaintyNanos()
     },
 )

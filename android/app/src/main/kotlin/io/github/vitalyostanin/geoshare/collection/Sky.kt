@@ -91,6 +91,9 @@ val Constellation.word: String
         Constellation.Glonass -> "GLONASS"
         Constellation.Galileo -> "Galileo"
         Constellation.Beidou -> "BeiDou"
+        Constellation.Qzss -> "QZSS"
+        Constellation.Sbas -> "SBAS"
+        Constellation.Irnss -> "IRNSS"
         Constellation.Other -> "other"
     }
 
@@ -100,6 +103,9 @@ fun inOrder(systems: Set<Constellation>): List<Constellation> = listOf(
     Constellation.Glonass,
     Constellation.Galileo,
     Constellation.Beidou,
+    Constellation.Qzss,
+    Constellation.Sbas,
+    Constellation.Irnss,
     Constellation.Other,
 ).filter { it in systems }
 
@@ -123,6 +129,17 @@ data class Clock(
     val driftNanosPerSecond: Double?,
     val driftUncertaintyNanosPerSecond: Double?,
     val discontinuities: Int,
+    /**
+     * The phone's own clock since it was switched on, at the moment of the
+     * epoch.
+     *
+     * The one clock in the epoch a false sky cannot touch. Everything else
+     * here is taken from the satellites and steps when they say to step; this
+     * runs off the phone's own oscillator, so the pair of them is what shows a
+     * step happening at all.
+     */
+    val sinceBootNanos: Long?,
+    val sinceBootUncertaintyNanos: Double?,
 )
 
 /**
@@ -151,4 +168,45 @@ data class Measurement(
     val carrierHz: Double?,
     val multipath: Int,
     val gainDb: Double?,
+    /**
+     * Signal against noise where the receiver reports it, in dB.
+     *
+     * Not the same number as [loudness], which is carrier against noise
+     * density: this one carries the receiver's own bandwidth in it. Few
+     * receivers report it, and the ones that do report it beside the other,
+     * which is what makes the pair worth having.
+     */
+    val snrDb: Double?,
+    /**
+     * Which signal of the satellite this is — "C" for the coarse GPS code,
+     * "Q" and "I" for the halves of a Galileo or BeiDou one.
+     *
+     * A false sky is normally one signal per satellite, because imitating the
+     * second one costs as much again for nothing; a real one has receivers
+     * tracking several.
+     */
+    val codeType: String?,
+    /**
+     * The delay the receiver applies for this signal against its own reference
+     * signal, and how sure it is of it.
+     *
+     * Reported from Android 11. Worth keeping because a receiver mixing a
+     * false signal with real ones has to reconcile them somewhere, and this is
+     * where it says by how much.
+     */
+    val fullInterSignalBiasNanos: Double?,
+    val fullInterSignalBiasUncertaintyNanos: Double?,
+    /** The same delay as the satellite itself broadcasts it. */
+    val satelliteInterSignalBiasNanos: Double?,
+    val satelliteInterSignalBiasUncertaintyNanos: Double?,
+    /**
+     * Whether the receiver was tracking every signal it can rather than the
+     * cheapest set that gives a position.
+     *
+     * A property of the epoch rather than of the one measurement, written on
+     * each row the way Google's own logger writes it. It says how much of a
+     * silence is the receiver economising and how much is the sky: a receiver
+     * in the cheap mode hears fewer signals by design.
+     */
+    val fullTracking: Boolean?,
 )

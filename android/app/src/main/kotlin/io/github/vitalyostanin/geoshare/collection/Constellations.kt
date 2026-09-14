@@ -20,11 +20,29 @@ enum class Constellation {
     Galileo,
     Beidou,
 
-    /** SBAS, QZSS, IRNSS and whatever a receiver reports that is none of these. */
+    /** Japan's regional system, which broadcasts where GPS does. */
+    Qzss,
+
+    /** The augmentation satellites, which also sit in the GPS band. */
+    Sbas,
+
+    /** India's regional system. */
+    Irnss,
+
+    /** Whatever a receiver reports that is none of these. */
     Other,
 }
 
-/** The ones whose civil signal sits where GPS puts its own. */
+/**
+ * The ones whose civil signal sits where GPS puts its own.
+ *
+ * QZSS and SBAS transmit in that band too and are deliberately left out. What
+ * this set is for is an average that a false signal moves, and both of those
+ * are heard on these phones a few satellites at a time or not at all: letting
+ * them in would make the band's average jump about as they come and go,
+ * without adding anything a false signal would show up in. They are told apart
+ * in the log, which is where the question of what was heard is asked.
+ */
 val SHARE_THE_GPS_BAND: Set<Constellation> =
     setOf(Constellation.Gps, Constellation.Galileo, Constellation.Beidou)
 

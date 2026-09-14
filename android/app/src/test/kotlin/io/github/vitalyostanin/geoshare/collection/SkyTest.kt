@@ -103,4 +103,43 @@ class SkyTest {
             inOrder(setOf(Constellation.Beidou, Constellation.Gps, Constellation.Glonass)),
         )
     }
+
+    // The regional systems used to arrive as one word, "other", which threw
+    // away which of them was heard: QZSS transmits in the GPS band and IRNSS
+    // does not, and a file that calls them the same thing cannot be asked
+    // which band went quiet.
+    @Test
+    fun `the regional systems are named apart from each other`() {
+        assertEquals("QZSS", Constellation.Qzss.word)
+        assertEquals("SBAS", Constellation.Sbas.word)
+        assertEquals("IRNSS", Constellation.Irnss.word)
+        assertEquals("other", Constellation.Other.word)
+    }
+
+    @Test
+    fun `every system has a word of its own`() {
+        val words = Constellation.entries.map { it.word }
+
+        assertEquals(words.size, words.toSet().size)
+    }
+
+    @Test
+    fun `the regional systems take their place in the one order`() {
+        assertEquals(
+            listOf(
+                Constellation.Gps,
+                Constellation.Qzss,
+                Constellation.Sbas,
+                Constellation.Irnss,
+            ),
+            inOrder(
+                setOf(
+                    Constellation.Irnss,
+                    Constellation.Sbas,
+                    Constellation.Qzss,
+                    Constellation.Gps,
+                ),
+            ),
+        )
+    }
 }
