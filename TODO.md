@@ -521,6 +521,23 @@ What it should carry:
 - **Who may do it.** Only an administrator of the household, and the change is
   written down where the others can read it afterwards.
 
+What every screen shows while it stands:
+
+- **The phone of the member being looked for.** Its own screen says so, in
+  words rather than in a mark: that the household has opened its position, who
+  opened it, and until when. A phone that gives more away than usual and looks
+  exactly as it did is the version of this worth refusing to build.
+- **Every other phone, and the page.** The member being looked for is marked
+  wherever they are named — in the strip of cards, on the pin, in the card
+  itself — so that a relative opening the map sees who the search is for
+  without being told separately.
+- **More than one at a time.** A household can be looking for two members at
+  once, so this is a state each member carries rather than one switch for the
+  household: the marks stand on each of them, the panel lists them together,
+  and ending one leaves the others standing.
+
 What it costs: the rules on the server have to admit a grant with an end to
-it, and the page has to keep showing a position it is about to lose. Neither is
-free, and both belong to the admin panel rather than beside it.
+it, the page has to keep showing a position it is about to lose, and the
+application grows a state it has to show on its own screen rather than only
+obey. None of it is free, and all of it belongs to the admin panel rather than
+beside it.
