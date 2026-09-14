@@ -31,9 +31,27 @@ class FalsePlacesTest {
         assertNull(falsePlaceFor(fixAt(60.8003, 4.2625)))
     }
 
+    // The third phone has no mobile network, so nothing corrects what its
+    // satellites say, and it was held thirteen kilometres north-east of the
+    // island — outside the radius of the first place, which is why a second
+    // one was added rather than the first one widened.
     @Test
-    fun `the lake beyond the drawn road is not a false place`() {
-        assertNull(falsePlaceFor(fixAt(61.55, 5.60)))
+    fun `the second place the spoofer uses is known`() {
+        assertNotNull(falsePlaceFor(fixAt(61.49782, 5.60881)))
+        assertNull(falsePlaceFor(fixAt(61.49782, 5.60881), listOf(KNOWN_FALSE_PLACES.first())))
+    }
+
+    // What two entries buy over one wide one: the water between them is not
+    // called false, and a phone answering from there is still placed. Six and
+    // a half kilometres from each.
+    @Test
+    fun `the water between the two places is not false`() {
+        assertNull(falsePlaceFor(fixAt(61.4629, 5.5144)))
+    }
+
+    @Test
+    fun `the lake beyond the drawn roads is not a false place`() {
+        assertNull(falsePlaceFor(fixAt(61.60, 5.75)))
     }
 
     // The rule that needs no anchor: a phone switched on inside the spoofed

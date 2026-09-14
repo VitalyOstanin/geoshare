@@ -38,13 +38,33 @@ data class FalsePlace(
  * the same spoofer used until the end of April is deliberately left off — it
  * has flights, staff and passengers, and calling it false would lose real
  * positions.
+ *
+ * The list is expected to grow. What one costs is the ground inside its
+ * radius: a phone genuinely there is a phone this build refuses to place, so
+ * a new entry is read off the log of a phone being fed the signal, given a
+ * radius that covers the spread seen in that log and no more, and named for
+ * somebody reading the log afterwards. Two entries are cheaper than one wide
+ * one whenever the ground between them is ground a family can stand on.
  */
 val KNOWN_FALSE_PLACES: List<FalsePlace> = listOf(
+    // Every phone in the household that could see the satellites at all was
+    // put here through the evening of 13 September 2026.
     FalsePlace(
         latitude = 61.428,
         longitude = 5.420,
         radiusMetres = 4_000.0,
         named = "a place a false signal uses",
+    ),
+    // Thirteen kilometres north-east of the island, and outside its radius:
+    // the third phone, which has no mobile network and is placed by whatever
+    // its satellites say, was held here on the same evening. One point so far,
+    // so the radius is the smallest that covers it with room for the road the
+    // receiver draws.
+    FalsePlace(
+        latitude = 61.49782,
+        longitude = 5.60881,
+        radiusMetres = 5_000.0,
+        named = "a second place a false signal uses",
     ),
 )
 
