@@ -435,3 +435,39 @@ What it costs, so that the decision is made with the price in view:
   sharing a position with them, and it should look like one: the phone says in
   its log what was asked and by whom, and the screen where the member sees it
   is not hidden behind a developer setting.
+
+## The phones fetch their own updates
+
+Every phone in the household is updated by cable: a build is made, `adb
+install` is run against each device in turn, and the application is opened by
+hand so that the service comes back. That works while all three phones are on
+one desk and stops working the moment one of them is not — the third phone
+spent an evening on an old build for no better reason than being unplugged.
+
+What is wanted is the phone asking, on its own and rarely, whether a newer
+build exists, and offering to install it.
+
+What it costs, so that the decision is made with the price in view:
+
+- **Somewhere to ask.** The application is not in a store, so the answer has to
+  come from somewhere the household controls: a small document beside the page
+  on Hosting, or a release on the repository, saying the newest version code
+  and where its package is. Whatever answers has to be reachable without a
+  session, since a phone that cannot sign in is exactly the phone that needs
+  fixing.
+- **The install is not silent.** A package installed by an ordinary
+  application goes through the platform's own confirmation, and the member has
+  to allow this application to install packages at all. Silent installation
+  belongs to a device owner, which means enrolling the phones into management —
+  a great deal of machinery for a household of three.
+- **The signature is the check that matters.** The platform refuses a package
+  signed by anybody else, which is what keeps this from being a way into the
+  phone. Nothing about that is optional or worth working around.
+- **The service does not survive the install.** Replacing the package stops
+  the collection, and nothing brings it back until the application is opened.
+  An update that quietly ends the sharing is worse than an old build, so
+  whatever does this has to bring the service back and say in the log that it
+  did.
+- **Asking costs battery.** The question is worth asking about once a day, on
+  a charger and over Wi-Fi, and never in the middle of the modes that matter.
+  A phone that checks for updates every hour has been made worse, not better.
