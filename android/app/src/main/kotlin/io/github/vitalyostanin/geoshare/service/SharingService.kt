@@ -13,6 +13,7 @@ import androidx.lifecycle.LifecycleService
 import androidx.lifecycle.lifecycleScope
 import com.google.firebase.auth.FirebaseAuth
 import io.github.vitalyostanin.geoshare.collection.Accuracy
+import io.github.vitalyostanin.geoshare.collection.Answered
 import io.github.vitalyostanin.geoshare.collection.CLOCK_TOLERANCE
 import io.github.vitalyostanin.geoshare.collection.CollectionMode
 import io.github.vitalyostanin.geoshare.collection.CollectionState
@@ -23,6 +24,7 @@ import io.github.vitalyostanin.geoshare.collection.Moving
 import io.github.vitalyostanin.geoshare.collection.Trail
 import io.github.vitalyostanin.geoshare.collection.WATCH_AHEAD
 import io.github.vitalyostanin.geoshare.collection.anchorFrom
+import io.github.vitalyostanin.geoshare.collection.answeredBy
 import io.github.vitalyostanin.geoshare.collection.chooseMode
 import io.github.vitalyostanin.geoshare.collection.clockDisagrees
 import io.github.vitalyostanin.geoshare.collection.comingHome
@@ -34,11 +36,13 @@ import io.github.vitalyostanin.geoshare.collection.impliedSpeedMps
 import io.github.vitalyostanin.geoshare.collection.knows
 import io.github.vitalyostanin.geoshare.collection.mayBeConfirmed
 import io.github.vitalyostanin.geoshare.collection.networkAnswerStands
+import io.github.vitalyostanin.geoshare.collection.noteOf
 import io.github.vitalyostanin.geoshare.collection.otherRadiosAreDue
 import io.github.vitalyostanin.geoshare.collection.remembering
 import io.github.vitalyostanin.geoshare.collection.rescueAfter
 import io.github.vitalyostanin.geoshare.collection.shouldWrite
 import io.github.vitalyostanin.geoshare.collection.whyAJump
+import io.github.vitalyostanin.geoshare.collection.word
 import io.github.vitalyostanin.geoshare.log.AppLog
 import io.github.vitalyostanin.geoshare.log.SkyLog
 import kotlinx.coroutines.CancellationException
@@ -922,7 +926,15 @@ class SharingService : LifecycleService() {
         // because a position from the towers and a position from the
         // satellites are worth reading differently, and until now the log
         // said nothing about which of the two had just arrived.
-        val source = fix.from?.let { " from $it" }.orEmpty()
+        //
+        // The name is followed by what the provider's own note said about how
+        // it arrived at the answer, where it said anything: the name `gps` has
+        // been seen on a position an assistance service handed over with not
+        // one satellite audible, and the two read the same until this is put
+        // beside them.
+        val said = answeredBy(noteOf(fix.reported?.alongside))
+        val how = if (said == Answered.Unsaid) "" else ", ${said.word}"
+        val source = fix.from?.let { " from $it$how" }.orEmpty()
         val since =
             if (last == null) {
                 // Not necessarily the first fix to arrive: while every answer
