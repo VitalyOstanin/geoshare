@@ -498,3 +498,29 @@ What the screen should carry:
 What it costs: the service has to hand this out rather than only write it to
 its own log, the screen has to keep it while the application is not in front,
 and every wording here is one more line to translate.
+
+## Turning one member's position on for the rest, in an emergency
+
+The admin panel decides who sees whom. What it cannot do today is change that
+in a hurry: an older member who has gone quiet and is being looked for by the
+whole family is exactly the case where every relative needs their position at
+once, and the person who could grant it is the person nobody can reach.
+
+What it should carry:
+
+- **A switch per pair, and a switch for the household.** Turning one member
+  visible to everybody is one action rather than a grant added for each
+  relative in turn, and it is undone the same way.
+- **The switch says how long it stands.** An emergency ends, and a grant that
+  outlives it is a grant nobody remembers making. A day is the useful length,
+  with the panel naming when it lapses and offering to hold it longer.
+- **Everybody is told.** A position becoming visible without the member being
+  told is the one thing this must not do quietly, even when the member is the
+  one being looked for: the phone says it on its own screen, and the panel
+  names who opened it and when.
+- **Who may do it.** Only an administrator of the household, and the change is
+  written down where the others can read it afterwards.
+
+What it costs: the rules on the server have to admit a grant with an end to
+it, and the page has to keep showing a position it is about to lose. Neither is
+free, and both belong to the admin panel rather than beside it.
