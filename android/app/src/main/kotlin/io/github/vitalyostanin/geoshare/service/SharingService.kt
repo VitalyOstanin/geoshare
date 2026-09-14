@@ -543,10 +543,11 @@ class SharingService : LifecycleService() {
             looking,
             movement(this),
             standingStill(this, fenceCentre),
+            MapOnScreen.state,
             reviews,
-        ) { seen, moving, standing, _ ->
+        ) { seen, moving, standing, ownMap, _ ->
             noteMovement(moving)
-            currentMode(seen.map { it.until }, moving.going, standing)
+            currentMode(seen.map { it.until }, moving.going, standing, ownMap)
         }.distinctUntilChanged()
     }
 
@@ -1011,6 +1012,7 @@ class SharingService : LifecycleService() {
         untils: List<Instant>,
         moving: Boolean,
         standing: Boolean,
+        ownMap: Boolean,
     ): CollectionMode = chooseMode(
         CollectionState(
             watchersUntil = untils,
@@ -1019,6 +1021,7 @@ class SharingService : LifecycleService() {
             insideGeofence = standing,
             moving = moving,
             batteryPercent = batteryPercent(),
+            ownMapOpen = ownMap,
         ),
     )
 

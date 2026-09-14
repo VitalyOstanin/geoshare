@@ -14,6 +14,7 @@ class ModeSelectionTest {
         insideGeofence: Boolean = false,
         moving: Boolean = false,
         batteryPercent: Int = 80,
+        ownMapOpen: Boolean = false,
     ) = CollectionState(
         watchersUntil = watchersUntil,
         now = now,
@@ -21,6 +22,7 @@ class ModeSelectionTest {
         insideGeofence = insideGeofence,
         moving = moving,
         batteryPercent = batteryPercent,
+        ownMapOpen = ownMapOpen,
     )
 
     @Test
@@ -112,5 +114,24 @@ class ModeSelectionTest {
         val mode = chooseMode(state(batteryPercent = LOW_BATTERY_PERCENT, moving = true))
 
         assertEquals(CollectionMode.Moving, mode)
+    }
+
+    @Test
+    fun `the map open on this phone outranks the geofence`() {
+        val mode = chooseMode(state(insideGeofence = true, ownMapOpen = true))
+
+        assertEquals(CollectionMode.Viewing, mode)
+    }
+
+    @Test
+    fun `the map open on this phone outranks the night`() {
+        val mode = chooseMode(state(localTime = LocalTime.of(3, 0), ownMapOpen = true))
+
+        assertEquals(CollectionMode.Viewing, mode)
+    }
+
+    @Test
+    fun `a closed map on this phone changes nothing`() {
+        assertEquals(CollectionMode.Standby, chooseMode(state(ownMapOpen = false)))
     }
 }

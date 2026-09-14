@@ -12,6 +12,15 @@ data class CollectionState(
     val insideGeofence: Boolean,
     val moving: Boolean,
     val batteryPercent: Int,
+    /**
+     * Whether this phone's own map is open in front of somebody.
+     *
+     * Separate from [watchersUntil] because it never travels: the claim this
+     * phone writes for the others comes back to it filtered out, so without
+     * this the one viewer the phone can be certain of would be the only one it
+     * never counted.
+     */
+    val ownMapOpen: Boolean,
 )
 
 /** Below this the phone stops trying to be useful and starts trying to last. */
@@ -32,7 +41,9 @@ fun chooseMode(state: CollectionState): CollectionMode {
     return when {
         // A viewer outranks everything, including a flat battery: the point of
         // the application is to answer "where are you" while somebody asks.
-        watched -> CollectionMode.Viewing
+        // The person holding this phone is a viewer like any other, and the
+        // question they are asking of their own map is the same question.
+        watched || state.ownMapOpen -> CollectionMode.Viewing
 
         state.insideGeofence -> CollectionMode.Idle
 

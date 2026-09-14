@@ -11,6 +11,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.repeatOnLifecycle
 import io.github.vitalyostanin.geoshare.collection.Watcher
 import io.github.vitalyostanin.geoshare.membership.Roster
+import io.github.vitalyostanin.geoshare.service.MapOnScreen
 import io.github.vitalyostanin.geoshare.service.groupRoster
 import io.github.vitalyostanin.geoshare.service.positionId
 import io.github.vitalyostanin.geoshare.service.watchers
@@ -162,7 +163,8 @@ fun PublishProfile(memberId: String, displayName: String?, pictureUrl: String?, 
 }
 
 /**
- * Tells the other members that somebody is looking, while somebody is.
+ * Tells everybody that somebody is looking, while somebody is — the other
+ * members through the database, and this phone's own collection directly.
  *
  * Tied to the resumed state rather than to the composition: a map left behind
  * a lock screen is not somebody looking, and keeping the claim alive there
@@ -176,9 +178,16 @@ fun KeepWatching(memberId: String, deviceId: String) {
         val writer = WatchWriter(memberId, deviceId)
 
         owner.repeatOnLifecycle(Lifecycle.State.RESUMED) {
+            // Said twice on purpose: once to the other members through the
+            // database, and once to this phone's own collection, which never
+            // hears the first because a phone ignores its own claim.
+            MapOnScreen.opened()
+
             try {
                 writer.keepLooking()
             } finally {
+                MapOnScreen.closed()
+
                 // The claim is being withdrawn because this coroutine was
                 // cancelled, so the withdrawal needs a scope that survives the
                 // cancellation to reach the database at all.
