@@ -10,7 +10,6 @@ import android.os.Looper
 import io.github.vitalyostanin.geoshare.collection.Fix
 import io.github.vitalyostanin.geoshare.log.AppLog
 import kotlinx.coroutines.suspendCancellableCoroutine
-import java.time.Instant
 import kotlin.coroutines.resume
 
 /**
@@ -98,11 +97,3 @@ fun lastNetworkPosition(context: Context): Fix? {
 }
 
 private const val TAG = "geoshare.network"
-
-private fun fixOf(location: Location): Fix = Fix(
-    latitude = location.latitude,
-    longitude = location.longitude,
-    takenAt = Instant.ofEpochMilli(location.time),
-    accuracyMetres = location.accuracy.toDouble(),
-    from = location.provider,
-)

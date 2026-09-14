@@ -33,6 +33,23 @@ data class Fix(
      * opposite things, and this is the field that tells them apart.
      */
     val from: String? = null,
+    /**
+     * How long the phone had been awake when the fix was taken, or nothing
+     * where that is not known.
+     *
+     * A second clock, because the first one moves. The wall clock of a phone
+     * is set from the network and from the satellites, and both of those can
+     * step it: a step of a few seconds between two fixes turns a phone
+     * standing still into one that travelled. This count runs from the last
+     * boot and nothing sets it back.
+     *
+     * It is null for a fix read back from the trail file, and that is the
+     * point: the count starts again at every boot, so two of them may only be
+     * compared within one run of the process.
+     */
+    val sinceBoot: Duration? = null,
+    /** The rest of what the provider said, kept for the record. */
+    val reported: Reported? = null,
 )
 
 /**

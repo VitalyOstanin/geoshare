@@ -8,11 +8,14 @@ import android.location.LocationManager
 import android.os.Build
 import android.os.Handler
 import android.os.Looper
+import io.github.vitalyostanin.geoshare.collection.Clock
 import io.github.vitalyostanin.geoshare.collection.Constellation
 import io.github.vitalyostanin.geoshare.collection.Counted
 import io.github.vitalyostanin.geoshare.collection.Epochs
+import io.github.vitalyostanin.geoshare.collection.Fix
 import io.github.vitalyostanin.geoshare.collection.Gain
 import io.github.vitalyostanin.geoshare.collection.Interference
+import io.github.vitalyostanin.geoshare.collection.Measurement
 import io.github.vitalyostanin.geoshare.collection.SHARE_THE_GPS_BAND
 import io.github.vitalyostanin.geoshare.collection.Satellite
 import io.github.vitalyostanin.geoshare.collection.acrossTheBand
@@ -81,6 +84,12 @@ class RadioWatch(private val context: Context) {
 
     @Volatile
     private var running: List<Gain> = emptyList()
+
+    @Volatile
+    private var measured: List<Measurement> = emptyList()
+
+    @Volatile
+    private var clock: Clock? = null
 
     private var saidNothingAt: Instant = Instant.EPOCH
     private var status: GnssStatus.Callback? = null
@@ -167,7 +176,14 @@ class RadioWatch(private val context: Context) {
      *
      * Called once per fix rather than once per epoch: see [SkyLog] for why.
      */
-    fun noteSky(at: Instant, place: String) = SkyLog.note(at, place, running, sky)
+    fun noteSky(at: Instant, fix: Fix) = SkyLog.note(
+        at = at,
+        fix = fix,
+        clock = clock,
+        gains = running,
+        sky = sky,
+        measurements = measured,
+    )
 
     /**
      * Subscribes to both, on the handler rather than on an executor.
@@ -198,6 +214,9 @@ class RadioWatch(private val context: Context) {
         measurements =
             object : GnssMeasurementsEvent.Callback() {
                 override fun onGnssMeasurementsReceived(event: GnssMeasurementsEvent) {
+                    clock = clockOf(event)
+                    measured = event.measurements.map(::measurementOf)
+
                     val epoch = reported(gainsOf(event))
 
                     if (epoch.isEmpty()) {
@@ -379,3 +398,63 @@ private fun gainsOf(event: GnssMeasurementsEvent): List<Gain> =
                 )
             }
     }
+
+/**
+ * The receiver's own clock as it came with the epoch.
+ *
+ * Most of it is optional, and a receiver that reports none of it still reports
+ * the count of discontinuities — which is the field worth having on its own: a
+ * receiver whose time stopped running forward raises it, and a false sky
+ * carrying a false time is one of the few things that can make it happen.
+ */
+private fun clockOf(event: GnssMeasurementsEvent): Clock {
+    val clock = event.clock
+
+    return Clock(
+        timeNanos = clock.timeNanos,
+        leapSecond = clock.leapSecond.takeIf { clock.hasLeapSecond() },
+        timeUncertaintyNanos = clock.timeUncertaintyNanos.takeIf {
+            clock.hasTimeUncertaintyNanos()
+        },
+        fullBiasNanos = clock.fullBiasNanos.takeIf { clock.hasFullBiasNanos() },
+        biasNanos = clock.biasNanos.takeIf { clock.hasBiasNanos() },
+        biasUncertaintyNanos =
+        clock.biasUncertaintyNanos.takeIf { clock.hasBiasUncertaintyNanos() },
+        driftNanosPerSecond =
+        clock.driftNanosPerSecond.takeIf { clock.hasDriftNanosPerSecond() },
+        driftUncertaintyNanosPerSecond =
+        clock.driftUncertaintyNanosPerSecond.takeIf {
+            clock.hasDriftUncertaintyNanosPerSecond()
+        },
+        discontinuities = clock.hardwareClockDiscontinuityCount,
+    )
+}
+
+/** One raw measurement, in the terms the rest of this uses. */
+@Suppress("DEPRECATION")
+private fun measurementOf(measured: android.location.GnssMeasurement): Measurement = Measurement(
+    constellation = constellationOf(measured.constellationType),
+    id = measured.svid,
+    timeOffsetNanos = measured.timeOffsetNanos,
+    state = measured.state,
+    receivedSvTimeNanos = measured.receivedSvTimeNanos,
+    receivedSvTimeUncertaintyNanos = measured.receivedSvTimeUncertaintyNanos,
+    loudness = measured.cn0DbHz,
+    basebandLoudness =
+    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R && measured.hasBasebandCn0DbHz()) {
+        measured.basebandCn0DbHz
+    } else {
+        null
+    },
+    pseudorangeRateMps = measured.pseudorangeRateMetersPerSecond,
+    pseudorangeRateUncertaintyMps = measured.pseudorangeRateUncertaintyMetersPerSecond,
+    deltaRangeState = measured.accumulatedDeltaRangeState,
+    deltaRangeMetres = measured.accumulatedDeltaRangeMeters,
+    deltaRangeUncertaintyMetres = measured.accumulatedDeltaRangeUncertaintyMeters,
+    carrierHz = measured.carrierFrequencyHz.toDouble().takeIf { measured.hasCarrierFrequencyHz() },
+    multipath = measured.multipathIndicator,
+    gainDb =
+    measured.automaticGainControlLevelDb.takeIf {
+        measured.hasAutomaticGainControlLevelDb()
+    },
+)

@@ -3,7 +3,6 @@ package io.github.vitalyostanin.geoshare.service
 import android.annotation.SuppressLint
 import android.content.Context
 import android.location.Location
-import android.os.Build
 import android.os.Looper
 import com.google.android.gms.location.LocationCallback
 import com.google.android.gms.location.LocationRequest
@@ -16,7 +15,6 @@ import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.callbackFlow
 import kotlinx.coroutines.tasks.await
-import java.time.Instant
 
 private const val TAG = "geoshare.location"
 
@@ -46,15 +44,7 @@ fun positionUpdates(context: Context, spec: RequestSpec): Flow<Fix> = callbackFl
                 result.locations.forEach { location ->
                     noteIfPretended(location)
 
-                    trySend(
-                        Fix(
-                            latitude = location.latitude,
-                            longitude = location.longitude,
-                            takenAt = Instant.ofEpochMilli(location.time),
-                            accuracyMetres = location.accuracy.toDouble(),
-                            from = location.provider,
-                        ),
-                    )
+                    trySend(fixOf(location))
                 }
             }
         }
@@ -85,15 +75,7 @@ suspend fun currentPosition(context: Context, priority: Int): Fix? {
 
     location?.let(::noteIfPretended)
 
-    return location?.let {
-        Fix(
-            latitude = it.latitude,
-            longitude = it.longitude,
-            takenAt = Instant.ofEpochMilli(it.time),
-            accuracyMetres = it.accuracy.toDouble(),
-            from = it.provider,
-        )
-    }
+    return location?.let(::fixOf)
 }
 
 /**
@@ -109,15 +91,7 @@ suspend fun currentPosition(context: Context, priority: Int): Fix? {
  * than a marker that says where the phone claims to be.
  */
 private fun noteIfPretended(location: Location) {
-    val pretended =
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-            location.isMock
-        } else {
-            @Suppress("DEPRECATION")
-            location.isFromMockProvider
-        }
-
-    if (pretended) {
+    if (pretended(location)) {
         AppLog.w(TAG, "this position was put there by another application, not by the radio")
     }
 }

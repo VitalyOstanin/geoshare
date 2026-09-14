@@ -12,6 +12,7 @@ import androidx.core.content.getSystemService
 import androidx.lifecycle.LifecycleService
 import androidx.lifecycle.lifecycleScope
 import com.google.firebase.auth.FirebaseAuth
+import io.github.vitalyostanin.geoshare.collection.Accuracy
 import io.github.vitalyostanin.geoshare.collection.CLOCK_TOLERANCE
 import io.github.vitalyostanin.geoshare.collection.CollectionMode
 import io.github.vitalyostanin.geoshare.collection.CollectionState
@@ -39,6 +40,7 @@ import io.github.vitalyostanin.geoshare.collection.rescueAfter
 import io.github.vitalyostanin.geoshare.collection.shouldWrite
 import io.github.vitalyostanin.geoshare.collection.whyAJump
 import io.github.vitalyostanin.geoshare.log.AppLog
+import io.github.vitalyostanin.geoshare.log.SkyLog
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.coroutineScope
@@ -58,6 +60,20 @@ import java.time.LocalTime
 import java.util.Locale
 
 private const val TAG = "geoshare.service"
+
+/**
+ * How far the satellites' own answer has to be from the written one before the
+ * disagreement is worth a line.
+ *
+ * Two hundred metres. Below that the two are answering about the same place
+ * with different instruments — a position from the towers is a few hundred
+ * metres wide on a good day — and above it they are answering about different
+ * places, which is the case worth reading about.
+ */
+private const val SATELLITES_APART_METRES = 200.0
+
+/** How often that disagreement is said out loud while it goes on. */
+private val DISAGREEMENT_SAID_EVERY: Duration = Duration.ofMinutes(1)
 
 /**
  * A position as it goes into the document: where the phone was, and whether
@@ -189,6 +205,9 @@ class SharingService : LifecycleService() {
      * below watches for is silence rather than stillness.
      */
     private var heardAt: Instant = Instant.now()
+
+    /** When the satellites were last said to disagree with what is written. */
+    private var disagreedAt: Instant = Instant.EPOCH
 
     /**
      * When the last write actually reached the database.
@@ -485,6 +504,7 @@ class SharingService : LifecycleService() {
                     coroutineScope {
                         heardAt = Instant.now()
                         launch { rescueWhileSilent(writer, mode) }
+                        launch { watchTheSatellites(mode) }
 
                         positionUpdates(this@SharingService, spec).collect { fix ->
                             heardAt = Instant.now()
@@ -745,6 +765,67 @@ class SharingService : LifecycleService() {
     }
 
     /**
+     * What the satellites alone say, while the receiver is on anyway.
+     *
+     * Nothing is written to the database from this and nothing is filtered by
+     * it: it is a second opinion put in the record beside the first. The fused
+     * provider will not say whether an answer came from the sky or from the
+     * Wi-Fi, and the difference is the whole question — a position from the
+     * towers that is a kilometre out is a stale database, and a position from
+     * the satellites that is a kilometre out is somebody transmitting.
+     */
+    private suspend fun watchTheSatellites(mode: CollectionMode) {
+        if (mode.accuracy != Accuracy.High) {
+            return
+        }
+
+        satellitePositions(this).collect { fix ->
+            SkyLog.note(fix.takenAt, fix)
+            noteTheDisagreement(fix)
+        }
+    }
+
+    /**
+     * Says so when the satellites and the written position are not in the same
+     * place, and not more often than a reader can use.
+     *
+     * The distance is the finding. Two answers about one phone that differ by
+     * more than either of them claims to be wide cannot both be right, and
+     * which of the two is wrong is not decided here — only that they disagree,
+     * with the numbers to show it.
+     */
+    private fun noteTheDisagreement(satellites: Fix) {
+        val written = lastFix ?: return
+        val apart = distanceMetres(written, satellites)
+
+        if (apart < SATELLITES_APART_METRES) {
+            return
+        }
+
+        if (Duration.between(disagreedAt, Instant.now()) < DISAGREEMENT_SAID_EVERY) {
+            return
+        }
+
+        disagreedAt = Instant.now()
+
+        AppLog.w(
+            TAG,
+            String.format(
+                Locale.ROOT,
+                "the satellites put the phone %.0f m from the position being written: " +
+                    "%.5f,%.5f ±%.0f m against %.5f,%.5f ±%.0f m",
+                apart,
+                satellites.latitude,
+                satellites.longitude,
+                satellites.accuracyMetres ?: 0.0,
+                written.latitude,
+                written.longitude,
+                written.accuracyMetres ?: 0.0,
+            ),
+        )
+    }
+
+    /**
      * Writes down a fix as it arrived, beside what it would take to be true.
      *
      * A line per fix rather than per write: the ones left out are the ones
@@ -802,17 +883,7 @@ class SharingService : LifecycleService() {
         // The epoch behind the line just written, in its own file. Everything
         // above is one sentence about a minute of averages; this is the sky
         // itself, satellite by satellite, for the questions that come later.
-        radio.noteSky(
-            fix.takenAt,
-            String.format(
-                Locale.ROOT,
-                "%.7f,%.7f,%s,%s",
-                fix.latitude,
-                fix.longitude,
-                fix.accuracyMetres?.let { String.format(Locale.ROOT, "%.1f", it) }.orEmpty(),
-                fix.from.orEmpty(),
-            ),
-        )
+        radio.noteSky(fix.takenAt, fix)
     }
 
     /**

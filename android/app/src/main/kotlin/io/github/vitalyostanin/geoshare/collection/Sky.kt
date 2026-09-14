@@ -102,3 +102,53 @@ fun inOrder(systems: Set<Constellation>): List<Constellation> = listOf(
     Constellation.Beidou,
     Constellation.Other,
 ).filter { it in systems }
+
+/**
+ * The receiver's own clock, as it reports it with every epoch.
+ *
+ * A receiver takes its time from the satellites, so a transmitter that hands
+ * out a false sky hands out a false time with it, and the receiver's clock
+ * steps to meet it. The step shows here before it shows anywhere else: in the
+ * bias against the phone's own clock, in the drift, and in the count of
+ * discontinuities, which the receiver raises whenever its own time stopped
+ * running forward.
+ */
+data class Clock(
+    val timeNanos: Long,
+    val leapSecond: Int?,
+    val timeUncertaintyNanos: Double?,
+    val fullBiasNanos: Long?,
+    val biasNanos: Double?,
+    val biasUncertaintyNanos: Double?,
+    val driftNanosPerSecond: Double?,
+    val driftUncertaintyNanosPerSecond: Double?,
+    val discontinuities: Int,
+)
+
+/**
+ * One raw measurement of one signal, before a position is worked out of it.
+ *
+ * What the status says is how loud a satellite is; this is what the receiver
+ * measured off it — how far away the signal says the satellite is, how fast
+ * that distance is changing, and how sure the receiver is of either. A false
+ * sky has to be self-consistent in these to be believed, and the ones that are
+ * not show up as distances that do not agree with the rates.
+ */
+data class Measurement(
+    val constellation: Constellation,
+    val id: Int,
+    val timeOffsetNanos: Double,
+    val state: Int,
+    val receivedSvTimeNanos: Long,
+    val receivedSvTimeUncertaintyNanos: Long,
+    val loudness: Double,
+    val basebandLoudness: Double?,
+    val pseudorangeRateMps: Double,
+    val pseudorangeRateUncertaintyMps: Double,
+    val deltaRangeState: Int,
+    val deltaRangeMetres: Double,
+    val deltaRangeUncertaintyMetres: Double,
+    val carrierHz: Double?,
+    val multipath: Int,
+    val gainDb: Double?,
+)
