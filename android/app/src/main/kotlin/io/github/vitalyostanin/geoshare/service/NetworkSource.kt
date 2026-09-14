@@ -104,4 +104,5 @@ private fun fixOf(location: Location): Fix = Fix(
     longitude = location.longitude,
     takenAt = Instant.ofEpochMilli(location.time),
     accuracyMetres = location.accuracy.toDouble(),
+    from = location.provider,
 )

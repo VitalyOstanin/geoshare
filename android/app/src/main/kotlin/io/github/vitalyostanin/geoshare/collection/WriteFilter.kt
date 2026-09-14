@@ -21,6 +21,18 @@ data class Fix(
      * second part telling the truth long after the first has stopped.
      */
     val accuracyMetres: Double? = null,
+    /**
+     * Which of the phone's ways of knowing answered, in the platform's own
+     * word for it: `gps` for the satellites, `network` for the towers and the
+     * Wi-Fi, `fused` for Play Services having picked one of them itself.
+     *
+     * Carried because the question every other rule here is in aid of — is
+     * this position a lie the satellites were told — cannot be asked of an
+     * answer that never came from a satellite. A tower fix a kilometre wide
+     * and a spoofed fix a kilometre away read the same on a map and mean
+     * opposite things, and this is the field that tells them apart.
+     */
+    val from: String? = null,
 )
 
 /**

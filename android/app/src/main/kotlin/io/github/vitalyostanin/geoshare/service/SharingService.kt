@@ -762,6 +762,11 @@ class SharingService : LifecycleService() {
         val last = lastFix
         val place = String.format(Locale.ROOT, "%.5f,%.5f", fix.latitude, fix.longitude)
         val width = fix.accuracyMetres?.let { String.format(Locale.ROOT, " ±%.0f m", it) }.orEmpty()
+        // Which way of knowing answered. Written down beside the place
+        // because a position from the towers and a position from the
+        // satellites are worth reading differently, and until now the log
+        // said nothing about which of the two had just arrived.
+        val source = fix.from?.let { " from $it" }.orEmpty()
         val since =
             if (last == null) {
                 // Not necessarily the first fix to arrive: while every answer
@@ -789,9 +794,25 @@ class SharingService : LifecycleService() {
         // read as a receiver whose time has been tampered with.
         val clock = if (trusted) "" else aClockApart(fix.takenAt)
 
-        AppLog.i(TAG, "fix $place$width in mode $mode, $since$verdict$clock")
+        AppLog.i(TAG, "fix $place$width$source in mode $mode, $since$verdict$clock")
 
         radio.saying()?.let { AppLog.i(TAG, it) }
+        radio.satellitesSaying()?.let { AppLog.i(TAG, it) }
+
+        // The epoch behind the line just written, in its own file. Everything
+        // above is one sentence about a minute of averages; this is the sky
+        // itself, satellite by satellite, for the questions that come later.
+        radio.noteSky(
+            fix.takenAt,
+            String.format(
+                Locale.ROOT,
+                "%.7f,%.7f,%s,%s",
+                fix.latitude,
+                fix.longitude,
+                fix.accuracyMetres?.let { String.format(Locale.ROOT, "%.1f", it) }.orEmpty(),
+                fix.from.orEmpty(),
+            ),
+        )
     }
 
     /**

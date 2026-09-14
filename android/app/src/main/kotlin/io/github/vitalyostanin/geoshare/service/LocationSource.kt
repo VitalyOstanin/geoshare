@@ -52,6 +52,7 @@ fun positionUpdates(context: Context, spec: RequestSpec): Flow<Fix> = callbackFl
                             longitude = location.longitude,
                             takenAt = Instant.ofEpochMilli(location.time),
                             accuracyMetres = location.accuracy.toDouble(),
+                            from = location.provider,
                         ),
                     )
                 }
@@ -90,6 +91,7 @@ suspend fun currentPosition(context: Context, priority: Int): Fix? {
             longitude = it.longitude,
             takenAt = Instant.ofEpochMilli(it.time),
             accuracyMetres = it.accuracy.toDouble(),
+            from = it.provider,
         )
     }
 }
