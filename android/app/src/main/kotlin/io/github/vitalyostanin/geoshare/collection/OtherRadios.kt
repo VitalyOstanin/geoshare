@@ -106,15 +106,24 @@ fun networkAnswerStands(
  * position sixty metres wide replaced by one of one thousand six hundred and
  * sixty.
  *
- * So an answer is written over a fresh one only where it adds something: where
- * it is no wider, or where it names a place outside the doubt of the one
+ * So an answer is written over a standing one only where it adds something:
+ * where it is no wider, or where it names a place outside the doubt of the one
  * already written, which is a phone that has moved rather than a radio with a
  * poorer answer about the same place. Anything already stale is replaced
  * whatever it says — an old exact answer is not better than a new vague one,
  * it is merely older.
+ *
+ * Stale here is [STALE_AFTER] rather than [NETWORK_ANSWER_STALE], and the
+ * difference was paid for: with five minutes, a phone standing in its own flat
+ * had its position of forty-two metres replaced, six minutes later, by a tower
+ * answer of one thousand six hundred and seventy-seven, and the marker walked
+ * four hundred and thirty metres. The five minutes answer a different
+ * question — how old an answer from the towers may be to be used at all — and
+ * a position that is still good enough to show is not one to overwrite with
+ * something vaguer about the same place.
  */
 fun saysMoreThan(asked: Fix, written: Fix?, now: Instant): Boolean {
-    if (written == null || Duration.between(written.takenAt, now) > NETWORK_ANSWER_STALE) {
+    if (written == null || Duration.between(written.takenAt, now) > STALE_AFTER) {
         return true
     }
 

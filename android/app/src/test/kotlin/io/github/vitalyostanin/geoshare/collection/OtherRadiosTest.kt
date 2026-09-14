@@ -111,6 +111,19 @@ class OtherRadiosTest {
         assertTrue("nothing written yet", saysMoreThan(fromATower, null, NOW))
     }
 
+    // Six minutes is long enough for an answer from the towers to be called
+    // old, and nothing like long enough for a phone standing in its own flat
+    // to have gone anywhere. The first version of this rule counted the two
+    // the same way, and the marker walked four hundred and thirty metres.
+    @Test
+    fun `a position still worth showing is not overwritten by a vaguer one`() {
+        val minutesOld = NOW.minus(Duration.ofMinutes(6))
+        val fromTheWiFi = fixAt(61.03268, 4.40304, width = 42.5, takenAt = minutesOld)
+        val fromATower = fixAt(61.03253, 4.39526, width = 1_677.0)
+
+        assertFalse(saysMoreThan(fromATower, fromTheWiFi, NOW))
+    }
+
     private fun fixAt(latitude: Double, longitude: Double, width: Double, takenAt: Instant = NOW) =
         Fix(latitude = latitude, longitude = longitude, takenAt = takenAt, accuracyMetres = width)
 
