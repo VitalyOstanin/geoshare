@@ -8,9 +8,13 @@ import android.location.LocationManager
 import android.os.Build
 import android.os.Handler
 import android.os.Looper
+import io.github.vitalyostanin.geoshare.collection.Constellation
 import io.github.vitalyostanin.geoshare.collection.Epochs
 import io.github.vitalyostanin.geoshare.collection.Interference
+import io.github.vitalyostanin.geoshare.collection.SHARE_THE_GPS_BAND
+import io.github.vitalyostanin.geoshare.collection.acrossTheBand
 import io.github.vitalyostanin.geoshare.collection.interferenceFrom
+import io.github.vitalyostanin.geoshare.collection.whatTheBandsSay
 import io.github.vitalyostanin.geoshare.log.AppLog
 import java.time.Duration
 import java.time.Instant
@@ -42,20 +46,40 @@ private val SILENCE_REPORTED_EVERY: Duration = Duration.ofMinutes(5)
  * receiver from a spoofed one — see [interferenceFrom] for which way each
  * moves — and neither alone says much.
  *
+ * The satellites are kept apart by the system they belong to, which is a third
+ * thing to read and the only one that names where the interference is coming
+ * from: see [whatTheBandsSay].
+ *
  * The measurements arrive whether or not a position comes out of them, which
  * is the case this exists for: a phone that has gone silent is a phone with
  * nothing to write down, and this is what can still be written.
  */
 class RadioWatch(private val context: Context) {
-    private val noise = ArrayDeque<Double>()
+    // Kept apart by the system the satellites belong to, because the answer
+    // this exists for is a disagreement between them: averaged together, a
+    // band gone loud and a band holding still come out as a sky that has not
+    // moved. See Constellations.kt for which bands those are.
+    private val heard = mutableMapOf<Constellation, ArrayDeque<Double>>()
     private val gain = ArrayDeque<Double>()
 
     private var saidNothingAt: Instant = Instant.EPOCH
     private var status: GnssStatus.Callback? = null
     private var measurements: GnssMeasurementsEvent.Callback? = null
 
-    /** What the last minute of measurements adds up to. */
-    fun verdict(): Interference = interferenceFrom(gain = window(gain), noise = window(noise))
+    /**
+     * What the last minute of measurements adds up to.
+     *
+     * The bands are asked first. They answer less often — a phone hearing one
+     * system has nothing to compare — but when they do answer they name the
+     * band whatever is going on is going on in, and they answer without the
+     * gain, which some phones never report at all.
+     */
+    fun verdict(): Interference {
+        val bands = windows()
+
+        return whatTheBandsSay(sharedBand(bands), bands[Constellation.Glonass] ?: NOTHING)
+            ?: interferenceFrom(gain = window(gain), noise = acrossTheBand(bands.values))
+    }
 
     /**
      * The same, in the words of the log, or nothing when there is nothing to
@@ -73,12 +97,15 @@ class RadioWatch(private val context: Context) {
             return whatIsMissing()
         }
 
+        val bands = windows()
+
         return String.format(
             Locale.ROOT,
-            "the radio says %s (gain %+.1f dB, satellites %+.1f dB)",
+            "the radio says %s (gain %s, the GPS band %s, GLONASS %s)",
             verdict.toString().lowercase(),
-            window(gain).moved ?: 0.0,
-            window(noise).moved ?: 0.0,
+            moved(window(gain)),
+            moved(sharedBand(bands)),
+            moved(bands[Constellation.Glonass] ?: NOTHING),
         )
     }
 
@@ -98,7 +125,9 @@ class RadioWatch(private val context: Context) {
         status =
             object : GnssStatus.Callback() {
                 override fun onSatelliteStatusChanged(status: GnssStatus) {
-                    heard(status)?.let { note(noise, it) }
+                    for ((constellation, loudness) in loudnessOf(status)) {
+                        note(heard.getOrPut(constellation) { ArrayDeque() }, loudness)
+                    }
                 }
             }.also { manager.registerGnssStatusCallback(it, handler) }
 
@@ -152,10 +181,19 @@ class RadioWatch(private val context: Context) {
         saidNothingAt = now
 
         val needed = RECENT_EPOCHS + EARLIER_EPOCHS
+        val shared = SHARE_THE_GPS_BAND.maxOf { heard[it]?.size ?: 0 }
+        val glonass = heard[Constellation.Glonass]?.size ?: 0
 
         return "the radio has nothing to go on: ${gain.size} epochs of gain, " +
-            "${noise.size} of the satellites, $needed needed of each"
+            "$shared of the GPS band, $glonass of GLONASS, $needed needed"
     }
+
+    /** Every system's history, each read as its own pair of averages. */
+    private fun windows(): Map<Constellation, Epochs> = heard.mapValues { window(it.value) }
+
+    /** The three systems that transmit where GPS does, read as one band. */
+    private fun sharedBand(bands: Map<Constellation, Epochs>): Epochs =
+        acrossTheBand(bands.filterKeys { it in SHARE_THE_GPS_BAND }.values)
 
     private fun note(into: ArrayDeque<Double>, value: Double) {
         into.addLast(value)
@@ -166,21 +204,39 @@ class RadioWatch(private val context: Context) {
     }
 }
 
+/** A band with no history yet, which is what having heard nothing looks like. */
+private val NOTHING = Epochs(recent = null, earlier = null)
+
 /**
- * How loud the satellites are, averaged over the ones actually heard.
+ * How loud the satellites are, averaged within each system separately.
  *
  * The ones with nothing on them are left out rather than counted as silence:
  * a receiver lists the satellites it expects as well as the ones it has, and
  * counting the expected ones as zero would make every sky look like jamming.
+ *
+ * Averaged within the system rather than over all of them at once so that a
+ * system with eight satellites in view does not speak for one with three.
  */
-private fun heard(status: GnssStatus): Double? {
-    val loudness =
-        (0 until status.satelliteCount)
-            .map { status.getCn0DbHz(it).toDouble() }
-            .filter { it > 0.0 }
+private fun loudnessOf(status: GnssStatus): Map<Constellation, Double> =
+    (0 until status.satelliteCount)
+        .filter { status.getCn0DbHz(it) > 0.0f }
+        .groupBy { constellationOf(status.getConstellationType(it)) }
+        .mapValues { (_, satellites) ->
+            satellites.map { status.getCn0DbHz(it).toDouble() }.average()
+        }
 
-    return loudness.takeIf { it.isNotEmpty() }?.average()
+/** The receiver's number for a system, in the words the rest of this uses. */
+private fun constellationOf(type: Int): Constellation = when (type) {
+    GnssStatus.CONSTELLATION_GPS -> Constellation.Gps
+    GnssStatus.CONSTELLATION_GLONASS -> Constellation.Glonass
+    GnssStatus.CONSTELLATION_GALILEO -> Constellation.Galileo
+    GnssStatus.CONSTELLATION_BEIDOU -> Constellation.Beidou
+    else -> Constellation.Other
 }
+
+/** A move in decibels, or a word for a band the phone has nothing on. */
+private fun moved(epochs: Epochs): String =
+    epochs.moved?.let { String.format(Locale.ROOT, "%+.1f dB", it) } ?: "not heard"
 
 /**
  * The gain the receiver is running at, averaged over the bands it reports.
