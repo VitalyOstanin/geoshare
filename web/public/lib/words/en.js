@@ -56,7 +56,8 @@ export const EN = {
 
     // The card a marker opens.
     lastSeen: 'Last seen',
-    at: 'At',
+    at: 'Taken at',
+    online: 'Online',
     mode: 'Mode',
     battery: 'Battery',
     position: 'Position',

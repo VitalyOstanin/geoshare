@@ -631,7 +631,14 @@ function detail(position, name, faces, now) {
 
     const rows = [
         [WORDS.lastSeen, ageText(positionAge(position.positionAt, now))],
-        [WORDS.at, timeText(position.knownAt)],
+        // Two moments, because under a spoof they are days apart: when the
+        // phone last had a position it believed, and when it last reached the
+        // server. A card naming only one of them is read as naming the other,
+        // and a phone standing still with satellites it cannot trust is then
+        // either lost or in a place it left hours ago, depending on which the
+        // viewer assumed.
+        [WORDS.at, timeText(position.positionAt)],
+        [WORDS.online, timeText(position.knownAt)],
         [WORDS.mode, modeButton(position.mode)],
         [WORDS.battery, batteryText(position)],
         [WORDS.position, `${position.latitude.toFixed(5)}, ${position.longitude.toFixed(5)}`],

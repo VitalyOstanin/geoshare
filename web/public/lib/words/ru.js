@@ -77,7 +77,8 @@ export const RU = {
 
     // The card a marker opens.
     lastSeen: 'Обновлено',
-    at: 'Время',
+    at: 'Время позиции',
+    online: 'В сети',
     mode: 'Режим',
     battery: 'Заряд',
     position: 'Координаты',
