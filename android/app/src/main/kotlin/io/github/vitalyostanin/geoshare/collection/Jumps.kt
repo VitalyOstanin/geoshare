@@ -79,6 +79,15 @@ enum class JumpReason {
      * road away is that it closes.
      */
     Circling,
+
+    /**
+     * The answers are tracing a route they have already been round.
+     *
+     * The same reading as the circle, without asking what shape the route is:
+     * a transmitter that changes its figure still has to close it, and a
+     * person retraces nothing on a fixed period for an hour.
+     */
+    Repeating,
 }
 
 /**
@@ -125,6 +134,7 @@ fun whyAJump(
     lately: List<Fix> = emptyList(),
     falsePlaces: List<FalsePlace> = emptyList(),
     circleLimits: CircleLimits = CircleLimits(),
+    repeatLimits: RepeatLimits = RepeatLimits(),
 ): JumpReason? {
     if (falsePlaceFor(next, falsePlaces) != null) {
         return JumpReason.FalsePlace
@@ -136,6 +146,10 @@ fun whyAJump(
 
     if (goingInCircles(lately, circleLimits)) {
         return JumpReason.Circling
+    }
+
+    if (goingRoundAgain(lately, repeatLimits)) {
+        return JumpReason.Repeating
     }
 
     if (last == null) {

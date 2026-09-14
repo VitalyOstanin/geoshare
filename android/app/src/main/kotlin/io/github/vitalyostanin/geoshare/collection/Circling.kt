@@ -218,14 +218,35 @@ fun goingInCircles(lately: List<Fix>, limits: CircleLimits = CircleLimits()): Bo
     circleDrawn(lately, limits) != null
 
 /**
- * The run with one more answer in it, the oldest dropped.
+ * How far back the run of answers reaches.
  *
- * Twice the length that is looked at is kept, so that the shape is still
- * there to be seen after a few answers have arrived from somewhere else, and
- * so that a group asking for a longer run than the default still has one.
+ * Twenty minutes, which is set by the rule that looks for a route being gone
+ * round again rather than by this one: two rounds of the longest period worth
+ * looking for have to fit inside it. The shape of a circle is read off the
+ * last ten answers whatever else the run holds.
  */
-fun List<Fix>.andThen(fix: Fix, limits: CircleLimits = CircleLimits()): List<Fix> =
-    (this + fix).takeLast(maxOf(limits.answers, CIRCLE_ANSWERS) * 2)
+val ANSWERS_REMEMBERED: Duration = Duration.ofMinutes(20)
+
+/**
+ * How many answers are kept whatever their age.
+ *
+ * A phone answering every second — which is what the fastest mode does while
+ * somebody is watching — would otherwise keep twelve hundred of them, and
+ * every rule that reads the run walks it.
+ */
+const val ANSWERS_KEPT: Int = 200
+
+/**
+ * The run with one more answer in it, the oldest and the stalest dropped.
+ *
+ * Kept by age rather than by count, because what the rules ask of the run is
+ * about time: a shape held for a minute, a route gone round again after three.
+ */
+fun List<Fix>.andThen(fix: Fix, remembered: Duration = ANSWERS_REMEMBERED): List<Fix> {
+    val fresh = (this + fix).filter { Duration.between(it.takenAt, fix.takenAt) <= remembered }
+
+    return fresh.takeLast(ANSWERS_KEPT)
+}
 
 /** A place in metres east and north of where the run began. */
 private data class Spot(val east: Double, val north: Double, val at: Instant)

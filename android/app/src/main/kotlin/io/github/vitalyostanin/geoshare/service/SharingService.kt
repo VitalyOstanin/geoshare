@@ -46,6 +46,7 @@ import io.github.vitalyostanin.geoshare.collection.noteOf
 import io.github.vitalyostanin.geoshare.collection.otherRadiosAreDue
 import io.github.vitalyostanin.geoshare.collection.remembering
 import io.github.vitalyostanin.geoshare.collection.rescueAfter
+import io.github.vitalyostanin.geoshare.collection.routeRepeated
 import io.github.vitalyostanin.geoshare.collection.secondOpinion
 import io.github.vitalyostanin.geoshare.collection.shouldWrite
 import io.github.vitalyostanin.geoshare.collection.whyAJump
@@ -826,7 +827,7 @@ class SharingService : LifecycleService() {
             return
         }
 
-        lately = lately.andThen(fix, circleLimits)
+        lately = lately.andThen(fix)
     }
 
     /**
@@ -1215,6 +1216,24 @@ class SharingService : LifecycleService() {
             "by the other radios placing the phone ${apartFromTheRadios(fix)}"
 
         JumpReason.Circling -> "by the shape of the road: ${theCircleDrawn()}"
+
+        JumpReason.Repeating -> "by the road being gone round again: ${theRouteRepeated()}"
+    }
+
+    /**
+     * The route the last answers are going round again, for the line that
+     * says a fix was left out.
+     */
+    private fun theRouteRepeated(): String {
+        val round = routeRepeated(lately) ?: return "a route traced again"
+
+        return String.format(
+            Locale.ROOT,
+            "a route %.0f m across every %d s, within %.0f m of the round before",
+            round.reachMetres,
+            round.period.seconds,
+            round.apartMetres,
+        )
     }
 
     /**

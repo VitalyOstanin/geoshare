@@ -135,15 +135,30 @@ class CirclingTest {
     }
 
     @Test
-    fun `the run keeps the answers it is given, newest last`() {
+    fun `the run keeps the answers of the last twenty minutes, newest last`() {
+        val places = (0 until 40).map { (61.0300 + it * 0.00126) to 4.5700 }
+        val hourLong = road(places, everySeconds = 60)
         var run = emptyList<Fix>()
 
-        repeat(CIRCLE_ANSWERS * 3) { step ->
-            run = run.andThen(falseRoad[step % falseRoad.size])
-        }
+        hourLong.forEach { run = run.andThen(it) }
 
-        assertEquals(CIRCLE_ANSWERS * 2, run.size)
-        assertEquals(falseRoad[(CIRCLE_ANSWERS * 3 - 1) % falseRoad.size], run.last())
+        assertEquals(21, run.size)
+        assertEquals(hourLong.last(), run.last())
+        assertTrue(
+            Duration.between(run.first().takenAt, run.last().takenAt) <= ANSWERS_REMEMBERED,
+        )
+    }
+
+    @Test
+    fun `the run does not grow past what the rules can walk`() {
+        val places = (0 until 260).map { (61.0300 + it * 0.00001) to 4.5700 }
+        val everySecond = road(places, everySeconds = 1)
+        var run = emptyList<Fix>()
+
+        everySecond.forEach { run = run.andThen(it) }
+
+        assertEquals(ANSWERS_KEPT, run.size)
+        assertEquals(everySecond.last(), run.last())
     }
 
     @Test
