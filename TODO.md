@@ -541,3 +541,56 @@ it, the page has to keep showing a position it is about to lose, and the
 application grows a state it has to show on its own screen rather than only
 obey. None of it is free, and all of it belongs to the admin panel rather than
 beside it.
+
+## The phone being looked for makes a sound
+
+A position on a map ends the search from across town and does nothing in the
+last ten metres: a phone under a coat on the back seat, or in the hands of
+somebody who cannot answer, is found by sound rather than by coordinates. The
+same sound is what finds a phone left behind in a flat, which makes this one
+piece of machinery serving two cases.
+
+How it behaves:
+
+- **Loud, and on the alarm's terms.** Played the way an alarm is played rather
+  than the way a notification is, so that a phone turned down is still heard,
+  and at a level set for this rather than at whatever the phone was left at —
+  restored to what it was afterwards. Whether a silenced phone and one under Do
+  Not Disturb really let this through has to be tried on these phones rather
+  than taken from the documentation: the platform's rules and the maker's own
+  differ, and the case this exists for is the one where the phone was silenced
+  on purpose.
+- **It says on screen what it is doing and who asked.** A phone screaming with
+  no explanation is a phone somebody turns off. The screen names the member who
+  started the search and offers to stop the sound; stopping the sound is not
+  stopping the search, and the phone says so and goes on sharing its position.
+- **It ends by itself.** A few minutes of sound, then quiet, with the search
+  still standing and the sound able to be asked for again. A phone sounding
+  until its battery is gone has been made useless at exactly the wrong moment.
+
+Who it reaches, which is the same choice the emergency grant makes above:
+
+- **Everybody in the household.** The ordinary case: an older member has gone
+  quiet and the family is looking.
+- **A part of it, named.** The two relatives actually out looking rather than
+  every phone in the group — a grandchild at school does not need this. The
+  named part is remembered, because the same few people do the looking every
+  time.
+- **Nobody but its owner.** Which is the lost phone: the owner asks their own
+  phone to sound, and nothing about it reaches anybody else's screen.
+
+What it costs, beyond the sound itself:
+
+- **The phone hears about it late.** Nothing wakes these phones from outside —
+  see the item above about waking a phone without the paid tier — so the
+  request waits until the phone next speaks to the server: up to twenty-five
+  minutes in the settled mode, and a couple of minutes while somebody has the
+  map open. A member pressing this and hearing nothing for twenty minutes has
+  to be told that, on the button itself.
+- **Somebody must be able to stop it from outside.** The member who started the
+  sound ends it, and the end has to reach the phone the same slow way the start
+  did.
+- **It is a thing one phone does to another.** The rules on the server decide
+  who may ask, the phone refuses what does not come from its own household, and
+  every request is written down where the household can read who asked for
+  what.
