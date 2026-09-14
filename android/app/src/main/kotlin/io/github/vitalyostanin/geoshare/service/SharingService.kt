@@ -27,6 +27,7 @@ import io.github.vitalyostanin.geoshare.collection.Moving
 import io.github.vitalyostanin.geoshare.collection.SECOND_OPINION_ASKED_EVERY
 import io.github.vitalyostanin.geoshare.collection.Trail
 import io.github.vitalyostanin.geoshare.collection.WATCH_AHEAD
+import io.github.vitalyostanin.geoshare.collection.agreementStands
 import io.github.vitalyostanin.geoshare.collection.anchorFrom
 import io.github.vitalyostanin.geoshare.collection.andThen
 import io.github.vitalyostanin.geoshare.collection.answeredBy
@@ -37,10 +38,8 @@ import io.github.vitalyostanin.geoshare.collection.comingHome
 import io.github.vitalyostanin.geoshare.collection.distanceMetres
 import io.github.vitalyostanin.geoshare.collection.falsePlaceFor
 import io.github.vitalyostanin.geoshare.collection.fenceMoves
-import io.github.vitalyostanin.geoshare.collection.fixesAgree
 import io.github.vitalyostanin.geoshare.collection.impliedSpeedMps
 import io.github.vitalyostanin.geoshare.collection.knows
-import io.github.vitalyostanin.geoshare.collection.mayBeConfirmed
 import io.github.vitalyostanin.geoshare.collection.networkAnswerStands
 import io.github.vitalyostanin.geoshare.collection.noteOf
 import io.github.vitalyostanin.geoshare.collection.otherRadiosAreDue
@@ -440,11 +439,11 @@ class SharingService : LifecycleService() {
         // A second fix that agrees with the one before it is the way out of a
         // width nothing can outlive — and only out of that one, because a
         // spoofed signal draws a road whose fixes all agree, and against the
-        // speed rule the clock is the way out anyway.
+        // speed rule the clock is the way out anyway. The agreement is not
+        // taken on the word of the two wide answers alone: the towers or the
+        // Wi-Fi around the phone have to name the same place.
         val agreed =
-            jump != null &&
-                mayBeConfirmed(jump) &&
-                candidate?.let { fixesAgree(it, fix) } == true
+            jump != null && agreementStands(jump, candidate, fix, networkSaid, Instant.now())
 
         // The other way out of an anchor that has gone wrong, and the only one
         // that works against a width or a false place: the phone answering

@@ -136,4 +136,26 @@ class SecondOpinionTest {
     fun `a contradiction is not something a second fix can confirm away`() {
         assertFalse(mayBeConfirmed(JumpReason.Contradicted))
     }
+
+    // Backing an answer up is a stricter question than failing to contradict
+    // it: the answer fifty-five kilometres away is not contradicted by a wide
+    // enough doubt, and it is never where the towers say the phone is.
+    @Test
+    fun `an answer is backed up only where the other radios name its place`() {
+        val nearby = fix(61.11800, 5.38200, 120.0)
+
+        assertTrue(backedUpBy(spoofed, nearby, at))
+        assertFalse(backedUpBy(spoofed, towers, at))
+    }
+
+    @Test
+    fun `nothing to ask backs nothing up`() {
+        val stale = fix(61.11800, 5.38200, 120.0, takenAt = at.minus(Duration.ofMinutes(30)))
+        val itself =
+            fix(61.11817, 5.38151, 22.7, alongside = "SourceType=0|maxCn0=39|meanCn0=32")
+
+        assertFalse("no answer from the other radios", backedUpBy(spoofed, null, at))
+        assertFalse("an answer half an hour old", backedUpBy(spoofed, stale, at))
+        assertFalse("the satellites under another name", backedUpBy(spoofed, itself, at))
+    }
 }

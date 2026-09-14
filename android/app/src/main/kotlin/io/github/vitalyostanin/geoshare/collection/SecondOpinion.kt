@@ -136,6 +136,31 @@ fun secondOpinion(satellites: Fix, network: Fix?, now: Instant): SecondOpinion? 
 }
 
 /**
+ * Whether something the phone did not measure puts it where the satellites say
+ * it is.
+ *
+ * Not the opposite of [secondOpinion] disagreeing. That one looks for an
+ * impossibility and grants three times the doubt before it names one, because
+ * accusing the satellites of lying is a serious thing to do on the strength of
+ * a database entry. This looks for the other answer landing inside the doubt
+ * of the two together — a tower or a Wi-Fi service naming the same place —
+ * and it is asked where a rule is about to be overruled rather than enforced.
+ *
+ * False wherever there is nothing to ask: no answer from the other radios, one
+ * too old or too wide to mean anything, or the satellites' own answer under
+ * the name of the network. Nothing to compare is not agreement.
+ */
+fun backedUpBy(satellites: Fix, network: Fix?, now: Instant): Boolean {
+    if (network == null || secondOpinion(satellites, network, now) == null) {
+        return false
+    }
+
+    val doubt = (satellites.accuracyMetres ?: 0.0) + (network.accuracyMetres ?: 0.0)
+
+    return distanceMetres(satellites, network) <= doubt
+}
+
+/**
  * What the other radios said about a satellite answer, kept in full so the log
  * can say by how much rather than merely that.
  */

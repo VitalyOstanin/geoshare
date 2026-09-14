@@ -199,6 +199,56 @@ fun fixesAgree(one: Fix, other: Fix): Boolean = whyOutOfReach(one, other) == nul
  */
 fun mayBeConfirmed(jump: JumpReason): Boolean = jump == JumpReason.Width
 
+/**
+ * The widest an answer may be and still be confirmable by an agreeing one.
+ *
+ * Two kilometres. What two answers agreeing means depends entirely on how wide
+ * they are, because agreement is measured against the doubt in them: a pair
+ * twenty kilometres wide agrees with itself across a whole region, and a phone
+ * was watched being carried out of its own city by exactly that — two answers
+ * of twenty-one and nineteen kilometres, forty kilometres from the flat,
+ * agreeing with each other because their circles of doubt overlapped. Past two
+ * kilometres an answer names a district, and two districts overlapping is not
+ * a phone saying where it is.
+ */
+const val CONFIRMABLE_WIDTH_METRES: Double = 2_000.0
+
+/**
+ * Whether a second, agreeing answer really does overrule the width that caught
+ * the first.
+ *
+ * Three things are asked, and the last of them is why this is not simply two
+ * answers agreeing. The rule the agreement overrules is the one saying the
+ * answer is too wide to place the phone; letting the same wide answers vouch
+ * for each other therefore means trusting the very thing that was doubted. So
+ * something the transmitter cannot reach has to put the phone there too — not
+ * merely fail to contradict it, which a wide answer is never contradicted by,
+ * its doubt being wider than any disagreement.
+ *
+ * A phone out of reach of the towers and the Wi-Fi around it confirms nothing
+ * here, and that is intended: its way back is the one that does not depend on
+ * a radio at all, a place it has answered from three times over an hour.
+ */
+fun agreementStands(
+    jump: JumpReason,
+    candidate: Fix?,
+    next: Fix,
+    networkSays: Fix? = null,
+    now: Instant = next.takenAt,
+): Boolean {
+    if (!mayBeConfirmed(jump) || candidate == null || !fixesAgree(candidate, next)) {
+        return false
+    }
+
+    val widest = maxOf(candidate.accuracyMetres ?: 0.0, next.accuracyMetres ?: 0.0)
+
+    if (widest > CONFIRMABLE_WIDTH_METRES) {
+        return false
+    }
+
+    return backedUpBy(next, networkSays, now)
+}
+
 /** What stands between two fixes once the width of the answer is granted. */
 private fun whyOutOfReach(last: Fix, next: Fix): JumpReason? {
     val doubt = (last.accuracyMetres ?: 0.0) + (next.accuracyMetres ?: 0.0)

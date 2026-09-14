@@ -151,6 +151,49 @@ class JumpsTest {
         assertFalse(mayBeConfirmed(whyAJump(anchor, second)!!))
     }
 
+    // The pair that carried the second phone out of its own city: answers
+    // twenty-one and nineteen kilometres wide, forty kilometres from the flat,
+    // agreeing with each other for no better reason than that answers that
+    // wide agree with anything within a region.
+    @Test
+    fun `two answers a region wide agreeing is not a phone saying where it is`() {
+        val anchor = fixAt(61.03268, 4.40300, 0, accuracy = 20.0)
+        val first = fixAt(61.30000, 4.90000, 60, accuracy = 21_781.0)
+        val second = fixAt(61.31000, 4.91000, 304, accuracy = 19_200.0)
+
+        assertEquals(JumpReason.Width, whyAJump(anchor, first))
+        assertTrue("wide answers agree with anything", fixesAgree(first, second))
+        assertFalse(agreementStands(JumpReason.Width, first, second))
+    }
+
+    // What agreement was meant for: an answer too wide to place the phone, a
+    // second one agreeing with it, and something the transmitter cannot reach
+    // naming the same place.
+    @Test
+    fun `a moderate width is confirmed where the other radios name the place`() {
+        val first = fixAt(61.10000, 4.50000, 0, accuracy = 600.0)
+        val second = fixAt(61.10050, 4.50100, 60, accuracy = 700.0)
+        val towers = fixAt(61.10020, 4.50040, 55, accuracy = 900.0)
+
+        assertTrue(agreementStands(JumpReason.Width, first, second, towers, second.takenAt))
+        assertFalse(
+            "nothing to ask is not agreement",
+            agreementStands(JumpReason.Width, first, second),
+        )
+    }
+
+    // The towers answering about somewhere else while the two wide answers
+    // vouch for each other. The width they carry is granted, and they are
+    // still not where the phone is.
+    @Test
+    fun `a width is not confirmed where the other radios name another place`() {
+        val first = fixAt(61.10000, 4.50000, 0, accuracy = 600.0)
+        val second = fixAt(61.10050, 4.50100, 60, accuracy = 700.0)
+        val towers = fixAt(61.03268, 4.40300, 55, accuracy = 900.0)
+
+        assertFalse(agreementStands(JumpReason.Width, first, second, towers, second.takenAt))
+    }
+
     private fun fixAt(latitude: Double, longitude: Double, second: Long, accuracy: Double? = null) =
         Fix(
             latitude = latitude,
