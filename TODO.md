@@ -472,6 +472,34 @@ What it costs, so that the decision is made with the price in view:
   a charger and over Wi-Fi, and never in the middle of the modes that matter.
   A phone that checks for updates every hour has been made worse, not better.
 
+Asking once a day is the ordinary case, and it is the wrong one for the case
+that matters: a build that fixes something the household is suffering from now
+should not wait for tomorrow's question. So the household should be able to
+start an update from the admin panel, and the phones should hear about it
+rather than be asked again.
+
+What that adds, on top of the above:
+
+- **A push, and nothing else reaches a sleeping phone.** The phones already
+  cannot be woken from outside — the item about waking a phone without the paid
+  tier says so — and an update nobody is present for is exactly the case where
+  waiting for the phone to speak first is useless. Whatever carries this is the
+  same machinery that carries a request to sound or an emergency grant, and it
+  should be built once.
+- **The panel says who is on what.** A household cannot decide to update
+  anything without seeing which phone runs which build and when each of them
+  last asked. That listing is worth having on its own, before any update is
+  ever started from it.
+- **Starting is not installing.** What the panel starts is a phone fetching and
+  offering; the platform's confirmation still stands in front of the install,
+  and a phone in a pocket will not answer it for hours. The panel has to show
+  the difference between asked, fetched, and running the new build, rather than
+  reporting the update as done the moment it was requested.
+- **One phone at a time, and reversibly.** An update that breaks the collection
+  breaks it on every phone at once if every phone takes it at once. Starting
+  with one phone, seeing it come back, and only then going on is the difference
+  between a bad build costing an evening and costing the household its map.
+
 ## The screen says the satellites are being spoofed
 
 The phone already knows: the log names every answer it leaves out, and the
