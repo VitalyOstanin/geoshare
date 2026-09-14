@@ -376,6 +376,8 @@ class SharingService : LifecycleService() {
             forgetThePlace()
         }
 
+        rememberASecondOpinion(fix)
+
         val jump =
             if (trusted) {
                 null
@@ -708,6 +710,28 @@ class SharingService : LifecycleService() {
 
             noteWhatTheNetworkKnows()
         }
+    }
+
+    /**
+     * Keeps an answer the phone did not measure, for the rule that weighs the
+     * satellites against something they cannot reach.
+     *
+     * An assistance service answers over the network, from a list of the Wi-Fi
+     * around the phone rather than from the sky, and arrives under the name of
+     * the satellites like everything else the provider hands over. The name is
+     * therefore not what it is taken by — the note is, and a note admitting
+     * that nothing was measured is a note from beyond the transmitter's reach.
+     *
+     * It matters most where there is no second opinion otherwise: a phone with
+     * no SIM has no towers to ask, and these answers are the only ones it ever
+     * gets that the spoofer did not write.
+     */
+    private fun rememberASecondOpinion(fix: Fix) {
+        if (answeredBy(noteOf(fix.reported?.alongside)) != Answered.Assistance) {
+            return
+        }
+
+        networkSaid = fix
     }
 
     /**

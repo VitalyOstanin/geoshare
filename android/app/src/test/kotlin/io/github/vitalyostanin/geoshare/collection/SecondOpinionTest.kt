@@ -110,6 +110,20 @@ class SecondOpinionTest {
         assertNull(secondOpinion(spoofed, sameAnswerAgain, at))
     }
 
+    // A phone with no SIM has no towers to ask, and this is the only second
+    // opinion it ever gets: the assistance service answers over the network,
+    // from the Wi-Fi around the phone, under the name of the satellites.
+    @Test
+    fun `an assistance answer counts as a second opinion though it is named gps`() {
+        val assisted =
+            fix(61.03268, 4.40300, 100.0, alongside = "QUICKGPS=true|SourceType=128|maxCn0=0")
+
+        val said = secondOpinion(spoofed, assisted, at)!!
+
+        assertTrue(said.disagrees)
+        assertEquals(JumpReason.Contradicted, whyAJump(null, spoofed, null, assisted, at))
+    }
+
     @Test
     fun `a phone whose radios were never asked is not accused of anything`() {
         assertNull(secondOpinion(spoofed, null, at))

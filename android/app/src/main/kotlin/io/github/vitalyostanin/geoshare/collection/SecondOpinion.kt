@@ -71,14 +71,23 @@ val SECOND_OPINION_TOGETHER: Duration = NETWORK_ANSWER_STALE
 val SECOND_OPINION_ASKED_EVERY: Duration = Duration.ofMinutes(5)
 
 /**
- * Whether the other radios contradict the satellites about where the phone is.
+ * Whether something the phone did not measure contradicts the satellites about
+ * where it is.
  *
- * Null rather than false wherever the question cannot be asked: no network
- * answer, an answer too old to be about this moment, an answer so wide it
- * places the phone in a region rather than a place, or an answer that turns
- * out to be the satellites' own under another name. The distinction matters
- * because the caller reports what was asked as well as what was answered, and
- * a rule that has nothing to compare is not a rule that found agreement.
+ * What counts as that something is decided by the note rather than by the name
+ * of the provider: an answer from the towers and an answer an assistance
+ * service worked out from the Wi-Fi around the phone are both computed
+ * somewhere the transmitter cannot reach, and the second of them arrives under
+ * the name of the satellites. The one thing refused here is an answer that was
+ * measured off the sky after all.
+ *
+ * Null rather than false wherever the question cannot be asked: nothing to
+ * compare against, an answer too old to be about this moment, an answer so
+ * wide it places the phone in a region rather than a place, or an answer that
+ * turns out to be the satellites' own under another name. The distinction
+ * matters because the caller reports what was asked as well as what was
+ * answered, and a rule that has nothing to compare is not a rule that found
+ * agreement.
  */
 fun secondOpinion(satellites: Fix, network: Fix?, now: Instant): SecondOpinion? {
     if (network == null) {
