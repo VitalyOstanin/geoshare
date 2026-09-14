@@ -186,6 +186,23 @@ class RadioWatch(private val context: Context) {
     )
 
     /**
+     * The same epoch, put down while no position is coming out of it.
+     *
+     * A receiver hearing twenty satellites and answering nothing is the case
+     * the whole file exists for, and it is exactly the case that used to leave
+     * no rows at all.
+     */
+    fun noteSkyWithoutFix(at: Instant, mode: String, silence: Duration) = SkyLog.note(
+        at = at,
+        mode = mode,
+        silence = silence,
+        clock = clock,
+        gains = running,
+        sky = sky,
+        measurements = measured,
+    )
+
+    /**
      * Subscribes to both, on the handler rather than on an executor.
      *
      * The executor overloads arrive with Android 11, and the phone this was

@@ -76,6 +76,17 @@ private const val SATELLITES_APART_METRES = 200.0
 private val DISAGREEMENT_SAID_EVERY: Duration = Duration.ofMinutes(1)
 
 /**
+ * How long the receiver may answer nothing before the sky it is hearing is put
+ * down without a position, and how often it is put down after that.
+ *
+ * Half a minute, against the fifteen seconds a watched phone asks at: a
+ * receiver that is working never reaches it, so nothing is written while there
+ * is nothing to explain. A receiver being talked over reaches it at once and
+ * keeps reaching it, which is when the rows are worth their room.
+ */
+private val SKY_NOTED_WHILE_SILENT: Duration = Duration.ofSeconds(30)
+
+/**
  * A position as it goes into the document: where the phone was, and whether
  * the cable was in it at the moment that was decided.
  *
@@ -508,6 +519,7 @@ class SharingService : LifecycleService() {
                         heardAt = Instant.now()
                         launch { rescueWhileSilent(writer, mode) }
                         launch { watchTheSatellites(mode) }
+                        launch { noteTheSkyWhileSilent(mode) }
 
                         positionUpdates(this@SharingService, spec).collect { fix ->
                             heardAt = Instant.now()
@@ -813,6 +825,38 @@ class SharingService : LifecycleService() {
         satellitePositions(this).collect { fix ->
             SkyLog.note(fix.takenAt, fix)
             noteTheDisagreement(fix)
+        }
+    }
+
+    /**
+     * Writes down what the receiver is hearing while it works out nothing from
+     * it.
+     *
+     * Only where the receiver is being asked often enough for silence to mean
+     * something: in the slow modes a minute without an answer is the ordinary
+     * state of a phone in a pocket, and rows about it would fill the file with
+     * a phone behaving exactly as intended.
+     *
+     * The phone this was written for hears twenty-one satellites and produces
+     * no position at all, and until this ran, that phone wrote nothing into the
+     * sky file — the one case where the sky is the entire evidence was the one
+     * case with no evidence kept.
+     */
+    private suspend fun noteTheSkyWhileSilent(mode: CollectionMode) {
+        if (mode.accuracy != Accuracy.High) {
+            return
+        }
+
+        while (true) {
+            delay(SKY_NOTED_WHILE_SILENT.toMillis())
+
+            val quiet = Duration.between(heardAt, Instant.now())
+
+            if (quiet < SKY_NOTED_WHILE_SILENT) {
+                continue
+            }
+
+            radio.noteSkyWithoutFix(Instant.now(), mode.name, quiet)
         }
     }
 

@@ -7,6 +7,7 @@ import io.github.vitalyostanin.geoshare.collection.Measurement
 import io.github.vitalyostanin.geoshare.collection.Satellite
 import io.github.vitalyostanin.geoshare.collection.word
 import java.io.File
+import java.time.Duration
 import java.time.Instant
 import java.util.Locale
 
@@ -79,6 +80,42 @@ object SkyLog {
     }
 
     /**
+     * The same block, for an epoch that produced no position at all.
+     *
+     * The case worth recording most. A receiver that hears twenty satellites
+     * and works out nothing from them is a receiver being talked over, and
+     * until this existed such an epoch left no trace whatever: the block was
+     * written beside a fix, so the phones with the most to say were the ones
+     * that said nothing.
+     *
+     * The head row carries how long the silence has lasted and which mode the
+     * phone was collecting in, because a minute without an answer means one
+     * thing at four fixes a minute and another at one an hour.
+     */
+    @Suppress("LongParameterList")
+    fun note(
+        at: Instant,
+        mode: String,
+        silence: Duration,
+        clock: Clock?,
+        gains: List<Gain>,
+        sky: List<Satellite>,
+        measurements: List<Measurement>,
+    ) {
+        val stamp = at.toEpochMilli()
+
+        note(
+            buildString {
+                unfixed(stamp, mode, silence)
+                clock?.let { clock(stamp, it) }
+                gains.forEach { gain(stamp, it) }
+                sky.forEach { satellite(stamp, it) }
+                measurements.forEach { measurement(stamp, it) }
+            },
+        )
+    }
+
+    /**
      * One position on its own, with nothing else about the epoch.
      *
      * What the raw satellite provider answers, which arrives on its own terms
@@ -112,6 +149,12 @@ object SkyLog {
         append(number(said?.verticalAccuracyMetres)).append(',')
         append(if (said?.pretended == true) '1' else '0').append(',')
         append(said?.alongside.orEmpty().replace(',', ' ')).append('\n')
+    }
+
+    private fun StringBuilder.unfixed(stamp: Long, mode: String, silence: Duration) {
+        append("NoFix,").append(stamp).append(',')
+        append(mode).append(',')
+        append(silence.toMillis()).append('\n')
     }
 
     private fun StringBuilder.clock(stamp: Long, clock: Clock) {
@@ -182,6 +225,7 @@ object SkyLog {
     private val HEADER =
         """
         # Fix,UnixTimeMillis,Provider,LatitudeDegrees,LongitudeDegrees,AltitudeMeters,SpeedMps,AccuracyMeters,BearingDegrees,TakenAtMillis,SpeedAccuracyMps,BearingAccuracyDegrees,ElapsedRealtimeNanos,VerticalAccuracyMeters,MockLocation,ExtraKeyValuePairs
+        # NoFix,UnixTimeMillis,Mode,SilenceMillis
         # Clock,UnixTimeMillis,TimeNanos,LeapSecond,TimeUncertaintyNanos,FullBiasNanos,BiasNanos,BiasUncertaintyNanos,DriftNanosPerSecond,DriftUncertaintyNanosPerSecond,HardwareClockDiscontinuityCount
         # Agc,UnixTimeMillis,ConstellationType,CarrierFrequencyHz,AgcDb
         # Sat,UnixTimeMillis,ConstellationType,Svid,Cn0DbHz,BasebandCn0DbHz,ElevationDegrees,AzimuthDegrees,CarrierFrequencyHz,UsedInFix,HasEphemerisData,HasAlmanacData
