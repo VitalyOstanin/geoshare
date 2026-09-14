@@ -107,11 +107,21 @@ fun networkAnswerStands(
  * sixty.
  *
  * So an answer is written over a standing one only where it adds something:
- * where it is no wider, or where it names a place outside the doubt of the one
- * already written, which is a phone that has moved rather than a radio with a
- * poorer answer about the same place. Anything already stale is replaced
- * whatever it says — an old exact answer is not better than a new vague one,
- * it is merely older.
+ * where it is no wider, or where it names a place well outside the doubt of
+ * the one already written, which is a phone that has moved rather than a radio
+ * with a poorer answer about the same place. Anything already stale is
+ * replaced whatever it says — an old exact answer is not better than a new
+ * vague one, it is merely older.
+ *
+ * Well outside rather than merely outside, by [SECOND_OPINION_MARGIN], and
+ * that margin was paid for too: a phone standing in its own flat at
+ * twenty-eight metres was moved nearly two kilometres by a tower answering one
+ * thousand seven hundred, whose circle missed the flat by a hundred and
+ * fifty-six metres. A width of one thousand seven hundred is not a measurement
+ * that can contradict one of twenty-eight by a hundred and fifty-six metres —
+ * the width of a network answer describes a database entry rather than the
+ * phone, which is the same reason the second opinion grants three times the
+ * doubt before it calls two answers a disagreement.
  *
  * Stale here is [STALE_AFTER] rather than [NETWORK_ANSWER_STALE], and the
  * difference was paid for: with five minutes, a phone standing in its own flat
@@ -134,5 +144,5 @@ fun saysMoreThan(asked: Fix, written: Fix?, now: Instant): Boolean {
         return true
     }
 
-    return distanceMetres(written, asked) > wasWide + isWide
+    return distanceMetres(written, asked) > (wasWide + isWide) * SECOND_OPINION_MARGIN
 }

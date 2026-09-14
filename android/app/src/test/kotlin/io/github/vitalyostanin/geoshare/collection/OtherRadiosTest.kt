@@ -124,6 +124,20 @@ class OtherRadiosTest {
         assertFalse(saysMoreThan(fromATower, fromTheWiFi, NOW))
     }
 
+    // The flat again, and the answer that moved the phone out of it: a tower
+    // one thousand seven hundred metres wide whose circle fell one hundred and
+    // fifty-six metres short of reaching the position already written. Outside
+    // the doubt by arithmetic, and inside it by any honest reading of what a
+    // network width means.
+    @Test
+    fun `a tower missing the flat by a hundred metres has not found the phone elsewhere`() {
+        val minutesOld = NOW.minus(Duration.ofMinutes(2))
+        val inTheFlat = fixAt(61.03268, 4.40300, width = 28.1, takenAt = minutesOld)
+        val fromATower = fixAt(61.03545, 4.36954, width = 1_700.0)
+
+        assertFalse(saysMoreThan(fromATower, inTheFlat, NOW))
+    }
+
     private fun fixAt(latitude: Double, longitude: Double, width: Double, takenAt: Instant = NOW) =
         Fix(latitude = latitude, longitude = longitude, takenAt = takenAt, accuracyMetres = width)
 
