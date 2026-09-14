@@ -471,3 +471,30 @@ What it costs, so that the decision is made with the price in view:
 - **Asking costs battery.** The question is worth asking about once a day, on
   a charger and over Wi-Fi, and never in the middle of the modes that matter.
   A phone that checks for updates every hour has been made worse, not better.
+
+## The screen says the satellites are being spoofed
+
+The phone already knows: the log names every answer it leaves out, and the
+service knows which radio the position it wrote came from. None of that reaches
+the screen, and a member looking at the application sees a position with no
+sign that the satellites are saying an island in a lake and that what is on the
+map came from the towers instead.
+
+What the screen should carry:
+
+- **That a spoof is going on right now.** A line the moment answers start being
+  left out for landing in a place the phone counts as false, naming the place
+  and how long it has been going on. It ends when the satellites are believed
+  again, and the line says that too.
+- **Where the position on screen came from.** The satellites, the towers and
+  the Wi-Fi, or a repeat of what the phone last believed — named on the
+  position itself rather than buried in the log. Under a spoof the honest
+  position comes from the towers and is hundreds of metres wide, and a member
+  reading fifty metres of accuracy off a satellite fix would be reading the
+  spoof.
+- **What the phone is leaving out.** A count over the last hour, so that a
+  member can tell a quiet radio from a radio being answered by somebody else.
+
+What it costs: the service has to hand this out rather than only write it to
+its own log, the screen has to keep it while the application is not in front,
+and every wording here is one more line to translate.
