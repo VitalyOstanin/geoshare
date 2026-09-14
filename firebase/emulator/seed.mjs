@@ -44,8 +44,8 @@ const MEMBERS = [
     { email: 'child@geoshare.test', name: 'Child', device: 'child-phone' },
 ];
 
-// Around the the city flat the real group moves about, so the map
-// opens on something that looks like a household rather than on null island.
+// A pair of places a few hundred metres apart, so the map opens on something
+// that looks like a household rather than on null island.
 const PLACES = {
     'spouse@geoshare.test': { latitude: 61.0327, longitude: 4.403 },
     'child@geoshare.test': { latitude: 61.0295, longitude: 4.4108 },

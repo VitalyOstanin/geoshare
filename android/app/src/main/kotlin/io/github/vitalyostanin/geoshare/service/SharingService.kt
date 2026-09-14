@@ -16,8 +16,10 @@ import com.google.firebase.auth.FirebaseAuth
 import io.github.vitalyostanin.geoshare.collection.Accuracy
 import io.github.vitalyostanin.geoshare.collection.Answered
 import io.github.vitalyostanin.geoshare.collection.CLOCK_TOLERANCE
+import io.github.vitalyostanin.geoshare.collection.CircleLimits
 import io.github.vitalyostanin.geoshare.collection.CollectionMode
 import io.github.vitalyostanin.geoshare.collection.CollectionState
+import io.github.vitalyostanin.geoshare.collection.FalsePlace
 import io.github.vitalyostanin.geoshare.collection.Fix
 import io.github.vitalyostanin.geoshare.collection.IDLE_REPEAT
 import io.github.vitalyostanin.geoshare.collection.JumpReason
@@ -203,6 +205,26 @@ class SharingService : LifecycleService() {
     private var trail: Trail = Trail()
 
     /**
+     * The places this group says a false signal uses, and the copy of them
+     * that survives the process being killed.
+     *
+     * Read from the file first and from the database after, because the fix
+     * these places are there to catch is the first one of the session: a phone
+     * waiting for its subscription has nothing to catch it with.
+     */
+    private val falsePlaceStore by lazy { FalsePlaceStore(this) }
+    private var falsePlaces: List<FalsePlace> = emptyList()
+
+    /**
+     * What this group counts as going round in circles.
+     *
+     * The build's own limits until the group says otherwise, and the group
+     * says it in its settings rather than in a release: what a transmitter
+     * over one neighbourhood draws is not a fact about the application.
+     */
+    private var circleLimits: CircleLimits = CircleLimits()
+
+    /**
      * The last position this phone was ever sure of, however long ago.
      *
      * Apart from [lastFix], which the rules measure against and which an old
@@ -296,6 +318,10 @@ class SharingService : LifecycleService() {
         trail = trailStore.read()
         lastKnown = trail.fixes.lastOrNull()
         lastFix = anchorFrom(trail, Instant.now())
+        falsePlaces = falsePlaceStore.read()
+
+        lifecycleScope.launch { keepTheFalsePlaces() }
+        lifecycleScope.launch { keepWhatCountsAsCircling() }
 
         AppLog.i(
             TAG,
@@ -396,7 +422,16 @@ class SharingService : LifecycleService() {
             if (trusted) {
                 null
             } else {
-                whyAJump(lastFix, fix, standingSince, networkSaid, Instant.now(), lately)
+                whyAJump(
+                    lastFix,
+                    fix,
+                    standingSince,
+                    networkSaid,
+                    Instant.now(),
+                    lately,
+                    falsePlaces,
+                    circleLimits,
+                )
             }
         // A fix left out does not move the last position, and that is how the
         // marker can be left standing somewhere the phone has long left: a
@@ -749,6 +784,32 @@ class SharingService : LifecycleService() {
     }
 
     /**
+     * Keeps the group's list of false places up to date, and on disk.
+     *
+     * The subscription runs for as long as the service does, whatever mode it
+     * is in: the list is read by the rules on every fix, and a list that
+     * stopped arriving while the phone was quiet would be a list that is wrong
+     * exactly when the phone starts answering again.
+     */
+    private suspend fun keepTheFalsePlaces() {
+        namedFalsePlaces().collect { places ->
+            falsePlaces = places
+            falsePlaceStore.write(places)
+        }
+    }
+
+    /**
+     * Keeps this group's idea of going round in circles up to date.
+     *
+     * Nothing is kept on disk for it: a phone that has not reached the
+     * settings weighs answers against the limits in the build, which catch a
+     * transmitter of any shape and only take a few more answers to do it.
+     */
+    private suspend fun keepWhatCountsAsCircling() {
+        circlingLimits().collect { circleLimits = it }
+    }
+
+    /**
      * Keeps an answer for the rule that reads the shape of the run.
      *
      * Only what the satellites answered goes in. An answer the towers gave,
@@ -765,7 +826,7 @@ class SharingService : LifecycleService() {
             return
         }
 
-        lately = lately.andThen(fix)
+        lately = lately.andThen(fix, circleLimits)
     }
 
     /**
@@ -830,7 +891,7 @@ class SharingService : LifecycleService() {
                 networkPosition(this@SharingService)
             } ?: lastNetworkPosition(this)
 
-        if (!networkAnswerStands(asked, Instant.now())) {
+        if (!networkAnswerStands(asked, Instant.now(), falsePlaces)) {
             AppLog.w(TAG, "the other radios had nothing to put in its place: ${saying(asked)}")
 
             return
@@ -1088,7 +1149,7 @@ class SharingService : LifecycleService() {
      *
      * Written positions only. An answer left out never becomes part of what
      * counts as familiar, which is what stops an hour of a false signal from
-     * teaching the phone that the lake is where it lives.
+     * teaching the phone that a false place is where it lives.
      */
     private fun rememberThePlace(fix: Fix) {
         val before = trail.knows(fix)
@@ -1146,8 +1207,7 @@ class SharingService : LifecycleService() {
 
         JumpReason.Contradiction -> "by two places at one time"
 
-        JumpReason.FalsePlace ->
-            "by landing on ${falsePlaceFor(fix)?.named ?: "a place a false signal uses"}"
+        JumpReason.FalsePlace -> "by landing on ${theFalsePlace(fix)}"
 
         JumpReason.Unmoved -> "by the phone never having been carried there"
 
@@ -1162,7 +1222,7 @@ class SharingService : LifecycleService() {
      * was left out.
      */
     private fun theCircleDrawn(): String {
-        val circle = circleDrawn(lately) ?: return "a circle at a steady speed"
+        val circle = circleDrawn(lately, circleLimits) ?: return "a circle at a steady speed"
 
         return String.format(
             Locale.ROOT,
@@ -1172,6 +1232,10 @@ class SharingService : LifecycleService() {
             circle.turnedDegrees,
         )
     }
+
+    /** What the group calls the place this fix landed on. */
+    private fun theFalsePlace(fix: Fix): String =
+        falsePlaceFor(fix, falsePlaces)?.named ?: "a place a false signal uses"
 
     /**
      * How far the towers and the Wi-Fi put the phone from where the satellites

@@ -8,6 +8,8 @@ which keeps both storage and read counts flat.
 groups/{groupId}                            members: [uid, ...], admins: [uid, ...]
 groups/{groupId}/invitations/{code}         a code that lets one more person in
 groups/{groupId}/joins/{uid}                the code somebody is holding, while they join
+groups/{groupId}/falsePlaces/{placeId}      where a false signal is known to put phones
+groups/{groupId}/settings/{key}             what the group has settled about judging answers
 groups/{groupId}/members/{uid}              what a member says about themselves
 groups/{groupId}/grants/{uid}               which phones a member carries, and who may watch
 groups/{groupId}/positions/{uid}.{deviceId} last known position of one phone
@@ -83,6 +85,66 @@ roster reads it from here.
 The document is theirs and nobody else's -- reading it would be reading a code,
 writing it would be putting one into somebody's hand -- and its shape is held to
 eight letters and digits, because the rules build a document path out of it.
+
+## falsePlaces/{placeId}
+
+| Field          | Type   | Meaning                                                    |
+|----------------|--------|-------------------------------------------------------------|
+| `latitude`     | number | Degrees                                                      |
+| `longitude`    | number | Degrees                                                      |
+| `radiusMetres` | number | How far around the point to distrust; at most 50 000         |
+| `named`        | string | What the place is, so a log line says something readable     |
+
+Where a false signal puts the phones of this group. Held here rather than in
+the build: which places those are is a fact about one household's surroundings,
+and a build carrying them would hand them to everybody who downloads it.
+
+Everybody in the group reads the collection, including somebody who joined an
+hour ago on a code — a phone that does not know the places takes the lie as its
+anchor, and that first fix of a session is the one no other rule can catch.
+Only an administrator writes it, for the same reason they are the ones who edit
+the roster: a place added wrongly is ground the group's phones can no longer be
+placed on.
+
+The radius is not the spread of the false answers — those sit within metres of
+each other — but the length of the road the receiver draws away from the point
+while it is being fed.
+
+The phones subscribe to the collection and keep a copy in a file of their own,
+because the fix these places exist to catch is the first one after the service
+starts, and a phone waiting for its subscription has nothing to catch it with.
+Whatever cannot be read as a place is left out rather than thrown, so one
+document typed wrong in the console does not stop the rest from arriving.
+
+## settings/{key}
+
+One document per subject. Today there is one: `circling`, the limits of the
+rule that reads the shape of a run of answers.
+
+| Field            | Type   | Meaning                                                      |
+|------------------|--------|---------------------------------------------------------------|
+| `answers`        | int    | How many answers in a row are fitted to a circle; at least 4   |
+| `withinSeconds`  | number | How long those answers may be spread over                      |
+| `roundness`      | number | How far off the circle they may sit, as a share of its radius   |
+| `widestMetres`   | number | The widest circle worth calling a circle                       |
+| `tightestMetres` | number | The tightest one                                               |
+| `steadiness`     | number | How much the speed may vary, as a share of its average          |
+| `turnedDegrees`  | number | How far round the circle the answers have to have gone          |
+| `slowestMps`     | number | The slowest the answers may move and still be a road            |
+
+Every field may be absent, and what is absent keeps the value the build
+carries. The build's limits catch a transmitter of any shape; a group that has
+watched one over its own neighbourhood knows its size and speed and can narrow
+them, which recognises the same circle in fewer answers. Those numbers describe
+the transmitter rather than the application, which is why they are here and not
+in a release anybody can download.
+
+Everybody in the group reads it — every phone weighs its own answers against it
+— and only an administrator writes it, because limits set wrongly either catch
+nothing or refuse honest positions. The rules hold the fields to numbers of the
+right kind; what the numbers mean together is weighed on the phone, and a
+document that does not stand as limits is ignored whole rather than applied in
+part.
 
 ## members/{uid}
 

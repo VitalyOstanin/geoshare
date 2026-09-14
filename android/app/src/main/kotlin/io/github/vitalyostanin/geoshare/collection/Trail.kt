@@ -13,7 +13,7 @@ import java.time.Instant
 // What goes in is positions that were written, never answers that arrived. The
 // distinction is the whole safety of it: an answer left out as a jump never
 // becomes part of what the phone considers familiar, so an hour of spoofing
-// does not teach the phone that the lake is home.
+// does not teach the phone that the false place is home.
 
 /** The places the phone has been, oldest first. */
 data class Trail(val fixes: List<Fix> = emptyList())

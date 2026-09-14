@@ -73,12 +73,16 @@ fun otherRadiosAreDue(jumpsInARow: Int, askedAt: Instant?, now: Instant): Boolea
  * may have handed it to the platform's own store of last known places, and
  * that store is what answers when the towers are slow.
  */
-fun networkAnswerStands(fix: Fix?, now: Instant): Boolean {
+fun networkAnswerStands(
+    fix: Fix?,
+    now: Instant,
+    falsePlaces: List<FalsePlace> = emptyList(),
+): Boolean {
     if (fix == null) {
         return false
     }
 
-    if (falsePlaceFor(fix) != null) {
+    if (falsePlaceFor(fix, falsePlaces) != null) {
         return false
     }
 

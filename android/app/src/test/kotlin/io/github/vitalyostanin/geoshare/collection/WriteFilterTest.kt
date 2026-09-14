@@ -9,8 +9,8 @@ import java.time.Instant
 class WriteFilterTest {
     private val start: Instant = Instant.parse("2026-09-11T12:00:00Z")
 
-    // the city, where the phones actually are: the metre-per-degree
-    // figures below are the ones at this latitude.
+    // A northern latitude, which is what the metre-per-degree figures below
+    // are taken at.
     private val home = Fix(latitude = 60.9386, longitude = 4.3141, takenAt = start)
 
     /** Roughly [metres] north of [home], which avoids the longitude scaling. */

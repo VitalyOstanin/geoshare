@@ -48,8 +48,11 @@ class OtherRadiosTest {
     // put there an hour ago, and that store is what answers when the towers
     // are slow.
     @Test
-    fun `an answer from a known false place does not stand`() {
-        assertFalse(networkAnswerStands(fixAt(61.42565, 5.40377, width = 30.0), NOW))
+    fun `an answer from a place the group named false does not stand`() {
+        val named = listOf(FalsePlace(61.42565, 5.40377, 4_000.0, "where the phones are put"))
+
+        assertTrue(networkAnswerStands(fixAt(61.42565, 5.40377, width = 30.0), NOW))
+        assertFalse(networkAnswerStands(fixAt(61.42565, 5.40377, width = 30.0), NOW, named))
     }
 
     @Test

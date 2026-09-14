@@ -10,6 +10,13 @@ package io.github.vitalyostanin.geoshare.collection
 // it, and the first fix after the service starts has nothing to be compared
 // with. A phone switched on inside the affected area therefore takes the false
 // place as its anchor and believes every step of the road drawn away from it.
+//
+// Which places those are is a question about one household's surroundings
+// rather than about the application, so the list lives in the group's own
+// settings in the database and reaches the phone from there. Nothing is built
+// in: a build carrying somebody's coordinates hands them to everybody who
+// downloads it, and a list of places where receivers are being lied to says
+// as much about the neighbourhood as about the phones.
 
 /**
  * A place a false signal lands on, and how far around it to distrust.
@@ -28,51 +35,44 @@ data class FalsePlace(
 )
 
 /**
- * The places this build knows about.
+ * How many places one group may keep.
  *
- * Kept in the build rather than read from the database, because the point
- * moves once in months, while reading it would need a phone that wakes to
- * fetch it — the very thing the service does not do. A place goes on this list
- * only where nobody has business being: the island is water and forest, and a
- * family standing on it is a case worth losing to catch the lie. The airport
- * the same spoofer used until the end of April is deliberately left off — it
- * has flights, staff and passengers, and calling it false would lose real
- * positions.
- *
- * The list is expected to grow. What one costs is the ground inside its
- * radius: a phone genuinely there is a phone this build refuses to place, so
- * a new entry is read off the log of a phone being fed the signal, given a
- * radius that covers the spread seen in that log and no more, and named for
- * somebody reading the log afterwards. Two entries are cheaper than one wide
- * one whenever the ground between them is ground a family can stand on.
+ * Every one of them is weighed against every fix, and the list is read by a
+ * phone that has to hold it in memory while it does nothing else. Fifty is far
+ * past what a neighbourhood produces and short of anything that costs.
  */
-val KNOWN_FALSE_PLACES: List<FalsePlace> = listOf(
-    // Every phone in the household that could see the satellites at all was
-    // put here through the evening of 13 September 2026.
-    FalsePlace(
-        latitude = 61.428,
-        longitude = 5.420,
-        radiusMetres = 4_000.0,
-        named = "a place a false signal uses",
-    ),
-    // Thirteen kilometres north-east of the island, and outside its radius:
-    // the third phone, which has no mobile network and is placed by whatever
-    // its satellites say, was held here on the same evening. One point so far,
-    // so the radius is the smallest that covers it with room for the road the
-    // receiver draws.
-    FalsePlace(
-        latitude = 61.49782,
-        longitude = 5.60881,
-        radiusMetres = 5_000.0,
-        named = "a second place a false signal uses",
-    ),
-)
+const val FALSE_PLACES_KEPT: Int = 50
+
+/**
+ * The widest a place may be.
+ *
+ * What a place costs is the ground inside its radius: a phone genuinely there
+ * is a phone that cannot be placed at all. Fifty kilometres is the whole
+ * surroundings of a city, and past it a place stops being a place.
+ */
+const val FALSE_PLACE_WIDEST_METRES: Double = 50_000.0
+
+/**
+ * Whether a place is one the rules can be asked about.
+ *
+ * Checked on the way in from the database, because the rules there hold the
+ * shape of a document and cannot hold what the numbers mean: a radius of zero
+ * catches nothing and a negative one catches everything.
+ */
+fun falsePlaceStands(place: FalsePlace): Boolean = place.latitude in -90.0..90.0 &&
+    place.longitude in -180.0..180.0 &&
+    place.radiusMetres > 0.0 &&
+    place.radiusMetres <= FALSE_PLACE_WIDEST_METRES
 
 /**
  * The false place a fix has landed on, or nothing where it has landed
  * somewhere phones are actually taken.
+ *
+ * [places] is empty wherever the group has named none, and a phone that has
+ * never reached the database is a phone with none: the rule then says nothing,
+ * which is what it did before any place was ever listed.
  */
-fun falsePlaceFor(fix: Fix, places: List<FalsePlace> = KNOWN_FALSE_PLACES): FalsePlace? =
+fun falsePlaceFor(fix: Fix, places: List<FalsePlace> = emptyList()): FalsePlace? =
     places.firstOrNull { distanceMetres(asFix(it, fix), fix) <= it.radiusMetres }
 
 /** The place as a fix, so that one distance function serves both. */

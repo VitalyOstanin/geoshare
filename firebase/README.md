@@ -24,9 +24,8 @@ Done once; the project this repository talks to already exists.
 1. Create a project. It is also a Google Cloud project, and the account that
    creates it owns both.
 2. Create the Firestore database in production mode. **The location cannot be
-   changed afterwards**, so pick the one closest to where the phones are;
-   `europe-north1` (Finland) is the nearest to the city. One database
-   per project is free.
+   changed afterwards**, so pick the one closest to where the phones are.
+   One database per project is free.
 3. Under Authentication, enable Google as a sign-in provider.
 4. Enable Hosting. It hands out `<project-id>.web.app`, which is on the list of
    authorised sign-in domains from the start — a domain of our own would have to

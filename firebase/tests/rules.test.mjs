@@ -850,3 +850,182 @@ describe('running a group', () => {
         await assertFails(setDoc(groupDoc(db), { members: [BOB], admins: [ALICE] }));
     });
 });
+
+// Where a false signal is known to put the phones of this group. The list is
+// in the database rather than in the build, because which places those are is
+// a fact about one household's surroundings.
+describe('false places', () => {
+    const falsePlaceOf = (db, id = 'a-false-place') =>
+        doc(db, `groups/${GROUP}/falsePlaces/${id}`);
+
+    const somePlace = {
+        latitude: 61.43,
+        longitude: 4.42,
+        radiusMetres: 4000,
+        named: 'a place a false signal uses',
+    };
+
+    const plantAPlace = () =>
+        testEnv.withSecurityRulesDisabled(async (context) => {
+            await setDoc(falsePlaceOf(context.firestore()), somePlace);
+        });
+
+    it('a member reads the places', async () => {
+        await plantAPlace();
+
+        const db = testEnv.authenticatedContext(BOB).firestore();
+
+        await assertSucceeds(getDoc(falsePlaceOf(db)));
+        await assertSucceeds(getDocs(collection(db, `groups/${GROUP}/falsePlaces`)));
+    });
+
+    it('somebody outside the group reads nothing', async () => {
+        await plantAPlace();
+
+        const db = testEnv.authenticatedContext(STRANGER).firestore();
+
+        await assertFails(getDoc(falsePlaceOf(db)));
+    });
+
+    it('an administrator names a place', async () => {
+        await plantAnAdministrator();
+
+        const db = testEnv.authenticatedContext(ALICE).firestore();
+
+        await assertSucceeds(setDoc(falsePlaceOf(db), somePlace));
+    });
+
+    // A place added wrongly is ground the group's phones can no longer be
+    // placed on, so naming one is an administrator's business.
+    it('a member who does not run the group names none', async () => {
+        await plantAnAdministrator();
+
+        const db = testEnv.authenticatedContext(BOB).firestore();
+
+        await assertFails(setDoc(falsePlaceOf(db), somePlace));
+    });
+
+    it('a place outside the globe is refused', async () => {
+        await plantAnAdministrator();
+
+        const db = testEnv.authenticatedContext(ALICE).firestore();
+
+        await assertFails(setDoc(falsePlaceOf(db), { ...somePlace, latitude: 91 }));
+        await assertFails(setDoc(falsePlaceOf(db), { ...somePlace, longitude: -181 }));
+    });
+
+    // A radius of nothing catches nothing, and one of half a country catches
+    // the whole household.
+    it('a radius has to be a radius', async () => {
+        await plantAnAdministrator();
+
+        const db = testEnv.authenticatedContext(ALICE).firestore();
+
+        await assertFails(setDoc(falsePlaceOf(db), { ...somePlace, radiusMetres: 0 }));
+        await assertFails(setDoc(falsePlaceOf(db), { ...somePlace, radiusMetres: 50001 }));
+    });
+
+    it('nothing else goes in the document', async () => {
+        await plantAnAdministrator();
+
+        const db = testEnv.authenticatedContext(ALICE).firestore();
+
+        await assertFails(setDoc(falsePlaceOf(db), { ...somePlace, seenAt: new Date() }));
+    });
+
+    it('an administrator takes a place off the list, and a member does not', async () => {
+        await plantAnAdministrator();
+        await plantAPlace();
+
+        const bob = testEnv.authenticatedContext(BOB).firestore();
+        const alice = testEnv.authenticatedContext(ALICE).firestore();
+
+        await assertFails(deleteDoc(falsePlaceOf(bob)));
+        await assertSucceeds(deleteDoc(falsePlaceOf(alice)));
+    });
+});
+
+// What the group has settled about how its phones judge an answer: today the
+// limits of the rule that reads the shape of a run of answers.
+describe('settings', () => {
+    const settingOf = (db, key = 'circling') => doc(db, `groups/${GROUP}/settings/${key}`);
+
+    const someLimits = {
+        answers: 8,
+        withinSeconds: 120,
+        roundness: 0.02,
+        widestMetres: 3000,
+        tightestMetres: 500,
+        steadiness: 0.08,
+        turnedDegrees: 90,
+        slowestMps: 10,
+    };
+
+    const plantTheLimits = () =>
+        testEnv.withSecurityRulesDisabled(async (context) => {
+            await setDoc(settingOf(context.firestore()), someLimits);
+        });
+
+    it('every member reads the limits their phone weighs answers against', async () => {
+        await plantTheLimits();
+
+        const db = testEnv.authenticatedContext(BOB).firestore();
+
+        await assertSucceeds(getDoc(settingOf(db)));
+    });
+
+    it('somebody outside the group reads nothing', async () => {
+        await plantTheLimits();
+
+        const db = testEnv.authenticatedContext(STRANGER).firestore();
+
+        await assertFails(getDoc(settingOf(db)));
+    });
+
+    it('an administrator narrows the limits, and a member does not', async () => {
+        await plantAnAdministrator();
+
+        const alice = testEnv.authenticatedContext(ALICE).firestore();
+        const bob = testEnv.authenticatedContext(BOB).firestore();
+
+        await assertFails(setDoc(settingOf(bob), someLimits));
+        await assertSucceeds(setDoc(settingOf(alice), someLimits));
+    });
+
+    // Three points lie on a circle exactly, so a run of three has nothing left
+    // over to disagree with one.
+    it('a run too short to disagree with a circle is refused', async () => {
+        await plantAnAdministrator();
+
+        const db = testEnv.authenticatedContext(ALICE).firestore();
+
+        await assertFails(setDoc(settingOf(db), { ...someLimits, answers: 3 }));
+    });
+
+    it('a limit that is not a number is refused', async () => {
+        await plantAnAdministrator();
+
+        const db = testEnv.authenticatedContext(ALICE).firestore();
+
+        await assertFails(setDoc(settingOf(db), { ...someLimits, roundness: 'tight' }));
+        await assertFails(setDoc(settingOf(db), { ...someLimits, widestMetres: 0 }));
+    });
+
+    it('nothing else goes in the document', async () => {
+        await plantAnAdministrator();
+
+        const db = testEnv.authenticatedContext(ALICE).firestore();
+
+        await assertFails(setDoc(settingOf(db), { ...someLimits, note: 'why' }));
+    });
+
+    // One document per subject, and the rules know the subjects: a setting
+    // nobody reads is a setting nobody has reasoned about.
+    it('a setting the phones do not read is refused', async () => {
+        await plantAnAdministrator();
+
+        const db = testEnv.authenticatedContext(ALICE).firestore();
+
+        await assertFails(setDoc(settingOf(db, 'whatever'), someLimits));
+    });
+});

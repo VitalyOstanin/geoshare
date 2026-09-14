@@ -56,6 +56,32 @@ fun invitationsOf(store: FirebaseFirestore): CollectionReference =
 fun joinsOf(store: FirebaseFirestore): CollectionReference =
     groupDocument(store).collection("joins")
 
+/**
+ * The places a false signal is known to put phones at, as this group knows
+ * them.
+ *
+ * In the database rather than in the build: which places those are is a fact
+ * about one household's surroundings, and a build carrying them would hand
+ * them to everybody who downloads it. Everybody in the group reads the
+ * collection, and only an administrator writes it.
+ */
+fun falsePlacesOf(store: FirebaseFirestore): CollectionReference =
+    groupDocument(store).collection("falsePlaces")
+
+/**
+ * What the group has settled about how its phones judge an answer.
+ *
+ * One document per subject rather than fields on the group document: the
+ * roster is written by a rule that allows two named shapes and nothing else,
+ * and every setting added to it would be a third.
+ */
+fun settingsOf(store: FirebaseFirestore): CollectionReference =
+    groupDocument(store).collection("settings")
+
+/** What counts as going round in circles, as this group has settled it. */
+fun circlingSetting(store: FirebaseFirestore): DocumentReference =
+    settingsOf(store).document("circling")
+
 /** The fields of the group document itself. */
 object GroupField {
     const val MEMBERS = "members"
@@ -97,6 +123,30 @@ object ProfileField {
 object GrantField {
     const val DEVICES = "devices"
     const val SHARED_WITH = "sharedWith"
+}
+
+/** The fields of a place a false signal is known to use. */
+object FalsePlaceField {
+    const val LATITUDE = "latitude"
+    const val LONGITUDE = "longitude"
+    const val RADIUS_METRES = "radiusMetres"
+    const val NAMED = "named"
+}
+
+/**
+ * The fields of the circling setting, each one a limit of the rule that reads
+ * the shape of a run of answers. Every one of them may be absent, and what is
+ * absent keeps the value the build carries.
+ */
+object CirclingField {
+    const val ANSWERS = "answers"
+    const val WITHIN_SECONDS = "withinSeconds"
+    const val ROUNDNESS = "roundness"
+    const val WIDEST_METRES = "widestMetres"
+    const val TIGHTEST_METRES = "tightestMetres"
+    const val STEADINESS = "steadiness"
+    const val TURNED_DEGREES = "turnedDegrees"
+    const val SLOWEST_MPS = "slowestMps"
 }
 
 /** The fields of a claim to be looking. */

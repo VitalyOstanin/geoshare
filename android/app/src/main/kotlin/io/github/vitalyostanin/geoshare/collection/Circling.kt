@@ -17,22 +17,23 @@ import kotlin.math.sqrt
 // every seven seconds is a car on a motorway, and nothing in a pair of fixes
 // says otherwise.
 //
-// What says otherwise is the whole set of them at once. The false position
-// observed here went round a circle of one thousand two hundred metres at a
-// steady thirty-five metres a second, a lap every three and a half minutes,
-// for the better part of an hour. A phone carried by a person does not draw
-// that: a car on a roundabout leaves it within a lap, a ring road is wider
-// than any circle worth fitting, and a walk holds neither the radius nor the
-// speed for ten answers running.
+// What says otherwise is the whole set of them at once: a run of answers that
+// sits on one circle, holds one speed and turns one way. A phone carried by a
+// person does not draw that — a car on a roundabout leaves it within a lap, a
+// ring road is wider than any circle worth fitting, and a walk holds neither
+// the radius nor the speed for ten answers running.
+//
+// What a particular transmitter draws is a fact about one neighbourhood
+// rather than about the application, so the limits below are defaults and the
+// group narrows them in its own settings.
 
 /**
  * How many answers in a row are looked at.
  *
  * Ten, because the question asked of them is whether they lie on one circle,
  * and three points lie on a circle always. Ten of them at the seven seconds
- * the fast mode answers in is a minute of road — long enough that fitting a
- * circle to it means something, short enough that the phone is told before
- * the next lap.
+ * the fast mode answers in is a minute of road: long enough that fitting a
+ * circle to it means something, short enough to be answered inside one lap.
  */
 const val CIRCLE_ANSWERS: Int = 10
 
@@ -48,10 +49,9 @@ val CIRCLE_WITHIN: Duration = Duration.ofMinutes(5)
 /**
  * How far the answers may sit off the circle, as a share of its radius.
  *
- * Three per cent — thirty-six metres on the circle observed, against the two
- * to eight metres it actually held. The allowance is what leaves room for a
- * real arc to be recognised too; what it does not leave room for is a road
- * with corners in it.
+ * Three per cent: thirty metres on a circle of a kilometre. The allowance is
+ * what leaves room for a real arc to be recognised too; what it does not leave
+ * room for is a road with corners in it.
  */
 const val CIRCLE_ROUNDNESS: Double = 0.03
 
@@ -77,9 +77,9 @@ const val CIRCLE_TIGHTEST_METRES: Double = 100.0
 /**
  * How much the speed may vary across the answers, as a share of its average.
  *
- * Fifteen per cent, against the one to three per cent the false road held. A
- * driver holding a speed that steadily through ten answers is holding it on
- * cruise control on a straight road, and a straight road is not a circle.
+ * Fifteen per cent. A driver holding a speed steadier than that through ten
+ * answers is holding it on cruise control on a straight road, and a straight
+ * road is not a circle.
  */
 const val CIRCLE_STEADINESS: Double = 0.15
 
@@ -99,6 +99,54 @@ const val CIRCLE_TURNED_DEGREES: Double = 60.0
  * fitted to that is a circle fitted to noise.
  */
 const val CIRCLE_SLOWEST_MPS: Double = 3.0
+
+/**
+ * What counts as going round in circles, as this group has settled it.
+ *
+ * Defaults that catch a transmitter of any shape, narrowed by the group where
+ * the one over its own neighbourhood has a shape worth naming: a circle whose
+ * size and speed are known can be recognised in fewer answers and with less
+ * room for doubt than one that is not. Kept in the group's settings rather
+ * than in the build, for the same reason the false places are — what a
+ * transmitter draws is a fact about one neighbourhood.
+ */
+data class CircleLimits(
+    val answers: Int = CIRCLE_ANSWERS,
+    val within: Duration = CIRCLE_WITHIN,
+    val roundness: Double = CIRCLE_ROUNDNESS,
+    val widestMetres: Double = CIRCLE_WIDEST_METRES,
+    val tightestMetres: Double = CIRCLE_TIGHTEST_METRES,
+    val steadiness: Double = CIRCLE_STEADINESS,
+    val turnedDegrees: Double = CIRCLE_TURNED_DEGREES,
+    val slowestMps: Double = CIRCLE_SLOWEST_MPS,
+)
+
+/**
+ * Whether limits make sense to weigh answers against.
+ *
+ * Asked on the way in from the database, where the rules hold the shape of a
+ * document and not what its numbers mean: a run of two answers lies on a
+ * circle always, and a tightest wider than the widest catches nothing at all.
+ */
+fun circleLimitsStand(limits: CircleLimits): Boolean =
+    limits.answers >= FEWEST_ANSWERS_WORTH_FITTING &&
+        !limits.within.isNegative &&
+        !limits.within.isZero &&
+        limits.roundness > 0.0 &&
+        limits.tightestMetres > 0.0 &&
+        limits.widestMetres > limits.tightestMetres &&
+        limits.steadiness > 0.0 &&
+        limits.turnedDegrees > 0.0 &&
+        limits.slowestMps >= 0.0
+
+/**
+ * The fewest answers a circle can be fitted to and mean anything.
+ *
+ * Four: three points lie on a circle exactly, so nothing is left over to
+ * disagree with it, and a rule that cannot be disagreed with catches every
+ * corner a phone is carried round.
+ */
+const val FEWEST_ANSWERS_WORTH_FITTING: Int = 4
 
 /** The circle a run of answers turned out to be drawing. */
 data class Circle(
@@ -121,39 +169,39 @@ data class Circle(
  * refuses are the ones that show the shape, and a filtered run would show the
  * phone the shape only once the anchor had already been lost to it.
  */
-fun circleDrawn(lately: List<Fix>): Circle? {
-    if (lately.size < CIRCLE_ANSWERS) {
+fun circleDrawn(lately: List<Fix>, limits: CircleLimits = CircleLimits()): Circle? {
+    if (lately.size < limits.answers) {
         return null
     }
 
-    val run = lately.takeLast(CIRCLE_ANSWERS)
+    val run = lately.takeLast(limits.answers)
 
-    if (Duration.between(run.first().takenAt, run.last().takenAt) > CIRCLE_WITHIN) {
+    if (Duration.between(run.first().takenAt, run.last().takenAt) > limits.within) {
         return null
     }
 
     val spots = spotsOf(run)
     val centre = centreOf(spots) ?: return null
 
-    if (centre.radius > CIRCLE_WIDEST_METRES || centre.radius < CIRCLE_TIGHTEST_METRES) {
+    if (centre.radius > limits.widestMetres || centre.radius < limits.tightestMetres) {
         return null
     }
 
     val offCircle = offCircle(spots, centre)
 
-    if (offCircle > centre.radius * CIRCLE_ROUNDNESS) {
+    if (offCircle > centre.radius * limits.roundness) {
         return null
     }
 
     val speed = speedAlong(spots) ?: return null
 
-    if (speed.average < CIRCLE_SLOWEST_MPS || speed.spread > speed.average * CIRCLE_STEADINESS) {
+    if (speed.average < limits.slowestMps || speed.spread > speed.average * limits.steadiness) {
         return null
     }
 
     val turned = turnedAround(spots, centre) ?: return null
 
-    if (abs(turned) < CIRCLE_TURNED_DEGREES) {
+    if (abs(turned) < limits.turnedDegrees) {
         return null
     }
 
@@ -166,15 +214,18 @@ fun circleDrawn(lately: List<Fix>): Circle? {
 }
 
 /** Whether the answers are going round in a circle rather than anywhere. */
-fun goingInCircles(lately: List<Fix>): Boolean = circleDrawn(lately) != null
+fun goingInCircles(lately: List<Fix>, limits: CircleLimits = CircleLimits()): Boolean =
+    circleDrawn(lately, limits) != null
 
 /**
  * The run with one more answer in it, the oldest dropped.
  *
  * Twice the length that is looked at is kept, so that the shape is still
- * there to be seen after a few answers have arrived from somewhere else.
+ * there to be seen after a few answers have arrived from somewhere else, and
+ * so that a group asking for a longer run than the default still has one.
  */
-fun List<Fix>.andThen(fix: Fix): List<Fix> = (this + fix).takeLast(CIRCLE_ANSWERS * 2)
+fun List<Fix>.andThen(fix: Fix, limits: CircleLimits = CircleLimits()): List<Fix> =
+    (this + fix).takeLast(maxOf(limits.answers, CIRCLE_ANSWERS) * 2)
 
 /** A place in metres east and north of where the run began. */
 private data class Spot(val east: Double, val north: Double, val at: Instant)

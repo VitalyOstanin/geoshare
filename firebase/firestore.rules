@@ -149,6 +149,101 @@ service cloud.firestore {
         allow delete: if isSelf();
       }
 
+      match /falsePlaces/{placeId} {
+        // Where a false signal is known to put the phones of this group.
+        //
+        // In the database rather than in the build, because which places those
+        // are is a fact about one household's surroundings: a build carrying
+        // them hands them to everybody who downloads it, and a list of places
+        // where receivers are being lied to says as much about the
+        // neighbourhood as about the phones.
+        //
+        // Everybody in the group reads it, including somebody who joined an
+        // hour ago on a code: a phone that does not know the places takes the
+        // lie as its anchor, which is the one failure this list exists to
+        // prevent. Only an administrator writes it, for the same reason they
+        // are the ones who edit the roster — a place added wrongly is ground
+        // the group's phones can no longer be placed on.
+        //
+        // The coordinates are held to the globe and the radius to fifty
+        // kilometres; what those numbers mean is weighed again on the phone,
+        // since a rule can hold the shape of a document and not its sense.
+        function falsePlaceShape() {
+          return request.resource.data.keys()
+                   .hasOnly(['latitude', 'longitude', 'radiusMetres', 'named']) &&
+                 request.resource.data.latitude is number &&
+                 request.resource.data.latitude >= -90 &&
+                 request.resource.data.latitude <= 90 &&
+                 request.resource.data.longitude is number &&
+                 request.resource.data.longitude >= -180 &&
+                 request.resource.data.longitude <= 180 &&
+                 request.resource.data.radiusMetres is number &&
+                 request.resource.data.radiusMetres > 0 &&
+                 request.resource.data.radiusMetres <= 50000 &&
+                 (!('named' in request.resource.data) ||
+                  (request.resource.data.named is string &&
+                   request.resource.data.named.size() <= 100));
+        }
+
+        allow read: if isMember();
+        allow create, update: if isGroupAdmin() && falsePlaceShape();
+        // Stated apart from the write: a deletion carries no document whose
+        // shape could be checked.
+        allow delete: if isGroupAdmin();
+      }
+
+      match /settings/{key} {
+        // What the group has settled about how its phones judge an answer.
+        //
+        // Today one document: what counts as going round in circles, which is
+        // the shape of the transmitter over this neighbourhood rather than
+        // anything about the application. Held here so that narrowing the
+        // rule does not mean publishing the numbers in a build.
+        //
+        // Everybody in the group reads it, because every phone weighs its own
+        // answers against it; only an administrator writes it, because limits
+        // set wrongly either catch nothing or refuse honest positions.
+        //
+        // The shape is held to numbers of the right kind and nothing else.
+        // What those numbers mean together — that the widest is wider than
+        // the tightest, that a run is long enough to disagree with a circle —
+        // is weighed on the phone, which is where such a judgement belongs.
+        function settingNumbers() {
+          return request.resource.data.keys().hasOnly(['answers', 'withinSeconds',
+                   'roundness', 'widestMetres', 'tightestMetres', 'steadiness',
+                   'turnedDegrees', 'slowestMps']) &&
+                 (!('answers' in request.resource.data) ||
+                  (request.resource.data.answers is int &&
+                   request.resource.data.answers >= 4 &&
+                   request.resource.data.answers <= 200)) &&
+                 (!('withinSeconds' in request.resource.data) ||
+                  (request.resource.data.withinSeconds is number &&
+                   request.resource.data.withinSeconds > 0)) &&
+                 (!('roundness' in request.resource.data) ||
+                  (request.resource.data.roundness is number &&
+                   request.resource.data.roundness > 0)) &&
+                 (!('widestMetres' in request.resource.data) ||
+                  (request.resource.data.widestMetres is number &&
+                   request.resource.data.widestMetres > 0)) &&
+                 (!('tightestMetres' in request.resource.data) ||
+                  (request.resource.data.tightestMetres is number &&
+                   request.resource.data.tightestMetres > 0)) &&
+                 (!('steadiness' in request.resource.data) ||
+                  (request.resource.data.steadiness is number &&
+                   request.resource.data.steadiness > 0)) &&
+                 (!('turnedDegrees' in request.resource.data) ||
+                  (request.resource.data.turnedDegrees is number &&
+                   request.resource.data.turnedDegrees > 0)) &&
+                 (!('slowestMps' in request.resource.data) ||
+                  (request.resource.data.slowestMps is number &&
+                   request.resource.data.slowestMps >= 0));
+        }
+
+        allow read: if isMember();
+        allow create, update: if isGroupAdmin() && key == 'circling' && settingNumbers();
+        allow delete: if isGroupAdmin();
+      }
+
       match /members/{uid} {
         // What a member says about themselves: the name and the picture their
         // account carries, so that a marker can name a person rather than the

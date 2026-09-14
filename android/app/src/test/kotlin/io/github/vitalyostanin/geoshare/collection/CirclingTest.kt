@@ -6,6 +6,7 @@ import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
+import java.time.Duration
 import java.time.Instant
 import kotlin.math.abs
 import kotlin.math.cos
@@ -185,6 +186,46 @@ class CirclingTest {
         val atOnce = falseRoad.map { it.copy(takenAt = at) }
 
         assertNull(circleDrawn(atOnce))
+    }
+
+    // What a group buys by naming the shape of its own transmitter: the same
+    // circle is recognised in fewer answers, because the size and the speed
+    // are known rather than guessed.
+    @Test
+    fun `a group narrows what counts as going round in circles`() {
+        val narrowed =
+            CircleLimits(
+                answers = 6,
+                within = Duration.ofMinutes(2),
+                tightestMetres = 900.0,
+                widestMetres = 1_500.0,
+                slowestMps = 25.0,
+                turnedDegrees = 40.0,
+            )
+
+        assertNull(circleDrawn(falseRoad.take(6)))
+        assertNotNull(circleDrawn(falseRoad.take(6), narrowed))
+    }
+
+    @Test
+    fun `a circle outside the size a group named is left alone`() {
+        val narrowed = CircleLimits(tightestMetres = 2_000.0)
+
+        assertNotNull(circleDrawn(falseRoad))
+        assertNull(circleDrawn(falseRoad, narrowed))
+    }
+
+    @Test
+    fun `limits have to make sense to be weighed against`() {
+        assertTrue(circleLimitsStand(CircleLimits()))
+        assertFalse(circleLimitsStand(CircleLimits(answers = 3)))
+        assertFalse(circleLimitsStand(CircleLimits(within = Duration.ZERO)))
+        assertFalse(circleLimitsStand(CircleLimits(roundness = 0.0)))
+        assertFalse(circleLimitsStand(CircleLimits(widestMetres = 50.0)))
+        assertFalse(circleLimitsStand(CircleLimits(tightestMetres = 0.0)))
+        assertFalse(circleLimitsStand(CircleLimits(steadiness = 0.0)))
+        assertFalse(circleLimitsStand(CircleLimits(turnedDegrees = 0.0)))
+        assertFalse(circleLimitsStand(CircleLimits(slowestMps = -1.0)))
     }
 
     @Test

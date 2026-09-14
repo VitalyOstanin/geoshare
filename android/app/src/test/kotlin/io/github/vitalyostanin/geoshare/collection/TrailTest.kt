@@ -55,27 +55,27 @@ class TrailTest {
     }
 
     @Test
-    fun `the lake is not a place this phone knows`() {
+    fun `a place far off is not one this phone knows`() {
         val trail = Trail(listOf(home(0), home(30), home(60)))
 
-        assertFalse(trail.knows(lake(61)))
+        assertFalse(trail.knows(faraway(61)))
     }
 
-    // The anchor left standing in the lake, and the phone answering from home:
+    // The anchor left standing far off, and the phone answering from home:
     // every true fix reads as a jump, and the width rule has no clock to run
     // out. Being home is what says which of the two is the lie.
     @Test
     fun `a fix from a familiar place beats an anchor from nowhere`() {
         val trail = Trail(listOf(home(0), home(30), home(60)))
 
-        assertTrue(comingHome(trail, lake(61), home(62)))
+        assertTrue(comingHome(trail, faraway(61), home(62)))
     }
 
     @Test
-    fun `a fix into the lake is not coming home`() {
+    fun `a fix out to the false place is not coming home`() {
         val trail = Trail(listOf(home(0), home(30), home(60)))
 
-        assertFalse(comingHome(trail, home(61), lake(62)))
+        assertFalse(comingHome(trail, home(61), faraway(62)))
     }
 
     @Test
@@ -92,14 +92,14 @@ class TrailTest {
         assertFalse(comingHome(trail, null, home(62)))
     }
 
-    // While the spoofing runs, nothing is written, so nothing about the lake
+    // While the spoofing runs, nothing is written, so nothing about the false place
     // reaches the trail — which is what keeps an hour of it from teaching the
-    // phone that the lake is home.
+    // phone that the false place is home.
     @Test
-    fun `a trail of lake fixes would make the lake familiar, and is never gathered`() {
-        val spoofed = Trail(listOf(lake(0), lake(30), lake(60)))
+    fun `a trail of false fixes would make the false place familiar, and is never gathered`() {
+        val spoofed = Trail(listOf(faraway(0), faraway(30), faraway(60)))
 
-        assertTrue(spoofed.knows(lake(61)))
+        assertTrue(spoofed.knows(faraway(61)))
     }
 
     // A process killed inside a spoofing episode comes back with no anchor at
@@ -155,7 +155,7 @@ class TrailTest {
 
     private fun home(minute: Long) = Fix(HOME_LATITUDE, HOME_LONGITUDE, at(minute))
 
-    private fun lake(minute: Long) = Fix(61.428, 5.420, at(minute))
+    private fun faraway(minute: Long) = Fix(61.428, 5.420, at(minute))
 
     private fun at(minute: Long): Instant = START.plus(Duration.ofMinutes(minute))
 

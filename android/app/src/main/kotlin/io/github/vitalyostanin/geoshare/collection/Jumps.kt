@@ -90,6 +90,10 @@ enum class JumpReason {
  * answer with and takes the lie as its anchor. A place needs no anchor to be
  * recognised.
  *
+ * The places themselves come from the group's own settings rather than from
+ * the build, and [falsePlaces] is empty wherever none have been named or the
+ * phone has not reached them yet.
+ *
  * Past that, the first fix of a session is never a jump: there is nothing to
  * have jumped from. A fix no wider than the doubt in the two answers put
  * together has not moved at all in any sense worth arguing about.
@@ -119,8 +123,10 @@ fun whyAJump(
     networkSays: Fix? = null,
     now: Instant = next.takenAt,
     lately: List<Fix> = emptyList(),
+    falsePlaces: List<FalsePlace> = emptyList(),
+    circleLimits: CircleLimits = CircleLimits(),
 ): JumpReason? {
-    if (falsePlaceFor(next) != null) {
+    if (falsePlaceFor(next, falsePlaces) != null) {
         return JumpReason.FalsePlace
     }
 
@@ -128,7 +134,7 @@ fun whyAJump(
         return JumpReason.Contradicted
     }
 
-    if (goingInCircles(lately)) {
+    if (goingInCircles(lately, circleLimits)) {
         return JumpReason.Circling
     }
 
