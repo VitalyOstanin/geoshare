@@ -83,6 +83,11 @@ export const RU = {
     battery: 'Заряд',
     position: 'Координаты',
     unknown: 'неизвестно',
+
+    // How wide the phone said its answer is. The sign is what turns a distance
+    // into a claim about where the marker might really be.
+    widthMetres: (count) => `±${count} м`,
+    widthKilometres: (count) => `±${count} км`,
     backToList: '← К списку',
     oneMember: '1 участник',
     members: (count) => `${count} ${counted(count, 'участник', 'участника', 'участников')}`,

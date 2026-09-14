@@ -29,6 +29,9 @@ private const val DEVICES_PER_MEMBER = 10
  */
 internal val RETRY_AFTER: Duration = Duration.ofMinutes(1)
 
+/** The widest answer still drawn as a circle. The rules say the same number. */
+internal const val WIDEST_CIRCLE_METRES = 100_000.0
+
 /**
  * Which documents hold the positions of the members who let this phone watch.
  *
@@ -173,5 +176,19 @@ private fun positionOf(document: DocumentSnapshot): MemberPosition? {
         mode = document.getString(PositionField.MODE),
         batteryPercent = document.getLong(PositionField.BATTERY_PERCENT)?.toInt(),
         charging = document.getBoolean(PositionField.CHARGING) ?: false,
+        accuracyMetres = widthOf(document),
     )
 }
+
+/**
+ * The width of the answer, where the document holds one worth drawing.
+ *
+ * A width is a radius, so nought and less are not widths at all; and one wider
+ * than a hundred kilometres is a circle covering everything the map can show,
+ * which says less about where the phone is than the marker alone does. The
+ * rules refuse both, and this is what happens to a document written before
+ * they did.
+ */
+private fun widthOf(document: DocumentSnapshot): Double? = document
+    .getDouble(PositionField.ACCURACY_METRES)
+    ?.takeIf { it.isFinite() && it > 0.0 && it <= WIDEST_CIRCLE_METRES }

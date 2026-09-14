@@ -286,6 +286,34 @@ describe('positions', () => {
             setDoc(positionOf(db, ALICE), { ...positionFrom(ALICE), batteryPercent: 140 }),
         );
     });
+
+    // How wide the provider called its answer, which the readers draw as a
+    // circle around the marker. A tower answers about a district, and that is
+    // a width of well over a kilometre.
+    it('a position says how wide its answer is', async () => {
+        const db = testEnv.authenticatedContext(ALICE).firestore();
+
+        await assertSucceeds(
+            setDoc(positionOf(db, ALICE), { ...positionFrom(ALICE), accuracyMetres: 1700 }),
+        );
+    });
+
+    // A radius is a distance and cannot be negative; and past a hundred
+    // kilometres a circle stops describing a place, while a number of any size
+    // would let one phone paint over the whole map.
+    it('a width no answer has is refused', async () => {
+        const db = testEnv.authenticatedContext(ALICE).firestore();
+
+        await assertFails(
+            setDoc(positionOf(db, ALICE), { ...positionFrom(ALICE), accuracyMetres: -1 }),
+        );
+        await assertFails(
+            setDoc(positionOf(db, ALICE), { ...positionFrom(ALICE), accuracyMetres: 100001 }),
+        );
+        await assertFails(
+            setDoc(positionOf(db, ALICE), { ...positionFrom(ALICE), accuracyMetres: 'wide' }),
+        );
+    });
 });
 
 describe('watch', () => {

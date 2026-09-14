@@ -110,6 +110,15 @@ object PositionField {
     const val MODE = "mode"
     const val BATTERY_PERCENT = "batteryPercent"
     const val CHARGING = "charging"
+
+    /**
+     * How wide the provider said the answer is, in metres.
+     *
+     * Written because a position is a claim of two parts, and a map showing
+     * only the first says the same thing about an answer from the Wi-Fi in the
+     * flat and an answer from a tower a kilometre and a half wide.
+     */
+    const val ACCURACY_METRES = "accuracyMetres"
 }
 
 /** The fields of a member's profile. */

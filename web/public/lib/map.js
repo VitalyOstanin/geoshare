@@ -20,7 +20,25 @@ import { clusterMembers, facesShown } from './clusters.js';
 import { openModeHelp } from './mode-help.js';
 import { markerOrder } from './stacking.js';
 import { modeText } from './modes.js';
+import { accuracyRing } from './width.js';
 import { WORDS } from './words.js';
+
+/** The ring around the marker being looked at: the fill, the line, the source. */
+const WIDTH_SOURCE = 'width';
+const WIDTH_FILL_LAYER = 'width-fill';
+const WIDTH_LINE_LAYER = 'width-line';
+
+/**
+ * How much of the marker's colour the fill keeps.
+ *
+ * Twelve percent is enough to see where the circle ends and light enough to
+ * read the streets through it, which is the whole point of drawing it on the
+ * map rather than beside it.
+ */
+const WIDTH_FILL_OPACITY = 0.12;
+
+/** The line round the ring, in screen pixels rather than in metres. */
+const WIDTH_LINE_WIDTH = 1.5;
 
 /** Close enough to tell which street somebody is on, without hunting for them. */
 const START_ZOOM = 15;
@@ -100,6 +118,27 @@ export function createMap(element, onCardChange = () => {}) {
     });
 
     const view = { map, markers: new Map(), centred: false, last: null, onCardChange };
+
+    // The layers cannot be added before the style has arrived, and positions
+    // can arrive before either: the ring is drawn again once they are in.
+    map.on('load', () => {
+        map.addSource(WIDTH_SOURCE, { type: 'geojson', data: emptyRing() });
+        map.addLayer({
+            id: WIDTH_FILL_LAYER,
+            type: 'fill',
+            source: WIDTH_SOURCE,
+            paint: { 'fill-opacity': WIDTH_FILL_OPACITY },
+        });
+        map.addLayer({
+            id: WIDTH_LINE_LAYER,
+            type: 'line',
+            source: WIDTH_SOURCE,
+            paint: { 'line-width': WIDTH_LINE_WIDTH },
+        });
+
+        view.ringReady = true;
+        drawWidth(view);
+    });
 
     // Which members cover each other is a question about the screen, so the
     // answer changes with every zoom: a group that was one pin has to come
@@ -215,6 +254,83 @@ function draw(view, { positions, names, faces, now }) {
             view.markers.delete(key);
         }
     }
+
+    // After the markers that went away have gone: a ring is drawn around a
+    // marker whose card is open, and a marker taken off the map has none.
+    drawWidth(view);
+}
+
+/**
+ * The circle around the member being looked at, or nothing at all.
+ *
+ * One at a time rather than all of them: four circles of a kilometre and a
+ * half cover the map in each other, and the question a circle answers is asked
+ * about the member being looked at.
+ *
+ * Redrawn with the markers rather than only when a card opens: the position
+ * under the circle moves on its own, and a ring left where the member used to
+ * be would be a claim about the wrong place.
+ */
+function drawWidth(view) {
+    if (!view.ringReady) {
+        return;
+    }
+
+    const position = selectedPosition(view);
+    const source = view.map.getSource(WIDTH_SOURCE);
+
+    if (!position || position.accuracyMetres === null) {
+        source?.setData(emptyRing());
+
+        return;
+    }
+
+    source?.setData({
+        type: 'Feature',
+        geometry: {
+            type: 'Polygon',
+            coordinates: [
+                accuracyRing(position.latitude, position.longitude, position.accuracyMetres),
+            ],
+        },
+        properties: {},
+    });
+
+    // The member's own colour rather than one colour for every circle: the
+    // circle belongs to a marker and has to be readable as that marker's when
+    // two members are near each other.
+    const colour = memberColour(position.memberId);
+
+    view.map.setPaintProperty(WIDTH_FILL_LAYER, 'fill-color', colour);
+    view.map.setPaintProperty(WIDTH_LINE_LAYER, 'line-color', colour);
+}
+
+/**
+ * Whose card is open, where exactly one member's is.
+ *
+ * A list of who stands under one marker is not one of them: which member the
+ * viewer means is the question that list is asking, and a circle drawn for any
+ * one of them would answer it for them.
+ */
+function selectedPosition(view) {
+    for (const entry of view.markers.values()) {
+        if (!entry.popup.isOpen()) {
+            continue;
+        }
+
+        if (entry.members.length === 1) {
+            return entry.members[0];
+        }
+
+        return entry.members.find((member) => member.positionId === entry.openedPositionId) ?? null;
+    }
+
+    return null;
+}
+
+/** What the source holds when there is no circle to draw. */
+function emptyRing() {
+    return { type: 'FeatureCollection', features: [] };
 }
 
 function addMarker(view, key, group) {
@@ -302,6 +418,9 @@ function addMarker(view, key, group) {
         // Carried on the entry rather than read off the view, because the rows
         // of a group list are built with the entry alone in hand.
         onCardChange: view.onCardChange,
+        // The same reason: stepping into a member's card out of a group list
+        // changes whose circle is drawn, and nothing about the map moves.
+        redrawWidth: () => drawWidth(view),
     };
 
     // One bubble at a time, the way a map shows one place at a time: the
@@ -317,12 +436,14 @@ function addMarker(view, key, group) {
         }
 
         entry.onCardChange();
+        drawWidth(view);
     });
     // The panel marks whoever the open card is about, and a card closed by the
     // cross, by Escape or by a tap on the map leaves nobody marked.
     popup.on('close', () => {
         entry.openedPositionId = null;
         entry.onCardChange();
+        drawWidth(view);
     });
 
     // Placed before it is added: a marker with nowhere to be cannot be put on
@@ -453,6 +574,7 @@ function showPopup(entry, names, faces, now) {
     back.addEventListener('click', () => {
         entry.openedPositionId = null;
         showPopup(entry, names, faces, now);
+        entry.redrawWidth();
     });
 
     card.prepend(back);
@@ -525,6 +647,7 @@ function groupList(entry, names, faces, now) {
             entry.openedPositionId = member.positionId;
             showPopup(entry, names, faces, now);
             entry.onCardChange();
+            entry.redrawWidth();
         });
 
         list.append(row);
@@ -734,6 +857,8 @@ export function lookAt(view, position) {
     if (!entry.popup.isOpen()) {
         entry.marker.togglePopup();
     }
+
+    drawWidth(view);
 }
 
 /** The map measures its element when it is created, and the sign-in screen hides it. */

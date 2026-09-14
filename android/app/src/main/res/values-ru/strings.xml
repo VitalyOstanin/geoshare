@@ -31,6 +31,8 @@
     <string name="permission_open_settings">Открыть настройки</string>
     <string name="map_nobody_yet">Никто ещё не поделился своим местом.</string>
     <string name="map_member_you">Вы</string>
+    <string name="map_width_metres">±%1$d м</string>
+    <string name="map_width_kilometres">±%1$.1f км</string>
     <string name="map_age_just_now">только что</string>
     <string name="map_detail_last_seen">Обновлено</string>
     <string name="map_detail_at">Время</string>

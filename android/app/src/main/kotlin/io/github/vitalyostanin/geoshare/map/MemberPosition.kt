@@ -32,6 +32,14 @@ data class MemberPosition(
     val batteryPercent: Int?,
     /** Whether the phone was on a charger; false for the builds that wrote no such field. */
     val charging: Boolean = false,
+    /**
+     * How wide the answer is, in metres, where the phone that wrote it said so.
+     *
+     * Missing for a build that wrote no such field, and for a fix whose
+     * provider named no width at all — both of which are drawn as a marker
+     * without a circle rather than as a circle of a made-up size.
+     */
+    val accuracyMetres: Double? = null,
 ) {
     /**
      * The moment the age is counted from.

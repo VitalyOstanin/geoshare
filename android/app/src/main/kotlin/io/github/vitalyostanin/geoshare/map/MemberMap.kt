@@ -19,6 +19,8 @@ import org.maplibre.android.maps.MapLibreMap
 import org.maplibre.android.maps.MapView
 import org.maplibre.android.maps.Style
 import org.maplibre.android.style.expressions.Expression
+import org.maplibre.android.style.layers.FillLayer
+import org.maplibre.android.style.layers.LineLayer
 import org.maplibre.android.style.layers.Property
 import org.maplibre.android.style.layers.PropertyFactory
 import org.maplibre.android.style.layers.RasterLayer
@@ -27,6 +29,7 @@ import org.maplibre.android.style.sources.GeoJsonSource
 import org.maplibre.geojson.Feature
 import org.maplibre.geojson.FeatureCollection
 import org.maplibre.geojson.Point
+import org.maplibre.geojson.Polygon
 import java.time.Instant
 
 /** Close enough to tell which street somebody is on, without hunting for them. */
@@ -45,6 +48,23 @@ private const val CLUSTER_RADIUS_DP = 44f
 
 private const val MEMBER_SOURCE = "members"
 private const val MEMBER_LAYER = "members"
+
+/** The ring around the marker being looked at: the fill, and the line round it. */
+private const val WIDTH_SOURCE = "width"
+private const val WIDTH_FILL_LAYER = "width-fill"
+private const val WIDTH_LINE_LAYER = "width-line"
+
+/**
+ * How much of the marker's colour the fill keeps.
+ *
+ * Twelve percent is enough to see where the circle ends and light enough to
+ * read the streets through it, which is the whole point of drawing it on the
+ * map rather than beside it.
+ */
+private const val WIDTH_FILL_OPACITY = 0.12f
+
+/** The line round the ring, in screen pixels rather than in metres. */
+private const val WIDTH_LINE_WIDTH = 1.5f
 
 /** The layer the tiles are drawn in, named in the style below. */
 private const val TILE_LAYER = "osm"
@@ -120,6 +140,14 @@ fun MemberMap(
     groupLabel: (Int) -> String,
     /** The member the panel asked to look at, if one has been asked for. */
     focus: MapFocus?,
+    /**
+     * The position whose card is open, whose width is drawn as a circle.
+     *
+     * One at a time rather than all of them: four circles of a kilometre and a
+     * half cover the map in each other, and the question a circle answers is
+     * asked about the member being looked at.
+     */
+    selected: String?,
     /** Called with the position whose marker was tapped. */
     onSelect: (String) -> Unit,
     /** Called with every position under a marker that stands for more than one. */
@@ -168,7 +196,7 @@ fun MemberMap(
     }
 
     AndroidView(factory = { holder.view }, modifier = modifier) { _ ->
-        holder.show(positions, names, faces, ownMemberId, now, dark)
+        holder.show(positions, names, faces, ownMemberId, now, dark, selected)
         holder.lookAt(focus)
     }
 }
@@ -201,6 +229,20 @@ private fun memberLayer(): SymbolLayer = SymbolLayer(MEMBER_LAYER, MEMBER_SOURCE
     )
 
 /**
+ * The inside of the circle: the member's own colour, thinned to a wash.
+ *
+ * The member's colour rather than one colour for every circle, because the
+ * circle belongs to a marker and has to be readable as that marker's when two
+ * members are near each other.
+ */
+private fun widthFillLayer(): FillLayer = FillLayer(WIDTH_FILL_LAYER, WIDTH_SOURCE)
+    .withProperties(PropertyFactory.fillOpacity(WIDTH_FILL_OPACITY))
+
+/** The edge of the circle, which is what says where the width stops. */
+private fun widthLineLayer(): LineLayer = LineLayer(WIDTH_LINE_LAYER, WIDTH_SOURCE)
+    .withProperties(PropertyFactory.lineWidth(WIDTH_LINE_WIDTH))
+
+/**
  * What the composition and the map's own callbacks both have to reach.
  *
  * The map and its style arrive after the view does, and a tap arrives at any
@@ -221,6 +263,9 @@ private class MapHolder(val view: MapView) {
     private var faces: Map<String, Bitmap> = emptyMap()
     private var ownMemberId: String = ""
     private var now: Instant = Instant.EPOCH
+
+    /** Whose width is drawn as a circle, if anybody's card is open. */
+    private var selected: String? = null
 
     /** The last request acted on, so that an unchanged one does not move the map again. */
     private var focused = 0
@@ -274,6 +319,13 @@ private class MapHolder(val view: MapView) {
                 loaded.addSource(GeoJsonSource(MEMBER_SOURCE))
                 loaded.addLayer(memberLayer())
 
+                // Under the markers, so that a circle drawn around a member
+                // never covers the member it is about — nor the face of
+                // somebody standing inside it.
+                loaded.addSource(GeoJsonSource(WIDTH_SOURCE))
+                loaded.addLayerBelow(widthFillLayer(), MEMBER_LAYER)
+                loaded.addLayerBelow(widthLineLayer(), MEMBER_LAYER)
+
                 style = loaded
                 icons.clear()
                 paintTiles()
@@ -292,12 +344,14 @@ private class MapHolder(val view: MapView) {
         ownMemberId: String,
         now: Instant,
         dark: Boolean,
+        selected: String?,
     ) {
         members = positions
         this.names = names
         this.faces = faces
         this.ownMemberId = ownMemberId
         this.now = now
+        this.selected = selected
 
         if (dark != this.dark) {
             this.dark = dark
@@ -413,7 +467,54 @@ private class MapHolder(val view: MapView) {
             icons.remove(name)
         }
 
+        drawWidth()
         centre()
+    }
+
+    /**
+     * The circle around the member being looked at, or nothing at all.
+     *
+     * Redrawn with everything else rather than only when the selection
+     * changes: the position under the circle moves on its own, and a ring left
+     * where the member used to be would be a claim about the wrong place.
+     */
+    private fun drawWidth() {
+        val loaded = style ?: return
+
+        val ring =
+            members
+                .firstOrNull { it.positionId == selected }
+                ?.let { position ->
+                    val metres = position.accuracyMetres ?: return@let null
+
+                    accuracyRing(position.latitude, position.longitude, metres) to
+                        memberColour(position.memberId)
+                }
+
+        loaded.getSourceAs<GeoJsonSource>(WIDTH_SOURCE)?.setGeoJson(
+            ring
+                ?.let { (points, _) ->
+                    Feature.fromGeometry(
+                        Polygon.fromLngLats(
+                            listOf(points.map { (east, north) -> Point.fromLngLat(east, north) }),
+                        ),
+                    )
+                }
+                ?.let { FeatureCollection.fromFeature(it) }
+                // An empty collection rather than a layer taken away: the
+                // layers are put in once, and emptying the source is what
+                // removes the circle when the card is closed.
+                ?: FeatureCollection.fromFeatures(emptyList()),
+        )
+
+        val colour = ring?.second ?: return
+
+        loaded.getLayerAs<FillLayer>(WIDTH_FILL_LAYER)?.setProperties(
+            PropertyFactory.fillColor(colour),
+        )
+        loaded.getLayerAs<LineLayer>(WIDTH_LINE_LAYER)?.setProperties(
+            PropertyFactory.lineColor(colour),
+        )
     }
 
     /**

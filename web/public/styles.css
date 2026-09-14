@@ -22,6 +22,11 @@
     /* A charge that is growing: the one reassuring thing on a card, and the
        only colour on the page that carries a meaning of its own. */
     --charging: #2e7d32;
+    /* An answer wider than a hundred metres: ochre rather than red, because a
+       wide answer is not a fault — it is a claim about a block instead of
+       about a doorway, and the colour is there to be noticed rather than
+       acted on. */
+    --wide: #a85a17;
 
     /* The same surfaces at night, named once and switched to in the two
        places below. A media query and an attribute cannot be asked for in one
@@ -33,6 +38,7 @@
     --night-edge: rgba(160, 160, 170, 0.35);
     --night-error: #ef9a9a;
     --night-charging: #81c784;
+    --night-wide: #d99149;
 
     /* A tile is a picture drawn light on somebody else's server, so a dark map
        is either a different set of tiles or this: the picture turned over and
@@ -70,6 +76,7 @@
         --edge: var(--night-edge);
         --error: var(--night-error);
         --charging: var(--night-charging);
+        --wide: var(--night-wide);
         --canvas-filter: var(--night-canvas);
     }
 }
@@ -84,6 +91,7 @@
     --edge: var(--night-edge);
     --error: var(--night-error);
     --charging: var(--night-charging);
+    --wide: var(--night-wide);
     --canvas-filter: var(--night-canvas);
 }
 
@@ -212,9 +220,18 @@ body {
 }
 
 .age,
+.width,
 .battery {
     opacity: 0.7;
     font-size: 0.85em;
+}
+
+/* An answer wide enough to be worth noticing, said in the colour of the number
+   itself. Full strength rather than dimmed like the figures around it: the
+   whole point of the colour is that the eye stops on it. */
+.width.wide {
+    color: var(--wide);
+    opacity: 1;
 }
 
 /* A charge that is growing, said in the colour of the number itself. Full

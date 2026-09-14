@@ -70,6 +70,16 @@ private const val AGE_TICK_MILLIS = 30_000L
 private val CHARGING_DAY = Color(0xFF2E7D32)
 private val CHARGING_NIGHT = Color(0xFF81C784)
 
+/**
+ * Ochre for an answer wider than a hundred metres, in the two shades again.
+ *
+ * Ochre rather than red: a wide answer is not a fault, it is a claim about a
+ * block instead of about a doorway, and the colour is there to be noticed
+ * rather than acted on.
+ */
+private val WIDE_DAY = Color(0xFFA85A17)
+private val WIDE_NIGHT = Color(0xFFD99149)
+
 /** Above this a surface counts as pale, below it as dark. */
 private const val HALF_LIT = 0.5f
 
@@ -212,6 +222,7 @@ fun MapScreen(
                 dark = MaterialTheme.colorScheme.surface.luminance() < HALF_LIT,
                 groupLabel = groupLabel,
                 focus = focus,
+                selected = openedPositionId,
                 onSelect = { positionId ->
                     openedPositionId = positionId
                     openedGroup = emptyList()
@@ -527,6 +538,8 @@ private fun MemberRow(
             AgeText(member = member, now = now)
         }
 
+        WidthText(member = member)
+
         BatteryText(member = member)
     }
 }
@@ -547,6 +560,42 @@ private fun BatteryText(member: MemberPosition) {
         style = MaterialTheme.typography.bodySmall,
         color = batteryColour(member.charging),
     )
+}
+
+/**
+ * How wide the answer behind the marker is.
+ *
+ * A column of its own rather than a word after the age: the widths then line
+ * up down the list and are read against each other, which is the question
+ * being asked — whether one marker is standing where a phone is and another
+ * somewhere in its district.
+ *
+ * Nothing at all for a position whose phone named no width: an empty place in
+ * the column says "not said", and any number put there would be invented.
+ */
+@Composable
+private fun WidthText(member: MemberPosition) {
+    val metres = member.accuracyMetres ?: return
+
+    Text(
+        text = widthText(positionWidth(metres)),
+        style = MaterialTheme.typography.bodySmall,
+        color = widthColour(widthIsWide(metres)),
+    )
+}
+
+@Composable
+private fun widthText(width: PositionWidth): String = when (width) {
+    is PositionWidth.Metres -> stringResource(R.string.map_width_metres, width.count)
+    is PositionWidth.Kilometres -> stringResource(R.string.map_width_kilometres, width.count)
+}
+
+/** The muted colour of the other figures on the card, and ochre once it is wide. */
+@Composable
+private fun widthColour(wide: Boolean): Color = when {
+    !wide -> MaterialTheme.colorScheme.onSurfaceVariant
+    MaterialTheme.colorScheme.surface.luminance() < HALF_LIT -> WIDE_NIGHT
+    else -> WIDE_DAY
 }
 
 /**

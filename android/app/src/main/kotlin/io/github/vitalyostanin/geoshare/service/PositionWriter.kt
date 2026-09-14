@@ -52,11 +52,22 @@ class PositionWriter(
                 // fine, and fifteen percent off one is a phone about to go
                 // quiet.
                 PositionField.CHARGING to charging,
-            )
+            ) + width(fix)
 
         positionsOf(store)
             .document(positionId(memberId, device.id))
             .set(position)
             .await()
     }
+
+    /**
+     * The width of the answer, where there is one.
+     *
+     * Left out of the document rather than written as null when the provider
+     * said nothing: the readers draw a circle for a width they have and leave
+     * the marker alone for one they do not, and an absent field says that
+     * plainly without every reader having to know that null means absent.
+     */
+    private fun width(fix: Fix): Map<String, Any> =
+        fix.accuracyMetres?.let { mapOf(PositionField.ACCURACY_METRES to it) }.orEmpty()
 }
