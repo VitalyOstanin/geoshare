@@ -72,6 +72,45 @@ class OtherRadiosTest {
         assertFalse(networkAnswerStands(old, NOW))
     }
 
+    // What was watched happening on a phone standing in its own flat: an
+    // answer from the Wi-Fi sixty metres wide, then a tower answering about
+    // the same district one thousand six hundred and sixty metres wide, and
+    // the marker walking four hundred metres to meet it.
+    @Test
+    fun `a tower answering about the district does not replace the flat`() {
+        val fromTheWiFi = fixAt(61.03268, 4.40304, width = 62.5, takenAt = NOW.minusSeconds(120))
+        val fromATower = fixAt(61.03253, 4.39526, width = 1_660.0)
+
+        assertFalse(saysMoreThan(fromATower, fromTheWiFi, NOW))
+    }
+
+    @Test
+    fun `a narrower answer is written whatever it says`() {
+        val fromATower = fixAt(61.03253, 4.39526, width = 1_660.0, takenAt = NOW.minusSeconds(60))
+        val fromTheWiFi = fixAt(61.03268, 4.40304, width = 62.5)
+
+        assertTrue(saysMoreThan(fromTheWiFi, fromATower, NOW))
+    }
+
+    // A phone really carried across the city: the answer is wider than the one
+    // written and names a place the written one does not reach.
+    @Test
+    fun `a wider answer about another place is worth writing`() {
+        val atHome = fixAt(61.03268, 4.40304, width = 62.5, takenAt = NOW.minusSeconds(120))
+        val acrossTheCity = fixAt(61.11817, 4.38151, width = 900.0)
+
+        assertTrue(saysMoreThan(acrossTheCity, atHome, NOW))
+    }
+
+    @Test
+    fun `anything replaces a position nobody has refreshed`() {
+        val stale = fixAt(61.03268, 4.40304, width = 20.0, takenAt = NOW.minus(Duration.ofHours(1)))
+        val fromATower = fixAt(61.03253, 4.39526, width = 1_660.0)
+
+        assertTrue(saysMoreThan(fromATower, stale, NOW))
+        assertTrue("nothing written yet", saysMoreThan(fromATower, null, NOW))
+    }
+
     private fun fixAt(latitude: Double, longitude: Double, width: Double, takenAt: Instant = NOW) =
         Fix(latitude = latitude, longitude = longitude, takenAt = takenAt, accuracyMetres = width)
 

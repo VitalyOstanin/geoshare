@@ -92,3 +92,38 @@ fun networkAnswerStands(
 
     return Duration.between(fix.takenAt, now) <= NETWORK_ANSWER_STALE
 }
+
+/**
+ * Whether an answer from the other radios says more than the position already
+ * written.
+ *
+ * It is asked because the answers those radios give are not one thing. The
+ * Wi-Fi around a phone places it in the flat to within fifty metres; a tower
+ * places it in the district to within two kilometres; and whichever of them
+ * answers first is the one that arrives. Writing every answer as it comes
+ * means a phone standing still walking half a kilometre every few minutes,
+ * with the width growing each time — which is what was watched happening, a
+ * position sixty metres wide replaced by one of one thousand six hundred and
+ * sixty.
+ *
+ * So an answer is written over a fresh one only where it adds something: where
+ * it is no wider, or where it names a place outside the doubt of the one
+ * already written, which is a phone that has moved rather than a radio with a
+ * poorer answer about the same place. Anything already stale is replaced
+ * whatever it says — an old exact answer is not better than a new vague one,
+ * it is merely older.
+ */
+fun saysMoreThan(asked: Fix, written: Fix?, now: Instant): Boolean {
+    if (written == null || Duration.between(written.takenAt, now) > NETWORK_ANSWER_STALE) {
+        return true
+    }
+
+    val wasWide = written.accuracyMetres ?: 0.0
+    val isWide = asked.accuracyMetres ?: 0.0
+
+    if (isWide <= wasWide) {
+        return true
+    }
+
+    return distanceMetres(written, asked) > wasWide + isWide
+}

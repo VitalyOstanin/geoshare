@@ -46,6 +46,7 @@ import io.github.vitalyostanin.geoshare.collection.otherRadiosAreDue
 import io.github.vitalyostanin.geoshare.collection.remembering
 import io.github.vitalyostanin.geoshare.collection.rescueAfter
 import io.github.vitalyostanin.geoshare.collection.routeRepeated
+import io.github.vitalyostanin.geoshare.collection.saysMoreThan
 import io.github.vitalyostanin.geoshare.collection.secondOpinion
 import io.github.vitalyostanin.geoshare.collection.shouldWrite
 import io.github.vitalyostanin.geoshare.collection.whyAJump
@@ -899,7 +900,20 @@ class SharingService : LifecycleService() {
 
         val fix = asked ?: return
 
+        // Kept whatever happens next: an answer that is not worth writing is
+        // still worth having as the second opinion, which is what the rules
+        // about contradiction and about confirming a width are asked against.
         networkSaid = fix
+
+        // The towers answer about a district and the Wi-Fi about a flat, and
+        // whichever answers first is the one that arrives. An answer that
+        // merely repeats a place already written, only wider, would move the
+        // marker half a kilometre and widen the circle around it for nothing.
+        if (!saysMoreThan(fix, lastFix, Instant.now())) {
+            AppLog.i(TAG, "the other radios repeated what is written, only wider: ${saying(fix)}")
+
+            return
+        }
 
         AppLog.i(TAG, "standing on what the other radios say: ${saying(fix)}")
 
