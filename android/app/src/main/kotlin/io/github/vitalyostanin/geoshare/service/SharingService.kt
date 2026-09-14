@@ -5,6 +5,7 @@ import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
 import android.content.pm.ServiceInfo
+import android.location.LocationManager
 import android.os.BatteryManager
 import androidx.core.app.ServiceCompat
 import androidx.core.content.ContextCompat
@@ -25,8 +26,10 @@ import io.github.vitalyostanin.geoshare.collection.SECOND_OPINION_ASKED_EVERY
 import io.github.vitalyostanin.geoshare.collection.Trail
 import io.github.vitalyostanin.geoshare.collection.WATCH_AHEAD
 import io.github.vitalyostanin.geoshare.collection.anchorFrom
+import io.github.vitalyostanin.geoshare.collection.andThen
 import io.github.vitalyostanin.geoshare.collection.answeredBy
 import io.github.vitalyostanin.geoshare.collection.chooseMode
+import io.github.vitalyostanin.geoshare.collection.circleDrawn
 import io.github.vitalyostanin.geoshare.collection.clockDisagrees
 import io.github.vitalyostanin.geoshare.collection.comingHome
 import io.github.vitalyostanin.geoshare.collection.distanceMetres
@@ -174,6 +177,16 @@ class SharingService : LifecycleService() {
      * another rule fires there would be nothing left to compare.
      */
     private var networkSaid: Fix? = null
+
+    /**
+     * The answers the satellites have given lately, newest last.
+     *
+     * Every one of them, whether or not it was written out: what the shape of
+     * the run gives away is exactly what a pair of answers hides, and the
+     * answers a rule has already refused are the ones that draw the shape
+     * while the anchor still stands where the phone really is.
+     */
+    private var lately: List<Fix> = emptyList()
 
     /**
      * Since when the phone's own sensors say it has not been carried anywhere,
@@ -377,12 +390,13 @@ class SharingService : LifecycleService() {
         }
 
         rememberASecondOpinion(fix)
+        rememberTheShapeOfIt(fix, trusted)
 
         val jump =
             if (trusted) {
                 null
             } else {
-                whyAJump(lastFix, fix, standingSince, networkSaid, Instant.now())
+                whyAJump(lastFix, fix, standingSince, networkSaid, Instant.now(), lately)
             }
         // A fix left out does not move the last position, and that is how the
         // marker can be left standing somewhere the phone has long left: a
@@ -732,6 +746,26 @@ class SharingService : LifecycleService() {
         }
 
         networkSaid = fix
+    }
+
+    /**
+     * Keeps an answer for the rule that reads the shape of the run.
+     *
+     * Only what the satellites answered goes in. An answer the towers gave,
+     * and one an assistance service worked out from the Wi-Fi around the
+     * phone, are answers from outside the transmitter's reach: mixing them
+     * into the run would break the very shape the run is kept for.
+     */
+    private fun rememberTheShapeOfIt(fix: Fix, trusted: Boolean) {
+        if (trusted || answeredBy(noteOf(fix.reported?.alongside)) == Answered.Assistance) {
+            return
+        }
+
+        if (fix.from != null && fix.from != LocationManager.GPS_PROVIDER) {
+            return
+        }
+
+        lately = lately.andThen(fix)
     }
 
     /**
@@ -1119,6 +1153,24 @@ class SharingService : LifecycleService() {
 
         JumpReason.Contradicted ->
             "by the other radios placing the phone ${apartFromTheRadios(fix)}"
+
+        JumpReason.Circling -> "by the shape of the road: ${theCircleDrawn()}"
+    }
+
+    /**
+     * The circle the last answers are drawing, for the line that says a fix
+     * was left out.
+     */
+    private fun theCircleDrawn(): String {
+        val circle = circleDrawn(lately) ?: return "a circle at a steady speed"
+
+        return String.format(
+            Locale.ROOT,
+            "a circle of %.0f m at a steady %.0f m/s, %.0f degrees of it so far",
+            circle.radiusMetres,
+            circle.speedMps,
+            circle.turnedDegrees,
+        )
     }
 
     /**

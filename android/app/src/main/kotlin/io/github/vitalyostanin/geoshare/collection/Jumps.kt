@@ -70,6 +70,15 @@ enum class JumpReason {
      * and so the one a slowly drawn false road does not defeat.
      */
     Contradicted,
+
+    /**
+     * The answers are going round a circle at a steady speed.
+     *
+     * Read off the run of answers rather than off a pair of them: every pair
+     * of a false road is a plausible stretch of driving, and what gives the
+     * road away is that it closes.
+     */
+    Circling,
 }
 
 /**
@@ -91,6 +100,11 @@ enum class JumpReason {
  * along. [stillSince] is null wherever there is nothing to ask — the
  * permission was refused, or the sensors have not reported yet.
  *
+ * The shape of the run is asked about next, and it is asked of the answers
+ * the phone was given rather than of the ones it wrote down: while the speed
+ * rule is still refusing a false road, the answers it refuses are the ones
+ * that show the shape. [lately] is empty wherever there is no run to look at.
+ *
  * The other radios are asked before any of that, and before the anchor, for
  * the same reason the false places are: their answer needs nothing earlier to
  * be worth something. A phone switched on inside a spoofed area has no anchor,
@@ -104,6 +118,7 @@ fun whyAJump(
     stillSince: Instant? = null,
     networkSays: Fix? = null,
     now: Instant = next.takenAt,
+    lately: List<Fix> = emptyList(),
 ): JumpReason? {
     if (falsePlaceFor(next) != null) {
         return JumpReason.FalsePlace
@@ -111,6 +126,10 @@ fun whyAJump(
 
     if (secondOpinion(next, networkSays, now)?.disagrees == true) {
         return JumpReason.Contradicted
+    }
+
+    if (goingInCircles(lately)) {
+        return JumpReason.Circling
     }
 
     if (last == null) {

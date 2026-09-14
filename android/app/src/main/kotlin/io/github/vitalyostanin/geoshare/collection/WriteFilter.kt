@@ -76,7 +76,8 @@ fun shouldWrite(last: Fix?, next: Fix, mode: CollectionMode): Boolean {
     return Duration.between(last.takenAt, next.takenAt) >= mode.writeSilence
 }
 
-private const val EARTH_RADIUS_METRES = 6_371_000.0
+/** The radius the distances here are measured on, in metres. */
+const val EARTH_RADIUS_METRES: Double = 6_371_000.0
 
 /** Haversine: the fixes compared here are metres apart, not continents. */
 fun distanceMetres(from: Fix, to: Fix): Double {
