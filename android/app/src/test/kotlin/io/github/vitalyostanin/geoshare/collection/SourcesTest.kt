@@ -2,7 +2,6 @@ package io.github.vitalyostanin.geoshare.collection
 
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
-import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
@@ -41,22 +40,37 @@ class SourcesTest {
         assertTrue(usesWhatWasFoundBy(FoundBy.Unsaid, leftOut))
     }
 
-    // Counting nothing at all is what the sharing switch is for, so the
-    // satellites count whatever is stored — and no switch covers them.
+    // The setting a neighbourhood with a transmitter in it actually calls
+    // for: the satellite answer is the one being lied to, and the towers go
+    // on saying roughly the right district.
     @Test
-    fun `the satellites count however the setting reads`() {
-        assertNull(choiceFor(FoundBy.Satellites))
-        assertTrue(usesWhatWasFoundBy(FoundBy.Satellites, setOf("Satellites", "OtherRadios")))
+    fun `the satellites can be switched off like anything else`() {
+        val leftOut = setOf(SourceChoice.Satellites.name)
+
+        assertFalse(usesWhatWasFoundBy(FoundBy.Satellites, leftOut))
+        assertTrue(usesWhatWasFoundBy(FoundBy.OtherRadios, leftOut))
     }
 
     @Test
-    fun `every other source falls under exactly one switch`() {
-        FoundBy.entries.filter { it != FoundBy.Satellites }.forEach { source ->
+    fun `every source falls under exactly one switch`() {
+        FoundBy.entries.forEach { source ->
             assertEquals(
                 source.name,
                 1,
                 SourceChoice.entries.count { source in it.covers },
             )
+        }
+    }
+
+    // Everything off is a phone with nothing to place itself by, and it is
+    // allowed: the button says how many are left, so it cannot be done by
+    // accident and forgotten.
+    @Test
+    fun `every switch off leaves nothing counting`() {
+        val leftOut = SourceChoice.entries.map { it.name }.toSet()
+
+        FoundBy.entries.forEach { source ->
+            assertFalse(source.name, usesWhatWasFoundBy(source, leftOut))
         }
     }
 

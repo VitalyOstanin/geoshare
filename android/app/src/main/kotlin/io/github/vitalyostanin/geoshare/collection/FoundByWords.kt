@@ -36,6 +36,7 @@ fun foundByLabel(foundBy: String?): Int = when (foundBy) {
  */
 @StringRes
 fun sourceChoiceLabel(choice: SourceChoice): Int = when (choice) {
+    SourceChoice.Satellites -> R.string.found_satellites
     SourceChoice.OtherRadios -> R.string.found_other_radios
     SourceChoice.Unheard -> R.string.found_unheard
     SourceChoice.Pretended -> R.string.found_pretended

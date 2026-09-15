@@ -26,7 +26,7 @@
     <string name="jumps_title">Leave out impossible positions</string>
     <string name="jumps_explained">Where the satellites are jammed, the phone is told it is somewhere it cannot be, and the marker jumps across the map. This leaves out any position that would have taken more than 200 km/h to reach.</string>
     <string name="sources_title">Sources this phone counts</string>
-    <string name="sources_explained">Which kinds of answer count towards where this phone says it is. An answer from a source switched off is still collected and logged, but it moves no marker and reaches no one. The satellites always count — to stop sharing altogether, use the switch at the top.</string>
+    <string name="sources_explained">Which kinds of answer count towards the point this phone reports. An answer from a source switched off is still collected and logged, but it moves no marker and reaches no one. Where the satellites are jammed, leaving only the towers and the Wi-Fi is the sensible setting: a wider answer, but not a false one. With every switch off the phone writes nothing at all.</string>
     <string name="sources_button">Sources: %1$d of %2$d</string>
     <string name="jumps_forget">Forget the last place</string>
     <string name="jumps_forgotten">Forgotten</string>

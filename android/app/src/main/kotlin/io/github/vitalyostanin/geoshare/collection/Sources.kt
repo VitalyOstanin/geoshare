@@ -31,12 +31,22 @@ package io.github.vitalyostanin.geoshare.collection
  * other. The difference is kept where it is worth something — in the document,
  * on the card and in the log — and left out of the choice.
  *
- * [FoundBy.Satellites] has no switch at all, deliberately: leaving it out
- * would leave the phone with no source of a point, which is what the sharing
- * switch is for. A setting that quietly amounts to switching off is a setting
- * that will be blamed for something else.
+ * The satellites have a switch like everything else, and that is the point of
+ * the list rather than an oversight in it: where a transmitter is running, the
+ * satellite answer is the one that lies — a kilometre out, six kilometres out —
+ * while the towers around the phone go on saying roughly the right district. A
+ * member in that neighbourhood wants exactly the setting that leaves the wide
+ * honest answer and drops the narrow false one.
+ *
+ * Switching off every one of them leaves the phone with nothing to place
+ * itself by, and nothing is written at all. That is a thing a member may
+ * legitimately want for an hour, and the button says how many are left so it
+ * cannot be done by accident and forgotten.
  */
 enum class SourceChoice(val covers: List<FoundBy>) {
+    /** Measured off satellites the receiver was hearing at the time. */
+    Satellites(listOf(FoundBy.Satellites)),
+
     /** Worked out from the towers and the Wi-Fi, by the phone or by a service. */
     OtherRadios(listOf(FoundBy.Assistance, FoundBy.OtherRadios)),
 
