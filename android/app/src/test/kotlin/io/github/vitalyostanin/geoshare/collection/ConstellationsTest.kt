@@ -1,7 +1,9 @@
 package io.github.vitalyostanin.geoshare.collection
 
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
+import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class ConstellationsTest {
@@ -79,5 +81,102 @@ class ConstellationsTest {
             setOf(Constellation.Gps, Constellation.Galileo, Constellation.Beidou),
             SHARE_THE_GPS_BAND,
         )
+    }
+
+    // The epoch beside the false fix of 22:26 on the Huawei: nine GPS
+    // satellites heard and four of them in the fix, five GLONASS heard and
+    // none of them in it, and the position fifty-six kilometres from the flat.
+    @Test
+    fun `a fix built on the spoofed band while the other was heard is one band's work`() {
+        assertTrue(
+            restsOnOneBand(
+                mapOf(
+                    Constellation.Gps to Counted(heard = 9, usedInFix = 4),
+                    Constellation.Glonass to Counted(heard = 5, usedInFix = 0),
+                    Constellation.Beidou to Counted(heard = 1, usedInFix = 0),
+                ),
+            ),
+        )
+    }
+
+    // The epoch beside the true fix two minutes earlier, at home.
+    @Test
+    fun `a fix the other band is in is not one band's work`() {
+        assertFalse(
+            restsOnOneBand(
+                mapOf(
+                    Constellation.Gps to Counted(heard = 8, usedInFix = 0),
+                    Constellation.Glonass to Counted(heard = 5, usedInFix = 4),
+                    Constellation.Beidou to Counted(heard = 1, usedInFix = 1),
+                ),
+            ),
+        )
+    }
+
+    // One satellite of the other band in the fix is the receiver having had
+    // something to check the band against, which is the whole of the rule.
+    @Test
+    fun `a single satellite of the other band in the fix silences the rule`() {
+        assertFalse(
+            restsOnOneBand(
+                mapOf(
+                    Constellation.Gps to Counted(heard = 9, usedInFix = 8),
+                    Constellation.Glonass to Counted(heard = 5, usedInFix = 1),
+                ),
+            ),
+        )
+    }
+
+    // The HONOR phones, which hear no GLONASS at all: there is no denominator
+    // to compare against and the rule has to stay silent rather than call
+    // every fix a lie.
+    @Test
+    fun `a phone that hears one band is accused of nothing`() {
+        assertFalse(
+            restsOnOneBand(mapOf(Constellation.Gps to Counted(heard = 12, usedInFix = 9))),
+        )
+        assertFalse(restsOnOneBand(emptyMap()))
+    }
+
+    @Test
+    fun `two satellites of the other band are too few to have been built on`() {
+        assertFalse(
+            restsOnOneBand(
+                mapOf(
+                    Constellation.Gps to Counted(heard = 9, usedInFix = 8),
+                    Constellation.Glonass to Counted(heard = 2, usedInFix = 0),
+                ),
+            ),
+        )
+    }
+
+    // Three satellites of the band cannot have produced a position on their
+    // own, so a fix resting on that many rests on something else as well.
+    @Test
+    fun `a fix resting on too little of the band is not held to be its work`() {
+        assertFalse(
+            restsOnOneBand(
+                mapOf(
+                    Constellation.Gps to Counted(heard = 9, usedInFix = 3),
+                    Constellation.Glonass to Counted(heard = 5, usedInFix = 0),
+                ),
+            ),
+        )
+    }
+
+    // The three systems transmitting where GPS does are one band to a
+    // transmitter and one number here.
+    @Test
+    fun `the band is counted as the whole of it, not as GPS alone`() {
+        val counts =
+            mapOf(
+                Constellation.Gps to Counted(heard = 4, usedInFix = 2),
+                Constellation.Galileo to Counted(heard = 3, usedInFix = 1),
+                Constellation.Beidou to Counted(heard = 2, usedInFix = 1),
+                Constellation.Glonass to Counted(heard = 6, usedInFix = 0),
+            )
+
+        assertEquals(FixMakeup(bandInFix = 4, glonassHeard = 6, glonassInFix = 0), makeupOf(counts))
+        assertTrue(restsOnOneBand(counts))
     }
 }

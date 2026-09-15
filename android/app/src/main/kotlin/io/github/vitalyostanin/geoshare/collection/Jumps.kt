@@ -81,6 +81,15 @@ enum class JumpReason {
     Circling,
 
     /**
+     * The fix was built out of the band a false signal is transmitted in,
+     * while the band it cannot reach was heard and left out.
+     *
+     * Read off one epoch rather than off a run of them, and so the one rule
+     * that speaks on the first false answer: see [restsOnOneBand].
+     */
+    OneBand,
+
+    /**
      * The answers are tracing a route they have already been round.
      *
      * The same reading as the circle, without asking what shape the route is:
@@ -124,6 +133,14 @@ enum class JumpReason {
  * no sensor history and no list of false places covering a new one — and still
  * has towers around it that the transmitter never reached. [networkSays] is
  * null wherever the other radios were not asked or had nothing to say.
+ *
+ * What the fix rests on is asked in the same breath and for the same reason:
+ * one epoch of the receiver's own status, needing no trail behind it. It is
+ * asked after the other radios because they are the stronger statement — a
+ * tower naming another district contradicts the position itself, where this
+ * contradicts only the way it was built. [restsOn] is empty wherever there is
+ * nothing to ask: no status, a status too old to be about this fix, or a phone
+ * that hears one band and has nothing to compare.
  */
 fun whyAJump(
     last: Fix?,
@@ -135,6 +152,8 @@ fun whyAJump(
     falsePlaces: List<FalsePlace> = emptyList(),
     circleLimits: CircleLimits = CircleLimits(),
     repeatLimits: RepeatLimits = RepeatLimits(),
+    restsOn: Map<Constellation, Counted> = emptyMap(),
+    bandLimits: OneBandLimits = OneBandLimits(),
 ): JumpReason? {
     if (falsePlaceFor(next, falsePlaces) != null) {
         return JumpReason.FalsePlace
@@ -142,6 +161,10 @@ fun whyAJump(
 
     if (secondOpinion(next, networkSays, now)?.disagrees == true) {
         return JumpReason.Contradicted
+    }
+
+    if (restsOnOneBand(restsOn, bandLimits)) {
+        return JumpReason.OneBand
     }
 
     if (goingInCircles(lately, circleLimits)) {

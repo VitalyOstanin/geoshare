@@ -19,6 +19,8 @@ import io.github.vitalyostanin.geoshare.collection.CLOCK_TOLERANCE
 import io.github.vitalyostanin.geoshare.collection.CircleLimits
 import io.github.vitalyostanin.geoshare.collection.CollectionMode
 import io.github.vitalyostanin.geoshare.collection.CollectionState
+import io.github.vitalyostanin.geoshare.collection.Constellation
+import io.github.vitalyostanin.geoshare.collection.Counted
 import io.github.vitalyostanin.geoshare.collection.FalsePlace
 import io.github.vitalyostanin.geoshare.collection.Fix
 import io.github.vitalyostanin.geoshare.collection.IDLE_REPEAT
@@ -40,6 +42,7 @@ import io.github.vitalyostanin.geoshare.collection.falsePlaceFor
 import io.github.vitalyostanin.geoshare.collection.fenceMoves
 import io.github.vitalyostanin.geoshare.collection.impliedSpeedMps
 import io.github.vitalyostanin.geoshare.collection.knows
+import io.github.vitalyostanin.geoshare.collection.makeupOf
 import io.github.vitalyostanin.geoshare.collection.networkAnswerStands
 import io.github.vitalyostanin.geoshare.collection.noteOf
 import io.github.vitalyostanin.geoshare.collection.otherRadiosAreDue
@@ -170,6 +173,15 @@ class SharingService : LifecycleService() {
 
     /** When the towers and the Wi-Fi were last asked in place of the satellites. */
     private var askedTheOtherRadiosAt: Instant? = null
+
+    /**
+     * What the receiver's own status said the last fix rested on.
+     *
+     * Kept rather than asked for twice: the rule reads it while the fix is
+     * being judged and the log says the numbers afterwards, and the epoch
+     * moves on between the two.
+     */
+    private var restsOn: Map<Constellation, Counted> = emptyMap()
 
     /**
      * The last thing the towers and the Wi-Fi said, whoever asked them.
@@ -419,6 +431,11 @@ class SharingService : LifecycleService() {
         rememberASecondOpinion(fix)
         rememberTheShapeOfIt(fix, trusted)
 
+        // Read once, before anything is decided: the receiver goes on
+        // reporting while the rules run, and an epoch read afterwards would
+        // be a different epoch from the one the fix came out of.
+        restsOn = if (trusted) emptyMap() else radio.restingOn()
+
         val jump =
             if (trusted) {
                 null
@@ -432,6 +449,7 @@ class SharingService : LifecycleService() {
                     lately,
                     falsePlaces,
                     circleLimits,
+                    restsOn = restsOn,
                 )
             }
         // A fix left out does not move the last position, and that is how the
@@ -1239,6 +1257,23 @@ class SharingService : LifecycleService() {
         JumpReason.Circling -> "by the shape of the road: ${theCircleDrawn()}"
 
         JumpReason.Repeating -> "by the road being gone round again: ${theRouteRepeated()}"
+
+        JumpReason.OneBand -> "by what it rests on: ${theBandItRestsOn()}"
+    }
+
+    /**
+     * Which systems the fix was built out of, for the line that says a fix was
+     * left out.
+     */
+    private fun theBandItRestsOn(): String {
+        val makeup = makeupOf(restsOn)
+
+        return String.format(
+            Locale.ROOT,
+            "%d satellites of the GPS band and none of the %d GLONASS heard",
+            makeup.bandInFix,
+            makeup.glonassHeard,
+        )
     }
 
     /**

@@ -194,6 +194,50 @@ class JumpsTest {
         assertFalse(agreementStands(JumpReason.Width, first, second, towers, second.takenAt))
     }
 
+    // The first false answer of a run has no trail behind it, which is what
+    // every other rule here is read from. This one is read from the epoch.
+    @Test
+    fun `a fix built on the spoofed band alone is caught without anything to compare`() {
+        assertEquals(
+            JumpReason.OneBand,
+            whyAJump(
+                null,
+                fixAt(61.11719, 5.39843, 0, accuracy = 57.0),
+                restsOn = mapOf(
+                    Constellation.Gps to Counted(heard = 9, usedInFix = 4),
+                    Constellation.Glonass to Counted(heard = 5, usedInFix = 0),
+                ),
+            ),
+        )
+    }
+
+    @Test
+    fun `a fix the other band is in passes, epoch and all`() {
+        val first = fixAt(61.03268, 4.40299, 0, accuracy = 60.0)
+        val second = fixAt(61.03270, 4.40305, 60, accuracy = 80.0)
+
+        assertNull(
+            whyAJump(
+                first,
+                second,
+                restsOn = mapOf(
+                    Constellation.Gps to Counted(heard = 8, usedInFix = 0),
+                    Constellation.Glonass to Counted(heard = 5, usedInFix = 4),
+                ),
+            ),
+        )
+    }
+
+    // The status is read as a statement about the fix beside it, so a caller
+    // with no current status hands over nothing and the rule says nothing.
+    @Test
+    fun `no epoch to read is not an accusation`() {
+        val first = fixAt(61.03268, 4.40299, 0, accuracy = 60.0)
+        val second = fixAt(61.03270, 4.40305, 60, accuracy = 80.0)
+
+        assertNull(whyAJump(first, second, restsOn = emptyMap()))
+    }
+
     private fun fixAt(latitude: Double, longitude: Double, second: Long, accuracy: Double? = null) =
         Fix(
             latitude = latitude,

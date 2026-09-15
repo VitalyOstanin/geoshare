@@ -66,6 +66,17 @@ private val SILENCE_REPORTED_EVERY: Duration = Duration.ofMinutes(5)
 private val NAVIGATION_REPORTED_EVERY: Duration = Duration.ofMinutes(5)
 
 /**
+ * How old the last epoch may be and still be taken as being about a fix.
+ *
+ * Five seconds. The status arrives about once a second while the receiver is
+ * running, so anything older than this is a receiver that has stopped
+ * reporting rather than one reporting about this moment — and the rule read
+ * off the epoch, which asks what a fix was built out of, would then be
+ * answering about some other minute.
+ */
+private val SKY_STILL_CURRENT: Duration = Duration.ofSeconds(5)
+
+/**
  * What the radio is being subjected to, as the receiver's own measures say.
  *
  * Subscriptions the phone already has the permission for, none of which asks
@@ -99,6 +110,12 @@ class RadioWatch(private val context: Context) {
     // at afterwards to see what it was. Written to their own file per fix.
     @Volatile
     private var sky: List<Satellite> = emptyList()
+
+    // When that epoch arrived, by the phone's own clock. Kept because the
+    // epoch is read as a statement about a fix, and a statement about a fix
+    // has to have been made at about the same time as the fix.
+    @Volatile
+    private var skyAt: Instant = Instant.EPOCH
 
     @Volatile
     private var running: List<Gain> = emptyList()
@@ -217,6 +234,24 @@ class RadioWatch(private val context: Context) {
     }
 
     /**
+     * What the last epoch says the fix rests on, system by system.
+     *
+     * Empty rather than stale: the counts are read as a statement about the
+     * fix beside them — see
+     * [io.github.vitalyostanin.geoshare.collection.restsOnOneBand] — and an
+     * epoch from a minute ago is a statement about a minute ago. Empty as well
+     * where the receiver has said nothing at all, which is the same answer for
+     * the same reason.
+     */
+    fun restingOn(now: Instant = Instant.now()): Map<Constellation, Counted> {
+        if (Duration.between(skyAt, now).abs() > SKY_STILL_CURRENT) {
+            return emptyMap()
+        }
+
+        return counted(sky)
+    }
+
+    /**
      * The epoch itself, put beside the position that came out of it.
      *
      * Called once per fix rather than once per epoch: see [SkyLog] for why.
@@ -266,6 +301,7 @@ class RadioWatch(private val context: Context) {
                     val epoch = skyOf(status)
 
                     sky = epoch
+                    skyAt = Instant.now()
 
                     for ((constellation, loudness) in loudnessPerBand(epoch)) {
                         note(heard.getOrPut(constellation) { ArrayDeque() }, loudness)

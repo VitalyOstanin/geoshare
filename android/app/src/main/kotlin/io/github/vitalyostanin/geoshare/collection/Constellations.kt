@@ -97,3 +97,94 @@ fun whatTheBandsSay(sharedBand: Epochs, glonass: Epochs): Interference? {
 
     return null
 }
+
+/**
+ * How much has to be true before a fix is called one band's work.
+ *
+ * Both numbers are read off one phone's own logs rather than chosen: on the
+ * Huawei, over two hundred and twenty-two fixes, the true ones rested on four
+ * and a half GLONASS satellites on average and almost never on GPS, and the
+ * false ones on nine GPS satellites and almost never on GLONASS. What the
+ * limits have to do is separate those two without calling a thin sky a lie.
+ */
+data class OneBandLimits(
+    /**
+     * How many GLONASS satellites have to be heard before their absence from
+     * the fix says anything.
+     *
+     * Three. Fewer than that is a receiver that could not have built on them
+     * anyway, and a rule that fired there would be reading the sky rather than
+     * the fix. It is also what keeps the rule silent on the HONOR phones,
+     * which hear no GLONASS at all.
+     */
+    val glonassHeard: Int = 3,
+    /**
+     * How much of the shared band the fix has to rest on before the fix is
+     * held to be its work.
+     *
+     * Four, which is the fewest satellites a position can be built out of at
+     * all. Below it the receiver was resting on something else as well, and
+     * the false fixes this is written for rested on nine.
+     */
+    val bandInFix: Int = 4,
+)
+
+/** What a fix rests on, in the numbers the one-band rule is read from. */
+data class FixMakeup(
+    /** How many of the shared band's satellites the fix rests on. */
+    val bandInFix: Int,
+    val glonassHeard: Int,
+    val glonassInFix: Int,
+)
+
+/** The same counts as [counted] gives them, read as the two sides of the sky. */
+fun makeupOf(counts: Map<Constellation, Counted>): FixMakeup {
+    val glonass = counts[Constellation.Glonass] ?: Counted(heard = 0, usedInFix = 0)
+
+    return FixMakeup(
+        bandInFix = SHARE_THE_GPS_BAND.sumOf { counts[it]?.usedInFix ?: 0 },
+        glonassHeard = glonass.heard,
+        glonassInFix = glonass.usedInFix,
+    )
+}
+
+/**
+ * Whether the fix was built out of the band a false signal is transmitted in,
+ * while the band it cannot reach was there to be built out of and was not.
+ *
+ * The one rule here that needs neither an earlier position nor a second radio:
+ * it is read off a single epoch, so it speaks on the first false answer rather
+ * than on the second. Everything else — the speed, the width, the shape of the
+ * road — needs a trail to compare against, and the first false answer is
+ * precisely the one that has none.
+ *
+ * What it rests on is that the two bands are twenty-five megahertz apart: a
+ * transmitter drawing a false road transmits in one of them, and the receiver
+ * has to prefer whichever satellites agree with each other. On the Huawei the
+ * separation was total — while the fix rested on GLONASS the phone was at
+ * home, and the moment it rested on GPS alone the phone was fifty-six
+ * kilometres away — and the rule would have caught a hundred and eighteen of
+ * the hundred and eighty-nine false fixes without touching a true one.
+ *
+ * The caveat is in what `usedInFix` is: the receiver's last status rather than
+ * the fix's own working, which Android does not hand over. The two are a
+ * fraction of a second apart and the caller asks only of a status that is
+ * still current — see the freshness the watch enforces — but it remains a
+ * statement about the epoch beside the fix rather than about the fix.
+ */
+fun restsOnOneBand(
+    counts: Map<Constellation, Counted>,
+    limits: OneBandLimits = OneBandLimits(),
+): Boolean {
+    val makeup = makeupOf(counts)
+
+    if (makeup.glonassHeard < limits.glonassHeard) {
+        return false
+    }
+
+    if (makeup.glonassInFix > 0) {
+        return false
+    }
+
+    return makeup.bandInFix >= limits.bandInFix
+}
