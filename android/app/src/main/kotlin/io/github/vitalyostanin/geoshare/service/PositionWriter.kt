@@ -5,6 +5,7 @@ import com.google.firebase.firestore.FieldValue
 import com.google.firebase.firestore.FirebaseFirestore
 import io.github.vitalyostanin.geoshare.collection.CollectionMode
 import io.github.vitalyostanin.geoshare.collection.Fix
+import io.github.vitalyostanin.geoshare.collection.foundBy
 import kotlinx.coroutines.tasks.await
 import java.util.Date
 
@@ -52,6 +53,11 @@ class PositionWriter(
                 // fine, and fifteen percent off one is a phone about to go
                 // quiet.
                 PositionField.CHARGING to charging,
+                // How the phone arrived at this, in its own words rather than
+                // the provider's: the same answer reads as `gps` whether the
+                // receiver measured it or an assistance service sent it over,
+                // and those are worth opposite amounts to whoever is looking.
+                PositionField.FOUND_BY to foundBy(fix).name,
             ) + width(fix)
 
         positionsOf(store)

@@ -63,6 +63,18 @@ export const EN = {
     position: 'Position',
     unknown: 'unknown',
 
+    // How the phone arrived at the answer, and how wide it called it. The two
+    // rows stand together: a word without a width does not separate the flat
+    // from the district, and a width without the word does not say whether the
+    // circle was measured off the sky or looked up in somebody's database.
+    foundBy: 'Found by',
+    width: 'Width',
+    foundSatellites: 'The satellites',
+    foundAssistance: 'Assistance over the network',
+    foundUnheard: 'Satellites, none of them heard',
+    foundOtherRadios: 'Towers and Wi-Fi',
+    foundPretended: 'Another application on the phone',
+
     // How wide the phone said its answer is. The sign is what turns a distance
     // into a claim about where the marker might really be.
     widthMetres: (count) => `±${count} m`,

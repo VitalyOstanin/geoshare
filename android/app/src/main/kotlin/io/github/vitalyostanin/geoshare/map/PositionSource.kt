@@ -177,6 +177,7 @@ private fun positionOf(document: DocumentSnapshot): MemberPosition? {
         batteryPercent = document.getLong(PositionField.BATTERY_PERCENT)?.toInt(),
         charging = document.getBoolean(PositionField.CHARGING) ?: false,
         accuracyMetres = widthOf(document),
+        foundBy = document.getString(PositionField.FOUND_BY),
     )
 }
 

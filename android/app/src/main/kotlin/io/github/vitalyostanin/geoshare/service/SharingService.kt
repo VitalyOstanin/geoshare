@@ -40,6 +40,7 @@ import io.github.vitalyostanin.geoshare.collection.comingHome
 import io.github.vitalyostanin.geoshare.collection.distanceMetres
 import io.github.vitalyostanin.geoshare.collection.falsePlaceFor
 import io.github.vitalyostanin.geoshare.collection.fenceMoves
+import io.github.vitalyostanin.geoshare.collection.foundBy
 import io.github.vitalyostanin.geoshare.collection.impliedSpeedMps
 import io.github.vitalyostanin.geoshare.collection.knows
 import io.github.vitalyostanin.geoshare.collection.makeupOf
@@ -49,6 +50,7 @@ import io.github.vitalyostanin.geoshare.collection.otherRadiosAreDue
 import io.github.vitalyostanin.geoshare.collection.remembering
 import io.github.vitalyostanin.geoshare.collection.rescueAfter
 import io.github.vitalyostanin.geoshare.collection.routeRepeated
+import io.github.vitalyostanin.geoshare.collection.said
 import io.github.vitalyostanin.geoshare.collection.saysMoreThan
 import io.github.vitalyostanin.geoshare.collection.secondOpinion
 import io.github.vitalyostanin.geoshare.collection.shouldWrite
@@ -1338,7 +1340,11 @@ class SharingService : LifecycleService() {
         mode: CollectionMode,
     ): Boolean = try {
         writer.write(written.fix, mode, batteryPercent(), written.charging)
-        AppLog.i(TAG, "wrote a position taken at ${written.fix.takenAt}")
+        AppLog.i(
+            TAG,
+            "wrote a position taken at ${written.fix.takenAt}, " +
+                "found by ${foundBy(written.fix).said}",
+        )
 
         true
     } catch (cancellation: CancellationException) {

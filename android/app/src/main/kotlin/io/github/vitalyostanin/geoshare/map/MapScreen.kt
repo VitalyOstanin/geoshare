@@ -54,6 +54,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import io.github.vitalyostanin.geoshare.R
 import io.github.vitalyostanin.geoshare.collection.Watcher
+import io.github.vitalyostanin.geoshare.collection.foundByLabel
 import io.github.vitalyostanin.geoshare.collection.modeLabel
 import io.github.vitalyostanin.geoshare.collection.modesExplained
 import io.github.vitalyostanin.geoshare.collection.watchingMembers
@@ -817,6 +818,32 @@ private fun MemberDetail(
                 if (helpOpen) {
                     ModeHelp(onClose = { helpOpen = false })
                 }
+            }
+            // How the phone arrived at this, and how wide it called the answer.
+            // The two stand together because neither says much alone: a word
+            // without a width does not separate the flat from the district,
+            // and a width without the word does not say whether the circle
+            // was measured off the sky or looked up in somebody's database.
+            DetailRow(
+                R.string.map_detail_found_by,
+                stringResource(foundByLabel(member.foundBy)),
+            )
+            DetailRow(R.string.map_detail_width) {
+                val metres = member.accuracyMetres
+
+                Text(
+                    text =
+                    metres
+                        ?.let { widthText(positionWidth(it)) }
+                        ?: stringResource(R.string.map_detail_unknown),
+                    style = MaterialTheme.typography.bodyMedium,
+                    color =
+                    if (metres != null) {
+                        widthColour(widthIsWide(metres))
+                    } else {
+                        MaterialTheme.colorScheme.onSurface
+                    },
+                )
             }
             DetailRow(R.string.map_detail_battery) {
                 val percent = member.batteryPercent

@@ -20,7 +20,8 @@ import { clusterMembers, facesShown } from './clusters.js';
 import { openModeHelp } from './mode-help.js';
 import { markerOrder } from './stacking.js';
 import { modeText } from './modes.js';
-import { accuracyRing } from './width.js';
+import { accuracyRing, widthText } from './width.js';
+import { foundText } from './found.js';
 import { WORDS } from './words.js';
 
 /** The ring around the marker being looked at: the fill, the line, the source. */
@@ -763,6 +764,18 @@ function detail(position, name, faces, now) {
         [WORDS.at, timeText(position.positionAt)],
         [WORDS.online, timeText(position.knownAt)],
         [WORDS.mode, modeButton(position.mode)],
+        // How the phone arrived at the answer, and how wide it called it. The
+        // two rows stand together: a word without a width does not separate
+        // the flat from the district, and a width without the word does not
+        // say whether the circle was measured off the sky or looked up in
+        // somebody's database.
+        [WORDS.foundBy, foundText(position.foundBy)],
+        [
+            WORDS.width,
+            position.accuracyMetres === null
+                ? WORDS.unknown
+                : widthText(position.accuracyMetres),
+        ],
         [WORDS.battery, batteryText(position)],
         [WORDS.position, `${position.latitude.toFixed(5)}, ${position.longitude.toFixed(5)}`],
     ];

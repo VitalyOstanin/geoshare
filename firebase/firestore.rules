@@ -374,7 +374,7 @@ service cloud.firestore {
           return request.resource.data.keys()
                    .hasOnly(['memberId', 'deviceName', 'latitude', 'longitude',
                              'takenAt', 'writtenAt', 'mode', 'batteryPercent', 'charging',
-                             'accuracyMetres']) &&
+                             'accuracyMetres', 'foundBy']) &&
                  request.resource.data.memberId == request.auth.uid &&
                  request.resource.data.latitude is number &&
                  request.resource.data.latitude >= -90 &&
@@ -407,7 +407,16 @@ service cloud.firestore {
                  (!('accuracyMetres' in request.resource.data) ||
                   (request.resource.data.accuracyMetres is number &&
                    request.resource.data.accuracyMetres >= 0 &&
-                   request.resource.data.accuracyMetres <= 100000));
+                   request.resource.data.accuracyMetres <= 100000)) &&
+                 // How the phone says it arrived at the answer: one of the
+                 // words the clients know, and a word from a build newer than
+                 // a reader is shown as it came. Held to the length of a word
+                 // for the same reason as the mode — a reader shows it, and a
+                 // field of any size would be a sentence of somebody's
+                 // choosing on everybody's card.
+                 (!('foundBy' in request.resource.data) ||
+                  (request.resource.data.foundBy is string &&
+                   request.resource.data.foundBy.size() <= 20));
         }
 
         // One document at a time, and no listing of the collection. A query is

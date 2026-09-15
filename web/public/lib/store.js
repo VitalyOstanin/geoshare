@@ -227,6 +227,10 @@ function positionOf(snapshot) {
         // be charging rather than a phone known not to be.
         charging: data.charging === true,
         accuracyMetres: widthOf(data.accuracyMetres),
+        // How the phone says it arrived at the answer, in the word it wrote.
+        // Absent in what the older builds wrote, which is a source not known
+        // rather than a position arrived at by no means at all.
+        foundBy: typeof data.foundBy === 'string' ? data.foundBy : null,
     };
 }
 

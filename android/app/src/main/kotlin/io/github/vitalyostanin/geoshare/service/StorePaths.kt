@@ -119,6 +119,17 @@ object PositionField {
      * flat and an answer from a tower a kilometre and a half wide.
      */
     const val ACCURACY_METRES = "accuracyMetres"
+
+    /**
+     * How the phone arrived at the answer, as one of the words of `FoundBy`.
+     *
+     * The phone's own reading of it rather than the name of the provider: what
+     * arrives under the name of the satellites is half the time an assistance
+     * service answering over the network, and a reader shown the provider's
+     * name would be told the opposite of what happened. The entry the phone
+     * wrote is the key, and each client says it in its own language.
+     */
+    const val FOUND_BY = "foundBy"
 }
 
 /** The fields of a member's profile. */

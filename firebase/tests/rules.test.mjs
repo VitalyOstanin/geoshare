@@ -314,6 +314,33 @@ describe('positions', () => {
             setDoc(positionOf(db, ALICE), { ...positionFrom(ALICE), accuracyMetres: 'wide' }),
         );
     });
+
+    // How the phone says it arrived at the answer. The word is the phone's
+    // own — the satellites, an assistance service, the towers and the Wi-Fi —
+    // and a reader shows it in its own language.
+    it('a position says how it was arrived at', async () => {
+        const db = testEnv.authenticatedContext(ALICE).firestore();
+
+        await assertSucceeds(
+            setDoc(positionOf(db, ALICE), { ...positionFrom(ALICE), foundBy: 'Satellites' }),
+        );
+    });
+
+    // A reader puts this on a card, so a phone must not be able to write a
+    // sentence of its own choosing into everybody's panel.
+    it('a source that is not one word is refused', async () => {
+        const db = testEnv.authenticatedContext(ALICE).firestore();
+
+        await assertFails(
+            setDoc(positionOf(db, ALICE), { ...positionFrom(ALICE), foundBy: 7 }),
+        );
+        await assertFails(
+            setDoc(positionOf(db, ALICE), {
+                ...positionFrom(ALICE),
+                foundBy: 'the satellites, most of them anyway',
+            }),
+        );
+    });
 });
 
 describe('watch', () => {

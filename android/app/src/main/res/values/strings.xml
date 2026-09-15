@@ -44,6 +44,17 @@
     <string name="map_detail_last_seen">Last seen</string>
     <string name="map_detail_at">At</string>
     <string name="map_detail_mode">Mode</string>
+    <!-- How the phone arrived at the answer, and how wide it called it.
+         The two are read together: the towers place a phone in its
+         district and the satellites in its doorway, and a word without a
+         width says half of that. -->
+    <string name="map_detail_found_by">Found by</string>
+    <string name="map_detail_width">Width</string>
+    <string name="found_satellites">The satellites</string>
+    <string name="found_assistance">Assistance over the network</string>
+    <string name="found_unheard">Satellites, none of them heard</string>
+    <string name="found_other_radios">Towers and Wi-Fi</string>
+    <string name="found_pretended">Another application on the phone</string>
     <string name="map_detail_battery">Battery</string>
     <string name="map_detail_position">Position</string>
     <string name="map_detail_coordinates" translatable="false">%1$.5f, %2$.5f</string>

@@ -40,6 +40,14 @@ data class MemberPosition(
      * without a circle rather than as a circle of a made-up size.
      */
     val accuracyMetres: Double? = null,
+    /**
+     * How the phone that wrote it says it arrived at the answer, in the word
+     * it wrote rather than in this reader's language.
+     *
+     * Missing for a build that wrote no such field, which is a position whose
+     * source is not known rather than one arrived at by no means at all.
+     */
+    val foundBy: String? = null,
 ) {
     /**
      * The moment the age is counted from.

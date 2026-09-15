@@ -37,6 +37,13 @@
     <string name="map_detail_last_seen">Обновлено</string>
     <string name="map_detail_at">Время</string>
     <string name="map_detail_mode">Режим</string>
+    <string name="map_detail_found_by">Откуда место</string>
+    <string name="map_detail_width">Ширина</string>
+    <string name="found_satellites">Спутники</string>
+    <string name="found_assistance">Подсказка по сети</string>
+    <string name="found_unheard">Спутники, которых не слышно</string>
+    <string name="found_other_radios">Вышки и Wi-Fi</string>
+    <string name="found_pretended">Другое приложение на телефоне</string>
     <string name="map_detail_battery">Заряд</string>
     <string name="map_detail_position">Координаты</string>
     <string name="map_detail_unknown">неизвестно</string>
