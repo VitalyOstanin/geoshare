@@ -14,6 +14,8 @@
 #   NoFix  the same head row for an epoch that produced no position at all
 #   Clock  the receiver's own clock as it reported it
 #   Agc    the gain of one band the receiver is running
+#   Slant  how the loudness of one system stood against the height of the
+#          satellites it came from, worked out from the Sat rows below it
 #   Sat    one satellite the receiver named
 #   Raw    one measurement the receiver made off one signal
 #   Nav    one message a satellite broadcast, written when it says something
