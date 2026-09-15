@@ -436,6 +436,36 @@ What it costs, so that the decision is made with the price in view:
   its log what was asked and by whom, and the screen where the member sees it
   is not hidden behind a developer setting.
 
+### The tier, the limits and what the project has spent
+
+The same screen is where the household should be able to see what the free
+tier has left. Everything here is built to stay inside it — a position every
+few minutes, three fields a minute while a phone is being lied to, no
+functions, no storage — but nothing in the application says how close that
+comes to the daily allowance, and the first sign of going over would be phones
+failing to write at all.
+
+What such a screen shows: which tier the project is on, the daily allowance of
+document reads, writes and deletes against what has been used today, and the
+same for the stored size. Whose it is: the member who owns the project, since
+the numbers are a billing fact.
+
+What it costs:
+
+- The numbers are not in Firestore, so the client cannot read them the way it
+  reads everything else. They come from the Cloud Monitoring API of the
+  project, which needs a credential the phones do not have and should not be
+  given.
+- A credential that reads billing figures is worth more than anything else the
+  application holds, so it cannot ride in a build. Either the owner signs in on
+  that screen with the account that owns the project, or something outside the
+  phones reads the numbers on a schedule and writes them into the group where
+  the rules can share them with the household.
+- The second way needs something that runs without a phone — a function, a
+  scheduled job — which is exactly what the free tier does not include. That
+  makes the first way the one to start with, and it means the screen works only
+  for the owner.
+
 ## Who runs the group, said in the data and edited on a screen
 
 Being an administrator is a fact in the group document — the `admins` list —
