@@ -31,7 +31,7 @@ fun circlingLimits(store: FirebaseFirestore = FirebaseFirestore.getInstance()): 
         val subscription =
             circlingSetting(store).addSnapshotListener { snapshot, error ->
                 if (error != null) {
-                    AppLog.w(TAG, "the circling setting subscription failed", error)
+                    close(error)
 
                     return@addSnapshotListener
                 }
@@ -40,7 +40,7 @@ fun circlingLimits(store: FirebaseFirestore = FirebaseFirestore.getInstance()): 
             }
 
         awaitClose { subscription.remove() }
-    }
+    }.comingBack("circling setting")
 
 /** The document read as limits, falling back to the build's own. */
 private fun limitsOf(snapshot: DocumentSnapshot?): CircleLimits {

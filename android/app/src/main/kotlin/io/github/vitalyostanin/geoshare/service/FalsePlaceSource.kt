@@ -32,7 +32,7 @@ fun namedFalsePlaces(
     val subscription =
         falsePlacesOf(store).addSnapshotListener { snapshot, error ->
             if (error != null) {
-                AppLog.w(TAG, "the false places subscription failed", error)
+                close(error)
 
                 return@addSnapshotListener
             }
@@ -48,7 +48,7 @@ fun namedFalsePlaces(
         }
 
     awaitClose { subscription.remove() }
-}
+}.comingBack("false places")
 
 /** A document read as a place, or nothing where it is not one. */
 private fun placeOf(snapshot: DocumentSnapshot): FalsePlace? {

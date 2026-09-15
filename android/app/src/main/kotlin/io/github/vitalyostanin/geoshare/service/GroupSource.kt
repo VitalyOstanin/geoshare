@@ -36,7 +36,7 @@ fun groupRoster(store: FirebaseFirestore = FirebaseFirestore.getInstance()): Flo
         val subscription =
             groupDocument(store).addSnapshotListener { snapshot, error ->
                 if (error != null) {
-                    AppLog.w(TAG, "the roster subscription failed", error)
+                    close(error)
 
                     return@addSnapshotListener
                 }
@@ -45,7 +45,7 @@ fun groupRoster(store: FirebaseFirestore = FirebaseFirestore.getInstance()): Flo
             }
 
         awaitClose { subscription.remove() }
-    }
+    }.comingBack("roster")
 
 private fun rosterOf(snapshot: DocumentSnapshot): Roster = Roster(
     members = snapshot.get(GroupField.MEMBERS).asIds(),

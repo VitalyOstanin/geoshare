@@ -7,6 +7,7 @@ import com.google.firebase.firestore.ListenerRegistration
 import io.github.vitalyostanin.geoshare.log.AppLog
 import io.github.vitalyostanin.geoshare.service.GrantField
 import io.github.vitalyostanin.geoshare.service.ProfileField
+import io.github.vitalyostanin.geoshare.service.comingBack
 import io.github.vitalyostanin.geoshare.service.grantsOf
 import io.github.vitalyostanin.geoshare.service.membersOf
 import kotlinx.coroutines.channels.awaitClose
@@ -33,7 +34,7 @@ fun memberProfiles(
         membersOf(store)
             .addSnapshotListener { snapshot, error ->
                 if (error != null) {
-                    AppLog.w(TAG, "the profiles subscription failed", error)
+                    close(error)
 
                     return@addSnapshotListener
                 }
@@ -48,7 +49,7 @@ fun memberProfiles(
             }
 
     awaitClose { subscription.remove() }
-}
+}.comingBack("profiles")
 
 /**
  * A document turns into a profile, or into nothing.
@@ -153,7 +154,7 @@ fun ownSharedWith(
             .document(memberId)
             .addSnapshotListener { snapshot, error ->
                 if (error != null) {
-                    AppLog.w(TAG, "the permissions subscription failed", error)
+                    close(error)
 
                     return@addSnapshotListener
                 }
@@ -162,7 +163,7 @@ fun ownSharedWith(
             }
 
     awaitClose { subscription.remove() }
-}
+}.comingBack("permissions")
 
 /**
  * The permissions a grant carries: a reader, and the moment their permission

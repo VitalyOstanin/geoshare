@@ -3,13 +3,10 @@ package io.github.vitalyostanin.geoshare.service
 import com.google.firebase.firestore.FirebaseFirestore
 import io.github.vitalyostanin.geoshare.collection.WATCH_AHEAD
 import io.github.vitalyostanin.geoshare.collection.Watcher
-import io.github.vitalyostanin.geoshare.log.AppLog
 import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.callbackFlow
 import java.time.Instant
-
-private const val TAG = "geoshare.watch"
 
 /**
  * Who the other members looking are, and when each of them stops counting.
@@ -31,7 +28,7 @@ fun watchers(
         watchOf(store)
             .addSnapshotListener { snapshot, error ->
                 if (error != null) {
-                    AppLog.w(TAG, "the watch subscription failed", error)
+                    close(error)
 
                     return@addSnapshotListener
                 }
@@ -71,4 +68,4 @@ fun watchers(
             }
 
     awaitClose { subscription.remove() }
-}
+}.comingBack("watch")
