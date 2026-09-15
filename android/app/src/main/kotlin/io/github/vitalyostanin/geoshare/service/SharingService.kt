@@ -1339,11 +1339,16 @@ class SharingService : LifecycleService() {
         written: Written,
         mode: CollectionMode,
     ): Boolean = try {
-        writer.write(written.fix, mode, batteryPercent(), written.charging)
+        // The receiver's own last answer, read from the store rather than
+        // asked for: on these phones the fused answer being written carries no
+        // note of its own, and this is what says whether it is the satellites'
+        // measurement under another name.
+        val whence = foundBy(written.fix, lastSatellitePosition(this))
+
+        writer.write(written.fix, mode, batteryPercent(), written.charging, whence)
         AppLog.i(
             TAG,
-            "wrote a position taken at ${written.fix.takenAt}, " +
-                "found by ${foundBy(written.fix).said}",
+            "wrote a position taken at ${written.fix.takenAt}, found by ${whence.said}",
         )
 
         true

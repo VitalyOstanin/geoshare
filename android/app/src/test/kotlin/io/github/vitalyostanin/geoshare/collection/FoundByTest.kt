@@ -68,6 +68,61 @@ class FoundByTest {
         )
     }
 
+    // The case nearly every written position falls into. The fused provider
+    // hands over no note at all on these phones — checked in the sky file —
+    // while the satellites are asked for directly and answer with one. Both
+    // place the phone at the same spot at the same moment, which is the two
+    // names of one answer rather than two answers agreeing.
+    @Test
+    fun `a fused answer standing on the satellites' own is the satellites`() {
+        assertEquals(
+            FoundBy.Satellites,
+            foundBy(
+                fix(from = "fused", alongside = null),
+                satellites = fix(from = "gps", alongside = measured),
+            ),
+        )
+    }
+
+    @Test
+    fun `a fused answer somewhere else is not credited to the satellites`() {
+        assertEquals(
+            FoundBy.Unsaid,
+            foundBy(
+                fix(from = "fused", alongside = null),
+                satellites =
+                fix(from = "gps", alongside = measured).copy(latitude = 61.02, longitude = 4.35),
+            ),
+        )
+    }
+
+    @Test
+    fun `a satellite answer from before this one says nothing about it`() {
+        assertEquals(
+            FoundBy.Unsaid,
+            foundBy(
+                fix(from = "fused", alongside = null),
+                satellites =
+                fix(from = "gps", alongside = measured)
+                    .copy(takenAt = Instant.parse("2026-09-15T11:58:00Z")),
+            ),
+        )
+    }
+
+    // The store of last known places answers for the satellites with whatever
+    // was put there, and under a false signal that can be an assistance
+    // answer. Agreement with it is not a measurement.
+    @Test
+    fun `agreeing with an assistance answer is not agreeing with a measurement`() {
+        assertEquals(
+            FoundBy.Unsaid,
+            foundBy(
+                fix(from = "fused", alongside = null),
+                satellites = fix(from = "gps", alongside = assisted),
+            ),
+        )
+    }
+
     private fun fix(from: String?, alongside: String?, pretended: Boolean = false) = Fix(
         latitude = 61.0,
         longitude = 4.0,

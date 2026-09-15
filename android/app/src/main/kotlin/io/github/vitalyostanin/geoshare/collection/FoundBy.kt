@@ -1,5 +1,7 @@
 package io.github.vitalyostanin.geoshare.collection
 
+import java.time.Duration
+
 // How a position was arrived at, in words of this application's own.
 //
 // The name of the provider is not the answer. It says which of the phone's
@@ -24,6 +26,16 @@ package io.github.vitalyostanin.geoshare.collection
 
 /** The platform's name for the provider that answers from the towers and the Wi-Fi. */
 const val NETWORK_PROVIDER = "network"
+
+/**
+ * How far apart in time two answers may stand and still be the same answer.
+ *
+ * Half a minute. The satellites are asked for directly while the receiver is
+ * on anyway, and the fused provider hands over what it has: the two are the
+ * same fix under two names, seconds apart, or they are not the same fix at
+ * all.
+ */
+val SAME_ANSWER_WITHIN: Duration = Duration.ofSeconds(30)
 
 /** How a position was arrived at, as far as the phone that wrote it could tell. */
 enum class FoundBy {
@@ -64,8 +76,15 @@ enum class FoundBy {
  * and the provider's own name is read only where the note was silent — where
  * an answer from the network, which carries no note on these phones, is what
  * the name is naming.
+ *
+ * [satellites] is the receiver's own last answer, which is what settles the
+ * case the positions actually get written from. The fused provider hands over
+ * no note at all on these phones — checked in the sky file: every `fused` row
+ * has an empty note beside `gps` rows carrying `SourceType`, `maxCn0` and a
+ * satellite count — so without it the answer would be "not said" for nearly
+ * every position this application writes.
  */
-fun foundBy(fix: Fix): FoundBy {
+fun foundBy(fix: Fix, satellites: Fix? = null): FoundBy {
     if (fix.reported?.pretended == true) {
         return FoundBy.Pretended
     }
@@ -77,9 +96,45 @@ fun foundBy(fix: Fix): FoundBy {
 
         Answered.Unheard -> FoundBy.Unheard
 
-        Answered.Unsaid ->
-            if (fix.from == NETWORK_PROVIDER) FoundBy.OtherRadios else FoundBy.Unsaid
+        Answered.Unsaid -> when {
+            fix.from == NETWORK_PROVIDER -> FoundBy.OtherRadios
+            theSameAnswer(fix, satellites) -> FoundBy.Satellites
+            else -> FoundBy.Unsaid
+        }
     }
+}
+
+/**
+ * Whether the receiver's own answer and the one being written are one answer.
+ *
+ * Not a guess from the width and not the name of a provider: the satellites
+ * are asked for directly, their answer carries a note saying it was measured,
+ * and if it stands at the same moment and inside the doubt of the two
+ * together, then the fix without a note is that same measurement handed over
+ * under another name.
+ *
+ * The doubt is taken as it stands rather than with the margin the second
+ * opinion grants. That margin is there for accusing the satellites of lying,
+ * which is a serious thing to do on the strength of a database entry; naming
+ * a source is the opposite case, and a claim that two answers are the same
+ * answer should be held to the tighter test, not the looser one.
+ */
+private fun theSameAnswer(fix: Fix, satellites: Fix?): Boolean {
+    if (satellites == null) {
+        return false
+    }
+
+    if (!restsOnSatellites(satellites.reported?.alongside)) {
+        return false
+    }
+
+    if (Duration.between(satellites.takenAt, fix.takenAt).abs() > SAME_ANSWER_WITHIN) {
+        return false
+    }
+
+    val doubt = (fix.accuracyMetres ?: 0.0) + (satellites.accuracyMetres ?: 0.0)
+
+    return distanceMetres(fix, satellites) <= doubt
 }
 
 /** The word the log uses for it; the clients have their own, translated. */

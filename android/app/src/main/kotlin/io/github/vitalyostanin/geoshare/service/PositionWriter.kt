@@ -5,7 +5,7 @@ import com.google.firebase.firestore.FieldValue
 import com.google.firebase.firestore.FirebaseFirestore
 import io.github.vitalyostanin.geoshare.collection.CollectionMode
 import io.github.vitalyostanin.geoshare.collection.Fix
-import io.github.vitalyostanin.geoshare.collection.foundBy
+import io.github.vitalyostanin.geoshare.collection.FoundBy
 import kotlinx.coroutines.tasks.await
 import java.util.Date
 
@@ -35,7 +35,13 @@ class PositionWriter(
     private val device: DeviceIdentity,
     private val store: FirebaseFirestore = FirebaseFirestore.getInstance(),
 ) {
-    suspend fun write(fix: Fix, mode: CollectionMode, batteryPercent: Int, charging: Boolean) {
+    suspend fun write(
+        fix: Fix,
+        mode: CollectionMode,
+        batteryPercent: Int,
+        charging: Boolean,
+        foundBy: FoundBy,
+    ) {
         val position =
             mapOf(
                 PositionField.MEMBER_ID to memberId,
@@ -57,7 +63,9 @@ class PositionWriter(
                 // the provider's: the same answer reads as `gps` whether the
                 // receiver measured it or an assistance service sent it over,
                 // and those are worth opposite amounts to whoever is looking.
-                PositionField.FOUND_BY to foundBy(fix).name,
+                // Worked out by the caller, which is where the receiver's own
+                // last answer is to hand.
+                PositionField.FOUND_BY to foundBy.name,
             ) + width(fix)
 
         positionsOf(store)
