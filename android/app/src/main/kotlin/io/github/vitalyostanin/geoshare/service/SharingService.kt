@@ -24,6 +24,7 @@ import io.github.vitalyostanin.geoshare.collection.Constellation
 import io.github.vitalyostanin.geoshare.collection.Counted
 import io.github.vitalyostanin.geoshare.collection.FalsePlace
 import io.github.vitalyostanin.geoshare.collection.Fix
+import io.github.vitalyostanin.geoshare.collection.FoundBy
 import io.github.vitalyostanin.geoshare.collection.IDLE_REPEAT
 import io.github.vitalyostanin.geoshare.collection.JumpReason
 import io.github.vitalyostanin.geoshare.collection.Moving
@@ -290,6 +291,9 @@ class SharingService : LifecycleService() {
     /** Whether the member has asked for the impossible positions to be left out. */
     private val jumps by lazy { JumpFilterSetting(this) }
 
+    /** Which sources of a position this phone takes into account, as asked on the screen. */
+    private val sources by lazy { SourcesSetting(this) }
+
     /**
      * What the radio itself says, apart from any position that comes out of it.
      *
@@ -476,6 +480,13 @@ class SharingService : LifecycleService() {
         // be a different epoch from the one the fix came out of.
         restsOn = if (trusted) emptyMap() else radio.restingOn()
 
+        // How the phone arrived at this answer, worked out before anything is
+        // decided: it settles both whether this is a source the member allows
+        // and what the written document says about itself. The receiver's own
+        // last answer is what makes it possible at all — the fused answer
+        // being weighed carries no note of its own on these phones.
+        val whence = foundBy(fix, lastSatellitePosition(this))
+
         val jump =
             if (trusted) {
                 null
@@ -528,6 +539,21 @@ class SharingService : LifecycleService() {
             return false
         }
 
+        // Left out the same way a jump is, and for a reason of the same kind:
+        // the member has said this is not a source to take into account. So it
+        // moves no marker, becomes no last position and reaches nobody — while
+        // staying in the log, where the question of what the provider was
+        // saying is answered.
+        if (!sources.uses(whence)) {
+            AppLog.i(
+                TAG,
+                "left out a position found by ${whence.said}: " +
+                    "this phone was told not to take that source into account",
+            )
+
+            return false
+        }
+
         candidate = null
         jumpsInARow = 0
 
@@ -545,7 +571,7 @@ class SharingService : LifecycleService() {
             return false
         }
 
-        if (!writeQuietly(writer, written, mode)) {
+        if (!writeQuietly(writer, written, mode, whence)) {
             return false
         }
 
@@ -574,7 +600,10 @@ class SharingService : LifecycleService() {
         val known = lastFix ?: lastKnown ?: return false
         val written = Written(known, charging())
 
-        if (!writeQuietly(writer, written, mode)) {
+        // Not weighed against what the member shares: this is the position
+        // they have already shared, said again so that the marker does not go
+        // grey while the phone sits quietly at home.
+        if (!writeQuietly(writer, written, mode, foundBy(known, lastSatellitePosition(this)))) {
             return false
         }
 
@@ -1445,13 +1474,12 @@ class SharingService : LifecycleService() {
         writer: PositionWriter,
         written: Written,
         mode: CollectionMode,
+        // How the phone arrived at this, worked out by the caller: on these
+        // phones the fused answer being written carries no note of its own,
+        // and what says whether it is the satellites' measurement under
+        // another name is the receiver's own last answer, read from the store.
+        whence: FoundBy,
     ): Boolean = try {
-        // The receiver's own last answer, read from the store rather than
-        // asked for: on these phones the fused answer being written carries no
-        // note of its own, and this is what says whether it is the satellites'
-        // measurement under another name.
-        val whence = foundBy(written.fix, lastSatellitePosition(this))
-
         writer.write(written.fix, mode, batteryPercent(), written.charging, whence)
         AppLog.i(
             TAG,

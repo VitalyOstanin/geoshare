@@ -19,6 +19,7 @@ const FOUND_WORDS = {
     Unheard: WORDS.foundUnheard,
     OtherRadios: WORDS.foundOtherRadios,
     Pretended: WORDS.foundPretended,
+    Unsaid: WORDS.foundUnsaid,
 };
 
 /**

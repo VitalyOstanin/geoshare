@@ -25,6 +25,9 @@
          satellites are being jammed wants that. -->
     <string name="jumps_title">Leave out impossible positions</string>
     <string name="jumps_explained">Where the satellites are jammed, the phone is told it is somewhere it cannot be, and the marker jumps across the map. This leaves out any position that would have taken more than 200 km/h to reach.</string>
+    <string name="sources_title">Sources this phone counts</string>
+    <string name="sources_explained">Which kinds of answer count towards where this phone says it is. An answer from a source switched off is still collected and logged, but it moves no marker and reaches no one. The satellites always count — to stop sharing altogether, use the switch at the top.</string>
+    <string name="sources_button">Sources: %1$d of %2$d</string>
     <string name="jumps_forget">Forget the last place</string>
     <string name="jumps_forgotten">Forgotten</string>
 
@@ -51,10 +54,11 @@
     <string name="map_detail_found_by">Found by</string>
     <string name="map_detail_width">Width</string>
     <string name="found_satellites">The satellites</string>
-    <string name="found_assistance">Assistance over the network</string>
-    <string name="found_unheard">Satellites, none of them heard</string>
+    <string name="found_assistance">Towers and Wi-Fi</string>
+    <string name="found_unheard">Satellites with no measurements</string>
     <string name="found_other_radios">Towers and Wi-Fi</string>
     <string name="found_pretended">Another application on the phone</string>
+    <string name="found_unsaid">Source not stated</string>
     <string name="map_detail_battery">Battery</string>
     <string name="map_detail_position">Position</string>
     <string name="map_detail_coordinates" translatable="false">%1$.5f, %2$.5f</string>

@@ -70,10 +70,11 @@ export const EN = {
     foundBy: 'Found by',
     width: 'Width',
     foundSatellites: 'The satellites',
-    foundAssistance: 'Assistance over the network',
-    foundUnheard: 'Satellites, none of them heard',
+    foundAssistance: 'Towers and Wi-Fi',
+    foundUnheard: 'Satellites with no measurements',
     foundOtherRadios: 'Towers and Wi-Fi',
     foundPretended: 'Another application on the phone',
+    foundUnsaid: 'Source not stated',
 
     // How wide the phone said its answer is. The sign is what turns a distance
     // into a claim about where the marker might really be.

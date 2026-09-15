@@ -87,13 +87,14 @@ export const RU = {
     // Откуда взялось место и насколько широк ответ. Две строки рядом: слово
     // без ширины не отличает квартиру от района, а ширина без слова не
     // говорит, измерено это по небу или найдено в чьей-то базе.
-    foundBy: 'Откуда место',
+    foundBy: 'Откуда точка',
     width: 'Ширина',
     foundSatellites: 'Спутники',
-    foundAssistance: 'Подсказка по сети',
-    foundUnheard: 'Спутники, которых не слышно',
+    foundAssistance: 'Вышки и Wi-Fi',
+    foundUnheard: 'Спутники без измерений',
     foundOtherRadios: 'Вышки и Wi-Fi',
     foundPretended: 'Другое приложение на телефоне',
+    foundUnsaid: 'Источник не назван',
 
     // How wide the phone said its answer is. The sign is what turns a distance
     // into a claim about where the marker might really be.

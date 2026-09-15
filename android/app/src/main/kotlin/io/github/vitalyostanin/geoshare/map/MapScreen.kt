@@ -239,6 +239,16 @@ fun MapScreen(
                 modifier = Modifier.fillMaxSize(),
             )
 
+            SourcePicker(
+                leftOut = settings.sourcesLeftOut,
+                onSourceUseChange = actions.onSourceUseChange,
+                modifier =
+                Modifier
+                    .align(Alignment.TopStart)
+                    .statusBarsPadding()
+                    .padding(12.dp),
+            )
+
             AccountButton(
                 displayName = ownDisplayName,
                 pictureUrl = ownPictureUrl,

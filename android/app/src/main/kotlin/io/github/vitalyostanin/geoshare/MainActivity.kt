@@ -63,6 +63,7 @@ import io.github.vitalyostanin.geoshare.service.JumpFilterSetting
 import io.github.vitalyostanin.geoshare.service.LanguageChoice
 import io.github.vitalyostanin.geoshare.service.SharingService
 import io.github.vitalyostanin.geoshare.service.SharingSetting
+import io.github.vitalyostanin.geoshare.service.SourcesSetting
 import io.github.vitalyostanin.geoshare.service.ThemeSetting
 import io.github.vitalyostanin.geoshare.service.darkWanted
 import io.github.vitalyostanin.geoshare.service.foundGroup
@@ -94,6 +95,7 @@ class MainActivity : AppCompatActivity() {
 
     /** Whether the member asked for the positions the phone cannot have reached to be left out. */
     private lateinit var jumps: JumpFilterSetting
+    private lateinit var sources: SourcesSetting
 
     /** What the member has answered about letting the application keep running. */
     private lateinit var backgroundWork: BackgroundWorkSetting
@@ -166,6 +168,7 @@ class MainActivity : AppCompatActivity() {
         appearance = ThemeSetting(this)
         backgroundWork = BackgroundWorkSetting(this)
         jumps = JumpFilterSetting(this)
+        sources = SourcesSetting(this)
         batteryFree = batteryUnrestricted(this)
 
         // Before anything is drawn: the window is what shows while the screen
@@ -192,6 +195,7 @@ class MainActivity : AppCompatActivity() {
                     var sharingOn by remember { mutableStateOf(sharing.enabled) }
                     var startupSet by remember { mutableStateOf(backgroundWork.startupSet) }
                     var jumpsFiltered by remember { mutableStateOf(jumps.enabled) }
+                    var sourcesLeftOut by remember { mutableStateOf(sources.leftOut) }
 
                     when (val current = state) {
                         // Signed in, the map is the application; the sign-in
@@ -243,6 +247,7 @@ class MainActivity : AppCompatActivity() {
                                     startupScreen = startupAvailable,
                                     startupSet = startupSet,
                                     jumpsFiltered = jumpsFiltered,
+                                    sourcesLeftOut = sourcesLeftOut,
                                     roster = roster,
                                     invitation = invitation,
                                 ),
@@ -264,6 +269,14 @@ class MainActivity : AppCompatActivity() {
                                     // to outlive this screen, since the phone
                                     // may not have a fix to answer it with
                                     // until minutes from now.
+                                    // The service reads the same store on
+                                    // every answer it gets, so the choice
+                                    // takes effect at the next fix rather
+                                    // than at the next restart.
+                                    onSourceUseChange = { source, counted ->
+                                        sources.use(source, counted)
+                                        sourcesLeftOut = sources.leftOut
+                                    },
                                     onForgetPlace = { jumps.askToForget() },
                                     onThemeChange = { wanted ->
                                         theme = wanted

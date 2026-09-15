@@ -22,6 +22,9 @@
 
     <string name="jumps_title">Отбрасывать невозможные места</string>
     <string name="jumps_explained">Там, где глушат спутники, телефону сообщают место, где он быть не может, и метка прыгает по карте. Так отбрасывается любое место, до которого пришлось бы добираться быстрее 200 км/ч.</string>
+    <string name="sources_title">Источники точки, которые учитывать</string>
+    <string name="sources_explained">Какие ответы телефон учитывает, определяя своё место. Ответ из выключенного источника по-прежнему собирается и попадает в журнал, но метку не двигает и никому не уходит. Спутники учитываются всегда — чтобы не делиться вовсе, есть переключатель наверху.</string>
+    <string name="sources_button">Источники: %1$d из %2$d</string>
     <string name="jumps_forget">Забыть последнее место</string>
     <string name="jumps_forgotten">Забыто</string>
 
@@ -37,13 +40,14 @@
     <string name="map_detail_last_seen">Обновлено</string>
     <string name="map_detail_at">Время</string>
     <string name="map_detail_mode">Режим</string>
-    <string name="map_detail_found_by">Откуда место</string>
+    <string name="map_detail_found_by">Откуда точка</string>
     <string name="map_detail_width">Ширина</string>
     <string name="found_satellites">Спутники</string>
-    <string name="found_assistance">Подсказка по сети</string>
-    <string name="found_unheard">Спутники, которых не слышно</string>
+    <string name="found_assistance">Вышки и Wi-Fi</string>
+    <string name="found_unheard">Спутники без измерений</string>
     <string name="found_other_radios">Вышки и Wi-Fi</string>
     <string name="found_pretended">Другое приложение на телефоне</string>
+    <string name="found_unsaid">Источник не назван</string>
     <string name="map_detail_battery">Заряд</string>
     <string name="map_detail_position">Координаты</string>
     <string name="map_detail_unknown">неизвестно</string>

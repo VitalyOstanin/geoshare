@@ -23,5 +23,21 @@ fun foundByLabel(foundBy: String?): Int = when (foundBy) {
     FoundBy.Unheard.name -> R.string.found_unheard
     FoundBy.OtherRadios.name -> R.string.found_other_radios
     FoundBy.Pretended.name -> R.string.found_pretended
+    FoundBy.Unsaid.name -> R.string.found_unsaid
     else -> R.string.map_detail_unknown
+}
+
+/**
+ * What each switch is called on the screen where it is set.
+ *
+ * One name per switch rather than per entry of [FoundBy]: the two ways of
+ * arriving at a place from the towers and the Wi-Fi are one thing to choose
+ * about, and the card is where the difference between them is told.
+ */
+@StringRes
+fun sourceChoiceLabel(choice: SourceChoice): Int = when (choice) {
+    SourceChoice.OtherRadios -> R.string.found_other_radios
+    SourceChoice.Unheard -> R.string.found_unheard
+    SourceChoice.Pretended -> R.string.found_pretended
+    SourceChoice.Unsaid -> R.string.found_unsaid
 }

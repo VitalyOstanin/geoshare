@@ -1,5 +1,6 @@
 package io.github.vitalyostanin.geoshare.map
 
+import io.github.vitalyostanin.geoshare.collection.SourceChoice
 import io.github.vitalyostanin.geoshare.membership.Roster
 import io.github.vitalyostanin.geoshare.permission.PermissionStep
 import io.github.vitalyostanin.geoshare.service.LanguageChoice
@@ -27,6 +28,14 @@ data class SettingsState(
     val sharedWith: Map<String, Instant>,
     /** Whether the phone leaves out the positions it cannot have reached. */
     val jumpsFiltered: Boolean,
+    /**
+     * The sources this phone does not take into account, by the name each is
+     * stored under.
+     *
+     * Empty for a phone counting every answer it gets, which is how one
+     * starts.
+     */
+    val sourcesLeftOut: Set<String>,
     /** Whether the phone leaves the application out of its battery saving. */
     val batteryUnrestricted: Boolean,
     /** Whether this phone has a startup list of its own to open. */
@@ -43,6 +52,7 @@ data class SettingsState(
 data class SettingsActions(
     val onSharingChange: (Boolean) -> Unit,
     val onJumpsFilteredChange: (Boolean) -> Unit,
+    val onSourceUseChange: (SourceChoice, Boolean) -> Unit,
     val onForgetPlace: () -> Unit,
     val onThemeChange: (ThemeChoice) -> Unit,
     val onLanguageChange: (LanguageChoice) -> Unit,

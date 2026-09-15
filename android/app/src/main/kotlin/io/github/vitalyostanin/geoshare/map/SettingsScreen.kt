@@ -31,6 +31,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import io.github.vitalyostanin.geoshare.R
+import io.github.vitalyostanin.geoshare.collection.SourceChoice
+import io.github.vitalyostanin.geoshare.collection.sourceChoiceLabel
 import io.github.vitalyostanin.geoshare.permission.PermissionStep
 import io.github.vitalyostanin.geoshare.service.LanguageChoice
 import io.github.vitalyostanin.geoshare.service.ThemeChoice
@@ -168,6 +170,13 @@ fun SettingsScreen(
 
             HorizontalDivider()
 
+            SourcesSection(
+                leftOut = settings.sourcesLeftOut,
+                onSourceUseChange = actions.onSourceUseChange,
+            )
+
+            HorizontalDivider()
+
             GroupSection(
                 roster = settings.roster,
                 ownMemberId = ownMemberId,
@@ -214,6 +223,55 @@ fun SettingsScreen(
             ) {
                 Text(text = stringResource(R.string.sign_out_action))
             }
+        }
+    }
+}
+
+/**
+ * Which sources of a position this phone takes into account.
+ *
+ * One switch per source rather than a single "only trust the satellites",
+ * because the sources are not a scale: an answer from the towers is a wide
+ * honest guess, one from an assistance service is a guess built on whatever
+ * the towers around the phone were told, and one another application put there
+ * is not a guess at all. Which of them are worth counting is a fact about the
+ * neighbourhood the phone is in, and the member is the one who knows it.
+ *
+ * Answers from a source switched off are still collected, weighed and logged;
+ * what stops is their counting towards where the phone is — see
+ * [io.github.vitalyostanin.geoshare.collection.SourceChoice] for what each
+ * switch covers and why the satellites have none.
+ */
+@Composable
+private fun SourcesSection(
+    leftOut: Set<String>,
+    onSourceUseChange: (SourceChoice, Boolean) -> Unit,
+) {
+    Text(
+        text = stringResource(R.string.sources_title),
+        style = MaterialTheme.typography.titleMedium,
+        modifier = Modifier.padding(start = 16.dp, top = 8.dp, end = 16.dp),
+    )
+
+    Text(
+        text = stringResource(R.string.sources_explained),
+        style = MaterialTheme.typography.bodySmall,
+        color = MaterialTheme.colorScheme.onSurfaceVariant,
+        modifier = Modifier.padding(start = 16.dp, end = 16.dp, bottom = 4.dp),
+    )
+
+    SourceChoice.entries.forEach { source ->
+        Row(
+            modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 4.dp),
+            horizontalArrangement = Arrangement.spacedBy(12.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Text(text = stringResource(sourceChoiceLabel(source)), modifier = Modifier.weight(1f))
+
+            Switch(
+                checked = source.name !in leftOut,
+                onCheckedChange = { counted -> onSourceUseChange(source, counted) },
+            )
         }
     }
 }
