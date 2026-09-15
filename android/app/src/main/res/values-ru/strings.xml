@@ -22,8 +22,8 @@
 
     <string name="jumps_title">Отбрасывать невозможные места</string>
     <string name="jumps_explained">Там, где глушат спутники, телефону сообщают место, где он быть не может, и метка прыгает по карте. Так отбрасывается любое место, до которого пришлось бы добираться быстрее 200 км/ч.</string>
-    <string name="sources_title">Источники точки, которые учитывать</string>
-    <string name="sources_explained">Какие ответы телефон учитывает, определяя свою точку. Ответ из выключенного источника по-прежнему собирается и попадает в журнал, но метку не двигает и никому не уходит. Там, где спутники глушат, разумно оставить только вышки и Wi-Fi: ответ шире, зато не подделан. Если выключить все, телефон не запишет ни одной точки.</string>
+    <string name="sources_title">Источники позиции, которые учитывать</string>
+    <string name="sources_explained">Какие ответы телефон учитывает, определяя свою позицию. Ответ из выключенного источника по-прежнему собирается и попадает в журнал, но метку не двигает и никому не уходит. Там, где спутники глушат, разумно оставить только вышки и Wi-Fi: ответ шире, зато не подделан. Если выключить все, телефон не запишет ни одной позиции.</string>
     <string name="sources_button">Источники: %1$d из %2$d</string>
     <string name="jumps_forget">Забыть последнее место</string>
     <string name="jumps_forgotten">Забыто</string>
@@ -41,8 +41,8 @@
     <string name="map_detail_at">Время позиции</string>
     <string name="map_detail_online">В сети</string>
     <string name="map_detail_mode">Режим</string>
-    <string name="map_detail_found_by">Откуда точка</string>
-    <string name="map_detail_width">Ширина</string>
+    <string name="map_detail_found_by">Откуда позиция</string>
+    <string name="map_detail_width">Точность</string>
     <string name="found_satellites">Спутники</string>
     <string name="found_assistance">Вышки и Wi-Fi</string>
     <string name="found_unheard">Спутники без измерений</string>
