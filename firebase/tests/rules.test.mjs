@@ -3,6 +3,7 @@
 // Run through tools/rules.sh, which starts the Firestore emulator around this
 // file. The emulator needs no project of our own: a project id starting with
 // "demo-" never reaches the real service.
+import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { after, before, beforeEach, describe, it } from 'node:test';
 
@@ -135,6 +136,98 @@ describe('positions', () => {
         const db = testEnv.authenticatedContext(ALICE).firestore();
 
         await assertFails(setDoc(doc(db, `groups/${GROUP}/positions/${ALICE}`), somePosition));
+    });
+
+    // The whole point of the three fields: a phone under a transmitter writes
+    // no positions at all, and its card has to say that rather than let the
+    // marker quietly get older.
+    it('a member says their answers are being left out', async () => {
+        const db = testEnv.authenticatedContext(ALICE).firestore();
+
+        await setDoc(positionOf(db, ALICE), positionFrom(ALICE));
+
+        await assertSucceeds(updateDoc(positionOf(db, ALICE), {
+            leftOutCount: 217,
+            leftOutReason: 'Drifted',
+            leftOutSince: new Date(),
+        }));
+    });
+
+    // What such a write leaves alone: the position and the moment the server
+    // stamped it. A marker whose writtenAt moved on while the phone wrote no
+    // position would stop ageing under a transmitter, and the age of a marker
+    // is what a reader decides by. The rules cannot forbid an owner to write
+    // their own document whole — nor should they — so what is checked here is
+    // that saying this much does not require it.
+    it('saying so leaves the position and its moment alone', async () => {
+        const db = testEnv.authenticatedContext(ALICE).firestore();
+
+        await setDoc(positionOf(db, ALICE), positionFrom(ALICE));
+
+        const before = await getDoc(positionOf(db, ALICE));
+
+        await assertSucceeds(updateDoc(positionOf(db, ALICE), {
+            leftOutCount: 5,
+            leftOutReason: 'Contradicted',
+            leftOutSince: new Date(),
+        }));
+
+        const after = await getDoc(positionOf(db, ALICE));
+
+        assert.deepEqual(after.data().writtenAt, before.data().writtenAt);
+        assert.equal(after.data().latitude, before.data().latitude);
+    });
+
+    // Nor may it move the phone: the coordinates of a position are written
+    // whole or not at all.
+    it('saying so does not move the position', async () => {
+        const db = testEnv.authenticatedContext(ALICE).firestore();
+
+        await setDoc(positionOf(db, ALICE), positionFrom(ALICE));
+
+        await assertFails(updateDoc(positionOf(db, ALICE), {
+            leftOutCount: 5,
+            latitude: 61.5,
+        }));
+    });
+
+    it('a count of answers left out is held to a number', async () => {
+        const db = testEnv.authenticatedContext(ALICE).firestore();
+
+        await setDoc(positionOf(db, ALICE), positionFrom(ALICE));
+
+        await assertFails(updateDoc(positionOf(db, ALICE), { leftOutCount: 'many' }));
+    });
+
+    // The reason is shown on everybody's card, so it is held to the length of
+    // a word rather than left to be a sentence of somebody's choosing.
+    it('a reason longer than a word is refused', async () => {
+        const db = testEnv.authenticatedContext(ALICE).firestore();
+
+        await setDoc(positionOf(db, ALICE), positionFrom(ALICE));
+
+        await assertFails(updateDoc(positionOf(db, ALICE), {
+            leftOutReason: 'the answers have walked away from a phone nobody touched',
+        }));
+    });
+
+    it("a member cannot say another member's answers are being left out", async () => {
+        const db = testEnv.authenticatedContext(ALICE).firestore();
+
+        await assertFails(updateDoc(positionOf(db, BOB), { leftOutCount: 3 }));
+    });
+
+    // A phone whose answers were being thrown out before it ever wrote a
+    // position has nowhere to say so: a document of these fields alone would
+    // be a marker with no coordinates on everybody's map.
+    it('there is nowhere to say it before a position has been written', async () => {
+        const db = testEnv.authenticatedContext(ALICE).firestore();
+
+        await assertFails(setDoc(positionOf(db, ALICE, 'fresh'), {
+            memberId: ALICE,
+            leftOutCount: 3,
+            leftOutReason: 'Drifted',
+        }));
     });
 
     it("a member cannot write another member's position", async () => {

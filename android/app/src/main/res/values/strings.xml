@@ -59,6 +59,20 @@
     <string name="found_other_radios">Towers and Wi-Fi</string>
     <string name="found_pretended">Another application on the phone</string>
     <string name="found_unsaid">Source not stated</string>
+    <string name="map_detail_left_out">Left out</string>
+    <string name="map_detail_left_out_reason">Last reason</string>
+    <string name="map_detail_left_out_answers">%1$d answers</string>
+    <string name="left_out_drifted">Walked away from an untouched phone</string>
+    <string name="left_out_contradicted">The towers say otherwise</string>
+    <string name="left_out_width">Wider than a district</string>
+    <string name="left_out_speed">No such speed is possible</string>
+    <string name="left_out_contradiction">Two places at one time</string>
+    <string name="left_out_false_place">A known false place</string>
+    <string name="left_out_unmoved">The phone was not moved</string>
+    <string name="left_out_circling">The answers go round a circle</string>
+    <string name="left_out_one_band">Only one band is heard</string>
+    <string name="left_out_repeating">The answer repeats itself</string>
+    <string name="left_out_by_source">You switched this source off</string>
     <string name="map_detail_battery">Battery</string>
     <string name="map_detail_position">Position</string>
     <string name="map_detail_coordinates" translatable="false">%1$.5f, %2$.5f</string>

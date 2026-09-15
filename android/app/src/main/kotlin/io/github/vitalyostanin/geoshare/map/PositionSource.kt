@@ -178,6 +178,12 @@ private fun positionOf(document: DocumentSnapshot): MemberPosition? {
         charging = document.getBoolean(PositionField.CHARGING) ?: false,
         accuracyMetres = widthOf(document),
         foundBy = document.getString(PositionField.FOUND_BY),
+        leftOutCount = document.getLong(PositionField.LEFT_OUT_COUNT)?.toInt(),
+        leftOutReason = document.getString(PositionField.LEFT_OUT_REASON),
+        leftOutSince =
+        document
+            .getTimestamp(PositionField.LEFT_OUT_SINCE)
+            ?.let { Instant.ofEpochSecond(it.seconds, it.nanoseconds.toLong()) },
     )
 }
 

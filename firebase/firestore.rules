@@ -396,7 +396,8 @@ service cloud.firestore {
           return request.resource.data.keys()
                    .hasOnly(['memberId', 'deviceName', 'latitude', 'longitude',
                              'takenAt', 'writtenAt', 'mode', 'batteryPercent', 'charging',
-                             'accuracyMetres', 'foundBy']) &&
+                             'accuracyMetres', 'foundBy',
+                             'leftOutCount', 'leftOutReason', 'leftOutSince']) &&
                  request.resource.data.memberId == request.auth.uid &&
                  request.resource.data.latitude is number &&
                  request.resource.data.latitude >= -90 &&
@@ -447,8 +448,51 @@ service cloud.firestore {
         // client sends. So a reader walks the roster instead: the grant of a
         // member names their devices, and each of those is a document read by
         // name.
+        // What a phone says while its answers are being thrown away, and it is
+        // therefore writing no positions at all. Without it a phone under a
+        // transmitter is indistinguishable from a phone in a drawer: both stop
+        // writing, and the marker of each quietly gets older.
+        //
+        // The count is held to a number a run of answers can reach — seven
+        // seconds apart, a day of them is twelve thousand — and the reason to
+        // the length of a word, for the same reason the mode and the source
+        // are: a reader shows it.
+        function leftOutShape() {
+          return (!('leftOutCount' in request.resource.data) ||
+                  (request.resource.data.leftOutCount is int &&
+                   request.resource.data.leftOutCount >= 0 &&
+                   request.resource.data.leftOutCount <= 100000)) &&
+                 (!('leftOutReason' in request.resource.data) ||
+                  (request.resource.data.leftOutReason is string &&
+                   request.resource.data.leftOutReason.size() <= 20)) &&
+                 (!('leftOutSince' in request.resource.data) ||
+                  request.resource.data.leftOutSince is timestamp);
+        }
+
+        // Those three fields and nothing else, on a document already there.
+        //
+        // Stated as a way of its own rather than folded into the shape above,
+        // because such a write leaves the position where it is — coordinates,
+        // the moment they were taken and the moment the server stamped all
+        // stay as they were. The whole-document shape cannot allow that: it
+        // holds `writtenAt` to the server's clock of this very request, so a
+        // phone saying this much through it would have to renew the moment of
+        // a position it did not take. A marker whose `writtenAt` moved on
+        // while the phone wrote nothing would stop ageing under a
+        // transmitter, and the age of a marker is what a reader decides by.
+        //
+        // An owner writing their own document whole is a different matter and
+        // stays allowed: what this branch removes is the need to.
+        function onlyTheLeftOutChanged() {
+          return resource != null &&
+                 request.resource.data.diff(resource.data).affectedKeys()
+                   .hasOnly(['leftOutCount', 'leftOutReason', 'leftOutSince']);
+        }
+
         allow get: if isMember() && (ownsPosition() || mayRead());
-        allow create, update: if ownsPosition() && positionShape();
+        allow create, update: if ownsPosition() &&
+                                 ((positionShape() && leftOutShape()) ||
+                                  (onlyTheLeftOutChanged() && leftOutShape()));
         // Stated apart from the write: a deletion carries no document whose
         // owner could be checked.
         allow delete: if ownsPosition();

@@ -55,6 +55,7 @@ import androidx.compose.ui.unit.dp
 import io.github.vitalyostanin.geoshare.R
 import io.github.vitalyostanin.geoshare.collection.Watcher
 import io.github.vitalyostanin.geoshare.collection.foundByLabel
+import io.github.vitalyostanin.geoshare.collection.leftOutReasonLabel
 import io.github.vitalyostanin.geoshare.collection.modeLabel
 import io.github.vitalyostanin.geoshare.collection.modesExplained
 import io.github.vitalyostanin.geoshare.collection.watchingMembers
@@ -610,6 +611,21 @@ private fun widthColour(wide: Boolean): Color = when {
 }
 
 /**
+ * The colour the left-out rows are written in: the same ochre a wide answer
+ * wears.
+ *
+ * Ochre rather than red for the same reason as there — what these rows report
+ * is not a fault of the phone, and nothing about them is to be acted on in the
+ * next minute. What they are for is to stop an old marker being read as a
+ * phone that has gone quiet.
+ */
+@Composable
+private fun leftOutColour(): Color = when {
+    MaterialTheme.colorScheme.surface.luminance() < HALF_LIT -> WIDE_NIGHT
+    else -> WIDE_DAY
+}
+
+/**
  * The colour a charge is written in: green while the phone is on a charger.
  *
  * The colour rather than a mark next to the number: a percentage that is
@@ -808,6 +824,29 @@ private fun MemberDetail(
 
             DetailRow(R.string.map_detail_last_seen, ageText(positionAge(member.knownAt, now)))
             DetailRow(R.string.map_detail_at, momentText(member.knownAt))
+            // Only while it is happening. A phone getting its answers through
+            // is a phone with nothing to explain, and two rows saying nought
+            // would be two rows of noise on every card in the household.
+            //
+            // Placed directly under the age, because that is the reading these
+            // two correct: an old marker on its own says the phone has gone
+            // quiet, and these say it is working and being talked over.
+            member.leftOutCount?.takeIf { it > 0 }?.let { count ->
+                DetailRow(R.string.map_detail_left_out) {
+                    Text(
+                        text = stringResource(R.string.map_detail_left_out_answers, count),
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = leftOutColour(),
+                    )
+                }
+                DetailRow(R.string.map_detail_left_out_reason) {
+                    Text(
+                        text = stringResource(leftOutReasonLabel(member.leftOutReason)),
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = leftOutColour(),
+                    )
+                }
+            }
             DetailRow(R.string.map_detail_mode) {
                 var helpOpen by remember { mutableStateOf(false) }
 

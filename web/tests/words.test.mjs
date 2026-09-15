@@ -42,6 +42,16 @@ test('a counted member takes the ending the count asks for', () => {
     assert.equal(RU.members(11), '11 участников');
 });
 
+// The same three forms for the answers a phone threw away, which is a count
+// shown on a card while a spoof is running.
+test('a count of left-out answers takes the ending the count asks for', () => {
+    assert.equal(RU.leftOutAnswers(1), '1 ответ');
+    assert.equal(RU.leftOutAnswers(2), '2 ответа');
+    assert.equal(RU.leftOutAnswers(5), '5 ответов');
+    assert.equal(RU.leftOutAnswers(21), '21 ответ');
+    assert.equal(RU.leftOutAnswers(11), '11 ответов');
+});
+
 test('an age takes the ending its unit and count ask for', () => {
     assert.equal(RU.ago(1, 'minutes'), '1 минуту назад');
     assert.equal(RU.ago(3, 'minutes'), '3 минуты назад');

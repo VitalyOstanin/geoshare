@@ -21,7 +21,7 @@ import { openModeHelp } from './mode-help.js';
 import { markerOrder } from './stacking.js';
 import { modeText } from './modes.js';
 import { accuracyRing, widthText } from './width.js';
-import { foundText } from './found.js';
+import { foundText, leftOutText } from './found.js';
 import { WORDS } from './words.js';
 
 /** The ring around the marker being looked at: the fill, the line, the source. */
@@ -763,6 +763,17 @@ function detail(position, name, faces, now) {
         // viewer assumed.
         [WORDS.at, timeText(position.positionAt)],
         [WORDS.online, timeText(position.knownAt)],
+        // Only while it is happening, and directly under the two moments,
+        // because that is the reading these correct: an old marker on its own
+        // says the phone has gone quiet, and these say it is working and being
+        // talked over. A phone whose answers get through has nothing to
+        // explain, and rows saying nought would stand on every card.
+        ...(position.leftOutCount > 0
+            ? [
+                [WORDS.leftOut, WORDS.leftOutAnswers(position.leftOutCount)],
+                [WORDS.leftOutReason, leftOutText(position.leftOutReason)],
+            ]
+            : []),
         [WORDS.mode, modeButton(position.mode)],
         // How the phone arrived at the answer, and how wide it called it. The
         // two rows stand together: a word without a width does not separate

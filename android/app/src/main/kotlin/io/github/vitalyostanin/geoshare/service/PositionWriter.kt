@@ -7,6 +7,7 @@ import io.github.vitalyostanin.geoshare.collection.CollectionMode
 import io.github.vitalyostanin.geoshare.collection.Fix
 import io.github.vitalyostanin.geoshare.collection.FoundBy
 import kotlinx.coroutines.tasks.await
+import java.time.Instant
 import java.util.Date
 
 /** The one group this build shares within; membership is edited outside the application. */
@@ -71,6 +72,35 @@ class PositionWriter(
         positionsOf(store)
             .document(positionId(memberId, device.id))
             .set(position)
+            .await()
+    }
+
+    /**
+     * Says that answers are arriving and being left out.
+     *
+     * Written into the phone's own position document, beside a position that
+     * is by then out of date: the point of it is precisely that the position
+     * is not being renewed. Nothing else in the document is touched — the
+     * coordinates, the moment they were taken at and the moment the server
+     * stamped all stay as they were, so the marker goes on ageing honestly
+     * while the card explains why.
+     *
+     * An update rather than a write of the whole document, and one that fails
+     * where there is nothing to update: a phone whose answers were being
+     * thrown out before it ever wrote a position has nowhere to say so, and
+     * inventing a document without coordinates would put a marker nowhere on
+     * everybody's map. The caller treats a failure as nothing happening.
+     */
+    suspend fun noteLeftOut(count: Int, reason: String, since: Instant) {
+        positionsOf(store)
+            .document(positionId(memberId, device.id))
+            .update(
+                mapOf(
+                    PositionField.LEFT_OUT_COUNT to count,
+                    PositionField.LEFT_OUT_REASON to reason,
+                    PositionField.LEFT_OUT_SINCE to Timestamp(Date.from(since)),
+                ),
+            )
             .await()
     }
 

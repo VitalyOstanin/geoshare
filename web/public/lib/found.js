@@ -36,3 +36,34 @@ export function foundText(found) {
 
     return FOUND_WORDS[found] ?? WORDS.unknown;
 }
+
+/**
+ * What each reason for leaving an answer out is called on a card.
+ *
+ * The same arrangement as the sources above: the document carries the word the
+ * phone wrote — an entry of `JumpReason`, or `Source` for an answer whose
+ * source the member switched off — and each client says it in its own
+ * language. The Android client keeps the same names.
+ */
+const LEFT_OUT_WORDS = {
+    Drifted: WORDS.leftOutDrifted,
+    Contradicted: WORDS.leftOutContradicted,
+    Width: WORDS.leftOutWidth,
+    Speed: WORDS.leftOutSpeed,
+    Contradiction: WORDS.leftOutContradiction,
+    FalsePlace: WORDS.leftOutFalsePlace,
+    Unmoved: WORDS.leftOutUnmoved,
+    Circling: WORDS.leftOutCircling,
+    OneBand: WORDS.leftOutOneBand,
+    Repeating: WORDS.leftOutRepeating,
+    Source: WORDS.leftOutBySource,
+};
+
+/** The words for a reason, or the unknown for anything this build cannot name. */
+export function leftOutText(reason) {
+    if (!reason) {
+        return WORDS.unknown;
+    }
+
+    return LEFT_OUT_WORDS[reason] ?? WORDS.unknown;
+}

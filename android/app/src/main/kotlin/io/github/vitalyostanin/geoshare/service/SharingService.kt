@@ -27,6 +27,7 @@ import io.github.vitalyostanin.geoshare.collection.Fix
 import io.github.vitalyostanin.geoshare.collection.FoundBy
 import io.github.vitalyostanin.geoshare.collection.IDLE_REPEAT
 import io.github.vitalyostanin.geoshare.collection.JumpReason
+import io.github.vitalyostanin.geoshare.collection.LEFT_OUT_BY_SOURCE
 import io.github.vitalyostanin.geoshare.collection.Moving
 import io.github.vitalyostanin.geoshare.collection.PutDown
 import io.github.vitalyostanin.geoshare.collection.SECOND_OPINION_ASKED_EVERY
@@ -111,6 +112,16 @@ private val DISAGREEMENT_SAID_EVERY: Duration = Duration.ofMinutes(1)
  * keeps reaching it, which is when the rows are worth their room.
  */
 private val SKY_NOTED_WHILE_SILENT: Duration = Duration.ofSeconds(30)
+
+/**
+ * How often the group is told that this phone's answers are being left out.
+ *
+ * Once a minute. Under a transmitter an answer arrives every seven seconds,
+ * and telling the database about each of them would spend its free daily
+ * allowance in an afternoon; what a reader wants from the field is whether
+ * this is happening and roughly how much of it, and a minute answers that.
+ */
+private val LEFT_OUT_TOLD_EVERY: Duration = Duration.ofMinutes(1)
 
 /**
  * A position as it goes into the document: where the phone was, and whether
@@ -260,6 +271,23 @@ class SharingService : LifecycleService() {
     private var walkStarted: Instant? = null
 
     private var walkedFrom: Fix? = null
+
+    /**
+     * The run of answers left out since the last position was written: how
+     * many, why the last one was, when the run began and when the group was
+     * last told about it.
+     *
+     * Kept so that the card of a phone under a transmitter can say what is
+     * happening to it. Everything here is cleared by a position being written,
+     * because a written position is the run ending.
+     */
+    private var leftOutCount = 0
+
+    private var leftOutReason: String? = null
+
+    private var leftOutSince: Instant? = null
+
+    private var leftOutToldAt: Instant? = null
 
     /**
      * Whether this phone has sensors to ask at all.
@@ -552,6 +580,8 @@ class SharingService : LifecycleService() {
             candidate = fix
             jumpsInARow += 1
 
+            tellThemAnswersAreBeingLeftOut(writer, jump.name)
+
             askTheOtherRadios(writer, mode)
 
             return false
@@ -568,6 +598,8 @@ class SharingService : LifecycleService() {
                 "left out a position found by ${whence.said}: " +
                     "this phone was told not to take that source into account",
             )
+
+            tellThemAnswersAreBeingLeftOut(writer, LEFT_OUT_BY_SOURCE)
 
             return false
         }
@@ -596,6 +628,7 @@ class SharingService : LifecycleService() {
         lastFix = fix
         lastWritten = written
         wroteAt = Instant.now()
+        forgetTheAnswersLeftOut()
         rememberThePlace(fix)
         anchorWhereItLies(fix)
 
@@ -803,6 +836,60 @@ class SharingService : LifecycleService() {
         }
 
         putDown = settled
+    }
+
+    /**
+     * Tells the group that answers are arriving and being thrown away.
+     *
+     * The count and the reason go into the phone's own position document, so
+     * that a reader sees a phone being lied to rather than a phone that has
+     * gone quiet. Nothing else in the document is touched: the coordinates
+     * stay as old as they are.
+     *
+     * Said at most once every [LEFT_OUT_TOLD_EVERY] however fast the answers
+     * come. Under a transmitter an answer arrives every seven seconds, and a
+     * write for each of them would spend the day's free allowance of the
+     * database in an afternoon — while saying nothing a minute's worth of
+     * counting does not say just as well.
+     *
+     * A failure is nothing happening: a phone whose answers were being thrown
+     * out before it ever wrote a position has no document to add this to, and
+     * that is the one case the write fails in.
+     */
+    private suspend fun tellThemAnswersAreBeingLeftOut(writer: PositionWriter, reason: String) {
+        val now = Instant.now()
+
+        leftOutCount += 1
+        leftOutReason = reason
+
+        if (leftOutSince == null) {
+            leftOutSince = now
+        }
+
+        val told = leftOutToldAt
+
+        if (told != null && Duration.between(told, now) < LEFT_OUT_TOLD_EVERY) {
+            return
+        }
+
+        leftOutToldAt = now
+
+        runCatching { writer.noteLeftOut(leftOutCount, reason, leftOutSince ?: now) }
+            .onFailure { AppLog.i(TAG, "nowhere to say answers are being left out yet") }
+    }
+
+    /**
+     * Forgets the run of left-out answers, because a position has been
+     * written.
+     *
+     * The document itself needs no clearing: it is written whole, and the
+     * three fields simply stop being in it.
+     */
+    private fun forgetTheAnswersLeftOut() {
+        leftOutCount = 0
+        leftOutReason = null
+        leftOutSince = null
+        leftOutToldAt = null
     }
 
     /**

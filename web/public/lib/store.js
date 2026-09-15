@@ -231,6 +231,12 @@ function positionOf(snapshot) {
         // Absent in what the older builds wrote, which is a source not known
         // rather than a position arrived at by no means at all.
         foundBy: typeof data.foundBy === 'string' ? data.foundBy : null,
+        // How many answers this phone has thrown away since it wrote this
+        // position, and why the last of them went. A phone under a
+        // transmitter writes nothing at all, and without these its marker
+        // simply gets older — which is what a phone in a drawer does too.
+        leftOutCount: typeof data.leftOutCount === 'number' ? data.leftOutCount : null,
+        leftOutReason: typeof data.leftOutReason === 'string' ? data.leftOutReason : null,
     };
 }
 

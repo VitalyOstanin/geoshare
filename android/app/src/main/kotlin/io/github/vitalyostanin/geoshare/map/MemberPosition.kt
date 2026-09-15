@@ -48,6 +48,20 @@ data class MemberPosition(
      * source is not known rather than one arrived at by no means at all.
      */
     val foundBy: String? = null,
+    /**
+     * How many answers this phone has left out since it wrote this position.
+     *
+     * Nought — and for the builds that wrote no such field, missing — means
+     * nothing is being thrown away and the position is simply the latest one.
+     * A number here says the phone is working, getting answers and refusing
+     * them, which is what being lied to looks like from the outside; without
+     * it such a phone is indistinguishable from one in a drawer.
+     */
+    val leftOutCount: Int? = null,
+    /** Why the last of them was left out, in the word the phone wrote. */
+    val leftOutReason: String? = null,
+    /** When the run of left-out answers began. */
+    val leftOutSince: Instant? = null,
 ) {
     /**
      * The moment the age is counted from.

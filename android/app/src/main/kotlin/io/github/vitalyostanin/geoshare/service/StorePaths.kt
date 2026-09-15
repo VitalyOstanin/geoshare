@@ -130,6 +130,30 @@ object PositionField {
      * wrote is the key, and each client says it in its own language.
      */
     const val FOUND_BY = "foundBy"
+
+    /**
+     * How many answers have been left out since the last position was written.
+     *
+     * The field that tells a phone being lied to from a phone that is off. A
+     * phone under a transmitter writes nothing — every answer it gets is
+     * thrown out by one rule or another — and from the outside that is exactly
+     * what a phone in a drawer looks like: a marker quietly getting older. The
+     * count says the phone is there, working, and being talked over.
+     */
+    const val LEFT_OUT_COUNT = "leftOutCount"
+
+    /**
+     * Why the last answer was left out, as one of the words of `JumpReason` or
+     * the word for a source the member has switched off.
+     *
+     * The key rather than a sentence, for the same reason as [FOUND_BY]: each
+     * client says it in its own language, and a word from a newer build is
+     * shown as it came rather than mistranslated.
+     */
+    const val LEFT_OUT_REASON = "leftOutReason"
+
+    /** When the run of left-out answers began, by the server's clock. */
+    const val LEFT_OUT_SINCE = "leftOutSince"
 }
 
 /** The fields of a member's profile. */

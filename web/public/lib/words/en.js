@@ -76,6 +76,24 @@ export const EN = {
     foundPretended: 'Another application on the phone',
     foundUnsaid: 'Source not stated',
 
+    // What the phone has thrown away since the last position it wrote. The
+    // rows appear only while it is happening: a phone whose answers get
+    // through has nothing to explain.
+    leftOut: 'Left out',
+    leftOutReason: 'Last reason',
+    leftOutAnswers: (count) => (count === 1 ? '1 answer' : `${count} answers`),
+    leftOutDrifted: 'Walked away from an untouched phone',
+    leftOutContradicted: 'The towers say otherwise',
+    leftOutWidth: 'Wider than a district',
+    leftOutSpeed: 'No such speed is possible',
+    leftOutContradiction: 'Two places at one time',
+    leftOutFalsePlace: 'A known false place',
+    leftOutUnmoved: 'The phone was not moved',
+    leftOutCircling: 'The answers go round a circle',
+    leftOutOneBand: 'Only one band is heard',
+    leftOutRepeating: 'The answer repeats itself',
+    leftOutBySource: 'You switched this source off',
+
     // How wide the phone said its answer is. The sign is what turns a distance
     // into a claim about where the marker might really be.
     widthMetres: (count) => `±${count} m`,

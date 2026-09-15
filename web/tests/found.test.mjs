@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 
-import { foundText } from '../public/lib/found.js';
+import { foundText, leftOutText } from '../public/lib/found.js';
 import { WORDS } from '../public/lib/words.js';
 
 // The English name of a source is close to the entry the phone writes, so
@@ -35,4 +35,39 @@ test('a position from before the source was written says so', () => {
 // language something it has a word for.
 test('a source this build has never heard of is shown as unknown', () => {
     assert.equal(foundText('Lighthouse'), WORDS.unknown);
+});
+
+// The same check for the other list of words a phone writes: why an answer was
+// left out. A reason missing from the dictionary would be shown as unknown on
+// every card, and nothing else would go wrong to say so.
+test('every reason a phone writes is named by the dictionary', () => {
+    const reasons = {
+        Drifted: 'leftOutDrifted',
+        Contradicted: 'leftOutContradicted',
+        Width: 'leftOutWidth',
+        Speed: 'leftOutSpeed',
+        Contradiction: 'leftOutContradiction',
+        FalsePlace: 'leftOutFalsePlace',
+        Unmoved: 'leftOutUnmoved',
+        Circling: 'leftOutCircling',
+        OneBand: 'leftOutOneBand',
+        Repeating: 'leftOutRepeating',
+        Source: 'leftOutBySource',
+    };
+
+    for (const [reason, key] of Object.entries(reasons)) {
+        const named = WORDS[key];
+
+        assert.ok(named, `${reason} has no name in the dictionary`);
+        assert.equal(leftOutText(reason), named);
+    }
+});
+
+test('a position with nothing left out names no reason', () => {
+    assert.equal(leftOutText(null), WORDS.unknown);
+    assert.equal(leftOutText(undefined), WORDS.unknown);
+});
+
+test('a reason this build has never heard of is shown as unknown', () => {
+    assert.equal(leftOutText('Sunspots'), WORDS.unknown);
 });
