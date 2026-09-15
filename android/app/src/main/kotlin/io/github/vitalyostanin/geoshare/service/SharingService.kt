@@ -742,8 +742,25 @@ class SharingService : LifecycleService() {
             return
         }
 
-        putDown = putDownAt(believed, lastStir, sensorsTell, Instant.now(), stepsNow)
+        val settled = putDownAt(believed, lastStir, sensorsTell, Instant.now(), stepsNow)
+
+        // Said once per anchor rather than per fix: what this line answers is
+        // whether the rule is awake at all on a given phone, and a phone
+        // standing still would otherwise repeat it every few minutes.
+        if (settled?.at != putDown?.at) {
+            AppLog.i(
+                TAG,
+                settled?.let { "the phone is standing where it was put down, at ${theSpot(it)}" }
+                    ?: "nothing to anchor on: the phone has been moved too recently",
+            )
+        }
+
+        putDown = settled
     }
+
+    /** Where an anchor stands, for the one line that says it was set. */
+    private fun theSpot(anchor: PutDown): String =
+        "%.5f,%.5f".format(Locale.ROOT, anchor.at.latitude, anchor.at.longitude)
 
     /**
      * Keeps the moment the phone was last carried anywhere.
