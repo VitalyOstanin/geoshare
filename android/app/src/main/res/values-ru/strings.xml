@@ -60,6 +60,7 @@
     <string name="left_out_unmoved">Телефон не двигали</string>
     <string name="left_out_circling">Ответы ходят по кругу</string>
     <string name="left_out_one_band">Слышна одна полоса</string>
+    <string name="left_out_one_transmitter">Небо от одного передатчика</string>
     <string name="left_out_repeating">Ответ повторяется</string>
     <string name="left_out_by_source">Источник выключен на устройстве</string>
     <string name="left_out_by_source_named">Источник выключен на устройстве: %1$s</string>

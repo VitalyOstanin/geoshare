@@ -211,6 +211,36 @@ class JumpsTest {
         )
     }
 
+    // The phone that hears the far band not at all rather than hears it and
+    // leaves it out: the other rule stays silent there, because it asks for
+    // GLONASS to have been heard. See OneTransmitter.kt for the measurements.
+    @Test
+    fun `a sky from one transmitter is caught where the one-band rule is silent`() {
+        assertEquals(
+            JumpReason.OneTransmitter,
+            whyAJump(
+                null,
+                fixAt(61.11719, 5.39843, 0, accuracy = 57.0),
+                restsOn = mapOf(Constellation.Gps to Counted(heard = 12, usedInFix = 11)),
+                skySays = SkySays(shape = SkyShape.Flat, otherBandSilent = true),
+            ),
+        )
+    }
+
+    @Test
+    fun `a flat sky with the far band still heard is not held against the fix`() {
+        val first = fixAt(61.03268, 4.40299, 0, accuracy = 60.0)
+        val second = fixAt(61.03270, 4.40305, 60, accuracy = 80.0)
+
+        assertNull(
+            whyAJump(
+                first,
+                second,
+                skySays = SkySays(shape = SkyShape.Flat, otherBandSilent = false),
+            ),
+        )
+    }
+
     @Test
     fun `a fix the other band is in passes, epoch and all`() {
         val first = fixAt(61.03268, 4.40299, 0, accuracy = 60.0)

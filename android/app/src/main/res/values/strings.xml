@@ -71,6 +71,7 @@
     <string name="left_out_unmoved">The phone was not moved</string>
     <string name="left_out_circling">The answers go round a circle</string>
     <string name="left_out_one_band">Only one band is heard</string>
+    <string name="left_out_one_transmitter">The sky came from one transmitter</string>
     <string name="left_out_repeating">The answer repeats itself</string>
     <string name="left_out_by_source">The source is switched off on the phone</string>
     <string name="left_out_by_source_named">Switched off on the phone: %1$s</string>

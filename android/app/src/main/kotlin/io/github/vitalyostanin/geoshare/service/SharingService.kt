@@ -546,6 +546,7 @@ class SharingService : LifecycleService() {
                     falsePlaces,
                     circleLimits,
                     restsOn = restsOn,
+                    skySays = radio.skySays(),
                     putDown = putDown,
                     carrying = carryingSince(putDown, stirsHeard, sensorsTell),
                 )
@@ -1551,6 +1552,8 @@ class SharingService : LifecycleService() {
         JumpReason.Repeating -> "by the road being gone round again: ${theRouteRepeated()}"
 
         JumpReason.OneBand -> "by what it rests on: ${theBandItRestsOn()}"
+
+        JumpReason.OneTransmitter -> "by the sky it was built out of: ${theSkyItCameFrom()}"
     }
 
     /**
@@ -1565,6 +1568,20 @@ class SharingService : LifecycleService() {
             "%d satellites of the GPS band and none of the %d GLONASS heard",
             makeup.bandInFix,
             makeup.glonassHeard,
+        )
+    }
+
+    /**
+     * Why the sky reads as one transmitter's, for the line that says a fix was
+     * left out.
+     */
+    private fun theSkyItCameFrom(): String {
+        val says = radio.skySays()
+
+        return String.format(
+            Locale.ROOT,
+            "the loudness %s and the far band silent",
+            says.shape.toString().lowercase(),
         )
     }
 

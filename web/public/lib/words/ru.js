@@ -111,6 +111,7 @@ export const RU = {
     leftOutUnmoved: 'Телефон не двигали',
     leftOutCircling: 'Ответы ходят по кругу',
     leftOutOneBand: 'Слышна одна полоса',
+    leftOutOneTransmitter: 'Небо от одного передатчика',
     leftOutRepeating: 'Ответ повторяется',
     leftOutBySource: 'Источник выключен на устройстве',
     leftOutBySourceNamed: (source) => `Источник выключен на устройстве: ${source}`,

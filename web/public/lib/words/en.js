@@ -91,6 +91,7 @@ export const EN = {
     leftOutUnmoved: 'The phone was not moved',
     leftOutCircling: 'The answers go round a circle',
     leftOutOneBand: 'Only one band is heard',
+    leftOutOneTransmitter: 'The sky came from one transmitter',
     leftOutRepeating: 'The answer repeats itself',
     leftOutBySource: 'The source is switched off on the phone',
     leftOutBySourceNamed: (source) => `Switched off on the phone: ${source}`,

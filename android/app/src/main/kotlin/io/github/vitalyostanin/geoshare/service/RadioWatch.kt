@@ -24,6 +24,8 @@ import io.github.vitalyostanin.geoshare.collection.NavSoFar
 import io.github.vitalyostanin.geoshare.collection.SHARE_THE_GPS_BAND
 import io.github.vitalyostanin.geoshare.collection.SLANT_MIN_SATELLITES
 import io.github.vitalyostanin.geoshare.collection.Satellite
+import io.github.vitalyostanin.geoshare.collection.SkySays
+import io.github.vitalyostanin.geoshare.collection.SkyShape
 import io.github.vitalyostanin.geoshare.collection.Slant
 import io.github.vitalyostanin.geoshare.collection.acrossTheBand
 import io.github.vitalyostanin.geoshare.collection.counted
@@ -33,9 +35,11 @@ import io.github.vitalyostanin.geoshare.collection.inOrder
 import io.github.vitalyostanin.geoshare.collection.interferenceFrom
 import io.github.vitalyostanin.geoshare.collection.loudnessPerBand
 import io.github.vitalyostanin.geoshare.collection.navConstellation
+import io.github.vitalyostanin.geoshare.collection.presenceOf
 import io.github.vitalyostanin.geoshare.collection.reported
 import io.github.vitalyostanin.geoshare.collection.shapeOf
 import io.github.vitalyostanin.geoshare.collection.slantOf
+import io.github.vitalyostanin.geoshare.collection.theOtherBandIsSilent
 import io.github.vitalyostanin.geoshare.collection.whatTheBandsSay
 import io.github.vitalyostanin.geoshare.collection.word
 import io.github.vitalyostanin.geoshare.log.AppLog
@@ -115,6 +119,11 @@ class RadioWatch(private val context: Context) {
     // shape the sky either has or has not — see Slant.kt. Ten epochs deep,
     // because that is what a verdict is read from.
     private val shapes = mutableMapOf<Constellation, ArrayDeque<Slant>>()
+
+    // Whether the band a transmitter on the ground cannot reach was silent,
+    // epoch by epoch. Kept beside the shapes because the two are read
+    // together and neither is worth acting on alone — see OneTransmitter.kt.
+    private val silences = ArrayDeque<Boolean>()
 
     // The last epoch of each, kept whole rather than averaged: the averages
     // answer whether anything is going on, and these are what a person looks
@@ -196,6 +205,22 @@ class RadioWatch(private val context: Context) {
             moved(loudness[Constellation.Glonass] ?: NOTHING),
         )
     }
+
+    /**
+     * The two measures the jump filter reads, as the last ten epochs leave
+     * them.
+     *
+     * Handed over as one value rather than as the windows themselves: the
+     * filter is a pure function over an answer and the windows belong to the
+     * subscriptions. Both are silent until the window is full, which is what
+     * keeps a phone that has just started collecting from calling its first
+     * minute an attack.
+     */
+    fun skySays(): SkySays = SkySays(
+        shape = shapeOf(shapes[Constellation.Gps]?.toList().orEmpty()),
+        otherBandSilent =
+        silences.size >= EPOCHS_READ_TOGETHER && silences.all { it },
+    )
 
     /**
      * How many satellites each system has in the sky and how many of them the
@@ -361,6 +386,8 @@ class RadioWatch(private val context: Context) {
                         note(heard.getOrPut(constellation) { ArrayDeque() }, loudness)
                     }
 
+                    noteSilence(theOtherBandIsSilent(presenceOf(epoch)))
+
                     for ((constellation, slant) in slantOf(epoch)) {
                         if (slant.satellites < SLANT_MIN_SATELLITES) {
                             continue
@@ -465,6 +492,14 @@ class RadioWatch(private val context: Context) {
     /** The three systems that transmit where GPS does, read as one band. */
     private fun sharedBand(bands: Map<Constellation, Epochs>): Epochs =
         acrossTheBand(bands.filterKeys { it in SHARE_THE_GPS_BAND }.values)
+
+    private fun noteSilence(value: Boolean) {
+        silences.addLast(value)
+
+        while (silences.size > EPOCHS_READ_TOGETHER) {
+            silences.removeFirst()
+        }
+    }
 
     private fun noteShape(into: ArrayDeque<Slant>, value: Slant) {
         into.addLast(value)

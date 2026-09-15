@@ -100,6 +100,17 @@ enum class JumpReason {
     OneBand,
 
     /**
+     * The sky the answer was built out of came from one transmitter.
+     *
+     * The other half of [OneBand], for the phone that hears the far band not
+     * at all rather than hears it and leaves it out: the receiver holds the
+     * orbits of those satellites and hears none of them, while the near band
+     * arrives at one strength however high a satellite claims to be. See
+     * [fromOneTransmitter], and Slant.kt for what a flat sky is.
+     */
+    OneTransmitter,
+
+    /**
      * The answers are tracing a route they have already been round.
      *
      * The same reading as the circle, without asking what shape the route is:
@@ -172,6 +183,7 @@ fun whyAJump(
     repeatLimits: RepeatLimits = RepeatLimits(),
     restsOn: Map<Constellation, Counted> = emptyMap(),
     bandLimits: OneBandLimits = OneBandLimits(),
+    skySays: SkySays = SkySays(),
     putDown: PutDown? = null,
     carrying: Carrying = Carrying(stirred = false, told = false),
 ): JumpReason? {
@@ -185,6 +197,10 @@ fun whyAJump(
 
     if (restsOnOneBand(restsOn, bandLimits)) {
         return JumpReason.OneBand
+    }
+
+    if (fromOneTransmitter(skySays)) {
+        return JumpReason.OneTransmitter
     }
 
     if (goingInCircles(lately, circleLimits)) {
