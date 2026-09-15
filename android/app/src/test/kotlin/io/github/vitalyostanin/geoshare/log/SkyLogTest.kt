@@ -136,6 +136,57 @@ class SkyLogTest {
         assertEquals(listOf("GPS"), systems)
     }
 
+    // The row that is about a pair of blocks rather than about one: it needs
+    // the block before it, and it needs that block to stand far enough back in
+    // time for the satellites to have moved at all.
+    @Test
+    fun `two blocks far enough apart carry how far the satellites moved`() {
+        SkyLog.start(folder.newFolder("drift"))
+
+        note(AT, WIDE_SKY)
+        note(AT.plusSeconds(20), WIDE_SKY.map { it.copy(loudness = it.loudness + 0.2) })
+
+        val rows = SkyLog.read().lineSequence().filter { it.startsWith("Drift,") }.toList()
+
+        assertEquals(1, rows.size)
+
+        val fields = rows.first().split(",")
+
+        assertEquals("GPS", fields[2])
+        assertEquals("9", fields[3])
+        assertEquals("0.200", fields[4])
+        assertEquals("0.000", fields[5])
+    }
+
+    @Test
+    fun `two blocks a moment apart carry nothing of the kind`() {
+        SkyLog.start(folder.newFolder("close"))
+
+        note(AT, WIDE_SKY)
+        note(AT.plusSeconds(2), WIDE_SKY)
+
+        assertTrue(SkyLog.read().lineSequence().none { it.startsWith("Drift,") })
+    }
+
+    @Test
+    fun `blocks an hour apart are not held against each other`() {
+        SkyLog.start(folder.newFolder("hour"))
+
+        note(AT, WIDE_SKY)
+        note(AT.plusSeconds(3600), WIDE_SKY)
+
+        assertTrue(SkyLog.read().lineSequence().none { it.startsWith("Drift,") })
+    }
+
+    private fun note(at: Instant, sky: List<Satellite>) = SkyLog.note(
+        at = at,
+        fix = FIX,
+        clock = CLOCK,
+        gains = listOf(GAIN),
+        sky = sky,
+        measurements = listOf(MEASUREMENT),
+    )
+
     private companion object {
         fun sat(id: Int, loudness: Double, elevationDegrees: Double) = Satellite(
             constellation = Constellation.Gps,
@@ -192,6 +243,19 @@ class SkyLogTest {
                 sat(4, 33.1, 48.0),
                 sat(5, 33.8, 62.0),
                 sat(6, 33.9, 76.0),
+            )
+
+        val WIDE_SKY =
+            listOf(
+                sat(1, 36.5, 7.0),
+                sat(2, 36.0, 19.0),
+                sat(3, 36.0, 31.0),
+                sat(4, 36.2, 40.0),
+                sat(5, 36.0, 48.0),
+                sat(6, 36.1, 55.0),
+                sat(7, 36.0, 62.0),
+                sat(8, 36.3, 70.0),
+                sat(9, 36.2, 76.0),
             )
 
         val SATELLITE =

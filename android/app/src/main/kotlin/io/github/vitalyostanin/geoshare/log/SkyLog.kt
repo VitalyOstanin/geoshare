@@ -2,6 +2,9 @@ package io.github.vitalyostanin.geoshare.log
 
 import io.github.vitalyostanin.geoshare.collection.Clock
 import io.github.vitalyostanin.geoshare.collection.Constellation
+import io.github.vitalyostanin.geoshare.collection.DRIFT_LEAST_APART_MS
+import io.github.vitalyostanin.geoshare.collection.DRIFT_MOST_APART_MS
+import io.github.vitalyostanin.geoshare.collection.Drift
 import io.github.vitalyostanin.geoshare.collection.Fix
 import io.github.vitalyostanin.geoshare.collection.Gain
 import io.github.vitalyostanin.geoshare.collection.Measurement
@@ -9,6 +12,7 @@ import io.github.vitalyostanin.geoshare.collection.NavMessage
 import io.github.vitalyostanin.geoshare.collection.SLANT_MIN_SATELLITES
 import io.github.vitalyostanin.geoshare.collection.Satellite
 import io.github.vitalyostanin.geoshare.collection.Slant
+import io.github.vitalyostanin.geoshare.collection.driftOf
 import io.github.vitalyostanin.geoshare.collection.slantOf
 import io.github.vitalyostanin.geoshare.collection.word
 import java.io.File
@@ -40,8 +44,16 @@ object SkyLog {
     @Volatile
     private var files: RollingFiles? = null
 
+    // The epoch the next drift row is measured against, and when it was
+    // written. Kept here because the row is about a pair of blocks rather than
+    // about one: see Drift.kt.
+    private var driftFrom: List<Satellite> = emptyList()
+    private var driftFromAt: Long = 0L
+
     /** Called once, from the application object. */
     fun start(directory: File) {
+        driftFrom = emptyList()
+        driftFromAt = 0L
         files =
             RollingFiles(
                 directory = directory,
@@ -79,6 +91,7 @@ object SkyLog {
                 clock?.let { clock(stamp, it) }
                 gains.forEach { gain(stamp, it) }
                 slants(stamp, sky)
+                drifts(stamp, sky)
                 sky.forEach { satellite(stamp, it) }
                 measurements.forEach { measurement(stamp, it) }
             },
@@ -116,6 +129,7 @@ object SkyLog {
                 clock?.let { clock(stamp, it) }
                 gains.forEach { gain(stamp, it) }
                 slants(stamp, sky)
+                drifts(stamp, sky)
                 sky.forEach { satellite(stamp, it) }
                 measurements.forEach { measurement(stamp, it) }
             },
@@ -220,6 +234,45 @@ object SkyLog {
         }
     }
 
+    /**
+     * How far this epoch's satellites moved apart from the ones of a block a
+     * few seconds back, system by system.
+     *
+     * Nothing where the two blocks stand too close together in time to have
+     * moved or too far apart to be about one sky; the kept block is replaced
+     * either way, so that a file picked up after an hour of silence measures
+     * against the epoch beside it rather than against the hour.
+     */
+    private fun StringBuilder.drifts(stamp: Long, sky: List<Satellite>) {
+        val apart = stamp - driftFromAt
+
+        if (driftFromAt == 0L || apart > DRIFT_MOST_APART_MS) {
+            driftFrom = sky
+            driftFromAt = stamp
+
+            return
+        }
+
+        if (apart < DRIFT_LEAST_APART_MS) {
+            return
+        }
+
+        for ((constellation, drift) in driftOf(driftFrom, sky)) {
+            drift(stamp, constellation, drift)
+        }
+
+        driftFrom = sky
+        driftFromAt = stamp
+    }
+
+    private fun StringBuilder.drift(stamp: Long, constellation: Constellation, drift: Drift) {
+        append("Drift,").append(stamp).append(',')
+        append(constellation.word).append(',')
+        append(drift.satellites).append(',')
+        append(number(drift.shiftDb)).append(',')
+        append(number(drift.apartDb)).append('\n')
+    }
+
     private fun StringBuilder.slant(stamp: Long, constellation: Constellation, slant: Slant) {
         append("Slant,").append(stamp).append(',')
         append(constellation.word).append(',')
@@ -300,6 +353,7 @@ object SkyLog {
         # Clock,UnixTimeMillis,TimeNanos,LeapSecond,TimeUncertaintyNanos,FullBiasNanos,BiasNanos,BiasUncertaintyNanos,DriftNanosPerSecond,DriftUncertaintyNanosPerSecond,HardwareClockDiscontinuityCount,ElapsedRealtimeNanos,ElapsedRealtimeUncertaintyNanos
         # Agc,UnixTimeMillis,ConstellationType,CarrierFrequencyHz,AgcDb
         # Slant,UnixTimeMillis,ConstellationType,Satellites,MeanCn0DbHz,SpreadDbHz,SlopeDbPerSineOfElevation,HighLessLowDbHz
+        # Drift,UnixTimeMillis,ConstellationType,Satellites,ShiftDbHz,ApartDbHz
         # Sat,UnixTimeMillis,ConstellationType,Svid,Cn0DbHz,BasebandCn0DbHz,ElevationDegrees,AzimuthDegrees,CarrierFrequencyHz,UsedInFix,HasEphemerisData,HasAlmanacData
         # Raw,UnixTimeMillis,ConstellationType,Svid,TimeOffsetNanos,State,ReceivedSvTimeNanos,ReceivedSvTimeUncertaintyNanos,Cn0DbHz,BasebandCn0DbHz,PseudorangeRateMetersPerSecond,PseudorangeRateUncertaintyMetersPerSecond,AccumulatedDeltaRangeState,AccumulatedDeltaRangeMeters,AccumulatedDeltaRangeUncertaintyMeters,CarrierFrequencyHz,MultipathIndicator,AgcDb,SnrInDb,CodeType,FullInterSignalBiasNanos,FullInterSignalBiasUncertaintyNanos,SatelliteInterSignalBiasNanos,SatelliteInterSignalBiasUncertaintyNanos,IsFullTracking
         # Nav,UnixTimeMillis,ConstellationType,Svid,Type,Status,MessageId,SubmessageId,DataHex

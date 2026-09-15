@@ -193,7 +193,7 @@ private fun slantOfOne(satellites: List<Satellite>): Slant {
 }
 
 /** The middle of a set of readings, which one wild epoch cannot move. */
-private fun middle(values: List<Double>): Double {
+internal fun middle(values: List<Double>): Double {
     val sorted = values.sorted()
     val half = sorted.size / 2
 

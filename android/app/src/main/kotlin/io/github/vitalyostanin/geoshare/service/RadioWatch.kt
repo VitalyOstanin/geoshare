@@ -13,6 +13,9 @@ import androidx.annotation.RequiresApi
 import io.github.vitalyostanin.geoshare.collection.Clock
 import io.github.vitalyostanin.geoshare.collection.Constellation
 import io.github.vitalyostanin.geoshare.collection.Counted
+import io.github.vitalyostanin.geoshare.collection.DRIFT_LEAST_APART_MS
+import io.github.vitalyostanin.geoshare.collection.DRIFT_MOST_APART_MS
+import io.github.vitalyostanin.geoshare.collection.Drift
 import io.github.vitalyostanin.geoshare.collection.EPOCHS_READ_TOGETHER
 import io.github.vitalyostanin.geoshare.collection.Epochs
 import io.github.vitalyostanin.geoshare.collection.Fix
@@ -24,11 +27,14 @@ import io.github.vitalyostanin.geoshare.collection.NavSoFar
 import io.github.vitalyostanin.geoshare.collection.SHARE_THE_GPS_BAND
 import io.github.vitalyostanin.geoshare.collection.SLANT_MIN_SATELLITES
 import io.github.vitalyostanin.geoshare.collection.Satellite
+import io.github.vitalyostanin.geoshare.collection.SkyDrift
 import io.github.vitalyostanin.geoshare.collection.SkySays
 import io.github.vitalyostanin.geoshare.collection.SkyShape
 import io.github.vitalyostanin.geoshare.collection.Slant
 import io.github.vitalyostanin.geoshare.collection.acrossTheBand
 import io.github.vitalyostanin.geoshare.collection.counted
+import io.github.vitalyostanin.geoshare.collection.driftOf
+import io.github.vitalyostanin.geoshare.collection.driftShapeOf
 import io.github.vitalyostanin.geoshare.collection.gainPerBand
 import io.github.vitalyostanin.geoshare.collection.hexOf
 import io.github.vitalyostanin.geoshare.collection.inOrder
@@ -119,6 +125,18 @@ class RadioWatch(private val context: Context) {
     // shape the sky either has or has not — see Slant.kt. Ten epochs deep,
     // because that is what a verdict is read from.
     private val shapes = mutableMapOf<Constellation, ArrayDeque<Slant>>()
+
+    // The fourth window: how far the satellites moved apart from one another
+    // between two epochs a few seconds apart — see Drift.kt. Read beside the
+    // shapes rather than instead of them, because the shape says what one
+    // epoch looked like and this says what a run of them did.
+    private val drifts = mutableMapOf<Constellation, ArrayDeque<Drift>>()
+
+    // The epoch the next drift is measured against, and when it arrived. Kept
+    // whole because the measure is a difference: what is wanted is the same
+    // satellites' loudness a few seconds earlier, not an average of it.
+    private var driftFrom: List<Satellite> = emptyList()
+    private var driftFromAt: Instant? = null
 
     // Whether the band a transmitter on the ground cannot reach was silent,
     // epoch by epoch. Kept beside the shapes because the two are read
@@ -218,6 +236,7 @@ class RadioWatch(private val context: Context) {
      */
     fun skySays(): SkySays = SkySays(
         shape = shapeOf(shapes[Constellation.Gps]?.toList().orEmpty()),
+        drift = driftShapeOf(drifts[Constellation.Gps]?.toList().orEmpty()),
         otherBandSilent =
         silences.size >= EPOCHS_READ_TOGETHER && silences.all { it },
     )
@@ -290,6 +309,49 @@ class RadioWatch(private val context: Context) {
         }
 
         return "the sky reads ${read.joinToString(", ")}"
+    }
+
+    /**
+     * How far the satellites of each system moved apart from one another over
+     * the last ten readings.
+     *
+     * Beside [skySaying] rather than inside it because the two answer
+     * different questions about the same band: that one is the shape of one
+     * epoch, this one is what a run of them did. Both go out with their
+     * numbers, because the limits behind the verdicts were read off three
+     * phones' logs and will have to be corrected against more.
+     */
+    fun driftSaying(): String? {
+        val read =
+            inOrder(drifts.keys).mapNotNull { system ->
+                val epochs = drifts[system]?.toList().orEmpty()
+
+                if (epochs.size < EPOCHS_READ_TOGETHER) {
+                    return@mapNotNull null
+                }
+
+                val last = epochs.last()
+
+                String.format(
+                    Locale.ROOT,
+                    "%s %s (apart %.1f dB, shift %+.1f dB, %d satellites)",
+                    system.word,
+                    when (driftShapeOf(epochs)) {
+                        SkyDrift.Together -> "as one block"
+                        SkyDrift.Apart -> "each on its own"
+                        SkyDrift.Unclear -> "neither way"
+                    },
+                    last.apartDb,
+                    last.shiftDb,
+                    last.satellites,
+                )
+            }
+
+        if (read.isEmpty()) {
+            return null
+        }
+
+        return "the satellites move ${read.joinToString(", ")}"
     }
 
     /**
@@ -387,6 +449,7 @@ class RadioWatch(private val context: Context) {
                     }
 
                     noteSilence(theOtherBandIsSilent(presenceOf(epoch)))
+                    noteDrift(epoch)
 
                     for ((constellation, slant) in slantOf(epoch)) {
                         if (slant.satellites < SLANT_MIN_SATELLITES) {
@@ -501,12 +564,46 @@ class RadioWatch(private val context: Context) {
         }
     }
 
-    private fun noteShape(into: ArrayDeque<Slant>, value: Slant) {
+    private fun <T> noteShape(into: ArrayDeque<T>, value: T) {
         into.addLast(value)
 
         while (into.size > EPOCHS_READ_TOGETHER) {
             into.removeFirst()
         }
+    }
+
+    /**
+     * One epoch against the one kept for it, where the two stand far enough
+     * apart in time to say anything.
+     *
+     * The kept epoch is replaced by this one whenever a reading is taken off
+     * the pair, and also whenever the gap has grown past what the measure is
+     * for: a phone that stopped collecting and started again has an old epoch
+     * in hand, and the difference against it would be about the hour between
+     * them rather than about the sky.
+     */
+    private fun noteDrift(epoch: List<Satellite>) {
+        val at = Instant.now()
+        val since = driftFromAt
+        val apart = since?.let { Duration.between(it, at).toMillis() }
+
+        if (apart == null || apart > DRIFT_MOST_APART_MS) {
+            driftFrom = epoch
+            driftFromAt = at
+
+            return
+        }
+
+        if (apart < DRIFT_LEAST_APART_MS) {
+            return
+        }
+
+        for ((constellation, drift) in driftOf(driftFrom, epoch)) {
+            noteShape(drifts.getOrPut(constellation) { ArrayDeque() }, drift)
+        }
+
+        driftFrom = epoch
+        driftFromAt = at
     }
 
     private fun note(into: ArrayDeque<Double>, value: Double) {

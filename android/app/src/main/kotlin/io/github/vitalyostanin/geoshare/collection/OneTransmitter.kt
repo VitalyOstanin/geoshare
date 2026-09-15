@@ -94,6 +94,8 @@ fun theOtherBandIsSilent(
 data class SkySays(
     /** The shape of the loudness against the height of the satellites. */
     val shape: SkyShape = SkyShape.Unclear,
+    /** Whether the satellites moved as one block over the run — see Drift.kt. */
+    val drift: SkyDrift = SkyDrift.Unclear,
     /** Whether the other band has been silent for the whole of the run. */
     val otherBandSilent: Boolean = false,
 )
@@ -101,12 +103,21 @@ data class SkySays(
 /**
  * Whether the sky is one transmitter's work.
  *
- * Both halves are required, and the measurements are why. Over the recorded
- * logs the silence of the other band alone fires on a tenth to a quarter of
- * the honest morning's windows — a phone indoors loses a band for minutes at a
- * time — and the flat sky alone never fires on an honest record but says
- * nothing about where the false signal comes from. Together they fired on two
- * fifths of the windows of the worst hours under the transmitter and on none
- * of the honest ones.
+ * A flat sky is required, and one of the two things that say the flatness is a
+ * transmitter's rather than a thin sky's: the band it cannot reach gone
+ * silent, or the satellites moving as one block.
+ *
+ * The measurements are why it is built that way. Neither of the second pair
+ * fires on its own without cost — the silence of the other band alone fires on
+ * a tenth to a quarter of the honest morning's windows, because a phone
+ * indoors loses a band for minutes at a time — and the flat sky alone says
+ * nothing about where the false signal comes from. Held against the flat sky,
+ * the silence fired on two fifths of the windows of the worst hours under the
+ * transmitter; the block moving together fires on half to nine tenths of them,
+ * which is why it is worth having as the second way in. Neither pair fires on
+ * any honest record: the hours of 14.09 when the same phone still took GLONASS
+ * into the fix give none in 1366 windows, and the phone in another part of the
+ * city none in 146.
  */
-fun fromOneTransmitter(says: SkySays): Boolean = says.shape == SkyShape.Flat && says.otherBandSilent
+fun fromOneTransmitter(says: SkySays): Boolean = says.shape == SkyShape.Flat &&
+    (says.otherBandSilent || says.drift == SkyDrift.Together)

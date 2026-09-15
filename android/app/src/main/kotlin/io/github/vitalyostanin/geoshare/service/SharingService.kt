@@ -32,6 +32,7 @@ import io.github.vitalyostanin.geoshare.collection.Moving
 import io.github.vitalyostanin.geoshare.collection.PutDown
 import io.github.vitalyostanin.geoshare.collection.SECOND_OPINION_ASKED_EVERY
 import io.github.vitalyostanin.geoshare.collection.STIRS_KEPT
+import io.github.vitalyostanin.geoshare.collection.SkyDrift
 import io.github.vitalyostanin.geoshare.collection.Stir
 import io.github.vitalyostanin.geoshare.collection.Trail
 import io.github.vitalyostanin.geoshare.collection.WATCH_AHEAD
@@ -1466,6 +1467,7 @@ class SharingService : LifecycleService() {
         radio.saying()?.let { AppLog.i(TAG, it) }
         radio.satellitesSaying()?.let { AppLog.i(TAG, it) }
         radio.skySaying()?.let { AppLog.i(TAG, it) }
+        radio.driftSaying()?.let { AppLog.i(TAG, it) }
         radio.navigationSaying()?.let { AppLog.i(TAG, it) }
 
         // The epoch behind the line just written, in its own file. Everything
@@ -1577,11 +1579,17 @@ class SharingService : LifecycleService() {
      */
     private fun theSkyItCameFrom(): String {
         val says = radio.skySays()
+        val alongside =
+            listOfNotNull(
+                "the far band silent".takeIf { says.otherBandSilent },
+                "the satellites moving as one block".takeIf { says.drift == SkyDrift.Together },
+            )
 
         return String.format(
             Locale.ROOT,
-            "the loudness %s and the far band silent",
+            "the loudness %s and %s",
             says.shape.toString().lowercase(),
+            alongside.joinToString(" and "),
         )
     }
 

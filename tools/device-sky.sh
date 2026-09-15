@@ -16,6 +16,8 @@
 #   Agc    the gain of one band the receiver is running
 #   Slant  how the loudness of one system stood against the height of the
 #          satellites it came from, worked out from the Sat rows below it
+#   Drift  how far the satellites of one system moved apart from one another
+#          since the block written some fifteen to sixty seconds earlier
 #   Sat    one satellite the receiver named
 #   Raw    one measurement the receiver made off one signal
 #   Nav    one message a satellite broadcast, written when it says something

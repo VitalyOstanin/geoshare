@@ -106,4 +106,33 @@ class OneTransmitterTest {
         assertFalse(fromOneTransmitter(SkySays()))
         assertFalse(theOtherBandIsSilent(emptyMap()))
     }
+
+    // The second way in: the far band can be heard and the verdict still
+    // stand, where the satellites of the band that is heard move as one block.
+    @Test
+    fun `satellites moving as one block stand in for the silent band`() {
+        assertTrue(
+            fromOneTransmitter(
+                SkySays(shape = SkyShape.Flat, drift = SkyDrift.Together, otherBandSilent = false),
+            ),
+        )
+    }
+
+    @Test
+    fun `satellites moving as one block do not stand on their own`() {
+        assertFalse(
+            fromOneTransmitter(
+                SkySays(
+                    shape = SkyShape.Sloped,
+                    drift = SkyDrift.Together,
+                    otherBandSilent = false,
+                ),
+            ),
+        )
+        assertFalse(
+            fromOneTransmitter(
+                SkySays(shape = SkyShape.Flat, drift = SkyDrift.Apart, otherBandSilent = false),
+            ),
+        )
+    }
 }
