@@ -1,5 +1,27 @@
 rules_version = '2';
 
+// What this database allows, and nothing besides.
+//
+// A deployment replaces the whole of a database's rules, so this file is the
+// whole of what anybody may do here. Two things follow from that, and both are
+// load-bearing.
+//
+// Nothing is granted that is not written below. A request no `match` reaches
+// is refused, which means every collection outside `groups` is already shut —
+// anything the owner of the project keeps by hand, anything a later
+// application puts in the same database — and a subcollection under a group
+// stays shut until a rule names it. There is deliberately no
+// `match /{document=**}` here, not even one saying `if false`: allow rules are
+// added together and none of them takes anything away, so a catch-all cannot
+// forbid, and the only thing such a line could ever do is grant. The checks in
+// "the rest of the database" hold this to account, so that a `match` written
+// one level too far out fails a test rather than quietly handing over the rest
+// of the project.
+//
+// And these rules bind one service and one database — `(default)`, the only
+// one this project has. Storage and the Realtime Database are ruled
+// separately, and this project has neither, so a mistake here has nothing else
+// to reach.
 service cloud.firestore {
   match /databases/{database}/documents {
     match /groups/{groupId} {
