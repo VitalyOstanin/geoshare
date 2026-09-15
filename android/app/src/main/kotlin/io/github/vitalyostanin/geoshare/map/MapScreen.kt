@@ -552,8 +552,6 @@ private fun MemberRow(
             AgeText(member = member, now = now)
         }
 
-        WidthText(member = member)
-
         BatteryText(member = member)
     }
 }
@@ -573,28 +571,6 @@ private fun BatteryText(member: MemberPosition) {
         text = stringResource(R.string.map_battery, percent),
         style = MaterialTheme.typography.bodySmall,
         color = batteryColour(member.charging),
-    )
-}
-
-/**
- * How wide the answer behind the marker is.
- *
- * A column of its own rather than a word after the age: the widths then line
- * up down the list and are read against each other, which is the question
- * being asked — whether one marker is standing where a phone is and another
- * somewhere in its district.
- *
- * Nothing at all for a position whose phone named no width: an empty place in
- * the column says "not said", and any number put there would be invented.
- */
-@Composable
-private fun WidthText(member: MemberPosition) {
-    val metres = member.accuracyMetres ?: return
-
-    Text(
-        text = widthText(positionWidth(metres)),
-        style = MaterialTheme.typography.bodySmall,
-        color = widthColour(widthIsWide(metres)),
     )
 }
 

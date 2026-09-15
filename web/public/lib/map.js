@@ -20,7 +20,7 @@ import { clusterMembers, facesShown } from './clusters.js';
 import { openModeHelp } from './mode-help.js';
 import { markerOrder } from './stacking.js';
 import { modeText } from './modes.js';
-import { accuracyRing, widthText } from './width.js';
+import { accuracyRing, widthIsWide, widthText } from './width.js';
 import { foundText, leftOutText } from './found.js';
 import { WORDS } from './words.js';
 
@@ -781,12 +781,7 @@ function detail(position, name, faces, now) {
         // say whether the circle was measured off the sky or looked up in
         // somebody's database.
         [WORDS.foundBy, foundText(position.foundBy)],
-        [
-            WORDS.width,
-            position.accuracyMetres === null
-                ? WORDS.unknown
-                : widthText(position.accuracyMetres),
-        ],
+        [WORDS.width, widthValue(position.accuracyMetres)],
         [WORDS.battery, batteryText(position)],
         [WORDS.position, `${position.latitude.toFixed(5)}, ${position.longitude.toFixed(5)}`],
     ];
@@ -813,6 +808,33 @@ function detail(position, name, faces, now) {
     card.append(heading, table);
 
     return card;
+}
+
+/**
+ * The width as the card writes it, ochre once the answer names a block rather
+ * than a building.
+ *
+ * The colour rather than a word beside the number, and only here now that the
+ * strip has stopped carrying the figure: the card is where a width is read at
+ * all, and the whole point of the colour is that the eye stops on it. The same
+ * hundred metres the application colours at, because the two clients share a
+ * database and nothing else, and one width read two ways is read as two.
+ */
+function widthValue(metres) {
+    if (metres === null) {
+        return WORDS.unknown;
+    }
+
+    if (!widthIsWide(metres)) {
+        return widthText(metres);
+    }
+
+    const wide = document.createElement('span');
+
+    wide.className = 'detail-width wide';
+    wide.textContent = widthText(metres);
+
+    return wide;
 }
 
 /**

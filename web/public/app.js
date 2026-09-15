@@ -21,7 +21,6 @@ import {
 import { applyTheme, readTheme, writeTheme } from './lib/theme.js';
 import { watchingMembers } from './lib/watchers.js';
 import { readLanguage, writeLanguage } from './lib/language.js';
-import { widthIsWide, widthText } from './lib/width.js';
 import { SPEAKING, WORDS } from './lib/words.js';
 import {
     keepWatching,
@@ -599,20 +598,6 @@ function memberEntry(position, labels, pictures, shown, now) {
     age.className = stale ? 'age stale' : 'age';
     age.textContent = ageText(positionAge(position.positionAt, now));
 
-    // How wide the answer behind the marker is, in a column of its own: the
-    // widths then line up down the strip and are read against each other,
-    // which is the question being asked — whether one marker is standing where
-    // a phone is and another somewhere in its district. A position whose phone
-    // named no width leaves the column empty rather than inventing a number.
-    const width = document.createElement('span');
-
-    width.className =
-        position.accuracyMetres !== null && widthIsWide(position.accuracyMetres)
-            ? 'width wide'
-            : 'width';
-    width.textContent =
-        position.accuracyMetres === null ? '' : widthText(position.accuracyMetres);
-
     const battery = document.createElement('span');
     battery.className = 'battery';
 
@@ -620,7 +605,7 @@ function memberEntry(position, labels, pictures, shown, now) {
         batteryText(position, battery);
     }
 
-    entry.append(face, name, age, width, battery);
+    entry.append(face, name, age, battery);
 
     return entry;
 }

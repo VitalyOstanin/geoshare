@@ -220,18 +220,17 @@ body {
 }
 
 .age,
-.width,
 .battery {
     opacity: 0.7;
     font-size: 0.85em;
 }
 
 /* An answer wide enough to be worth noticing, said in the colour of the number
-   itself. Full strength rather than dimmed like the figures around it: the
-   whole point of the colour is that the eye stops on it. */
-.width.wide {
+   itself. It stands on the card alone: the strip says how old a position is and
+   how much charge is left, and how wide the answer was is read once the marker
+   is opened. */
+.detail-width.wide {
     color: var(--wide);
-    opacity: 1;
 }
 
 /* A charge that is growing, said in the colour of the number itself. Full
