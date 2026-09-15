@@ -209,3 +209,134 @@ fun carryingSince(putDown: PutDown?, stirs: List<Stir>, told: Boolean = true): C
         told = told,
     )
 }
+
+/**
+ * How many steps must be walked, without a break, before a position that has
+ * not moved looks pinned in place.
+ *
+ * Four hundred, which is about three hundred metres. The number is deliberately
+ * far beyond anything a room allows: what this rule has to survive is a person
+ * moving about indoors, where the steps are real and the position honestly does
+ * not change, and three hundred metres of walking is not indoors.
+ */
+const val PINNED_STEPS: Int = 400
+
+/**
+ * How long a gap in the counting ends the stretch of walking being measured.
+ *
+ * Three minutes. The counter is read in batches about once a minute, so a
+ * couple of missed readings are the chip staying asleep rather than the person
+ * stopping; a gap longer than this is somebody who sat down, and the walk
+ * after it is a new one.
+ */
+val WALKING_BREAK: Duration = Duration.ofMinutes(3)
+
+/**
+ * How far a position must move over such a walk to count as following it.
+ *
+ * Sixty metres. Three hundred metres of walking rarely ends within sixty
+ * metres of where it started — and where it does, the walk was a circle around
+ * a building, which is exactly the case the width test below throws out
+ * anyway.
+ */
+const val PINNED_MOVE_METRES: Double = 60.0
+
+/**
+ * How narrow the answers have to be for their standing still to mean anything.
+ *
+ * Fifty metres. A place worked out from the towers does not move while its
+ * owner walks a few streets, and there is nothing wrong with that — the tower
+ * has not moved. So the rule speaks only where the receiver claims to have
+ * measured the position off the sky and claims to know it to within a few
+ * tens of metres: an answer that narrow, standing still through three hundred
+ * metres of walking, is an answer about somewhere the phone is not.
+ */
+const val PINNED_WIDTH_METRES: Double = 50.0
+
+/**
+ * An unbroken stretch of walking, as the step counter reports it.
+ *
+ * [since] is when the stretch began, [steps] how many have been counted since.
+ * The stretch is what the rule measures against, rather than the whole history
+ * of the counter, because a person who walked to the shop an hour ago and has
+ * been sitting since has not moved and their position should not move either.
+ */
+data class Walk(val since: Instant, val steps: Long)
+
+/**
+ * The stretch of walking the phone is in the middle of, or nothing where it is
+ * not walking.
+ *
+ * Every reading of the counter that added nothing, and every gap longer than
+ * [WALKING_BREAK], starts the stretch again: what comes out is the walking
+ * that has been going on without a rest.
+ *
+ * Where a stretch starts again, the count runs from the reading before it and
+ * the moment from the reading that ended the rest. The two come from different
+ * readings on purpose: the steps in the batch that ended the rest belong to
+ * the new stretch, since they were taken after the rest, while the moment they
+ * were taken at is not known any closer than the batch that carried them — so
+ * the later of the two is used, and the rule waits for a position taken after
+ * that.
+ */
+fun walkingNow(stirs: List<Stir>): Walk? {
+    val counted = stirs.filter { it.steps != null }.sortedBy { it.at }
+
+    if (counted.size < 2) {
+        return null
+    }
+
+    var base = counted.first().steps!!
+    var since = counted.first().at
+
+    for (index in 1 until counted.size) {
+        val before = counted[index - 1]
+        val now = counted[index]
+        val walked = now.steps!! > before.steps!!
+        val rested = Duration.between(before.at, now.at) > WALKING_BREAK
+
+        if (!walked || rested) {
+            base = before.steps!!
+            since = now.at
+        }
+    }
+
+    return Walk(since = since, steps = counted.last().steps!! - base)
+}
+
+/**
+ * Whether the position has stayed put while the phone was carried somewhere.
+ *
+ * The other half of [driftedWhilePutDown], and the harder half: there the
+ * phone was still and the answer moved, here the phone moved and the answer
+ * is still. A receiver held on a false position reports it steadily however
+ * far its owner walks, and nothing about the run of answers gives that away —
+ * they agree with one another perfectly. What disagrees is the step counter,
+ * which no transmitter reaches.
+ *
+ * [from] is the position the phone gave when this stretch of walking began.
+ * Both it and [next] have to be narrow claims measured off the sky, for which
+ * see [PINNED_WIDTH_METRES]; where the caller cannot say that much about them,
+ * it should not call.
+ */
+fun pinnedWhileWalking(walk: Walk?, from: Fix?, next: Fix, told: Boolean = true): Boolean {
+    if (!told || walk == null || from == null) {
+        return false
+    }
+
+    if (walk.steps < PINNED_STEPS) {
+        return false
+    }
+
+    if (next.takenAt.isBefore(walk.since)) {
+        return false
+    }
+
+    val widest = maxOf(from.accuracyMetres ?: 0.0, next.accuracyMetres ?: 0.0)
+
+    if (widest > PINNED_WIDTH_METRES) {
+        return false
+    }
+
+    return distanceMetres(from, next) < PINNED_MOVE_METRES
+}

@@ -158,6 +158,106 @@ class CarriedTest {
         assertNull(carrying.steps)
     }
 
+    // The walk this rule is about: a person carrying the phone three hundred
+    // metres down a street while the receiver goes on reporting the same
+    // doorway to within ten metres.
+    @Test
+    fun `a narrow answer standing still through a walk is pinned in place`() {
+        val walked = walk(steps = 500)
+        val doorway = fix(61.03268, 4.40300, noon, width = 10.0)
+        val same = fix(61.03270, 4.40302, noon.plusSeconds(300), width = 12.0)
+
+        assertTrue(pinnedWhileWalking(walked, doorway, same))
+    }
+
+    @Test
+    fun `an answer that followed the walking says nothing`() {
+        val walked = walk(steps = 500)
+        val doorway = fix(61.03268, 4.40300, noon, width = 10.0)
+        val away = fix(61.03500, 4.40300, noon.plusSeconds(300), width = 12.0)
+
+        assertFalse(pinnedWhileWalking(walked, doorway, away))
+    }
+
+    // Moving about a flat is walking too, and the position honestly does not
+    // change; the rule has to stay quiet through it.
+    @Test
+    fun `walking about indoors is too short to accuse anything`() {
+        val walked = walk(steps = 120)
+        val doorway = fix(61.03268, 4.40300, noon, width = 10.0)
+        val same = fix(61.03269, 4.40301, noon.plusSeconds(300), width = 12.0)
+
+        assertFalse(pinnedWhileWalking(walked, doorway, same))
+    }
+
+    // A place worked out from the towers does not move while its owner walks a
+    // few streets, and there is nothing wrong with that.
+    @Test
+    fun `a wide answer standing still is not accused of anything`() {
+        val walked = walk(steps = 500)
+        val district = fix(61.03268, 4.40300, noon, width = 700.0)
+        val same = fix(61.03270, 4.40302, noon.plusSeconds(300), width = 700.0)
+
+        assertFalse(pinnedWhileWalking(walked, district, same))
+    }
+
+    @Test
+    fun `an answer taken before the walking began is about another part of the day`() {
+        val walked = Walk(since = noon.plusSeconds(600), steps = 500)
+        val doorway = fix(61.03268, 4.40300, noon, width = 10.0)
+        val earlier = fix(61.03268, 4.40300, noon.plusSeconds(60), width = 10.0)
+
+        assertFalse(pinnedWhileWalking(walked, doorway, earlier))
+    }
+
+    @Test
+    fun `a phone without sensors is not asked about being carried`() {
+        val walked = walk(steps = 500)
+        val doorway = fix(61.03268, 4.40300, noon, width = 10.0)
+        val same = fix(61.03270, 4.40302, noon.plusSeconds(300), width = 12.0)
+
+        assertFalse(pinnedWhileWalking(walked, doorway, same, told = false))
+    }
+
+    @Test
+    fun `the walking is counted from the last rest, not from the first step`() {
+        // Five hundred steps to the shop, a quarter of an hour sitting, then
+        // fifty steps back out: what is being walked now is the fifty.
+        val stirs = listOf(
+            Stir(noon, steps = 1_000),
+            Stir(noon.plusSeconds(60), steps = 1_500),
+            Stir(noon.plusSeconds(60 * 16), steps = 1_550),
+        )
+
+        assertEquals(50L, walkingNow(stirs)?.steps)
+    }
+
+    @Test
+    fun `a reading that added no steps starts the count again`() {
+        val stirs = listOf(
+            Stir(noon, steps = 1_000),
+            Stir(noon.plusSeconds(60), steps = 1_000),
+            Stir(noon.plusSeconds(120), steps = 1_400),
+        )
+
+        val walked = walkingNow(stirs)
+
+        assertEquals(400L, walked?.steps)
+        assertEquals(noon.plusSeconds(60), walked?.since)
+    }
+
+    @Test
+    fun `a phone whose counter has been read once is not walking yet`() {
+        assertNull(walkingNow(listOf(Stir(noon, steps = 1_000))))
+    }
+
+    @Test
+    fun `stirs without a step count are not walking`() {
+        assertNull(walkingNow(listOf(Stir(noon), Stir(noon.plusSeconds(60)))))
+    }
+
+    private fun walk(steps: Long) = Walk(since = noon.minusSeconds(60), steps = steps)
+
     private fun fix(latitude: Double, longitude: Double, takenAt: Instant, width: Double) = Fix(
         latitude = latitude,
         longitude = longitude,

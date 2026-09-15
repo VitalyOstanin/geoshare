@@ -53,6 +53,7 @@ import io.github.vitalyostanin.geoshare.collection.makeupOf
 import io.github.vitalyostanin.geoshare.collection.networkAnswerStands
 import io.github.vitalyostanin.geoshare.collection.noteOf
 import io.github.vitalyostanin.geoshare.collection.otherRadiosAreDue
+import io.github.vitalyostanin.geoshare.collection.pinnedWhileWalking
 import io.github.vitalyostanin.geoshare.collection.putDownAt
 import io.github.vitalyostanin.geoshare.collection.remembering
 import io.github.vitalyostanin.geoshare.collection.rescueAfter
@@ -61,6 +62,7 @@ import io.github.vitalyostanin.geoshare.collection.said
 import io.github.vitalyostanin.geoshare.collection.saysMoreThan
 import io.github.vitalyostanin.geoshare.collection.secondOpinion
 import io.github.vitalyostanin.geoshare.collection.shouldWrite
+import io.github.vitalyostanin.geoshare.collection.walkingNow
 import io.github.vitalyostanin.geoshare.collection.whyAJump
 import io.github.vitalyostanin.geoshare.collection.word
 import io.github.vitalyostanin.geoshare.log.AppLog
@@ -244,6 +246,20 @@ class SharingService : LifecycleService() {
      * lie, and this does not.
      */
     private var putDown: PutDown? = null
+
+    /**
+     * When the stretch of walking the phone is in the middle of began, and
+     * where it said it was at the time.
+     *
+     * The pair is the other rule's anchor turned around: there a place is kept
+     * while the phone lies still, here a place is kept while the phone is
+     * carried, so that an answer refusing to follow the walking can be seen.
+     * Only a narrow answer measured off the sky is kept — see
+     * [pinnedWhileWalking] for why the others say nothing.
+     */
+    private var walkStarted: Instant? = null
+
+    private var walkedFrom: Fix? = null
 
     /**
      * Whether this phone has sensors to ask at all.
@@ -530,6 +546,8 @@ class SharingService : LifecycleService() {
         // about the filter instead.
         noteFix(fix, mode, jump, agreed, home, trusted)
 
+        noticeAnAnswerThatWillNotFollow(fix, whence)
+
         if (jump != null && jumps.enabled && !agreed && !home) {
             candidate = fix
             jumpsInARow += 1
@@ -785,6 +803,48 @@ class SharingService : LifecycleService() {
         }
 
         putDown = settled
+    }
+
+    /**
+     * Says so when the phone has been carried somewhere and the answer has
+     * stayed behind.
+     *
+     * Nothing is decided by it yet: the line goes in the log, the position is
+     * treated exactly as it would have been, and what the line is for is the
+     * measurement — how often this happens over a day of ordinary carrying,
+     * and what it looks like when it does. The threshold of [PINNED_STEPS] was
+     * chosen to be far beyond a room rather than measured, which is the other
+     * way round from every other threshold here, and it should be measured
+     * before anything is left out on the strength of it.
+     *
+     * The place a walk is measured from is taken from a narrow satellite
+     * answer and no other, because only such an answer claims to know where
+     * the phone is closely enough for standing still to mean anything.
+     */
+    private fun noticeAnAnswerThatWillNotFollow(fix: Fix, whence: FoundBy) {
+        if (whence != FoundBy.Satellites) {
+            return
+        }
+
+        val walk = walkingNow(stirsHeard) ?: return
+
+        if (walkStarted != walk.since || walkedFrom == null) {
+            walkStarted = walk.since
+            walkedFrom = fix
+
+            return
+        }
+
+        val from = walkedFrom ?: return
+
+        if (!pinnedWhileWalking(walk, from, fix, sensorsTell)) {
+            return
+        }
+
+        val away = "%.0f m from where the walk began, ±%.0f m"
+            .format(Locale.ROOT, distanceMetres(from, fix), fix.accuracyMetres ?: 0.0)
+
+        AppLog.w(TAG, "carried ${walk.steps} steps and the answer has not followed: $away")
     }
 
     /** Where an anchor stands, for the one line that says it was set. */
