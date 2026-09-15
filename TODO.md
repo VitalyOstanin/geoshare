@@ -680,3 +680,41 @@ What it costs, beyond the sound itself:
   who may ask, the phone refuses what does not come from its own household, and
   every request is written down where the household can read who asked for
   what.
+
+## The map follows, instead of being dragged
+
+Both ways of moving the map today are single acts: a tap frames one member,
+and the control above frames everybody once. A minute later the phones have
+moved and the frame is stale, so whoever is watching drags the map again —
+which is the whole of watching somebody walk home.
+
+What is needed is a mode the map stays in:
+
+- **Following one device.** The member picks a phone and the map keeps that
+  marker in the middle as new positions arrive, at the zoom the watcher chose.
+  Under a spoof this is the case that matters most: the marker jumps, and a
+  map that follows says so by moving, where a still map hides it below the
+  edge.
+- **Keeping everybody in view.** The map holds a frame around every position
+  the member may read and widens or tightens it as the phones move, with the
+  same room around the edges the one-off control leaves.
+
+What has to be decided:
+
+- **How the mode ends.** A watcher who drags or pinches has taken the map back
+  and following must stop, or the map fights the hand. Whether it resumes on
+  its own after a while, or only when the control is pressed again, is the
+  question.
+- **Where the two modes live.** They are three states of one control — still,
+  following one, holding all — rather than two more buttons beside the
+  existing one.
+- **What following costs.** A map that recentres on every write redraws far
+  more often than one that is dragged; on the page that is a watcher's tab
+  kept awake, and on a phone it is the screen and the battery behind it.
+- **What it says when there is nothing to follow.** A phone that has gone
+  quiet, or a member whose position is refused, leaves the mode with no
+  marker: it has to say so rather than sit on the last place silently.
+
+Both clients want it, and the two libraries do the recentring differently —
+the page has the map object itself, the application has the camera of the
+Compose map — so the mode is one decision written twice.
