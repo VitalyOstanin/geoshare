@@ -43,6 +43,25 @@ export function isStale(knownAt, now) {
 }
 
 /**
+ * The two moments a position carries: when the phone last reached the server,
+ * and when it last had a position it believed.
+ *
+ * They part whenever a phone says a position again — which is what a phone
+ * does while its satellites are being spoofed and it has nothing new it
+ * believes. The stamp is the one clock every member shares, so it is what the
+ * news is dated by, and the position is capped at it: the rest of a phone
+ * clock running ahead would be somebody's watch rather than the age of
+ * anything.
+ *
+ * The Android screen works out the same two from the same fields.
+ */
+export function positionMoments(takenAt, writtenAt) {
+    const knownAt = writtenAt ?? takenAt;
+
+    return { knownAt, positionAt: Math.min(takenAt, knownAt) };
+}
+
+/**
  * The moment itself, for the detail a viewer opens rather than for the list.
  *
  * Written the way the language of the page writes a date rather than the way

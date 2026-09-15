@@ -19,6 +19,7 @@ import {
     setDoc,
 } from 'https://www.gstatic.com/firebasejs/12.19.0/firebase-firestore.js';
 import { firebaseConfig } from '../firebase-config.js';
+import { positionMoments } from './age.js';
 
 /** The one group this build shares within; membership is edited outside the clients. */
 const GROUP = 'family';
@@ -211,16 +212,10 @@ function positionOf(snapshot) {
         latitude: data.latitude,
         longitude: data.longitude,
         takenAt: data.takenAt.toMillis(),
-        // The server stamp is the one clock every member shares; the phone
-        // that took the fix may be minutes off.
-        knownAt: (data.writtenAt ?? data.takenAt).toMillis(),
-        // How old the position itself is, as opposed to how long ago the phone
-        // last spoke. The two differ whenever a phone says a position again —
-        // which is what a phone does while its satellites are being spoofed
-        // and it has nothing new it believes. Capped at the server stamp,
-        // because the rest of the difference would be somebody's clock rather
-        // than the age of anything.
-        positionAt: Math.min(data.takenAt.toMillis(), (data.writtenAt ?? data.takenAt).toMillis()),
+        // The server stamp dates the news and the fix dates the position; the
+        // two part under a spoof, and which is which is worked out in one
+        // place the tests can reach.
+        ...positionMoments(data.takenAt.toMillis(), data.writtenAt?.toMillis() ?? null),
         mode: data.mode ?? null,
         batteryPercent: typeof data.batteryPercent === 'number' ? data.batteryPercent : null,
         // Absent in what the older builds wrote, which is a phone not known to

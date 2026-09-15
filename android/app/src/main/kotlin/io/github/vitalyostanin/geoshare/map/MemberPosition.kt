@@ -71,4 +71,16 @@ data class MemberPosition(
      * difference would show up as an age nobody can explain.
      */
     val knownAt: Instant get() = writtenAt ?: takenAt
+
+    /**
+     * How old the position itself is, as opposed to how long ago the phone
+     * last spoke.
+     *
+     * The two part whenever a phone says a position again, which is what a
+     * phone does while its satellites are being spoofed and it has nothing new
+     * it believes: the stamp moves and the position does not. Capped at the
+     * server stamp, because the rest of the difference would be somebody's
+     * clock rather than the age of anything.
+     */
+    val positionAt: Instant get() = minOf(takenAt, knownAt)
 }

@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 
-import { STALE_AFTER_MS, ageText, isStale, positionAge } from '../public/lib/age.js';
+import { STALE_AFTER_MS, ageText, isStale, positionAge, positionMoments } from '../public/lib/age.js';
 
 const NOW = Date.parse('2026-09-11T12:00:00Z');
 const MINUTE = 60 * 1000;
@@ -56,7 +56,9 @@ test('one of a unit is spelled without the plural', () => {
 // again rather than a new false one, so the writing is fresh while the
 // position is not. The card is for the phone being in touch; the age is for
 // the position, and the two must not be taken from the same stamp.
-const positionOf = (takenAt, writtenAt) => Math.min(takenAt, writtenAt);
+// The moments as the page works them out of a document, rather than as a copy
+// of the same arithmetic written beside the test.
+const positionOf = (takenAt, writtenAt) => positionMoments(takenAt, writtenAt).positionAt;
 
 test('a position said again carries the age of the position, not of the writing', () => {
     const takenAt = NOW - 40 * MINUTE;
@@ -75,4 +77,18 @@ test('a phone whose clock runs ahead is aged by the server stamp instead', () =>
 test('a position said again goes stale by the writing, however old the fix', () => {
     assert.equal(isStale(NOW - STALE_AFTER_MS, NOW), true);
     assert.equal(isStale(NOW - MINUTE, NOW), false);
+});
+
+test('the news is dated by the stamp and the position by the fix', () => {
+    const takenAt = NOW - 3 * HOUR;
+
+    assert.deepEqual(positionMoments(takenAt, NOW), { knownAt: NOW, positionAt: takenAt });
+});
+
+// The moment between the phone writing and the server stamping, where the
+// local copy carries no stamp at all.
+test('a position not yet stamped is dated by the phone that took it', () => {
+    const takenAt = NOW - MINUTE;
+
+    assert.deepEqual(positionMoments(takenAt, null), { knownAt: takenAt, positionAt: takenAt });
 });

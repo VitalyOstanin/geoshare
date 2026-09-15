@@ -38,7 +38,8 @@
     <string name="map_width_kilometres">±%1$.1f км</string>
     <string name="map_age_just_now">только что</string>
     <string name="map_detail_last_seen">Обновлено</string>
-    <string name="map_detail_at">Время</string>
+    <string name="map_detail_at">Время позиции</string>
+    <string name="map_detail_online">В сети</string>
     <string name="map_detail_mode">Режим</string>
     <string name="map_detail_found_by">Откуда точка</string>
     <string name="map_detail_width">Ширина</string>

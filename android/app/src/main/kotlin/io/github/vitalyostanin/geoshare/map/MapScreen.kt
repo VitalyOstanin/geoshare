@@ -690,7 +690,10 @@ private fun MemberFace(memberId: String, name: String, picture: Bitmap?, stale: 
 
 @Composable
 private fun AgeText(member: MemberPosition, now: Instant, short: Boolean = false) {
-    val age = positionAge(member.knownAt, now)
+    // How old the position is, not how long ago the phone spoke: a phone under
+    // a transmitter goes on saying the same position, and an age counted from
+    // the stamp would read as a member who is where the marker stands.
+    val age = positionAge(member.positionAt, now)
 
     Text(
         text = if (short) shortAgeText(age) else ageText(age),
@@ -824,8 +827,15 @@ private fun MemberDetail(
                 }
             }
 
-            DetailRow(R.string.map_detail_last_seen, ageText(positionAge(member.knownAt, now)))
-            DetailRow(R.string.map_detail_at, momentText(member.knownAt))
+            DetailRow(R.string.map_detail_last_seen, ageText(positionAge(member.positionAt, now)))
+            // Two moments, because under a spoof they are days apart: when the
+            // phone last had a position it believed, and when it last reached
+            // the server. A card naming only one of them is read as naming the
+            // other, and a phone standing still with satellites it cannot
+            // trust is then either lost or in a place it left hours ago,
+            // depending on which the viewer assumed.
+            DetailRow(R.string.map_detail_at, momentText(member.positionAt))
+            DetailRow(R.string.map_detail_online, momentText(member.knownAt))
             // Only while it is happening. A phone getting its answers through
             // is a phone with nothing to explain, and two rows saying nought
             // would be two rows of noise on every card in the household.
