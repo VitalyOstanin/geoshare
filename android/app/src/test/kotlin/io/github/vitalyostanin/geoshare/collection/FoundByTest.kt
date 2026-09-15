@@ -109,16 +109,30 @@ class FoundByTest {
         )
     }
 
-    // The store of last known places answers for the satellites with whatever
-    // was put there, and under a false signal that can be an assistance
-    // answer. Agreement with it is not a measurement.
+    // What the phone this was written for does most of the day: the receiver's
+    // own answer says outright that an assistance service produced it, and the
+    // fused answer standing on the same spot is that answer. Saying "the
+    // satellites" there would be saying the one thing that is not true of it.
     @Test
-    fun `agreeing with an assistance answer is not agreeing with a measurement`() {
+    fun `a fused answer standing on an assistance one is assistance`() {
+        assertEquals(
+            FoundBy.Assistance,
+            foundBy(
+                fix(from = "fused", alongside = null),
+                satellites = fix(from = "gps", alongside = assisted),
+            ),
+        )
+    }
+
+    // Two answers agreeing is not a note: neither of them said anything about
+    // how it was arrived at, and the pair says no more than each one alone.
+    @Test
+    fun `two answers with nothing said between them stay unsaid`() {
         assertEquals(
             FoundBy.Unsaid,
             foundBy(
                 fix(from = "fused", alongside = null),
-                satellites = fix(from = "gps", alongside = assisted),
+                satellites = fix(from = "gps", alongside = null),
             ),
         )
     }

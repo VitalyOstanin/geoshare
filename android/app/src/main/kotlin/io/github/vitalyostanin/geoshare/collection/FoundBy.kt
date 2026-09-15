@@ -82,7 +82,8 @@ enum class FoundBy {
  * no note at all on these phones — checked in the sky file: every `fused` row
  * has an empty note beside `gps` rows carrying `SourceType`, `maxCn0` and a
  * satellite count — so without it the answer would be "not said" for nearly
- * every position this application writes.
+ * every position this application writes. Where the two turn out to be one
+ * answer, the receiver's note speaks for both.
  */
 fun foundBy(fix: Fix, satellites: Fix? = null): FoundBy {
     if (fix.reported?.pretended == true) {
@@ -96,22 +97,49 @@ fun foundBy(fix: Fix, satellites: Fix? = null): FoundBy {
 
         Answered.Unheard -> FoundBy.Unheard
 
-        Answered.Unsaid -> when {
-            fix.from == NETWORK_PROVIDER -> FoundBy.OtherRadios
-            theSameAnswer(fix, satellites) -> FoundBy.Satellites
-            else -> FoundBy.Unsaid
-        }
+        Answered.Unsaid ->
+            if (fix.from == NETWORK_PROVIDER) {
+                FoundBy.OtherRadios
+            } else {
+                whatTheReceiverSaid(fix, satellites)
+            }
+    }
+}
+
+/**
+ * The note of the receiver's own answer, where that answer is this one.
+ *
+ * The fused provider says nothing about how it arrived at a position, and the
+ * receiver, asked directly, says a great deal: on the phone this was written
+ * for the two stand a second apart on the same spot, and the receiver's note
+ * reads `QUICKGPS=true|SourceType=128` — an assistance service answering over
+ * the network under the name of the satellites. That is precisely what a
+ * member needs told, and the fused answer alone cannot tell them.
+ *
+ * So the note is carried across where the two are one answer, and nowhere
+ * else. Where they are not, the word stays "not said": a source invented from
+ * the width would be read as a fact.
+ */
+private fun whatTheReceiverSaid(fix: Fix, satellites: Fix?): FoundBy {
+    if (!theSameAnswer(fix, satellites)) {
+        return FoundBy.Unsaid
+    }
+
+    return when (answeredBy(noteOf(satellites?.reported?.alongside))) {
+        Answered.Satellites -> FoundBy.Satellites
+        Answered.Assistance -> FoundBy.Assistance
+        Answered.Unheard -> FoundBy.Unheard
+        Answered.Unsaid -> FoundBy.Unsaid
     }
 }
 
 /**
  * Whether the receiver's own answer and the one being written are one answer.
  *
- * Not a guess from the width and not the name of a provider: the satellites
- * are asked for directly, their answer carries a note saying it was measured,
- * and if it stands at the same moment and inside the doubt of the two
- * together, then the fix without a note is that same measurement handed over
- * under another name.
+ * Not a guess from the width and not the name of a provider: the receiver is
+ * asked directly, and if its answer stands at the same moment and inside the
+ * doubt of the two together, then the fix that came with no note is that same
+ * answer handed over under another name.
  *
  * The doubt is taken as it stands rather than with the margin the second
  * opinion grants. That margin is there for accusing the satellites of lying,
@@ -121,10 +149,6 @@ fun foundBy(fix: Fix, satellites: Fix? = null): FoundBy {
  */
 private fun theSameAnswer(fix: Fix, satellites: Fix?): Boolean {
     if (satellites == null) {
-        return false
-    }
-
-    if (!restsOnSatellites(satellites.reported?.alongside)) {
         return false
     }
 
