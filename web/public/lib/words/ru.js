@@ -84,7 +84,7 @@ export const RU = {
     position: 'Координаты',
     unknown: 'неизвестно',
 
-    // Откуда взялась позиция и насколько точен ответ. Две строки рядом:
+    // Откуда взялась позиция и насколько она точна. Две строки рядом:
     // слово без точности не отличает квартиру от района, а точность без
     // слова не говорит, измерено это по небу или найдено в чьей-то базе.
     foundBy: 'Откуда позиция',
@@ -97,11 +97,11 @@ export const RU = {
     foundUnsaid: 'Источник не назван',
 
     // Что телефон отбросил с последней записанной позиции. Строки появляются
-    // только тогда, когда отказы идут: телефон, у которого ответы проходят,
+    // только тогда, когда отказы идут: телефон, у которого позиции проходят,
     // объяснять нечего, а две строки с нулём стояли бы на каждой карточке.
     leftOut: 'Отброшено',
     leftOutReason: 'Последняя причина',
-    leftOutAnswers: (count) => `${count} ${counted(count, 'ответ', 'ответа', 'ответов')}`,
+    leftOutAnswers: (count) => `${count} ${counted(count, 'позиция', 'позиции', 'позиций')}`,
     leftOutDrifted: 'Увод при неподвижном телефоне',
     leftOutContradicted: 'Вышки говорят другое',
     leftOutWidth: 'Ответ шире района',
@@ -117,8 +117,8 @@ export const RU = {
 
     // How wide the phone said its answer is. The sign is what turns a distance
     // into a claim about where the marker might really be.
-    widthMetres: (count) => `±${count} м`,
-    widthKilometres: (count) => `±${count} км`,
+    widthMetres: (count) => `${count} м`,
+    widthKilometres: (count) => `${count} км`,
     backToList: '← К списку',
     oneMember: '1 участник',
     members: (count) => `${count} ${counted(count, 'участник', 'участника', 'участников')}`,

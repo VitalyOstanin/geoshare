@@ -97,8 +97,8 @@ export const EN = {
 
     // How wide the phone said its answer is. The sign is what turns a distance
     // into a claim about where the marker might really be.
-    widthMetres: (count) => `±${count} m`,
-    widthKilometres: (count) => `±${count} km`,
+    widthMetres: (count) => `${count} m`,
+    widthKilometres: (count) => `${count} km`,
     backToList: '← Back to the list',
     oneMember: '1 member',
     members: (count) => `${count} members`,

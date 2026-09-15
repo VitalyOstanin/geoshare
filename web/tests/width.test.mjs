@@ -13,26 +13,26 @@ const eastwardsMetres = (degrees, latitude) =>
 // The four kinds of answer seen in the logs of the phones: the satellites
 // under open sky, the Wi-Fi in a flat, the assistance service, and a tower.
 test('an answer under a kilometre is said in whole metres', () => {
-    assert.equal(widthText(11.7), '±12 m');
-    assert.equal(widthText(28.1), '±28 m');
-    assert.equal(widthText(122.4), '±122 m');
+    assert.equal(widthText(11.7), '12 m');
+    assert.equal(widthText(28.1), '28 m');
+    assert.equal(widthText(122.4), '122 m');
 });
 
 test('an answer from a tower is said in kilometres to one place', () => {
-    assert.equal(widthText(1700), '±1.7 km');
+    assert.equal(widthText(1700), '1.7 km');
 });
 
 // Nine hundred and ninety-nine and a half metres rounds to a thousand, and
-// "±1000 m" is the one thing the rule exists to avoid writing.
+// "1000 m" is the one thing the rule exists to avoid writing.
 test('an answer that rounds up to a kilometre is written as one', () => {
-    assert.equal(widthText(999.6), '±1.0 km');
-    assert.equal(widthText(999.4), '±999 m');
+    assert.equal(widthText(999.6), '1.0 km');
+    assert.equal(widthText(999.4), '999 m');
 });
 
 // A receiver that calls its answer a fraction of a metre wide is not claiming
-// the phone is at a point, and "±0 m" would say it is.
+// the phone is at a point, and "0 m" would say it is.
 test('an answer narrower than a metre is still a metre', () => {
-    assert.equal(widthText(0.2), '±1 m');
+    assert.equal(widthText(0.2), '1 m');
 });
 
 test('a hundred metres is where the colour changes', () => {

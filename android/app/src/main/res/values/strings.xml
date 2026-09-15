@@ -41,8 +41,8 @@
     <string name="map_battery" translatable="false">%1$d%%</string>
     <!-- How wide the phone said its answer is. The sign is what turns a
          distance into a claim about where the marker might really be. -->
-    <string name="map_width_metres">±%1$d m</string>
-    <string name="map_width_kilometres">±%1$.1f km</string>
+    <string name="map_width_metres">%1$d m</string>
+    <string name="map_width_kilometres">%1$.1f km</string>
     <string name="map_age_just_now">just now</string>
     <string name="map_detail_last_seen">Last seen</string>
     <string name="map_detail_at">At</string>

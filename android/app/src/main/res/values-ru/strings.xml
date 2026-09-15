@@ -23,7 +23,7 @@
     <string name="jumps_title">Отбрасывать невозможные места</string>
     <string name="jumps_explained">Там, где глушат спутники, телефону сообщают место, где он быть не может, и метка прыгает по карте. Так отбрасывается любое место, до которого пришлось бы добираться быстрее 200 км/ч.</string>
     <string name="sources_title">Источники позиции, которые учитывать</string>
-    <string name="sources_explained">Какие ответы телефон учитывает, определяя свою позицию. Ответ из выключенного источника по-прежнему собирается и попадает в журнал, но метку не двигает и никому не уходит. Там, где спутники глушат, разумно оставить только вышки и Wi-Fi: ответ шире, зато не подделан. Если выключить все, телефон не запишет ни одной позиции.</string>
+    <string name="sources_explained">Какие позиции телефон учитывает, определяя, где он находится. Позиция из выключенного источника по-прежнему собирается и попадает в журнал, но метку не двигает и никому не уходит. Там, где спутники глушат, разумно оставить только вышки и Wi-Fi: позиция менее точная, зато не подделанная. Если выключить все, телефон не запишет ни одной позиции.</string>
     <string name="sources_button">Источники: %1$d из %2$d</string>
     <string name="jumps_forget">Забыть последнее место</string>
     <string name="jumps_forgotten">Забыто</string>
@@ -34,8 +34,8 @@
     <string name="permission_open_settings">Открыть настройки</string>
     <string name="map_nobody_yet">Никто ещё не поделился своим местом.</string>
     <string name="map_member_you">Вы</string>
-    <string name="map_width_metres">±%1$d м</string>
-    <string name="map_width_kilometres">±%1$.1f км</string>
+    <string name="map_width_metres">%1$d м</string>
+    <string name="map_width_kilometres">%1$.1f км</string>
     <string name="map_age_just_now">только что</string>
     <string name="map_detail_last_seen">Обновлено</string>
     <string name="map_detail_at">Время позиции</string>
@@ -165,10 +165,10 @@
     <string name="map_age_short_days">%1$d д</string>
 
     <plurals name="map_detail_left_out_answers">
-        <item quantity="one">%1$d ответ</item>
-        <item quantity="few">%1$d ответа</item>
-        <item quantity="many">%1$d ответов</item>
-        <item quantity="other">%1$d ответа</item>
+        <item quantity="one">%1$d позиция</item>
+        <item quantity="few">%1$d позиции</item>
+        <item quantity="many">%1$d позиций</item>
+        <item quantity="other">%1$d позиции</item>
     </plurals>
     <plurals name="map_age_minutes">
         <item quantity="one">%1$d минуту назад</item>

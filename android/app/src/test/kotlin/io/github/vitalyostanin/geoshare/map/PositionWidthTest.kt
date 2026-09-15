@@ -21,7 +21,7 @@ class PositionWidthTest {
     }
 
     // Nine hundred and ninety-nine and a half metres rounds to a thousand, and
-    // "±1000 m" is the one thing the rule exists to avoid writing.
+    // "1000 m" is the one thing the rule exists to avoid writing.
     @Test
     fun `an answer that rounds up to a kilometre is written as one`() {
         assertEquals(PositionWidth.Kilometres(1.0), positionWidth(999.6))
@@ -29,7 +29,7 @@ class PositionWidthTest {
     }
 
     // A receiver that calls its answer a fraction of a metre wide is not
-    // claiming the phone is at a point, and "±0 m" would say it is.
+    // claiming the phone is at a point, and "0 m" would say it is.
     @Test
     fun `an answer narrower than a metre is still a metre`() {
         assertEquals(PositionWidth.Metres(1), positionWidth(0.2))
