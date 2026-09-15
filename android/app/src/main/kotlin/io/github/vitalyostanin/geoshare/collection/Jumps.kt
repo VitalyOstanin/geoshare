@@ -64,6 +64,16 @@ enum class JumpReason {
     Unmoved,
 
     /**
+     * The answers have walked away from a phone lying untouched.
+     *
+     * The same evidence as [Unmoved] held against a place instead of against
+     * the answer before: a creep of thirty metres an answer never trips a
+     * comparison between neighbours, and every one of those metres is distance
+     * from where the phone was put down. See [driftedWhilePutDown].
+     */
+    Drifted,
+
+    /**
      * The towers and the Wi-Fi place the phone somewhere else entirely.
      *
      * The one rule that does not compare a position with an earlier position,
@@ -122,6 +132,14 @@ enum class JumpReason {
  * along. [stillSince] is null wherever there is nothing to ask — the
  * permission was refused, or the sensors have not reported yet.
  *
+ * Where the phone was put down is asked about in the same spirit and needs no
+ * anchor of its own beyond that place: [putDown] is the spot the phone was
+ * standing at when its sensors last fell quiet, and [carrying] is what they
+ * have said since. This is the only rule here that a creep does not defeat —
+ * every other comparison is against the position written before, which crept
+ * along with the lie. Both are absent wherever the phone has no such sensors,
+ * the permission was refused, or something has touched it since.
+ *
  * The shape of the run is asked about next, and it is asked of the answers
  * the phone was given rather than of the ones it wrote down: while the speed
  * rule is still refusing a false road, the answers it refuses are the ones
@@ -154,6 +172,8 @@ fun whyAJump(
     repeatLimits: RepeatLimits = RepeatLimits(),
     restsOn: Map<Constellation, Counted> = emptyMap(),
     bandLimits: OneBandLimits = OneBandLimits(),
+    putDown: PutDown? = null,
+    carrying: Carrying = Carrying(stirred = false, told = false),
 ): JumpReason? {
     if (falsePlaceFor(next, falsePlaces) != null) {
         return JumpReason.FalsePlace
@@ -173,6 +193,10 @@ fun whyAJump(
 
     if (goingRoundAgain(lately, repeatLimits)) {
         return JumpReason.Repeating
+    }
+
+    if (driftedWhilePutDown(putDown, next, carrying)) {
+        return JumpReason.Drifted
     }
 
     if (last == null) {

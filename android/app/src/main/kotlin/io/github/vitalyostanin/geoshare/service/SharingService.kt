@@ -15,6 +15,7 @@ import androidx.lifecycle.lifecycleScope
 import com.google.firebase.auth.FirebaseAuth
 import io.github.vitalyostanin.geoshare.collection.Accuracy
 import io.github.vitalyostanin.geoshare.collection.Answered
+import io.github.vitalyostanin.geoshare.collection.CARRIED_STEPS
 import io.github.vitalyostanin.geoshare.collection.CLOCK_TOLERANCE
 import io.github.vitalyostanin.geoshare.collection.CircleLimits
 import io.github.vitalyostanin.geoshare.collection.CollectionMode
@@ -26,13 +27,17 @@ import io.github.vitalyostanin.geoshare.collection.Fix
 import io.github.vitalyostanin.geoshare.collection.IDLE_REPEAT
 import io.github.vitalyostanin.geoshare.collection.JumpReason
 import io.github.vitalyostanin.geoshare.collection.Moving
+import io.github.vitalyostanin.geoshare.collection.PutDown
 import io.github.vitalyostanin.geoshare.collection.SECOND_OPINION_ASKED_EVERY
+import io.github.vitalyostanin.geoshare.collection.STIRS_KEPT
+import io.github.vitalyostanin.geoshare.collection.Stir
 import io.github.vitalyostanin.geoshare.collection.Trail
 import io.github.vitalyostanin.geoshare.collection.WATCH_AHEAD
 import io.github.vitalyostanin.geoshare.collection.agreementStands
 import io.github.vitalyostanin.geoshare.collection.anchorFrom
 import io.github.vitalyostanin.geoshare.collection.andThen
 import io.github.vitalyostanin.geoshare.collection.answeredBy
+import io.github.vitalyostanin.geoshare.collection.carryingSince
 import io.github.vitalyostanin.geoshare.collection.chooseMode
 import io.github.vitalyostanin.geoshare.collection.circleDrawn
 import io.github.vitalyostanin.geoshare.collection.clockDisagrees
@@ -47,6 +52,7 @@ import io.github.vitalyostanin.geoshare.collection.makeupOf
 import io.github.vitalyostanin.geoshare.collection.networkAnswerStands
 import io.github.vitalyostanin.geoshare.collection.noteOf
 import io.github.vitalyostanin.geoshare.collection.otherRadiosAreDue
+import io.github.vitalyostanin.geoshare.collection.putDownAt
 import io.github.vitalyostanin.geoshare.collection.remembering
 import io.github.vitalyostanin.geoshare.collection.rescueAfter
 import io.github.vitalyostanin.geoshare.collection.routeRepeated
@@ -215,6 +221,37 @@ class SharingService : LifecycleService() {
      */
     private var standingSince: Instant? = null
 
+    /**
+     * What the phone's own motion sensors have reported lately, oldest first.
+     *
+     * Kept as moments rather than as a flag because they arrive late: the step
+     * counter is read in batches, and a batch landing a minute after the fact
+     * still has to undo an anchor that covered the minute it describes.
+     */
+    private val stirsHeard = mutableListOf<Stir>()
+
+    /** What the step counter last stood at, and when anything last stirred. */
+    private var stepsNow: Long? = null
+    private var lastStir: Instant? = null
+
+    /**
+     * Where the phone was standing when it was last put down.
+     *
+     * The place the answers are weighed against while nothing touches the
+     * phone, which is the one comparison a slow creep cannot walk away from
+     * unnoticed: the position written before each answer creeps along with the
+     * lie, and this does not.
+     */
+    private var putDown: PutDown? = null
+
+    /**
+     * Whether this phone has sensors to ask at all.
+     *
+     * Read once: sensors do not come and go, and the permission is asked for
+     * before the service starts collecting.
+     */
+    private val sensorsTell by lazy { sensorsNoticeMovement(this) }
+
     /** Where this phone keeps being, kept across restarts of the process. */
     private val trailStore by lazy { TrailStore(this) }
     private var trail: Trail = Trail()
@@ -336,6 +373,7 @@ class SharingService : LifecycleService() {
         falsePlaces = falsePlaceStore.read()
 
         lifecycleScope.launch { keepTheFalsePlaces() }
+        lifecycleScope.launch { noticeBeingCarried() }
         lifecycleScope.launch { keepWhatCountsAsCircling() }
 
         AppLog.i(
@@ -452,6 +490,8 @@ class SharingService : LifecycleService() {
                     falsePlaces,
                     circleLimits,
                     restsOn = restsOn,
+                    putDown = putDown,
+                    carrying = carryingSince(putDown, stirsHeard, sensorsTell),
                 )
             }
         // A fix left out does not move the last position, and that is how the
@@ -513,6 +553,7 @@ class SharingService : LifecycleService() {
         lastWritten = written
         wroteAt = Instant.now()
         rememberThePlace(fix)
+        anchorWhereItLies(fix)
 
         if (fenceMoves(fenceCentre.value, fix)) {
             fenceCentre.value = fix
@@ -655,6 +696,53 @@ class SharingService : LifecycleService() {
             noteMovement(moving)
             currentMode(seen.map { it.until }, moving.going, standing, ownMap)
         }.distinctUntilChanged()
+    }
+
+    /**
+     * Listens to the phone's own motion sensors for as long as the service
+     * runs.
+     *
+     * Apart from the activity recogniser feeding the modes, and deliberately:
+     * that one answers what the person is doing, in its own time and only when
+     * it is sure, and this one answers whether the phone was moved at all. The
+     * second question is the one a transmitter cannot answer for us.
+     */
+    private suspend fun noticeBeingCarried() {
+        stirs(this).collect { stir -> noteStir(stir) }
+    }
+
+    /**
+     * Keeps what the motion sensors have said, so that the anchor can be
+     * undone by a report that arrives after the fact.
+     */
+    private fun noteStir(stir: Stir) {
+        stirsHeard += stir
+        lastStir = maxOf(lastStir ?: stir.at, stir.at)
+        stir.steps?.let { counted -> stepsNow = maxOf(stepsNow ?: counted, counted) }
+
+        val old = Instant.now().minus(STIRS_KEPT)
+
+        stirsHeard.removeAll { it.at.isBefore(old) }
+    }
+
+    /**
+     * Moves the anchor to where the phone has just said it is, where the
+     * anchor it had is no longer about a phone lying untouched.
+     *
+     * An anchor is left where it is for as long as nothing has stirred: that
+     * is the whole of its value, since an anchor that followed the answers
+     * would follow a creep as readily as the last position does. It is moved
+     * once something has been carried somewhere and then put down again, and
+     * [putDownAt] is what decides that the phone has settled.
+     */
+    private fun anchorWhereItLies(believed: Fix) {
+        val carrying = carryingSince(putDown, stirsHeard, sensorsTell)
+
+        if (putDown != null && !carrying.stirred && (carrying.steps ?: 0) < CARRIED_STEPS) {
+            return
+        }
+
+        putDown = putDownAt(believed, lastStir, sensorsTell, Instant.now(), stepsNow)
     }
 
     /**
@@ -1252,6 +1340,8 @@ class SharingService : LifecycleService() {
         JumpReason.FalsePlace -> "by landing on ${theFalsePlace(fix)}"
 
         JumpReason.Unmoved -> "by the phone never having been carried there"
+
+        JumpReason.Drifted -> "by the answer walking away from a phone nobody touched"
 
         JumpReason.Contradicted ->
             "by the other radios placing the phone ${apartFromTheRadios(fix)}"

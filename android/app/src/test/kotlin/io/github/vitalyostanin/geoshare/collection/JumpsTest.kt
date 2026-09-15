@@ -238,6 +238,45 @@ class JumpsTest {
         assertNull(whyAJump(first, second, restsOn = emptyMap()))
     }
 
+    // The creep this whole rule exists for: every pair of answers is a few
+    // metres apart, so the speed says nothing and the width says nothing,
+    // while the place they have walked to is a kilometre from where the phone
+    // is lying.
+    @Test
+    fun `answers creeping away from a phone nobody touched are a jump`() {
+        val lying = fixAt(61.03268, 4.40300, 0, accuracy = 20.0)
+        val crept = fixAt(61.04170, 4.40300, 1_800, accuracy = 40.0)
+        val nearlyThere = fixAt(61.04168, 4.40300, 1_770, accuracy = 40.0)
+
+        assertEquals(
+            JumpReason.Drifted,
+            whyAJump(
+                nearlyThere,
+                crept,
+                putDown = PutDown(at = lying, since = lying.takenAt, steps = 1_000),
+                carrying = Carrying(stirred = false, steps = 0),
+            ),
+        )
+    }
+
+    // The same pair with the phone having been carried: the sensors say it
+    // went somewhere, and the rule has nothing to say about where.
+    @Test
+    fun `answers that moved with the phone are left alone`() {
+        val lying = fixAt(61.03268, 4.40300, 0, accuracy = 20.0)
+        val crept = fixAt(61.04170, 4.40300, 1_800, accuracy = 40.0)
+        val nearlyThere = fixAt(61.04168, 4.40300, 1_770, accuracy = 40.0)
+
+        assertNull(
+            whyAJump(
+                nearlyThere,
+                crept,
+                putDown = PutDown(at = lying, since = lying.takenAt, steps = 1_000),
+                carrying = Carrying(stirred = true),
+            ),
+        )
+    }
+
     private fun fixAt(latitude: Double, longitude: Double, second: Long, accuracy: Double? = null) =
         Fix(
             latitude = latitude,
