@@ -112,7 +112,8 @@ export const RU = {
     leftOutCircling: 'Ответы ходят по кругу',
     leftOutOneBand: 'Слышна одна полоса',
     leftOutRepeating: 'Ответ повторяется',
-    leftOutBySource: 'Источник выключен вами',
+    leftOutBySource: 'Источник выключен на устройстве',
+    leftOutBySourceNamed: (source) => `Источник выключен на устройстве: ${source}`,
 
     // How wide the phone said its answer is. The sign is what turns a distance
     // into a claim about where the marker might really be.

@@ -50,7 +50,6 @@
     <string name="found_unsaid">Источник не назван</string>
     <string name="map_detail_left_out">Отброшено</string>
     <string name="map_detail_left_out_reason">Последняя причина</string>
-    <string name="map_detail_left_out_answers">%1$d ответов</string>
     <string name="left_out_drifted">Увод при неподвижном телефоне</string>
     <string name="left_out_contradicted">Вышки говорят другое</string>
     <string name="left_out_width">Ответ шире района</string>
@@ -61,7 +60,8 @@
     <string name="left_out_circling">Ответы ходят по кругу</string>
     <string name="left_out_one_band">Слышна одна полоса</string>
     <string name="left_out_repeating">Ответ повторяется</string>
-    <string name="left_out_by_source">Источник выключен вами</string>
+    <string name="left_out_by_source">Источник выключен на устройстве</string>
+    <string name="left_out_by_source_named">Источник выключен на устройстве: %1$s</string>
     <string name="map_detail_battery">Заряд</string>
     <string name="map_detail_position">Координаты</string>
     <string name="map_detail_unknown">неизвестно</string>
@@ -163,6 +163,12 @@
     <string name="map_age_short_hours">%1$d ч</string>
     <string name="map_age_short_days">%1$d д</string>
 
+    <plurals name="map_detail_left_out_answers">
+        <item quantity="one">%1$d ответ</item>
+        <item quantity="few">%1$d ответа</item>
+        <item quantity="many">%1$d ответов</item>
+        <item quantity="other">%1$d ответа</item>
+    </plurals>
     <plurals name="map_age_minutes">
         <item quantity="one">%1$d минуту назад</item>
         <item quantity="few">%1$d минуты назад</item>

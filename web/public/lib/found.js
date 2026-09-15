@@ -59,10 +59,38 @@ const LEFT_OUT_WORDS = {
     Source: WORDS.leftOutBySource,
 };
 
-/** The words for a reason, or the unknown for anything this build cannot name. */
+/**
+ * What each switch is called, for a reason that names the one switched off.
+ *
+ * The switches are not the sources one for one: the two ways of arriving at a
+ * place from the towers and the Wi-Fi are one switch, and the card is where
+ * the difference between them is told.
+ */
+const SWITCH_WORDS = {
+    Satellites: WORDS.foundSatellites,
+    OtherRadios: WORDS.foundOtherRadios,
+    Unheard: WORDS.foundUnheard,
+    Pretended: WORDS.foundPretended,
+    Unsaid: WORDS.foundUnsaid,
+};
+
+/**
+ * The words for a reason, or the unknown for anything this build cannot name.
+ *
+ * A source the member switched off arrives as `Source:Satellites`, and the
+ * switch is named: which of the five it was is the whole of what the member
+ * opens the card for. A build that wrote the fact without the switch, and a
+ * switch this build has never heard of, both come out as the plain sentence.
+ */
 export function leftOutText(reason) {
     if (!reason) {
         return WORDS.unknown;
+    }
+
+    if (reason.startsWith('Source:')) {
+        const named = SWITCH_WORDS[reason.slice('Source:'.length)];
+
+        return named ? WORDS.leftOutBySourceNamed(named) : WORDS.leftOutBySource;
     }
 
     return LEFT_OUT_WORDS[reason] ?? WORDS.unknown;

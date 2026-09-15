@@ -191,6 +191,18 @@ describe('positions', () => {
         }));
     });
 
+    // A source the member switched off is written as two words joined by a
+    // colon, so that the card can name which of the five it was.
+    it('a reason may name the switch that was turned off', async () => {
+        const db = testEnv.authenticatedContext(ALICE).firestore();
+
+        await setDoc(positionOf(db, ALICE), positionFrom(ALICE));
+
+        await assertSucceeds(updateDoc(positionOf(db, ALICE), {
+            leftOutReason: 'Source:OtherRadios',
+        }));
+    });
+
     it('a count of answers left out is held to a number', async () => {
         const db = testEnv.authenticatedContext(ALICE).firestore();
 

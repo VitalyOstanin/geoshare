@@ -58,6 +58,8 @@ import io.github.vitalyostanin.geoshare.collection.foundByLabel
 import io.github.vitalyostanin.geoshare.collection.leftOutReasonLabel
 import io.github.vitalyostanin.geoshare.collection.modeLabel
 import io.github.vitalyostanin.geoshare.collection.modesExplained
+import io.github.vitalyostanin.geoshare.collection.sourceChoiceLabel
+import io.github.vitalyostanin.geoshare.collection.sourceLeftOut
 import io.github.vitalyostanin.geoshare.collection.watchingMembers
 import kotlinx.coroutines.delay
 import java.time.Instant
@@ -834,14 +836,33 @@ private fun MemberDetail(
             member.leftOutCount?.takeIf { it > 0 }?.let { count ->
                 DetailRow(R.string.map_detail_left_out) {
                     Text(
-                        text = stringResource(R.string.map_detail_left_out_answers, count),
+                        text =
+                        pluralStringResource(
+                            R.plurals.map_detail_left_out_answers,
+                            count,
+                            count,
+                        ),
                         style = MaterialTheme.typography.bodyMedium,
                         color = leftOutColour(),
                     )
                 }
                 DetailRow(R.string.map_detail_left_out_reason) {
+                    val switched = sourceLeftOut(member.leftOutReason)
+
                     Text(
-                        text = stringResource(leftOutReasonLabel(member.leftOutReason)),
+                        // A source the member switched off is named: which of
+                        // the five it was is what they open the card to find
+                        // out. Everything else, and a build that wrote the
+                        // fact without the switch, says what it says.
+                        text =
+                        switched
+                            ?.let {
+                                stringResource(
+                                    R.string.left_out_by_source_named,
+                                    stringResource(sourceChoiceLabel(it)),
+                                )
+                            }
+                            ?: stringResource(leftOutReasonLabel(member.leftOutReason)),
                         style = MaterialTheme.typography.bodyMedium,
                         color = leftOutColour(),
                     )

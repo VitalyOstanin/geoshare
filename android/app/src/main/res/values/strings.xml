@@ -61,7 +61,6 @@
     <string name="found_unsaid">Source not stated</string>
     <string name="map_detail_left_out">Left out</string>
     <string name="map_detail_left_out_reason">Last reason</string>
-    <string name="map_detail_left_out_answers">%1$d answers</string>
     <string name="left_out_drifted">Walked away from an untouched phone</string>
     <string name="left_out_contradicted">The towers say otherwise</string>
     <string name="left_out_width">Wider than a district</string>
@@ -72,7 +71,8 @@
     <string name="left_out_circling">The answers go round a circle</string>
     <string name="left_out_one_band">Only one band is heard</string>
     <string name="left_out_repeating">The answer repeats itself</string>
-    <string name="left_out_by_source">You switched this source off</string>
+    <string name="left_out_by_source">The source is switched off on the phone</string>
+    <string name="left_out_by_source_named">Switched off on the phone: %1$s</string>
     <string name="map_detail_battery">Battery</string>
     <string name="map_detail_position">Position</string>
     <string name="map_detail_coordinates" translatable="false">%1$.5f, %2$.5f</string>
@@ -188,6 +188,10 @@
     <string name="map_age_short_hours">%1$d h</string>
     <string name="map_age_short_days">%1$d d</string>
 
+    <plurals name="map_detail_left_out_answers">
+        <item quantity="one">%1$d answer</item>
+        <item quantity="other">%1$d answers</item>
+    </plurals>
     <plurals name="map_age_minutes">
         <item quantity="one">%1$d minute ago</item>
         <item quantity="other">%1$d minutes ago</item>

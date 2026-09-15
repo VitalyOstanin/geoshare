@@ -92,7 +92,8 @@ export const EN = {
     leftOutCircling: 'The answers go round a circle',
     leftOutOneBand: 'Only one band is heard',
     leftOutRepeating: 'The answer repeats itself',
-    leftOutBySource: 'You switched this source off',
+    leftOutBySource: 'The source is switched off on the phone',
+    leftOutBySourceNamed: (source) => `Switched off on the phone: ${source}`,
 
     // How wide the phone said its answer is. The sign is what turns a distance
     // into a claim about where the marker might really be.

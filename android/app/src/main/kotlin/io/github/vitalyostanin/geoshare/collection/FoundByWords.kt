@@ -64,8 +64,43 @@ fun leftOutReasonLabel(reason: String?): Int = when (reason) {
     JumpReason.Circling.name -> R.string.left_out_circling
     JumpReason.OneBand.name -> R.string.left_out_one_band
     JumpReason.Repeating.name -> R.string.left_out_repeating
-    LEFT_OUT_BY_SOURCE -> R.string.left_out_by_source
-    else -> R.string.map_detail_unknown
+    else -> switchedOffLabel(reason)
+}
+
+/**
+ * What is left of a reason naming a source the member switched off.
+ *
+ * Such a reason is written with the switch beside it — `Source:Satellites` —
+ * and the screen names the switch where this build knows it; this is the
+ * sentence for the cases where it does not: a build older than the switches,
+ * or a switch newer than this build.
+ */
+@StringRes
+private fun switchedOffLabel(reason: String?): Int =
+    if (reason?.substringBefore(':') == LEFT_OUT_BY_SOURCE) {
+        R.string.left_out_by_source
+    } else {
+        R.string.map_detail_unknown
+    }
+
+/**
+ * The switch named in a reason, where the reason names one.
+ *
+ * A source the member switched off is written as `Source:Satellites` rather
+ * than as `Source` alone: which of the five it was is the whole of what the
+ * member wants back from such a row, and the phone knows it at the moment it
+ * leaves the answer out. The older form without a switch is still understood,
+ * because a build that wrote it may be the one a phone in the household is
+ * running.
+ *
+ * A switch this build has never heard of comes out as nothing, and the row
+ * says only that a source was switched off — which is true, and better than a
+ * word of another language on the card.
+ */
+fun sourceLeftOut(reason: String?): SourceChoice? {
+    val named = reason?.substringAfter("$LEFT_OUT_BY_SOURCE:", "").orEmpty()
+
+    return SourceChoice.entries.firstOrNull { it.name == named }
 }
 
 /**

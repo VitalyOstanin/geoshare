@@ -40,6 +40,7 @@ import io.github.vitalyostanin.geoshare.collection.anchorFrom
 import io.github.vitalyostanin.geoshare.collection.andThen
 import io.github.vitalyostanin.geoshare.collection.answeredBy
 import io.github.vitalyostanin.geoshare.collection.carryingSince
+import io.github.vitalyostanin.geoshare.collection.choiceFor
 import io.github.vitalyostanin.geoshare.collection.chooseMode
 import io.github.vitalyostanin.geoshare.collection.circleDrawn
 import io.github.vitalyostanin.geoshare.collection.clockDisagrees
@@ -599,7 +600,12 @@ class SharingService : LifecycleService() {
                     "this phone was told not to take that source into account",
             )
 
-            tellThemAnswersAreBeingLeftOut(writer, LEFT_OUT_BY_SOURCE)
+            // The switch as well as the fact, because "a source was switched
+            // off" answers none of what a member opens the card for.
+            tellThemAnswersAreBeingLeftOut(
+                writer,
+                "$LEFT_OUT_BY_SOURCE:${choiceFor(whence)?.name.orEmpty()}",
+            )
 
             return false
         }

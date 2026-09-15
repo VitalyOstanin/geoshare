@@ -71,3 +71,17 @@ test('a position with nothing left out names no reason', () => {
 test('a reason this build has never heard of is shown as unknown', () => {
     assert.equal(leftOutText('Sunspots'), WORDS.unknown);
 });
+
+// Which of the five was switched off is the whole of what the row is opened
+// for, so the phone writes the switch beside the fact.
+test('a reason names the switch that was turned off', () => {
+    assert.equal(leftOutText('Source:Satellites'), WORDS.leftOutBySourceNamed(WORDS.foundSatellites));
+    assert.equal(leftOutText('Source:OtherRadios'), WORDS.leftOutBySourceNamed(WORDS.foundOtherRadios));
+});
+
+// The older form, and a switch from a build newer than this one: both say a
+// source was switched off without naming it.
+test('a switch this build cannot name still says a source was switched off', () => {
+    assert.equal(leftOutText('Source'), WORDS.leftOutBySource);
+    assert.equal(leftOutText('Source:Lighthouse'), WORDS.leftOutBySource);
+});

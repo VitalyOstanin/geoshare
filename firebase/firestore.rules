@@ -455,8 +455,10 @@ service cloud.firestore {
         //
         // The count is held to a number a run of answers can reach — seven
         // seconds apart, a day of them is twelve thousand — and the reason to
-        // the length of a word, for the same reason the mode and the source
-        // are: a reader shows it.
+        // a length a word and a switch fit in, for the same reason the mode
+        // and the source are held to one: a reader shows it. A source the
+        // member switched off arrives as two words joined by a colon, because
+        // which of the five it was is what the card is opened for.
         function leftOutShape() {
           return (!('leftOutCount' in request.resource.data) ||
                   (request.resource.data.leftOutCount is int &&
@@ -464,7 +466,7 @@ service cloud.firestore {
                    request.resource.data.leftOutCount <= 100000)) &&
                  (!('leftOutReason' in request.resource.data) ||
                   (request.resource.data.leftOutReason is string &&
-                   request.resource.data.leftOutReason.size() <= 20)) &&
+                   request.resource.data.leftOutReason.size() <= 40)) &&
                  (!('leftOutSince' in request.resource.data) ||
                   request.resource.data.leftOutSince is timestamp);
         }

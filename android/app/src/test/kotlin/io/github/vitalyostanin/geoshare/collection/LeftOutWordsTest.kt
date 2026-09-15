@@ -33,6 +33,25 @@ class LeftOutWordsTest {
         assertEquals(R.string.left_out_by_source, leftOutReasonLabel(LEFT_OUT_BY_SOURCE))
     }
 
+    // Which of the five was switched off is what a member opens the card for,
+    // so the phone writes the switch beside the fact.
+    @Test
+    fun `a reason names the switch that was turned off`() {
+        assertEquals(SourceChoice.Satellites, sourceLeftOut("Source:Satellites"))
+        assertEquals(SourceChoice.OtherRadios, sourceLeftOut("Source:OtherRadios"))
+        assertEquals(R.string.left_out_by_source, leftOutReasonLabel("Source:Satellites"))
+    }
+
+    // What the builds before this wrote, and what a build newer than this one
+    // may write: both say a source was switched off without this one being
+    // able to name it, which is true and better than a foreign word.
+    @Test
+    fun `a switch this build cannot name still says a source was switched off`() {
+        assertEquals(null, sourceLeftOut(LEFT_OUT_BY_SOURCE))
+        assertEquals(null, sourceLeftOut("Source:Lighthouse"))
+        assertEquals(R.string.left_out_by_source, leftOutReasonLabel("Source:Lighthouse"))
+    }
+
     @Test
     fun `a position with nothing left out names no reason`() {
         assertEquals(R.string.map_detail_unknown, leftOutReasonLabel(null))
