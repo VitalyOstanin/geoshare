@@ -3,6 +3,7 @@ package io.github.vitalyostanin.geoshare.service
 import android.annotation.SuppressLint
 import android.content.Context
 import android.location.GnssMeasurementsEvent
+import android.location.GnssNavigationMessage
 import android.location.GnssStatus
 import android.location.LocationManager
 import android.os.Build
@@ -17,14 +18,18 @@ import io.github.vitalyostanin.geoshare.collection.Fix
 import io.github.vitalyostanin.geoshare.collection.Gain
 import io.github.vitalyostanin.geoshare.collection.Interference
 import io.github.vitalyostanin.geoshare.collection.Measurement
+import io.github.vitalyostanin.geoshare.collection.NavMessage
+import io.github.vitalyostanin.geoshare.collection.NavSoFar
 import io.github.vitalyostanin.geoshare.collection.SHARE_THE_GPS_BAND
 import io.github.vitalyostanin.geoshare.collection.Satellite
 import io.github.vitalyostanin.geoshare.collection.acrossTheBand
 import io.github.vitalyostanin.geoshare.collection.counted
 import io.github.vitalyostanin.geoshare.collection.gainPerBand
+import io.github.vitalyostanin.geoshare.collection.hexOf
 import io.github.vitalyostanin.geoshare.collection.inOrder
 import io.github.vitalyostanin.geoshare.collection.interferenceFrom
 import io.github.vitalyostanin.geoshare.collection.loudnessPerBand
+import io.github.vitalyostanin.geoshare.collection.navConstellation
 import io.github.vitalyostanin.geoshare.collection.reported
 import io.github.vitalyostanin.geoshare.collection.whatTheBandsSay
 import io.github.vitalyostanin.geoshare.collection.word
@@ -52,13 +57,25 @@ private const val EARLIER_EPOCHS = 50
 private val SILENCE_REPORTED_EVERY: Duration = Duration.ofMinutes(5)
 
 /**
+ * How often the log says how much the satellites have said.
+ *
+ * Said on its own schedule rather than beside a fix: the messages arrive
+ * whether or not a position comes out of them, and on the phones this was
+ * written for the fixes are the rare part.
+ */
+private val NAVIGATION_REPORTED_EVERY: Duration = Duration.ofMinutes(5)
+
+/**
  * What the radio is being subjected to, as the receiver's own measures say.
  *
- * Two subscriptions the phone already has the permission for, and neither of
- * which asks for a position: the satellites it can hear and how loud, and the
- * gain its amplifier is running at. The pair is what separates a jammed
- * receiver from a spoofed one — see [interferenceFrom] for which way each
- * moves — and neither alone says much.
+ * Subscriptions the phone already has the permission for, none of which asks
+ * for a position: the satellites it can hear and how loud, the gain its
+ * amplifier is running at, and the messages the satellites themselves are
+ * broadcasting. The first pair is what separates a jammed receiver from a
+ * spoofed one — see [interferenceFrom] for which way each moves — and neither
+ * of the two alone says much. The third is not a measure at all but the
+ * content of the signal: see
+ * [io.github.vitalyostanin.geoshare.collection.NavMessage].
  *
  * Both are kept apart by the system the satellites belong to, which is a third
  * thing to read and the only one that names where the interference is coming
@@ -92,9 +109,16 @@ class RadioWatch(private val context: Context) {
     @Volatile
     private var clock: Clock? = null
 
+    // What the satellites have said so far, kept rather than written straight
+    // out: a page repeated every thirty seconds would fill the sky file and
+    // push out everything else in it. See NavSoFar for what counts as new.
+    private val navigation = NavSoFar()
+
     private var saidNothingAt: Instant = Instant.EPOCH
+    private var saidNavigationAt: Instant = Instant.EPOCH
     private var status: GnssStatus.Callback? = null
     private var measurements: GnssMeasurementsEvent.Callback? = null
+    private var navMessages: GnssNavigationMessage.Callback? = null
 
     /**
      * What the last minute of measurements adds up to.
@@ -173,6 +197,26 @@ class RadioWatch(private val context: Context) {
     }
 
     /**
+     * How much the satellites have actually said, and which of them.
+     *
+     * Said rarely, and said even when the answer is none. Whether a chipset
+     * hands these over at all is what the subscription exists to find out, and
+     * a file with no such rows in it cannot tell "nothing arrived" from
+     * "nobody asked": this is the line that tells them apart.
+     */
+    fun navigationSaying(): String? {
+        val now = Instant.now()
+
+        if (Duration.between(saidNavigationAt, now) < NAVIGATION_REPORTED_EVERY) {
+            return null
+        }
+
+        saidNavigationAt = now
+
+        return navigation.saying()
+    }
+
+    /**
      * The epoch itself, put beside the position that came out of it.
      *
      * Called once per fix rather than once per epoch: see [SkyLog] for why.
@@ -204,7 +248,7 @@ class RadioWatch(private val context: Context) {
     )
 
     /**
-     * Subscribes to both, on the handler rather than on an executor.
+     * Subscribes to all three, on the handler rather than on an executor.
      *
      * The executor overloads arrive with Android 11, and the phone this was
      * written for — the one that goes silent for hours at a time — runs
@@ -251,7 +295,19 @@ class RadioWatch(private val context: Context) {
                 }
             }.also { manager.registerGnssMeasurementsCallback(it, handler) }
 
+        navMessages =
+            object : GnssNavigationMessage.Callback() {
+                override fun onGnssNavigationMessageReceived(message: GnssNavigationMessage) {
+                    val said = navMessageOf(message)
+
+                    if (navigation.worthWriting(said)) {
+                        SkyLog.note(Instant.now(), said)
+                    }
+                }
+            }.also { manager.registerGnssNavigationMessageCallback(it, handler) }
+
         AppLog.i(TAG, "watching the radio")
+        AppLog.i(TAG, whatTheChipsetSays(manager))
     }
 
     fun stop() {
@@ -259,9 +315,11 @@ class RadioWatch(private val context: Context) {
 
         status?.let { manager.unregisterGnssStatusCallback(it) }
         measurements?.let { manager.unregisterGnssMeasurementsCallback(it) }
+        navMessages?.let { manager.unregisterGnssNavigationMessageCallback(it) }
 
         status = null
         measurements = null
+        navMessages = null
     }
 
     /**
@@ -559,3 +617,36 @@ private fun reportedDelays(measured: android.location.GnssMeasurement): Delays =
         measured.hasSatelliteInterSignalBiasUncertaintyNanos()
     },
 )
+
+/** One navigation message, in the terms the rest of this uses. */
+private fun navMessageOf(message: GnssNavigationMessage): NavMessage = NavMessage(
+    constellation = navConstellation(message.type),
+    id = message.svid,
+    type = message.type,
+    status = message.status,
+    messageId = message.messageId,
+    submessageId = message.submessageId,
+    data = hexOf(message.data),
+)
+
+/**
+ * What the chipset admits it can hand over, where the platform asks it.
+ *
+ * Android 12 and later. Below that the question has no answer at all, which is
+ * not the same as a negative one, and the subscriptions are made either way:
+ * what arrives is the answer that counts. Worth writing at every start because
+ * it is the one line that says whether a phone with nothing in its navigation
+ * rows was ever going to have anything there.
+ */
+private fun whatTheChipsetSays(manager: LocationManager): String {
+    if (Build.VERSION.SDK_INT < Build.VERSION_CODES.S) {
+        return "this version of Android does not ask the chipset what it can hand over"
+    }
+
+    val can = manager.gnssCapabilities
+
+    return "the chipset ${saysItCan(can.hasMeasurements())} hand over raw measurements, and " +
+        "${saysItCan(can.hasNavigationMessages())} hand over navigation messages"
+}
+
+private fun saysItCan(can: Boolean): String = if (can) "says it can" else "says it cannot"

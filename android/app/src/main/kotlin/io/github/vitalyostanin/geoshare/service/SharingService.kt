@@ -1045,6 +1045,13 @@ class SharingService : LifecycleService() {
             }
 
             radio.noteSkyWithoutFix(Instant.now(), mode.name, quiet)
+
+            // The satellites go on talking while the receiver works out
+            // nothing from them, and a phone that is being talked over is
+            // exactly the phone whose fixes have stopped: without this, the
+            // count of what they said would only be written while things were
+            // going well.
+            radio.navigationSaying()?.let { AppLog.i(TAG, it) }
         }
     }
 
@@ -1150,6 +1157,7 @@ class SharingService : LifecycleService() {
 
         radio.saying()?.let { AppLog.i(TAG, it) }
         radio.satellitesSaying()?.let { AppLog.i(TAG, it) }
+        radio.navigationSaying()?.let { AppLog.i(TAG, it) }
 
         // The epoch behind the line just written, in its own file. Everything
         // above is one sentence about a minute of averages; this is the sky

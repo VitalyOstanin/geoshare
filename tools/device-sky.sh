@@ -8,11 +8,16 @@
 #   tools/device-sky.sh                 # the whole file, oldest row first
 #   ANDROID_SERIAL=<device> tools/device-sky.sh
 #
-# Columns:
-#   Fix,<millis>,<latitude>,<longitude>,<accuracy m>,<provider>
-#   Agc,<millis>,<system>,<carrier Hz>,<level dB>
-#   Sat,<millis>,<system>,<id>,<C/N0>,<baseband C/N0>,<elevation>,<azimuth>,
-#       <carrier Hz>,<in the fix>,<has ephemeris>,<has almanac>
+# Kinds of row, told apart by the first field. What each one carries is
+# written at the head of the file itself, which is where to read it:
+#   Fix    the position that came out of the epoch
+#   NoFix  the same head row for an epoch that produced no position at all
+#   Clock  the receiver's own clock as it reported it
+#   Agc    the gain of one band the receiver is running
+#   Sat    one satellite the receiver named
+#   Raw    one measurement the receiver made off one signal
+#   Nav    one message a satellite broadcast, written when it says something
+#          new rather than on every repeat
 set -euo pipefail
 
 readonly PACKAGE=io.github.vitalyostanin.geoshare

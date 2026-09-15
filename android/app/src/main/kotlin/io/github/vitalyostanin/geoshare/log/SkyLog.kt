@@ -4,6 +4,7 @@ import io.github.vitalyostanin.geoshare.collection.Clock
 import io.github.vitalyostanin.geoshare.collection.Fix
 import io.github.vitalyostanin.geoshare.collection.Gain
 import io.github.vitalyostanin.geoshare.collection.Measurement
+import io.github.vitalyostanin.geoshare.collection.NavMessage
 import io.github.vitalyostanin.geoshare.collection.Satellite
 import io.github.vitalyostanin.geoshare.collection.word
 import java.io.File
@@ -124,6 +125,19 @@ object SkyLog {
      */
     fun note(at: Instant, fix: Fix) = note(buildString { fix(at.toEpochMilli(), fix) })
 
+    /**
+     * One navigation message, written as it arrives rather than beside a fix.
+     *
+     * The satellites say what they say on their own schedule, a page every few
+     * seconds, and a page that arrived while the receiver was working out
+     * nothing is as much worth having as one that arrived beside a position.
+     * What keeps the file from filling up with them is the caller, which
+     * writes a page only when it differs from the last one written for that
+     * satellite — see [io.github.vitalyostanin.geoshare.collection.NavSoFar].
+     */
+    fun note(at: Instant, message: NavMessage) =
+        note(buildString { nav(at.toEpochMilli(), message) })
+
     /** Both files, oldest row first. */
     fun read(): String = files?.read().orEmpty()
 
@@ -220,6 +234,17 @@ object SkyLog {
         append(measured.fullTracking?.let { if (it) "1" else "0" }.orEmpty()).append('\n')
     }
 
+    private fun StringBuilder.nav(stamp: Long, message: NavMessage) {
+        append("Nav,").append(stamp).append(',')
+        append(message.constellation.word).append(',')
+        append(message.id).append(',')
+        append(message.type).append(',')
+        append(message.status).append(',')
+        append(message.messageId).append(',')
+        append(message.submessageId).append(',')
+        append(message.data).append('\n')
+    }
+
     /** A number the way a spreadsheet wants it, or nothing where there is none. */
     private fun number(value: Double?): String =
         value?.let { String.format(Locale.ROOT, "%.3f", it) }.orEmpty()
@@ -239,5 +264,6 @@ object SkyLog {
         # Agc,UnixTimeMillis,ConstellationType,CarrierFrequencyHz,AgcDb
         # Sat,UnixTimeMillis,ConstellationType,Svid,Cn0DbHz,BasebandCn0DbHz,ElevationDegrees,AzimuthDegrees,CarrierFrequencyHz,UsedInFix,HasEphemerisData,HasAlmanacData
         # Raw,UnixTimeMillis,ConstellationType,Svid,TimeOffsetNanos,State,ReceivedSvTimeNanos,ReceivedSvTimeUncertaintyNanos,Cn0DbHz,BasebandCn0DbHz,PseudorangeRateMetersPerSecond,PseudorangeRateUncertaintyMetersPerSecond,AccumulatedDeltaRangeState,AccumulatedDeltaRangeMeters,AccumulatedDeltaRangeUncertaintyMeters,CarrierFrequencyHz,MultipathIndicator,AgcDb,SnrInDb,CodeType,FullInterSignalBiasNanos,FullInterSignalBiasUncertaintyNanos,SatelliteInterSignalBiasNanos,SatelliteInterSignalBiasUncertaintyNanos,IsFullTracking
+        # Nav,UnixTimeMillis,ConstellationType,Svid,Type,Status,MessageId,SubmessageId,DataHex
         """.trimIndent() + "\n"
 }
