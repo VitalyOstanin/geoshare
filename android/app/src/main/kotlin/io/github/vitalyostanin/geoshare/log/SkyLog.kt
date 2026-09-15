@@ -1,11 +1,15 @@
 package io.github.vitalyostanin.geoshare.log
 
 import io.github.vitalyostanin.geoshare.collection.Clock
+import io.github.vitalyostanin.geoshare.collection.Constellation
 import io.github.vitalyostanin.geoshare.collection.Fix
 import io.github.vitalyostanin.geoshare.collection.Gain
 import io.github.vitalyostanin.geoshare.collection.Measurement
 import io.github.vitalyostanin.geoshare.collection.NavMessage
+import io.github.vitalyostanin.geoshare.collection.SLANT_MIN_SATELLITES
 import io.github.vitalyostanin.geoshare.collection.Satellite
+import io.github.vitalyostanin.geoshare.collection.Slant
+import io.github.vitalyostanin.geoshare.collection.slantOf
 import io.github.vitalyostanin.geoshare.collection.word
 import java.io.File
 import java.time.Duration
@@ -74,6 +78,7 @@ object SkyLog {
                 fix(stamp, fix)
                 clock?.let { clock(stamp, it) }
                 gains.forEach { gain(stamp, it) }
+                slants(stamp, sky)
                 sky.forEach { satellite(stamp, it) }
                 measurements.forEach { measurement(stamp, it) }
             },
@@ -110,6 +115,7 @@ object SkyLog {
                 unfixed(stamp, mode, silence)
                 clock?.let { clock(stamp, it) }
                 gains.forEach { gain(stamp, it) }
+                slants(stamp, sky)
                 sky.forEach { satellite(stamp, it) }
                 measurements.forEach { measurement(stamp, it) }
             },
@@ -193,6 +199,37 @@ object SkyLog {
         append(number(gain.levelDb)).append('\n')
     }
 
+    /**
+     * How the epoch's loudness stands against the height of the satellites,
+     * one row per system.
+     *
+     * Worked out here rather than left to whoever reads the file, although
+     * every number behind it is in the rows below: what it is for is to be
+     * read beside the gain and the loudness without the reader having to
+     * group the epoch first, and to be the same arithmetic the phone itself
+     * acted on. Only the systems with satellites enough to mean anything —
+     * see [SLANT_MIN_SATELLITES].
+     */
+    private fun StringBuilder.slants(stamp: Long, sky: List<Satellite>) {
+        for ((constellation, slant) in slantOf(sky)) {
+            if (slant.satellites < SLANT_MIN_SATELLITES) {
+                continue
+            }
+
+            slant(stamp, constellation, slant)
+        }
+    }
+
+    private fun StringBuilder.slant(stamp: Long, constellation: Constellation, slant: Slant) {
+        append("Slant,").append(stamp).append(',')
+        append(constellation.word).append(',')
+        append(slant.satellites).append(',')
+        append(number(slant.meanDb)).append(',')
+        append(number(slant.spreadDb)).append(',')
+        append(number(slant.slopeDb)).append(',')
+        append(number(slant.highLessLowDb)).append('\n')
+    }
+
     private fun StringBuilder.satellite(stamp: Long, satellite: Satellite) {
         append("Sat,").append(stamp).append(',')
         append(satellite.constellation.word).append(',')
@@ -262,6 +299,7 @@ object SkyLog {
         # NoFix,UnixTimeMillis,Mode,SilenceMillis
         # Clock,UnixTimeMillis,TimeNanos,LeapSecond,TimeUncertaintyNanos,FullBiasNanos,BiasNanos,BiasUncertaintyNanos,DriftNanosPerSecond,DriftUncertaintyNanosPerSecond,HardwareClockDiscontinuityCount,ElapsedRealtimeNanos,ElapsedRealtimeUncertaintyNanos
         # Agc,UnixTimeMillis,ConstellationType,CarrierFrequencyHz,AgcDb
+        # Slant,UnixTimeMillis,ConstellationType,Satellites,MeanCn0DbHz,SpreadDbHz,SlopeDbPerSineOfElevation,HighLessLowDbHz
         # Sat,UnixTimeMillis,ConstellationType,Svid,Cn0DbHz,BasebandCn0DbHz,ElevationDegrees,AzimuthDegrees,CarrierFrequencyHz,UsedInFix,HasEphemerisData,HasAlmanacData
         # Raw,UnixTimeMillis,ConstellationType,Svid,TimeOffsetNanos,State,ReceivedSvTimeNanos,ReceivedSvTimeUncertaintyNanos,Cn0DbHz,BasebandCn0DbHz,PseudorangeRateMetersPerSecond,PseudorangeRateUncertaintyMetersPerSecond,AccumulatedDeltaRangeState,AccumulatedDeltaRangeMeters,AccumulatedDeltaRangeUncertaintyMeters,CarrierFrequencyHz,MultipathIndicator,AgcDb,SnrInDb,CodeType,FullInterSignalBiasNanos,FullInterSignalBiasUncertaintyNanos,SatelliteInterSignalBiasNanos,SatelliteInterSignalBiasUncertaintyNanos,IsFullTracking
         # Nav,UnixTimeMillis,ConstellationType,Svid,Type,Status,MessageId,SubmessageId,DataHex

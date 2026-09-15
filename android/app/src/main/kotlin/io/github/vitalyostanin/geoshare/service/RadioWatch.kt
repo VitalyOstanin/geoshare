@@ -13,6 +13,7 @@ import androidx.annotation.RequiresApi
 import io.github.vitalyostanin.geoshare.collection.Clock
 import io.github.vitalyostanin.geoshare.collection.Constellation
 import io.github.vitalyostanin.geoshare.collection.Counted
+import io.github.vitalyostanin.geoshare.collection.EPOCHS_READ_TOGETHER
 import io.github.vitalyostanin.geoshare.collection.Epochs
 import io.github.vitalyostanin.geoshare.collection.Fix
 import io.github.vitalyostanin.geoshare.collection.Gain
@@ -21,7 +22,9 @@ import io.github.vitalyostanin.geoshare.collection.Measurement
 import io.github.vitalyostanin.geoshare.collection.NavMessage
 import io.github.vitalyostanin.geoshare.collection.NavSoFar
 import io.github.vitalyostanin.geoshare.collection.SHARE_THE_GPS_BAND
+import io.github.vitalyostanin.geoshare.collection.SLANT_MIN_SATELLITES
 import io.github.vitalyostanin.geoshare.collection.Satellite
+import io.github.vitalyostanin.geoshare.collection.Slant
 import io.github.vitalyostanin.geoshare.collection.acrossTheBand
 import io.github.vitalyostanin.geoshare.collection.counted
 import io.github.vitalyostanin.geoshare.collection.gainPerBand
@@ -31,6 +34,8 @@ import io.github.vitalyostanin.geoshare.collection.interferenceFrom
 import io.github.vitalyostanin.geoshare.collection.loudnessPerBand
 import io.github.vitalyostanin.geoshare.collection.navConstellation
 import io.github.vitalyostanin.geoshare.collection.reported
+import io.github.vitalyostanin.geoshare.collection.shapeOf
+import io.github.vitalyostanin.geoshare.collection.slantOf
 import io.github.vitalyostanin.geoshare.collection.whatTheBandsSay
 import io.github.vitalyostanin.geoshare.collection.word
 import io.github.vitalyostanin.geoshare.log.AppLog
@@ -104,6 +109,12 @@ class RadioWatch(private val context: Context) {
     // moved. See Constellations.kt for which bands those are.
     private val heard = mutableMapOf<Constellation, ArrayDeque<Double>>()
     private val gains = mutableMapOf<Constellation, ArrayDeque<Double>>()
+
+    // The third window, read on its own terms rather than as a pair of
+    // averages: what it carries is not a level that has to have moved but a
+    // shape the sky either has or has not — see Slant.kt. Ten epochs deep,
+    // because that is what a verdict is read from.
+    private val shapes = mutableMapOf<Constellation, ArrayDeque<Slant>>()
 
     // The last epoch of each, kept whole rather than averaged: the averages
     // answer whether anything is going on, and these are what a person looks
@@ -214,6 +225,49 @@ class RadioWatch(private val context: Context) {
     }
 
     /**
+     * How the loudness of the last ten epochs stands against the height of the
+     * satellites it came from, system by system.
+     *
+     * The line every other measure here needs and none of them carry: the gain
+     * and the loudness say a band has moved, and moving is what a bus going
+     * past does as well. This says whether the sky the satellites describe
+     * could be a sky at all — see [io.github.vitalyostanin.geoshare.collection.SkyShape].
+     *
+     * The numbers go out beside the verdict rather than instead of it, because
+     * the limits behind the verdict were read off two phones' logs and will
+     * have to be corrected against more.
+     */
+    fun skySaying(): String? {
+        val read =
+            inOrder(shapes.keys).mapNotNull { system ->
+                val epochs = shapes[system]?.toList().orEmpty()
+
+                if (epochs.size < EPOCHS_READ_TOGETHER) {
+                    return@mapNotNull null
+                }
+
+                val last = epochs.last()
+
+                String.format(
+                    Locale.ROOT,
+                    "%s %s (spread %.1f dB, slope %s, %d satellites)",
+                    system.word,
+                    shapeOf(epochs).toString().lowercase(),
+                    last.spreadDb,
+                    last.slopeDb?.let { String.format(Locale.ROOT, "%+.1f dB", it) }
+                        ?: "not measurable",
+                    last.satellites,
+                )
+            }
+
+        if (read.isEmpty()) {
+            return null
+        }
+
+        return "the sky reads ${read.joinToString(", ")}"
+    }
+
+    /**
      * How much the satellites have actually said, and which of them.
      *
      * Said rarely, and said even when the answer is none. Whether a chipset
@@ -305,6 +359,14 @@ class RadioWatch(private val context: Context) {
 
                     for ((constellation, loudness) in loudnessPerBand(epoch)) {
                         note(heard.getOrPut(constellation) { ArrayDeque() }, loudness)
+                    }
+
+                    for ((constellation, slant) in slantOf(epoch)) {
+                        if (slant.satellites < SLANT_MIN_SATELLITES) {
+                            continue
+                        }
+
+                        noteShape(shapes.getOrPut(constellation) { ArrayDeque() }, slant)
                     }
                 }
             }.also { manager.registerGnssStatusCallback(it, handler) }
@@ -403,6 +465,14 @@ class RadioWatch(private val context: Context) {
     /** The three systems that transmit where GPS does, read as one band. */
     private fun sharedBand(bands: Map<Constellation, Epochs>): Epochs =
         acrossTheBand(bands.filterKeys { it in SHARE_THE_GPS_BAND }.values)
+
+    private fun noteShape(into: ArrayDeque<Slant>, value: Slant) {
+        into.addLast(value)
+
+        while (into.size > EPOCHS_READ_TOGETHER) {
+            into.removeFirst()
+        }
+    }
 
     private fun note(into: ArrayDeque<Double>, value: Double) {
         into.addLast(value)

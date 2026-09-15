@@ -1464,6 +1464,7 @@ class SharingService : LifecycleService() {
 
         radio.saying()?.let { AppLog.i(TAG, it) }
         radio.satellitesSaying()?.let { AppLog.i(TAG, it) }
+        radio.skySaying()?.let { AppLog.i(TAG, it) }
         radio.navigationSaying()?.let { AppLog.i(TAG, it) }
 
         // The epoch behind the line just written, in its own file. Everything

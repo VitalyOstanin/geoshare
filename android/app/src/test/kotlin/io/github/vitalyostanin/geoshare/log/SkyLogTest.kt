@@ -12,6 +12,7 @@ import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
 import org.junit.rules.TemporaryFolder
+import java.time.Duration
 import java.time.Instant
 
 class SkyLogTest {
@@ -31,7 +32,7 @@ class SkyLogTest {
             fix = FIX,
             clock = CLOCK,
             gains = listOf(GAIN),
-            sky = listOf(SATELLITE),
+            sky = SKY + SATELLITE,
             measurements = listOf(MEASUREMENT),
         )
 
@@ -70,7 +71,7 @@ class SkyLogTest {
             fix = FIX,
             clock = CLOCK,
             gains = listOf(GAIN),
-            sky = listOf(SATELLITE),
+            sky = SKY + SATELLITE,
             measurements = listOf(MEASUREMENT),
         )
 
@@ -80,10 +81,75 @@ class SkyLogTest {
                 .map { it.substringBefore(",") }
                 .toSet()
 
-        assertEquals(setOf("Fix", "Clock", "Agc", "Sat", "Raw"), kinds)
+        assertEquals(setOf("Fix", "Clock", "Agc", "Slant", "Sat", "Raw"), kinds)
+    }
+
+    // The one row of a block that is not a copy of what the receiver said: it
+    // is worked out from the satellites below it, and written where the
+    // reader of the file meets it beside the gain rather than having to group
+    // the epoch first.
+    @Test
+    fun `a block with satellites enough carries what the sky was shaped like`() {
+        SkyLog.start(folder.newFolder("slant"))
+
+        SkyLog.note(
+            at = AT,
+            fix = FIX,
+            clock = CLOCK,
+            gains = listOf(GAIN),
+            sky = SKY,
+            measurements = listOf(MEASUREMENT),
+        )
+
+        val rows = SkyLog.read().lineSequence().filter { it.startsWith("Slant,") }.toList()
+
+        assertEquals(1, rows.size)
+
+        val fields = rows.first().split(",")
+
+        assertEquals("GPS", fields[2])
+        assertEquals("6", fields[3])
+    }
+
+    // Six of one system and two of another: the second is left out because
+    // two satellites say nothing about the shape of a sky.
+    @Test
+    fun `a system heard a satellite or two at a time is left out of it`() {
+        SkyLog.start(folder.newFolder("thin"))
+
+        SkyLog.note(
+            at = AT,
+            mode = "Watching",
+            silence = Duration.ofMinutes(4),
+            clock = CLOCK,
+            gains = listOf(GAIN),
+            sky = SKY + SATELLITE,
+            measurements = listOf(MEASUREMENT),
+        )
+
+        val systems =
+            SkyLog.read().lineSequence()
+                .filter { it.startsWith("Slant,") }
+                .map { it.split(",")[2] }
+                .toList()
+
+        assertEquals(listOf("GPS"), systems)
     }
 
     private companion object {
+        fun sat(id: Int, loudness: Double, elevationDegrees: Double) = Satellite(
+            constellation = Constellation.Gps,
+            id = id,
+            loudness = loudness,
+            basebandLoudness = null,
+            elevationDegrees = elevationDegrees,
+            azimuthDegrees = 120.0,
+            carrierHz = 1_575_420_032.0,
+            usedInFix = true,
+            hasEphemeris = true,
+            hasAlmanac = true,
+        )
+
         val AT: Instant = Instant.parse("2026-09-14T19:00:00Z")
 
         val FIX =
@@ -116,6 +182,16 @@ class SkyLogTest {
                 constellation = Constellation.Gps,
                 carrierHz = 1_575_420_000.0,
                 levelDb = -62.85,
+            )
+
+        val SKY =
+            listOf(
+                sat(1, 33.9, 7.0),
+                sat(2, 32.8, 19.0),
+                sat(3, 34.3, 31.0),
+                sat(4, 33.1, 48.0),
+                sat(5, 33.8, 62.0),
+                sat(6, 33.9, 76.0),
             )
 
         val SATELLITE =
