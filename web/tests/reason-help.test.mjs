@@ -14,6 +14,7 @@ const WRITTEN = [
     'Contradiction',
     'Drifted',
     'FalsePlace',
+    'Hurried',
     'OneBand',
     'OneTransmitter',
     'Repeating',

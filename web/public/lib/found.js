@@ -47,6 +47,7 @@ export function foundText(found) {
  */
 const LEFT_OUT_WORDS = {
     Drifted: WORDS.leftOutDrifted,
+    Hurried: WORDS.leftOutHurried,
     Contradicted: WORDS.leftOutContradicted,
     Width: WORDS.leftOutWidth,
     Speed: WORDS.leftOutSpeed,

@@ -22,6 +22,7 @@ const HELP_ORDER = [
     'FalsePlace',
     'Unmoved',
     'Drifted',
+    'Hurried',
     'Contradicted',
     'Circling',
     'Repeating',

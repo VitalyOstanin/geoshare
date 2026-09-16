@@ -55,6 +55,7 @@ fun sourceChoiceLabel(choice: SourceChoice): Int = when (choice) {
 @StringRes
 fun leftOutReasonLabel(reason: String?): Int = when (reason) {
     JumpReason.Drifted.name -> R.string.left_out_drifted
+    JumpReason.Hurried.name -> R.string.left_out_hurried
     JumpReason.Contradicted.name -> R.string.left_out_contradicted
     JumpReason.Width.name -> R.string.left_out_width
     JumpReason.Speed.name -> R.string.left_out_speed

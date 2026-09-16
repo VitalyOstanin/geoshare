@@ -1588,6 +1588,9 @@ class SharingService : LifecycleService() {
 
         JumpReason.Drifted -> "by the answer walking away from a phone nobody touched"
 
+        JumpReason.Hurried ->
+            "by the speed it claims for a phone nobody touched: ${theSpeedClaimed(fix)}"
+
         JumpReason.Contradicted ->
             "by the other radios placing the phone ${apartFromTheRadios(fix)}"
 
@@ -1602,6 +1605,16 @@ class SharingService : LifecycleService() {
         JumpReason.Settling -> "by the receiver still coming up: ${theReceiverSettling(fix)}"
 
         JumpReason.TimeApart -> "by the satellites' own time: ${theClockThatStepped()}"
+    }
+
+    /**
+     * What speed the provider claimed, for the line that says a fix was left
+     * out because a phone nobody touched was said to be travelling.
+     */
+    private fun theSpeedClaimed(fix: Fix): String {
+        val speed = fix.reported?.speedMps ?: return "no speed given"
+
+        return String.format(Locale.ROOT, "%.1f m/s", speed)
     }
 
     /**

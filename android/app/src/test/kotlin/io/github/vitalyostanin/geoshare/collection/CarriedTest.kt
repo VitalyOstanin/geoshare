@@ -271,11 +271,69 @@ class CarriedTest {
 
     private fun walk(steps: Long) = Walk(since = noon.minusSeconds(60), steps = steps)
 
-    private fun fix(latitude: Double, longitude: Double, takenAt: Instant, width: Double) = Fix(
+    // The speed phone 1 was given while lying on a table on 16.09.2026, when
+    // the answers it was handed stood fifty-five kilometres away: thirty-three
+    // metres a second, which is a hundred and twenty kilometres an hour.
+    @Test
+    fun `a phone nobody touched is not travelling at the speed of a car`() {
+        val moving = fix(61.11864, 5.38881, noon.plusSeconds(60), width = 15.0, speedMps = 33.3)
+
+        assertTrue(hurriedWhilePutDown(standing, moving, untouched))
+    }
+
+    // What the distance rule cannot do: the place is still inside the anchor's
+    // allowance, so nothing has walked away yet, and the claim is caught all
+    // the same because it sits inside the single answer.
+    @Test
+    fun `a speed is caught before the answer has gone anywhere`() {
+        val nearby = fix(61.03300, 4.40300, noon.plusSeconds(60), width = 15.0, speedMps = 33.3)
+
+        assertFalse(driftedWhilePutDown(standing, nearby, untouched))
+        assertTrue(hurriedWhilePutDown(standing, nearby, untouched))
+    }
+
+    // Of 6,405 answers the phones gave from home over 14—16.09.2026, nine in
+    // ten claimed exactly this.
+    @Test
+    fun `a phone lying still is told it is going nowhere`() {
+        val resting = fix(61.03268, 4.40300, noon.plusSeconds(60), width = 15.0, speedMps = 0.0)
+
+        assertFalse(hurriedWhilePutDown(standing, resting, untouched))
+    }
+
+    @Test
+    fun `a phone somebody picked up may honestly be travelling`() {
+        val moving = fix(61.11864, 5.38881, noon.plusSeconds(60), width = 15.0, speedMps = 33.3)
+
+        assertFalse(hurriedWhilePutDown(standing, moving, Carrying(stirred = true)))
+    }
+
+    @Test
+    fun `an answer that named no speed is not judged on one`() {
+        val silent = fix(61.11864, 5.38881, noon.plusSeconds(60), width = 15.0)
+
+        assertFalse(hurriedWhilePutDown(standing, silent, untouched))
+    }
+
+    @Test
+    fun `without an anchor a speed is nobody's business`() {
+        val moving = fix(61.11864, 5.38881, noon.plusSeconds(60), width = 15.0, speedMps = 33.3)
+
+        assertFalse(hurriedWhilePutDown(null, moving, untouched))
+    }
+
+    private fun fix(
+        latitude: Double,
+        longitude: Double,
+        takenAt: Instant,
+        width: Double,
+        speedMps: Double? = null,
+    ) = Fix(
         latitude = latitude,
         longitude = longitude,
         takenAt = takenAt,
         accuracyMetres = width,
         from = "fused",
+        reported = speedMps?.let { Reported(speedMps = it) },
     )
 }

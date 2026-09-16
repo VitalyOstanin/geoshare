@@ -65,6 +65,7 @@
     <string name="map_detail_left_out">Rejected</string>
     <string name="map_detail_left_out_reason">Why it was rejected</string>
     <string name="left_out_drifted">Drift while the phone lay still</string>
+    <string name="left_out_hurried">A speed the phone was never carried at</string>
     <string name="left_out_contradicted">The towers give another position</string>
     <string name="left_out_width">Too much doubt in the answer</string>
     <string name="left_out_speed">An impossible speed</string>
@@ -114,6 +115,8 @@
     <string name="reason_help_means_unmoved">Only a false signal moves the marker of a phone lying still: steps and journeys are counted by a chip of their own that a transmitter cannot reach.</string>
     <string name="reason_help_sign_drifted">The phone is lying where it was put down, and the answers walk away from it a little at a time.</string>
     <string name="reason_help_means_drifted">A slow drift. A step of thirty metres never trips a comparison between neighbours, but within an hour the marker is somewhere else, so the distance is counted from where the phone was put down.</string>
+    <string name="reason_help_sign_hurried">The phone has not been touched, and the answer says it is travelling at the speed of a car.</string>
+    <string name="reason_help_means_hurried">The receiver reports a speed of its own alongside every position, and on a phone lying still that speed is zero. A false signal draws a road and a speed along it, and the speed is inside the single answer — so this catches the first false position rather than the one after it.</string>
     <string name="reason_help_sign_contradicted">The position from the satellites and the position from the towers and the Wi-Fi are kilometres apart.</string>
     <string name="reason_help_means_contradicted">The towers are harder to imitate than the satellites. This is the one rule that does not compare an answer with an earlier one, so it catches both a slow drift and the very first false answer.</string>
     <string name="reason_help_sign_circling">The answers go round a closed circle at a steady speed.</string>

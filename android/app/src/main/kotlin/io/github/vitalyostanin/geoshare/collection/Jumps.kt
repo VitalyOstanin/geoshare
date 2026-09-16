@@ -143,6 +143,17 @@ enum class JumpReason {
      * moving it shows up as a step against that clock. See SatelliteClock.kt.
      */
     TimeApart,
+
+    /**
+     * The answer says the phone is travelling while nobody has touched it.
+     *
+     * A sibling of [Drifted], asked of the same anchor: that one is about
+     * where the answer puts the phone, this one about what it says the phone
+     * is doing. A false road comes with a speed along it, and the speed is
+     * inside a single answer — so this catches a lie before it has gone
+     * anywhere for the distance rule to measure. See Carried.kt.
+     */
+    Hurried,
 }
 
 /**
@@ -249,6 +260,10 @@ fun whyAJump(
 
     if (driftedWhilePutDown(putDown, next, carrying)) {
         return JumpReason.Drifted
+    }
+
+    if (hurriedWhilePutDown(putDown, next, carrying)) {
+        return JumpReason.Hurried
     }
 
     if (settling && settlingJump(last, next)) {

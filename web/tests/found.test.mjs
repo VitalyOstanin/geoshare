@@ -43,6 +43,7 @@ test('a source this build has never heard of is shown as unknown', () => {
 test('every reason a phone writes is named by the dictionary', () => {
     const reasons = {
         Drifted: 'leftOutDrifted',
+        Hurried: 'leftOutHurried',
         Contradicted: 'leftOutContradicted',
         Width: 'leftOutWidth',
         Speed: 'leftOutSpeed',

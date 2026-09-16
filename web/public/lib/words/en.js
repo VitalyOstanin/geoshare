@@ -90,6 +90,7 @@ export const EN = {
     leftOutReason: 'Why it was rejected',
     leftOutAnswers: (count) => (count === 1 ? '1 answer' : `${count} answers`),
     leftOutDrifted: 'Drift while the phone lay still',
+    leftOutHurried: 'A speed the phone was never carried at',
     leftOutContradicted: 'The towers give another position',
     leftOutWidth: 'Too much doubt in the answer',
     leftOutSpeed: 'An impossible speed',
@@ -137,6 +138,12 @@ export const EN = {
     reasonMeansDrifted: 'A slow drift. A step of thirty metres never trips a comparison between '
         + 'neighbours, but within an hour the marker is somewhere else, so the distance is '
         + 'counted from where the phone was put down.',
+    reasonSignHurried: 'The phone has not been touched, and the answer says it is travelling at '
+        + 'the speed of a car.',
+    reasonMeansHurried: 'The receiver reports a speed of its own alongside every position, and on '
+        + 'a phone lying still that speed is zero. A false signal draws a road and a speed along '
+        + 'it, and the speed is inside the single answer — so this catches the first false '
+        + 'position rather than the one after it.',
     reasonSignContradicted: 'The position from the satellites and the position from the towers '
         + 'and the Wi-Fi are kilometres apart.',
     reasonMeansContradicted: 'The towers are harder to imitate than the satellites. This is the '

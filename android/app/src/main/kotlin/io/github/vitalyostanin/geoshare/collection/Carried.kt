@@ -59,6 +59,25 @@ const val PUT_DOWN_DRIFT_METRES: Double = 150.0
 val PUT_DOWN_AFTER: Duration = Duration.ofMinutes(2)
 
 /**
+ * What speed a put-down phone may be told it is travelling at.
+ *
+ * Three metres a second. The receiver reports a speed of its own alongside
+ * every position, and on a phone lying still that number is not noisy — it is
+ * zero. Of 6,405 answers the three phones gave from within two hundred metres
+ * of home over 14—16.09.2026, the median was 0.00 m/s and so was the ninetieth
+ * percentile; of the 5,381 answers given while the same phones, still lying
+ * where they were, were being told they stood a kilometre or more away, the
+ * median was 33.00 m/s and four in five were above 20. The threshold sits an
+ * order of magnitude below the lie and above anything a phone on a table has
+ * ever been seen to claim.
+ *
+ * What the rule it belongs to has over the ordinary speed rule is that it
+ * needs no second position: the claim is inside a single answer, so it is
+ * caught on the first false fix rather than on the one after it.
+ */
+const val PUT_DOWN_SPEED_MPS: Double = 3.0
+
+/**
  * How long a stir is worth keeping after it arrives.
  *
  * Half an hour. What the stirs are asked is whether anything has touched the
@@ -178,6 +197,37 @@ fun driftedWhilePutDown(putDown: PutDown?, next: Fix, carrying: Carrying): Boole
     val doubt = (putDown.at.accuracyMetres ?: 0.0) + (next.accuracyMetres ?: 0.0)
 
     return distanceMetres(putDown.at, next) > maxOf(PUT_DOWN_DRIFT_METRES, doubt)
+}
+
+/**
+ * Whether an answer says the phone is moving while nobody has touched it.
+ *
+ * The other way of reading the same anchor as [driftedWhilePutDown]: there the
+ * question is where the answer puts the phone, here it is what the answer says
+ * the phone is doing. A receiver drawing a false road has to draw a speed
+ * along it, and it draws one whether or not the place it draws happens to be
+ * near where the phone is lying — so this speaks on a lie that has not yet
+ * gone anywhere, which the distance rule cannot.
+ *
+ * It falls silent on the same terms as the distance rule, and for the same
+ * reason: a stir, or enough steps to have gone anywhere, and the phone is one
+ * that may honestly be travelling. Where the provider said nothing about a
+ * speed there is nothing to judge.
+ */
+fun hurriedWhilePutDown(putDown: PutDown?, next: Fix, carrying: Carrying): Boolean {
+    if (putDown == null || !carrying.told || carrying.stirred) {
+        return false
+    }
+
+    if ((carrying.steps ?: 0) >= CARRIED_STEPS) {
+        return false
+    }
+
+    if (next.takenAt.isBefore(putDown.since)) {
+        return false
+    }
+
+    return (next.reported?.speedMps ?: 0.0) > PUT_DOWN_SPEED_MPS
 }
 
 /**

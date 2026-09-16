@@ -54,6 +54,7 @@
     <string name="map_detail_left_out">Отказ точки</string>
     <string name="map_detail_left_out_reason">Причина отказа</string>
     <string name="left_out_drifted">Увод при лежащем телефоне</string>
+    <string name="left_out_hurried">Скорость, с которой телефон не носили</string>
     <string name="left_out_contradicted">От вышек другая позиция</string>
     <string name="left_out_width">Слишком большая погрешность</string>
     <string name="left_out_speed">Нереальная скорость</string>
@@ -101,6 +102,8 @@
     <string name="reason_help_means_unmoved">Сдвинуть метку у неподвижного телефона может только ложный сигнал: шаги и поездки считает отдельный чип, до которого подмена не достаёт.</string>
     <string name="reason_help_sign_drifted">Телефон лежит на месте, а точки понемногу уходят в сторону, каждая недалеко от предыдущей.</string>
     <string name="reason_help_means_drifted">Медленный увод. Шаг в тридцать метров не ловится сравнением соседних точек, но за час метка оказывается в другом месте, поэтому счёт идёт от места, где телефон положили.</string>
+    <string name="reason_help_sign_hurried">Телефон никто не трогал, а ответ говорит, что он едет со скоростью автомобиля.</string>
+    <string name="reason_help_means_hurried">Приёмник сообщает свою оценку скорости вместе с каждой позицией, и у лежащего телефона она равна нулю. Ложный сигнал рисует дорогу и скорость вдоль неё, и эта скорость находится внутри одного ответа — поэтому ловится первая же ложная точка, а не следующая за ней.</string>
     <string name="reason_help_sign_contradicted">Позиция по спутникам и позиция по вышкам и Wi-Fi расходятся на километры.</string>
     <string name="reason_help_means_contradicted">Вышки подделать труднее, чем спутники. Это единственное правило, которое не сравнивает точку с предыдущей, поэтому оно видит и медленный увод, и первую же ложную точку.</string>
     <string name="reason_help_sign_circling">Точки идут по замкнутому кругу с ровной скоростью.</string>

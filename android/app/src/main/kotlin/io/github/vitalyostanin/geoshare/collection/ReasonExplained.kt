@@ -65,6 +65,12 @@ fun reasonsExplained(): List<ReasonExplained> = listOf(
         R.string.reason_help_means_drifted,
     ),
     ReasonExplained(
+        JumpReason.Hurried.name,
+        R.string.left_out_hurried,
+        R.string.reason_help_sign_hurried,
+        R.string.reason_help_means_hurried,
+    ),
+    ReasonExplained(
         JumpReason.Contradicted.name,
         R.string.left_out_contradicted,
         R.string.reason_help_sign_contradicted,

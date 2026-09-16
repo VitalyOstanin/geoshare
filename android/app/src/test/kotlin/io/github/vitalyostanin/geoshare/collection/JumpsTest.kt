@@ -365,17 +365,53 @@ class JumpsTest {
         )
     }
 
+    // The answer stands where the phone is lying, so nothing has walked away
+    // and nothing is out of reach; what gives it away is the speed it was
+    // handed with, which is a car's.
+    @Test
+    fun `a speed claimed for a phone nobody touched is a jump`() {
+        val lying = fixAt(61.03268, 4.40300, 0, accuracy = 20.0)
+        val racing = fixAt(61.03300, 4.40300, 60, accuracy = 15.0, speedMps = 33.3)
+
+        assertEquals(
+            JumpReason.Hurried,
+            whyAJump(
+                lying,
+                racing,
+                putDown = PutDown(at = lying, since = lying.takenAt, steps = 1_000),
+                carrying = Carrying(stirred = false, steps = 0),
+            ),
+        )
+    }
+
+    @Test
+    fun `a phone lying still and told so is left alone`() {
+        val lying = fixAt(61.03268, 4.40300, 0, accuracy = 20.0)
+        val resting = fixAt(61.03300, 4.40300, 60, accuracy = 15.0, speedMps = 0.0)
+
+        assertNull(
+            whyAJump(
+                lying,
+                resting,
+                putDown = PutDown(at = lying, since = lying.takenAt, steps = 1_000),
+                carrying = Carrying(stirred = false, steps = 0),
+            ),
+        )
+    }
+
     private fun fixAt(
         latitude: Double,
         longitude: Double,
         second: Long,
         accuracy: Double? = null,
         sinceBoot: Duration? = null,
+        speedMps: Double? = null,
     ) = Fix(
         latitude = latitude,
         longitude = longitude,
         takenAt = Instant.parse("2026-09-13T12:00:00Z").plusSeconds(second),
         accuracyMetres = accuracy,
         sinceBoot = sinceBoot,
+        reported = speedMps?.let { Reported(speedMps = it) },
     )
 }
