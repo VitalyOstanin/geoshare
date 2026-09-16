@@ -8,8 +8,9 @@
 export default [
     {
         // Written by tools/web-config.sh out of the Firebase project itself,
-        // and not in the repository at all.
-        ignores: ['web/public/firebase-config.js'],
+        // and not in the repository at all. Beside it, the map library as its
+        // authors published it: minified, not ours to hold to a style.
+        ignores: ['web/public/firebase-config.js', 'web/public/lib/vendor/**'],
     },
     {
         files: ['**/*.js', '**/*.mjs'],

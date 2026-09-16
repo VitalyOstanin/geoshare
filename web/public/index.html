@@ -7,17 +7,11 @@
         <!-- Nothing to show yet, and an empty one is quieter than a 404 on
              every load. Replaced when the application gets its icon. -->
         <link rel="icon" href="data:," />
-        <!-- Checked against its hash: the file comes from somebody else's
-             server, and whatever it carries runs against a page that is
-             signed in. The module beside it cannot be checked this way — an
-             import has no place to put a hash — and the policy in
-             firebase.json is what holds it to the same one source. -->
-        <link
-            rel="stylesheet"
-            href="https://cdn.jsdelivr.net/npm/maplibre-gl@6.9.0/dist/maplibre-gl.css"
-            integrity="sha384-Q5Blg3vUVAlUKqIPJYz7wGnz40Vwrx4pVuFVicI73+8c/26Zr5hhckfuIiIUflLE"
-            crossorigin="anonymous"
-        />
+        <!-- Served from here rather than from somebody else's server: the
+             library's own worker refuses to start when the library is read
+             across origins, and the map then draws a background with nothing
+             on it. lib/vendor holds the whole of it, version and all. -->
+        <link rel="stylesheet" href="lib/vendor/maplibre-gl.css" />
         <link rel="stylesheet" href="styles.css" />
 
         <!-- The theme has to be on the element before the page is first

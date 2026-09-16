@@ -13,7 +13,7 @@
         "headers": [
           {
             "key": "Content-Security-Policy",
-            "value": "default-src 'self'; script-src 'self' https://www.gstatic.com https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; img-src 'self' data: blob: https://tile.openstreetmap.org https://*.googleusercontent.com; connect-src 'self' https://*.googleapis.com https://*.google.com https://tile.openstreetmap.org https://cdn.jsdelivr.net; worker-src 'self' blob:; frame-src https://*.firebaseapp.com https://accounts.google.com; frame-ancestors 'none'; base-uri 'self'; object-src 'none'"
+            "value": "default-src 'self'; script-src 'self' https://www.gstatic.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https://tile.openstreetmap.org https://*.googleusercontent.com; connect-src 'self' https://*.googleapis.com https://*.google.com https://tile.openstreetmap.org; worker-src 'self'; frame-src https://*.firebaseapp.com https://accounts.google.com; frame-ancestors 'none'; base-uri 'self'; object-src 'none'"
           },
           {
             "key": "X-Content-Type-Options",
@@ -48,11 +48,38 @@
         ]
       },
       {
-        "source": "**/*.@(js|css)",
+        "source": "/*.@(js|css)",
         "headers": [
           {
             "key": "Cache-Control",
             "value": "no-cache"
+          }
+        ]
+      },
+      {
+        "source": "/lib/*.@(js|css)",
+        "headers": [
+          {
+            "key": "Cache-Control",
+            "value": "no-cache"
+          }
+        ]
+      },
+      {
+        "source": "/lib/words/*.@(js|css)",
+        "headers": [
+          {
+            "key": "Cache-Control",
+            "value": "no-cache"
+          }
+        ]
+      },
+      {
+        "source": "/lib/vendor/**",
+        "headers": [
+          {
+            "key": "Cache-Control",
+            "value": "public, max-age=31536000, immutable"
           }
         ]
       }

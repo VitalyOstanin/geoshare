@@ -5,12 +5,14 @@
 
 // Named exports only: the module has no default, and the parts used here are
 // the map, a marker, its bubble and the zoom buttons.
-import {
-    Map as MapLibre,
-    Marker,
-    NavigationControl,
-    Popup,
-} from 'https://cdn.jsdelivr.net/npm/maplibre-gl@6.9.0/dist/maplibre-gl.mjs';
+//
+// Read from this site rather than from a content network. Across origins the
+// library starts its worker from a blob that imports the real file and drops
+// the blob's address in the same breath; the worker dies without a word, and
+// everything the worker cuts into tiles — every GeoJSON layer, the accuracy
+// ring among them — silently never appears. From here the worker is a plain
+// address and starts.
+import { Map as MapLibre, Marker, NavigationControl, Popup } from './vendor/maplibre-gl.mjs';
 
 import { STALE_COLOUR, memberColour, shortName } from './members.js';
 import { showFace } from './faces.js';
