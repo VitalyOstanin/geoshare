@@ -107,7 +107,7 @@ fun secondOpinion(satellites: Fix, network: Fix?, now: Instant): SecondOpinion? 
         return null
     }
 
-    val between = Duration.between(network.takenAt, satellites.takenAt).abs()
+    val between = apart(network, satellites).abs()
 
     if (between > SECOND_OPINION_TOGETHER) {
         return null

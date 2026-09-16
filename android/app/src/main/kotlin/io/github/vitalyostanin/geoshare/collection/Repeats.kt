@@ -141,16 +141,16 @@ private fun periodsWorthTrying(lately: List<Fix>, limits: RepeatLimits): List<Du
 
     for (later in lately.indices) {
         for (earlier in 0 until later) {
-            val apart = Duration.between(lately[earlier].takenAt, lately[later].takenAt)
+            val gap = apart(lately[earlier], lately[later])
 
-            if (apart < limits.shortest || apart > limits.longest) {
+            if (gap < limits.shortest || gap > limits.longest) {
                 continue
             }
 
             val metres = distanceMetres(lately[earlier], lately[later])
 
             if (metres <= REPEAT_CLOSE_METRES) {
-                found += metres to apart
+                found += metres to gap
             }
         }
     }

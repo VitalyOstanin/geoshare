@@ -176,7 +176,7 @@ fun circleDrawn(lately: List<Fix>, limits: CircleLimits = CircleLimits()): Circl
 
     val run = lately.takeLast(limits.answers)
 
-    if (Duration.between(run.first().takenAt, run.last().takenAt) > limits.within) {
+    if (apart(run.first(), run.last()) > limits.within) {
         return null
     }
 
@@ -243,7 +243,7 @@ const val ANSWERS_KEPT: Int = 200
  * about time: a shape held for a minute, a route gone round again after three.
  */
 fun List<Fix>.andThen(fix: Fix, remembered: Duration = ANSWERS_REMEMBERED): List<Fix> {
-    val fresh = (this + fix).filter { Duration.between(it.takenAt, fix.takenAt) <= remembered }
+    val fresh = (this + fix).filter { apart(it, fix) <= remembered }
 
     return fresh.takeLast(ANSWERS_KEPT)
 }

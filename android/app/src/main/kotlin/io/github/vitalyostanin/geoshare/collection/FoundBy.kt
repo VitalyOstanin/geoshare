@@ -152,7 +152,7 @@ private fun theSameAnswer(fix: Fix, satellites: Fix?): Boolean {
         return false
     }
 
-    if (Duration.between(satellites.takenAt, fix.takenAt).abs() > SAME_ANSWER_WITHIN) {
+    if (apart(satellites, fix).abs() > SAME_ANSWER_WITHIN) {
         return false
     }
 

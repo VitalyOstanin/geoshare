@@ -73,7 +73,37 @@ fun shouldWrite(last: Fix?, next: Fix, mode: CollectionMode): Boolean {
         return true
     }
 
-    return Duration.between(last.takenAt, next.takenAt) >= mode.writeSilence
+    return apart(last, next) >= mode.writeSilence
+}
+
+/**
+ * How much time passed between two fixes, counted on the steadier of the two
+ * clocks they carry.
+ *
+ * The wall clock of a phone is set from the network and from the satellites,
+ * and either can step it between one fix and the next. A step of a minute
+ * backwards turns a phone standing still into one that crossed the city, and
+ * a step forwards hides a jump that did happen — and under a false signal the
+ * wall clock is part of the lie, since the time it is set from comes off the
+ * same satellites. Where both fixes know how long the phone had been awake,
+ * that count answers instead: it runs from the last boot and nothing sets it
+ * back.
+ *
+ * The count starts again at every boot and is absent for a fix read back from
+ * the trail file, so the wall clock still answers whenever the two fixes do
+ * not both carry it. Two counts from either side of a reboot are never
+ * compared, because a fix only carries one while the process that took it is
+ * still running.
+ */
+fun apart(from: Fix, to: Fix): Duration {
+    val fromBoot = from.sinceBoot
+    val toBoot = to.sinceBoot
+
+    if (fromBoot != null && toBoot != null) {
+        return toBoot.minus(fromBoot)
+    }
+
+    return Duration.between(from.takenAt, to.takenAt)
 }
 
 /** The radius the distances here are measured on, in metres. */

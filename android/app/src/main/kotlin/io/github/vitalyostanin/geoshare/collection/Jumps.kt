@@ -1,6 +1,5 @@
 package io.github.vitalyostanin.geoshare.collection
 
-import java.time.Duration
 import java.time.Instant
 
 // Telling a move from a jump.
@@ -32,9 +31,13 @@ const val USELESS_ACCURACY_METRES: Double = 500.0
 /**
  * How fast the phone would have had to travel, or nothing when the clock of
  * the two fixes does not run forward.
+ *
+ * The time between them is counted by [apart], which asks the count since
+ * boot before the wall clock: a phone whose clock is stepped between two
+ * fixes must not be read as having travelled the distance in the difference.
  */
 fun impliedSpeedMps(last: Fix, next: Fix): Double? {
-    val seconds = Duration.between(last.takenAt, next.takenAt).toMillis() / MILLIS_IN_A_SECOND
+    val seconds = apart(last, next).toMillis() / MILLIS_IN_A_SECOND
 
     if (seconds <= 0.0) {
         return null

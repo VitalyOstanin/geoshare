@@ -5,6 +5,7 @@ import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
+import java.time.Duration
 import java.time.Instant
 
 class JumpsTest {
@@ -73,6 +74,39 @@ class JumpsTest {
 
         // A hundred metres in ten seconds, give or take the earth's shape.
         assertEquals(10.0, speed!!, 0.5)
+    }
+
+    // The phone stood still for a minute and the wall clock was stepped a
+    // minute back in the middle of it. Counted on the wall clock the second
+    // fix arrives before the first; counted since boot, a minute passed.
+    @Test
+    fun `a wall clock stepped back does not turn a standstill into a jump`() {
+        val first = fixAt(60.9, 4.3, 60, sinceBoot = Duration.ofSeconds(600))
+        val second = fixAt(60.9 + 0.0009, 4.3, 0, sinceBoot = Duration.ofSeconds(660))
+
+        assertEquals(1.7, impliedSpeedMps(first, second)!!, 0.5)
+        assertNull(whyAJump(first, second))
+    }
+
+    // The other way round: the clock was stepped forward an hour, which on
+    // the wall clock makes a flight across the country a stroll.
+    @Test
+    fun `a wall clock stepped forward does not hide a jump`() {
+        val first = fixAt(60.9, 4.3, 0, sinceBoot = Duration.ofSeconds(600))
+        val second = fixAt(60.98, 4.56, 3600, sinceBoot = Duration.ofSeconds(615))
+
+        assertEquals(JumpReason.Speed, whyAJump(first, second))
+    }
+
+    // A fix read back from the trail file carries no count since boot, and
+    // neither does one taken before this run of the process. The wall clock
+    // answers for those, as it did before there was a second clock at all.
+    @Test
+    fun `without the count since boot the wall clock still answers`() {
+        val first = fixAt(60.9, 4.3, 0, sinceBoot = Duration.ofSeconds(600))
+        val second = fixAt(60.9 + 0.0009, 4.3, 10)
+
+        assertEquals(10.0, impliedSpeedMps(first, second)!!, 0.5)
     }
 
     @Test
@@ -307,11 +341,17 @@ class JumpsTest {
         )
     }
 
-    private fun fixAt(latitude: Double, longitude: Double, second: Long, accuracy: Double? = null) =
-        Fix(
-            latitude = latitude,
-            longitude = longitude,
-            takenAt = Instant.parse("2026-09-13T12:00:00Z").plusSeconds(second),
-            accuracyMetres = accuracy,
-        )
+    private fun fixAt(
+        latitude: Double,
+        longitude: Double,
+        second: Long,
+        accuracy: Double? = null,
+        sinceBoot: Duration? = null,
+    ) = Fix(
+        latitude = latitude,
+        longitude = longitude,
+        takenAt = Instant.parse("2026-09-13T12:00:00Z").plusSeconds(second),
+        accuracyMetres = accuracy,
+        sinceBoot = sinceBoot,
+    )
 }
