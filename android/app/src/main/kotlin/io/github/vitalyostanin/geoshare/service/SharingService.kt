@@ -1713,7 +1713,12 @@ class SharingService : LifecycleService() {
         )
         AppLog.i(
             TAG,
-            "wrote a position taken at ${written.fix.takenAt}, found by ${whence.said}",
+            "wrote a position taken at ${written.fix.takenAt}, found by ${whence.said}" +
+                // Said in the line about the write rather than left to the
+                // document: what a phone wrote is the one thing a log of a
+                // boot cannot be read back from, and the first minutes after
+                // a boot are exactly when somebody is reading it.
+                if (written.settling) ", with the receiver still settling" else "",
         )
 
         true
