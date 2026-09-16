@@ -46,6 +46,28 @@ const WIDTH_LINE_WIDTH = 1.5;
 const START_ZOOM = 15;
 
 /**
+ * How much of the window the circle of doubt is aimed to fill.
+ *
+ * Half of the shorter side: enough that the ring reads as a claim about an
+ * area rather than as a halo round the pin, and not so much that the streets
+ * it is there to be compared against leave the window.
+ */
+const RING_SHARE_OF_THE_VIEW = 0.5;
+
+/**
+ * How close the map is ever taken by a circle.
+ *
+ * Eighteen is a courtyard across the window. An answer five metres wide would
+ * otherwise pull the map down onto a single roof, where nothing around it says
+ * where that roof is.
+ */
+const CLOSEST_ZOOM = 18;
+
+/** How many metres a pixel covers at the equator at zoom nought. */
+const EQUATOR_METRES_PER_PIXEL = 156543.03392;
+
+
+/**
  * How close two pins have to come before they are drawn as one.
  *
  * A little less than the width of a pin: at that distance the heads already
@@ -85,8 +107,34 @@ const STYLE = {
             maxzoom: 19,
             attribution: '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
         },
+        // Declared with the style rather than added to it once the map has
+        // loaded: a source put in afterwards was accepted, kept the data it was
+        // given and never went on to build anything out of it — loaded() stayed
+        // false, nothing was ever rendered from it, and no error was raised
+        // anywhere to say so. Part of the style from the start, it behaves.
+        [WIDTH_SOURCE]: { type: 'geojson', data: { type: 'FeatureCollection', features: [] } },
     },
-    layers: [{ id: 'osm', type: 'raster', source: 'osm' }],
+    layers: [
+        { id: 'osm', type: 'raster', source: 'osm' },
+        {
+            id: WIDTH_FILL_LAYER,
+            type: 'fill',
+            source: WIDTH_SOURCE,
+            paint: {
+                'fill-color': ['get', 'colour'],
+                'fill-opacity': WIDTH_FILL_OPACITY,
+            },
+        },
+        {
+            id: WIDTH_LINE_LAYER,
+            type: 'line',
+            source: WIDTH_SOURCE,
+            paint: {
+                'line-color': ['get', 'colour'],
+                'line-width': WIDTH_LINE_WIDTH,
+            },
+        },
+    ],
 };
 
 /**
@@ -121,26 +169,19 @@ export function createMap(element, onCardChange = () => {}) {
 
     const view = { map, markers: new Map(), centred: false, last: null, onCardChange };
 
-    // The layers cannot be added before the style has arrived, and positions
-    // can arrive before either: the ring is drawn again once they are in.
-    map.on('load', () => {
-        map.addSource(WIDTH_SOURCE, { type: 'geojson', data: emptyRing() });
-        map.addLayer({
-            id: WIDTH_FILL_LAYER,
-            type: 'fill',
-            source: WIDTH_SOURCE,
-            paint: { 'fill-opacity': WIDTH_FILL_OPACITY },
-        });
-        map.addLayer({
-            id: WIDTH_LINE_LAYER,
-            type: 'line',
-            source: WIDTH_SOURCE,
-            paint: { 'line-width': WIDTH_LINE_WIDTH },
-        });
+    // The ring's source and layers come with the style; what has to wait is the
+    // drawing, because positions can arrive before the style has.
+    const ringIsReady = () => {
+        if (view.ringReady || !map.isStyleLoaded()) {
+            return;
+        }
 
         view.ringReady = true;
         drawWidth(view);
-    });
+    };
+
+    map.on('load', ringIsReady);
+    map.on('styledata', ringIsReady);
 
     // Which members cover each other is a question about the screen, so the
     // answer changes with every zoom: a group that was one pin has to come
@@ -281,30 +322,35 @@ function drawWidth(view) {
     const position = selectedPosition(view);
     const source = view.map.getSource(WIDTH_SOURCE);
 
+
     if (!position || position.accuracyMetres === null) {
         source?.setData(emptyRing());
 
         return;
     }
 
-    source?.setData({
-        type: 'Feature',
-        geometry: {
-            type: 'Polygon',
-            coordinates: [
-                accuracyRing(position.latitude, position.longitude, position.accuracyMetres),
-            ],
-        },
-        properties: {},
-    });
-
+    // A collection of one rather than the bare feature, and the colour carried
+    // inside it rather than set on the layer: the source is declared as GeoJSON
+    // and a feature handed to it on its own left the layer with nothing to
+    // draw, silently — no error anywhere, the layer present, the paint set, and
+    // no circle on the map.
+    //
     // The member's own colour rather than one colour for every circle: the
     // circle belongs to a marker and has to be readable as that marker's when
     // two members are near each other.
-    const colour = memberColour(position.memberId);
-
-    view.map.setPaintProperty(WIDTH_FILL_LAYER, 'fill-color', colour);
-    view.map.setPaintProperty(WIDTH_LINE_LAYER, 'line-color', colour);
+    source?.setData({
+        type: 'FeatureCollection',
+        features: [{
+            type: 'Feature',
+            geometry: {
+                type: 'Polygon',
+                coordinates: [
+                    accuracyRing(position.latitude, position.longitude, position.accuracyMetres),
+                ],
+            },
+            properties: { colour: memberColour(position.memberId) },
+        }],
+    });
 }
 
 /**
@@ -908,7 +954,7 @@ export function lookAt(view, position) {
     // somewhere and the way there says how far it was.
     view.map.flyTo({
         center: [position.longitude, position.latitude],
-        zoom: Math.max(view.map.getZoom(), START_ZOOM),
+        zoom: Math.max(view.map.getZoom(), START_ZOOM, closeEnoughForTheRing(view, position)),
     });
 
     const entry = [...view.markers.values()].find((marker) =>
@@ -930,7 +976,43 @@ export function lookAt(view, position) {
         entry.marker.togglePopup();
     }
 
+    // Said out loud rather than left to the bubble's own event: a card already
+    // open over a group changes who it is about without opening again, and the
+    // strip would go on marking the member the viewer has just navigated away
+    // from until the next redraw — half a minute, on the clock that moves the
+    // ages along.
+    view.onCardChange();
     drawWidth(view);
+}
+
+/**
+ * How close the map has to come for the circle of doubt to be worth drawing.
+ *
+ * The circle is drawn in metres, and a browser window is three times as wide
+ * as a phone: at the zoom both clients start at, a hundred and sixty metres of
+ * doubt comes out thirty-three pixels across on a laptop, which is the size of
+ * the pin standing on top of it — the ring is there and cannot be seen. On a
+ * phone the same ring covers a good part of a narrow screen, which is why the
+ * Android map needs nothing of the sort.
+ *
+ * The answer is the zoom at which the circle spans [RING_SHARE_OF_THE_VIEW] of
+ * the shorter side of the window, held back at [CLOSEST_ZOOM] so that a sharp
+ * answer does not drop the viewer onto a single roof. Only ever used to come
+ * closer: whoever zoomed out did it on purpose.
+ */
+function closeEnoughForTheRing(view, position) {
+    const metres = position.accuracyMetres;
+
+    if (!metres) {
+        return 0;
+    }
+
+    const canvas = view.map.getCanvas();
+    const side = Math.min(canvas.clientWidth, canvas.clientHeight);
+    const wanted = (2 * metres) / (side * RING_SHARE_OF_THE_VIEW);
+    const across = EQUATOR_METRES_PER_PIXEL * Math.cos((position.latitude * Math.PI) / 180);
+
+    return Math.min(Math.log2(across / wanted), CLOSEST_ZOOM);
 }
 
 /** The map measures its element when it is created, and the sign-in screen hides it. */
