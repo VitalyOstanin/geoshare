@@ -1,8 +1,10 @@
 package io.github.vitalyostanin.geoshare.map
 
+import io.github.vitalyostanin.geoshare.collection.Constellation
 import io.github.vitalyostanin.geoshare.collection.SourceChoice
 import io.github.vitalyostanin.geoshare.membership.Roster
 import io.github.vitalyostanin.geoshare.permission.PermissionStep
+import io.github.vitalyostanin.geoshare.service.AidingErasure
 import io.github.vitalyostanin.geoshare.service.LanguageChoice
 import io.github.vitalyostanin.geoshare.service.ThemeChoice
 import java.time.Instant
@@ -36,6 +38,15 @@ data class SettingsState(
      * starts.
      */
     val sourcesLeftOut: Set<String>,
+    /**
+     * The constellations the receiver has been hearing for nothing, as the
+     * collecting service last left them.
+     *
+     * Empty on a phone whose receiver is making use of everything it hears,
+     * which is how one should stand: a name here is the receiver sitting on
+     * aiding data it believes and cannot use.
+     */
+    val aidingDoubted: Set<Constellation>,
     /** Whether the phone leaves the application out of its battery saving. */
     val batteryUnrestricted: Boolean,
     /** Whether this phone has a startup list of its own to open. */
@@ -54,6 +65,12 @@ data class SettingsActions(
     val onJumpsFilteredChange: (Boolean) -> Unit,
     val onSourceUseChange: (SourceChoice, Boolean) -> Unit,
     val onForgetPlace: () -> Unit,
+    /**
+     * Tell the receiver to throw its aiding data away, and say how that
+     * went: the answer is the receiver's and arrives at once, so the row
+     * reads it back rather than waiting for a state to travel round.
+     */
+    val onForgetAiding: () -> AidingErasure,
     val onThemeChange: (ThemeChoice) -> Unit,
     val onLanguageChange: (LanguageChoice) -> Unit,
     val onShare: (String, ShareSpan) -> Unit,

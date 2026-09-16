@@ -12,6 +12,7 @@ import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
@@ -31,11 +32,16 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import io.github.vitalyostanin.geoshare.R
+import io.github.vitalyostanin.geoshare.collection.Constellation
 import io.github.vitalyostanin.geoshare.collection.SourceChoice
+import io.github.vitalyostanin.geoshare.collection.constellationLabel
+import io.github.vitalyostanin.geoshare.collection.inOrder
 import io.github.vitalyostanin.geoshare.collection.sourceChoiceLabel
 import io.github.vitalyostanin.geoshare.permission.PermissionStep
+import io.github.vitalyostanin.geoshare.service.AidingErasure
 import io.github.vitalyostanin.geoshare.service.LanguageChoice
 import io.github.vitalyostanin.geoshare.service.ThemeChoice
+import io.github.vitalyostanin.geoshare.service.aidingErasureNote
 import java.time.Instant
 
 /**
@@ -177,6 +183,13 @@ fun SettingsScreen(
 
             HorizontalDivider()
 
+            AidingSection(
+                doubted = settings.aidingDoubted,
+                onForgetAiding = actions.onForgetAiding,
+            )
+
+            HorizontalDivider()
+
             GroupSection(
                 roster = settings.roster,
                 ownMemberId = ownMemberId,
@@ -224,6 +237,104 @@ fun SettingsScreen(
                 Text(text = stringResource(R.string.sign_out_action))
             }
         }
+    }
+}
+
+/**
+ * The one lever the phone has over a constellation it hears and never counts.
+ *
+ * On the settings screen rather than on the card that shows the trouble: the
+ * card is read on the map, where a receiver restarting itself in the middle of
+ * a walk is the last thing wanted, and this is answered once and left alone
+ * for months. The row says nothing until the receiver has answered, since
+ * "nothing has been asked" and "asked and refused" are different facts.
+ */
+@Composable
+private fun AidingSection(doubted: Set<Constellation>, onForgetAiding: () -> AidingErasure) {
+    var asking by remember { mutableStateOf(false) }
+    var erasure by remember { mutableStateOf(AidingErasure.Untouched) }
+    val note = aidingErasureNote(erasure)
+
+    Text(
+        text = stringResource(R.string.aiding_title),
+        style = MaterialTheme.typography.titleMedium,
+        modifier = Modifier.padding(start = 16.dp, top = 8.dp, end = 16.dp),
+    )
+
+    Text(
+        text = stringResource(R.string.aiding_explained),
+        style = MaterialTheme.typography.bodySmall,
+        color = MaterialTheme.colorScheme.onSurfaceVariant,
+        modifier = Modifier.padding(start = 16.dp, end = 16.dp, bottom = 4.dp),
+    )
+
+    // The one row on this screen that is not an answer the member gave: the
+    // service watched half an hour of epochs to write it, and it is here
+    // rather than on the map because the button that answers it is here.
+    if (doubted.isNotEmpty()) {
+        // Named through a mapping rather than inside joinToString: the words
+        // come from the resources, and only an inline call keeps that
+        // readable to the compose compiler.
+        val named =
+            inOrder(doubted)
+                .map { system -> stringResource(constellationLabel(system)) }
+                .joinToString(", ")
+
+        Text(
+            text = stringResource(R.string.aiding_wasted, named),
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.error,
+            modifier = Modifier.padding(start = 16.dp, end = 16.dp, bottom = 4.dp),
+        )
+    }
+
+    Row(
+        modifier = Modifier.fillMaxWidth().padding(start = 8.dp, end = 16.dp, bottom = 8.dp),
+        horizontalArrangement = Arrangement.spacedBy(12.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        TextButton(onClick = { asking = true }) {
+            Text(text = stringResource(R.string.aiding_forget))
+        }
+
+        if (note != null) {
+            Text(
+                text = stringResource(note),
+                style = MaterialTheme.typography.bodyMedium,
+                color =
+                if (erasure == AidingErasure.Refused) {
+                    MaterialTheme.colorScheme.error
+                } else {
+                    MaterialTheme.colorScheme.onSurfaceVariant
+                },
+            )
+        }
+    }
+
+    // Asked before it is done rather than undone afterwards: the receiver
+    // cannot be given its orbits back, and the minutes without a position
+    // that follow are what a member has to agree to beforehand.
+    if (asking) {
+        AlertDialog(
+            onDismissRequest = { asking = false },
+            title = { Text(text = stringResource(R.string.aiding_confirm_title)) },
+            text = { Text(text = stringResource(R.string.aiding_confirm_text)) },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        asking = false
+                        erasure = onForgetAiding()
+                    },
+                ) {
+                    Text(text = stringResource(R.string.aiding_forget))
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { asking = false }) {
+                    Text(text = stringResource(R.string.aiding_keep))
+                }
+            },
+        )
     }
 }
 

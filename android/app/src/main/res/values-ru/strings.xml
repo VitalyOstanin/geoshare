@@ -74,6 +74,24 @@
     <string name="map_open_settings">Настройки</string>
     <string name="settings_title">Настройки</string>
     <string name="settings_close">Закрыть</string>
+    <string name="constellation_gps">GPS</string>
+    <string name="constellation_glonass">ГЛОНАСС</string>
+    <string name="constellation_galileo">Galileo</string>
+    <string name="constellation_beidou">BeiDou</string>
+    <string name="constellation_qzss">QZSS</string>
+    <string name="constellation_sbas">SBAS</string>
+    <string name="constellation_irnss">NavIC</string>
+    <string name="constellation_other">другое</string>
+    <string name="aiding_wasted">Слышно, но без пользы: %1$s. Приёмник не держит ни одной орбиты этих спутников — это и лечит стирание данных помощи.</string>
+    <string name="aiding_title">Данные помощи</string>
+    <string name="aiding_explained">Орбиты спутников и последнее известное место, от которых приёмник ведёт поиск. Испорченные данные помощи не пускают в решение целое созвездие: его спутники слышны, а в позицию не идут.</string>
+    <string name="aiding_forget">Стереть</string>
+    <string name="aiding_keep">Оставить</string>
+    <string name="aiding_erased">Стёрто</string>
+    <string name="aiding_refused">Приёмник отказал</string>
+    <string name="aiding_confirm_title">Стереть данные помощи?</string>
+    <string name="aiding_confirm_text">Приёмник начнёт с нуля: первая позиция придёт через минуты, а не через секунды, и орбиты наберутся заново за следующие четверть часа. Имеет смысл, когда созвездие слышно сутками, но в решение так и не входит.</string>
+
     <string name="background_title">Работа в фоне</string>
     <string name="background_battery">Ограничение батареи</string>
     <string name="background_battery_lifted">Снято</string>

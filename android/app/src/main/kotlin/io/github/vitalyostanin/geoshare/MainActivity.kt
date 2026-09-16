@@ -57,6 +57,7 @@ import io.github.vitalyostanin.geoshare.permission.movementPermissionWanted
 import io.github.vitalyostanin.geoshare.permission.nextPermissionStep
 import io.github.vitalyostanin.geoshare.permission.permissionOf
 import io.github.vitalyostanin.geoshare.permission.startupScreen
+import io.github.vitalyostanin.geoshare.service.AidingDoubtSetting
 import io.github.vitalyostanin.geoshare.service.BackgroundWorkSetting
 import io.github.vitalyostanin.geoshare.service.DeviceIdentity
 import io.github.vitalyostanin.geoshare.service.JumpFilterSetting
@@ -66,6 +67,7 @@ import io.github.vitalyostanin.geoshare.service.SharingSetting
 import io.github.vitalyostanin.geoshare.service.SourcesSetting
 import io.github.vitalyostanin.geoshare.service.ThemeSetting
 import io.github.vitalyostanin.geoshare.service.darkWanted
+import io.github.vitalyostanin.geoshare.service.forgetAidingData
 import io.github.vitalyostanin.geoshare.service.foundGroup
 import io.github.vitalyostanin.geoshare.service.joinGroup
 import io.github.vitalyostanin.geoshare.service.languageChosen
@@ -96,6 +98,7 @@ class MainActivity : AppCompatActivity() {
     /** Whether the member asked for the positions the phone cannot have reached to be left out. */
     private lateinit var jumps: JumpFilterSetting
     private lateinit var sources: SourcesSetting
+    private lateinit var aidingDoubt: AidingDoubtSetting
 
     /** What the member has answered about letting the application keep running. */
     private lateinit var backgroundWork: BackgroundWorkSetting
@@ -169,6 +172,7 @@ class MainActivity : AppCompatActivity() {
         backgroundWork = BackgroundWorkSetting(this)
         jumps = JumpFilterSetting(this)
         sources = SourcesSetting(this)
+        aidingDoubt = AidingDoubtSetting(this)
         batteryFree = batteryUnrestricted(this)
 
         // Before anything is drawn: the window is what shows while the screen
@@ -196,6 +200,11 @@ class MainActivity : AppCompatActivity() {
                     var startupSet by remember { mutableStateOf(backgroundWork.startupSet) }
                     var jumpsFiltered by remember { mutableStateOf(jumps.enabled) }
                     var sourcesLeftOut by remember { mutableStateOf(sources.leftOut) }
+                    // Read once per screen rather than watched: the
+                    // service writes it after half an hour of epochs, and
+                    // a member who has just erased the aiding data is
+                    // told by the row itself rather than by this.
+                    val aidingDoubted = remember { aidingDoubt.doubted }
 
                     when (val current = state) {
                         // Signed in, the map is the application; the sign-in
@@ -248,6 +257,7 @@ class MainActivity : AppCompatActivity() {
                                     startupSet = startupSet,
                                     jumpsFiltered = jumpsFiltered,
                                     sourcesLeftOut = sourcesLeftOut,
+                                    aidingDoubted = aidingDoubted,
                                     roster = roster,
                                     invitation = invitation,
                                 ),
@@ -278,6 +288,13 @@ class MainActivity : AppCompatActivity() {
                                         sourcesLeftOut = sources.leftOut
                                     },
                                     onForgetPlace = { jumps.askToForget() },
+                                    // Done here and not in the service:
+                                    // the command is answered by the
+                                    // receiver on the spot, and what it
+                                    // answered is what the row shows.
+                                    onForgetAiding = {
+                                        forgetAidingData(this@MainActivity)
+                                    },
                                     onThemeChange = { wanted ->
                                         theme = wanted
                                         appearance.choice = wanted

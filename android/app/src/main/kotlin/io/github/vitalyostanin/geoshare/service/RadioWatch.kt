@@ -10,6 +10,7 @@ import android.os.Build
 import android.os.Handler
 import android.os.Looper
 import androidx.annotation.RequiresApi
+import io.github.vitalyostanin.geoshare.collection.AidingDoubt
 import io.github.vitalyostanin.geoshare.collection.Clock
 import io.github.vitalyostanin.geoshare.collection.Constellation
 import io.github.vitalyostanin.geoshare.collection.Counted
@@ -46,6 +47,7 @@ import io.github.vitalyostanin.geoshare.collection.reported
 import io.github.vitalyostanin.geoshare.collection.shapeOf
 import io.github.vitalyostanin.geoshare.collection.slantOf
 import io.github.vitalyostanin.geoshare.collection.theOtherBandIsSilent
+import io.github.vitalyostanin.geoshare.collection.useOf
 import io.github.vitalyostanin.geoshare.collection.whatTheBandsSay
 import io.github.vitalyostanin.geoshare.collection.word
 import io.github.vitalyostanin.geoshare.log.AppLog
@@ -142,6 +144,17 @@ class RadioWatch(private val context: Context) {
     // epoch by epoch. Kept beside the shapes because the two are read
     // together and neither is worth acting on alone — see OneTransmitter.kt.
     private val silences = ArrayDeque<Boolean>()
+
+    // The fifth reading, and the only one that is not about a minute: which
+    // constellations the receiver has been hearing for nothing since it was
+    // switched on — see AidingDoubt.kt. Its answer goes to the settings
+    // screen rather than into a verdict about a fix, because what it asks for
+    // is a member pressing a button.
+    private val aiding = AidingDoubt()
+    private val aidingDoubted = AidingDoubtSetting(context)
+
+    @Volatile
+    private var doubted: Set<Constellation> = emptySet()
 
     // The last epoch of each, kept whole rather than averaged: the averages
     // answer whether anything is going on, and these are what a person looks
@@ -450,6 +463,7 @@ class RadioWatch(private val context: Context) {
 
                     noteSilence(theOtherBandIsSilent(presenceOf(epoch)))
                     noteDrift(epoch)
+                    noteAiding(epoch)
 
                     for ((constellation, slant) in slantOf(epoch)) {
                         if (slant.satellites < SLANT_MIN_SATELLITES) {
@@ -562,6 +576,35 @@ class RadioWatch(private val context: Context) {
         while (silences.size > EPOCHS_READ_TOGETHER) {
             silences.removeFirst()
         }
+    }
+
+    /**
+     * What this epoch says about a constellation being heard for nothing.
+     *
+     * The answer is kept here and written out only when it changes: the epochs
+     * arrive about once a second, and the settings file is not a place to put
+     * a second's worth of anything. It is written out whichever way it
+     * changed, so that a constellation that has come good clears the line on
+     * the screen as well as raising it.
+     */
+    private fun noteAiding(epoch: List<Satellite>) {
+        val said = aiding.read(useOf(epoch), awakeFor())
+
+        if (said == doubted) {
+            return
+        }
+
+        doubted = said
+        aidingDoubted.doubted = said
+
+        AppLog.i(
+            TAG,
+            if (said.isEmpty()) {
+                "every system heard is being made use of"
+            } else {
+                "heard for nothing: ${inOrder(said).joinToString(", ") { it.word }}"
+            },
+        )
     }
 
     private fun <T> noteShape(into: ArrayDeque<T>, value: T) {
