@@ -77,6 +77,7 @@ fun networkAnswerStands(
     fix: Fix?,
     now: Instant,
     falsePlaces: List<FalsePlace> = emptyList(),
+    nowSinceBoot: Duration? = null,
 ): Boolean {
     if (fix == null) {
         return false
@@ -90,7 +91,7 @@ fun networkAnswerStands(
         return false
     }
 
-    return Duration.between(fix.takenAt, now) <= NETWORK_ANSWER_STALE
+    return since(fix, now, nowSinceBoot) <= NETWORK_ANSWER_STALE
 }
 
 /**
@@ -132,8 +133,13 @@ fun networkAnswerStands(
  * a position that is still good enough to show is not one to overwrite with
  * something vaguer about the same place.
  */
-fun saysMoreThan(asked: Fix, written: Fix?, now: Instant): Boolean {
-    if (written == null || Duration.between(written.takenAt, now) > STALE_AFTER) {
+fun saysMoreThan(
+    asked: Fix,
+    written: Fix?,
+    now: Instant,
+    nowSinceBoot: Duration? = null,
+): Boolean {
+    if (written == null || since(written, now, nowSinceBoot) > STALE_AFTER) {
         return true
     }
 

@@ -3,6 +3,7 @@ package io.github.vitalyostanin.geoshare.service
 import android.location.Location
 import android.os.Build
 import android.os.Bundle
+import android.os.SystemClock
 import io.github.vitalyostanin.geoshare.collection.Fix
 import io.github.vitalyostanin.geoshare.collection.Reported
 import java.time.Duration
@@ -44,6 +45,17 @@ fun fixOf(location: Location): Fix = Fix(
         alongside = alongside(location),
     ),
 )
+
+/**
+ * How long the phone has been awake, as of now.
+ *
+ * The moment to hold a fix's own count since boot against. Both come off the
+ * same clock, the one the platform never sets back, so the pair says how old
+ * an answer is even across a correction of the wall clock — and under a false
+ * signal the wall clock is itself suspect, since the time it is set from comes
+ * off the satellites being faked.
+ */
+fun awakeFor(): Duration = Duration.ofNanos(SystemClock.elapsedRealtimeNanos())
 
 /**
  * Whether a position was put there by another application.

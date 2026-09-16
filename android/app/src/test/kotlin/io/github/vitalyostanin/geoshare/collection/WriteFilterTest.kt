@@ -4,6 +4,7 @@ import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
+import java.time.Duration
 import java.time.Instant
 
 class WriteFilterTest {
@@ -60,6 +61,48 @@ class WriteFilterTest {
         )
 
         assertFalse(shouldWrite(last = home, next = next, mode = CollectionMode.Standby))
+    }
+
+    // The wall clock was stepped ten minutes forward between the fix and the
+    // moment it is judged at. On the wall clock the answer is ten minutes
+    // old; on the clock that is not set back, one minute.
+    @Test
+    fun `the age of a fix survives a stepped wall clock`() {
+        val fix = home.copy(sinceBoot = Duration.ofMinutes(20))
+        val age = since(fix, start.plus(Duration.ofMinutes(10)), Duration.ofMinutes(21))
+
+        assertEquals(Duration.ofMinutes(1), age)
+    }
+
+    // Where either side has no count since boot — a fix read back from the
+    // trail file, or a caller with no such count to offer — the wall clock
+    // answers, as it did before there was a second clock at all.
+    @Test
+    fun `without a count since boot the age comes off the wall clock`() {
+        assertEquals(
+            Duration.ofMinutes(10),
+            since(home, start.plus(Duration.ofMinutes(10))),
+        )
+        assertEquals(
+            Duration.ofMinutes(10),
+            since(
+                home.copy(sinceBoot = Duration.ofMinutes(20)),
+                start.plus(Duration.ofMinutes(10)),
+            ),
+        )
+    }
+
+    // Two fixes an hour apart on the wall clock and a minute apart since
+    // boot: the silence between writes is the minute.
+    @Test
+    fun `the silence between writes is counted since boot`() {
+        val last = home.copy(sinceBoot = Duration.ofMinutes(20))
+        val next = home.copy(
+            takenAt = start.plus(Duration.ofHours(1)),
+            sinceBoot = Duration.ofMinutes(21),
+        )
+
+        assertFalse(shouldWrite(last = last, next = next, mode = CollectionMode.Standby))
     }
 
     @Test

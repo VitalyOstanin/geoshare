@@ -89,7 +89,12 @@ val SECOND_OPINION_ASKED_EVERY: Duration = Duration.ofMinutes(5)
  * answered, and a rule that has nothing to compare is not a rule that found
  * agreement.
  */
-fun secondOpinion(satellites: Fix, network: Fix?, now: Instant): SecondOpinion? {
+fun secondOpinion(
+    satellites: Fix,
+    network: Fix?,
+    now: Instant,
+    nowSinceBoot: Duration? = null,
+): SecondOpinion? {
     if (network == null) {
         return null
     }
@@ -113,7 +118,7 @@ fun secondOpinion(satellites: Fix, network: Fix?, now: Instant): SecondOpinion? 
         return null
     }
 
-    if (Duration.between(network.takenAt, now).abs() > SECOND_OPINION_TOGETHER) {
+    if (since(network, now, nowSinceBoot).abs() > SECOND_OPINION_TOGETHER) {
         return null
     }
 
@@ -150,8 +155,13 @@ fun secondOpinion(satellites: Fix, network: Fix?, now: Instant): SecondOpinion? 
  * too old or too wide to mean anything, or the satellites' own answer under
  * the name of the network. Nothing to compare is not agreement.
  */
-fun backedUpBy(satellites: Fix, network: Fix?, now: Instant): Boolean {
-    if (network == null || secondOpinion(satellites, network, now) == null) {
+fun backedUpBy(
+    satellites: Fix,
+    network: Fix?,
+    now: Instant,
+    nowSinceBoot: Duration? = null,
+): Boolean {
+    if (network == null || secondOpinion(satellites, network, now, nowSinceBoot) == null) {
         return false
     }
 

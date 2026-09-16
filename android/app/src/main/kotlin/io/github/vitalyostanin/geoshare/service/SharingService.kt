@@ -1226,7 +1226,7 @@ class SharingService : LifecycleService() {
                 networkPosition(this@SharingService)
             } ?: lastNetworkPosition(this)
 
-        if (!networkAnswerStands(asked, Instant.now(), falsePlaces)) {
+        if (!networkAnswerStands(asked, Instant.now(), falsePlaces, awakeFor())) {
             AppLog.w(TAG, "the other radios had nothing to put in its place: ${saying(asked)}")
 
             return
@@ -1243,7 +1243,7 @@ class SharingService : LifecycleService() {
         // whichever answers first is the one that arrives. An answer that
         // merely repeats a place already written, only wider, would move the
         // marker half a kilometre and widen the circle around it for nothing.
-        if (!saysMoreThan(fix, lastFix, Instant.now())) {
+        if (!saysMoreThan(fix, lastFix, Instant.now(), awakeFor())) {
             AppLog.i(TAG, "the other radios repeated what is written, only wider: ${saying(fix)}")
 
             return
@@ -1679,7 +1679,8 @@ class SharingService : LifecycleService() {
      */
     private fun apartFromTheRadios(fix: Fix): String {
         val said =
-            secondOpinion(fix, networkSaid, Instant.now()) ?: return "somewhere else"
+            secondOpinion(fix, networkSaid, Instant.now(), awakeFor())
+                ?: return "somewhere else"
 
         return String.format(
             Locale.ROOT,

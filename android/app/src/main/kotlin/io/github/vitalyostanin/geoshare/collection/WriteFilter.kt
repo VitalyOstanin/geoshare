@@ -77,6 +77,28 @@ fun shouldWrite(last: Fix?, next: Fix, mode: CollectionMode): Boolean {
 }
 
 /**
+ * How old a fix is at a given moment, counted on the steadier clock where both
+ * sides of the comparison carry it.
+ *
+ * The same reasoning as [apart], asked of one fix against now rather than of
+ * two fixes against each other: a clock stepped between the fix and the
+ * moment it is judged at makes a fresh answer look stale, or a stale one
+ * fresh. [nowSinceBoot] is how long the phone has been awake at that moment,
+ * and it is absent wherever the caller has no such count to offer — a test
+ * holding a fixed wall clock, or a fix read back from the trail file, which
+ * carries none of its own.
+ */
+fun since(fix: Fix, now: Instant, nowSinceBoot: Duration? = null): Duration {
+    val fixBoot = fix.sinceBoot
+
+    if (fixBoot != null && nowSinceBoot != null) {
+        return nowSinceBoot.minus(fixBoot)
+    }
+
+    return Duration.between(fix.takenAt, now)
+}
+
+/**
  * How much time passed between two fixes, counted on the steadier of the two
  * clocks they carry.
  *
