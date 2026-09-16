@@ -131,6 +131,18 @@ enum class JumpReason {
      * for what the platform answers during them.
      */
     Settling,
+
+    /**
+     * The time the satellites carry stepped away from the phone's own clock.
+     *
+     * The one rule nothing on the ground can talk its way past. Every other
+     * reading here is of something a transmitter chooses — where the answer
+     * lands, how loud a satellite is, which band is silent — and this is of
+     * the phone's own clock since it was switched on, which no signal reaches.
+     * A signal built to move the phone has to move the time it carries, and
+     * moving it shows up as a step against that clock. See SatelliteClock.kt.
+     */
+    TimeApart,
 }
 
 /**
@@ -221,6 +233,10 @@ fun whyAJump(
 
     if (fromOneTransmitter(skySays)) {
         return JumpReason.OneTransmitter
+    }
+
+    if (skySays.satelliteTimeApart) {
+        return JumpReason.TimeApart
     }
 
     if (goingInCircles(lately, circleLimits)) {

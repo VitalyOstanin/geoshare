@@ -261,6 +261,30 @@ class JumpsTest {
         )
     }
 
+    // The clock rule needs neither a flat sky nor a silent band: it rests on
+    // the count of seconds since the phone was switched on, which no signal
+    // reaches. See SatelliteClock.kt.
+    @Test
+    fun `a fix built while the satellites' time stepped is left out`() {
+        val first = fixAt(61.03268, 4.40299, 0, accuracy = 60.0)
+        val second = fixAt(61.03270, 4.40305, 60, accuracy = 80.0)
+
+        assertEquals(
+            JumpReason.TimeApart,
+            whyAJump(first, second, skySays = SkySays(satelliteTimeApart = true)),
+        )
+    }
+
+    @Test
+    fun `a fix the satellites' time ran along with passes`() {
+        val first = fixAt(61.03268, 4.40299, 0, accuracy = 60.0)
+        val second = fixAt(61.03270, 4.40305, 60, accuracy = 80.0)
+
+        assertNull(
+            whyAJump(first, second, skySays = SkySays(satelliteTimeApart = false)),
+        )
+    }
+
     @Test
     fun `a flat sky with the far band still heard is not held against the fix`() {
         val first = fixAt(61.03268, 4.40299, 0, accuracy = 60.0)

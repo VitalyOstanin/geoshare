@@ -74,6 +74,7 @@
     <string name="left_out_circling">The track goes round a circle</string>
     <string name="left_out_one_band">A fix without GLONASS</string>
     <string name="left_out_one_transmitter">The signal is not from orbit</string>
+    <string name="left_out_time_apart">The satellites\' time stepped</string>
     <string name="left_out_repeating">The track repeats itself</string>
     <string name="left_out_settling">The receiver has not settled</string>
     <string name="left_out_by_source">The source is switched off</string>
@@ -123,6 +124,8 @@
     <string name="reason_help_means_one_band">A spoofing transmitter works in one band. GLONASS broadcasts at 1602 MHz, out of its reach, so the receiver could not reconcile it with the satellites it was handed.</string>
     <string name="reason_help_sign_one_transmitter">Every satellite arrives at the same strength however low it claims to be, and the far band is silent.</string>
     <string name="reason_help_means_one_transmitter">A real sky grows quieter the lower the satellite. One strength for all of them means one point on the ground.</string>
+    <string name="reason_help_sign_time_apart">Between two epochs the time the satellites carry advanced by a different amount than the phone\'s own clock did.</string>
+    <string name="reason_help_means_time_apart">The phone counts the seconds since it was switched on, and nothing transmitted can reach that count. A signal built to move the phone has to move the time it carries, and the step shows up here.</string>
     <string name="reason_help_sign_settling">The first five minutes after the phone was switched on, while the answer rests on fewer than four satellites.</string>
     <string name="reason_help_means_settling">In those minutes the receiver reports places the phone has never been. Answers of that window are held to tighter limits: wider than a hundred metres, or faster than 5 m/s, and they are rejected.</string>
     <string name="reason_help_sign_by_source">You switched this source of a position off in the settings.</string>

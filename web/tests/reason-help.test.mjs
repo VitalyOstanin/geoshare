@@ -20,6 +20,7 @@ const WRITTEN = [
     'Settling',
     'Source',
     'Speed',
+    'TimeApart',
     'Unmoved',
     'Width',
 ];

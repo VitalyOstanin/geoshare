@@ -15,6 +15,16 @@ package io.github.vitalyostanin.geoshare.collection
 // something nearer is louder. On its own that still fires on an honest
 // morning, where a phone indoors hears one band for a while; what settles it
 // is the shape of the sky, which under a real sky is never flat. See Slant.kt.
+//
+// The time the signals take to arrive was measured against this and dropped.
+// A transmitter that repeats one signal would hand every satellite the same
+// flight time, and the spread within an epoch would collapse; the one here
+// does not repeat, it writes times that agree with the position it is selling.
+// Over the epochs of 14.09 marked by the rule below, the GPS spread came to
+// 16.17 ms against 13.72 ms under an honest sky, and the measurements sat
+// closer to the geometry of the orbit (0.12 ms off) than the honest ones did
+// (0.42 ms). Nothing was left over: of 13480 measurements not one under the
+// transmitter fell outside what an orbit allows.
 
 /** How one system stood in one epoch, counted over the whole of it. */
 data class Presence(
@@ -98,6 +108,16 @@ data class SkySays(
     val drift: SkyDrift = SkyDrift.Unclear,
     /** Whether the other band has been silent for the whole of the run. */
     val otherBandSilent: Boolean = false,
+    /**
+     * Whether the time the satellites carry left the phone's own clock during
+     * the run — see [satelliteTimeParted].
+     *
+     * Kept here beside the rest of what the sky says, and read on its own
+     * rather than as a half of [fromOneTransmitter]: it rests on a clock that
+     * cannot be reached from the ground instead of on how the sky looks, so
+     * pairing it with the shape would only weaken it.
+     */
+    val satelliteTimeApart: Boolean = false,
 )
 
 /**

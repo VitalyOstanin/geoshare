@@ -1,7 +1,9 @@
 package io.github.vitalyostanin.geoshare.collection
 
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
+import org.junit.Assert.assertTrue
 import org.junit.Test
 
 /**
@@ -209,6 +211,67 @@ class SatelliteClockTest {
 
         assertEquals(2, said.size)
         assertEquals(listOf(20), parted(said).map { it.signal.id })
+
+        // Two milliseconds is the receiver's clock, not the phone's: only a
+        // signal past a tenth of a second is held against the count since the
+        // boot, and only that one leaves a fix out.
+        assertFalse(leftThePhonesClock(said))
+    }
+
+    @Test
+    fun `a reading where every signal agrees has not left the phone's clock`() {
+        val watch = SatelliteClockWatch()
+
+        watch.read(clock(), listOf(measurement()))
+
+        val said =
+            watch.read(
+                clock(timeNanos = 60_270_030_000_000L, boot = 60_596_857_222_640L),
+                listOf(measurement(sent = 301_884_334_077_975L)),
+            )
+
+        assertEquals(1, said.size)
+        assertFalse(leftThePhonesClock(said))
+    }
+
+    @Test
+    fun `a signal whose time stepped a whole second has left the phone's clock`() {
+        val watch = SatelliteClockWatch()
+
+        watch.read(clock(), listOf(measurement()))
+
+        val said =
+            watch.read(
+                clock(timeNanos = 60_270_030_000_000L, boot = 60_596_857_222_640L),
+                listOf(measurement(sent = 301_884_334_077_975L - 1_000_000_000L)),
+            )
+
+        assertEquals(
+            listOf(SatelliteClockVerdict.PhoneApart),
+            said.map { it.verdict },
+        )
+        assertTrue(leftThePhonesClock(said))
+    }
+
+    @Test
+    fun `a window that is not full yet says nothing`() {
+        assertFalse(satelliteTimeParted(List(EPOCHS_READ_TOGETHER - 1) { true }))
+    }
+
+    @Test
+    fun `one epoch of a full window is enough to raise the answer`() {
+        val read = MutableList(EPOCHS_READ_TOGETHER) { false }
+
+        assertFalse(satelliteTimeParted(read))
+
+        read[EPOCHS_READ_TOGETHER / 2] = true
+
+        assertTrue(satelliteTimeParted(read))
+    }
+
+    @Test
+    fun `a window that has run past the step says nothing again`() {
+        assertFalse(satelliteTimeParted(List(EPOCHS_READ_TOGETHER) { false }))
     }
 
     private fun clock(timeNanos: Long = 60_260_030_000_000L, boot: Long = 60_586_853_114_102L) =

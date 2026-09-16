@@ -1583,6 +1583,30 @@ class SharingService : LifecycleService() {
         JumpReason.OneTransmitter -> "by the sky it was built out of: ${theSkyItCameFrom()}"
 
         JumpReason.Settling -> "by the receiver still coming up: ${theReceiverSettling(fix)}"
+
+        JumpReason.TimeApart -> "by the satellites' own time: ${theClockThatStepped()}"
+    }
+
+    /**
+     * Which signal's time left the phone's clock and by how much, for the line
+     * that says a fix was left out.
+     *
+     * Both differences are written, against the receiver's clock and against
+     * the count since the boot, because they say different things: the first
+     * can be moved by the same signal that moved the time, and the second
+     * cannot be reached at all. See SatelliteClock.kt.
+     */
+    private fun theClockThatStepped(): String {
+        val stepped = radio.clockThatStepped() ?: return "no signal named"
+
+        return String.format(
+            Locale.ROOT,
+            "%s %d, %d ns from the receiver's clock and %d ns from the phone's own",
+            stepped.signal.constellation.word,
+            stepped.signal.id,
+            stepped.apart.receiverNanos,
+            stepped.apart.sinceBootNanos,
+        )
     }
 
     /**

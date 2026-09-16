@@ -99,6 +99,7 @@ export const EN = {
     leftOutCircling: 'The track goes round a circle',
     leftOutOneBand: 'A fix without GLONASS',
     leftOutOneTransmitter: 'The signal is not from orbit',
+    leftOutTimeApart: 'The satellites\' time stepped',
     leftOutRepeating: 'The track repeats itself',
     leftOutSettling: 'The receiver has not settled',
     leftOutBySource: 'The source is switched off',
@@ -156,6 +157,11 @@ export const EN = {
         + 'to be, and the far band is silent.',
     reasonMeansOneTransmitter: 'A real sky grows quieter the lower the satellite. One strength '
         + 'for all of them means one point on the ground.',
+    reasonSignTimeApart: 'Between two epochs the time the satellites carry advanced by a '
+        + 'different amount than the phone\'s own clock did.',
+    reasonMeansTimeApart: 'The phone counts the seconds since it was switched on, and nothing '
+        + 'transmitted can reach that count. A signal built to move the phone has to move the '
+        + 'time it carries, and the step shows up here.',
     reasonSignSettling: 'The first five minutes after the phone was switched on, while the answer '
         + 'rests on fewer than four satellites.',
     reasonMeansSettling: 'In those minutes the receiver reports places the phone has never been. '

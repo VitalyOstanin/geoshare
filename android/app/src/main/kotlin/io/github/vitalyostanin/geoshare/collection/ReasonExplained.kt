@@ -22,6 +22,10 @@ data class ReasonExplained(
  * the answer against the one before it, then the phone's own sensors, then the
  * other radios, then the shape of a whole track, then the sky itself. The
  * switched-off source comes last because it is not a fault at all.
+ *
+ * The satellites' time sits with the sky rather than after it: what it rests
+ * on is the same epochs the sky is read from, and a member who has just read
+ * about a flat sky is reading about the same signal.
  */
 fun reasonsExplained(): List<ReasonExplained> = listOf(
     ReasonExplained(
@@ -89,6 +93,12 @@ fun reasonsExplained(): List<ReasonExplained> = listOf(
         R.string.left_out_one_transmitter,
         R.string.reason_help_sign_one_transmitter,
         R.string.reason_help_means_one_transmitter,
+    ),
+    ReasonExplained(
+        JumpReason.TimeApart.name,
+        R.string.left_out_time_apart,
+        R.string.reason_help_sign_time_apart,
+        R.string.reason_help_means_time_apart,
     ),
     ReasonExplained(
         JumpReason.Settling.name,

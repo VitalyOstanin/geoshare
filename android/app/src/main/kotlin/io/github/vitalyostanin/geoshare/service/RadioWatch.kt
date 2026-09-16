@@ -28,7 +28,9 @@ import io.github.vitalyostanin.geoshare.collection.NavSoFar
 import io.github.vitalyostanin.geoshare.collection.SHARE_THE_GPS_BAND
 import io.github.vitalyostanin.geoshare.collection.SLANT_MIN_SATELLITES
 import io.github.vitalyostanin.geoshare.collection.Satellite
+import io.github.vitalyostanin.geoshare.collection.SatelliteClockVerdict
 import io.github.vitalyostanin.geoshare.collection.SatelliteClockWatch
+import io.github.vitalyostanin.geoshare.collection.SignalApart
 import io.github.vitalyostanin.geoshare.collection.SkyDrift
 import io.github.vitalyostanin.geoshare.collection.SkySays
 import io.github.vitalyostanin.geoshare.collection.SkyShape
@@ -41,11 +43,13 @@ import io.github.vitalyostanin.geoshare.collection.gainPerBand
 import io.github.vitalyostanin.geoshare.collection.hexOf
 import io.github.vitalyostanin.geoshare.collection.inOrder
 import io.github.vitalyostanin.geoshare.collection.interferenceFrom
+import io.github.vitalyostanin.geoshare.collection.leftThePhonesClock
 import io.github.vitalyostanin.geoshare.collection.loudnessPerBand
 import io.github.vitalyostanin.geoshare.collection.navConstellation
 import io.github.vitalyostanin.geoshare.collection.parted
 import io.github.vitalyostanin.geoshare.collection.presenceOf
 import io.github.vitalyostanin.geoshare.collection.reported
+import io.github.vitalyostanin.geoshare.collection.satelliteTimeParted
 import io.github.vitalyostanin.geoshare.collection.shapeOf
 import io.github.vitalyostanin.geoshare.collection.slantOf
 import io.github.vitalyostanin.geoshare.collection.theOtherBandIsSilent
@@ -157,6 +161,18 @@ class RadioWatch(private val context: Context) {
     // The satellites' own clocks, kept from one epoch to the next: what is
     // read off them is a pair of epochs rather than a single one.
     private val satelliteClock = SatelliteClockWatch()
+
+    // Whether that reading found the satellites' time away from the phone's,
+    // epoch by epoch. A window rather than the last answer because the step it
+    // catches is an event and the fixes around it are the ones worth leaving
+    // out — see satelliteTimeParted.
+    private val partings = ArrayDeque<Boolean>()
+
+    // The last signal whose time left the phone's clock, kept whole for the
+    // line the log writes when a fix is left out: the window says that
+    // something stepped, and this says what and by how much.
+    @Volatile
+    private var stepped: SignalApart? = null
     private val aidingDoubted = AidingDoubtSetting(context)
 
     @Volatile
@@ -244,6 +260,16 @@ class RadioWatch(private val context: Context) {
     }
 
     /**
+     * The last signal whose time stepped away from the phone's clock, or null
+     * where none has since the receiver started.
+     *
+     * Kept for the log rather than for a verdict: the verdict is [skySays],
+     * which reads the window, and this is what a person reads afterwards to
+     * see which signal it was.
+     */
+    fun clockThatStepped(): SignalApart? = stepped
+
+    /**
      * The two measures the jump filter reads, as the last ten epochs leave
      * them.
      *
@@ -258,6 +284,7 @@ class RadioWatch(private val context: Context) {
         drift = driftShapeOf(drifts[Constellation.Gps]?.toList().orEmpty()),
         otherBandSilent =
         silences.size >= EPOCHS_READ_TOGETHER && silences.all { it },
+        satelliteTimeApart = satelliteTimeParted(partings.toList()),
     )
 
     /**
@@ -420,7 +447,12 @@ class RadioWatch(private val context: Context) {
      * the whole sky, every epoch, and saying so would fill the file.
      */
     private fun noteSatelliteClocks() {
-        val apart = parted(clock?.let { satelliteClock.read(it, measured) }.orEmpty())
+        val said = clock?.let { satelliteClock.read(it, measured) }.orEmpty()
+        val apart = parted(said)
+
+        noteParting(leftThePhonesClock(said))
+
+        said.lastOrNull { it.verdict == SatelliteClockVerdict.PhoneApart }?.let { stepped = it }
 
         if (apart.isEmpty()) {
             return
@@ -603,6 +635,14 @@ class RadioWatch(private val context: Context) {
     /** The three systems that transmit where GPS does, read as one band. */
     private fun sharedBand(bands: Map<Constellation, Epochs>): Epochs =
         acrossTheBand(bands.filterKeys { it in SHARE_THE_GPS_BAND }.values)
+
+    private fun noteParting(value: Boolean) {
+        partings.addLast(value)
+
+        while (partings.size > EPOCHS_READ_TOGETHER) {
+            partings.removeFirst()
+        }
+    }
 
     private fun noteSilence(value: Boolean) {
         silences.addLast(value)

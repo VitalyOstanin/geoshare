@@ -52,6 +52,7 @@ test('every reason a phone writes is named by the dictionary', () => {
         Circling: 'leftOutCircling',
         OneBand: 'leftOutOneBand',
         OneTransmitter: 'leftOutOneTransmitter',
+        TimeApart: 'leftOutTimeApart',
         Repeating: 'leftOutRepeating',
         Settling: 'leftOutSettling',
         Source: 'leftOutBySource',

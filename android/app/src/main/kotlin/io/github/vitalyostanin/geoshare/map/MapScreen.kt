@@ -1026,7 +1026,7 @@ private fun ReasonHelp(onClose: () -> Unit) {
         title = { Text(text = stringResource(R.string.reason_help_title)) },
         text = {
             Column(
-                // Thirteen reasons with two sentences each outgrow any screen,
+                // Fourteen reasons with two sentences each outgrow any screen,
                 // and a dialog clips what does not fit rather than folding it.
                 modifier = Modifier.verticalScroll(rememberScrollState()),
                 verticalArrangement = Arrangement.spacedBy(10.dp),

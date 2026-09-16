@@ -64,6 +64,7 @@ fun leftOutReasonLabel(reason: String?): Int = when (reason) {
     JumpReason.Circling.name -> R.string.left_out_circling
     JumpReason.OneBand.name -> R.string.left_out_one_band
     JumpReason.OneTransmitter.name -> R.string.left_out_one_transmitter
+    JumpReason.TimeApart.name -> R.string.left_out_time_apart
     JumpReason.Repeating.name -> R.string.left_out_repeating
     JumpReason.Settling.name -> R.string.left_out_settling
     else -> switchedOffLabel(reason)

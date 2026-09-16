@@ -63,6 +63,7 @@
     <string name="left_out_circling">Трек по кругу</string>
     <string name="left_out_one_band">Позиция без ГЛОНАСС</string>
     <string name="left_out_one_transmitter">Сигнал не с орбиты</string>
+    <string name="left_out_time_apart">Время спутников сместилось</string>
     <string name="left_out_repeating">Трек повторяется</string>
     <string name="left_out_settling">Приёмник не устоялся</string>
     <string name="left_out_by_source">Источник выключен</string>
@@ -110,6 +111,8 @@
     <string name="reason_help_means_one_band">Передатчик подмены работает в одной полосе. ГЛОНАСС вещает на 1602 МГц, туда передатчик не достаёт, и приёмник не смог согласовать его со своими ложными спутниками.</string>
     <string name="reason_help_sign_one_transmitter">Все спутники слышны одинаково громко, как бы низко над горизонтом они ни были, а дальняя полоса молчит.</string>
     <string name="reason_help_means_one_transmitter">Настоящее небо звучит тем тише, чем ниже спутник. Ровная громкость означает, что всё пришло из одной точки на земле.</string>
+    <string name="reason_help_sign_time_apart">За время между двумя измерениями время, которое несут спутники, продвинулось не на столько же, на сколько собственные часы телефона.</string>
+    <string name="reason_help_means_time_apart">Телефон считает секунды с момента включения, и до этого счёта не дотянуться ничем переданным по радио. Сигнал, который уводит телефон в другое место, вынужден сдвинуть переносимое им время — сдвиг здесь и виден.</string>
     <string name="reason_help_sign_settling">Первые пять минут после включения телефона, пока решение строится меньше чем на четырёх спутниках.</string>
     <string name="reason_help_means_settling">В эти минуты приёмник выдаёт места, где телефон никогда не был. Точки этого окна проверяются строже обычного: шире ста метров или быстрее 5 м/с — отказ.</string>
     <string name="reason_help_sign_by_source">Вы выключили этот источник позиции в настройках телефона.</string>

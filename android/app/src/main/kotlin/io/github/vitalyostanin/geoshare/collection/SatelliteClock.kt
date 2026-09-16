@@ -290,3 +290,29 @@ fun parted(said: List<SignalApart>): List<SignalApart> = said.filter {
     it.verdict == SatelliteClockVerdict.ReceiverApart ||
         it.verdict == SatelliteClockVerdict.PhoneApart
 }
+
+/** Whether a reading holds a signal whose time left the phone's own clock. */
+fun leftThePhonesClock(said: List<SignalApart>): Boolean = said.any {
+    it.verdict == SatelliteClockVerdict.PhoneApart
+}
+
+/**
+ * Whether the last run of epochs says the satellites' time has left the
+ * phone's.
+ *
+ * One epoch is enough to raise it, and that is the difference from the other
+ * readings of the sky. The loudness, the shape and the silence of a band are
+ * states — they hold for as long as the transmitter does, and reading one
+ * epoch of them says little. A clock that steps is an event: a signal built to
+ * put the phone somewhere else has to move the time it carries once, and after
+ * that it runs along with the phone again, honestly, from the wrong place.
+ *
+ * What the window is for is the other direction. The answer stays raised for
+ * as long as the window holds the epoch that stepped — about a minute at the
+ * rate these phones report — so the fixes built during the step are left out
+ * rather than only the one that happened to arrive with it. And it says
+ * nothing at all until the window is full, which keeps a receiver that has
+ * just been switched on from calling its first seconds an attack.
+ */
+fun satelliteTimeParted(read: List<Boolean>): Boolean =
+    read.size >= EPOCHS_READ_TOGETHER && read.any { it }

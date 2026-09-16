@@ -27,6 +27,7 @@ const HELP_ORDER = [
     'Repeating',
     'OneBand',
     'OneTransmitter',
+    'TimeApart',
     'Settling',
     'Source',
 ];
