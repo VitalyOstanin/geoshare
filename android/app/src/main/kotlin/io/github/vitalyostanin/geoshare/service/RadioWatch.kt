@@ -28,6 +28,7 @@ import io.github.vitalyostanin.geoshare.collection.NavSoFar
 import io.github.vitalyostanin.geoshare.collection.SHARE_THE_GPS_BAND
 import io.github.vitalyostanin.geoshare.collection.SLANT_MIN_SATELLITES
 import io.github.vitalyostanin.geoshare.collection.Satellite
+import io.github.vitalyostanin.geoshare.collection.SatelliteClockWatch
 import io.github.vitalyostanin.geoshare.collection.SkyDrift
 import io.github.vitalyostanin.geoshare.collection.SkySays
 import io.github.vitalyostanin.geoshare.collection.SkyShape
@@ -42,6 +43,7 @@ import io.github.vitalyostanin.geoshare.collection.inOrder
 import io.github.vitalyostanin.geoshare.collection.interferenceFrom
 import io.github.vitalyostanin.geoshare.collection.loudnessPerBand
 import io.github.vitalyostanin.geoshare.collection.navConstellation
+import io.github.vitalyostanin.geoshare.collection.parted
 import io.github.vitalyostanin.geoshare.collection.presenceOf
 import io.github.vitalyostanin.geoshare.collection.reported
 import io.github.vitalyostanin.geoshare.collection.shapeOf
@@ -151,6 +153,10 @@ class RadioWatch(private val context: Context) {
     // screen rather than into a verdict about a fix, because what it asks for
     // is a member pressing a button.
     private val aiding = AidingDoubt()
+
+    // The satellites' own clocks, kept from one epoch to the next: what is
+    // read off them is a pair of epochs rather than a single one.
+    private val satelliteClock = SatelliteClockWatch()
     private val aidingDoubted = AidingDoubtSetting(context)
 
     @Volatile
@@ -406,6 +412,32 @@ class RadioWatch(private val context: Context) {
     }
 
     /**
+     * Whether the satellites' own time still runs along with the phone's.
+     *
+     * Read on every epoch rather than where the sky is written down, because
+     * what it reads is a pair of epochs and the sky file is written once per
+     * fix. Only the signals that parted are written: the ones that agree are
+     * the whole sky, every epoch, and saying so would fill the file.
+     */
+    private fun noteSatelliteClocks() {
+        val apart = parted(clock?.let { satelliteClock.read(it, measured) }.orEmpty())
+
+        if (apart.isEmpty()) {
+            return
+        }
+
+        SkyLog.note(Instant.now(), apart)
+
+        AppLog.w(
+            TAG,
+            "the time of ${apart.size} signal(s) does not run with the phone's: " +
+                apart.joinToString(", ") {
+                    "${it.signal.constellation.word} ${it.signal.id} ${it.verdict}"
+                },
+        )
+    }
+
+    /**
      * The epoch itself, put beside the position that came out of it.
      *
      * Called once per fix rather than once per epoch: see [SkyLog] for why.
@@ -482,6 +514,8 @@ class RadioWatch(private val context: Context) {
                     val tracking = fullTrackingOf(event)
 
                     measured = event.measurements.map { measurementOf(it, tracking) }
+
+                    noteSatelliteClocks()
 
                     val epoch = reported(gainsOf(event))
 

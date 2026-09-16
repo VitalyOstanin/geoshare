@@ -11,6 +11,7 @@ import io.github.vitalyostanin.geoshare.collection.Measurement
 import io.github.vitalyostanin.geoshare.collection.NavMessage
 import io.github.vitalyostanin.geoshare.collection.SLANT_MIN_SATELLITES
 import io.github.vitalyostanin.geoshare.collection.Satellite
+import io.github.vitalyostanin.geoshare.collection.SignalApart
 import io.github.vitalyostanin.geoshare.collection.Slant
 import io.github.vitalyostanin.geoshare.collection.driftOf
 import io.github.vitalyostanin.geoshare.collection.slantOf
@@ -158,6 +159,21 @@ object SkyLog {
     fun note(at: Instant, message: NavMessage) =
         note(buildString { nav(at.toEpochMilli(), message) })
 
+    /**
+     * The signals whose own time parted from one of the phone's clocks.
+     *
+     * Only the ones that parted: writing a row per signal per epoch would say
+     * the same "nothing happened" thirty times a second and push the rest of
+     * the file out.
+     */
+    fun note(at: Instant, apart: List<SignalApart>) {
+        if (apart.isEmpty()) {
+            return
+        }
+
+        note(buildString { apart.forEach { apart(at.toEpochMilli(), it) } })
+    }
+
     /** Both files, oldest row first. */
     fun read(): String = files?.read().orEmpty()
 
@@ -297,6 +313,16 @@ object SkyLog {
         append(if (satellite.hasAlmanac) '1' else '0').append('\n')
     }
 
+    private fun StringBuilder.apart(stamp: Long, said: SignalApart) {
+        append("Apart,").append(stamp).append(',')
+        append(said.signal.constellation.word).append(',')
+        append(said.signal.id).append(',')
+        append(number(said.signal.carrierHz)).append(',')
+        append(said.apart.receiverNanos).append(',')
+        append(said.apart.sinceBootNanos).append(',')
+        append(said.verdict.name).append('\n')
+    }
+
     private fun StringBuilder.measurement(stamp: Long, measured: Measurement) {
         append("Raw,").append(stamp).append(',')
         append(measured.constellation.word).append(',')
@@ -357,5 +383,6 @@ object SkyLog {
         # Sat,UnixTimeMillis,ConstellationType,Svid,Cn0DbHz,BasebandCn0DbHz,ElevationDegrees,AzimuthDegrees,CarrierFrequencyHz,UsedInFix,HasEphemerisData,HasAlmanacData
         # Raw,UnixTimeMillis,ConstellationType,Svid,TimeOffsetNanos,State,ReceivedSvTimeNanos,ReceivedSvTimeUncertaintyNanos,Cn0DbHz,BasebandCn0DbHz,PseudorangeRateMetersPerSecond,PseudorangeRateUncertaintyMetersPerSecond,AccumulatedDeltaRangeState,AccumulatedDeltaRangeMeters,AccumulatedDeltaRangeUncertaintyMeters,CarrierFrequencyHz,MultipathIndicator,AgcDb,SnrInDb,CodeType,FullInterSignalBiasNanos,FullInterSignalBiasUncertaintyNanos,SatelliteInterSignalBiasNanos,SatelliteInterSignalBiasUncertaintyNanos,IsFullTracking
         # Nav,UnixTimeMillis,ConstellationType,Svid,Type,Status,MessageId,SubmessageId,DataHex
+        # Apart,UnixTimeMillis,ConstellationType,Svid,CarrierFrequencyHz,AgainstReceiverNanos,AgainstPhoneNanos,Verdict
         """.trimIndent() + "\n"
 }
