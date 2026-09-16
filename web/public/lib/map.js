@@ -18,6 +18,7 @@ import { showFace } from './faces.js';
 import { ageText, isStale, positionAge, timeText } from './age.js';
 import { clusterMembers, facesShown } from './clusters.js';
 import { openModeHelp } from './mode-help.js';
+import { openReasonHelp } from './reason-help.js';
 import { markerOrder } from './stacking.js';
 import { modeText } from './modes.js';
 import { accuracyRing, widthIsWide, widthText } from './width.js';
@@ -771,7 +772,7 @@ function detail(position, name, faces, now) {
         ...(position.leftOutCount > 0
             ? [
                 [WORDS.leftOut, WORDS.leftOutAnswers(position.leftOutCount)],
-                [WORDS.leftOutReason, leftOutText(position.leftOutReason)],
+                [WORDS.leftOutReason, reasonButton(position.leftOutReason)],
             ]
             : []),
         [WORDS.mode, modeButton(position.mode)],
@@ -857,6 +858,25 @@ function modeButton(mode) {
     button.type = 'button';
     button.textContent = modeText(mode);
     button.addEventListener('click', () => openModeHelp());
+
+    return button;
+}
+
+/**
+ * The reason as a thing to press, for the same reason the mode is one.
+ *
+ * "Two positions at one time" names what the phone saw without saying what it
+ * means, and a card is the one place a member meets a reason at all. The word
+ * shown is the one the card would have shown anyway, the switched-off source
+ * named among it.
+ */
+function reasonButton(reason) {
+    const button = document.createElement('button');
+
+    button.className = 'mode-help-open left-out';
+    button.type = 'button';
+    button.textContent = leftOutText(reason);
+    button.addEventListener('click', () => openReasonHelp());
 
     return button;
 }

@@ -104,6 +104,67 @@ export const EN = {
     leftOutBySource: 'The source is switched off',
     leftOutBySourceNamed: (source) => `Switched off on the phone: ${source}`,
 
+    // The help the rejection reason on a card opens.
+    reasonHelpTitle: 'Why a position is rejected',
+    reasonHelpIntro:
+        'The phone holds every position against several rules and rejects it as soon as the '
+        + 'first one speaks. A rejection is not a fault: where the signal is spoofed there are '
+        + 'more rejected answers than accepted ones, and that is the work being done properly.',
+    reasonHelpSign: 'What was seen',
+    reasonHelpMeans: 'What it means',
+    reasonSignWidth: 'The phone named the radius it is somewhere inside, and the radius is over '
+        + 'half a kilometre.',
+    reasonMeansWidth: 'Such an answer names a district rather than a place. It is what the towers '
+        + 'give while the phone is indoors.',
+    reasonSignSpeed: 'Reaching this place from the last one in the time between them would have '
+        + 'taken over 200 km/h.',
+    reasonMeansSpeed: 'One of the two is false. A spoof throws the marker far off rather than '
+        + 'easing it along.',
+    reasonSignContradiction: 'Two different positions arrived carrying the same moment.',
+    reasonMeansContradiction: 'The source is contradicting itself, which is what happens when a '
+        + 'receiver is caught between a transmitter on the ground and the satellites.',
+    reasonSignFalsePlace: 'The answer landed in an area you marked as somewhere the spoof puts '
+        + 'phones.',
+    reasonMeansFalsePlace: 'A transmitter puts the marker there, not the satellites. The areas '
+        + 'belong to the group, so marking one from any phone is enough.',
+    reasonSignUnmoved: 'The movement sensors say the phone was not carried anywhere, and the '
+        + 'position changed.',
+    reasonMeansUnmoved: 'Only a false signal moves the marker of a phone lying still: steps and '
+        + 'journeys are counted by a chip of their own that a transmitter cannot reach.',
+    reasonSignDrifted: 'The phone is lying where it was put down, and the answers walk away from '
+        + 'it a little at a time.',
+    reasonMeansDrifted: 'A slow drift. A step of thirty metres never trips a comparison between '
+        + 'neighbours, but within an hour the marker is somewhere else, so the distance is '
+        + 'counted from where the phone was put down.',
+    reasonSignContradicted: 'The position from the satellites and the position from the towers '
+        + 'and the Wi-Fi are kilometres apart.',
+    reasonMeansContradicted: 'The towers are harder to imitate than the satellites. This is the '
+        + 'one rule that does not compare an answer with an earlier one, so it catches both a '
+        + 'slow drift and the very first false answer.',
+    reasonSignCircling: 'The answers go round a closed circle at a steady speed.',
+    reasonMeansCircling: 'Every stretch of such a track reads as ordinary driving. What gives it '
+        + 'away is that the road closes, which is how a transmitter draws one and not how '
+        + 'anybody drives.',
+    reasonSignRepeating: 'The phone has been through this same run of places before.',
+    reasonMeansRepeating: 'A recorded false route is being played through again.',
+    reasonSignOneBand: 'The fix rests on the satellites of the 1575 MHz band — GPS, Galileo, '
+        + 'BeiDou — while GLONASS is heard and left out of it.',
+    reasonMeansOneBand: 'A spoofing transmitter works in one band. GLONASS broadcasts at 1602 '
+        + 'MHz, out of its reach, so the receiver could not reconcile it with the satellites it '
+        + 'was handed.',
+    reasonSignOneTransmitter: 'Every satellite arrives at the same strength however low it claims '
+        + 'to be, and the far band is silent.',
+    reasonMeansOneTransmitter: 'A real sky grows quieter the lower the satellite. One strength '
+        + 'for all of them means one point on the ground.',
+    reasonSignSettling: 'The first five minutes after the phone was switched on, while the answer '
+        + 'rests on fewer than four satellites.',
+    reasonMeansSettling: 'In those minutes the receiver reports places the phone has never been. '
+        + 'Answers of that window are held to tighter limits: wider than a hundred metres, or '
+        + 'faster than 5 m/s, and they are rejected.',
+    reasonSignSource: 'You switched this source of a position off in the settings.',
+    reasonMeansSource: 'Nothing is wrong with the answer: it is collected and logged, but it '
+        + 'moves no marker and reaches nobody. That is what the switch is for.',
+
     // How wide the phone said its answer is. The sign is what turns a distance
     // into a claim about where the marker might really be.
     widthMetres: (count) => `${count} m`,

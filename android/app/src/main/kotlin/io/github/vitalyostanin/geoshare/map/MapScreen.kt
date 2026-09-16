@@ -58,6 +58,7 @@ import io.github.vitalyostanin.geoshare.collection.foundByLabel
 import io.github.vitalyostanin.geoshare.collection.leftOutReasonLabel
 import io.github.vitalyostanin.geoshare.collection.modeLabel
 import io.github.vitalyostanin.geoshare.collection.modesExplained
+import io.github.vitalyostanin.geoshare.collection.reasonsExplained
 import io.github.vitalyostanin.geoshare.collection.sourceChoiceLabel
 import io.github.vitalyostanin.geoshare.collection.sourceLeftOut
 import io.github.vitalyostanin.geoshare.collection.watchingMembers
@@ -834,6 +835,7 @@ private fun MemberDetail(
                 }
                 DetailRow(R.string.map_detail_left_out_reason) {
                     val switched = sourceLeftOut(member.leftOutReason)
+                    var helpOpen by remember { mutableStateOf(false) }
 
                     Text(
                         // A source the member switched off is named: which of
@@ -850,8 +852,20 @@ private fun MemberDetail(
                             }
                             ?: stringResource(leftOutReasonLabel(member.leftOutReason)),
                         style = MaterialTheme.typography.bodyMedium,
+                        // Underlined and pressed like the mode above, and for
+                        // the same reason: "Two positions at one time" names
+                        // what the phone saw without saying what it means, and
+                        // the card is the one place a member meets a reason.
+                        // The colour stays the one rejection is written in, so
+                        // that the row still reads as the trouble it reports.
                         color = leftOutColour(),
+                        textDecoration = TextDecoration.Underline,
+                        modifier = Modifier.clickable { helpOpen = true },
                     )
+
+                    if (helpOpen) {
+                        ReasonHelp(onClose = { helpOpen = false })
+                    }
                 }
             }
             DetailRow(R.string.map_detail_mode) {
@@ -983,6 +997,58 @@ private fun ModeHelp(onClose: () -> Unit) {
                         )
                         Text(
                             text = stringResource(explained.whatItDoes),
+                            style = MaterialTheme.typography.bodyMedium,
+                        )
+                    }
+                }
+            }
+        },
+    )
+}
+
+/**
+ * What each reason for rejecting a position means.
+ *
+ * One place rather than a sentence at a time on the cards, as with the modes:
+ * the reasons are read against each other — several of them are the same
+ * evidence held against different things — and a member reads this once. The
+ * page shows the same table.
+ */
+@Composable
+private fun ReasonHelp(onClose: () -> Unit) {
+    AlertDialog(
+        onDismissRequest = onClose,
+        confirmButton = {
+            TextButton(onClick = onClose) {
+                Text(text = stringResource(R.string.map_detail_close))
+            }
+        },
+        title = { Text(text = stringResource(R.string.reason_help_title)) },
+        text = {
+            Column(
+                // Thirteen reasons with two sentences each outgrow any screen,
+                // and a dialog clips what does not fit rather than folding it.
+                modifier = Modifier.verticalScroll(rememberScrollState()),
+                verticalArrangement = Arrangement.spacedBy(10.dp),
+            ) {
+                Text(
+                    text = stringResource(R.string.reason_help_intro),
+                    style = MaterialTheme.typography.bodyMedium,
+                )
+
+                reasonsExplained().forEach { explained ->
+                    Column {
+                        Text(
+                            text = stringResource(explained.name),
+                            style = MaterialTheme.typography.titleSmall,
+                        )
+                        Text(
+                            text = stringResource(explained.sign),
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                        Text(
+                            text = stringResource(explained.means),
                             style = MaterialTheme.typography.bodyMedium,
                         )
                     }

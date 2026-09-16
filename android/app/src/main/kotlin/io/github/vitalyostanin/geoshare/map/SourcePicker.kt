@@ -20,6 +20,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import io.github.vitalyostanin.geoshare.R
@@ -76,8 +77,16 @@ fun SourcePicker(
                 }
             },
             colors = AssistChipDefaults.assistChipColors(
-                containerColor = MaterialTheme.colorScheme.surface,
+                // The ground is the surface behind, which is lifted and round.
+                // A chip painting its own ground over that paints a rectangle
+                // of a slightly different grey inside the circle, and the
+                // corners of it show along the round edge as grey streaks.
+                containerColor = Color.Transparent,
             ),
+            // For the same reason: the chip's own outline is a rounded
+            // rectangle of the outline colour, and it does not follow the
+            // circle it sits in. The edge of the button is the surface's.
+            border = null,
         )
     }
 
