@@ -232,6 +232,11 @@ function positionOf(snapshot) {
         // simply gets older — which is what a phone in a drawer does too.
         leftOutCount: typeof data.leftOutCount === 'number' ? data.leftOutCount : null,
         leftOutReason: typeof data.leftOutReason === 'string' ? data.leftOutReason : null,
+        // Whether the phone said its receiver had not settled since it was
+        // switched on. Absent in what the older builds wrote and in every
+        // position of a phone that has been up a while, which are one thing
+        // to a reader: nothing to say beyond what the other fields say.
+        settling: data.settling === true,
     };
 }
 

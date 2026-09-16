@@ -446,6 +446,30 @@ describe('positions', () => {
             }),
         );
     });
+
+    // Whether the receiver had settled when the fix was taken. A phone that
+    // has just been switched on answers narrowly and wrongly, and this is what
+    // lets a card say so.
+    it('a position says its receiver had not settled', async () => {
+        const db = testEnv.authenticatedContext(ALICE).firestore();
+
+        await assertSucceeds(
+            setDoc(positionOf(db, ALICE), { ...positionFrom(ALICE), settling: true }),
+        );
+    });
+
+    // A flag and nothing else: the readers show a sentence for it, and a
+    // number or a word here would be a phone writing into everybody's card.
+    it('a receiver note that is not a flag is refused', async () => {
+        const db = testEnv.authenticatedContext(ALICE).firestore();
+
+        await assertFails(
+            setDoc(positionOf(db, ALICE), { ...positionFrom(ALICE), settling: 23 }),
+        );
+        await assertFails(
+            setDoc(positionOf(db, ALICE), { ...positionFrom(ALICE), settling: 'not yet' }),
+        );
+    });
 });
 
 describe('watch', () => {

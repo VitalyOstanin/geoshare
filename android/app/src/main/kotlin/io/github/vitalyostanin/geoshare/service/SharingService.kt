@@ -65,6 +65,7 @@ import io.github.vitalyostanin.geoshare.collection.said
 import io.github.vitalyostanin.geoshare.collection.saysMoreThan
 import io.github.vitalyostanin.geoshare.collection.secondOpinion
 import io.github.vitalyostanin.geoshare.collection.shouldWrite
+import io.github.vitalyostanin.geoshare.collection.stillSettling
 import io.github.vitalyostanin.geoshare.collection.walkingNow
 import io.github.vitalyostanin.geoshare.collection.whyAJump
 import io.github.vitalyostanin.geoshare.collection.word
@@ -133,7 +134,20 @@ private val LEFT_OUT_TOLD_EVERY: Duration = Duration.ofMinutes(1)
  * cable newly in is a different document, while the same place written with
  * nothing changed is not.
  */
-private data class Written(val fix: Fix, val charging: Boolean)
+private data class Written(
+    val fix: Fix,
+    val charging: Boolean,
+    /**
+     * Whether the receiver had not settled when the fix was taken.
+     *
+     * Carried beside the fix rather than worked out again at the write: the
+     * count of satellites it rests on belongs to the epoch the fix came out
+     * of, and by the time the document is put together the receiver has moved
+     * on. It is part of what makes two writes the same write, so a phone whose
+     * receiver settles while it stands still says so once.
+     */
+    val settling: Boolean = false,
+)
 
 /**
  * The part of the application that keeps running: it holds the position up to
@@ -533,6 +547,12 @@ class SharingService : LifecycleService() {
         // being weighed carries no note of its own on these phones.
         val whence = foundBy(fix, lastSatellitePosition(this))
 
+        // Whether the receiver has had time to settle since the phone was
+        // switched on, read off the same epoch as the rules below. Never asked
+        // of an answer from the towers: it is a statement about the satellites,
+        // and such an answer rests on none.
+        val settling = !trusted && stillSettling(fix.sinceBoot, restsOn)
+
         val jump =
             if (trusted) {
                 null
@@ -550,6 +570,7 @@ class SharingService : LifecycleService() {
                     skySays = radio.skySays(),
                     putDown = putDown,
                     carrying = carryingSince(putDown, stirsHeard, sensorsTell),
+                    settling = settling,
                 )
             }
         // A fix left out does not move the last position, and that is how the
@@ -622,7 +643,7 @@ class SharingService : LifecycleService() {
         // Read once and carried into the write: asking twice would let the
         // cable come out between the two answers, and then the document would
         // disagree with what was decided here.
-        val written = Written(fix, charging())
+        val written = Written(fix, charging(), settling)
 
         // News passes the filter by; a repeat of itself is not news.
         if (written == lastWritten) {
@@ -657,7 +678,11 @@ class SharingService : LifecycleService() {
      */
     private suspend fun sayAgain(writer: PositionWriter, mode: CollectionMode): Boolean {
         val known = lastFix ?: lastKnown ?: return false
-        val written = Written(known, charging())
+        // The same position said again carries the same note about the
+        // receiver: it is a statement about the answer, and the answer has not
+        // changed. Worked out afresh here it would say something about an
+        // epoch this position never came out of.
+        val written = Written(known, charging(), lastWritten?.settling == true)
 
         // Not weighed against what the member shares: this is the position
         // they have already shared, said again so that the marker does not go
@@ -1556,7 +1581,26 @@ class SharingService : LifecycleService() {
         JumpReason.OneBand -> "by what it rests on: ${theBandItRestsOn()}"
 
         JumpReason.OneTransmitter -> "by the sky it was built out of: ${theSkyItCameFrom()}"
+
+        JumpReason.Settling -> "by the receiver still coming up: ${theReceiverSettling(fix)}"
     }
+
+    /**
+     * How long the phone had been awake and how much of the sky its answer
+     * rests on, for the line that says an answer of the first minutes was left
+     * out.
+     *
+     * Both numbers, because either alone reads as the wrong complaint: the
+     * seconds on their own say a phone was restarted, which is not a fault,
+     * and the count on its own says a receiver hears nothing, which is what a
+     * phone indoors does all day.
+     */
+    private fun theReceiverSettling(fix: Fix): String = String.format(
+        Locale.ROOT,
+        "%d s since the boot, %d satellites in the fix",
+        fix.sinceBoot?.seconds ?: 0L,
+        restsOn.values.sumOf { it.usedInFix },
+    )
 
     /**
      * Which systems the fix was built out of, for the line that says a fix was
@@ -1659,7 +1703,14 @@ class SharingService : LifecycleService() {
         // another name is the receiver's own last answer, read from the store.
         whence: FoundBy,
     ): Boolean = try {
-        writer.write(written.fix, mode, batteryPercent(), written.charging, whence)
+        writer.write(
+            written.fix,
+            mode,
+            batteryPercent(),
+            written.charging,
+            whence,
+            written.settling,
+        )
         AppLog.i(
             TAG,
             "wrote a position taken at ${written.fix.takenAt}, found by ${whence.said}",

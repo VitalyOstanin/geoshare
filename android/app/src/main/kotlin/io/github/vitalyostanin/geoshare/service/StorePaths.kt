@@ -132,6 +132,19 @@ object PositionField {
     const val FOUND_BY = "foundBy"
 
     /**
+     * Whether the receiver had not settled when this answer was taken.
+     *
+     * Written only where it is true, the way the width is written only where
+     * there is one: a phone whose receiver has settled says nothing, and a
+     * reader that finds nothing shows nothing. The field is what keeps the
+     * tighter rules of those minutes from being the whole of the answer — an
+     * answer of a receiver coming up that passes them is still an answer of a
+     * receiver coming up, and a card that showed it like any other would be
+     * putting the same weight on both.
+     */
+    const val SETTLING = "settling"
+
+    /**
      * How many answers have been left out since the last position was written.
      *
      * The field that tells a phone being lied to from a phone that is off. A

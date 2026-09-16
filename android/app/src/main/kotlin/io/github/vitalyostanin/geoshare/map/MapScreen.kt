@@ -901,6 +901,21 @@ private fun MemberDetail(
                     },
                 )
             }
+            // Only while it is true, the way the left-out rows are: a phone
+            // that has been up an hour has nothing to explain here. Placed
+            // under the width because that is the reading it corrects — a
+            // receiver still coming up answers narrowly and wrongly, and a
+            // width of eighty metres read without this says the phone is
+            // within eighty metres of the marker.
+            if (member.settling) {
+                DetailRow(R.string.map_detail_settling) {
+                    Text(
+                        text = stringResource(R.string.map_detail_settling_note),
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = leftOutColour(),
+                    )
+                }
+            }
             DetailRow(R.string.map_detail_battery) {
                 val percent = member.batteryPercent
 

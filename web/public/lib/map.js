@@ -782,6 +782,12 @@ function detail(position, name, faces, now) {
         // somebody's database.
         [WORDS.foundBy, foundText(position.foundBy)],
         [WORDS.width, widthValue(position.accuracyMetres)],
+        // Only while it is true, the way the left-out rows are, and directly
+        // under the width because that is the reading it corrects: a width of
+        // eighty metres read without it says the phone is within eighty metres
+        // of the marker, and a receiver that has just been switched on answers
+        // that narrowly out of nothing.
+        ...(position.settling ? [[WORDS.settling, WORDS.settlingNote]] : []),
         [WORDS.battery, batteryText(position)],
         [WORDS.position, `${position.latitude.toFixed(5)}, ${position.longitude.toFixed(5)}`],
     ];

@@ -396,7 +396,7 @@ service cloud.firestore {
           return request.resource.data.keys()
                    .hasOnly(['memberId', 'deviceName', 'latitude', 'longitude',
                              'takenAt', 'writtenAt', 'mode', 'batteryPercent', 'charging',
-                             'accuracyMetres', 'foundBy',
+                             'accuracyMetres', 'foundBy', 'settling',
                              'leftOutCount', 'leftOutReason', 'leftOutSince']) &&
                  request.resource.data.memberId == request.auth.uid &&
                  request.resource.data.latitude is number &&
@@ -439,7 +439,14 @@ service cloud.firestore {
                  // choosing on everybody's card.
                  (!('foundBy' in request.resource.data) ||
                   (request.resource.data.foundBy is string &&
-                   request.resource.data.foundBy.size() <= 20));
+                   request.resource.data.foundBy.size() <= 20)) &&
+                 // Whether the receiver had not settled since the phone was
+                 // switched on. A flag rather than the count of satellites or
+                 // the seconds since the boot: the readers show a sentence,
+                 // and what the limits of that window are is the phone's
+                 // business and changes between builds.
+                 (!('settling' in request.resource.data) ||
+                  request.resource.data.settling is bool);
         }
 
         // One document at a time, and no listing of the collection. A query is

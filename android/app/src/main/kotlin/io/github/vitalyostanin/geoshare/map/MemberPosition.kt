@@ -49,6 +49,17 @@ data class MemberPosition(
      */
     val foundBy: String? = null,
     /**
+     * Whether the phone that wrote this said its receiver had not settled
+     * since it was switched on.
+     *
+     * False for a build that wrote no such field and for every position of a
+     * phone that has been up a while, which are the same thing to a reader:
+     * nothing to say about how the answer was arrived at beyond what the other
+     * fields say. True is a position worth less than its width suggests — see
+     * the Android client's Settling.kt for the minutes this covers.
+     */
+    val settling: Boolean = false,
+    /**
      * How many answers this phone has left out since it wrote this position.
      *
      * Nought — and for the builds that wrote no such field, missing — means

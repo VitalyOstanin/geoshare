@@ -76,6 +76,13 @@ export const EN = {
     foundPretended: 'Another application on the phone',
     foundUnsaid: 'Source not stated',
 
+    // What the phone said about its receiver when it was switched on. The row
+    // appears only while it is true, and it stands under the width because
+    // that is the reading it corrects: a receiver still coming up answers
+    // narrowly and wrongly.
+    settling: 'Receiver',
+    settlingNote: 'Had not settled since the phone was switched on',
+
     // What the phone has thrown away since the last position it wrote. The
     // rows appear only while it is happening: a phone whose answers get
     // through has nothing to explain.
@@ -93,6 +100,7 @@ export const EN = {
     leftOutOneBand: 'Only one band is heard',
     leftOutOneTransmitter: 'The sky came from one transmitter',
     leftOutRepeating: 'The answer repeats itself',
+    leftOutSettling: 'The receiver has not settled yet',
     leftOutBySource: 'The source is switched off on the phone',
     leftOutBySourceNamed: (source) => `Switched off on the phone: ${source}`,
 

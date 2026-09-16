@@ -60,6 +60,8 @@
     <string name="found_other_radios">Towers and Wi-Fi</string>
     <string name="found_pretended">Another application on the phone</string>
     <string name="found_unsaid">Source not stated</string>
+    <string name="map_detail_settling">Receiver</string>
+    <string name="map_detail_settling_note">Had not settled since the phone was switched on</string>
     <string name="map_detail_left_out">Left out</string>
     <string name="map_detail_left_out_reason">Last reason</string>
     <string name="left_out_drifted">Walked away from an untouched phone</string>
@@ -73,6 +75,7 @@
     <string name="left_out_one_band">Only one band is heard</string>
     <string name="left_out_one_transmitter">The sky came from one transmitter</string>
     <string name="left_out_repeating">The answer repeats itself</string>
+    <string name="left_out_settling">The receiver has not settled yet</string>
     <string name="left_out_by_source">The source is switched off on the phone</string>
     <string name="left_out_by_source_named">Switched off on the phone: %1$s</string>
     <string name="map_detail_battery">Battery</string>

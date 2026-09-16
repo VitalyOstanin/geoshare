@@ -49,6 +49,8 @@
     <string name="found_other_radios">Вышки и Wi-Fi</string>
     <string name="found_pretended">Другое приложение на телефоне</string>
     <string name="found_unsaid">Источник не назван</string>
+    <string name="map_detail_settling">Приёмник</string>
+    <string name="map_detail_settling_note">Не устоялся после включения телефона</string>
     <string name="map_detail_left_out">Отброшено</string>
     <string name="map_detail_left_out_reason">Последняя причина</string>
     <string name="left_out_drifted">Увод при неподвижном телефоне</string>
@@ -62,6 +64,7 @@
     <string name="left_out_one_band">Слышна одна полоса</string>
     <string name="left_out_one_transmitter">Небо от одного передатчика</string>
     <string name="left_out_repeating">Ответ повторяется</string>
+    <string name="left_out_settling">Приёмник ещё не устоялся</string>
     <string name="left_out_by_source">Источник выключен на устройстве</string>
     <string name="left_out_by_source_named">Источник выключен на устройстве: %1$s</string>
     <string name="map_detail_battery">Заряд</string>

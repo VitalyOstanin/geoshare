@@ -118,6 +118,16 @@ enum class JumpReason {
      * person retraces nothing on a fixed period for an hour.
      */
     Repeating,
+
+    /**
+     * The receiver had not settled since the phone was switched on.
+     *
+     * The only rule whose limits are not the limits of the others: what it
+     * catches would pass every one of them, being a walking pace and a width
+     * a courtyard fits in. See Settling.kt for the minutes this covers and
+     * for what the platform answers during them.
+     */
+    Settling,
 }
 
 /**
@@ -170,6 +180,12 @@ enum class JumpReason {
  * contradicts only the way it was built. [restsOn] is empty wherever there is
  * nothing to ask: no status, a status too old to be about this fix, or a phone
  * that hears one band and has nothing to compare.
+ *
+ * Whether the receiver has settled since the phone was switched on is asked
+ * last of the rules that need no anchor, and it is asked before the anchor is
+ * required because the first answer after a boot is the one with nothing
+ * behind it. [settling] is false wherever the phone has been up long enough or
+ * its answers are built out of satellites; see Settling.kt for both.
  */
 fun whyAJump(
     last: Fix?,
@@ -186,6 +202,7 @@ fun whyAJump(
     skySays: SkySays = SkySays(),
     putDown: PutDown? = null,
     carrying: Carrying = Carrying(stirred = false, told = false),
+    settling: Boolean = false,
 ): JumpReason? {
     if (falsePlaceFor(next, falsePlaces) != null) {
         return JumpReason.FalsePlace
@@ -213,6 +230,10 @@ fun whyAJump(
 
     if (driftedWhilePutDown(putDown, next, carrying)) {
         return JumpReason.Drifted
+    }
+
+    if (settling && settlingJump(last, next)) {
+        return JumpReason.Settling
     }
 
     if (last == null) {

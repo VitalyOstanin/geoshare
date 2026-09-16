@@ -42,6 +42,11 @@ class PositionWriter(
         batteryPercent: Int,
         charging: Boolean,
         foundBy: FoundBy,
+        // Whether the receiver had not settled since the phone was switched
+        // on. Worked out by the caller, where the epoch this fix came out of
+        // is to hand; see Settling.kt for what the minutes after a boot look
+        // like.
+        settling: Boolean = false,
     ) {
         val position =
             mapOf(
@@ -67,7 +72,7 @@ class PositionWriter(
                 // Worked out by the caller, which is where the receiver's own
                 // last answer is to hand.
                 PositionField.FOUND_BY to foundBy.name,
-            ) + width(fix)
+            ) + width(fix) + settling(settling)
 
         positionsOf(store)
             .document(positionId(memberId, device.id))
@@ -114,4 +119,16 @@ class PositionWriter(
      */
     private fun width(fix: Fix): Map<String, Any> =
         fix.accuracyMetres?.let { mapOf(PositionField.ACCURACY_METRES to it) }.orEmpty()
+
+    /**
+     * That the receiver had not settled, where it had not.
+     *
+     * Left out of the document rather than written as false, for the same
+     * reason as the width above: the readers say something about a position
+     * whose phone had just been switched on and leave every other one alone,
+     * and an absent field says that without a reader having to know that false
+     * and absent mean the same thing.
+     */
+    private fun settling(settling: Boolean): Map<String, Any> =
+        if (settling) mapOf(PositionField.SETTLING to true) else emptyMap()
 }

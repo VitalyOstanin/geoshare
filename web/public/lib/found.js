@@ -57,6 +57,7 @@ const LEFT_OUT_WORDS = {
     OneBand: WORDS.leftOutOneBand,
     OneTransmitter: WORDS.leftOutOneTransmitter,
     Repeating: WORDS.leftOutRepeating,
+    Settling: WORDS.leftOutSettling,
     Source: WORDS.leftOutBySource,
 };
 
