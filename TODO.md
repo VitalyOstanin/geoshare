@@ -718,3 +718,38 @@ What has to be decided:
 Both clients want it, and the two libraries do the recentring differently —
 the page has the map object itself, the application has the camera of the
 Compose map — so the mode is one decision written twice.
+
+## The card belongs to the strip, not to the pin
+
+On the page a member's card is a bubble the map library anchors to the marker:
+it opens above the pin, moves with the map, and covers whatever is under it —
+which, at the zoom the accuracy ring asks for, is the very place being looked
+at. A card wide enough for a dozen rows over a marker in the corner is also
+half off the screen, and the map has to be shifted before it can be read.
+
+What is wanted instead: the card is shown attached to the strip of members
+along the bottom — it belongs to the entry that was tapped, rises from it, and
+leaves the map itself uncovered.
+
+What has to be decided:
+
+- **Where it sits when the strip is full.** The strip already scrolls
+  sideways; a card rising from an entry that is halfway off the edge has to
+  bring that entry into view first, or sit in a fixed place above the strip
+  regardless of which entry it is about.
+- **What still points at the marker.** Today the bubble is the line between
+  the card and the pin. Without it the reader needs another one: the marker of
+  the member the card is about is already highlighted in the strip, and the
+  ring is drawn around them, but a card at the bottom of the screen and a pin
+  at the top are otherwise two unrelated things.
+- **How it closes.** The bubble closes on the map's own close button, on a tap
+  elsewhere on the map, and when another member is picked. A card at the strip
+  answers to the strip instead, and tapping the map should probably leave it
+  open rather than dismiss it.
+- **How much room it may take.** A phone in portrait has little height, and a
+  card that fills it leaves no map at all; it needs a height it may not exceed
+  and a scroll of its own inside that.
+- **What the application does.** The Android screen draws its own card, and
+  the two clients have kept the same shape on purpose. Whether the phone
+  follows the page here, or keeps the bubble because a phone map is one member
+  at a time, is part of the decision rather than a detail left to the port.
