@@ -3,7 +3,7 @@
      web/public/lib/words/ru.js, and the names of the five collection modes are
      the words a card is read with on both. -->
 <resources>
-    <string name="sign_in_explanation">Войдите в тот аккаунт Google, под которым семья делится своими местами.</string>
+    <string name="sign_in_explanation">Войдите в тот аккаунт Google, под которым семья делится своими геопозициями.</string>
     <string name="sign_in_action">Войти через Google</string>
     <string name="sign_in_running">Входим…</string>
     <string name="sign_in_failed_no_account">На телефоне нет аккаунта Google. Добавьте его в настройках телефона и войдите ещё раз.</string>

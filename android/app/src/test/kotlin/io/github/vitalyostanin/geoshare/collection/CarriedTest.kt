@@ -28,6 +28,19 @@ class CarriedTest {
         assertTrue(driftedWhilePutDown(standing, elsewhere, untouched))
     }
 
+    // The answer the towers and the Wi-Fi handed phone 3 at 13:35 on
+    // 16.09.2026, while it lay at home: five metres of claimed doubt, and
+    // within two metres of the false satellite answer rejected a second
+    // earlier. The rescue branch writes such an answer past the rest of the
+    // filter, so this rule is the only one that stands in its way.
+    @Test
+    fun `an answer from the other radios is measured from the anchor as well`() {
+        val anchor = PutDown(at = fix(61.03268, 4.40299, noon, width = 100.0), since = noon)
+        val fromTheRadios = fix(61.04905, 4.46380, noon.plusSeconds(60), width = 5.0)
+
+        assertTrue(driftedWhilePutDown(anchor, fromTheRadios, untouched))
+    }
+
     @Test
     fun `an answer wandering inside the doubt of a put-down phone is left alone`() {
         val nearby = fix(61.03340, 4.40300, noon.plusSeconds(60), width = 30.0)
