@@ -753,3 +753,44 @@ What has to be decided:
   the two clients have kept the same shape on purpose. Whether the phone
   follows the page here, or keeps the bubble because a phone map is one member
   at a time, is part of the decision rather than a detail left to the port.
+
+## Beyond a location: a shared list, reminders, and notes pinned to a place
+
+The household already shares one thing through this app — where everyone is —
+and could share more the same way: what to buy, what needs doing, and notes
+that are about a place. Four pieces, loosely related:
+
+- **A shared shopping list.** One list the whole group edits, the way
+  positions are already shared — items added, checked off, and removed by
+  whoever is at the shop.
+- **A reminder.** Something the group or one member is meant to remember,
+  read back at the right time rather than buried in a chat.
+- **Quick capture.** Adding to the list should not require opening the map
+  first and finding the right screen — a home screen shortcut (or a widget)
+  that opens straight onto the list, and dictation for entering an item by
+  voice, are both about the same thing: getting an item in with as few taps as
+  possible, since a shopping list is usually filled in a hurry, one-handed, in
+  a shop.
+- **Notes tied to a place.** A note pinned to a point on the map, either
+  shared with the group (a gate code, where the spare key is) or personal to
+  whoever wrote it.
+
+Worth deciding before any of this is built:
+
+- **Whether this belongs in geoshare at all**, or is a separate application
+  that happens to share the same family and the same Firebase project. The
+  positions are read continuously and pushed by a background service; a
+  shopping list is read on demand and has no service of its own. Folding both
+  into one application couples their release cycles and permissions for a
+  gain that is mostly one icon on the home screen rather than shared code.
+- **Whether personal notes belong in the same collection as shared ones**, and
+  what "personal" means when a member may sign into the account from more
+  than one phone — the group already separates a member from a phone for
+  positions, and personal data would need the same care carried over.
+- **What the map already gives for free.** The same background and the same
+  MapLibre and Compose maps could draw a note's marker, but a note is a fixed
+  point rather than a moving position and needs its own marker style, so the
+  two are never mistaken for one another on the same screen.
+- **Where a reminder is read back.** A time, a place ("remind me at the
+  shop"), or both — the second needs the same geofencing a spoof-detection
+  screen would also want, which is its own undecided piece of work.
