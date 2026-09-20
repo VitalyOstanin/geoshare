@@ -34,6 +34,12 @@
 
         <div id="map" hidden></div>
 
+        <!-- Cycles the map between not following, the member whose card was
+             looked at last, and everybody at once. Kept at the top left so a
+             tap never lands on the account button at the top right or the
+             zoom buttons at the bottom right. -->
+        <button id="follow-button" type="button" hidden></button>
+
         <!-- The way into everything that is not the map: who is signed in,
              and where to change it. -->
         <div id="account" hidden>

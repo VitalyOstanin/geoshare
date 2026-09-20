@@ -19,6 +19,16 @@ import { showFace } from './faces.js';
 
 import { ageText, isStale, positionAge, timeText } from './age.js';
 import { clusterMembers, facesShown } from './clusters.js';
+import {
+    FOLLOW_ALL,
+    FOLLOW_NONE,
+    FOLLOW_ONE,
+    boundsAreClose,
+    boundsOf,
+    isPaused,
+    nextMode,
+    targetPosition,
+} from './following.js';
 import { openModeHelp } from './mode-help.js';
 import { openReasonHelp } from './reason-help.js';
 import { markerOrder } from './stacking.js';
@@ -26,6 +36,23 @@ import { modeText } from './modes.js';
 import { accuracyRing, widthIsWide, widthText } from './width.js';
 import { foundText, leftOutText } from './found.js';
 import { WORDS } from './words.js';
+
+/**
+ * How far the fitted view is padded from the window's edge, in screen pixels.
+ *
+ * Enough that a marker at the corner of the rectangle is not touching the
+ * account button or the zoom controls that sit over the same corners.
+ */
+const FOLLOW_ALL_PADDING = 60;
+
+/**
+ * How close "following everybody" is ever allowed to come.
+ *
+ * A group of one has a rectangle with no size at all, and fitting the map to
+ * it without a limit would zoom in on that single roof the way [CLOSEST_ZOOM]
+ * stops the circle of doubt from doing.
+ */
+const FOLLOW_ALL_MAX_ZOOM = 17;
 
 /** The ring around the marker being looked at: the fill, the line, the source. */
 const WIDTH_SOURCE = 'width';
@@ -169,7 +196,25 @@ export function createMap(element, onCardChange = () => {}) {
         console.error('map:', event.error?.message ?? event.error ?? event);
     });
 
-    const view = { map, markers: new Map(), centred: false, last: null, onCardChange };
+    const view = {
+        map,
+        markers: new Map(),
+        centred: false,
+        last: null,
+        onCardChange,
+        // The circle the follow button walks, and who it currently follows.
+        // Read and advanced from outside through the exported follow* and
+        // advanceFollow functions rather than written here directly.
+        mode: FOLLOW_NONE,
+        targetPositionId: null,
+        // When the last manual pan or zoom happened; null before any gesture.
+        // Read through isPaused rather than compared directly, because the
+        // window it opens is a duration rather than a single moment.
+        pausedAt: null,
+        // The rectangle "follow everybody" last fitted the map to, so that a
+        // rectangle barely different from it does not nudge the view again.
+        followedBounds: null,
+    };
 
     // The ring's source and layers come with the style; what has to wait is the
     // drawing, because positions can arrive before the style has.
@@ -193,6 +238,25 @@ export function createMap(element, onCardChange = () => {}) {
     map.on('moveend', () => {
         if (view.last) {
             draw(view, view.last);
+        }
+    });
+
+    // A pan or a pinch is a hand on the map; the same kind of movement also
+    // happens under easeTo and fitBounds, which the follow modes call below.
+    // The library tells the two apart with originalEvent: present on a
+    // gesture, absent on a call from code. Only a hand earns the pause — a
+    // follow mode moving the map on its own must not immediately pause
+    // itself.
+    map.on('movestart', (event) => {
+        if (event.originalEvent) {
+            view.pausedAt = Date.now();
+            // The hand has taken the map somewhere the fitted rectangle no
+            // longer describes. Forgetting the rectangle is what lets
+            // "everybody" fit the view again once the pause wears off:
+            // otherwise a household that has not moved hands back the same
+            // rectangle, it is found close to the one already fitted, and the
+            // map stays where the hand left it with the mode still on.
+            view.followedBounds = null;
         }
     });
 
@@ -243,6 +307,59 @@ export function showMembers(view, positions, names, faces, ownMemberId, now) {
     view.last = { positions, names, faces, now };
 
     draw(view, view.last);
+    applyFollowMode(view);
+}
+
+/**
+ * Moves the map to match the follow mode, once a fresh set of positions has
+ * been drawn.
+ *
+ * Nothing here runs on a timer of its own: a drawing is the only moment new
+ * positions are in hand to follow, so this is called from nowhere else.
+ */
+function applyFollowMode(view) {
+    if (followPaused(view)) {
+        return;
+    }
+
+    const positions = view.last?.positions ?? [];
+
+    if (view.mode === FOLLOW_ONE) {
+        const position = targetPosition(positions, view.targetPositionId);
+
+        // Gone quiet rather than never chosen: the map holds still on the
+        // last place it knew rather than snapping back to the world.
+        if (position) {
+            view.map.easeTo({ center: [position.longitude, position.latitude] });
+        }
+
+        return;
+    }
+
+    if (view.mode !== FOLLOW_ALL) {
+        return;
+    }
+
+    const bounds = boundsOf(positions);
+
+    if (!bounds) {
+        return;
+    }
+
+    if (view.followedBounds && boundsAreClose(bounds, view.followedBounds)) {
+        return;
+    }
+
+    view.followedBounds = bounds;
+    view.map.fitBounds(
+        [[bounds.west, bounds.south], [bounds.east, bounds.north]],
+        { padding: FOLLOW_ALL_PADDING, maxZoom: FOLLOW_ALL_MAX_ZOOM },
+    );
+}
+
+/** Remembers who a card just opened for, for the "one" follow mode to centre on. */
+function setFollowTarget(view, positionId) {
+    view.targetPositionId = positionId;
 }
 
 function draw(view, { positions, names, faces, now }) {
@@ -471,6 +588,10 @@ function addMarker(view, key, group) {
         // The same reason: stepping into a member's card out of a group list
         // changes whose circle is drawn, and nothing about the map moves.
         redrawWidth: () => drawWidth(view),
+        // The same reason again: picking a member out of a group list is one
+        // more place a card opens for somebody, and the "one" follow mode has
+        // to hear about it too.
+        setFollowTarget: (positionId) => setFollowTarget(view, positionId),
     };
 
     // One bubble at a time, the way a map shows one place at a time: the
@@ -478,6 +599,15 @@ function addMarker(view, key, group) {
     // otherwise leave the first member's card hanging over the map.
     popup.on('open', () => {
         closeOthers(view, key);
+
+        // A marker for one member opens straight onto their card, so tapping
+        // it is as much a choice of who to follow as tapping their entry in
+        // the strip. A marker for several opens onto the list instead, and no
+        // one of them is meant until a row in it is tapped — that click sets
+        // the target itself, further down in groupList.
+        if (entry.members.length === 1) {
+            entry.setFollowTarget(entry.members[0].positionId);
+        }
 
         // Filled on the way open rather than kept filled: until it is asked
         // for, an empty bubble costs nothing.
@@ -695,6 +825,7 @@ function groupList(entry, names, faces, now) {
         row.append(face, name, age);
         row.addEventListener('click', () => {
             entry.openedPositionId = member.positionId;
+            entry.setFollowTarget(member.positionId);
             showPopup(entry, names, faces, now);
             entry.onCardChange();
             entry.redrawWidth();
@@ -952,6 +1083,11 @@ export function centreOnce(view, positions, ownMemberId) {
 
 /** Takes the map to one member and opens their detail, the way tapping a place does. */
 export function lookAt(view, position) {
+    // A tap in the strip is as much a choice of who to follow as tapping the
+    // marker itself, and it is the one place that choice can be made without
+    // a marker already being on screen to tap.
+    setFollowTarget(view, position.positionId);
+
     // Flown to rather than jumped to, because the viewer asked to be taken
     // somewhere and the way there says how far it was.
     view.map.flyTo({
@@ -1020,4 +1156,48 @@ function closeEnoughForTheRing(view, position) {
 /** The map measures its element when it is created, and the sign-in screen hides it. */
 export function remeasure(view) {
     view.map.resize();
+}
+
+/**
+ * Walks the follow button's circle one tap forward and moves the map to
+ * match straight away, unless a gesture is holding it still. Returns the mode
+ * the button is on after the tap, which is what the caption is drawn from.
+ *
+ * Whether the member behind "one" is still worth landing on comes from the
+ * current positions rather than from the target id alone: an id kept from
+ * before is still remembered once the member goes quiet, but nextMode has to
+ * be told there is nowhere left to centre on, or the circle would stall on a
+ * mode that does nothing.
+ */
+export function advanceFollow(view) {
+    const hasTarget = targetPosition(view.last?.positions ?? [], view.targetPositionId) !== null;
+
+    view.mode = nextMode(view.mode, hasTarget);
+
+    // Pressing the button is a viewer asking for the map to move now. The
+    // pause exists to keep a followed member from yanking the view out from
+    // under a hand, which is the opposite of what a press means; and the
+    // rectangle last fitted describes a view the viewer may since have left.
+    view.pausedAt = null;
+    view.followedBounds = null;
+
+    view.onCardChange();
+    applyFollowMode(view);
+
+    return view.mode;
+}
+
+/** The mode the follow button is on right now. */
+export function followMode(view) {
+    return view.mode;
+}
+
+/** The position id the "one" mode centres on, or null if nobody has been picked yet. */
+export function followTarget(view) {
+    return view.targetPositionId;
+}
+
+/** Whether a manual pan or zoom is still holding the map still. */
+export function followPaused(view) {
+    return isPaused(view.pausedAt, Date.now());
 }

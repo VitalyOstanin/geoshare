@@ -97,6 +97,20 @@ private val GREYSCALE = ColorFilter.colorMatrix(ColorMatrix().apply { setToSatur
 /** As much of the screen as the full list may take before it starts scrolling instead. */
 private val LIST_MAX_HEIGHT = 220.dp
 
+/** The gap between the account button and the follow button stacked under it. */
+private val TOP_BUTTONS_GAP = 8.dp
+
+/**
+ * Who the follow button's [FollowMode.ONE] centres on.
+ *
+ * The name is captured at the moment the member's card is opened rather than
+ * looked up again from [MemberPosition] each time the button is drawn: once
+ * the member's position drops out of the positions this phone is being shown,
+ * there is nowhere left to look the name up from, and the button still has to
+ * say whose card it was.
+ */
+private data class FollowTarget(val positionId: String, val name: String)
+
 /**
  * The screen a signed-in member sees: everyone on a map, and a row of buttons
  * to move the map onto one of them.
@@ -126,6 +140,8 @@ fun MapScreen(
     val now by currentTime()
     val members = orderedForNavigation(positions, ownMemberId)
     var focus by remember { mutableStateOf<MapFocus?>(null) }
+    var followMode by remember { mutableStateOf(FollowMode.NONE) }
+    var followTarget by remember { mutableStateOf<FollowTarget?>(null) }
     var showAll by remember { mutableStateOf(false) }
     var openedPositionId by remember { mutableStateOf<String?>(null) }
     // The positions under one marker, held by id for the same reason a single
@@ -189,6 +205,21 @@ fun MapScreen(
                 }
         }
 
+    // Named at the place a member's card is opened, from whichever of the
+    // three ways it happened to open: a tap on the strip, a tap on the
+    // member's own marker, or a pick out of a group's list. All three end up
+    // here so that the follow button's ONE mode always has a name for
+    // whoever the last card was about, not only for the strip's own taps.
+    fun noteFollowTarget(positionId: String) {
+        val memberId = positions.firstOrNull { it.positionId == positionId }?.memberId
+
+        followTarget =
+            FollowTarget(
+                positionId = positionId,
+                name = names[positionId] ?: memberId?.let(::shortName) ?: positionId,
+            )
+    }
+
     // A tap is a request to look at somebody, not a state: tapping the same
     // member twice has to bring the map back both times, and the counter is
     // what makes the second tap a change the map can see.
@@ -196,6 +227,7 @@ fun MapScreen(
         focus = MapFocus(positionId = positionId, request = (focus?.request ?: 0) + 1)
         openedPositionId = positionId
         openedGroup = emptyList()
+        noteFollowTarget(positionId)
     }
 
     // The way back out of whatever is open, in the order things were opened
@@ -228,9 +260,12 @@ fun MapScreen(
                 groupLabel = groupLabel,
                 focus = focus,
                 selected = openedPositionId,
+                followMode = followMode,
+                followTarget = followTarget?.positionId,
                 onSelect = { positionId ->
                     openedPositionId = positionId
                     openedGroup = emptyList()
+                    noteFollowTarget(positionId)
                 },
                 onSelectGroup = { positionIds ->
                     openedPositionId = null
@@ -253,10 +288,13 @@ fun MapScreen(
                     .padding(12.dp),
             )
 
-            AccountButton(
-                displayName = ownDisplayName,
-                pictureUrl = ownPictureUrl,
-                onClick = { settingsOpen = true },
+            // Stacked in one corner rather than each finding its own: the two
+            // buttons are the only controls drawn over the map, and a column
+            // keeps a second one from ever landing on top of the first
+            // whatever either of them turns out to measure.
+            Column(
+                horizontalAlignment = Alignment.End,
+                verticalArrangement = Arrangement.spacedBy(TOP_BUTTONS_GAP),
                 // The map is drawn to the edges of the window on purpose; what
                 // stands over it is not, or the clock is what the member taps.
                 modifier =
@@ -264,7 +302,28 @@ fun MapScreen(
                     .align(Alignment.TopEnd)
                     .statusBarsPadding()
                     .padding(12.dp),
-            )
+            ) {
+                AccountButton(
+                    displayName = ownDisplayName,
+                    pictureUrl = ownPictureUrl,
+                    onClick = { settingsOpen = true },
+                )
+
+                FollowButton(
+                    mode = followMode,
+                    targetName = followTarget?.name,
+                    targetAvailable =
+                    followTarget?.let { targetPosition(positions, it.positionId) != null }
+                        ?: true,
+                    onClick = {
+                        val hasTarget =
+                            followTarget?.let { targetPosition(positions, it.positionId) != null }
+                                ?: false
+
+                        followMode = nextMode(followMode, hasTarget)
+                    },
+                )
+            }
 
             if (opened != null) {
                 MemberDetail(
@@ -288,6 +347,7 @@ fun MapScreen(
                     onSelect = { positionId ->
                         openedPositionId = positionId
                         openedGroup = emptyList()
+                        noteFollowTarget(positionId)
                     },
                     onClose = { openedGroup = emptyList() },
                     modifier =
@@ -366,6 +426,61 @@ fun MapScreen(
             ownMemberId = ownMemberId,
             now = now,
             onClose = { settingsOpen = false },
+        )
+    }
+}
+
+/**
+ * The single button that walks the camera through [FollowMode].
+ *
+ * A press advances the ring; what it lands on next is [nextMode]'s decision,
+ * and this composable only reports the mode already chosen. The label is the
+ * state itself rather than a caption beside a fixed word, the way
+ * [MoreButton] below reads "More" or "Hide" depending on whether the rest of
+ * the strip is open.
+ */
+@Composable
+private fun FollowButton(
+    mode: FollowMode,
+    /** Who [FollowMode.ONE] is centred on, named when their card was opened. */
+    targetName: String?,
+    /** False once the chosen member's position has dropped off the map entirely. */
+    targetAvailable: Boolean,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    val label = when (mode) {
+        FollowMode.NONE -> stringResource(R.string.map_follow_none)
+
+        FollowMode.ALL -> stringResource(R.string.map_follow_all)
+
+        // targetName is null here only if nextMode was never given the
+        // chance to skip ONE for want of a target, which the ring's own
+        // rules do not allow; the fallback exists for the type rather than
+        // for a case this screen expects to reach.
+        FollowMode.ONE ->
+            targetName
+                ?.let { stringResource(R.string.map_follow_one, it) }
+                ?: stringResource(R.string.map_follow_one_unnamed)
+    }
+
+    Surface(
+        modifier = modifier.clickable { onClick() },
+        shape = MaterialTheme.shapes.medium,
+        tonalElevation = if (mode == FollowMode.NONE) 2.dp else 8.dp,
+    ) {
+        Text(
+            text = label,
+            style = MaterialTheme.typography.bodyMedium,
+            color =
+            if (targetAvailable) {
+                MaterialTheme.colorScheme.onSurface
+            } else {
+                MaterialTheme.colorScheme.onSurfaceVariant
+            },
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
+            modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
         )
     }
 }

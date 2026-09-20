@@ -196,6 +196,11 @@
     <string name="map_more">Ещё</string>
     <string name="map_more_hide">Скрыть</string>
 
+    <string name="map_follow_none">Не слежу</string>
+    <string name="map_follow_one">Слежу за: %1$s</string>
+    <string name="map_follow_all">Слежу за всеми</string>
+    <string name="map_follow_one_unnamed">Слежу</string>
+
     <plurals name="map_group_count">
         <item quantity="one">%1$d участник</item>
         <item quantity="few">%1$d участника</item>

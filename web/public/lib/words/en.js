@@ -186,6 +186,14 @@ export const EN = {
     oneMember: '1 member',
     members: (count) => `${count} members`,
 
+    // The follow button over the map, which cycles between not following,
+    // one member and everybody. The "one" caption is the member's own name
+    // rather than a word here, worked out on the page from who was chosen.
+    followNone: 'Not following',
+    followOne: (name) => `Following ${name}`,
+    followAll: 'Following everyone',
+    followTargetMissing: 'No current position for this member',
+
     // Who else has the map open right now, named rather than counted, and said
     // once for the household rather than on a card: one open map puts every
     // phone of the group into the same way of collecting, so naming it per

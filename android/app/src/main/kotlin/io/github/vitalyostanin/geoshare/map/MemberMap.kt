@@ -13,8 +13,10 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import org.maplibre.android.MapLibre
+import org.maplibre.android.camera.CameraPosition
 import org.maplibre.android.camera.CameraUpdateFactory
 import org.maplibre.android.geometry.LatLng
+import org.maplibre.android.geometry.LatLngBounds
 import org.maplibre.android.maps.MapLibreMap
 import org.maplibre.android.maps.MapView
 import org.maplibre.android.maps.Style
@@ -34,6 +36,21 @@ import java.time.Instant
 
 /** Close enough to tell which street somebody is on, without hunting for them. */
 private const val START_ZOOM = 15.0
+
+/**
+ * How close in [FollowMode.ALL] ever zooms, reusing [START_ZOOM]'s distance.
+ *
+ * `CameraUpdateFactory.newLatLngBounds` has no overload that takes a maximum
+ * zoom, and fitting a single member's rectangle -- south-west and north-east
+ * the same point -- would otherwise zoom the camera in as far as the map
+ * allows. The fit is worked out first with
+ * [MapLibreMap.getCameraForLatLngBounds] and clamped to this before the
+ * camera is animated there, rather than flown in close and pulled back out.
+ */
+private const val MAX_ALL_MODE_ZOOM = START_ZOOM
+
+/** How much room is left around the group's rectangle when [FollowMode.ALL] fits it. */
+private const val ALL_MODE_PADDING_DP = 48f
 
 /** How far around a tap a marker still counts as the one that was meant. */
 private const val TOUCH_RADIUS_DP = 18f
@@ -148,6 +165,27 @@ fun MemberMap(
      * asked about the member being looked at.
      */
     selected: String?,
+    /**
+     * What the camera does on its own, between the taps that ask it to look
+     * somewhere in particular. See [FollowMode].
+     *
+     * A parameter of the composable rather than a field set on [MapHolder]
+     * directly, for the same reason [selected] is one: it is what makes a
+     * change from the follow button reach the view at all, by giving
+     * [AndroidView]'s update block something of its own to have changed.
+     *
+     * A gesture that pauses this is a different matter, and is not a
+     * parameter here. It is read off the map's own camera, through
+     * [MapLibreMap.addOnCameraMoveStartedListener], which only [MapHolder]
+     * is in a position to hear; carrying it out to this composable and back
+     * in would add a round trip for a fact nothing outside the map ever
+     * needs, and the map is redrawn often enough on its own -- a tick of
+     * [now], a fresh batch of [positions] -- that the pause is still noticed
+     * once it has worn off.
+     */
+    followMode: FollowMode,
+    /** The position [FollowMode.ONE] centres on; whose card was last opened. */
+    followTarget: String?,
     /** Called with the position whose marker was tapped. */
     onSelect: (String) -> Unit,
     /** Called with every position under a marker that stands for more than one. */
@@ -196,7 +234,9 @@ fun MemberMap(
     }
 
     AndroidView(factory = { holder.view }, modifier = modifier) { _ ->
-        holder.show(positions, names, faces, ownMemberId, now, dark, selected)
+        holder.show(
+            positions, names, faces, ownMemberId, now, dark, selected, followMode, followTarget,
+        )
         holder.lookAt(focus)
     }
 }
@@ -267,6 +307,33 @@ private class MapHolder(val view: MapView) {
     /** Whose width is drawn as a circle, if anybody's card is open. */
     private var selected: String? = null
 
+    /** What the camera does on its own; see [FollowMode]. */
+    private var followMode: FollowMode = FollowMode.NONE
+
+    /** The position [followMode] centres on in [FollowMode.ONE]. */
+    private var followTarget: String? = null
+
+    /**
+     * When a hand last dragged or pinched the map, or null before that has
+     * ever happened.
+     *
+     * Set from [MapLibreMap.addOnCameraMoveStartedListener] rather than
+     * carried in from the composable: a gesture is a fact about the map's own
+     * camera, which only this class touches, and turning it into a parameter
+     * that travels out to [MemberMap] and back would buy nothing a listener
+     * here does not already have. Read against the wall clock rather than
+     * against [now] -- [now] only ticks with a fresh batch of positions or the
+     * age clock's own half minute, and a pause timed against it would run
+     * short or long by however stale that tick happens to be.
+     */
+    private var pausedAt: Instant? = null
+
+    /** The rectangle [FollowMode.ALL] last fit the camera to, for [boundsAreClose]. */
+    private var lastAppliedBounds: MapBounds? = null
+
+    /** The point [FollowMode.ONE] last centred the camera on. */
+    private var followedOnePoint: LatLng? = null
+
     /** The last request acted on, so that an unchanged one does not move the map again. */
     private var focused = 0
 
@@ -308,6 +375,23 @@ private class MapHolder(val view: MapView) {
 
             ready.addOnMapClickListener { point -> select(ready, point) }
 
+            ready.addOnCameraMoveStartedListener { reason ->
+                // The other two reasons are this class's own animateCamera
+                // calls -- lookAt's and followCamera's -- and are not a
+                // request to be left alone the way a hand on the screen is.
+                if (reason == MapLibreMap.OnCameraMoveStartedListener.REASON_API_GESTURE) {
+                    pausedAt = Instant.now()
+                    // The hand has taken the camera off the place these two
+                    // remember putting it. Without forgetting them, a
+                    // household that has not moved hands back the same
+                    // rectangle and the same point once the pause wears off,
+                    // both are found to be where the camera already is, and
+                    // the map stays where the hand left it with the mode
+                    // still on.
+                    forgetWhereTheCameraWas()
+                }
+            }
+
             // Which members cover each other is a question about the screen,
             // so the answer changes with every zoom: a group that was one pin
             // has to come apart once the map is close enough to tell them
@@ -345,6 +429,8 @@ private class MapHolder(val view: MapView) {
         now: Instant,
         dark: Boolean,
         selected: String?,
+        followMode: FollowMode,
+        followTarget: String?,
     ) {
         members = positions
         this.names = names
@@ -352,6 +438,18 @@ private class MapHolder(val view: MapView) {
         this.ownMemberId = ownMemberId
         this.now = now
         this.selected = selected
+
+        // A press on the follow button is somebody asking the camera to move
+        // now: it lifts a pause a hand left behind, and forgets where the
+        // camera was put last, so that a mode entered afresh fits the view
+        // again instead of finding it near enough to leave alone.
+        if (followMode != this.followMode || followTarget != this.followTarget) {
+            pausedAt = null
+            forgetWhereTheCameraWas()
+        }
+
+        this.followMode = followMode
+        this.followTarget = followTarget
 
         if (dark != this.dark) {
             this.dark = dark
@@ -469,6 +567,88 @@ private class MapHolder(val view: MapView) {
 
         drawWidth()
         centre()
+        followCamera(ready)
+    }
+
+    /** Drops what the follow modes remember about where they put the camera. */
+    private fun forgetWhereTheCameraWas() {
+        lastAppliedBounds = null
+        followedOnePoint = null
+    }
+
+    /**
+     * Moves the camera the way [followMode] asks, once the rest of a draw is
+     * done.
+     *
+     * Skipped outright in [FollowMode.NONE] -- the camera stays wherever a
+     * hand or [lookAt] left it -- and skipped while [pausedAt] still holds,
+     * so that a drag is not fought straight back to where it was.
+     */
+    private fun followCamera(ready: MapLibreMap) {
+        if (followMode == FollowMode.NONE || isPaused(pausedAt, Instant.now())) {
+            return
+        }
+
+        when (followMode) {
+            FollowMode.ONE -> followOne(ready)
+            FollowMode.ALL -> followAll(ready)
+            FollowMode.NONE -> Unit
+        }
+    }
+
+    /**
+     * Keeps the camera centred on [followTarget], the zoom left as it is.
+     *
+     * Left alone once the target's position has dropped out of [members] --
+     * a phone that stopped sending is not a place to snap the camera to --
+     * and left alone once the camera is already there, so that a batch of
+     * positions that did not move this member does not restart the
+     * animation.
+     */
+    private fun followOne(ready: MapLibreMap) {
+        val position = targetPosition(members, followTarget) ?: return
+        val point = LatLng(position.latitude, position.longitude)
+
+        if (point == followedOnePoint) {
+            return
+        }
+
+        followedOnePoint = point
+        ready.animateCamera(CameraUpdateFactory.newLatLng(point))
+    }
+
+    /**
+     * Fits every member in [members] inside the view, zoomed no closer than
+     * [MAX_ALL_MODE_ZOOM].
+     *
+     * Checked against [lastAppliedBounds] with [boundsAreClose] first, or a
+     * household standing still would hand the camera a fresh, slightly
+     * different rectangle -- and a move for that -- on every batch of
+     * positions.
+     */
+    private fun followAll(ready: MapLibreMap) {
+        val bounds = boundsOf(members) ?: return
+
+        if (lastAppliedBounds?.let { boundsAreClose(it, bounds) } == true) {
+            return
+        }
+
+        lastAppliedBounds = bounds
+
+        val target =
+            LatLngBounds.Builder()
+                .include(LatLng(bounds.south, bounds.west))
+                .include(LatLng(bounds.north, bounds.east))
+                .build()
+        val density = view.context.resources.displayMetrics.density
+        val padding = (ALL_MODE_PADDING_DP * density).toInt()
+        val fitted =
+            ready.getCameraForLatLngBounds(target, intArrayOf(padding, padding, padding, padding))
+                ?: return
+        val zoom = fitted.zoom.coerceAtMost(MAX_ALL_MODE_ZOOM)
+        val clamped = CameraPosition.Builder(fitted).zoom(zoom).build()
+
+        ready.animateCamera(CameraUpdateFactory.newCameraPosition(clamped))
     }
 
     /**

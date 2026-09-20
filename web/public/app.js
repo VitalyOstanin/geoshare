@@ -2,10 +2,15 @@
 
 import { ageText, isStale, positionAge } from './lib/age.js';
 import { showFace } from './lib/faces.js';
+import { FOLLOW_ALL, FOLLOW_ONE } from './lib/following.js';
 import {
+    advanceFollow,
     batteryText,
     centreOnce,
     createMap,
+    followMode,
+    followPaused,
+    followTarget,
     lookAt,
     remeasure,
     showMembers,
@@ -43,6 +48,7 @@ const elements = {
     signInButton: document.querySelector('#sign-in-button'),
     signInError: document.querySelector('#sign-in-error'),
     map: document.querySelector('#map'),
+    followButton: document.querySelector('#follow-button'),
     panel: document.querySelector('#panel'),
     panelNote: document.querySelector('#panel-note'),
     panelWatching: document.querySelector('#panel-watching'),
@@ -95,6 +101,11 @@ const state = {
     // Whether the group itself is out of reach: the profiles are what every
     // other subscription is built from, so their failure is the connection.
     reachable: true,
+    // The name of whoever the follow button last had a target for. The map
+    // only remembers a position id, which stops meaning anything the moment
+    // that member goes quiet; the name is kept here so the button still has
+    // something to say about them once their position drops out of the set.
+    followTargetName: null,
 };
 
 elements.signInButton.addEventListener('click', async () => {
@@ -133,6 +144,10 @@ function signInTrouble(error) {
 }
 
 elements.signOutButton.addEventListener('click', () => leave());
+
+// advanceFollow moves the map itself and calls the map's own onCardChange,
+// which is render — nothing further is needed here.
+elements.followButton.addEventListener('click', () => advanceFollow(state.view));
 
 elements.accountButton.addEventListener('click', (event) => {
     event.stopPropagation();
@@ -263,6 +278,7 @@ watchSignIn((member) => {
 function start() {
     elements.signIn.hidden = true;
     elements.map.hidden = false;
+    elements.followButton.hidden = false;
     elements.panel.hidden = false;
     elements.account.hidden = false;
 
@@ -381,9 +397,13 @@ function stop() {
     state.positions = [];
     state.refused = 0;
     state.reachable = true;
+    // A new sign-in is a different group, and its members are not the one
+    // this name belonged to.
+    state.followTargetName = null;
 
     elements.signIn.hidden = false;
     elements.map.hidden = true;
+    elements.followButton.hidden = true;
     elements.panel.hidden = true;
     elements.account.hidden = true;
     showMenu(false);
@@ -440,9 +460,52 @@ function render() {
         ),
     );
 
+    showFollow(labels);
     showNote();
     showWatching();
     showStripEdge();
+}
+
+/**
+ * The follow button's caption, and whether it needs to say its member has
+ * gone quiet.
+ *
+ * The map only remembers a target by position id, which stops resolving to
+ * anything the moment that member's phone drops out of the set. The name is
+ * kept here instead, refreshed whenever the id still resolves and held onto
+ * once it does not, so a viewer following somebody out of the strip keeps
+ * reading their name rather than watching the button go blank.
+ */
+function showFollow(labels) {
+    const mode = followMode(state.view);
+    const targetId = followTarget(state.view);
+    const known = targetId !== null && labels.has(targetId);
+
+    if (known) {
+        state.followTargetName = labels.get(targetId);
+    }
+
+    const missing = targetId !== null && !known;
+
+    elements.followButton.textContent = followCaption(mode);
+    elements.followButton.classList.toggle('paused', followPaused(state.view));
+    elements.followButton.classList.toggle('missing', missing);
+    elements.followButton.title = missing ? WORDS.followTargetMissing : '';
+}
+
+/**
+ * The words the follow button says.
+ *
+ * The member's name is said inside a phrase rather than on its own: a button
+ * reading only "Oona" among captions like "Following everyone" says who
+ * without saying what is being done about them.
+ */
+function followCaption(mode) {
+    if (mode === FOLLOW_ONE && state.followTargetName) {
+        return WORDS.followOne(state.followTargetName);
+    }
+
+    return mode === FOLLOW_ALL ? WORDS.followAll : WORDS.followNone;
 }
 
 /**

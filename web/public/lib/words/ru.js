@@ -203,6 +203,14 @@ export const RU = {
     oneMember: '1 участник',
     members: (count) => `${count} ${counted(count, 'участник', 'участника', 'участников')}`,
 
+    // The follow button over the map, which cycles between not following,
+    // one member and everybody. The "one" caption is the member's own name
+    // rather than a word here, worked out on the page from who was chosen.
+    followNone: 'Не слежу',
+    followOne: (name) => `Слежу за: ${name}`,
+    followAll: 'Слежу за всеми',
+    followTargetMissing: 'У этого участника сейчас нет позиции',
+
     // Who else has the map open right now, named rather than counted.
     mapOpen: (names) => `Карту смотрят: ${names.join(', ')}`,
 

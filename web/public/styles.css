@@ -553,6 +553,45 @@ button {
     opacity: 1;
 }
 
+/* The corner control sits over the map rather than beside it, in the top
+   left corner the account button and the zoom buttons leave alone. Its
+   caption is a member's name or a mode word rather than a fixed word, so it
+   is a rounded chip that can hold a line of text rather than the account
+   button's plain circle. */
+#follow-button {
+    position: absolute;
+    top: 0.6rem;
+    left: 0.6rem;
+    z-index: 2;
+    max-width: min(12rem, calc(100% - 1.2rem));
+    padding: 0.4rem 0.8rem;
+    border-radius: 0.6rem;
+    border: 1px solid var(--edge);
+    background: var(--surface);
+    color: var(--on-surface);
+    font: inherit;
+    font-weight: 600;
+    font-size: 0.85rem;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.3);
+}
+
+/* A gesture holds the map still for a while (lib/following.js). Dimmed
+   rather than left as it was, so a map that has stopped following reads as
+   deliberately left alone rather than as stuck. */
+#follow-button.paused {
+    opacity: 0.75;
+}
+
+/* The member the button names has dropped out of the current positions. The
+   button keeps their name rather than losing it, and this is what marks that
+   name as not live right now; the title attribute says why. */
+#follow-button.missing {
+    opacity: 0.5;
+}
+
 /* The corner control sits over the map rather than beside it: the map is the
    page, and this is one circle out of it. */
 #account {
