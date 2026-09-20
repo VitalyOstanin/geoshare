@@ -48,6 +48,7 @@ const elements = {
     signInButton: document.querySelector('#sign-in-button'),
     signInError: document.querySelector('#sign-in-error'),
     map: document.querySelector('#map'),
+    card: document.querySelector('#card'),
     followButton: document.querySelector('#follow-button'),
     panel: document.querySelector('#panel'),
     panelNote: document.querySelector('#panel-note'),
@@ -106,6 +107,12 @@ const state = {
     // that member goes quiet; the name is kept here so the button still has
     // something to say about them once their position drops out of the set.
     followTargetName: null,
+    // Whose cards the strip highlighted on the last drawing, so that render
+    // can tell a highlight that has actually changed from the same one drawn
+    // again — the strip redraws on every clock tick regardless, and scrolling
+    // it on every one of those would drag the view out from under a reader's
+    // thumb for no reason at all.
+    shownPositionIds: new Set(),
 };
 
 elements.signInButton.addEventListener('click', async () => {
@@ -285,7 +292,7 @@ function start() {
     showAccount(state.member);
 
     if (!state.view) {
-        state.view = createMap(elements.map, render);
+        state.view = createMap(elements.map, render, elements.card);
     }
 
     // The map measures its element when it is created, and until the sign-in
@@ -400,6 +407,7 @@ function stop() {
     // A new sign-in is a different group, and its members are not the one
     // this name belonged to.
     state.followTargetName = null;
+    state.shownPositionIds = new Set();
 
     elements.signIn.hidden = false;
     elements.map.hidden = true;
@@ -453,17 +461,45 @@ function render() {
     // Whoever the open card is about is marked in the panel, so that a card
     // over the map and a card in the strip are visibly the same member.
     const shown = shownPositions(state.view);
+    const ordered = orderedForNavigation(state.positions, state.member.memberId);
+    const entries = ordered.map((position) => memberEntry(position, labels, pictures, shown, now));
 
-    elements.members.replaceChildren(
-        ...orderedForNavigation(state.positions, state.member.memberId).map((position) =>
-            memberEntry(position, labels, pictures, shown, now),
-        ),
-    );
+    elements.members.replaceChildren(...entries);
+    scrollShownIntoView(ordered, entries, shown);
 
     showFollow(labels);
     showNote();
     showWatching();
     showStripEdge();
+}
+
+/**
+ * Brings the entry the card is about into view, but only on the drawing that
+ * actually opened, closed or moved it.
+ *
+ * The strip redraws on its own every half a minute as the ages tick over, and
+ * scrolling it on each of those ticks would drag the strip out from under a
+ * reader's thumb for a highlight that has not gone anywhere. Comparing the
+ * set of shown ids against the one from the last drawing is what tells the
+ * two apart.
+ */
+function scrollShownIntoView(ordered, entries, shown) {
+    if (sameIds(shown, state.shownPositionIds)) {
+        return;
+    }
+
+    state.shownPositionIds = shown;
+
+    const index = ordered.findIndex((position) => shown.has(position.positionId));
+
+    if (index !== -1) {
+        entries[index].scrollIntoView({ block: 'nearest', inline: 'nearest' });
+    }
+}
+
+/** Whether two sets of ids name exactly the same members, in any order. */
+function sameIds(a, b) {
+    return a.size === b.size && [...a].every((id) => b.has(id));
 }
 
 /**

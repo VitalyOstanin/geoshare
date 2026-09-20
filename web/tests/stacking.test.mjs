@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 import { test } from 'node:test';
 
-import { HIGHEST, markerOrder } from '../public/lib/stacking.js';
+import { markerOrder } from '../public/lib/stacking.js';
 
 test('the marker further down the screen is drawn over the one above it', () => {
     assert.ok(markerOrder(400) > markerOrder(120));
@@ -23,13 +23,34 @@ test('a projection gone wrong cannot outrank the page for good', () => {
     assert.equal(markerOrder(Number.POSITIVE_INFINITY), markerOrder(1e9));
 });
 
-// The card a marker opens is drawn by the map library, in the same box as the
-// markers: it stands above them because the stylesheet says so, and the number
-// it says has to be above anything a marker can be given.
-test('a bubble outranks the highest a marker can reach', async () => {
+// A marker can be given any order up to stacking.js's own ceiling, and the
+// card is not in that pile at all any more: it is drawn in the panel below
+// the map rather than inside #map itself, so no marker's z-index — however
+// far that ceiling is ever raised — has a stacking context in common with the
+// card to outrank it in. #map's own isolation is what makes that true:
+// without it, a marker's number would be compared against the rest of the
+// page directly, card included.
+test('a marker can never outrank the card, because #map isolates its own stack', async () => {
     const styles = await readFile(new URL('../public/styles.css', import.meta.url), 'utf8');
-    const rule = styles.match(/\.maplibregl-popup \{[^}]*z-index:\s*(\d+)/);
+    const html = await readFile(new URL('../public/index.html', import.meta.url), 'utf8');
 
-    assert.ok(rule, 'the stylesheet gives the bubble no place of its own');
-    assert.ok(Number(rule[1]) > HIGHEST, `${rule[1]} is not above ${HIGHEST}`);
+    assert.match(
+        styles,
+        /#map \{[^}]*isolation:\s*isolate/,
+        'the map no longer walls its markers off into their own stacking context',
+    );
+
+    const map = html.match(/<div id="map"[^>]*>[\s\S]*?<\/div>/);
+
+    assert.ok(map, 'the map element is missing from the markup');
+    assert.doesNotMatch(
+        map[0],
+        /id="card"/,
+        'the card is drawn inside the map rather than beside it',
+    );
+
+    const panel = html.match(/<section id="panel"[^>]*>[\s\S]*<\/section>/);
+
+    assert.ok(panel, 'the panel is missing from the markup');
+    assert.match(panel[0], /id="card"/, 'the card is not where the panel expects it');
 });

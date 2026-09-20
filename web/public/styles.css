@@ -150,6 +150,46 @@ body {
     /* Clear of the bar a phone draws its gestures on. */
     padding-bottom: calc(0.5rem + env(safe-area-inset-bottom, 0px));
     border-top: 1px solid var(--edge);
+    /* The card is positioned from the panel rather than from the page: it
+       belongs to the strip below it, and has to move with the panel rather
+       than sit at a fixed height were the panel ever to grow or shrink. */
+    position: relative;
+}
+
+/* Stands over the bottom of the map rather than beside it, the way the phone
+   screen draws the same card. Anchored to the panel's own top edge instead of
+   to a marker: a card pinned to whichever pin it is about would cover the
+   very place on the map a viewer opened it to look at, and would have to
+   jump to a new spot on the map every time the marker under it moved. */
+#card {
+    position: absolute;
+    left: 0.5rem;
+    right: 0.5rem;
+    bottom: 100%;
+    margin-bottom: 0.5rem;
+    /* As wide as its own rows need and no wider: the card is a heading and a
+       handful of label-and-value lines, and stretched across a laptop window
+       it would be a band of empty surface with a narrow table in one corner.
+       On a phone the first limit is the window, which is what the second term
+       keeps it inside of. */
+    max-width: min(22rem, calc(100% - 1rem));
+    z-index: 3;
+    background: var(--surface);
+    color: var(--on-surface);
+    border: 1px solid var(--edge);
+    border-radius: 0.75rem;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.35);
+    padding: 0.75rem 0.9rem;
+}
+
+/* Kept apart from #card itself: #card is also the close button's positioned
+   ancestor, and a box that scrolls its own content carries every descendant
+   of that box along with the scroll — the button would drift out of the
+   corner it is meant to stay pinned to. Scrolling this inner box instead
+   leaves the button exactly where it was tapped from. */
+.card-body {
+    max-height: 40vh;
+    overflow-y: auto;
 }
 
 /* What the strip cannot say by being full: nobody yet, nothing reachable, or
@@ -652,42 +692,15 @@ button {
     text-align: left;
 }
 
-/* The library paints its bubble and its little triangle white, which is the
-   one surface on the page it does not ask anybody about. */
-/* The bubble a marker opens stands above every marker, whatever order the
-   markers are in among themselves: lib/stacking.js hands each one a place
-   between 0 and 9999 by how far down the screen it sits, and without this the
-   marker the card belongs to covers the card. A test holds the two numbers
-   together. */
-.maplibregl-popup {
-    z-index: 10000;
-}
-
-.maplibregl-popup-content {
-    background: var(--surface);
-    color: var(--on-surface);
-    /* The bubble widens to its card and stops at the window: a long name or a
-       date written out in full has to fold rather than leave the surface. */
-    max-width: min(22rem, 80vw);
-    /* Rounded, lifted and edged like the panel below it; the library's own
-       bubble is a square white box with a hairline shadow, which over a map
-       reads as part of the map rather than as a card on top of it. */
-    border-radius: 0.75rem;
-    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.35);
-    padding: 0.75rem 0.9rem;
-}
-
 /* Away from the text and large enough to hit on a phone. */
 /* One cross for both windows over the map: a member's card and the help read
    as the same kind of thing, and a second way of dismissing one of them would
    only be something more to find.
 
-   The library leaves its own button in the very corner with the cross sitting
-   on a text baseline, so the round hover area hung over the rounded corner of
-   the card and the cross stood above its own centre. Laid out as a box
-   instead: the circle is inset from the corner, and the cross is centred in it
-   by the box rather than by the line height. */
-.maplibregl-popup-close-button,
+   Laid out as a box rather than as text with the multiplication sign a font
+   would centre on its own x-height: the circle is inset from the corner, and
+   the cross is centred in it by the box rather than by the line height. */
+.card-close,
 .close-cross {
     position: absolute;
     top: 0.4rem;
@@ -699,17 +712,17 @@ button {
     padding: 0;
     background: none;
     color: inherit;
-    /* The multiplication sign the library writes into the button is a glyph,
-       and a glyph sits on the x-height rather than in the middle of its line,
-       so a button that centres it as text still shows it high of its own
-       circle. Hidden here and drawn below out of two lines, which have no
-       side of their own to lean on. */
+    /* The help windows write a multiplication sign into their button so that
+       a reader who finds it with no stylesheet still has something to press.
+       A glyph sits on the x-height rather than in the middle of its line, so
+       it shows high of its own circle: hidden here, and the cross drawn below
+       out of two lines instead, which have no side of their own to lean on. */
     font-size: 0;
     cursor: pointer;
 }
 
-.maplibregl-popup-close-button::before,
-.maplibregl-popup-close-button::after,
+.card-close::before,
+.card-close::after,
 .close-cross::before,
 .close-cross::after {
     content: '';
@@ -722,39 +735,19 @@ button {
     background: currentcolor;
 }
 
-.maplibregl-popup-close-button::before,
+.card-close::before,
 .close-cross::before {
     transform: translate(-50%, -50%) rotate(45deg);
 }
 
-.maplibregl-popup-close-button::after,
+.card-close::after,
 .close-cross::after {
     transform: translate(-50%, -50%) rotate(-45deg);
 }
 
-.maplibregl-popup-close-button:hover,
+.card-close:hover,
 .close-cross:hover {
     background: rgba(128, 128, 128, 0.2);
-}
-
-.maplibregl-popup-anchor-top .maplibregl-popup-tip,
-.maplibregl-popup-anchor-top-left .maplibregl-popup-tip,
-.maplibregl-popup-anchor-top-right .maplibregl-popup-tip {
-    border-bottom-color: var(--surface);
-}
-
-.maplibregl-popup-anchor-bottom .maplibregl-popup-tip,
-.maplibregl-popup-anchor-bottom-left .maplibregl-popup-tip,
-.maplibregl-popup-anchor-bottom-right .maplibregl-popup-tip {
-    border-top-color: var(--surface);
-}
-
-.maplibregl-popup-anchor-left .maplibregl-popup-tip {
-    border-right-color: var(--surface);
-}
-
-.maplibregl-popup-anchor-right .maplibregl-popup-tip {
-    border-left-color: var(--surface);
 }
 
 /* The zoom buttons: white by the library's own stylesheet, and placed in the

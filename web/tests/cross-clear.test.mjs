@@ -22,13 +22,10 @@ const rem = (styles, pattern) => {
 test('the text of a card stops before the cross that closes it', async () => {
     const styles = await stylesheet();
     const clear = rem(styles, /--cross-clear:\s*([\d.]+)rem/);
-    const cross = /\.maplibregl-popup-close-button,\s*\n\.close-cross \{[^}]*/.source;
+    const cross = /\.card-close,\s*\n\.close-cross \{[^}]*/.source;
     const inset = rem(styles, new RegExp(`${cross}right:\\s*([\\d.]+)rem`));
     const width = rem(styles, new RegExp(`${cross}width:\\s*([\\d.]+)rem`));
-    const padding = rem(
-        styles,
-        /\.maplibregl-popup-content \{[^}]*padding:\s*[\d.]+rem\s+([\d.]+)rem/,
-    );
+    const padding = rem(styles, /#card \{[^}]*padding:\s*[\d.]+rem\s+([\d.]+)rem/);
     const reach = inset + width - padding;
 
     assert.ok(clear >= reach, `${clear}rem of room leaves the text under ${reach}rem of button`);

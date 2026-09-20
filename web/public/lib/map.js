@@ -4,7 +4,10 @@
 // same wherever it is looked at.
 
 // Named exports only: the module has no default, and the parts used here are
-// the map, a marker, its bubble and the zoom buttons.
+// the map, a marker and the zoom buttons. The card a marker opens is none of
+// the library's business: it is plain DOM, drawn into the element the caller
+// hands to createMap, because it belongs to the strip of members rather than
+// to the pin it is about.
 //
 // Read from this site rather than from a content network. Across origins the
 // library starts its worker from a blob that imports the real file and drops
@@ -12,7 +15,7 @@
 // everything the worker cuts into tiles — every GeoJSON layer, the accuracy
 // ring among them — silently never appears. From here the worker is a plain
 // address and starts.
-import { Map as MapLibre, Marker, NavigationControl, Popup } from './vendor/maplibre-gl.mjs';
+import { Map as MapLibre, Marker, NavigationControl } from './vendor/maplibre-gl.mjs';
 
 import { STALE_COLOUR, memberColour, shortName } from './members.js';
 import { showFace } from './faces.js';
@@ -31,6 +34,13 @@ import {
 } from './following.js';
 import { openModeHelp } from './mode-help.js';
 import { openReasonHelp } from './reason-help.js';
+import {
+    listShown,
+    markerTapped,
+    openMember,
+    selectedPositionId,
+    shownPositionIds,
+} from './selection.js';
 import { markerOrder } from './stacking.js';
 import { modeText } from './modes.js';
 import { accuracyRing, widthIsWide, widthText } from './width.js';
@@ -170,8 +180,11 @@ const STYLE = {
  * @param element where the map is drawn
  * @param onCardChange called whenever a card opens, closes or changes who it
  *        is about, so that the panel can mark the card being looked at
+ * @param cardElement where the card is drawn — over the strip of members,
+ *        rather than pinned to the marker it is about, so that opening one
+ *        never covers the very place on the map the viewer is reading
  */
-export function createMap(element, onCardChange = () => {}) {
+export function createMap(element, onCardChange = () => {}, cardElement) {
     const map = new MapLibre({
         container: element,
         style: STYLE,
@@ -202,6 +215,13 @@ export function createMap(element, onCardChange = () => {}) {
         centred: false,
         last: null,
         onCardChange,
+        card: cardElement,
+        // The single card open at any one time, or null: which marker it is
+        // about and, when that marker covers several members, which one of
+        // them. The map, the strip and the circle of doubt all ask that
+        // question, so the answer is kept here as plain data, by the rules in
+        // lib/selection.js, rather than inside whatever happens to be drawn.
+        selection: null,
         // The circle the follow button walks, and who it currently follows.
         // Read and advanced from outside through the exported follow* and
         // advanceFollow functions rather than written here directly.
@@ -236,8 +256,10 @@ export function createMap(element, onCardChange = () => {}) {
     // map stops rather than while it moves, because regrouping under a moving
     // finger reads as flicker.
     map.on('moveend', () => {
-        if (view.last) {
-            draw(view, view.last);
+        if (view.last && draw(view, view.last)) {
+            // Unlike the draw a render triggers, nothing runs after this one
+            // to read view.selection again — the panel has to be told itself.
+            view.onCardChange();
         }
     });
 
@@ -260,6 +282,18 @@ export function createMap(element, onCardChange = () => {}) {
         }
     });
 
+    // A tap away from everybody means the card is no longer being looked at,
+    // which is how the phone reads the same tap. A tap on a marker is caught
+    // first, in addMarker, and stopped there from bubbling — without that,
+    // this handler would close the card the very tap that opened it was meant
+    // to leave open.
+    map.on('click', () => {
+        if (closeCards(view)) {
+            view.onCardChange();
+            drawWidth(view);
+        }
+    });
+
     // The way a dialog is dismissed everywhere else: the card covers the map,
     // and reaching for the small cross is the long way round. Listened for on
     // the document rather than on the map element, because the card takes the
@@ -269,7 +303,10 @@ export function createMap(element, onCardChange = () => {}) {
             return;
         }
 
-        closeCards(view);
+        if (closeCards(view)) {
+            view.onCardChange();
+            drawWidth(view);
+        }
     });
 
     return view;
@@ -277,16 +314,39 @@ export function createMap(element, onCardChange = () => {}) {
 
 /** Closes whatever card is open, and says whether there was one. */
 function closeCards(view) {
-    let closed = false;
+    if (view.selection === null) {
+        return false;
+    }
 
-    for (const entry of view.markers.values()) {
-        if (entry.popup.isOpen()) {
-            entry.popup.remove();
-            closed = true;
+    view.selection = null;
+    view.card.hidden = true;
+    view.card.replaceChildren();
+
+    return true;
+}
+
+/**
+ * Which marker a member is standing under right now, or null if none of them
+ * covers that member.
+ *
+ * Asked rather than remembered, because a marker is a group of whoever is
+ * close together on screen and the screen keeps changing: coming closer takes
+ * one marker apart into several, and going away puts them back. A member with
+ * no id at all — which is how a card over a list of members names nobody in
+ * particular — is nowhere by definition.
+ */
+function markerKeyFor(view, positionId) {
+    if (positionId === null) {
+        return null;
+    }
+
+    for (const [key, entry] of view.markers) {
+        if (entry.members.some((member) => member.positionId === positionId)) {
+            return key;
         }
     }
 
-    return closed;
+    return null;
 }
 
 /**
@@ -400,13 +460,13 @@ function draw(view, { positions, names, faces, now }) {
 
         showPin(entry, names, faces, now);
 
-        // What the bubble holds is built for the bubble that is open, and for
-        // no other: the card is a heading, a face and five rows, and building
+        // What the card holds is built for the card that is open, and for no
+        // other: the card is a heading, a face and five rows, and building
         // one per marker on every tick is work nobody sees.
         entry.latest = { names, faces, now };
 
-        if (entry.popup.isOpen()) {
-            showPopup(entry, names, faces, now);
+        if (view.selection && view.selection.key === key) {
+            showCard(view, names, faces, now);
         }
     }
 
@@ -417,9 +477,37 @@ function draw(view, { positions, names, faces, now }) {
         }
     }
 
+    // The marker a card was about can vanish between two drawings: coming
+    // closer takes a group apart into a marker each, and going away puts them
+    // back together. The card is about a member rather than about a pile of
+    // pins, so it moves to whichever marker now covers them, and only closes
+    // when the member themselves has left the positions.
+    //
+    // A card over a list has nobody to follow — the list is the pile — so it
+    // goes when the pile does.
+    //
+    // Whether it closed is the answer rather than a call to onCardChange from
+    // inside a drawing: a drawing is usually something the panel asked for,
+    // and showMembers reads the selection again the moment this returns.
+    let closed = false;
+
+    if (view.selection && !seen.has(view.selection.key)) {
+        const moved = markerKeyFor(view, view.selection.positionId);
+
+        if (moved === null) {
+            closeCards(view);
+            closed = true;
+        } else {
+            view.selection = openMember(moved, view.selection.positionId);
+            showCard(view, names, faces, now);
+        }
+    }
+
     // After the markers that went away have gone: a ring is drawn around a
     // marker whose card is open, and a marker taken off the map has none.
     drawWidth(view);
+
+    return closed;
 }
 
 /**
@@ -480,19 +568,15 @@ function drawWidth(view) {
  * one of them would answer it for them.
  */
 function selectedPosition(view) {
-    for (const entry of view.markers.values()) {
-        if (!entry.popup.isOpen()) {
-            continue;
-        }
+    const entry = view.selection ? view.markers.get(view.selection.key) : null;
 
-        if (entry.members.length === 1) {
-            return entry.members[0];
-        }
-
-        return entry.members.find((member) => member.positionId === entry.openedPositionId) ?? null;
+    if (!entry) {
+        return null;
     }
 
-    return null;
+    const positionId = selectedPositionId(view.selection);
+
+    return entry.members.find((member) => member.positionId === positionId) ?? null;
 }
 
 /** What the source holds when there is no circle to draw. */
@@ -542,87 +626,60 @@ function addMarker(view, key, group) {
 
     element.append(label, pin);
 
-    // Closing on a click elsewhere on the map is the library's own default,
-    // and it is what the phone does too: a tap away from everybody means the
-    // card is no longer being looked at.
-    // The width is left to the card rather than kept at the library's 240
-    // pixels: the rows are a label and a value on one line, and a value wider
-    // than that ran out over the edge of the bubble instead of widening it.
-    // The stylesheet is what stops it growing past the window.
-    // The bubble opens under the pointer, and the library would put the focus
-    // ring on the first thing in it — the mode, which is written as a link.
-    // A ring drawn around a word nobody asked for reads as a mistake, and the
-    // bubble has no keyboard way in to lose: the pin behind it is a plain div.
-    const popup = new Popup({
-        offset: 16,
-        closeButton: true,
-        maxWidth: 'none',
-        focusAfterOpen: false,
-    });
-
-    // The library gives its close button a multiplication sign and no name,
-    // which is what a reader is told the control is called. Named here, in the
-    // language the rest of the card is read in.
-    popup.on('open', () => {
-        popup
-            .getElement()
-            ?.querySelector('.maplibregl-popup-close-button')
-            ?.setAttribute('aria-label', WORDS.close);
-    });
-    // Held before the handlers, which reach into it, and before the marker,
-    // which is added to it once it is on the map.
+    // Held before the click handler, which reads it back on every tap rather
+    // than closing over the group this marker happened to have when it was
+    // made — the members under one key never change, but which of them the
+    // card is about does.
     const entry = {
         marker: null,
-        popup,
         pin,
         faces,
         label,
         members: group,
-        openedPositionId: null,
-        // What the last drawing knew, kept for the moment the bubble is opened
+        // What the last drawing knew, kept for the moment the card is opened
         // between two drawings.
         latest: null,
-        // Carried on the entry rather than read off the view, because the rows
-        // of a group list are built with the entry alone in hand.
-        onCardChange: view.onCardChange,
-        // The same reason: stepping into a member's card out of a group list
-        // changes whose circle is drawn, and nothing about the map moves.
-        redrawWidth: () => drawWidth(view),
-        // The same reason again: picking a member out of a group list is one
-        // more place a card opens for somebody, and the "one" follow mode has
-        // to hear about it too.
-        setFollowTarget: (positionId) => setFollowTarget(view, positionId),
     };
 
-    // One bubble at a time, the way a map shows one place at a time: the
-    // library leaves every popup it opens open, and a second tap would
-    // otherwise leave the first member's card hanging over the map.
-    popup.on('open', () => {
-        closeOthers(view, key);
+    // A tap on the marker is a choice about the card, and it must not reach
+    // the map underneath: the map's own click handler closes whatever card is
+    // open, and left alone it would close this same tap's card the instant it
+    // opened.
+    element.addEventListener('click', (event) => {
+        event.stopPropagation();
 
-        // A marker for one member opens straight onto their card, so tapping
-        // it is as much a choice of who to follow as tapping their entry in
-        // the strip. A marker for several opens onto the list instead, and no
-        // one of them is meant until a row in it is tapped — that click sets
-        // the target itself, further down in groupList.
-        if (entry.members.length === 1) {
-            entry.setFollowTarget(entry.members[0].positionId);
+        const positionIds = entry.members.map((member) => member.positionId);
+
+        // Worked out before it is stored, because closeCards is what takes
+        // the card off the screen and it does nothing at all once the
+        // selection is already empty: writing the answer down first would
+        // leave the card standing there with nothing selected behind it.
+        const tapped = markerTapped(view.selection, key, positionIds);
+
+        if (tapped === null) {
+            closeCards(view);
+        } else {
+            view.selection = tapped;
+
+            // A marker for one member opens straight onto their card, so
+            // tapping it is as much a choice of who to follow as tapping
+            // their entry in the strip. A marker for several opens onto the
+            // list instead, and no one of them is meant until a row in it is
+            // tapped — that click sets the target itself, in groupList.
+            if (view.selection.positionId !== null) {
+                setFollowTarget(view, view.selection.positionId);
+            }
+
+            // Filled on the way open rather than kept filled: until it is
+            // asked for, an empty card costs nothing. entry.latest is set on
+            // every drawing, and a marker cannot be tapped before its first
+            // one.
+            if (entry.latest) {
+                showCard(view, entry.latest.names, entry.latest.faces, entry.latest.now);
+            }
         }
 
-        // Filled on the way open rather than kept filled: until it is asked
-        // for, an empty bubble costs nothing.
-        if (entry.latest) {
-            showPopup(entry, entry.latest.names, entry.latest.faces, entry.latest.now);
-        }
-
-        entry.onCardChange();
-        drawWidth(view);
-    });
-    // The panel marks whoever the open card is about, and a card closed by the
-    // cross, by Escape or by a tap on the map leaves nobody marked.
-    popup.on('close', () => {
-        entry.openedPositionId = null;
-        entry.onCardChange();
+        view.onCardChange();
         drawWidth(view);
     });
 
@@ -632,7 +689,6 @@ function addMarker(view, key, group) {
     // where the point is, and everything else stands above them.
     entry.marker = new Marker({ element, anchor: 'bottom' })
         .setLngLat([centreLongitude(group), centreLatitude(group)])
-        .setPopup(popup)
         .addTo(view.map);
 
     view.markers.set(key, entry);
@@ -717,48 +773,88 @@ function groupLabel(count) {
 }
 
 /**
- * What the bubble holds: one member's card, or the list of who is standing
- * under a marker that covers several of them.
+ * Draws the one card the whole page ever shows at once: one member's detail,
+ * or the list of who is standing under a marker that covers several of them.
  *
  * Which of the group was meant is a question only the viewer can answer, so
- * the list comes first and the card is one click further in. The choice lives
- * on the marker rather than in the bubble, so that a tick that redraws the
- * bubble does not throw the viewer back to the list.
+ * the list comes first and the detail is one click further in. That choice
+ * lives in view.selection rather than in the card itself, so that a tick that
+ * redraws the card does not throw the viewer back to the list.
+ *
+ * Nothing here decides whether a card should be open at all — that is what
+ * closeCards is for — only what the open one looks like.
  */
-function showPopup(entry, names, faces, now) {
+function showCard(view, names, faces, now) {
+    const entry = view.markers.get(view.selection.key);
+
+    // The marker this card names is not on the map right now. draw() closes
+    // a card left stranded like this once a drawing has actually happened;
+    // reached from a click instead, a stale selection would otherwise be
+    // rendered as a card about nobody.
+    if (!entry) {
+        closeCards(view);
+
+        return;
+    }
+
     const group = entry.members;
+    const chosen = group.find((member) => member.positionId === view.selection.positionId);
+
+    let content;
 
     if (group.length === 1) {
-        entry.popup.setDOMContent(detail(group[0], nameOf(group[0], names), faces, now));
+        content = detail(group[0], nameOf(group[0], names), faces, now);
+    } else if (!chosen) {
+        content = groupList(view, entry, names, faces, now);
+    } else {
+        content = detail(chosen, nameOf(chosen, names), faces, now);
 
-        return;
+        const back = document.createElement('button');
+
+        back.type = 'button';
+        back.className = 'group-back';
+        // The arrow says which way the button goes before the words are read; an
+        // arrow written as a character rather than drawn, because a set of icons
+        // is a dependency of its own and this is the only one the page needs.
+        back.textContent = WORDS.backToList;
+        back.addEventListener('click', () => {
+            view.selection = listShown(view.selection);
+            showCard(view, names, faces, now);
+            view.onCardChange();
+            drawWidth(view);
+        });
+
+        content.prepend(back);
     }
 
-    const chosen = group.find((member) => member.positionId === entry.openedPositionId);
+    // Named in the language the rest of the card is read in: a cross drawn
+    // out of two lines has no text inside it for a reader who is listening to
+    // the page rather than looking at it.
+    const close = document.createElement('button');
 
-    if (!chosen) {
-        entry.popup.setDOMContent(groupList(entry, names, faces, now));
-
-        return;
-    }
-
-    const card = detail(chosen, nameOf(chosen, names), faces, now);
-    const back = document.createElement('button');
-
-    back.type = 'button';
-    back.className = 'group-back';
-    // The arrow says which way the button goes before the words are read; an
-    // arrow written as a character rather than drawn, because a set of icons
-    // is a dependency of its own and this is the only one the page needs.
-    back.textContent = WORDS.backToList;
-    back.addEventListener('click', () => {
-        entry.openedPositionId = null;
-        showPopup(entry, names, faces, now);
-        entry.redrawWidth();
+    close.type = 'button';
+    close.className = 'card-close';
+    close.setAttribute('aria-label', WORDS.close);
+    close.addEventListener('click', () => {
+        if (closeCards(view)) {
+            view.onCardChange();
+            drawWidth(view);
+        }
     });
 
-    card.prepend(back);
-    entry.popup.setDOMContent(card);
+    // Scrolling lives on this wrapper rather than on #card itself: #card is
+    // also the close button's positioned ancestor, and an ancestor that
+    // scrolls its own box carries every descendant along with it, the close
+    // button included — the corner it is meant to stay pinned to would drift
+    // out of view with the rest of the card. A plain content box underneath
+    // it, scrolling on its own, leaves the button where it was tapped from.
+    const body = document.createElement('div');
+
+    body.className = 'card-body';
+    body.append(content);
+
+    view.card.replaceChildren(close, body);
+    view.card.hidden = false;
 }
 
 /**
@@ -768,23 +864,21 @@ function showPopup(entry, names, faces, now) {
  * marker names all of them, because the viewer is looking at the group.
  */
 export function shownPositions(view) {
-    for (const entry of view.markers.values()) {
-        if (!entry.popup.isOpen()) {
-            continue;
-        }
-
-        return new Set(
-            entry.openedPositionId === null
-                ? entry.members.map((member) => member.positionId)
-                : [entry.openedPositionId],
-        );
+    if (view.selection === null) {
+        return new Set();
     }
 
-    return new Set();
+    const entry = view.markers.get(view.selection.key);
+
+    if (!entry) {
+        return new Set();
+    }
+
+    return shownPositionIds(view.selection, entry.members.map((member) => member.positionId));
 }
 
 /** The members under one marker, as rows that open their cards. */
-function groupList(entry, names, faces, now) {
+function groupList(view, entry, names, faces, now) {
     const list = document.createElement('div');
 
     list.className = 'group';
@@ -824,11 +918,11 @@ function groupList(entry, names, faces, now) {
 
         row.append(face, name, age);
         row.addEventListener('click', () => {
-            entry.openedPositionId = member.positionId;
-            entry.setFollowTarget(member.positionId);
-            showPopup(entry, names, faces, now);
-            entry.onCardChange();
-            entry.redrawWidth();
+            view.selection = openMember(view.selection.key, member.positionId);
+            setFollowTarget(view, member.positionId);
+            showCard(view, names, faces, now);
+            view.onCardChange();
+            drawWidth(view);
         });
 
         list.append(row);
@@ -872,14 +966,6 @@ function centreLongitude(group) {
 /** The same angle, written as the turn of at most half a circle either way. */
 function wrapDegrees(degrees) {
     return ((((degrees + 180) % 360) + 360) % 360) - 180;
-}
-
-function closeOthers(view, key) {
-    for (const [other, entry] of view.markers) {
-        if (other !== key && entry.popup.isOpen()) {
-            entry.popup.remove();
-        }
-    }
 }
 
 /**
@@ -1095,27 +1181,22 @@ export function lookAt(view, position) {
         zoom: Math.max(view.map.getZoom(), START_ZOOM, closeEnoughForTheRing(view, position)),
     });
 
-    const entry = [...view.markers.values()].find((marker) =>
-        marker.members.some((member) => member.positionId === position.positionId));
+    const key = markerKeyFor(view, position.positionId);
 
-    if (!entry) {
+    if (key === null) {
         return;
     }
 
     // A member asked for by name opens their own card even when the marker
     // stands for several: the question was about them, not about the place.
-    entry.openedPositionId = entry.members.length > 1 ? position.positionId : null;
+    view.selection = openMember(key, position.positionId);
 
     if (view.last) {
-        showPopup(entry, view.last.names, view.last.faces, view.last.now);
+        showCard(view, view.last.names, view.last.faces, view.last.now);
     }
 
-    if (!entry.popup.isOpen()) {
-        entry.marker.togglePopup();
-    }
-
-    // Said out loud rather than left to the bubble's own event: a card already
-    // open over a group changes who it is about without opening again, and the
+    // Said out loud rather than left to the next drawing: a card already open
+    // over a group changes who it is about without opening again, and the
     // strip would go on marking the member the viewer has just navigated away
     // from until the next redraw — half a minute, on the clock that moves the
     // ages along.
