@@ -13,6 +13,7 @@ in a diagram.
 
 - [How to read this](#how-to-read-this)
 - [Preferred wording](#preferred-wording)
+- [Words that carry more than one meaning here](#words-that-carry-more-than-one-meaning-here)
 - [The group and who is in it](#the-group-and-who-is-in-it)
 - [Getting into a group](#getting-into-a-group)
 - [What a member publishes](#what-a-member-publishes)
@@ -30,10 +31,11 @@ in a diagram.
 
 ## How to read this
 
-A term is canonical when it appears in the leftmost column of a table below.
-Identifiers in code, fields in documents, words shown to a member and words in
-comments are all meant to use the canonical term rather than a synonym, so that
-one thing is called one thing in the rules, in both clients and on screen.
+A term is canonical when it appears in the "Term" column of a table below, or
+in the "Prefer" column of the next section. Identifiers in code, fields in
+documents, words shown to a member and words in comments are all meant to use
+the canonical term rather than a synonym, so that one thing is called one thing
+in the rules, in both clients and on screen.
 
 Where a term names a field or a type, the definition is the code, and the
 column beside it says where that code is. Where the two disagree, the code is
@@ -41,29 +43,44 @@ right and this file is out of date.
 
 ## Preferred wording
 
-| № | Prefer        | Avoid                                   | Why |
-|---|---------------|-----------------------------------------|-----|
-| 1 | member        | user, contact, friend                   | The person is in a group; "user" says nothing about which one, and the id in every document is `memberId` |
-| 2 | group         | circle, team, channel                   | The group is the document everything else hangs under, and its name is the account of whoever founded it |
-| 3 | roster        | member list, participants               | The roster is the `members` array of the group document; "list" is also what the panel of the page is called |
-| 4 | administrator | admin, owner, moderator                 | The field is `admins`, and the word in the interface is spelled out; an owner in this project is the owner of a document, not of the group |
-| 5 | position      | location, coordinates, point            | A position is one document: a place, when it was taken, and how. `location` is the platform's word and appears only where the platform's API does |
-| 6 | fix           | reading, sample, measurement            | A fix is one answer from a provider, before anything decides whether to write it. A position is what gets written |
-| 7 | invitation    | invite, link, token                     | The noun is `invitation`; the eight characters inside it are the code |
-| 8 | code          | password, key, secret                   | It lets one more person in for a day and grants nothing else |
-| 9 | grant         | permission document, sharing settings   | One document per member holding both halves of what they give out: their phones and their readers |
-| 10 | permission   | share, subscription                     | A permission is one entry of `sharedWith`: one reader, and the moment it runs out |
-| 11 | device       | phone id, installation                  | In the data a device is an identifier a phone made for itself; "phone" is the thing in somebody's pocket and is used in prose |
-| 12 | watch claim  | presence, heartbeat, online status      | It says somebody had the map open a moment ago, not that they are online |
-| 13 | stale        | offline, lost, disconnected             | A marker goes stale when its position is older than half an hour; nothing here knows whether a phone is connected |
-| 14 | left out     | rejected, filtered, dropped             | An answer left out was collected and logged; it moved no marker |
-| 15 | false place  | spoof zone, jamming area                | A place where receivers are known to be told a lie, as the group recorded it |
+| № | Prefer        | Not this                              | Why |
+|---|---------------|---------------------------------------|-----|
+| 1 | member        | user, contact, friend                 | The person is in a group; "user" says nothing about which one. The field naming a person is `memberId`, and every document about one is named after their account |
+| 2 | roster        | member list, participants             | The roster is the `members` array of the group document. "Member list" would also collide with the strip of members the page draws under its map |
+| 3 | administrator | moderator, admin                      | The array is `admins` and the word written out is administrator; on screen the same thing is said as "runs the group" |
+| 4 | invitation    | invite                                | The noun is `invitation`; the eight characters inside it are the code |
+| 5 | grant         | permission document, sharing settings | One document per member holding both halves of what they give out: their phones and their readers |
+| 6 | watch claim   | heartbeat, online status              | It says somebody had the map open a moment ago, not that they are online |
+| 7 | stale         | disconnected                          | A marker goes stale when its position is older than half an hour; nothing here knows whether a phone is connected |
+| 8 | false place   | spoof zone, jamming area              | A place where receivers are known to be told a lie, as the group recorded it |
+| 9 | join claim    | join request                          | It is a document the joiner writes for the rules to read; nothing asks anybody for anything |
 
-Two words are deliberately not restricted. **Household** is used in prose for
-the people in a group, where "group" would read as the document; it names no
-field. **Family** appears as the name of the group that predates invitations —
-the one whose document id is literally `family` — and as the project's own
-description of who it is for.
+A word from the platform's own API is not a synonym and is left alone:
+`currentUser` from Firebase, `Location` and its permissions from Android, a
+notification channel. These name what the platform calls them.
+
+## Words that carry more than one meaning here
+
+Several everyday words are already taken by something specific. They are not
+banned — they are worth knowing before reaching for one.
+
+| № | Word | What it means here | Not this |
+|---|------|--------------------|----------|
+| 1 | fix, position | A fix is one answer from a provider; a position is a fix the phone decided to write | either word for the other: most fixes never become positions |
+| 2 | circle | The shape a spoofed run of answers is fitted to | a group of people |
+| 3 | owner | The account a document is named after, who may write it | somebody who runs the group — that is an administrator |
+| 4 | key | The name of a document in `settings`, and the API key in the emulator's URLs | a code, which is what an invitation is opened with |
+| 5 | subscription | A listener on the database | a permission, which is one entry of `sharedWith` |
+| 6 | share, sharing | Giving out one's own position: `sharedWith`, "Share my position" | a permission, which is one entry of that map |
+| 7 | rejected, dropped | Prose for an answer the phone threw away | the fields, which are `leftOutCount`, `leftOutReason` and `leftOutSince` |
+| 8 | point | The place this phone reports, as the settings screen says it | a position document |
+| 9 | standing | Where an account stands with respect to a group: `Ungrouped`, `Outsider`, `Member`, `Administrator`, `Unrun` | the group this phone writes into, which `CurrentGroup` unfortunately also calls a `Standing`; the two are unrelated and one of them should be renamed |
+
+Two more words are deliberately not restricted. **Household** is used in prose
+for the people in a group, where "group" would read as the document; it names
+no field. **Family** appears as the name of the group that predates
+invitations — the one whose document id is literally `family` — and as the
+project's own description of who it is for.
 
 ## The group and who is in it
 
@@ -72,19 +89,19 @@ description of who it is for.
 | 1 | group | The document everything else hangs under, and the unit of access: reading anything at all requires being on its roster | `firebase/firestore.rules`, `match /groups/{groupId}` |
 | 2 | group id | The name of that document. For a group founded on a phone it is the account id of the founder; the household that predates invitations is named `family` | `firestore.rules`, `founding()` |
 | 3 | roster | The `members` array: the account ids of everybody in the group. At most 50 | `firestore.rules`, `rosterFits()` |
-| 4 | administrator | An account in the `admins` array. Hands out invitations, takes members off the roster, edits the group's settings and its false places | `firestore.rules`, `administering()` |
+| 4 | administrator | An account in the `admins` array. Hands out invitations, puts members on the roster and takes them off, hands the running of the group to another member, and edits the group's settings and its false places | `firestore.rules`, `administering()` |
 | 5 | standing | Where the account signed in stands with respect to a group, as the screens decide what to offer: `Ungrouped`, `Outsider`, `Member`, `Administrator`, `Unrun` | `android/.../membership/Roster.kt` |
 | 6 | unrun group | A group with an empty `admins` array: nobody may change its roster, and the screens say so rather than offering controls every write would refuse | `Roster.kt`, `firestore.rules` |
-| 7 | member id | An account id, as the sign-in provider issues it. The key of a profile, of a grant and of a join claim, and the first half of a position id | `android/.../auth/SignInController.kt` |
+| 7 | member id | An account id, as the sign-in provider issues it. The name of a profile, of a grant and of a join claim, the first half of a position id, and a field of its own inside a position and a watch claim | `android/.../auth/AuthState.kt` |
 | 8 | current group | Which group this phone writes into, remembered on the phone itself and given out as a standing with a turn counter, so that founding or joining rebuilds every subscription | `android/.../service/CurrentGroup.kt` |
 
 ## Getting into a group
 
 | № | Term | Means | Defined in |
 |---|------|-------|------------|
-| 1 | invitation | A document whose name is the code, holding who made it and when it runs out. Nobody may read it — the rules read it on a writer's behalf | `firestore.rules`, `match /invitations/{code}` |
-| 2 | code | Eight characters from A–Z and 2–9 drawn at random. What is handed out leaves out the letters read for digits | `android/.../membership/Codes.kt` |
-| 3 | invitation text | What a person is actually sent: the group's name and the code joined by a dot, because a write has to know its path before it is made | `Codes.kt`, `invitationFrom()` |
+| 1 | invitation | A document whose name is the code, holding who made it and when it runs out. It lets in everybody who uses it before then rather than one person once. Nobody may read it — the rules read it on a writer's behalf | `firestore.rules`, `match /invitations/{code}` |
+| 2 | code | Eight characters. The rules accept A–Z and 2–9; what is handed out is drawn from those minus the letters read for digits, so a code can be read aloud | `android/.../membership/Codes.kt` |
+| 3 | invitation text | What a person is actually sent: the group's name and the code joined by a dot, because a write has to know its path before it is made | `Codes.kt`, `invitationText()` and `invitationFrom()` |
 | 4 | join claim | A document the person joining writes under their own account id, holding the code they are using. It is how a code reaches the rules, which cannot be told anything except through the database | `firestore.rules`, `match /joins/{uid}` |
 | 5 | joining | The write that adds one's own account to the roster and changes nothing else, allowed only while a join claim names an invitation that has not run out | `firestore.rules`, `joining()` |
 | 6 | founding | The write that creates a group: named after the founder, with the founder alone on the roster and alone among the administrators | `firestore.rules`, `founding()` |
@@ -96,22 +113,24 @@ description of who it is for.
 | 1 | profile | The name and the account picture of one member, written by that member and read by the whole group, so a marker can carry a person rather than the first characters of an id | `firestore.rules`, `match /members/{uid}`; `android/.../map/MemberProfile.kt` |
 | 2 | display name | The name the account carries. A member whose account has none writes no profile at all | `MemberProfile.kt`, `SignInController.kt` |
 | 3 | grant | One document per member holding what they give out: the devices they carry and the readers they allow | `firestore.rules`, `match /grants/{uid}`; `android/.../map/MemberGrant.kt` |
-| 4 | devices | The identifiers of the phones this member carries. A reader learns from here which position documents to read, because the collection of positions cannot be listed. At most 10 | `MemberGrant.kt` |
-| 5 | shared with | The readers this member allows, each with the moment their permission runs out. At most 50 | `MemberGrant.kt` |
-| 6 | permission | One entry of `sharedWith`: one reader and one expiry. Weighed against the server's clock on every read of a position | `firestore.rules`, `mayRead()` |
+| 4 | device | One phone, as the data knows it: an identifier the phone made for itself on first launch. "Phone" is the thing in somebody's pocket and is what prose calls it | `android/.../service/DeviceIdentity.kt` |
+| 5 | devices | The identifiers of the phones this member carries. A reader learns from here which position documents to read, because the collection of positions cannot be listed. At most 10 | `MemberGrant.kt` |
+| 6 | shared with | The readers this member allows, each with the moment their permission runs out. At most 50 | `MemberGrant.kt` |
+| 7 | permission | One entry of `sharedWith`: one reader and one expiry. Weighed against the server's clock on every read of a position | `firestore.rules`, `mayRead()` |
 
 ## Positions
 
 | № | Term | Means | Defined in |
 |---|------|-------|------------|
-| 1 | position | Where one phone last said it was, as one document: the place, the moments, how it was found and how the phone is doing | `firestore.rules`, `match /positions/{positionId}`; `android/.../map/MemberPosition.kt` |
-| 2 | position id | The account id and the device identifier joined by a dot. One document per phone, so two phones of one member do not overwrite each other | `MemberPosition.kt`, `firestore.rules`, `ownsPosition()` |
-| 3 | taken at | When the fix was taken, by the clock of the phone that took it | `MemberPosition.kt` |
-| 4 | written at | When the database accepted the write, by the server's clock. The one moment a reader can trust, and what a marker's age is measured from | `firestore.rules`, `positionShape()` |
-| 5 | device name | What a phone calls itself, shown when a member has more than one on the map | `MemberPosition.kt` |
-| 6 | accuracy, width | How wide the provider said its answer is, in metres. Drawn as a ring around the marker; absent where the provider named none | `MemberPosition.kt`, `web/public/lib/width.js` |
-| 7 | left out count, reason, since | What a phone says while its answers are being thrown away and it is therefore writing no positions: how many, why, and since when. Without it a phone under a transmitter looks like a phone in a drawer | `firestore.rules`, `leftOutShape()` |
-| 8 | settling | Whether the receiver had not yet settled since the phone was switched on | `firestore.rules`, `positionShape()` |
+| 1 | fix | One answer from a provider, as it arrived. Most are never written: a fix becomes a position only once the phone has decided it is worth saying | `android/.../collection/WriteFilter.kt` |
+| 2 | position | Where one phone last said it was, as one document: the place, the moments, how it was found and how the phone is doing | `firestore.rules`, `match /positions/{positionId}`; `android/.../map/MemberPosition.kt` |
+| 3 | position id | The account id and the device identifier joined by a dot. One document per phone, so two phones of one member do not overwrite each other | `MemberPosition.kt`, `firestore.rules`, `ownsPosition()` |
+| 4 | taken at | When the fix was taken, by the clock of the phone that took it | `MemberPosition.kt` |
+| 5 | written at | When the database accepted the write, by the server's clock. The one clock every member shares, so it is what the news is dated by — the age a card shows and the half hour after which a marker goes grey. The moment of the position itself is capped by it | `firestore.rules`, `positionShape()`; `web/public/lib/age.js`, `positionMoments()` |
+| 6 | device name | What a phone calls itself, shown when a member has more than one on the map | `MemberPosition.kt` |
+| 7 | accuracy, width | How wide the provider said its answer is, in metres. Drawn as a ring around the marker; absent where the provider named none | `MemberPosition.kt`, `web/public/lib/width.js` |
+| 8 | left out count, reason, since | What a phone says while its answers are being thrown away and it is therefore writing no positions: how many, why, and since when. Without it a phone under a transmitter looks like a phone in a drawer | `firestore.rules`, `leftOutShape()` |
+| 9 | settling | Whether the receiver had not yet settled since the phone was switched on | `firestore.rules`, `positionShape()` |
 
 ## How a position was arrived at
 
@@ -124,7 +143,7 @@ description of who it is for.
 | 5 | OtherRadios | Worked out from the towers and the Wi-Fi, by the phone or by a service | `FoundBy.kt` |
 | 6 | Pretended | Put there by another application on the phone | `FoundBy.kt` |
 | 7 | Unsaid | Arrived with nothing said about how it was reached | `FoundBy.kt` |
-| 8 | source switch | What a member turns off in the settings, as one switch per kind of answer: `SourceChoice`. An answer from a source switched off is still collected and logged and moves no marker | `android/.../collection/Sources.kt` |
+| 8 | source switch | What a member turns off in the settings, as one switch per kind of answer: `SourceChoice`. An answer from a source switched off is still collected and logged, and it moves no marker | `android/.../collection/Sources.kt` |
 | 9 | collection mode | How hard the phone is working and how readily it says what it found: `Idle`, `Standby`, `Moving`, `Viewing`, `Night`. `Viewing` is the only one that turns the receiver on | `android/.../collection/CollectionMode.kt` |
 
 ## Watching, and how old is too old
@@ -133,7 +152,7 @@ description of who it is for.
 |---|------|-------|------------|
 | 1 | watch claim | A document saying that one phone had the map open, written per phone and read by the whole group. It carries the moment it was made, by the server's clock; the phones add the three minutes themselves | `firestore.rules`, `match /watch/{watchId}`; `android/.../collection/Watching.kt` |
 | 2 | watcher | A member behind a claim that has not run out — what the strip under the map names | `Watching.kt`, `web/public/lib/watchers.js` |
-| 3 | stale | A position older than half an hour. The marker is drawn grey, and every mode that asks for anything has to write again before that | `android/.../collection/Freshness.kt`, `web/public/lib/age.js` |
+| 3 | stale | A position half an hour old, counted from the moment the server stamped it. The marker is drawn grey, and every mode that asks for anything has to write again before that | `android/.../collection/Freshness.kt`, `web/public/lib/age.js` |
 | 4 | following | How the map moves itself: after one member, after everybody, or not at all | `web/public/lib/following.js`, `android/.../map/Following.kt` |
 
 ## Judging an answer before it is written
@@ -161,7 +180,7 @@ the phone and are named here because the code names them.
 |---|------|-------|------------|
 | 1 | profile told | What this phone has already had accepted about its member: the group, the account, the name, the picture and the device. Compared whole, so joining another group is an introduction from scratch | `android/.../map/PublishedProfile.kt` |
 | 2 | device identity | The identifier a phone made for itself on first launch, used in its position id, its watch id and its member's grant | `android/.../service/DeviceIdentity.kt` |
-| 3 | standing (current group) | The name of the group this phone writes into, with a counter that grows on every move, so that subscriptions rebuild even when the name comes back the same | `android/.../service/CurrentGroup.kt` |
+| 3 | current standing | The name of the group this phone writes into, with a counter that grows on every move, so that subscriptions rebuild even when the name comes back the same. Named `CurrentGroup.Standing` in the code, which collides with the standing of an account in a group | `android/.../service/CurrentGroup.kt` |
 
 ## The clients and the stand-in stand
 
@@ -170,14 +189,15 @@ the phone and are named here because the code names them.
 | 1 | the application | The Android build: collects positions, writes them, and shows the group on a map | `android/` |
 | 2 | the page | The web client on hosting: signs in and shows the same group on the same background, reading the same documents | `web/public/` |
 | 3 | stand-in services | The Firestore and sign-in emulators a debug build talks to instead of the real project | `tools/run-services.sh`, `firebase/emulator/` |
-| 4 | seed | What fills the stand-in database before a run: the accounts, a group with three of them on the roster, a profile and a grant each | `firebase/emulator/seed.mjs` |
+| 4 | seed | What fills the stand-in database before a run: the accounts, a group with three of them on the roster, a profile and a grant each, and a position for the two the phone under test is meant to be looking at | `firebase/emulator/seed.mjs` |
 | 5 | stand-in account | One of the five accounts the seed creates. `Parent`, `Spouse` and `Child` are on the roster of `family`; `Stranger` and `Newcomer` are on no roster at all and exist for the way into a group. These are names of test accounts, not roles: the role is `Outsider` | `seed.mjs`, `android/app/src/debug/.../StandInServices.kt` |
 
 ## Entities and relations
 
-Everything lives under one group document. There is no collection outside
-`groups`, and no rule reaching one: a request no `match` reaches is refused, so
-the group is both the unit of access and the root of the data.
+Everything lives under one group document. Nothing outside `groups` is
+reachable at all — a request no `match` reaches is refused, whatever else the
+project keeps in the same database — so the group is both the unit of access
+and the root of the data.
 
 ### The entities
 
@@ -191,11 +211,13 @@ underneath it with nothing to say who may read them.
 
 **Member** — not a document. A member is an account whose id appears in
 `members`. Everything a member has in the database is keyed by that id in a
-subcollection, which is why membership itself stays in the group document and
-out of every client's reach: writing one's own profile grants nothing.
+subcollection, which is why membership itself stays in the group document,
+where no client may set it for themselves: writing one's own profile grants
+nothing.
 
 **Member profile** — `groups/{groupId}/members/{uid}`. Fields: `displayName`
-(at most 100 characters), `photoUrl` (nullable, at most 500), `updatedAt`.
+(at most 100 characters), `photoUrl` (nullable, at most 500), `updatedAt` (when
+the profile was last written).
 Written by the member it describes, read by everybody in the group. At most one
 per member per group, and the same account in another group has told that group
 nothing.
@@ -219,9 +241,11 @@ than per member. Written by the account named in its id; read by that account
 and by whoever holds an unexpired permission in the owner's grant.
 
 **Watch claim** — `groups/{groupId}/watch/{uid}.{deviceId}`. Fields:
-`memberId`, `since` (the server's clock). Written by the phone looking, read by
-everybody in the group, deleted when the map is closed and otherwise left to
-age out three minutes after it was made.
+`memberId`, `since` (the server's clock). Written by the phone looking,
+refreshed every minute while the map is up, and deleted when it is closed. A
+claim nobody deleted stays in the database and simply stops counting: the
+readers work out who is looking by leaving out claims older than three minutes,
+rather than by anything arriving at the moment one runs out.
 
 **Invitation** — `groups/{groupId}/invitations/{code}`. Fields: `createdBy`,
 `expiresAt`. The code is the document's name rather than a field, so an
@@ -259,7 +283,7 @@ administrator.
 | 7 | Device | Watch claim | 0 or 1 at a time | watch id = `{account id}.{device id}` |
 | 8 | Member | Permission | 0–50 readers, each with an expiry | the `sharedWith` map of the grant |
 | 9 | Permission | Position | one permission opens every position of that member's devices | the rules read the owner's grant on each position read |
-| 10 | Group | Invitation | 0 or more, each good for a day | subcollection; the code is the document name |
+| 10 | Group | Invitation | 0 or more, each carrying its own expiry; the application sets a day | subcollection; the code is the document name |
 | 11 | Invitation | Join claim | one claim names one code; one code lets in everybody who uses it before it runs out | the `code` field, matched against the invitation's document name |
 | 12 | Account | Join claim | 0 or 1 per group | document id = account id |
 | 13 | Group | False place | 0 or more | subcollection |
@@ -273,7 +297,7 @@ are what a reader of the data should be able to assume.
 | № | Invariant | Enforced by |
 |---|-----------|-------------|
 | 1 | A group founded on a phone is named after its founder, who is alone on the roster and alone among its administrators at that moment | `founding()` |
-| 2 | Nobody adds anybody but themselves, and only while holding a join claim naming an invitation that has not run out | `joining()`, `invitationStands()` |
+| 2 | Somebody outside the group adds themselves and nobody else, and only while holding a join claim naming an invitation that has not run out. Putting another person on the roster is an administrator's write | `joining()`, `invitationStands()`, `administering()` |
 | 3 | An administrator's write leaves at least one administrator, and every administrator on the roster | `administering()` |
 | 4 | A roster never exceeds 50 members | `rosterFits()` |
 | 5 | A profile, a grant, a join claim and a position belong to the account they are named after, and nobody else writes them | `isOwner()`, `isSelf()`, `ownsPosition()` |
