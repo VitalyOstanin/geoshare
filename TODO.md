@@ -803,27 +803,3 @@ What to check, on each of the phones rather than on one:
   on if they are not, belongs in the instructions rather than in the code —
   but it has to be found out by restarting, because nothing in the build can
   report it.
-
-## A roster the database has stopped answering for
-
-Somebody taken off the roster goes on seeing it. The subscriptions are refused
-the moment the member is gone — the log fills with `PERMISSION_DENIED` for the
-group document, the profiles, the grants and the watch claims — but nothing on
-the screen says so: `comingBack` takes the subscription out again without
-touching the last value it carried, so the roster on screen is whatever arrived
-before the refusal. A restart does not clear it either, because the database
-client answers from its own cache first and the server's refusal only arrives
-afterwards.
-
-Nothing new reaches them — the positions stop, the names stop, the claims stop
-— and the group they are looking at is a group as it stood at one moment. Still,
-a member removed from a household should see that they were removed, and the
-screen should offer the way back in it offers everybody else outside a group.
-
-What it needs is for a refusal to be an answer rather than a silence: the flows
-that carry a roster, the profiles and the grants would emit "the database will
-not answer for this any more" and the screen would show the two ways in, the way
-it does for somebody who has never been in a group. The wait that doubles stays
-where it is — the refusal can be temporary, and a member added back a minute
-later should not have to restart anything — but what is shown in the meantime
-should not be the household they are no longer part of.
