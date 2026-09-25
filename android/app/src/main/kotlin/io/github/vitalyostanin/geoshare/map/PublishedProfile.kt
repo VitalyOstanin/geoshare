@@ -3,18 +3,26 @@ package io.github.vitalyostanin.geoshare.map
 import android.content.Context
 
 private const val FILE = "profile"
+private const val KEY_GROUP = "group"
 private const val KEY_MEMBER = "member"
 private const val KEY_NAME = "name"
 private const val KEY_PICTURE = "picture"
 private const val KEY_DEVICE = "device"
 
 /**
- * Which group it was told.
+ * What a phone tells its group about the member signed in on it.
  *
- * A profile lives inside a group, so the same account moving to another one
- * has told the new group nothing, however much it told the old one.
+ * The group is part of it, not context around it: a profile document lives
+ * inside a group, so the same account in another group has told that one
+ * nothing, however much it told the group it came from.
  */
-private const val KEY_GROUP = "group"
+data class ProfileTold(
+    val group: String,
+    val memberId: String,
+    val displayName: String,
+    val pictureUrl: String?,
+    val deviceId: String,
+)
 
 /**
  * What this phone has already told the group about its member.
@@ -27,34 +35,33 @@ private const val KEY_GROUP = "group"
 class PublishedProfile(context: Context) {
     private val store = context.getSharedPreferences(FILE, Context.MODE_PRIVATE)
 
-    /** True when the account says exactly what was last accepted for it. */
-    fun matches(
-        group: String,
-        memberId: String,
-        displayName: String,
-        pictureUrl: String?,
-        deviceId: String,
-    ): Boolean = store.getString(KEY_GROUP, null) == group &&
-        store.getString(KEY_MEMBER, null) == memberId &&
-        store.getString(KEY_NAME, null) == displayName &&
-        store.getString(KEY_PICTURE, null) == pictureUrl &&
-        store.getString(KEY_DEVICE, null) == deviceId
+    /** What was last accepted, or nothing on a phone that has told nobody anything. */
+    fun told(): ProfileTold? {
+        val group = store.getString(KEY_GROUP, null) ?: return null
+        val memberId = store.getString(KEY_MEMBER, null) ?: return null
+        val displayName = store.getString(KEY_NAME, null) ?: return null
+        val deviceId = store.getString(KEY_DEVICE, null) ?: return null
+
+        return ProfileTold(
+            group = group,
+            memberId = memberId,
+            displayName = displayName,
+            // The one field a profile is allowed to be without, so its absence
+            // is an answer rather than a gap.
+            pictureUrl = store.getString(KEY_PICTURE, null),
+            deviceId = deviceId,
+        )
+    }
 
     /** Called once the server has accepted the write, not before. */
-    fun remember(
-        group: String,
-        memberId: String,
-        displayName: String,
-        pictureUrl: String?,
-        deviceId: String,
-    ) {
+    fun remember(told: ProfileTold) {
         store
             .edit()
-            .putString(KEY_GROUP, group)
-            .putString(KEY_MEMBER, memberId)
-            .putString(KEY_NAME, displayName)
-            .putString(KEY_PICTURE, pictureUrl)
-            .putString(KEY_DEVICE, deviceId)
+            .putString(KEY_GROUP, told.group)
+            .putString(KEY_MEMBER, told.memberId)
+            .putString(KEY_NAME, told.displayName)
+            .putString(KEY_PICTURE, told.pictureUrl)
+            .putString(KEY_DEVICE, told.deviceId)
             .apply()
     }
 }

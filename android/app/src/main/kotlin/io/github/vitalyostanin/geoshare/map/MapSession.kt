@@ -165,11 +165,18 @@ fun PublishProfile(memberId: String, displayName: String?, pictureUrl: String?, 
     // again on being let into a group as well, because the attempt made before
     // this phone was on the roster was refused.
     val standing = groupNow()
-    val group = standing.name
+    val telling =
+        ProfileTold(
+            group = standing.name,
+            memberId = memberId,
+            displayName = name,
+            pictureUrl = pictureUrl,
+            deviceId = deviceId,
+        )
 
-    LaunchedEffect(standing, memberId, name, pictureUrl, deviceId, owner) {
+    LaunchedEffect(standing, telling, owner) {
         owner.repeatOnLifecycle(Lifecycle.State.RESUMED) {
-            if (published.matches(group, memberId, name, pictureUrl, deviceId)) {
+            if (published.told() == telling) {
                 return@repeatOnLifecycle
             }
 
@@ -186,7 +193,7 @@ fun PublishProfile(memberId: String, displayName: String?, pictureUrl: String?, 
             val listed = publishDevice(memberId = memberId, deviceId = deviceId)
 
             if (named && listed) {
-                published.remember(group, memberId, name, pictureUrl, deviceId)
+                published.remember(telling)
             }
         }
     }

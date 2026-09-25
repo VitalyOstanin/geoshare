@@ -48,7 +48,10 @@ const MEMBERS = [
 // of their own, the other joins it on the invitation the first hands out.
 // Nothing is written for them beyond the account itself — everything else in
 // the household is closed to somebody outside it, which is the point of them.
-const OUTSIDERS = ['stranger@geoshare.test', 'newcomer@geoshare.test'];
+const OUTSIDERS = [
+    { email: 'stranger@geoshare.test', name: 'Stranger' },
+    { email: 'newcomer@geoshare.test', name: 'Newcomer' },
+];
 
 // A pair of places a few hundred metres apart, so the map opens on something
 // that looks like a household rather than on null island.
@@ -78,8 +81,25 @@ async function call(url, body) {
     return answer;
 }
 
-/** The account as it is, created if the emulator has not seen it before. */
-async function account(email) {
+/**
+ * The account as it is, created if the emulator has not seen it before, and
+ * carrying the name it is known by.
+ *
+ * The name is the account's own rather than the group's: a build reads it off
+ * whoever is signed in and writes the profile from that, so an account without
+ * one has nothing to tell the group and writes no profile at all. Set on every
+ * run, because an account the emulator already held was made before this and
+ * would otherwise stay nameless.
+ */
+async function account(email, displayName) {
+    const localId = await accountOf(email);
+
+    await call(authUrl('accounts:update'), { localId, displayName });
+
+    return localId;
+}
+
+async function accountOf(email) {
     try {
         const created = await call(authUrl('accounts:signUp'), {
             email,
@@ -127,7 +147,7 @@ const sharedWith = (readers) => ({
 const uids = new Map();
 
 for (const member of MEMBERS) {
-    uids.set(member.email, await account(member.email));
+    uids.set(member.email, await account(member.email, member.name));
 }
 
 const roster = MEMBERS.map((member) => uids.get(member.email));
@@ -181,9 +201,9 @@ for (const member of MEMBERS) {
 }
 
 for (const outsider of OUTSIDERS) {
-    uids.set(outsider, await account(outsider));
+    uids.set(outsider.email, await account(outsider.email, outsider.name));
 }
 
-for (const email of [...MEMBERS.map((member) => member.email), ...OUTSIDERS]) {
+for (const { email } of [...MEMBERS, ...OUTSIDERS]) {
     console.log(`${email}  ${uids.get(email)}`);
 }
