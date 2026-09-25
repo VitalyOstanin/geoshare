@@ -24,6 +24,8 @@ decided and tested; nothing sends a position yet.
 
 Directories appear as the corresponding part is implemented. Setting the
 Firebase project up is described in [firebase/README.md](firebase/README.md).
+The words used throughout, and the documents the database holds with how they
+relate, are in [GLOSSARY.md](GLOSSARY.md).
 
 ## How it works
 
