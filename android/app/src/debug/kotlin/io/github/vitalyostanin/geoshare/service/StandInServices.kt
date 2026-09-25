@@ -63,9 +63,19 @@ object StandInServices {
  * Offered as buttons on the sign-in screen: there is no Google account behind
  * an emulator, and typing an address on a phone keyboard to try a change is
  * time spent on nothing.
+ *
+ * The last two are on no roster: one founds a group, the other joins it on an
+ * invitation, and the way into a group is watched from both ends on the one
+ * emulator by signing out and back in as the other.
  */
 val STAND_IN_ACCOUNTS: List<String> =
-    listOf("parent@geoshare.test", "spouse@geoshare.test", "child@geoshare.test")
+    listOf(
+        "parent@geoshare.test",
+        "spouse@geoshare.test",
+        "child@geoshare.test",
+        "stranger@geoshare.test",
+        "newcomer@geoshare.test",
+    )
 
 /** The one password all of them share; nobody types it. */
 const val STAND_IN_PASSWORD = "geoshare"

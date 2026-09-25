@@ -29,7 +29,7 @@ function projectOfTheApplication() {
     return JSON.parse(readFileSync(services, 'utf8')).project_info.project_id;
 }
 
-// The same password for all three: the sign-in screen of a build pointed at
+// The same password for all of them: the sign-in screen of a build pointed at
 // the emulator offers the accounts as buttons, and nobody types this.
 const PASSWORD = 'geoshare';
 
@@ -43,6 +43,12 @@ const MEMBERS = [
     { email: 'spouse@geoshare.test', name: 'Spouse', device: 'spouse-phone' },
     { email: 'child@geoshare.test', name: 'Child', device: 'child-phone' },
 ];
+
+// Accounts on no roster at all, for the way into a group: one founds a group
+// of their own, the other joins it on the invitation the first hands out.
+// Nothing is written for them beyond the account itself — everything else in
+// the household is closed to somebody outside it, which is the point of them.
+const OUTSIDERS = ['stranger@geoshare.test', 'newcomer@geoshare.test'];
 
 // A pair of places a few hundred metres apart, so the map opens on something
 // that looks like a household rather than on null island.
@@ -174,6 +180,10 @@ for (const member of MEMBERS) {
     });
 }
 
-for (const member of MEMBERS) {
-    console.log(`${member.email}  ${uids.get(member.email)}`);
+for (const outsider of OUTSIDERS) {
+    uids.set(outsider, await account(outsider));
+}
+
+for (const email of [...MEMBERS.map((member) => member.email), ...OUTSIDERS]) {
+    console.log(`${email}  ${uids.get(email)}`);
 }
