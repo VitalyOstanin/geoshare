@@ -49,7 +49,9 @@ fun memberProfiles(
             }
 
     awaitClose { subscription.remove() }
-}.comingBack("profiles")
+    // Nobody to name once the collection is closed to this phone: the names it
+    // holds are the members of a group it has been taken out of.
+}.comingBack("profiles", forgetting = { emptyMap() })
 
 /**
  * A document turns into a profile, or into nothing.
@@ -163,7 +165,10 @@ fun ownSharedWith(
             }
 
     awaitClose { subscription.remove() }
-}.comingBack("permissions")
+    // The permissions shown are the ones this phone may still read; refused,
+    // it knows of none, and the screen should not offer to withdraw what it
+    // cannot see.
+}.comingBack("permissions", forgetting = { emptyMap() })
 
 /**
  * The permissions a grant carries: a reader, and the moment their permission

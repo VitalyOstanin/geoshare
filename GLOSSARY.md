@@ -75,6 +75,7 @@ banned — they are worth knowing before reaching for one.
 | 7 | rejected, dropped | Prose for an answer the phone threw away | the fields, which are `leftOutCount`, `leftOutReason` and `leftOutSince` |
 | 8 | point | The place this phone reports, as the settings screen says it | a position document |
 | 9 | standing | Where an account stands with respect to a group: `Ungrouped`, `Outsider`, `Member`, `Administrator`, `Unrun`. One meaning only — the group this phone writes into is a `Writing`, and how a permission stands is a `Sharing` | either of those two, which were called standings until the words were separated |
+| 10 | refused | The rules answering that this client may not ask: `PERMISSION_DENIED`. What a client already holds is untrue from then on, and a subscription given something to forget says so | a connection that dropped, after which the last answer is as true as it was |
 
 The verb is free: a phone standing still, a standing question, a refusal still
 standing. What is held to one meaning is the noun.

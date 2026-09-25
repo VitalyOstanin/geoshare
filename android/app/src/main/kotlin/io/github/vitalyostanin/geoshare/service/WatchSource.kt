@@ -68,4 +68,6 @@ fun watchers(
             }
 
     awaitClose { subscription.remove() }
-}.comingBack("watch")
+    // Nobody is looking as far as a refused phone can tell, and the strip
+    // under the map should say so rather than name the watchers it last saw.
+}.comingBack("watch", forgetting = { emptyList() })

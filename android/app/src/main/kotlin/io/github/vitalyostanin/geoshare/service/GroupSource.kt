@@ -48,7 +48,11 @@ fun groupRoster(store: FirebaseFirestore = FirebaseFirestore.getInstance()): Flo
             }
 
         awaitClose { subscription.remove() }
-    }.comingBack("roster")
+        // A refusal reads the same way as a group that was never made, which
+        // is what it amounts to for this phone: whoever is looking is offered
+        // the two ways into a group rather than left with a roster they are
+        // no longer on.
+    }.comingBack("roster", forgetting = { null })
 
 private fun rosterOf(snapshot: DocumentSnapshot): Roster = Roster(
     members = snapshot.get(GroupField.MEMBERS).asIds(),
