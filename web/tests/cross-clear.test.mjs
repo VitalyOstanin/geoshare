@@ -46,7 +46,8 @@ test('the text of a card stops before the cross that closes it', async () => {
 test('each line that can reach the corner keeps that distance', async () => {
     const styles = await stylesheet();
 
-    for (const selector of ['.detail h2', '.detail-device', '.group h2', '.group-back', '.mode-help h2']) {
+    for (const selector of ['.detail h2', '.detail-device', '.group h2', '.group-back',
+        '.mode-help h2', '.admin h2']) {
         const rule = new RegExp(`\\${selector.replace(' ', ' ')} \\{[^}]*padding-right:\\s*var\\(--cross-clear\\)`);
 
         assert.match(styles, rule, `${selector} does not keep clear of the cross`);

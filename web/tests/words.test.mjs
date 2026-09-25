@@ -52,6 +52,17 @@ test('a count of left-out answers takes the ending the count asks for', () => {
     assert.equal(RU.leftOutAnswers(11), '11 позиций');
 });
 
+// The count of phones in the panel that runs the group, where the verb agrees
+// with the count as well as the noun.
+test('a count of phones shared agrees in both number and verb', () => {
+    assert.equal(RU.adminPhonesShared(1), '1 телефон доступен вам');
+    assert.equal(RU.adminPhonesShared(2), '2 телефона доступны вам');
+    assert.equal(RU.adminPhonesShared(5), '5 телефонов доступны вам');
+    assert.equal(RU.adminPhonesShared(21), '21 телефон доступен вам');
+    assert.equal(EN.adminPhonesShared(1), '1 phone shared with you');
+    assert.equal(EN.adminPhonesShared(2), '2 phones shared with you');
+});
+
 test('an age takes the ending its unit and count ask for', () => {
     assert.equal(RU.ago(1, 'minutes'), '1 минуту назад');
     assert.equal(RU.ago(3, 'minutes'), '3 минуты назад');

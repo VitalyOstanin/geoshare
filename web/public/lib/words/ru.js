@@ -255,6 +255,14 @@ export const RU = {
     groupRemove: 'Убрать',
     groupUnrun: 'Группу никто не ведёт, её состав задаётся в консоли Firebase.',
 
+    // The panel the member running the group opens.
+    adminTitle: 'Управление группой',
+    adminYou: 'это вы',
+    adminNotShared: 'не делится с вами',
+    adminPhonesShared: (count) => `${count} `
+        + `${counted(count, 'телефон', 'телефона', 'телефонов')} `
+        + `${counted(count, 'доступен', 'доступны', 'доступны')} вам`,
+
     // What a refused write says.
     groupRefused: 'База отказала. Возможно, приглашение истекло или группа уже создана.',
 };

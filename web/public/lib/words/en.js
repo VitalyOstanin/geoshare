@@ -248,6 +248,17 @@ export const EN = {
     groupRemove: 'Remove',
     groupUnrun: 'Nobody runs this group, so its members are set from the Firebase console.',
 
+    // The panel the member running the group opens: the household seen whole,
+    // and the two acts that are running it — handing out an invitation and
+    // taking somebody off the roster.
+    adminTitle: 'Running the group',
+    adminYou: 'you',
+    // Said of a member whose phones this viewer may not read. Their phones are
+    // named in their grant, which is closed to everybody they have not shared
+    // with, so this is what is known here rather than what they own.
+    adminNotShared: 'not sharing with you',
+    adminPhonesShared: (count) => `${count} ${count === 1 ? 'phone' : 'phones'} shared with you`,
+
     // What a refused write says. The rules weigh several things at once — a
     // code that has run out, a group already made, a member the last
     // administrator cannot be taken from — and which of them it was is not

@@ -84,15 +84,14 @@
                     <p id="group-note" hidden></p>
                     <div id="group-members"></div>
 
-                    <div id="group-invitation" hidden>
-                        <code id="group-code"></code>
-                        <p id="group-code-lasts"></p>
-                    </div>
-
                     <div id="group-buttons">
                         <button id="group-found" type="button" hidden></button>
-                        <button id="group-make-invitation" type="button" hidden></button>
-                        <button id="group-copy" type="button" hidden></button>
+                        <!-- Handing out invitations and taking members off are
+                             not settings of this browser, so they are not in
+                             this menu: the button opens the panel that holds
+                             them, and only the member running the group is
+                             offered it. -->
+                        <button id="group-admin" type="button" hidden></button>
                     </div>
 
                     <!-- Nothing here is capitalised for the person typing:
@@ -112,6 +111,33 @@
                 <button id="sign-out-button" type="button" role="menuitem">Sign out</button>
             </div>
         </div>
+
+        <!-- The group seen whole, by the member who runs it. A window of its
+             own rather than more of the account menu: what it answers is not
+             "how does this browser behave" but "what does the household look
+             like from here", and the two questions are asked months apart.
+
+             Kept in the markup rather than built on opening, the way the help
+             windows are: the roster behind it changes while it stands, and
+             what it shows has to be drawn again when it does. -->
+        <dialog id="admin" class="admin">
+            <button id="admin-close" class="close-cross" type="button">×</button>
+            <h2 id="admin-title"></h2>
+            <div id="admin-members"></div>
+
+            <div id="admin-invitation" hidden>
+                <code id="admin-code"></code>
+                <p id="admin-code-lasts"></p>
+            </div>
+
+            <div id="admin-buttons">
+                <button id="admin-make-invitation" type="button"></button>
+                <button id="admin-copy" type="button" hidden></button>
+            </div>
+
+            <p id="admin-said" hidden></p>
+            <p id="admin-error" class="error" hidden></p>
+        </dialog>
 
         <section id="panel" hidden>
             <!-- The card belongs to the strip below it rather than to a

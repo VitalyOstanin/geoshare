@@ -3,6 +3,8 @@
 import { ageText, isStale, positionAge } from './lib/age.js';
 import { showFace } from './lib/faces.js';
 import { FOLLOW_ALL, FOLLOW_ONE } from './lib/following.js';
+import { groupOverview } from './lib/group-lines.js';
+import { outsideTheBox } from './lib/mode-help.js';
 import {
     advanceFollow,
     batteryText,
@@ -22,6 +24,7 @@ import {
     memberName,
     orderedForNavigation,
     positionDocuments,
+    shortName,
 } from './lib/members.js';
 import { applyTheme, readTheme, writeTheme } from './lib/theme.js';
 import { watchingMembers } from './lib/watchers.js';
@@ -32,7 +35,6 @@ import {
     UNGROUPED,
     UNRUN,
     invitationFrom,
-    mayBeRemoved,
     standingIn,
 } from './lib/membership.js';
 import {
@@ -81,17 +83,24 @@ const elements = {
     groupLabel: document.querySelector('#group-label'),
     groupNote: document.querySelector('#group-note'),
     groupMembers: document.querySelector('#group-members'),
-    groupInvitation: document.querySelector('#group-invitation'),
-    groupCode: document.querySelector('#group-code'),
-    groupCodeLasts: document.querySelector('#group-code-lasts'),
     groupFound: document.querySelector('#group-found'),
-    groupMakeInvitation: document.querySelector('#group-make-invitation'),
-    groupCopy: document.querySelector('#group-copy'),
+    groupAdmin: document.querySelector('#group-admin'),
     groupJoin: document.querySelector('#group-join'),
     groupTyped: document.querySelector('#group-typed'),
     groupJoinButton: document.querySelector('#group-join-button'),
     groupSaid: document.querySelector('#group-said'),
     groupError: document.querySelector('#group-error'),
+    admin: document.querySelector('#admin'),
+    adminClose: document.querySelector('#admin-close'),
+    adminTitle: document.querySelector('#admin-title'),
+    adminMembers: document.querySelector('#admin-members'),
+    adminInvitation: document.querySelector('#admin-invitation'),
+    adminCode: document.querySelector('#admin-code'),
+    adminCodeLasts: document.querySelector('#admin-code-lasts'),
+    adminMakeInvitation: document.querySelector('#admin-make-invitation'),
+    adminCopy: document.querySelector('#admin-copy'),
+    adminSaid: document.querySelector('#admin-said'),
+    adminError: document.querySelector('#admin-error'),
 };
 
 const state = {
@@ -350,6 +359,9 @@ function start() {
             state.reachable = true;
             publishProfile(state.member, profiles.get(state.member.memberId), () => {});
             followGrants(profiles);
+            // The names in the menu and in the panel are read from the
+            // profiles, so a member signing in for the first time changes both.
+            drawGroup();
             render();
         },
         () => {
@@ -393,6 +405,9 @@ function followGrants(profiles) {
     state.stopGrants = watchGrants(memberIds, (grants) => {
         state.grants = grants;
         followPositions(grants);
+        // What the panel counts beside each member is how many of their phones
+        // this viewer may watch, which is exactly what has just changed.
+        drawGroup();
         render();
     });
 }
@@ -472,6 +487,7 @@ function stop() {
     elements.panel.hidden = true;
     elements.account.hidden = true;
     showMenu(false);
+    closeAdmin();
 }
 
 /**
@@ -479,9 +495,8 @@ function stop() {
  *
  * Four positions to stand in and a different thing in each: somebody with no
  * group is offered the two ways into one, a member sees the roster, the one
- * running the group hands out invitations and takes members off, and a group
- * nobody runs says so rather than offering controls whose every write would be
- * refused.
+ * running the group is offered the panel that runs it, and a group nobody runs
+ * says so rather than offering controls whose every write would be refused.
  *
  * Drawn apart from the map and the strip, and on its own schedule: the roster
  * changes when somebody joins or leaves, which is rare, while the strip is
@@ -502,43 +517,36 @@ function drawGroup() {
     elements.groupNote.textContent = ungrouped ? WORDS.groupNone : WORDS.groupUnrun;
 
     elements.groupMembers.replaceChildren(
-        ...(state.roster?.members ?? []).map((memberId) => memberRow(memberId, running)),
+        ...(state.roster?.members ?? []).map((memberId) => memberRow(memberId)),
     );
 
     elements.groupFound.hidden = !ungrouped;
     elements.groupFound.textContent = WORDS.groupFound;
 
+    elements.groupAdmin.hidden = !running;
+    elements.groupAdmin.textContent = WORDS.adminTitle;
+
     elements.groupJoin.hidden = !ungrouped;
     elements.groupTyped.placeholder = WORDS.groupInvitation;
     elements.groupJoinButton.textContent = WORDS.groupJoin;
-
-    elements.groupMakeInvitation.hidden = !running;
-    elements.groupMakeInvitation.textContent =
-        state.invitation === null ? WORDS.groupMakeInvitation : WORDS.groupMakeAnotherInvitation;
-
-    elements.groupInvitation.hidden = state.invitation === null;
-    elements.groupCopy.hidden = state.invitation === null;
-    elements.groupCopy.textContent = WORDS.groupCopy;
-    elements.groupCode.textContent = state.invitation ?? '';
-    elements.groupCodeLasts.textContent = WORDS.groupCodeLasts;
 
     elements.groupSaid.hidden = state.groupSaid === null;
     elements.groupSaid.textContent = state.groupSaid ?? '';
 
     elements.groupError.hidden = state.groupTrouble === null;
     elements.groupError.textContent = state.groupTrouble ?? '';
+
+    drawAdmin(running);
 }
 
 /**
- * One person on the roster: their name, whether they run the group, and the
- * way to take them off it.
+ * One person on the roster: their name, and whether they run the group.
  *
- * Nobody removes themselves here — leaving is not the same act as taking
- * somebody out, and one row holding both is how a click in the wrong place
- * empties a group — and the last administrator cannot be removed at all,
- * because the rules refuse a group nobody runs.
+ * Nobody is taken off the roster from here — that, and the invitations, are in
+ * the panel the button below opens. What is left is a list a member reads to
+ * see who else is in this.
  */
-function memberRow(memberId, running) {
+function memberRow(memberId) {
     const row = document.createElement('div');
 
     row.className = 'group-member';
@@ -560,21 +568,131 @@ function memberRow(memberId, running) {
         row.append(runs);
     }
 
-    const removable =
-        running && memberId !== state.member.memberId && mayBeRemoved(state.roster, memberId);
+    return row;
+}
 
-    if (removable) {
+/**
+ * The panel that runs the group, drawn whenever what it shows has changed.
+ *
+ * The right to be here is weighed on every drawing rather than at the opening:
+ * an administrator can be taken off the roster while the panel stands in front
+ * of them, and a refused subscription leaves this page with no roster at all.
+ * Either way the panel closes itself rather than offering writes that the rules
+ * would refuse.
+ */
+function drawAdmin(running) {
+    if (!running || state.roster === null) {
+        closeAdmin();
+
+        return;
+    }
+
+    elements.adminTitle.textContent = WORDS.adminTitle;
+    elements.adminClose.setAttribute('aria-label', WORDS.close);
+
+    elements.adminMembers.replaceChildren(
+        ...groupOverview(
+            state.roster,
+            state.profiles,
+            state.grants,
+            state.member.memberId,
+        ).map(adminRow),
+    );
+
+    elements.adminMakeInvitation.textContent =
+        state.invitation === null ? WORDS.groupMakeInvitation : WORDS.groupMakeAnotherInvitation;
+
+    elements.adminInvitation.hidden = state.invitation === null;
+    elements.adminCopy.hidden = state.invitation === null;
+    elements.adminCopy.textContent = WORDS.groupCopy;
+    elements.adminCode.textContent = state.invitation ?? '';
+    elements.adminCodeLasts.textContent = WORDS.groupCodeLasts;
+
+    elements.adminSaid.hidden = state.groupSaid === null;
+    elements.adminSaid.textContent = state.groupSaid ?? '';
+
+    elements.adminError.hidden = state.groupTrouble === null;
+    elements.adminError.textContent = state.groupTrouble ?? '';
+}
+
+/**
+ * One member in the panel: their name, what they are to this group, and the
+ * way to take them off it.
+ *
+ * Nobody removes themselves here — leaving is not the same act as taking
+ * somebody out, and one row holding both is how a click in the wrong place
+ * empties a group — and the last administrator cannot be removed at all,
+ * because the rules refuse a group nobody runs.
+ */
+function adminRow(line) {
+    const row = document.createElement('div');
+
+    row.className = 'admin-member';
+
+    const about = document.createElement('div');
+
+    const name = document.createElement('span');
+
+    name.className = 'admin-name';
+    name.textContent = line.displayName ?? shortName(line.memberId);
+
+    const said = document.createElement('span');
+
+    said.className = 'admin-about';
+    said.textContent = aboutThem(line);
+
+    about.append(name, said);
+    row.append(about);
+
+    if (line.removable) {
         const remove = document.createElement('button');
 
         remove.type = 'button';
         remove.textContent = WORDS.groupRemove;
         remove.addEventListener('click', () =>
-            tryGroupWrite(() => removeMember(state.roster, memberId)),
+            tryGroupWrite(() => removeMember(state.roster, line.memberId)),
         );
         row.append(remove);
     }
 
     return row;
+}
+
+/**
+ * The line under a name: who they are to this group, and what this viewer may
+ * see of them.
+ *
+ * Said in one line rather than in marks beside the name, because a mark has to
+ * be learnt and this is read once a month.
+ */
+function aboutThem(line) {
+    const said = [];
+
+    if (line.isYou) {
+        said.push(WORDS.adminYou);
+    }
+
+    if (line.runsTheGroup) {
+        said.push(WORDS.groupRunsIt);
+    }
+
+    said.push(
+        line.phonesShared === 0 ? WORDS.adminNotShared : WORDS.adminPhonesShared(line.phonesShared),
+    );
+
+    return said.join(', ');
+}
+
+function openAdmin() {
+    if (!elements.admin.open) {
+        elements.admin.showModal();
+    }
+}
+
+function closeAdmin() {
+    if (elements.admin.open) {
+        elements.admin.close();
+    }
 }
 
 /**
@@ -614,13 +732,43 @@ elements.groupFound.addEventListener('click', () =>
     }),
 );
 
-elements.groupMakeInvitation.addEventListener('click', () =>
+elements.groupAdmin.addEventListener('click', () => {
+    // The menu stays open behind the panel: closing it would take the way back
+    // out of the settings with it, and the panel is closed the way the help
+    // windows over the map are.
+    openAdmin();
+    drawGroup();
+});
+
+elements.adminClose.addEventListener('click', closeAdmin);
+
+// The escape key closes a dialog on its own, so only the dark behind the
+// window is left to answer for: a click there closes it the way a tap beside a
+// sheet does on a phone. Such a click arrives at the dialog itself, as does a
+// click on its own padding, so the point is compared with the box to tell the
+// two apart.
+elements.admin.addEventListener('click', (event) => {
+    // The panel is not "anywhere else" as far as the menu is concerned: it was
+    // opened from the menu, and closing it should leave the settings standing
+    // where they were rather than back on the bare map.
+    event.stopPropagation();
+
+    if (event.target !== elements.admin) {
+        return;
+    }
+
+    if (outsideTheBox(elements.admin.getBoundingClientRect(), event)) {
+        closeAdmin();
+    }
+});
+
+elements.adminMakeInvitation.addEventListener('click', () =>
     tryGroupWrite(async () => {
         state.invitation = await makeInvitation(state.member.memberId);
     }),
 );
 
-elements.groupCopy.addEventListener('click', async () => {
+elements.adminCopy.addEventListener('click', async () => {
     if (state.invitation === null) {
         return;
     }
