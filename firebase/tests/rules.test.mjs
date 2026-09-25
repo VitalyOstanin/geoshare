@@ -790,11 +790,31 @@ describe('membership', () => {
         await assertFails(setDoc(groupDoc(db), { members: [ALICE, BOB, STRANGER] }));
     });
 
+    // A group is named after the account that made it, which is the one name
+    // its founder may write.
     it('somebody signed in makes a group with themselves alone in it', async () => {
         const db = testEnv.authenticatedContext(STRANGER).firestore();
 
         await assertSucceeds(
+            setDoc(groupDoc(db, STRANGER), { members: [STRANGER], admins: [STRANGER] }),
+        );
+    });
+
+    // Otherwise one account could fill the database with groups nobody is in,
+    // a document apiece and each of them free to make.
+    it("a group cannot be given a name of its founder's choosing", async () => {
+        const db = testEnv.authenticatedContext(STRANGER).firestore();
+
+        await assertFails(
             setDoc(groupDoc(db, 'a-new-group'), { members: [STRANGER], admins: [STRANGER] }),
+        );
+    });
+
+    it("a group cannot be made under somebody else's name", async () => {
+        const db = testEnv.authenticatedContext(STRANGER).firestore();
+
+        await assertFails(
+            setDoc(groupDoc(db, ALICE), { members: [STRANGER], admins: [STRANGER] }),
         );
     });
 
@@ -804,7 +824,7 @@ describe('membership', () => {
         const db = testEnv.authenticatedContext(STRANGER).firestore();
 
         await assertFails(
-            setDoc(groupDoc(db, 'a-new-group'), { members: [STRANGER, ALICE], admins: [STRANGER] }),
+            setDoc(groupDoc(db, STRANGER), { members: [STRANGER, ALICE], admins: [STRANGER] }),
         );
     });
 
@@ -812,7 +832,7 @@ describe('membership', () => {
         const db = testEnv.authenticatedContext(STRANGER).firestore();
 
         await assertFails(
-            setDoc(groupDoc(db, 'a-new-group'), { members: [STRANGER], admins: [ALICE] }),
+            setDoc(groupDoc(db, STRANGER), { members: [STRANGER], admins: [ALICE] }),
         );
     });
 

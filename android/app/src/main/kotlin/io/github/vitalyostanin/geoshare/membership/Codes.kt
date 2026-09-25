@@ -64,3 +64,71 @@ fun tidyCode(typed: String): String =
  */
 fun looksLikeACode(tidied: String): Boolean =
     tidied.length == CODE_LENGTH && tidied.all { it in 'A'..'Z' || it in '2'..'9' }
+
+/** An invitation as it is handed over: which group, and the code that opens it. */
+data class Invitation(val group: String, val code: String)
+
+/**
+ * The single string an invitation is handed over as.
+ *
+ * The name of the group travels with the code because the rule weighing
+ * somebody's addition to a roster weighs a write to a path, and a path has to
+ * be known before the write is made: a code alone would say which door to
+ * knock at only if there were one door. The two are joined by a dot, which is
+ * neither in a code nor in the account ids a group is named after.
+ */
+fun invitationText(group: String, code: String): String = "$group.$code"
+
+/**
+ * An invitation as somebody pasted or typed it, read back into its two halves.
+ *
+ * The dot taken from the end rather than the start: the code has none, and a
+ * group named before this rule existed might. What the halves are made of is
+ * held to what the database will accept — the group becomes a document name,
+ * and a name with a slash in it is a path of somebody else's choosing.
+ *
+ * Only the code is put into upper case. The group is an account id, where case
+ * is the difference between two accounts, so it is passed on as it came with
+ * nothing but the spaces a long string picks up on its way through a chat
+ * taken out of it.
+ */
+fun invitationFrom(typed: String): Invitation? {
+    val whole = typed.filterNot { it.isWhitespace() }
+    val dot = whole.lastIndexOf('.')
+
+    if (dot <= 0) {
+        return null
+    }
+
+    val group = whole.substring(0, dot)
+    val code = tidyCode(whole.substring(dot + 1))
+
+    return if (looksLikeAGroupName(group) && looksLikeACode(code)) {
+        Invitation(group, code)
+    } else {
+        null
+    }
+}
+
+/**
+ * Whether a name is one a group could have.
+ *
+ * A group is named after the account that made it, and an account id is
+ * letters and digits; the household that started before that rule has a name
+ * of the same shape. Held to it because the name becomes part of a document
+ * path: what is refused here is a name that would reach somewhere else in the
+ * database, and the refusal is a sentence on the screen rather than an error
+ * from the server.
+ */
+fun looksLikeAGroupName(name: String): Boolean = name.isNotEmpty() &&
+    name.length <= GROUP_NAME_LIMIT &&
+    name.all { it.isLetterOrDigit() || it == '-' || it == '_' }
+
+/**
+ * How long a name of a group may be.
+ *
+ * The limit an account id is held to by the service that issues one, which is
+ * longer than any id actually seen: what the number is for is stopping a name
+ * of any length from being typed into a path, not describing the ids.
+ */
+private const val GROUP_NAME_LIMIT = 128

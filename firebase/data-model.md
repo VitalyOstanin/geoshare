@@ -31,8 +31,23 @@ opposite of the roster: they write it and nobody else does.
 | `members` | list | Who is in the group; every other rule reads membership here  |
 | `admins`  | list | Who may change the roster; a subset of `members`, never empty |
 
-A group is created by the person who will run it, alone on both lists. After
-that the roster changes in exactly two ways, and the rules allow nothing else:
+A group is created by the person who will run it, alone on both lists, and is
+named after their account: the rules allow a group to be made under the
+founder's own id and under no other name. A name of their choosing would let
+one account fill the database with groups nobody is in, a document apiece and
+each of them free to make; a name that is the account itself gives everybody
+exactly one group to make. It follows that the name is not a secret and not
+something anybody types: an invitation carries it beside the code, as the one
+string `group.code`, because the rule weighing somebody's addition to a roster
+weighs a write to a path, and the path has to be known before the write is
+made.
+
+The household that started before any of this has a group named `family`, and
+it keeps that name: the rule names the founder only while a group is being
+created, and that one was created before the rule existed.
+
+After that the roster changes in exactly two ways, and the rules allow nothing
+else:
 
 1. **Somebody joins.** The write adds the caller and only the caller, leaves
    every other field alone, and is allowed only while an invitation they hold

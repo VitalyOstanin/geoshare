@@ -16,7 +16,18 @@ import com.google.firebase.firestore.FirebaseFirestore
  * the rules, which name the same fields again in `firebase/firestore.rules`.
  */
 fun groupDocument(store: FirebaseFirestore): DocumentReference =
-    store.collection("groups").document(GROUP)
+    groupDocumentOf(store, CurrentGroup.name)
+
+/**
+ * The same document of a group this phone is not in yet.
+ *
+ * Founding one and joining one are the two writes made before the phone has
+ * moved: both have to reach a group by name, and the name is only worth
+ * remembering once the write has been allowed. Everything else goes through
+ * the group this phone is in.
+ */
+fun groupDocumentOf(store: FirebaseFirestore, group: String): DocumentReference =
+    store.collection("groups").document(group)
 
 fun positionsOf(store: FirebaseFirestore): CollectionReference =
     groupDocument(store).collection("positions")
@@ -53,8 +64,13 @@ fun invitationsOf(store: FirebaseFirestore): CollectionReference =
  * A rule cannot be told anything except through the database: the write it
  * weighs is the roster, and a code has nowhere to ride in it.
  */
-fun joinsOf(store: FirebaseFirestore): CollectionReference =
-    groupDocument(store).collection("joins")
+fun joinsOf(store: FirebaseFirestore): CollectionReference = joinsIn(groupDocument(store))
+
+/**
+ * The same collection under a group this phone has not joined yet, which is
+ * the only group a claim to hold a code is ever written into.
+ */
+fun joinsIn(group: DocumentReference): CollectionReference = group.collection("joins")
 
 /**
  * The places a false signal is known to put phones at, as this group knows

@@ -308,9 +308,26 @@ so a code lets in everybody holding it until it runs out. That is why an
 invitation carries an expiry rather than a count, and why removing a member is
 part of the same piece of work rather than a later one.
 
-Left to build on top of it: the screens. Making a group and showing the code on
-one side, entering a code on the other, and a roster the administrator can
-remove from — in the application, and on the page as far as it can go.
+Built on top of it: the screens, in the application and on the page alike.
+Somebody with no group is offered both ways in at once, because neither client
+can tell a group that has not been made from a group it is not on — both read
+as a refusal. A member sees the roster; the one running the group hands out
+invitations and takes members off; a group nobody runs says so instead of
+offering controls whose every write would be refused.
+
+A group is named after the account that made it, and the rules allow no other
+name: a name of the founder's choosing would let one account fill the database
+with groups nobody is in, a document apiece and each of them free to make. So
+the name is not something a client knows when it is built, and both remember
+which group they are in — the phone beside its sharing switch, the page in its
+browser storage — falling back to `family`, the household that started before
+any of this. An invitation is therefore one string, `group.code`: the rule
+weighing somebody's addition to a roster weighs a write to a path, and the path
+has to be known before the write is made.
+
+Left on top of that: naming administrators on a screen, which is the section
+below, and the first write that fills in the `admins` of a group made before
+the list existed.
 
 What joins is a member, meaning an account, not a phone: the code is spent by
 the person who enters it, and whatever devices they sign in on come with them.

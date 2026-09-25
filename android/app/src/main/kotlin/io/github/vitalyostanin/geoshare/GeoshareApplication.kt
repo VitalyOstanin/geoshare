@@ -3,6 +3,7 @@ package io.github.vitalyostanin.geoshare
 import android.app.Application
 import io.github.vitalyostanin.geoshare.log.AppLog
 import io.github.vitalyostanin.geoshare.log.SkyLog
+import io.github.vitalyostanin.geoshare.service.CurrentGroup
 import io.github.vitalyostanin.geoshare.service.StandInServices
 import java.io.File
 
@@ -16,6 +17,9 @@ class GeoshareApplication : Application() {
         // Before the first read or write: the library refuses to be redirected
         // once it has been used.
         StandInServices.apply()
+        // Before the first path into the database is built, which the service
+        // does without waiting for a screen.
+        CurrentGroup.start(this)
     }
 
     private companion object {

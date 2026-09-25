@@ -338,7 +338,10 @@ class MainActivity : AppCompatActivity() {
                                     onFoundGroup = {
                                         lifecycleScope.launch {
                                             withGroup("found a group") {
-                                                foundGroup(current.memberId)
+                                                foundGroup(
+                                                    this@MainActivity,
+                                                    current.memberId,
+                                                )
                                             }
                                         }
                                     },
@@ -350,10 +353,14 @@ class MainActivity : AppCompatActivity() {
                                             }
                                         }
                                     },
-                                    onJoinGroup = { code ->
+                                    onJoinGroup = { invited ->
                                         lifecycleScope.launch {
                                             withGroup("joined a group") {
-                                                joinGroup(current.memberId, code)
+                                                joinGroup(
+                                                    this@MainActivity,
+                                                    current.memberId,
+                                                    invited,
+                                                )
                                             }
                                         }
                                     },

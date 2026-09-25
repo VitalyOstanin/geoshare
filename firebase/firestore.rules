@@ -58,8 +58,17 @@ service cloud.firestore {
       // The group is made by the person who will run it, alone on the roster
       // and alone among its administrators. Nobody can conjure a group with
       // somebody else already in it.
+      //
+      // And it is named after them. A name of the founder's choosing would let
+      // one account fill the database with groups nobody is in — a document
+      // apiece, each of them free to make — while a name that is the account
+      // itself gives everybody exactly one to make and one to lose. It is also
+      // what the person invited is told: a code carries the name of the group
+      // beside it, because a rule weighs a write to a path, and a path has to
+      // be known before the write is made.
       function founding() {
         return request.auth != null &&
+               groupId == request.auth.uid &&
                request.resource.data.keys().hasOnly(['members', 'admins']) &&
                request.resource.data.members == [request.auth.uid] &&
                request.resource.data.admins == [request.auth.uid];

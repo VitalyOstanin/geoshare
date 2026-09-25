@@ -2,6 +2,7 @@ package io.github.vitalyostanin.geoshare.map
 
 import io.github.vitalyostanin.geoshare.collection.Constellation
 import io.github.vitalyostanin.geoshare.collection.SourceChoice
+import io.github.vitalyostanin.geoshare.membership.Invitation
 import io.github.vitalyostanin.geoshare.membership.Roster
 import io.github.vitalyostanin.geoshare.permission.PermissionStep
 import io.github.vitalyostanin.geoshare.service.AidingErasure
@@ -55,7 +56,10 @@ data class SettingsState(
     val startupSet: Boolean,
     /** Who is in the group, or nothing when this account cannot see a roster. */
     val roster: Roster?,
-    /** The invitation code just made, held until the screen is left. */
+    /**
+     * The invitation just made, held until the screen is left: the code with
+     * the name of the group in front of it, which is what gets handed over.
+     */
     val invitation: String?,
 )
 
@@ -80,7 +84,7 @@ data class SettingsActions(
     val onStartupSetChange: (Boolean) -> Unit,
     val onFoundGroup: () -> Unit,
     val onMakeInvitation: () -> Unit,
-    val onJoinGroup: (String) -> Unit,
+    val onJoinGroup: (Invitation) -> Unit,
     val onRemoveMember: (String) -> Unit,
     val onSignOut: () -> Unit,
 )

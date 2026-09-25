@@ -10,9 +10,6 @@ import kotlinx.coroutines.tasks.await
 import java.time.Instant
 import java.util.Date
 
-/** The one group this build shares within; membership is edited outside the application. */
-const val GROUP = "family"
-
 /**
  * Where this phone says it is.
  *
