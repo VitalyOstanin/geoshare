@@ -5,35 +5,35 @@ import org.junit.Assert.assertTrue
 import org.junit.Test
 import java.time.Instant
 
-class StandingTest {
+class GeofenceTest {
     private fun fix(latitude: Double, longitude: Double) =
         Fix(latitude, longitude, Instant.parse("2026-09-13T12:00:00Z"))
 
     @Test
     fun `arriving somewhere is not yet standing there`() {
-        assertFalse(standingAfter(listOf(Fencing.Entered)))
+        assertFalse(dwellingAfter(listOf(Fencing.Entered)))
     }
 
     @Test
     fun `staying put is`() {
-        assertTrue(standingAfter(listOf(Fencing.Entered, Fencing.Dwelt)))
+        assertTrue(dwellingAfter(listOf(Fencing.Entered, Fencing.Dwelt)))
     }
 
     @Test
     fun `leaving ends it`() {
-        assertFalse(standingAfter(listOf(Fencing.Left), before = true))
+        assertFalse(dwellingAfter(listOf(Fencing.Left), before = true))
     }
 
     @Test
     fun `the last crossing of a batch is the one that holds`() {
         val changes = listOf(Fencing.Dwelt, Fencing.Left, Fencing.Entered, Fencing.Dwelt)
 
-        assertTrue(standingAfter(changes))
+        assertTrue(dwellingAfter(changes))
     }
 
     @Test
     fun `an entry on its own leaves the answer as it was`() {
-        assertTrue(standingAfter(listOf(Fencing.Entered), before = true))
+        assertTrue(dwellingAfter(listOf(Fencing.Entered), before = true))
     }
 
     @Test

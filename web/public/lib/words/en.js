@@ -238,8 +238,8 @@ export const EN = {
     groupFound: 'Make a group',
     groupInvitation: 'Invitation',
     groupJoin: 'Join',
-    groupInvite: 'Make an invitation',
-    groupInviteAgain: 'Make another invitation',
+    groupMakeInvitation: 'Make an invitation',
+    groupMakeAnotherInvitation: 'Make another invitation',
     groupCodeLasts: 'The invitation lets somebody in for a day, and lets in everybody it '
         + 'reaches in that time. Send it whole: it names the group as well as the code.',
     groupCopy: 'Copy',

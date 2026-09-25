@@ -85,7 +85,7 @@ const elements = {
     groupCode: document.querySelector('#group-code'),
     groupCodeLasts: document.querySelector('#group-code-lasts'),
     groupFound: document.querySelector('#group-found'),
-    groupInvite: document.querySelector('#group-invite'),
+    groupMakeInvitation: document.querySelector('#group-make-invitation'),
     groupCopy: document.querySelector('#group-copy'),
     groupJoin: document.querySelector('#group-join'),
     groupTyped: document.querySelector('#group-typed'),
@@ -512,9 +512,9 @@ function drawGroup() {
     elements.groupTyped.placeholder = WORDS.groupInvitation;
     elements.groupJoinButton.textContent = WORDS.groupJoin;
 
-    elements.groupInvite.hidden = !running;
-    elements.groupInvite.textContent =
-        state.invitation === null ? WORDS.groupInvite : WORDS.groupInviteAgain;
+    elements.groupMakeInvitation.hidden = !running;
+    elements.groupMakeInvitation.textContent =
+        state.invitation === null ? WORDS.groupMakeInvitation : WORDS.groupMakeAnotherInvitation;
 
     elements.groupInvitation.hidden = state.invitation === null;
     elements.groupCopy.hidden = state.invitation === null;
@@ -614,7 +614,7 @@ elements.groupFound.addEventListener('click', () =>
     }),
 );
 
-elements.groupInvite.addEventListener('click', () =>
+elements.groupMakeInvitation.addEventListener('click', () =>
     tryGroupWrite(async () => {
         state.invitation = await makeInvitation(state.member.memberId);
     }),

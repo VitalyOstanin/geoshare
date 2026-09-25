@@ -14,7 +14,7 @@ class CarriedTest {
     // carries.
     private val home = fix(61.03268, 4.40300, noon, width = 20.0)
 
-    private val standing = PutDown(at = home, since = noon, steps = 1_000)
+    private val putDown = PutDown(at = home, since = noon, steps = 1_000)
 
     private val untouched = Carrying(stirred = false, steps = 0)
 
@@ -25,7 +25,7 @@ class CarriedTest {
         // kilometre from the flat it was lying in.
         val elsewhere = fix(61.04170, 4.40300, noon.plusSeconds(60), width = 246.0)
 
-        assertTrue(driftedWhilePutDown(standing, elsewhere, untouched))
+        assertTrue(driftedWhilePutDown(putDown, elsewhere, untouched))
     }
 
     // The answer the towers and the Wi-Fi handed phone 3 at 13:35 on
@@ -45,7 +45,7 @@ class CarriedTest {
     fun `an answer wandering inside the doubt of a put-down phone is left alone`() {
         val nearby = fix(61.03340, 4.40300, noon.plusSeconds(60), width = 30.0)
 
-        assertFalse(driftedWhilePutDown(standing, nearby, untouched))
+        assertFalse(driftedWhilePutDown(putDown, nearby, untouched))
     }
 
     // Two answers wide enough to cover the distance between them are not a
@@ -63,7 +63,7 @@ class CarriedTest {
     fun `a phone that was stirred is not accused of anything`() {
         val elsewhere = fix(61.04170, 4.40300, noon.plusSeconds(60), width = 246.0)
 
-        assertFalse(driftedWhilePutDown(standing, elsewhere, Carrying(stirred = true)))
+        assertFalse(driftedWhilePutDown(putDown, elsewhere, Carrying(stirred = true)))
     }
 
     @Test
@@ -71,7 +71,7 @@ class CarriedTest {
         val elsewhere = fix(61.04170, 4.40300, noon.plusSeconds(60), width = 246.0)
 
         assertFalse(
-            driftedWhilePutDown(standing, elsewhere, Carrying(stirred = false, steps = 20)),
+            driftedWhilePutDown(putDown, elsewhere, Carrying(stirred = false, steps = 20)),
         )
     }
 
@@ -81,7 +81,7 @@ class CarriedTest {
     fun `a handful of steps leaves the answer to explain itself`() {
         val elsewhere = fix(61.04170, 4.40300, noon.plusSeconds(60), width = 246.0)
 
-        assertTrue(driftedWhilePutDown(standing, elsewhere, Carrying(stirred = false, steps = 5)))
+        assertTrue(driftedWhilePutDown(putDown, elsewhere, Carrying(stirred = false, steps = 5)))
     }
 
     @Test
@@ -89,7 +89,7 @@ class CarriedTest {
         val elsewhere = fix(61.04170, 4.40300, noon.plusSeconds(60), width = 246.0)
 
         assertFalse(
-            driftedWhilePutDown(standing, elsewhere, Carrying(stirred = false, told = false)),
+            driftedWhilePutDown(putDown, elsewhere, Carrying(stirred = false, told = false)),
         )
     }
 
@@ -97,7 +97,7 @@ class CarriedTest {
     fun `an answer from before the phone settled is about another part of the day`() {
         val earlier = fix(61.04170, 4.40300, noon.minusSeconds(60), width = 246.0)
 
-        assertFalse(driftedWhilePutDown(standing, earlier, untouched))
+        assertFalse(driftedWhilePutDown(putDown, earlier, untouched))
     }
 
     @Test
@@ -136,14 +136,14 @@ class CarriedTest {
     @Test
     fun `stirs from before the phone settled say nothing about it`() {
         val carrying =
-            carryingSince(standing, listOf(Stir(noon.minusSeconds(30)), Stir(noon.minusSeconds(5))))
+            carryingSince(putDown, listOf(Stir(noon.minusSeconds(30)), Stir(noon.minusSeconds(5))))
 
         assertFalse(carrying.stirred)
     }
 
     @Test
     fun `a stir inside the anchor's watch undoes it however late it arrives`() {
-        val carrying = carryingSince(standing, listOf(Stir(noon.plusSeconds(30))))
+        val carrying = carryingSince(putDown, listOf(Stir(noon.plusSeconds(30))))
 
         assertTrue(carrying.stirred)
     }
@@ -155,7 +155,7 @@ class CarriedTest {
     fun `steps are counted from where the counter stood at the anchor`() {
         val carrying =
             carryingSince(
-                standing,
+                putDown,
                 listOf(Stir(noon.plusSeconds(60), steps = 1_050)),
             )
 
@@ -175,7 +175,7 @@ class CarriedTest {
     // metres down a street while the receiver goes on reporting the same
     // doorway to within ten metres.
     @Test
-    fun `a narrow answer standing still through a walk is pinned in place`() {
+    fun `a narrow answer putDown still through a walk is pinned in place`() {
         val walked = walk(steps = 500)
         val doorway = fix(61.03268, 4.40300, noon, width = 10.0)
         val same = fix(61.03270, 4.40302, noon.plusSeconds(300), width = 12.0)
@@ -206,7 +206,7 @@ class CarriedTest {
     // A place worked out from the towers does not move while its owner walks a
     // few streets, and there is nothing wrong with that.
     @Test
-    fun `a wide answer standing still is not accused of anything`() {
+    fun `a wide answer putDown still is not accused of anything`() {
         val walked = walk(steps = 500)
         val district = fix(61.03268, 4.40300, noon, width = 700.0)
         val same = fix(61.03270, 4.40302, noon.plusSeconds(300), width = 700.0)
@@ -278,7 +278,7 @@ class CarriedTest {
     fun `a phone nobody touched is not travelling at the speed of a car`() {
         val moving = fix(61.11864, 5.38881, noon.plusSeconds(60), width = 15.0, speedMps = 33.3)
 
-        assertTrue(hurriedWhilePutDown(standing, moving, untouched))
+        assertTrue(hurriedWhilePutDown(putDown, moving, untouched))
     }
 
     // What the distance rule cannot do: the place is still inside the anchor's
@@ -288,8 +288,8 @@ class CarriedTest {
     fun `a speed is caught before the answer has gone anywhere`() {
         val nearby = fix(61.03300, 4.40300, noon.plusSeconds(60), width = 15.0, speedMps = 33.3)
 
-        assertFalse(driftedWhilePutDown(standing, nearby, untouched))
-        assertTrue(hurriedWhilePutDown(standing, nearby, untouched))
+        assertFalse(driftedWhilePutDown(putDown, nearby, untouched))
+        assertTrue(hurriedWhilePutDown(putDown, nearby, untouched))
     }
 
     // Of 6,405 answers the phones gave from home over 14—16.09.2026, nine in
@@ -298,21 +298,21 @@ class CarriedTest {
     fun `a phone lying still is told it is going nowhere`() {
         val resting = fix(61.03268, 4.40300, noon.plusSeconds(60), width = 15.0, speedMps = 0.0)
 
-        assertFalse(hurriedWhilePutDown(standing, resting, untouched))
+        assertFalse(hurriedWhilePutDown(putDown, resting, untouched))
     }
 
     @Test
     fun `a phone somebody picked up may honestly be travelling`() {
         val moving = fix(61.11864, 5.38881, noon.plusSeconds(60), width = 15.0, speedMps = 33.3)
 
-        assertFalse(hurriedWhilePutDown(standing, moving, Carrying(stirred = true)))
+        assertFalse(hurriedWhilePutDown(putDown, moving, Carrying(stirred = true)))
     }
 
     @Test
     fun `an answer that named no speed is not judged on one`() {
         val silent = fix(61.11864, 5.38881, noon.plusSeconds(60), width = 15.0)
 
-        assertFalse(hurriedWhilePutDown(standing, silent, untouched))
+        assertFalse(hurriedWhilePutDown(putDown, silent, untouched))
     }
 
     @Test

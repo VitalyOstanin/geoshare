@@ -167,8 +167,8 @@
     <string name="group_found">Make a group</string>
     <string name="group_code_label">Invitation</string>
     <string name="group_join">Join</string>
-    <string name="group_invite">Make an invitation</string>
-    <string name="group_invite_again">Make another invitation</string>
+    <string name="group_make_invitation">Make an invitation</string>
+    <string name="group_make_another_invitation">Make another invitation</string>
     <string name="group_code_lasts">The invitation lets somebody in for a day, and lets in everybody it reaches in that time. Send it whole: it names the group as well as the code.</string>
     <string name="group_copy">Copy</string>
     <string name="group_copied">Invitation copied</string>

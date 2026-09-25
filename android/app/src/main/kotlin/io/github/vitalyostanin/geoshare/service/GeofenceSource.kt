@@ -17,7 +17,7 @@ import io.github.vitalyostanin.geoshare.collection.Fix
 import io.github.vitalyostanin.geoshare.collection.GEOFENCE_RADIUS_METRES
 import io.github.vitalyostanin.geoshare.collection.GEOFENCE_RESPONSIVENESS
 import io.github.vitalyostanin.geoshare.collection.GEOFENCE_SETTLING
-import io.github.vitalyostanin.geoshare.collection.standingAfter
+import io.github.vitalyostanin.geoshare.collection.dwellingAfter
 import io.github.vitalyostanin.geoshare.log.AppLog
 import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.Flow
@@ -54,7 +54,7 @@ private const val FENCE = "last-written-position"
  */
 @SuppressLint("MissingPermission")
 fun standingStill(context: Context, centres: Flow<Fix?>): Flow<Boolean> = callbackFlow {
-    var standing = false
+    var dwelling = false
 
     send(false)
 
@@ -72,9 +72,9 @@ fun standingStill(context: Context, centres: Flow<Fix?>): Flow<Boolean> = callba
 
                 val crossing = crossingOf(event.geofenceTransition) ?: return
 
-                standing = standingAfter(listOf(crossing), standing)
-                AppLog.i(TAG, "the phone is ${if (standing) "settled" else "away from the fence"}")
-                trySend(standing)
+                dwelling = dwellingAfter(listOf(crossing), dwelling)
+                AppLog.i(TAG, "the phone is ${if (dwelling) "settled" else "away from the fence"}")
+                trySend(dwelling)
             }
         }
 
@@ -103,7 +103,7 @@ fun standingStill(context: Context, centres: Flow<Fix?>): Flow<Boolean> = callba
             // The old fence's verdict does not carry over to the new one, and
             // a phone that has just moved its fence has by definition gone
             // somewhere: it starts outside until the platform says otherwise.
-            standing = false
+            dwelling = false
             trySend(false)
 
             client

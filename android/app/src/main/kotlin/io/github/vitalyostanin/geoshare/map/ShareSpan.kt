@@ -55,22 +55,26 @@ fun shareUntil(span: ShareSpan, now: Instant): Instant? = when (span) {
  * Three answers of its own rather than a span that might be missing: a `when`
  * over spans had to keep a branch for the three that cannot arrive, which is a
  * branch nothing can be said about and nothing can test.
+ *
+ * Named for the sharing rather than for a standing: a standing is where an
+ * account stands with respect to a group, which is a different question
+ * answered in `membership`.
  */
-sealed interface Standing {
+sealed interface Sharing {
     /** Not shared, or shared until a moment that has passed. */
-    data object Never : Standing
+    data object Never : Sharing
 
     /** Shared with no end named. */
-    data object Endless : Standing
+    data object Endless : Sharing
 
     /** Shared until this moment, which is still ahead. */
-    data class Until(val moment: Instant) : Standing
+    data class Until(val moment: Instant) : Sharing
 }
 
-fun standingOf(until: Instant?, now: Instant): Standing = when {
-    until == null || !until.isAfter(now) -> Standing.Never
-    until.isAfter(ENDLESS_FROM) -> Standing.Endless
-    else -> Standing.Until(until)
+fun sharingOf(until: Instant?, now: Instant): Sharing = when {
+    until == null || !until.isAfter(now) -> Sharing.Never
+    until.isAfter(ENDLESS_FROM) -> Sharing.Endless
+    else -> Sharing.Until(until)
 }
 
 /**

@@ -99,7 +99,7 @@ private fun SignedOut(
         }
     }
 
-    // A dismissed chooser is the user saying "not now"; answering it with an
+    // A dismissed chooser is the person saying "not now"; answering it with an
     // error message would be arguing.
     if (failure != null && failure != SignInFailure.Cancelled) {
         Text(

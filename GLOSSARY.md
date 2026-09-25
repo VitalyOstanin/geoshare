@@ -74,7 +74,10 @@ banned — they are worth knowing before reaching for one.
 | 6 | share, sharing | Giving out one's own position: `sharedWith`, "Share my position" | a permission, which is one entry of that map |
 | 7 | rejected, dropped | Prose for an answer the phone threw away | the fields, which are `leftOutCount`, `leftOutReason` and `leftOutSince` |
 | 8 | point | The place this phone reports, as the settings screen says it | a position document |
-| 9 | standing | Where an account stands with respect to a group: `Ungrouped`, `Outsider`, `Member`, `Administrator`, `Unrun` | the group this phone writes into, which `CurrentGroup` unfortunately also calls a `Standing`; the two are unrelated and one of them should be renamed |
+| 9 | standing | Where an account stands with respect to a group: `Ungrouped`, `Outsider`, `Member`, `Administrator`, `Unrun`. One meaning only — the group this phone writes into is a `Writing`, and how a permission stands is a `Sharing` | either of those two, which were called standings until the words were separated |
+
+The verb is free: a phone standing still, a standing question, a refusal still
+standing. What is held to one meaning is the noun.
 
 Two more words are deliberately not restricted. **Household** is used in prose
 for the people in a group, where "group" would read as the document; it names
@@ -90,10 +93,10 @@ project's own description of who it is for.
 | 2 | group id | The name of that document. For a group founded on a phone it is the account id of the founder; the household that predates invitations is named `family` | `firestore.rules`, `founding()` |
 | 3 | roster | The `members` array: the account ids of everybody in the group. At most 50 | `firestore.rules`, `rosterFits()` |
 | 4 | administrator | An account in the `admins` array. Hands out invitations, puts members on the roster and takes them off, hands the running of the group to another member, and edits the group's settings and its false places | `firestore.rules`, `administering()` |
-| 5 | standing | Where the account signed in stands with respect to a group, as the screens decide what to offer: `Ungrouped`, `Outsider`, `Member`, `Administrator`, `Unrun` | `android/.../membership/Roster.kt` |
+| 5 | standing | Where the account signed in stands with respect to a group, as the screens decide what to offer: `Ungrouped`, `Outsider`, `Member`, `Administrator`, `Unrun`. The page names four of them — an account outside a group and a group not yet made are one answer there, because from outside they cannot be told apart | `android/.../membership/Roster.kt`, `web/public/lib/membership.js` |
 | 6 | unrun group | A group with an empty `admins` array: nobody may change its roster, and the screens say so rather than offering controls every write would refuse | `Roster.kt`, `firestore.rules` |
 | 7 | member id | An account id, as the sign-in provider issues it. The name of a profile, of a grant and of a join claim, the first half of a position id, and a field of its own inside a position and a watch claim | `android/.../auth/AuthState.kt` |
-| 8 | current group | Which group this phone writes into, remembered on the phone itself and given out as a standing with a turn counter, so that founding or joining rebuilds every subscription | `android/.../service/CurrentGroup.kt` |
+| 8 | current group | Which group this phone writes into, remembered on the phone itself and given out as a writing with a turn counter, so that founding or joining rebuilds every subscription | `android/.../service/CurrentGroup.kt` |
 
 ## Getting into a group
 
@@ -117,6 +120,8 @@ project's own description of who it is for.
 | 5 | devices | The identifiers of the phones this member carries. A reader learns from here which position documents to read, because the collection of positions cannot be listed. At most 10 | `MemberGrant.kt` |
 | 6 | shared with | The readers this member allows, each with the moment their permission runs out. At most 50 | `MemberGrant.kt` |
 | 7 | permission | One entry of `sharedWith`: one reader and one expiry. Weighed against the server's clock on every read of a position | `firestore.rules`, `mayRead()` |
+| 8 | sharing | How a permission stands, as the screen has to say it: `Never` for none or one that has run out, `Endless` for one with no end named, `Until` for one counting down | `android/.../map/ShareSpan.kt`, `Sharing` |
+| 9 | span | The length a permission is given for: nothing, an hour, eight hours, a day, or without an end. What a member picks; the moment it ends is worked out from it | `ShareSpan.kt`, `ShareSpan` |
 
 ## Positions
 
@@ -169,7 +174,7 @@ decision is made in.
 | 5 | circling | A run of answers lying round a circle rather than along a road — the shape of a transmitter overhead rather than of a journey | `android/.../collection/Circling.kt` |
 | 6 | circle limits | The eight numbers circling is judged by. Held in the group's settings so that narrowing them does not mean publishing a build | `Circling.kt`, `firestore.rules`, `settingNumbers()` |
 | 7 | false place | A place the group has recorded as one where receivers are told a lie: a centre, a radius and a name. Read by everybody in the group, written by an administrator | `firestore.rules`, `match /falsePlaces/{placeId}`; `android/.../collection/FalsePlaces.kt` |
-| 8 | geofence, dwelt | The fence around the place the phone last wrote, and the crossing that counts: entering changes nothing, staying does | `android/.../collection/Standing.kt` |
+| 8 | geofence, dwelt | The fence around the place the phone last wrote, and the crossing that counts: entering changes nothing, staying does | `android/.../collection/Geofence.kt` |
 
 ## What a phone keeps to itself
 
@@ -180,7 +185,7 @@ the phone and are named here because the code names them.
 |---|------|-------|------------|
 | 1 | profile told | What this phone has already had accepted about its member: the group, the account, the name, the picture and the device. Compared whole, so joining another group is an introduction from scratch | `android/.../map/PublishedProfile.kt` |
 | 2 | device identity | The identifier a phone made for itself on first launch, used in its position id, its watch id and its member's grant | `android/.../service/DeviceIdentity.kt` |
-| 3 | current standing | The name of the group this phone writes into, with a counter that grows on every move, so that subscriptions rebuild even when the name comes back the same. Named `CurrentGroup.Standing` in the code, which collides with the standing of an account in a group | `android/.../service/CurrentGroup.kt` |
+| 3 | writing | Which group this phone is writing into: the name, with a counter that grows on every move, so that subscriptions rebuild even when the name comes back the same | `android/.../service/CurrentGroup.kt`, `CurrentGroup.Writing` |
 
 ## The clients and the stand-in stand
 

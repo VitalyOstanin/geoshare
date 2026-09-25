@@ -32,19 +32,19 @@ import java.time.Instant
  */
 @Composable
 fun rememberMemberPositions(grants: Map<String, MemberGrant>): State<MembersInView> {
-    val standing = groupNow()
+    val writing = groupNow()
     val documents = remember(grants) { positionDocuments(grants) }
-    val positions = remember(standing, documents) { memberPositions(documents) }
+    val positions = remember(writing, documents) { memberPositions(documents) }
 
     return positions.collectAsStateWithLifecycle(initialValue = MembersInView())
 }
 
 /**
- * Where this phone stands with its group, as something a subscription can be
+ * Which group this phone is writing into, as something a subscription can be
  * rebuilt on.
  *
  * Every path below is built around the name, and founding a group or joining
- * one changes where this phone stands while the screen is open. Without this
+ * one changes where this phone writes while the screen is open. Without this
  * the subscriptions would go on asking a question the rules refuse — either
  * about the group the phone has left, or about the one it had not yet been let
  * into — and a refused subscription is only taken out again after a wait that
@@ -52,8 +52,8 @@ fun rememberMemberPositions(grants: Map<String, MemberGrant>): State<MembersInVi
  * minutes.
  */
 @Composable
-private fun groupNow(): CurrentGroup.Standing =
-    CurrentGroup.standings.collectAsStateWithLifecycle().value
+private fun groupNow(): CurrentGroup.Writing =
+    CurrentGroup.writings.collectAsStateWithLifecycle().value
 
 /**
  * What the members give out, collected while a screen is up.
@@ -64,9 +64,9 @@ private fun groupNow(): CurrentGroup.Standing =
  */
 @Composable
 fun rememberMemberGrants(profiles: Map<String, MemberProfile>?): State<Map<String, MemberGrant>> {
-    val standing = groupNow()
+    val writing = groupNow()
     val memberIds = remember(profiles) { profiles.orEmpty().keys.sorted() }
-    val grants = remember(standing, memberIds) { memberGrants(memberIds) }
+    val grants = remember(writing, memberIds) { memberGrants(memberIds) }
 
     return grants.collectAsStateWithLifecycle(initialValue = emptyMap())
 }
@@ -81,9 +81,9 @@ fun rememberMemberGrants(profiles: Map<String, MemberProfile>?): State<Map<Strin
  */
 @Composable
 fun rememberWatchers(memberId: String, deviceId: String): State<List<Watcher>> {
-    val standing = groupNow()
+    val writing = groupNow()
     val looking =
-        remember(standing, memberId, deviceId) { watchers(positionId(memberId, deviceId)) }
+        remember(writing, memberId, deviceId) { watchers(positionId(memberId, deviceId)) }
 
     return looking.collectAsStateWithLifecycle(initialValue = emptyList())
 }
@@ -98,8 +98,8 @@ fun rememberWatchers(memberId: String, deviceId: String): State<List<Watcher>> {
  */
 @Composable
 fun rememberMemberProfiles(): State<Map<String, MemberProfile>?> {
-    val standing = groupNow()
-    val profiles = remember(standing) { memberProfiles() }
+    val writing = groupNow()
+    val profiles = remember(writing) { memberProfiles() }
 
     return profiles.collectAsStateWithLifecycle(initialValue = null)
 }
@@ -115,8 +115,8 @@ fun rememberMemberProfiles(): State<Map<String, MemberProfile>?> {
  */
 @Composable
 fun rememberGroupRoster(): State<Roster?> {
-    val standing = groupNow()
-    val roster = remember(standing) { groupRoster() }
+    val writing = groupNow()
+    val roster = remember(writing) { groupRoster() }
 
     return roster.collectAsStateWithLifecycle(initialValue = null)
 }
@@ -130,8 +130,8 @@ fun rememberGroupRoster(): State<Roster?> {
  */
 @Composable
 fun rememberOwnSharedWith(memberId: String): State<Map<String, Instant>> {
-    val standing = groupNow()
-    val permissions = remember(standing, memberId) { ownSharedWith(memberId) }
+    val writing = groupNow()
+    val permissions = remember(writing, memberId) { ownSharedWith(memberId) }
 
     return permissions.collectAsStateWithLifecycle(initialValue = emptyMap())
 }
@@ -164,17 +164,17 @@ fun PublishProfile(memberId: String, displayName: String?, pictureUrl: String?, 
     // never having published: the new group has been told nothing. Written
     // again on being let into a group as well, because the attempt made before
     // this phone was on the roster was refused.
-    val standing = groupNow()
+    val writing = groupNow()
     val telling =
         ProfileTold(
-            group = standing.name,
+            group = writing.name,
             memberId = memberId,
             displayName = name,
             pictureUrl = pictureUrl,
             deviceId = deviceId,
         )
 
-    LaunchedEffect(standing, telling, owner) {
+    LaunchedEffect(writing, telling, owner) {
         owner.repeatOnLifecycle(Lifecycle.State.RESUMED) {
             if (published.told() == telling) {
                 return@repeatOnLifecycle

@@ -245,8 +245,8 @@ export const RU = {
     groupFound: 'Создать группу',
     groupInvitation: 'Приглашение',
     groupJoin: 'Вступить',
-    groupInvite: 'Создать приглашение',
-    groupInviteAgain: 'Создать другое приглашение',
+    groupMakeInvitation: 'Создать приглашение',
+    groupMakeAnotherInvitation: 'Создать другое приглашение',
     groupCodeLasts: 'Приглашение действует сутки и впускает всех, до кого дойдёт за это '
         + 'время. Передавайте его целиком: в нём названа и группа, и код.',
     groupCopy: 'Скопировать',

@@ -29,14 +29,14 @@ private const val TAG = "geoshare.group"
  * of those paths can be built, which is what [start] is for.
  */
 object CurrentGroup {
-    private val remembered = MutableStateFlow(Standing(INHERITED, 0))
+    private val remembered = MutableStateFlow(Writing(INHERITED, 0))
 
     /** The name to build a path out of. */
     val name: String
         get() = remembered.value.name
 
     /**
-     * Where this phone stands with its group, as something to follow.
+     * Which group this phone is writing into, as something to follow.
      *
      * The screens read every one of their subscriptions out of a path built
      * around the name, and a subscription taken out before this phone was let
@@ -47,13 +47,13 @@ object CurrentGroup {
      * because joining the group the phone already wrote into changes what the
      * rules allow without changing the name.
      */
-    val standings: StateFlow<Standing> = remembered.asStateFlow()
+    val writings: StateFlow<Writing> = remembered.asStateFlow()
 
     /** Reads back which group this phone joined, before anything reaches the database. */
     fun start(context: Context) {
         val saved = settingOf(context).getString(KEY_NAME, null) ?: INHERITED
 
-        remembered.value = Standing(saved, remembered.value.turn + 1)
+        remembered.value = Writing(saved, remembered.value.turn + 1)
 
         AppLog.i(TAG, "writing into the group $saved")
     }
@@ -69,7 +69,7 @@ object CurrentGroup {
      */
     fun moveTo(context: Context, group: String) {
         settingOf(context).edit().putString(KEY_NAME, group).apply()
-        remembered.value = Standing(group, remembered.value.turn + 1)
+        remembered.value = Writing(group, remembered.value.turn + 1)
 
         AppLog.i(TAG, "now writing into the group $group")
     }
@@ -83,8 +83,12 @@ object CurrentGroup {
      * The count is there because the name alone does not say everything that
      * matters: a phone that has just been let into the group it was already
      * writing into has the same name and a different answer from the rules.
+     *
+     * Named for the writing rather than for a standing, because a standing is
+     * already where an account stands with respect to a group — a different
+     * question, answered in `membership`.
      */
-    data class Standing(val name: String, val turn: Long)
+    data class Writing(val name: String, val turn: Long)
 }
 
 /**

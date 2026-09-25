@@ -60,12 +60,12 @@ enum class Fencing {
  * one is what holds now. Entering changes nothing by itself — only staying
  * does, which is what [Fencing.Dwelt] says.
  */
-fun standingAfter(changes: List<Fencing>, before: Boolean = false): Boolean =
-    changes.fold(before) { standing, change ->
+fun dwellingAfter(changes: List<Fencing>, before: Boolean = false): Boolean =
+    changes.fold(before) { dwelling, change ->
         when (change) {
             Fencing.Dwelt -> true
             Fencing.Left -> false
-            Fencing.Entered -> standing
+            Fencing.Entered -> dwelling
         }
     }
 

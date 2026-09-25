@@ -110,7 +110,7 @@ private fun ReaderRow(
         // obvious at exactly the moment it matters.
         Box {
             TextButton(onClick = { open = true }) {
-                Text(text = standingText(until, now))
+                Text(text = sharingText(until, now))
             }
 
             DropdownMenu(expanded = open, onDismissRequest = { open = false }) {
@@ -137,16 +137,16 @@ private fun ReaderRow(
  * screen is open changes the row instead of waiting for it to be reopened.
  */
 @Composable
-private fun standingText(until: Instant?, now: Instant): String =
-    when (val standing = standingOf(until, now)) {
-        Standing.Endless -> stringResource(R.string.visibility_forever)
+private fun sharingText(until: Instant?, now: Instant): String =
+    when (val sharing = sharingOf(until, now)) {
+        Sharing.Endless -> stringResource(R.string.visibility_forever)
 
-        Standing.Never -> stringResource(R.string.visibility_none)
+        Sharing.Never -> stringResource(R.string.visibility_none)
 
-        is Standing.Until ->
+        is Sharing.Until ->
             stringResource(
                 R.string.visibility_until,
-                ENDS_AT.format(standing.moment.atZone(ZoneId.systemDefault())),
+                ENDS_AT.format(sharing.moment.atZone(ZoneId.systemDefault())),
             )
     }
 

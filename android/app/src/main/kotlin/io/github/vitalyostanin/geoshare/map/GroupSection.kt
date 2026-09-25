@@ -262,7 +262,11 @@ private fun Invitation(invitation: String?, onMakeInvitation: () -> Unit) {
             Text(
                 text =
                 stringResource(
-                    if (invitation == null) R.string.group_invite else R.string.group_invite_again,
+                    if (invitation == null) {
+                        R.string.group_make_invitation
+                    } else {
+                        R.string.group_make_another_invitation
+                    },
                 ),
             )
         }

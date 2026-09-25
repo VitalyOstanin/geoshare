@@ -151,8 +151,8 @@
     <string name="group_found">Создать группу</string>
     <string name="group_code_label">Приглашение</string>
     <string name="group_join">Вступить</string>
-    <string name="group_invite">Создать приглашение</string>
-    <string name="group_invite_again">Создать другое приглашение</string>
+    <string name="group_make_invitation">Создать приглашение</string>
+    <string name="group_make_another_invitation">Создать другое приглашение</string>
     <string name="group_code_lasts">Приглашение действует сутки и впускает всех, до кого дойдёт за это время. Передавайте его целиком: в нём названа и группа, и код.</string>
     <string name="group_copy">Скопировать</string>
     <string name="group_copied">Приглашение скопировано</string>
