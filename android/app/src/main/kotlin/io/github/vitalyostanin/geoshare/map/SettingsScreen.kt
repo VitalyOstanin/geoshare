@@ -87,6 +87,8 @@ fun SettingsScreen(
     /** The clock the screen reads, so that a permission runs out while it is open. */
     now: Instant,
     onClose: () -> Unit,
+    /** The way to the screen where the group is run, offered to whoever runs it. */
+    onOpenAdmin: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     Surface(modifier = modifier.fillMaxSize()) {
@@ -194,12 +196,10 @@ fun SettingsScreen(
                 roster = settings.roster,
                 ownMemberId = ownMemberId,
                 profiles = profiles,
-                invitation = settings.invitation,
                 trouble = settings.groupTrouble,
                 onFoundGroup = actions.onFoundGroup,
-                onMakeInvitation = actions.onMakeInvitation,
                 onJoinGroup = actions.onJoinGroup,
-                onRemoveMember = actions.onRemoveMember,
+                onOpenAdmin = onOpenAdmin,
             )
 
             HorizontalDivider()

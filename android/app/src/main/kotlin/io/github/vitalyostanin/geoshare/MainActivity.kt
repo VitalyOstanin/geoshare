@@ -264,6 +264,7 @@ class MainActivity : AppCompatActivity() {
                                     sourcesLeftOut = sourcesLeftOut,
                                     aidingDoubted = aidingDoubted,
                                     roster = roster,
+                                    grants = grants,
                                     invitation = invitation,
                                     groupTrouble = groupTrouble,
                                 ),

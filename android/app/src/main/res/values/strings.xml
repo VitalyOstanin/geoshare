@@ -180,6 +180,19 @@
          administrator cannot be taken from - and which of them it was is not
          something a refusal says. -->
     <string name="group_refused">The database refused that. The invitation may have run out, or the group may already exist.</string>
+    <!-- Both the line that opens the panel and the panel's own title: the two
+         say the same thing, and a member who taps a line expects to arrive at
+         a screen carrying its name. -->
+    <string name="admin_title">Running the group</string>
+    <string name="admin_you">you</string>
+    <!-- Said of a member whose phones this one may not read. Their phones are
+         in their grant, which is closed to everybody they have not shared
+         with, so this is what is known here rather than what they own. -->
+    <string name="admin_not_shared">not sharing with you</string>
+    <plurals name="admin_phones_shared">
+        <item quantity="one">%1$d phone shared with you</item>
+        <item quantity="other">%1$d phones shared with you</item>
+    </plurals>
     <string name="visibility_title">Who sees where I am</string>
     <string name="visibility_empty">Nobody else has signed in yet.</string>
     <string name="visibility_none">not shared</string>

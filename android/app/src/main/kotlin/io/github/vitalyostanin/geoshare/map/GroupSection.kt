@@ -1,8 +1,5 @@
 package io.github.vitalyostanin.geoshare.map
 
-import android.content.ClipData
-import android.content.ClipboardManager
-import android.widget.Toast
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -19,16 +16,13 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.unit.dp
 import io.github.vitalyostanin.geoshare.R
 import io.github.vitalyostanin.geoshare.membership.Invitation
 import io.github.vitalyostanin.geoshare.membership.Roster
 import io.github.vitalyostanin.geoshare.membership.Standing
 import io.github.vitalyostanin.geoshare.membership.invitationFrom
-import io.github.vitalyostanin.geoshare.membership.mayBeRemoved
 import io.github.vitalyostanin.geoshare.membership.standingIn
 
 /**
@@ -36,9 +30,14 @@ import io.github.vitalyostanin.geoshare.membership.standingIn
  *
  * Four positions to stand in, and the screen shows a different thing in each:
  * somebody with no group offers to make one or to enter a code, a member sees
- * the roster, the one running the group hands out codes and takes members off,
+ * the roster, the one running the group is offered the screen where it is run,
  * and a group nobody runs says so rather than offering controls whose every
  * write would be refused.
+ *
+ * Running the group is not done here. Handing out a code and taking somebody
+ * off the roster are acts of a different kind from the switches around them —
+ * they change what the household is rather than how this phone behaves — and
+ * they are on a screen of their own, reached from the line below.
  */
 @Composable
 fun GroupSection(
@@ -46,14 +45,11 @@ fun GroupSection(
     ownMemberId: String,
     /** The names to show instead of account ids, as far as they are known. */
     profiles: Map<String, MemberProfile>,
-    /** The code just made, held until the screen is left. */
-    invitation: String?,
     /** Whether the last write to the group was refused. */
     trouble: Boolean,
     onFoundGroup: () -> Unit,
-    onMakeInvitation: () -> Unit,
     onJoinGroup: (Invitation) -> Unit,
-    onRemoveMember: (String) -> Unit,
+    onOpenAdmin: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val standing = standingIn(roster, ownMemberId)
@@ -72,12 +68,9 @@ fun GroupSection(
             else ->
                 TheGroup(
                     roster = roster ?: Roster(),
-                    ownMemberId = ownMemberId,
                     profiles = profiles,
                     standing = standing,
-                    invitation = invitation,
-                    onMakeInvitation = onMakeInvitation,
-                    onRemoveMember = onRemoveMember,
+                    onOpenAdmin = onOpenAdmin,
                 )
         }
 
@@ -154,32 +147,25 @@ private fun WayIn(onFoundGroup: () -> Unit, onJoinGroup: (Invitation) -> Unit) {
 @Composable
 private fun TheGroup(
     roster: Roster,
-    ownMemberId: String,
     profiles: Map<String, MemberProfile>,
     standing: Standing,
-    invitation: String?,
-    onMakeInvitation: () -> Unit,
-    onRemoveMember: (String) -> Unit,
+    onOpenAdmin: () -> Unit,
 ) {
     for (memberId in roster.members) {
         MemberRow(
-            memberId = memberId,
             name = profiles[memberId]?.displayName ?: memberId.take(NAME_FALLBACK_LENGTH),
             runsTheGroup = memberId in roster.admins,
-            // Nobody removes themselves here: leaving is not the same act as
-            // taking somebody out, and mixing the two into one row is how a
-            // tap in the wrong place empties a group.
-            removable =
-            standing == Standing.Administrator &&
-                memberId != ownMemberId &&
-                mayBeRemoved(roster, memberId),
-            onRemove = { onRemoveMember(memberId) },
         )
     }
 
     when (standing) {
         Standing.Administrator ->
-            Invitation(invitation = invitation, onMakeInvitation = onMakeInvitation)
+            TextButton(
+                onClick = onOpenAdmin,
+                modifier = Modifier.padding(start = 8.dp, top = 4.dp),
+            ) {
+                Text(text = stringResource(R.string.admin_title))
+            }
 
         Standing.Unrun ->
             Text(
@@ -192,15 +178,9 @@ private fun TheGroup(
     }
 }
 
-/** One person on the roster. */
+/** One person on the roster, named and nothing more. */
 @Composable
-private fun MemberRow(
-    memberId: String,
-    name: String,
-    runsTheGroup: Boolean,
-    removable: Boolean,
-    onRemove: () -> Unit,
-) {
+private fun MemberRow(name: String, runsTheGroup: Boolean) {
     Row(
         modifier = Modifier.fillMaxWidth().padding(start = 16.dp, end = 8.dp, top = 4.dp),
         verticalAlignment = Alignment.CenterVertically,
@@ -215,81 +195,8 @@ private fun MemberRow(
                 )
             }
         }
-
-        if (removable) {
-            TextButton(onClick = onRemove) {
-                Text(text = stringResource(R.string.group_remove))
-            }
-        }
-    }
-}
-
-/**
- * The invitation, made on demand and shown until the screen is left.
- *
- * Shown in a face whose characters are all the same width, because half of it
- * is an account id where a letter read for another is a different account, and
- * the other half is a code with the look-alike characters already left out.
- *
- * With a button that puts it on the clipboard, since it is too long to be read
- * aloud: what gets handed over is a message somebody sends, and retyping
- * thirty-odd characters by eye is where the mistakes come from.
- */
-@Composable
-private fun Invitation(invitation: String?, onMakeInvitation: () -> Unit) {
-    val context = LocalContext.current
-
-    if (invitation != null) {
-        Text(
-            text = invitation,
-            style = MaterialTheme.typography.bodyLarge,
-            fontFamily = FontFamily.Monospace,
-            modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
-        )
-
-        Text(
-            text = stringResource(R.string.group_code_lasts),
-            style = MaterialTheme.typography.bodySmall,
-            modifier = Modifier.padding(horizontal = 16.dp),
-        )
-    }
-
-    Row(
-        modifier = Modifier.fillMaxWidth().padding(horizontal = 8.dp),
-        horizontalArrangement = Arrangement.Start,
-    ) {
-        TextButton(onClick = onMakeInvitation) {
-            Text(
-                text =
-                stringResource(
-                    if (invitation == null) {
-                        R.string.group_make_invitation
-                    } else {
-                        R.string.group_make_another_invitation
-                    },
-                ),
-            )
-        }
-
-        if (invitation != null) {
-            TextButton(
-                onClick = {
-                    context
-                        .getSystemService(ClipboardManager::class.java)
-                        .setPrimaryClip(ClipData.newPlainText(CLIPBOARD_LABEL, invitation))
-                    Toast
-                        .makeText(context, R.string.group_copied, Toast.LENGTH_SHORT)
-                        .show()
-                },
-            ) {
-                Text(text = stringResource(R.string.group_copy))
-            }
-        }
     }
 }
 
 /** How much of an account id stands in for a name nobody has published. */
 private const val NAME_FALLBACK_LENGTH = 6
-
-/** What the clipboard calls what it is holding, where a system shows the name. */
-private const val CLIPBOARD_LABEL = "geoshare"

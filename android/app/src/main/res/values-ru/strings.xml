@@ -160,6 +160,15 @@
     <string name="group_remove">Убрать</string>
     <string name="group_unrun">Группу никто не ведёт, её состав задаётся в консоли Firebase.</string>
     <string name="group_refused">База отказала. Возможно, приглашение истекло или группа уже создана.</string>
+    <string name="admin_title">Управление группой</string>
+    <string name="admin_you">это вы</string>
+    <string name="admin_not_shared">не делится с вами</string>
+    <plurals name="admin_phones_shared">
+        <item quantity="one">%1$d телефон доступен вам</item>
+        <item quantity="few">%1$d телефона доступны вам</item>
+        <item quantity="many">%1$d телефонов доступны вам</item>
+        <item quantity="other">%1$d телефона доступны вам</item>
+    </plurals>
     <string name="visibility_title">Кто видит, где я</string>
     <string name="visibility_empty">Больше никто ещё не входил.</string>
     <string name="visibility_none">не показывать</string>

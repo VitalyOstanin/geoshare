@@ -62,6 +62,9 @@ import io.github.vitalyostanin.geoshare.collection.reasonsExplained
 import io.github.vitalyostanin.geoshare.collection.sourceChoiceLabel
 import io.github.vitalyostanin.geoshare.collection.sourceLeftOut
 import io.github.vitalyostanin.geoshare.collection.watchingMembers
+import io.github.vitalyostanin.geoshare.membership.Roster
+import io.github.vitalyostanin.geoshare.membership.Standing
+import io.github.vitalyostanin.geoshare.membership.standingIn
 import kotlinx.coroutines.delay
 import java.time.Instant
 import java.time.ZoneId
@@ -148,6 +151,9 @@ fun MapScreen(
     // one is: the list keeps arriving, and the card has to follow it.
     var openedGroup by remember { mutableStateOf<List<String>>(emptyList()) }
     var settingsOpen by remember { mutableStateOf(false) }
+    // Opened from within the settings and drawn over them, so that closing it
+    // puts the member back where they were rather than on the map.
+    var adminOpen by remember { mutableStateOf(false) }
     // Held by id rather than by value: the position keeps arriving, and a card
     // showing the one from when it was opened would quietly go stale.
     val opened = positions.firstOrNull { it.positionId == openedPositionId }
@@ -235,7 +241,8 @@ fun MapScreen(
     // itself only when nothing of ours is left on screen. Without these the
     // gesture leaves the application from a settings screen, which is not what
     // anybody means by it.
-    BackHandler(enabled = settingsOpen) { settingsOpen = false }
+    BackHandler(enabled = adminOpen) { adminOpen = false }
+    BackHandler(enabled = settingsOpen && !adminOpen) { settingsOpen = false }
     BackHandler(enabled = !settingsOpen && (opened != null || group.isNotEmpty())) {
         openedPositionId = null
         openedGroup = emptyList()
@@ -426,6 +433,31 @@ fun MapScreen(
             ownMemberId = ownMemberId,
             now = now,
             onClose = { settingsOpen = false },
+            onOpenAdmin = { adminOpen = true },
+        )
+    }
+
+    // Over the settings rather than instead of them: the way back out is the
+    // screen it was opened from, whichever of the two ways back is used.
+    //
+    // Weighed again on every draw rather than only when it was opened: an
+    // administrator can stop being one while the panel is up — somebody else
+    // takes the role away, or this phone is taken off the roster and the
+    // refused subscription empties it — and a panel left standing would go on
+    // offering writes that are now refused.
+    val runsTheGroup = standingIn(settings.roster, ownMemberId) == Standing.Administrator
+
+    if (settingsOpen && adminOpen && runsTheGroup) {
+        AdminPanel(
+            roster = settings.roster ?: Roster(),
+            profiles = profiles,
+            grants = settings.grants,
+            ownMemberId = ownMemberId,
+            invitation = settings.invitation,
+            trouble = settings.groupTrouble,
+            onMakeInvitation = actions.onMakeInvitation,
+            onRemoveMember = actions.onRemoveMember,
+            onClose = { adminOpen = false },
         )
     }
 }

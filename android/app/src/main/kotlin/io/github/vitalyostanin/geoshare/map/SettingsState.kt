@@ -57,6 +57,14 @@ data class SettingsState(
     /** Who is in the group, or nothing when this account cannot see a roster. */
     val roster: Roster?,
     /**
+     * What each member gives out, as far as this phone has been let see it.
+     *
+     * Carried for the panel where the group is seen whole: a member who shares
+     * with this phone is counted there by the phones they list, and one who
+     * does not is simply missing from this map.
+     */
+    val grants: Map<String, MemberGrant>,
+    /**
      * The invitation just made, held until the screen is left: the code with
      * the name of the group in front of it, which is what gets handed over.
      */
