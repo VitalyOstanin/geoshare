@@ -420,6 +420,33 @@ None of this is worth building before the two phones work. It is worth deciding
 before the storage is designed any further, since the first question decides
 whether a client may assume it knows its project at build time.
 
+**The whole path, built end to end.** Settled: somebody who does not write
+software is to get from an empty phone to a household sharing positions
+without a console and without being handed a file. Joining a group by
+invitation is built already; what is missing is everything before it, and it
+has to work as one path rather than as parts that each work on their own:
+
+- Making the project, turning on sign-in and the database, deploying the rules
+  and registering the build's fingerprint. The offered path is the script that
+  drives the Firebase command line; the manual steps stay written down for
+  somebody who cannot run it.
+- Handing the configuration to the phone. The configuration is no longer known
+  when the build is made, so the application starts Firebase from what it was
+  given rather than from a file compiled into it, and there is a screen where
+  that is entered — as a code carried across from the script rather than typed
+  field by field.
+- The same for the page, which today is configured by a file written at deploy
+  time.
+- Saying whose storage a member is in. The application knows which account owns
+  the project, and somebody joining is told before they agree to be looked at.
+- The first member founding the group, then inviting the rest, which is the
+  part that works today.
+
+What it costs: Firebase is started later than it is now, so everything reading
+the database has to cope with "not configured yet" as an ordinary state rather
+than as a failure; and the walkthrough becomes something to keep working as
+the Firebase console and its command line change under it.
+
 ## An admin panel for the family
 
 The member who owns the Firebase project is already unlike the others: the
@@ -452,6 +479,13 @@ What it costs, so that the decision is made with the price in view:
   sharing a position with them, and it should look like one: the phone says in
   its log what was asked and by whom, and the screen where the member sees it
   is not hidden behind a developer setting.
+
+Settled: this is to be built rather than weighed further. What it starts from
+is the part that needs nothing new travelling towards a phone — the group seen
+whole from one screen: every member, every device they have listed, when each
+last wrote, and who runs the group. The commands that reach into another
+phone come after that, because they wait on waking a phone that is not
+listening, which is its own unsolved item above.
 
 ### The tier, the limits and what the project has spent
 
@@ -769,3 +803,27 @@ What to check, on each of the phones rather than on one:
   on if they are not, belongs in the instructions rather than in the code —
   but it has to be found out by restarting, because nothing in the build can
   report it.
+
+## A roster the database has stopped answering for
+
+Somebody taken off the roster goes on seeing it. The subscriptions are refused
+the moment the member is gone — the log fills with `PERMISSION_DENIED` for the
+group document, the profiles, the grants and the watch claims — but nothing on
+the screen says so: `comingBack` takes the subscription out again without
+touching the last value it carried, so the roster on screen is whatever arrived
+before the refusal. A restart does not clear it either, because the database
+client answers from its own cache first and the server's refusal only arrives
+afterwards.
+
+Nothing new reaches them — the positions stop, the names stop, the claims stop
+— and the group they are looking at is a group as it stood at one moment. Still,
+a member removed from a household should see that they were removed, and the
+screen should offer the way back in it offers everybody else outside a group.
+
+What it needs is for a refusal to be an answer rather than a silence: the flows
+that carry a roster, the profiles and the grants would emit "the database will
+not answer for this any more" and the screen would show the two ways in, the way
+it does for somebody who has never been in a group. The wait that doubles stays
+where it is — the refusal can be temporary, and a member added back a minute
+later should not have to restart anything — but what is shown in the meantime
+should not be the household they are no longer part of.
