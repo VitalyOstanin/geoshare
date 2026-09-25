@@ -4,6 +4,8 @@ docs/superpowers/
 # Android / Gradle
 .gradle/
 build/
+# What the Kotlin compiler daemon leaves behind while a build is running
+.kotlin/
 local.properties
 *.apk
 *.aab

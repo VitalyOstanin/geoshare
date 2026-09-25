@@ -738,3 +738,34 @@ Worth deciding before any of this is built:
 - **Where a reminder is read back.** A time, a place ("remind me at the
   shop"), or both — the second needs the same geofencing a spoof-detection
   screen would also want, which is its own undecided piece of work.
+
+## The service coming back after a restart, checked on the phones
+
+The receiver that starts the service again after the phone restarts and after
+the application is replaced exists and is tested, but only against the code:
+`BootReceiver` has never been watched through an actual restart of an actual
+phone. That is the wrong way round for this particular piece. What it guards
+against is silence nobody notices — a phone that stopped writing still has a
+marker on everybody's map, freshly placed and slowly ageing — and the failure
+would look exactly like a phone doing nothing wrong.
+
+What to check, on each of the phones rather than on one:
+
+- **That it starts at all.** Restart the phone, leave it alone, and look for
+  the notification coming back on its own and for a position written after
+  the restart. The log says which of the two happened, `boot` or `an update`,
+  so the line is what confirms the receiver ran rather than somebody opening
+  the application by habit.
+- **That a refusal is a refusal and not a crash.** The receiver weighs four
+  conditions before starting — signed in, sharing turned on, location granted,
+  and background location granted, since a start from a receiver is a start
+  from the background — and writes the reason it stopped. A phone whose
+  location permission is "while using the app" is meant to stay quiet and say
+  so in the log, not to start and be killed by the platform.
+- **What the manufacturer does about it.** Several Android shells keep their
+  own list of applications allowed to start themselves, and an application
+  outside it never receives the broadcast at all, whatever the manifest says.
+  Whether these phones are in such a list, and what the member has to switch
+  on if they are not, belongs in the instructions rather than in the code —
+  but it has to be found out by restarting, because nothing in the build can
+  report it.
