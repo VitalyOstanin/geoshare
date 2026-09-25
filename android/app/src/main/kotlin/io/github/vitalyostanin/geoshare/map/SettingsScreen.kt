@@ -195,6 +195,7 @@ fun SettingsScreen(
                 ownMemberId = ownMemberId,
                 profiles = profiles,
                 invitation = settings.invitation,
+                trouble = settings.groupTrouble,
                 onFoundGroup = actions.onFoundGroup,
                 onMakeInvitation = actions.onMakeInvitation,
                 onJoinGroup = actions.onJoinGroup,

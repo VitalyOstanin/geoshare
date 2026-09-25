@@ -61,6 +61,15 @@ data class SettingsState(
      * the name of the group in front of it, which is what gets handed over.
      */
     val invitation: String?,
+    /**
+     * Whether the last write to the group was refused.
+     *
+     * Kept as a plain yes or no because the refusal says no more than that:
+     * the rules weigh a code that has run out, a group already made and a
+     * roster somebody else has changed all in one breath, and the screen would
+     * be guessing if it named one of them.
+     */
+    val groupTrouble: Boolean,
 )
 
 /** What the settings screen can ask for, as one value, and for the same reason. */

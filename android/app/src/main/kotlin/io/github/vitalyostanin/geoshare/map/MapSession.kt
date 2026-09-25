@@ -11,6 +11,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.repeatOnLifecycle
 import io.github.vitalyostanin.geoshare.collection.Watcher
 import io.github.vitalyostanin.geoshare.membership.Roster
+import io.github.vitalyostanin.geoshare.service.CurrentGroup
 import io.github.vitalyostanin.geoshare.service.MapOnScreen
 import io.github.vitalyostanin.geoshare.service.groupRoster
 import io.github.vitalyostanin.geoshare.service.positionId
@@ -31,11 +32,28 @@ import java.time.Instant
  */
 @Composable
 fun rememberMemberPositions(grants: Map<String, MemberGrant>): State<MembersInView> {
+    val standing = groupNow()
     val documents = remember(grants) { positionDocuments(grants) }
-    val positions = remember(documents) { memberPositions(documents) }
+    val positions = remember(standing, documents) { memberPositions(documents) }
 
     return positions.collectAsStateWithLifecycle(initialValue = MembersInView())
 }
+
+/**
+ * Where this phone stands with its group, as something a subscription can be
+ * rebuilt on.
+ *
+ * Every path below is built around the name, and founding a group or joining
+ * one changes where this phone stands while the screen is open. Without this
+ * the subscriptions would go on asking a question the rules refuse — either
+ * about the group the phone has left, or about the one it had not yet been let
+ * into — and a refused subscription is only taken out again after a wait that
+ * doubles, so somebody who had just joined would watch an empty screen for
+ * minutes.
+ */
+@Composable
+private fun groupNow(): CurrentGroup.Standing =
+    CurrentGroup.standings.collectAsStateWithLifecycle().value
 
 /**
  * What the members give out, collected while a screen is up.
@@ -46,8 +64,9 @@ fun rememberMemberPositions(grants: Map<String, MemberGrant>): State<MembersInVi
  */
 @Composable
 fun rememberMemberGrants(profiles: Map<String, MemberProfile>?): State<Map<String, MemberGrant>> {
+    val standing = groupNow()
     val memberIds = remember(profiles) { profiles.orEmpty().keys.sorted() }
-    val grants = remember(memberIds) { memberGrants(memberIds) }
+    val grants = remember(standing, memberIds) { memberGrants(memberIds) }
 
     return grants.collectAsStateWithLifecycle(initialValue = emptyMap())
 }
@@ -62,7 +81,9 @@ fun rememberMemberGrants(profiles: Map<String, MemberProfile>?): State<Map<Strin
  */
 @Composable
 fun rememberWatchers(memberId: String, deviceId: String): State<List<Watcher>> {
-    val looking = remember(memberId, deviceId) { watchers(positionId(memberId, deviceId)) }
+    val standing = groupNow()
+    val looking =
+        remember(standing, memberId, deviceId) { watchers(positionId(memberId, deviceId)) }
 
     return looking.collectAsStateWithLifecycle(initialValue = emptyList())
 }
@@ -77,7 +98,8 @@ fun rememberWatchers(memberId: String, deviceId: String): State<List<Watcher>> {
  */
 @Composable
 fun rememberMemberProfiles(): State<Map<String, MemberProfile>?> {
-    val profiles = remember { memberProfiles() }
+    val standing = groupNow()
+    val profiles = remember(standing) { memberProfiles() }
 
     return profiles.collectAsStateWithLifecycle(initialValue = null)
 }
@@ -93,7 +115,8 @@ fun rememberMemberProfiles(): State<Map<String, MemberProfile>?> {
  */
 @Composable
 fun rememberGroupRoster(): State<Roster?> {
-    val roster = remember { groupRoster() }
+    val standing = groupNow()
+    val roster = remember(standing) { groupRoster() }
 
     return roster.collectAsStateWithLifecycle(initialValue = null)
 }
@@ -107,7 +130,8 @@ fun rememberGroupRoster(): State<Roster?> {
  */
 @Composable
 fun rememberOwnSharedWith(memberId: String): State<Map<String, Instant>> {
-    val permissions = remember(memberId) { ownSharedWith(memberId) }
+    val standing = groupNow()
+    val permissions = remember(standing, memberId) { ownSharedWith(memberId) }
 
     return permissions.collectAsStateWithLifecycle(initialValue = emptyMap())
 }
@@ -136,10 +160,16 @@ fun PublishProfile(memberId: String, displayName: String?, pictureUrl: String?, 
     val context = LocalContext.current
     val published = remember(context) { PublishedProfile(context) }
     val owner = LocalLifecycleOwner.current
+    // A profile belongs to a group, so moving to another one is as good as
+    // never having published: the new group has been told nothing. Written
+    // again on being let into a group as well, because the attempt made before
+    // this phone was on the roster was refused.
+    val standing = groupNow()
+    val group = standing.name
 
-    LaunchedEffect(memberId, name, pictureUrl, deviceId, owner) {
+    LaunchedEffect(standing, memberId, name, pictureUrl, deviceId, owner) {
         owner.repeatOnLifecycle(Lifecycle.State.RESUMED) {
-            if (published.matches(memberId, name, pictureUrl, deviceId)) {
+            if (published.matches(group, memberId, name, pictureUrl, deviceId)) {
                 return@repeatOnLifecycle
             }
 
@@ -156,7 +186,7 @@ fun PublishProfile(memberId: String, displayName: String?, pictureUrl: String?, 
             val listed = publishDevice(memberId = memberId, deviceId = deviceId)
 
             if (named && listed) {
-                published.remember(memberId, name, pictureUrl, deviceId)
+                published.remember(group, memberId, name, pictureUrl, deviceId)
             }
         }
     }

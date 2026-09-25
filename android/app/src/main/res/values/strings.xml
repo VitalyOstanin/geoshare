@@ -175,6 +175,11 @@
     <string name="group_runs_it">runs the group</string>
     <string name="group_remove">Remove</string>
     <string name="group_unrun">Nobody runs this group, so its members are set from the Firebase console.</string>
+    <!-- What a refused write says. The rules weigh several things at once - a
+         code that has run out, a group already made, a member the last
+         administrator cannot be taken from - and which of them it was is not
+         something a refusal says. -->
+    <string name="group_refused">The database refused that. The invitation may have run out, or the group may already exist.</string>
     <string name="visibility_title">Who sees where I am</string>
     <string name="visibility_empty">Nobody else has signed in yet.</string>
     <string name="visibility_none">not shared</string>

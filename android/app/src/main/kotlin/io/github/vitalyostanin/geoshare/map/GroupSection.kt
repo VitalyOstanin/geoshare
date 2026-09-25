@@ -48,6 +48,8 @@ fun GroupSection(
     profiles: Map<String, MemberProfile>,
     /** The code just made, held until the screen is left. */
     invitation: String?,
+    /** Whether the last write to the group was refused. */
+    trouble: Boolean,
     onFoundGroup: () -> Unit,
     onMakeInvitation: () -> Unit,
     onJoinGroup: (Invitation) -> Unit,
@@ -77,6 +79,17 @@ fun GroupSection(
                     onMakeInvitation = onMakeInvitation,
                     onRemoveMember = onRemoveMember,
                 )
+        }
+
+        // Under both of them, because every one of the writes can be refused
+        // and none of them says which reason it was.
+        if (trouble) {
+            Text(
+                text = stringResource(R.string.group_refused),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.error,
+                modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
+            )
         }
     }
 }

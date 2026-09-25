@@ -220,6 +220,11 @@ class MainActivity : AppCompatActivity() {
                             // back, this phone included, so the only copy to
                             // show is the one just made.
                             var invitation by remember { mutableStateOf<String?>(null) }
+                            // Whether the last write to the group was refused.
+                            // Held beside the invitation and for the same
+                            // reason: nothing in the database says it, and the
+                            // person who pressed the button is owed an answer.
+                            var groupTrouble by remember { mutableStateOf(false) }
 
                             KeepWatching(current.memberId, device.id)
 
@@ -260,6 +265,7 @@ class MainActivity : AppCompatActivity() {
                                     aidingDoubted = aidingDoubted,
                                     roster = roster,
                                     invitation = invitation,
+                                    groupTrouble = groupTrouble,
                                 ),
                                 actions =
                                 SettingsActions(
@@ -337,40 +343,44 @@ class MainActivity : AppCompatActivity() {
                                     // it is not in.
                                     onFoundGroup = {
                                         lifecycleScope.launch {
-                                            withGroup("found a group") {
-                                                foundGroup(
-                                                    this@MainActivity,
-                                                    current.memberId,
-                                                )
-                                            }
+                                            groupTrouble =
+                                                !withGroup("found a group") {
+                                                    foundGroup(
+                                                        this@MainActivity,
+                                                        current.memberId,
+                                                    )
+                                                }
                                         }
                                     },
                                     onMakeInvitation = {
                                         lifecycleScope.launch {
-                                            withGroup("made an invitation") {
-                                                invitation =
-                                                    makeInvitation(current.memberId)
-                                            }
+                                            groupTrouble =
+                                                !withGroup("made an invitation") {
+                                                    invitation =
+                                                        makeInvitation(current.memberId)
+                                                }
                                         }
                                     },
                                     onJoinGroup = { invited ->
                                         lifecycleScope.launch {
-                                            withGroup("joined a group") {
-                                                joinGroup(
-                                                    this@MainActivity,
-                                                    current.memberId,
-                                                    invited,
-                                                )
-                                            }
+                                            groupTrouble =
+                                                !withGroup("joined a group") {
+                                                    joinGroup(
+                                                        this@MainActivity,
+                                                        current.memberId,
+                                                        invited,
+                                                    )
+                                                }
                                         }
                                     },
                                     onRemoveMember = { memberId ->
                                         lifecycleScope.launch {
-                                            withGroup("removed a member") {
-                                                roster?.let {
-                                                    removeFromGroup(it, memberId)
+                                            groupTrouble =
+                                                !withGroup("removed a member") {
+                                                    roster?.let {
+                                                        removeFromGroup(it, memberId)
+                                                    }
                                                 }
-                                            }
                                         }
                                     },
                                     onSignOut = { lifecycleScope.launch { signIn.signOut() } },
@@ -566,7 +576,12 @@ class MainActivity : AppCompatActivity() {
     // removed a moment ago. None of them is a fault of this phone, so the
     // refusal is written down and the screen goes on showing what the roster
     // actually says.
-    private suspend fun withGroup(done: String, write: suspend () -> Unit) {
+    //
+    // Whether it was taken is answered rather than kept here: the button was
+    // pressed by somebody who is waiting to see something happen, and a
+    // refusal that only reaches the log looks exactly like a write that did
+    // nothing.
+    private suspend fun withGroup(done: String, write: suspend () -> Unit): Boolean {
         try {
             write()
 
@@ -575,7 +590,11 @@ class MainActivity : AppCompatActivity() {
             throw cancellation
         } catch (refusal: Exception) {
             AppLog.w(TAG, "the group was left as it was: $done", refusal)
+
+            return false
         }
+
+        return true
     }
 
     private fun openStartupScreen() {
