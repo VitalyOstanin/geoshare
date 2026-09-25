@@ -28,13 +28,26 @@ import { watchingMembers } from './lib/watchers.js';
 import { readLanguage, writeLanguage } from './lib/language.js';
 import { SPEAKING, WORDS } from './lib/words.js';
 import {
+    ADMINISTRATOR,
+    UNGROUPED,
+    UNRUN,
+    invitationFrom,
+    mayBeRemoved,
+    standingIn,
+} from './lib/membership.js';
+import {
+    foundGroup,
+    joinGroup,
     keepWatching,
     leave,
+    makeInvitation,
     publishProfile,
+    removeMember,
     signIn,
     watchPositions,
     watchGrants,
     watchProfiles,
+    watchRoster,
     watchSignIn,
     watchWatchers,
 } from './lib/store.js';
@@ -65,6 +78,20 @@ const elements = {
     themeButtons: document.querySelectorAll('#theme-choice button'),
     languageLabel: document.querySelector('#language-label'),
     languageButtons: document.querySelectorAll('#language-choice button'),
+    groupLabel: document.querySelector('#group-label'),
+    groupNote: document.querySelector('#group-note'),
+    groupMembers: document.querySelector('#group-members'),
+    groupInvitation: document.querySelector('#group-invitation'),
+    groupCode: document.querySelector('#group-code'),
+    groupCodeLasts: document.querySelector('#group-code-lasts'),
+    groupFound: document.querySelector('#group-found'),
+    groupInvite: document.querySelector('#group-invite'),
+    groupCopy: document.querySelector('#group-copy'),
+    groupJoin: document.querySelector('#group-join'),
+    groupTyped: document.querySelector('#group-typed'),
+    groupJoinButton: document.querySelector('#group-join-button'),
+    groupSaid: document.querySelector('#group-said'),
+    groupError: document.querySelector('#group-error'),
 };
 
 const state = {
@@ -113,6 +140,20 @@ const state = {
     // it on every one of those would drag the view out from under a reader's
     // thumb for no reason at all.
     shownPositionIds: new Set(),
+    // Who is in the group, or nothing at all — which is both a group that has
+    // not been made and a group this account is not on, since neither can be
+    // read.
+    roster: null,
+    stopRoster: null,
+    // The invitation just made, held until the menu is closed. Nothing reads
+    // it back from the database: nobody may read that collection at all.
+    invitation: null,
+    // What a refused write said, in a sentence. The rules weigh several things
+    // at once and a refusal names none of them, so the page says what it can.
+    groupTrouble: null,
+    // What went right and is worth one line: the invitation reaching the
+    // clipboard, which leaves nothing on screen to show for itself.
+    groupSaid: null,
 };
 
 elements.signInButton.addEventListener('click', async () => {
@@ -254,6 +295,9 @@ function sayMarkup() {
     elements.signOutButton.textContent = WORDS.signOut;
     elements.themeLabel.textContent = WORDS.appearance;
     elements.languageLabel.textContent = WORDS.language;
+    // The group section says its own words, since what stands there depends on
+    // the roster rather than on the markup alone.
+    drawGroup();
 
     for (const button of elements.themeButtons) {
         button.textContent = themes[button.dataset.theme];
@@ -290,6 +334,7 @@ function start() {
     elements.account.hidden = false;
 
     showAccount(state.member);
+    drawGroup();
 
     if (!state.view) {
         state.view = createMap(elements.map, render, elements.card);
@@ -312,6 +357,11 @@ function start() {
             render();
         },
     );
+
+    state.stopRoster ??= watchRoster((roster) => {
+        state.roster = roster;
+        drawGroup();
+    });
 
     state.stopWatching ??= keepWatching(state.member.memberId, () => {});
 
@@ -401,6 +451,13 @@ function stop() {
     state.stopWatchers = null;
     state.watchers = [];
 
+    state.stopRoster?.();
+    state.stopRoster = null;
+    state.roster = null;
+    state.invitation = null;
+    state.groupTrouble = null;
+    state.groupSaid = null;
+
     state.positions = [];
     state.refused = 0;
     state.reachable = true;
@@ -416,6 +473,187 @@ function stop() {
     elements.account.hidden = true;
     showMenu(false);
 }
+
+/**
+ * The group, as the menu shows it.
+ *
+ * Four positions to stand in and a different thing in each: somebody with no
+ * group is offered the two ways into one, a member sees the roster, the one
+ * running the group hands out invitations and takes members off, and a group
+ * nobody runs says so rather than offering controls whose every write would be
+ * refused.
+ *
+ * Drawn apart from the map and the strip, and on its own schedule: the roster
+ * changes when somebody joins or leaves, which is rare, while the strip is
+ * built again on every clock tick.
+ */
+function drawGroup() {
+    if (!state.member) {
+        return;
+    }
+
+    const standing = standingIn(state.roster, state.member.memberId);
+    const ungrouped = standing === UNGROUPED;
+    const running = standing === ADMINISTRATOR;
+
+    elements.groupLabel.textContent = WORDS.group;
+
+    elements.groupNote.hidden = !ungrouped && standing !== UNRUN;
+    elements.groupNote.textContent = ungrouped ? WORDS.groupNone : WORDS.groupUnrun;
+
+    elements.groupMembers.replaceChildren(
+        ...(state.roster?.members ?? []).map((memberId) => memberRow(memberId, running)),
+    );
+
+    elements.groupFound.hidden = !ungrouped;
+    elements.groupFound.textContent = WORDS.groupFound;
+
+    elements.groupJoin.hidden = !ungrouped;
+    elements.groupTyped.placeholder = WORDS.groupInvitation;
+    elements.groupJoinButton.textContent = WORDS.groupJoin;
+
+    elements.groupInvite.hidden = !running;
+    elements.groupInvite.textContent =
+        state.invitation === null ? WORDS.groupInvite : WORDS.groupInviteAgain;
+
+    elements.groupInvitation.hidden = state.invitation === null;
+    elements.groupCopy.hidden = state.invitation === null;
+    elements.groupCopy.textContent = WORDS.groupCopy;
+    elements.groupCode.textContent = state.invitation ?? '';
+    elements.groupCodeLasts.textContent = WORDS.groupCodeLasts;
+
+    elements.groupSaid.hidden = state.groupSaid === null;
+    elements.groupSaid.textContent = state.groupSaid ?? '';
+
+    elements.groupError.hidden = state.groupTrouble === null;
+    elements.groupError.textContent = state.groupTrouble ?? '';
+}
+
+/**
+ * One person on the roster: their name, whether they run the group, and the
+ * way to take them off it.
+ *
+ * Nobody removes themselves here — leaving is not the same act as taking
+ * somebody out, and one row holding both is how a click in the wrong place
+ * empties a group — and the last administrator cannot be removed at all,
+ * because the rules refuse a group nobody runs.
+ */
+function memberRow(memberId, running) {
+    const row = document.createElement('div');
+
+    row.className = 'group-member';
+
+    const name = document.createElement('span');
+
+    name.textContent = memberName(
+        state.profiles?.get(memberId),
+        memberId,
+        memberId === state.member.memberId,
+    );
+    row.append(name);
+
+    if (state.roster?.admins.includes(memberId)) {
+        const runs = document.createElement('span');
+
+        runs.className = 'group-runs';
+        runs.textContent = WORDS.groupRunsIt;
+        row.append(runs);
+    }
+
+    const removable =
+        running && memberId !== state.member.memberId && mayBeRemoved(state.roster, memberId);
+
+    if (removable) {
+        const remove = document.createElement('button');
+
+        remove.type = 'button';
+        remove.textContent = WORDS.groupRemove;
+        remove.addEventListener('click', () =>
+            tryGroupWrite(() => removeMember(state.roster, memberId)),
+        );
+        row.append(remove);
+    }
+
+    return row;
+}
+
+/**
+ * A write to the group, and what to say when the database refuses it.
+ *
+ * Every one of these is weighed by a rule that can say no for several reasons
+ * at once — a code that has run out, a group already made, a member the last
+ * administrator cannot be taken from — and a refusal names none of them. So
+ * the page says what it can and leaves the roster on screen as it stands.
+ */
+async function tryGroupWrite(write) {
+    state.groupTrouble = null;
+    state.groupSaid = null;
+
+    try {
+        await write();
+    } catch {
+        state.groupTrouble = WORDS.groupRefused;
+    }
+
+    drawGroup();
+}
+
+/**
+ * Everything on this page is read out of one group, so joining another means
+ * every subscription has to be made again against the new one.
+ */
+function regroup() {
+    stop();
+    start();
+}
+
+elements.groupFound.addEventListener('click', () =>
+    tryGroupWrite(async () => {
+        await foundGroup(state.member.memberId);
+        regroup();
+    }),
+);
+
+elements.groupInvite.addEventListener('click', () =>
+    tryGroupWrite(async () => {
+        state.invitation = await makeInvitation(state.member.memberId);
+    }),
+);
+
+elements.groupCopy.addEventListener('click', async () => {
+    if (state.invitation === null) {
+        return;
+    }
+
+    try {
+        await navigator.clipboard.writeText(state.invitation);
+        state.groupSaid = WORDS.groupCopied;
+    } catch {
+        // A browser that refuses the clipboard leaves the invitation on
+        // screen, where it can be selected by hand.
+        state.groupSaid = null;
+    }
+
+    drawGroup();
+});
+
+elements.groupJoinButton.addEventListener('click', () => {
+    const invitation = invitationFrom(elements.groupTyped.value);
+
+    if (invitation === null) {
+        state.groupTrouble = WORDS.groupRefused;
+        drawGroup();
+
+        return;
+    }
+
+    elements.groupTyped.value = '';
+
+    tryGroupWrite(async () => {
+        await joinGroup(state.member.memberId, invitation);
+        regroup();
+    });
+});
 
 /**
  * The account picture, or the first letter of the name when there is none.

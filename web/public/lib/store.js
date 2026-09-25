@@ -10,6 +10,7 @@ import {
     signOut,
 } from 'https://www.gstatic.com/firebasejs/12.19.0/firebase-auth.js';
 import {
+    arrayUnion,
     collection,
     deleteDoc,
     doc,
@@ -17,12 +18,66 @@ import {
     onSnapshot,
     serverTimestamp,
     setDoc,
+    updateDoc,
 } from 'https://www.gstatic.com/firebasejs/12.19.0/firebase-firestore.js';
 import { firebaseConfig } from '../firebase-config.js';
 import { positionMoments } from './age.js';
+import {
+    INVITATION_LASTS_MS,
+    invitationText,
+    newInvitationCode,
+    rosterWithout,
+} from './membership.js';
 
-/** The one group this build shares within; membership is edited outside the clients. */
-const GROUP = 'family';
+/**
+ * Where this browser keeps the group it looks at.
+ *
+ * It used to be a constant of the page, and could be while every visitor
+ * belonged to one household. A group is now named after the account that made
+ * it, and that is not known when the page is written, so the name is something
+ * this browser remembers from the moment its viewer founded a group or joined
+ * one.
+ */
+const GROUP_KEY = 'geoshare.group';
+
+/**
+ * The group of the household that started before groups had names of their own.
+ *
+ * What a browser that has joined nothing assumes, because those phones and
+ * this page are already reading it: its document was made before the rule that
+ * names a founder, and a change that moved the page elsewhere would take the
+ * household off its own map.
+ */
+const INHERITED_GROUP = 'family';
+
+/**
+ * The group everything below is addressed to.
+ *
+ * Read on each use rather than once at the start: founding a group or joining
+ * one changes it while the page is open, and every subscription made
+ * afterwards has to reach the new one.
+ *
+ * A browser told to keep no site data throws on the attempt rather than
+ * answering with nothing, and a page that cannot remember a group should still
+ * show the one it started with.
+ */
+export function currentGroup(storage = window.localStorage) {
+    try {
+        return storage.getItem(GROUP_KEY) ?? INHERITED_GROUP;
+    } catch {
+        return INHERITED_GROUP;
+    }
+}
+
+/** Remembers which group this browser is in, or carries on without remembering. */
+function rememberGroup(group, storage = window.localStorage) {
+    try {
+        storage.setItem(GROUP_KEY, group);
+    } catch {
+        // Nothing to say to the viewer: what they are looking at is the group
+        // they just joined, it is only the next visit that starts elsewhere.
+    }
+}
 
 /**
  * How often the claim to be looking is pushed forward.
@@ -119,7 +174,7 @@ export function watchPositions(documents, onPositions, onRefused) {
         stops.set(
             id,
             onSnapshot(
-                doc(store, 'groups', GROUP, 'positions', id),
+                doc(store, 'groups', currentGroup(), 'positions', id),
                 (snapshot) => {
                     const position = snapshot.exists() ? positionOf(snapshot) : null;
 
@@ -303,9 +358,121 @@ function deviceName() {
     }
 }
 
+/**
+ * Who is in the group, as the group document holds it.
+ *
+ * A subscription rather than a read: somebody joins on a code while the menu
+ * is open, and an administrator taking a member off has to see them go.
+ *
+ * A refusal is read as no roster at all rather than reported. The group
+ * document is closed to everybody who is not on it, so a refusal is this
+ * account saying it is not in the group it is looking at — which is exactly
+ * what the screen offering a way in has to know.
+ */
+export function watchRoster(onRoster) {
+    return onSnapshot(
+        doc(store, 'groups', currentGroup()),
+        (snapshot) => onRoster(snapshot.exists() ? rosterOf(snapshot) : null),
+        () => onRoster(null),
+    );
+}
+
+/**
+ * A field that ought to be a list of account ids, read as one.
+ *
+ * Anything else is read as nothing rather than thrown: the menu then says
+ * there is no group instead of failing, and what is actually in the document
+ * is a question for the console.
+ */
+function rosterOf(snapshot) {
+    const data = snapshot.data();
+
+    return {
+        members: idsOf(data.members),
+        admins: idsOf(data.admins),
+    };
+}
+
+function idsOf(field) {
+    return Array.isArray(field) ? field.filter((id) => typeof id === 'string') : [];
+}
+
+/**
+ * Makes a group with the founder alone in it, and stays in it.
+ *
+ * There is no name to choose: a group is named after the account that made it,
+ * which is what keeps one account from making them without end. The browser is
+ * moved into the new group only once the write has been allowed — a viewer
+ * whose founding was refused would otherwise be left looking at a group that
+ * does not exist.
+ */
+export async function foundGroup(memberId) {
+    await setDoc(doc(store, 'groups', memberId), {
+        members: [memberId],
+        admins: [memberId],
+    });
+
+    rememberGroup(memberId);
+}
+
+/**
+ * Makes an invitation and returns the whole of what is handed over: the code
+ * with the name of this group in front of it.
+ *
+ * Nothing is read back. The code is the name of the document, and nobody may
+ * read that collection at all — a reader could collect the codes of a group
+ * and let themselves in.
+ */
+export async function makeInvitation(memberId) {
+    const group = currentGroup();
+    const code = newInvitationCode();
+
+    await setDoc(doc(store, 'groups', group, 'invitations', code), {
+        createdBy: memberId,
+        expiresAt: new Date(Date.now() + INVITATION_LASTS_MS),
+    });
+
+    return invitationText(group, code);
+}
+
+/**
+ * Joins a group on an invitation: the code first, the roster second.
+ *
+ * In that order because the rule weighing the roster reads the code from the
+ * document written first. Which group is not this browser's to assume — the
+ * invitation says so, and both writes are addressed by that name rather than
+ * by the group being looked at, which until this succeeds is a different one.
+ *
+ * The roster is not read, and cannot be: the group document is closed to
+ * everybody who is not on it. So the server is asked to append rather than
+ * told the whole list.
+ */
+export async function joinGroup(memberId, invitation) {
+    await setDoc(doc(store, 'groups', invitation.group, 'joins', memberId), {
+        code: invitation.code,
+    });
+
+    await updateDoc(doc(store, 'groups', invitation.group), {
+        members: arrayUnion(memberId),
+    });
+
+    rememberGroup(invitation.group);
+}
+
+/**
+ * Takes a member off the roster, and off the administrators with it.
+ *
+ * Leaving them among the administrators would leave somebody outside the group
+ * still able to say who is in it, and the rules refuse such a write whole
+ * rather than perform half of it.
+ */
+export function removeMember(roster, memberId) {
+    return setDoc(doc(store, 'groups', currentGroup()), rosterWithout(roster, memberId));
+}
+
 export function watchProfiles(onProfiles, onError) {
     return onSnapshot(
-        collection(store, 'groups', GROUP, 'members'),
+        collection(store, 'groups', currentGroup(), 'members'),
         (snapshot) => onProfiles(new Map(snapshot.docs.map(profileOf).filter(Boolean))),
         onError,
     );
@@ -353,7 +520,7 @@ export function watchGrants(memberIds, onGrants) {
         stops.set(
             memberId,
             onSnapshot(
-                doc(store, 'groups', GROUP, 'grants', memberId),
+                doc(store, 'groups', currentGroup(), 'grants', memberId),
                 (snapshot) => {
                     const devices = snapshot.exists() ? devicesOf(snapshot) : [];
 
@@ -431,7 +598,7 @@ export function publishProfile(member, known, onError) {
     }
 
     return setDoc(
-        doc(store, 'groups', GROUP, 'members', member.memberId),
+        doc(store, 'groups', currentGroup(), 'members', member.memberId),
         {
             displayName,
             // Written as a field rather than left out, so that an account that
@@ -457,7 +624,7 @@ export function publishProfile(member, known, onError) {
 export function watchWatchers(memberId, onWatchers) {
     const own = `${memberId}.${deviceName()}`;
 
-    return onSnapshot(collection(store, 'groups', GROUP, 'watch'), (snapshot) => {
+    return onSnapshot(collection(store, 'groups', currentGroup(), 'watch'), (snapshot) => {
         const looking = snapshot.docs
             .filter((document) => document.id !== own)
             .map((document) => {
@@ -503,7 +670,7 @@ export function keepWatching(memberId, onError) {
     // Per browser rather than per account, the way the phones claim per phone:
     // closing the page here must not withdraw the claim a phone of the same
     // account had just made.
-    const marker = doc(store, 'groups', GROUP, 'watch', `${memberId}.${deviceName()}`);
+    const marker = doc(store, 'groups', currentGroup(), 'watch', `${memberId}.${deviceName()}`);
 
     let timer = null;
     let touched = Date.now();

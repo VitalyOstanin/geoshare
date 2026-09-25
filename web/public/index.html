@@ -73,6 +73,42 @@
                     <button type="button" data-language="system" aria-pressed="false">System</button>
                 </div>
 
+                <!-- Who is in the group, and the two ways into one. Offered
+                     together because the page cannot tell them apart: a group
+                     that has not been made and a group this account is not on
+                     both read as no roster at all, since a group document is
+                     closed to everybody who is not in it. -->
+                <p id="group-label" class="choice-label">Group</p>
+
+                <div id="group">
+                    <p id="group-note" hidden></p>
+                    <div id="group-members"></div>
+
+                    <div id="group-invitation" hidden>
+                        <code id="group-code"></code>
+                        <p id="group-code-lasts"></p>
+                    </div>
+
+                    <div id="group-buttons">
+                        <button id="group-found" type="button" hidden></button>
+                        <button id="group-invite" type="button" hidden></button>
+                        <button id="group-copy" type="button" hidden></button>
+                    </div>
+
+                    <!-- Nothing here is capitalised for the person typing:
+                         half of an invitation is an account id, where an
+                         upper case letter and a lower case one belong to two
+                         different accounts. -->
+                    <div id="group-join" hidden>
+                        <input id="group-typed" type="text" autocomplete="off"
+                               autocapitalize="none" spellcheck="false" />
+                        <button id="group-join-button" type="button"></button>
+                    </div>
+
+                    <p id="group-said" hidden></p>
+                    <p id="group-error" class="error" hidden></p>
+                </div>
+
                 <button id="sign-out-button" type="button" role="menuitem">Sign out</button>
             </div>
         </div>

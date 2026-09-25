@@ -822,3 +822,79 @@ button {
     color: var(--on-link);
     font-weight: 600;
 }
+
+/* The group, which is the one part of the menu whose height is not known in
+   advance: a roster of five and a roster of one are both ordinary. */
+#group {
+    margin: 0 0.4rem 0.6rem;
+}
+
+.group-member {
+    display: flex;
+    align-items: baseline;
+    gap: 0.4rem;
+    padding: 0.15rem 0;
+}
+
+/* The one who runs the group, said beside their name rather than in a column
+   of its own: at this width a column would leave every other row empty. */
+.group-runs {
+    font-size: 0.75rem;
+    opacity: 0.7;
+}
+
+/* Against the rule that gives every button in the menu the full width: these
+   sit at the end of a row or beside each other. */
+#account-menu .group-member button,
+#account-menu #group-buttons button,
+#account-menu #group-join button {
+    width: auto;
+    margin-left: auto;
+    padding: 0.2rem 0.4rem;
+    color: var(--link);
+    font-size: 0.78rem;
+}
+
+#group-buttons,
+#group-join {
+    display: flex;
+    gap: 0.3rem;
+    margin-top: 0.3rem;
+}
+
+#account-menu #group-buttons button,
+#account-menu #group-join button {
+    margin-left: 0;
+}
+
+/* The invitation is read off this screen and pasted into another, so every
+   character has the same width: half of it is an account id, where one letter
+   read for another is a different account. */
+#group-code {
+    display: block;
+    margin: 0.4rem 0 0.2rem;
+    font-family: ui-monospace, "SFMono-Regular", "Menlo", monospace;
+    font-size: 0.8rem;
+    overflow-wrap: anywhere;
+}
+
+#group-typed {
+    flex: 1;
+    min-width: 0;
+    padding: 0.25rem 0.35rem;
+    border: 1px solid var(--edge);
+    border-radius: 0.4rem;
+    background: canvas;
+    color: inherit;
+    font: inherit;
+    font-size: 0.8rem;
+}
+
+#group-note,
+#group-code-lasts,
+#group-said,
+#group-error {
+    margin: 0.3rem 0 0;
+    font-size: 0.75rem;
+    opacity: 0.8;
+}

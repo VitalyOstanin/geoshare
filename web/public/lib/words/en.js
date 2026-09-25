@@ -227,4 +227,31 @@ export const EN = {
     languageRussian: 'Русский',
     languageEnglish: 'English',
     languageSystem: 'System',
+
+    // The group: who is in it, and what the person looking may do about it.
+    // An invitation is a single string naming the group as well as the code,
+    // because somebody joining has to reach a document nobody has named to
+    // them yet.
+    group: 'Group',
+    groupNone: 'You are not in a group yet. Make one and hand out an invitation, '
+        + 'or paste in the invitation somebody sent you.',
+    groupFound: 'Make a group',
+    groupInvitation: 'Invitation',
+    groupJoin: 'Join',
+    groupInvite: 'Make an invitation',
+    groupInviteAgain: 'Make another invitation',
+    groupCodeLasts: 'The invitation lets somebody in for a day, and lets in everybody it '
+        + 'reaches in that time. Send it whole: it names the group as well as the code.',
+    groupCopy: 'Copy',
+    groupCopied: 'Invitation copied',
+    groupRunsIt: 'runs the group',
+    groupRemove: 'Remove',
+    groupUnrun: 'Nobody runs this group, so its members are set from the Firebase console.',
+
+    // What a refused write says. The rules weigh several things at once — a
+    // code that has run out, a group already made, a member the last
+    // administrator cannot be taken from — and which of them it was is not
+    // something a refusal says.
+    groupRefused: 'The database refused that. The invitation may have run out, or the group '
+        + 'may already exist.',
 };

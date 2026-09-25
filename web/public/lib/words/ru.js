@@ -237,4 +237,24 @@ export const RU = {
     languageRussian: 'Русский',
     languageEnglish: 'English',
     languageSystem: 'Как в системе',
+
+    // The group: who is in it, and what the person looking may do about it.
+    group: 'Группа',
+    groupNone: 'Вы пока не в группе. Создайте её и раздайте приглашение или вставьте '
+        + 'приглашение, которое вам прислали.',
+    groupFound: 'Создать группу',
+    groupInvitation: 'Приглашение',
+    groupJoin: 'Вступить',
+    groupInvite: 'Создать приглашение',
+    groupInviteAgain: 'Создать другое приглашение',
+    groupCodeLasts: 'Приглашение действует сутки и впускает всех, до кого дойдёт за это '
+        + 'время. Передавайте его целиком: в нём названа и группа, и код.',
+    groupCopy: 'Скопировать',
+    groupCopied: 'Приглашение скопировано',
+    groupRunsIt: 'ведёт группу',
+    groupRemove: 'Убрать',
+    groupUnrun: 'Группу никто не ведёт, её состав задаётся в консоли Firebase.',
+
+    // What a refused write says.
+    groupRefused: 'База отказала. Возможно, приглашение истекло или группа уже создана.',
 };
