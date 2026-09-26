@@ -33,9 +33,13 @@ import java.time.Instant
  * subscriptions are rebuilt around the new list.
  */
 @Composable
-fun rememberMemberPositions(grants: Map<String, MemberGrant>): State<MembersInView> {
+fun rememberMemberPositions(
+    grants: Map<String, MemberGrant>,
+    /** This phone's own position document, followed whatever the grants say. */
+    own: String,
+): State<MembersInView> {
     val writing = groupNow()
-    val documents = remember(grants) { positionDocuments(grants) }
+    val documents = remember(grants, own) { positionDocuments(grants, own) }
     val positions = remember(writing, documents) { memberPositions(documents) }
     val written = positions.collectAsStateWithLifecycle(initialValue = MembersInView())
     val falsePlaces = remember(writing) { namedFalsePlaces() }

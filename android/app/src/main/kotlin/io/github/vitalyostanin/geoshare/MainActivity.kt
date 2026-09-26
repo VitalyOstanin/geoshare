@@ -79,6 +79,7 @@ import io.github.vitalyostanin.geoshare.service.languageChosen
 import io.github.vitalyostanin.geoshare.service.languageTag
 import io.github.vitalyostanin.geoshare.service.leavePreviousId
 import io.github.vitalyostanin.geoshare.service.makeInvitation
+import io.github.vitalyostanin.geoshare.service.positionId
 import io.github.vitalyostanin.geoshare.service.refusalToStart
 import io.github.vitalyostanin.geoshare.service.removeFromGroup
 import io.github.vitalyostanin.geoshare.service.setRunning
@@ -219,7 +220,11 @@ class MainActivity : AppCompatActivity() {
                         is AuthState.SignedIn -> {
                             val profiles by rememberMemberProfiles()
                             val grants by rememberMemberGrants(profiles)
-                            val onTheMap by rememberMemberPositions(grants)
+                            val ownDocument =
+                                remember(current.memberId) {
+                                    positionId(current.memberId, device.id)
+                                }
+                            val onTheMap by rememberMemberPositions(grants, ownDocument)
                             val labels by rememberOwnLabels(current.memberId)
                             val sharedWith by rememberOwnSharedWith(current.memberId)
                             val roster by rememberGroupRoster()

@@ -39,17 +39,27 @@ internal const val WIDEST_CIRCLE_METRES = 100_000.0
  * runs out cannot be proved by a query, so the collection of positions is
  * closed and a reader walks the devices each grant names instead.
  */
-fun positionDocuments(grants: Map<String, MemberGrant>): List<String> = grants.values
-    .flatMap { grant ->
-        grant.devices
-            // A subscription each, and the grant is written by somebody else:
-            // a grant naming more phones than a person can carry would put
-            // this screen out of action. The rules hold the list to the same
-            // number; this is what happens to one written before they did.
-            .take(DEVICES_PER_MEMBER)
-            .map { positionId(grant.memberId, it) }
-    }
-    .sorted()
+fun positionDocuments(grants: Map<String, MemberGrant>, own: String? = null): List<String> =
+    grants.values
+        .flatMap { grant ->
+            grant.devices
+                // A subscription each, and the grant is written by somebody
+                // else: a grant naming more phones than a person can carry
+                // would put this screen out of action. The rules hold the list
+                // to the same number; this is what happens to one written
+                // before they did.
+                .take(DEVICES_PER_MEMBER)
+                .map { positionId(grant.memberId, it) }
+        }
+        // This phone's own document is followed whether or not its grant says
+        // so yet: the grant is written after the first position, and until it
+        // reaches the server the phone would show nobody at all, itself
+        // included. The database hands a subscriber its own write before the
+        // server has it, so the marker is there as soon as the phone has a
+        // position, with the network or without it.
+        .plus(listOfNotNull(own))
+        .distinct()
+        .sorted()
 
 /**
  * What the subscriptions have to say: who is on the map, and how many are not.
