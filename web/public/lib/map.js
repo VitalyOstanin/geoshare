@@ -262,12 +262,27 @@ export function createMap(element, onCardChange = () => {}, cardElement) {
     // apart once the map is close enough to tell them apart. Redrawn when the
     // map stops rather than while it moves, because regrouping under a moving
     // finger reads as flicker.
+    //
+    // A flight cut short by another also ends with moveend, fired from wherever
+    // the first one had got to, and the second flight starts before the event
+    // has been handled. Grouping there would group at the height of the flight:
+    // two members a few hundred metres apart become one marker between them
+    // for the rest of the way, and the circle of the member flown to stands on
+    // its own. Looked at once the flight that cut in has had its chance to
+    // start, and left alone while the map is still on its way.
     map.on('moveend', () => {
-        if (view.last && draw(view, view.last)) {
-            // Unlike the draw a render triggers, nothing runs after this one
-            // to read view.selection again — the panel has to be told itself.
-            view.onCardChange();
-        }
+        setTimeout(() => {
+            if (map.isMoving()) {
+                return;
+            }
+
+            if (view.last && draw(view, view.last)) {
+                // Unlike the draw a render triggers, nothing runs after this
+                // one to read view.selection again — the panel has to be told
+                // itself.
+                view.onCardChange();
+            }
+        }, 0);
     });
 
     // A pan or a pinch is a hand on the map; the same kind of movement also
