@@ -106,6 +106,42 @@ class FalsePlacesTest {
         assertFalse(falsePlaceStands(named.first().copy(longitude = -181.0)))
     }
 
-    private fun fixAt(latitude: Double, longitude: Double) =
-        Fix(latitude = latitude, longitude = longitude, takenAt = Instant.ofEpochSecond(0))
+    // A position written before the place was named or widened: the phone
+    // answering from home a minute later is fifty kilometres off it, and that
+    // speed is the lie being measured against, not the phone.
+    @Test
+    fun `a last position inside a false place measures nothing`() {
+        val lake = fixAt(61.42565, 5.40377)
+        val home = fixAt(61.03268, 4.40300, seconds = 60)
+
+        assertNotNull(whyAJump(lake, home))
+        assertNull(whyAJump(lake, home, falsePlaces = named))
+    }
+
+    // The trap the stuck marker sat in: the phone lies still, its anchor was
+    // set where the lie put it, and the first true answer is a drift from it.
+    @Test
+    fun `an anchor inside a false place holds nothing to it`() {
+        val lake = fixAt(61.42565, 5.40377)
+        val home = fixAt(61.03268, 4.40300, seconds = 7_200)
+        val anchor = PutDown(at = lake, since = lake.takenAt, steps = 1_000)
+        val still = Carrying(stirred = false, steps = 0)
+
+        assertNotNull(
+            whyAJump(lake, home, stillSince = lake.takenAt, putDown = anchor, carrying = still),
+        )
+        assertNull(
+            whyAJump(
+                lake,
+                home,
+                stillSince = lake.takenAt,
+                falsePlaces = named,
+                putDown = anchor,
+                carrying = still,
+            ),
+        )
+    }
+
+    private fun fixAt(latitude: Double, longitude: Double, seconds: Long = 0) =
+        Fix(latitude = latitude, longitude = longitude, takenAt = Instant.ofEpochSecond(seconds))
 }

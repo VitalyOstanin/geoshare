@@ -212,9 +212,16 @@ enum class JumpReason {
  * required because the first answer after a boot is the one with nothing
  * behind it. [settling] is false wherever the phone has been up long enough or
  * its answers are built out of satellites; see Settling.kt for both.
+ *
+ * A last position or an anchor standing inside a false place measures
+ * nothing. It got there before the place was named or widened, and every rule
+ * that counts from it would hold the true answers to the lie: a phone lying
+ * still keeps its anchor in the lake, and the first fix from home is too far
+ * from it to be believed. Such a position is treated as absent, the way the
+ * first fix of a session is.
  */
 fun whyAJump(
-    last: Fix?,
+    lastWritten: Fix?,
     next: Fix,
     stillSince: Instant? = null,
     networkSays: Fix? = null,
@@ -233,6 +240,9 @@ fun whyAJump(
     if (falsePlaceFor(next, falsePlaces) != null) {
         return JumpReason.FalsePlace
     }
+
+    val last = lastWritten?.takeIf { falsePlaceFor(it, falsePlaces) == null }
+    val anchor = putDown?.takeIf { falsePlaceFor(it.at, falsePlaces) == null }
 
     if (secondOpinion(next, networkSays, now)?.disagrees == true) {
         return JumpReason.Contradicted
@@ -258,11 +268,11 @@ fun whyAJump(
         return JumpReason.Repeating
     }
 
-    if (driftedWhilePutDown(putDown, next, carrying)) {
+    if (driftedWhilePutDown(anchor, next, carrying)) {
         return JumpReason.Drifted
     }
 
-    if (hurriedWhilePutDown(putDown, next, carrying)) {
+    if (hurriedWhilePutDown(anchor, next, carrying)) {
         return JumpReason.Hurried
     }
 
