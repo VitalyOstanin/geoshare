@@ -206,6 +206,7 @@ export const EN = {
     // phone of the group into the same way of collecting, so naming it per
     // member would repeat the same list under every face.
     mapOpen: (names) => `Map open: ${names.join(', ')}`,
+    thisPage: 'you (this page)',
 
     // Ages, which are the only words with a plural in them.
     justNow: 'just now',

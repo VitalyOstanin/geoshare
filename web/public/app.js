@@ -36,7 +36,7 @@ import {
 } from './lib/labels.js';
 import { withPhones } from './lib/phones.js';
 import { applyTheme, readTheme, writeTheme } from './lib/theme.js';
-import { watchingMembers } from './lib/watchers.js';
+import { watchingBesides, watchingMembers } from './lib/watchers.js';
 import { readLanguage, writeLanguage } from './lib/language.js';
 import { SPEAKING, WORDS } from './lib/words.js';
 import {
@@ -164,6 +164,9 @@ const state = {
     // names are worked out again on every draw, because a claim runs out with
     // the clock rather than with an answer from the database.
     watchers: [],
+    // Whether this page itself is claiming to look, and so holding the
+    // phones of the group in the viewing mode.
+    pageLooking: false,
     stopWatchers: null,
     // How many of the documents the profiles name are being refused to us. A
     // refusal is a member no longer sharing, an expired permission or a rule
@@ -449,7 +452,7 @@ function start() {
         drawGroup();
     });
 
-    state.stopWatching ??= keepWatching(state.member.memberId, () => {});
+    state.stopWatching ??= keepWatching(state.member.memberId, () => {}, notePageLooking);
 
     state.stopWatchers ??= watchWatchers(state.member.memberId, (watchers) => {
         state.watchers = watchers;
@@ -1189,17 +1192,28 @@ function showNote() {
  * household it was.
  */
 function showWatching() {
-    const looking = watchingMembers(state.watchers, Date.now());
-    const names = looking.map((memberId) =>
+    const looking = watchingBesides(
+        watchingMembers(state.watchers, Date.now()),
+        state.member?.memberId,
+        state.pageLooking,
+    );
+    const others = looking.map((memberId) =>
         memberName(
             state.profiles?.get(memberId),
             memberId,
             memberId === state.member?.memberId,
         ),
     );
+    const names = state.pageLooking ? [WORDS.thisPage, ...others] : others;
 
     elements.panelWatching.textContent = names.length === 0 ? '' : WORDS.mapOpen(names);
     elements.panelWatching.hidden = names.length === 0;
+}
+
+/** Keeps the line of who is looking in step with this page's own claim. */
+function notePageLooking(looking) {
+    state.pageLooking = looking;
+    showWatching();
 }
 
 function noteText() {
@@ -1361,7 +1375,7 @@ window.addEventListener('pagehide', () => {
 // sign-in listener stays quiet.
 window.addEventListener('pageshow', () => {
     if (state.member) {
-        state.stopWatching ??= keepWatching(state.member.memberId, () => {});
+        state.stopWatching ??= keepWatching(state.member.memberId, () => {}, notePageLooking);
         render();
     }
 });

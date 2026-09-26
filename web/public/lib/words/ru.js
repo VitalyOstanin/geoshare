@@ -220,6 +220,7 @@ export const RU = {
 
     // Who else has the map open right now, named rather than counted.
     mapOpen: (names) => `Карту смотрят: ${names.join(', ')}`,
+    thisPage: 'вы (эта страница)',
 
     // Ages, which are the only words with a plural in them.
     justNow: 'только что',

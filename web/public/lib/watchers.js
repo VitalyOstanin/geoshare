@@ -17,3 +17,16 @@ export function watchingMembers(watchers, now) {
 
     return [...new Set(live.map((watcher) => watcher.memberId))].sort();
 }
+
+/**
+ * The members to name besides this page, when this page is looking itself.
+ *
+ * The page holding the phones in the viewing mode used to go unnamed, and a
+ * viewer who saw every phone of the group viewing with nobody listed could not
+ * tell what was holding them. Named first and on its own; the viewer's own
+ * account watching from somewhere else as well is folded into it, because
+ * either claim holds the phones and one "you" says so.
+ */
+export function watchingBesides(members, ownMemberId, pageLooking) {
+    return pageLooking ? members.filter((memberId) => memberId !== ownMemberId) : members;
+}

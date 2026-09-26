@@ -732,7 +732,7 @@ const ATTENTION = ['pointerdown', 'pointermove', 'keydown', 'wheel', 'touchstart
  * the same three minutes, so a viewer whose clock is wrong cannot hold the
  * group longer, and cannot fail to hold it at all.
  */
-export function keepWatching(memberId, onError) {
+export function keepWatching(memberId, onError, onClaim = () => {}) {
     // Per browser rather than per account, the way the phones claim per phone:
     // closing the page here must not withdraw the claim a phone of the same
     // account had just made.
@@ -753,6 +753,7 @@ export function keepWatching(memberId, onError) {
 
         push();
         timer = setInterval(() => (looking() ? push() : release()), WATCH_REFRESH_MS);
+        onClaim(true);
     };
 
     const release = () => {
@@ -763,6 +764,7 @@ export function keepWatching(memberId, onError) {
         clearInterval(timer);
         timer = null;
         withdraw();
+        onClaim(false);
     };
 
     const review = () => (looking() ? claim() : release());
@@ -790,6 +792,8 @@ export function keepWatching(memberId, onError) {
             clearInterval(timer);
             timer = null;
         }
+
+        onClaim(false);
 
         return withdraw();
     };
