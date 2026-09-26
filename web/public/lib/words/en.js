@@ -86,6 +86,12 @@ export const EN = {
     // explains.
     stuck: 'Location',
     stuckNote: 'The phone is online, but no new location has been accepted',
+    // How far the member is from the viewer: from the freshest place of the
+    // viewer's own phones. No row when there is nothing to measure from, nor
+    // on the card of the place measured from. Near while the two answers lie
+    // within each other's width, where a figure would read as another house.
+    fromYou: 'From you',
+    nearYou: 'Nearby',
 
     settling: 'Receiver',
     settlingNote: 'Had not settled since the phone was switched on',

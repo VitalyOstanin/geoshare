@@ -51,6 +51,8 @@
     <string name="found_unsaid">Источник не назван</string>
     <string name="map_detail_stuck">Место</string>
     <string name="map_detail_stuck_note">Телефон на связи, но новое место не принято</string>
+    <string name="map_detail_from_you">От вас</string>
+    <string name="map_detail_near_you">Рядом</string>
     <string name="map_detail_settling">Приёмник</string>
     <string name="map_detail_settling_note">Не устоялся после включения телефона</string>
     <string name="map_detail_left_out">Отказ точки</string>
