@@ -46,7 +46,7 @@ import { modeText } from './modes.js';
 import { accuracyRing, widthIsWide, widthText } from './width.js';
 import { foundText, leftOutText } from './found.js';
 import { distanceFromViewer, distanceText } from './distance.js';
-import { WORDS } from './words.js';
+import { SPEAKING, WORDS } from './words.js';
 
 /**
  * How far the fitted view is padded from the window's edge, in screen pixels.
@@ -1049,56 +1049,132 @@ function detail(view, position, name, faces, now) {
 
     heading.append(face, titles);
 
-    const table = document.createElement('table');
+    card.append(heading, summary(view, position, now));
+
+    const warnings = warningsOf(position, now);
+
+    if (warnings) {
+        card.append(warnings);
+    }
+
+    // Everything else behind one button, and the choice kept: a viewer who
+    // opens the details wants them on the next card too, and one who closed
+    // them opened the card for the summary.
+    const details = detailTable(position);
+    const more = document.createElement('button');
+
+    view.detailsOpen ??= readDetailsOpen();
+    details.id = 'card-details';
+    more.type = 'button';
+    more.className = 'detail-more';
+    more.setAttribute('aria-controls', details.id);
+
+    const showDetails = (open) => {
+        details.hidden = !open;
+        more.setAttribute('aria-expanded', String(open));
+        more.textContent = open ? WORDS.fewerDetails : WORDS.moreDetails;
+    };
+
+    showDetails(view.detailsOpen);
+    more.addEventListener('click', () => {
+        view.detailsOpen = !view.detailsOpen;
+        writeDetailsOpen(view.detailsOpen);
+        showDetails(view.detailsOpen);
+    });
+
+    card.append(details, more);
+
+    return card;
+}
+
+/**
+ * The line under the name: how far, how old the position, how long since the
+ * phone was online, and the charge.
+ *
+ * The two ages side by side because under a spoof they are hours apart, and a
+ * card naming only one of them is read as naming the other.
+ */
+function summary(view, position, now) {
+    const line = document.createElement('div');
+
+    line.className = 'detail-summary';
 
     const away = distanceFromViewer(position, view.last?.positions ?? [], view.ownMemberId, now);
+    const parts = [
+        ...(away === null ? [] : [WORDS.fromYou(distanceText(away))]),
+        WORDS.positionAgo(ageText(positionAge(position.positionAt, now))),
+        WORDS.onlineAgo(ageText(positionAge(position.knownAt, now))),
+    ];
+
+    for (const text of parts) {
+        const part = document.createElement('span');
+
+        part.textContent = text;
+        line.append(part);
+    }
+
+    line.append(batteryText(position));
+
+    return line;
+}
+
+/**
+ * What is wrong with the position, as one paragraph, or null when nothing is.
+ *
+ * Each sentence only while it is true: a marker left behind by a phone that is
+ * still online, answers being rejected, a receiver that has not settled. Put
+ * together rather than as rows, because they are read as one account of why
+ * the marker should not be trusted.
+ */
+function warningsOf(position, now) {
+    // Each sentence is a list of pieces: the one about rejected answers holds
+    // the reason as a word to press.
+    const sentences = [];
+
+    if (isStuck(position.positionAt, position.knownAt, now)) {
+        sentences.push([WORDS.stuckSentence(ageText(positionAge(position.knownAt, now)))]);
+    }
+
+    if (position.leftOutCount > 0) {
+        const reason = reasonButton(position.leftOutReason);
+
+        reason.textContent = lowerFirst(reason.textContent);
+        const lead = WORDS.leftOutLead(WORDS.leftOutAnswers(position.leftOutCount));
+
+        sentences.push([lead, ' ', reason, '.']);
+    }
+
+    if (position.settling) {
+        sentences.push([WORDS.settlingSentence]);
+    }
+
+    if (sentences.length === 0) {
+        return null;
+    }
+
+    const paragraph = document.createElement('p');
+
+    paragraph.className = 'detail-warn';
+    sentences.forEach((pieces, index) => paragraph.append(...(index > 0 ? [' '] : []), ...pieces));
+
+    return paragraph;
+}
+
+/** The first letter made small, for a reason read in the middle of a sentence. */
+function lowerFirst(text) {
+    return text.charAt(0).toLocaleLowerCase(SPEAKING) + text.slice(1);
+}
+
+/** The rows behind the button: the two moments, and how the answer was arrived at. */
+function detailTable(position) {
+    const table = document.createElement('table');
 
     const rows = [
-        // First, because it is what a member opens somebody else's card to
-        // learn more often than anything below it: how far off they are.
-        ...(away === null ? [] : [[WORDS.fromYou, distanceText(away)]]),
-        [WORDS.lastSeen, ageText(positionAge(position.positionAt, now))],
-        // Two moments, because under a spoof they are days apart: when the
-        // phone last had a position it believed, and when it last reached the
-        // server. A card naming only one of them is read as naming the other,
-        // and a phone standing still with satellites it cannot trust is then
-        // either lost or in a place it left hours ago, depending on which the
-        // viewer assumed.
         [WORDS.at, timeText(position.positionAt)],
         [WORDS.online, timeText(position.knownAt)],
-        // Only while it is true, directly under the two moments it explains:
-        // a viewer does not subtract one clock time from another, and a
-        // marker that has stood still for hours while the phone keeps
-        // reaching the server is a marker not to be trusted.
-        ...(isStuck(position.positionAt, position.knownAt, now)
-            ? [[WORDS.stuck, WORDS.stuckNote]]
-            : []),
-        // Only while it is happening, and directly under the two moments,
-        // because that is the reading these correct: an old marker on its own
-        // says the phone has gone quiet, and these say it is working and being
-        // talked over. A phone whose answers get through has nothing to
-        // explain, and rows saying nought would stand on every card.
-        ...(position.leftOutCount > 0
-            ? [
-                [WORDS.leftOut, WORDS.leftOutAnswers(position.leftOutCount)],
-                [WORDS.leftOutReason, reasonButton(position.leftOutReason)],
-            ]
-            : []),
         [WORDS.mode, modeButton(position.mode)],
-        // How the phone arrived at the answer, and how wide it called it. The
-        // two rows stand together: a word without a width does not separate
-        // the flat from the district, and a width without the word does not
-        // say whether the circle was measured off the sky or looked up in
-        // somebody's database.
         [WORDS.foundBy, foundText(position.foundBy)],
         [WORDS.width, widthValue(position.accuracyMetres)],
-        // Only while it is true, the way the left-out rows are, and directly
-        // under the width because that is the reading it corrects: a width of
-        // eighty metres read without it says the phone is within eighty metres
-        // of the marker, and a receiver that has just been switched on answers
-        // that narrowly out of nothing.
-        ...(position.settling ? [[WORDS.settling, WORDS.settlingNote]] : []),
-        [WORDS.battery, batteryText(position)],
         [WORDS.position, `${position.latitude.toFixed(5)}, ${position.longitude.toFixed(5)}`],
     ];
 
@@ -1109,8 +1185,6 @@ function detail(view, position, name, faces, now) {
 
         head.textContent = title;
 
-        // A value is either text or a piece of the page: the charge carries a
-        // bolt of its own colour, everything else is a line of characters.
         if (value instanceof Node) {
             cell.append(value);
         } else {
@@ -1121,9 +1195,26 @@ function detail(view, position, name, faces, now) {
         table.append(row);
     }
 
-    card.append(heading, table);
+    return table;
+}
 
-    return card;
+/** Where the choice of details is kept, in this browser only. */
+const DETAILS_KEY = 'geoshare.cardDetails';
+
+function readDetailsOpen() {
+    try {
+        return localStorage.getItem(DETAILS_KEY) === 'open';
+    } catch {
+        return false;
+    }
+}
+
+function writeDetailsOpen(open) {
+    try {
+        localStorage.setItem(DETAILS_KEY, open ? 'open' : 'closed');
+    } catch {
+        // A browser that keeps nothing forgets the choice with the tab.
+    }
 }
 
 /**

@@ -16,6 +16,8 @@
        dark enough to carry white, the dark theme's is not. */
     --on-link: #ffffff;
     --edge: rgba(128, 128, 128, 0.4);
+    /* Translucent, so the one value serves both themes. */
+    --capsule: rgba(128, 128, 128, 0.16);
     /* What a refusal is written in. Dark red on white; a dark red on a dark
        card is a word the eye slides off, hence a night value of its own. */
     --error: #c62828;
@@ -551,6 +553,56 @@ button {
 
 .detail table {
     border-collapse: collapse;
+}
+
+/* The line under the name: distance, the two ages and the charge, each a
+   capsule of its own so that the four read as separate facts when they wrap. */
+.detail-summary {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.3rem;
+    margin-bottom: 0.4rem;
+    font-size: 0.85rem;
+    font-variant-numeric: tabular-nums;
+}
+
+.detail-summary > span {
+    padding: 0.1rem 0.5rem;
+    border-radius: 999px;
+    background: var(--capsule);
+}
+
+/* What is wrong with the position, in the colour a wide answer wears: none of
+   it is a fault of the phone, and all of it says the marker is not to be
+   trusted. */
+.detail-warn {
+    margin: 0 0 0.4rem;
+    color: var(--wide);
+    font-size: 0.85rem;
+}
+
+.detail-warn .mode-help-open {
+    color: inherit;
+}
+
+/* The details open below the summary rather than in a second card. */
+.detail-more {
+    display: block;
+    width: 100%;
+    margin-top: 0.3rem;
+    padding: 0.35rem 0 0;
+    border: 0;
+    border-top: 1px solid var(--edge);
+    background: none;
+    color: var(--link);
+    font: inherit;
+    font-size: 0.9rem;
+    cursor: pointer;
+}
+
+.detail-more:focus-visible {
+    outline: 2px solid var(--link);
+    outline-offset: 2px;
 }
 
 .detail th {

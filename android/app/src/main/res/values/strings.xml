@@ -44,7 +44,14 @@
     <string name="map_width_metres">%1$d m</string>
     <string name="map_width_kilometres">%1$.1f km</string>
     <string name="map_age_just_now">just now</string>
-    <string name="map_detail_last_seen">Last seen</string>
+    <string name="map_detail_from_you">%1$s from you</string>
+    <string name="map_detail_position_ago">position %1$s</string>
+    <string name="map_detail_online_ago">online %1$s</string>
+    <string name="map_detail_stuck_sentence">Online %1$s, but no new location has been accepted.</string>
+    <string name="map_detail_left_out_lead">Rejected %1$s:</string>
+    <string name="map_detail_settling_sentence">The receiver had not settled since the phone was switched on.</string>
+    <string name="map_detail_more">More details</string>
+    <string name="map_detail_fewer">Fewer details</string>
     <string name="map_detail_at">At</string>
     <string name="map_detail_online">Online</string>
     <string name="map_detail_mode">Mode</string>
@@ -60,13 +67,6 @@
     <string name="found_other_radios">Towers and Wi-Fi</string>
     <string name="found_pretended">Another application on the phone</string>
     <string name="found_unsaid">Source not stated</string>
-    <string name="map_detail_stuck">Location</string>
-    <string name="map_detail_stuck_note">The phone is online, but no new location has been accepted</string>
-    <string name="map_detail_from_you">From you</string>
-    <string name="map_detail_settling">Receiver</string>
-    <string name="map_detail_settling_note">Had not settled since the phone was switched on</string>
-    <string name="map_detail_left_out">Rejected</string>
-    <string name="map_detail_left_out_reason">Why it was rejected</string>
     <string name="left_out_drifted">Drift while the phone lay still</string>
     <string name="left_out_hurried">A speed the phone was never carried at</string>
     <string name="left_out_contradicted">The towers give another position</string>
@@ -83,7 +83,6 @@
     <string name="left_out_settling">The receiver has not settled</string>
     <string name="left_out_by_source">The source is switched off</string>
     <string name="left_out_by_source_named">Switched off on the phone: %1$s</string>
-    <string name="map_detail_battery">Battery</string>
     <string name="map_detail_position">Position</string>
     <string name="map_detail_coordinates" translatable="false">%1$.5f, %2$.5f</string>
     <string name="map_detail_unknown">unknown</string>

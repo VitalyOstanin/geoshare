@@ -11,6 +11,8 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.fillMaxSize
@@ -36,6 +38,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -49,9 +52,14 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.LinkAnnotation
+import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.TextLinkStyles
 import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.text.withLink
 import androidx.compose.ui.unit.dp
 import io.github.vitalyostanin.geoshare.R
 import io.github.vitalyostanin.geoshare.collection.Watcher
@@ -71,6 +79,7 @@ import java.time.Instant
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 import java.time.format.FormatStyle
+import java.util.Locale
 
 /** How often the ages on screen are recounted. Half a minute keeps "5 minutes ago" honest. */
 private const val AGE_TICK_MILLIS = 30_000L
@@ -155,6 +164,10 @@ fun MapScreen(
     var followTarget by remember { mutableStateOf<FollowTarget?>(null) }
     var showAll by remember { mutableStateOf(false) }
     var openedPositionId by remember { mutableStateOf<String?>(null) }
+
+    // Kept across cards: a member who opened the details wants them on the
+    // next card too, and one who closed them opened the card for the summary.
+    var detailsOpen by rememberSaveable { mutableStateOf(false) }
     // The positions under one marker, held by id for the same reason a single
     // one is: the list keeps arriving, and the card has to follow it.
     var openedGroup by remember { mutableStateOf<List<String>>(emptyList()) }
@@ -351,6 +364,8 @@ fun MapScreen(
                     face = faces[opened.memberId],
                     now = now,
                     away = distanceFromViewer(opened, positions, ownMemberId, now),
+                    detailsOpen = detailsOpen,
+                    onToggleDetails = { detailsOpen = !detailsOpen },
                     onClose = { openedPositionId = null },
                     onNamePhone = { naming = LabelKind.PHONE to opened.positionId },
                     // Oneself is named on the account, not here.
@@ -938,6 +953,8 @@ private fun MemberDetail(
     face: Bitmap?,
     now: Instant,
     away: Double?,
+    detailsOpen: Boolean,
+    onToggleDetails: () -> Unit,
     onClose: () -> Unit,
     onNamePhone: () -> Unit,
     onNamePerson: (() -> Unit)?,
@@ -991,172 +1008,220 @@ private fun MemberDetail(
                 }
             }
 
-            // First, because it is what a member opens somebody else's card
-            // to learn more often than anything below it: how far off they are.
-            away?.let {
-                DetailRow(R.string.map_detail_from_you, widthText(distanceUnits(it)))
-            }
-            DetailRow(R.string.map_detail_last_seen, ageText(positionAge(member.positionAt, now)))
-            // Two moments, because under a spoof they are days apart: when the
-            // phone last had a position it believed, and when it last reached
-            // the server. A card naming only one of them is read as naming the
-            // other, and a phone standing still with satellites it cannot
-            // trust is then either lost or in a place it left hours ago,
-            // depending on which the viewer assumed.
-            DetailRow(R.string.map_detail_at, momentText(member.positionAt))
-            DetailRow(R.string.map_detail_online, momentText(member.knownAt))
-            // Only while it is true, directly under the two moments it
-            // explains: a viewer does not subtract one clock time from
-            // another, and a marker that has stood still for hours while the
-            // phone keeps reaching the server is a marker not to be trusted.
-            if (isStuck(member.positionAt, member.knownAt, now)) {
-                DetailRow(R.string.map_detail_stuck) {
-                    Text(
-                        text = stringResource(R.string.map_detail_stuck_note),
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = leftOutColour(),
-                    )
-                }
-            }
-            // Only while it is happening. A phone getting its answers through
-            // is a phone with nothing to explain, and two rows saying nought
-            // would be two rows of noise on every card in the household.
-            //
-            // Placed directly under the age, because that is the reading these
-            // two correct: an old marker on its own says the phone has gone
-            // quiet, and these say it is working and being talked over.
-            member.leftOutCount?.takeIf { it > 0 }?.let { count ->
-                DetailRow(R.string.map_detail_left_out) {
-                    Text(
-                        text =
-                        pluralStringResource(
-                            R.plurals.map_detail_left_out_answers,
-                            count,
-                            count,
-                        ),
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = leftOutColour(),
-                    )
-                }
-                DetailRow(R.string.map_detail_left_out_reason) {
-                    val switched = sourceLeftOut(member.leftOutReason)
+            DetailSummary(member = member, away = away, now = now)
+            DetailWarnings(member = member, now = now)
+
+            // Everything else behind one button: the summary above is what a
+            // card is opened for, and these rows are what pushed it past the
+            // height of a screen.
+            if (detailsOpen) {
+                DetailRow(R.string.map_detail_at, momentText(member.positionAt))
+                DetailRow(R.string.map_detail_online, momentText(member.knownAt))
+                DetailRow(R.string.map_detail_mode) {
                     var helpOpen by remember { mutableStateOf(false) }
 
+                    // A name alone answers nothing: "Standby" says what the
+                    // phone was doing only to somebody who already knows the
+                    // five, and a card is the one place a member meets a mode.
                     Text(
-                        // A source the member switched off is named: which of
-                        // the five it was is what they open the card to find
-                        // out. Everything else, and a build that wrote the
-                        // fact without the switch, says what it says.
-                        text =
-                        switched
-                            ?.let {
-                                stringResource(
-                                    R.string.left_out_by_source_named,
-                                    stringResource(sourceChoiceLabel(it)),
-                                )
-                            }
-                            ?: stringResource(leftOutReasonLabel(member.leftOutReason)),
+                        text = stringResource(modeLabel(member.mode)),
                         style = MaterialTheme.typography.bodyMedium,
-                        // Underlined and pressed like the mode above, and for
-                        // the same reason: "Two positions at one time" names
-                        // what the phone saw without saying what it means, and
-                        // the card is the one place a member meets a reason.
-                        // The colour stays the one rejection is written in, so
-                        // that the row still reads as the trouble it reports.
-                        color = leftOutColour(),
+                        color = MaterialTheme.colorScheme.primary,
                         textDecoration = TextDecoration.Underline,
                         modifier = Modifier.clickable { helpOpen = true },
                     )
 
                     if (helpOpen) {
-                        ReasonHelp(onClose = { helpOpen = false })
+                        ModeHelp(onClose = { helpOpen = false })
                     }
                 }
-            }
-            DetailRow(R.string.map_detail_mode) {
-                var helpOpen by remember { mutableStateOf(false) }
-
-                // A name alone answers nothing: "Standby" says what the phone
-                // was doing only to somebody who already knows the five, and a
-                // card is the one place a member meets a mode at all. Written
-                // as a word to press rather than as a button, so that a card of
-                // plain values does not read as a control that changes
-                // something.
-                Text(
-                    text = stringResource(modeLabel(member.mode)),
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.primary,
-                    textDecoration = TextDecoration.Underline,
-                    modifier = Modifier.clickable { helpOpen = true },
+                DetailRow(
+                    R.string.map_detail_found_by,
+                    stringResource(foundByLabel(member.foundBy)),
                 )
+                DetailRow(R.string.map_detail_width) {
+                    val metres = member.accuracyMetres
 
-                if (helpOpen) {
-                    ModeHelp(onClose = { helpOpen = false })
-                }
-            }
-            // How the phone arrived at this, and how wide it called the answer.
-            // The two stand together because neither says much alone: a word
-            // without a width does not separate the flat from the district,
-            // and a width without the word does not say whether the circle
-            // was measured off the sky or looked up in somebody's database.
-            DetailRow(
-                R.string.map_detail_found_by,
-                stringResource(foundByLabel(member.foundBy)),
-            )
-            DetailRow(R.string.map_detail_width) {
-                val metres = member.accuracyMetres
-
-                Text(
-                    text =
-                    metres
-                        ?.let { widthText(positionWidth(it)) }
-                        ?: stringResource(R.string.map_detail_unknown),
-                    style = MaterialTheme.typography.bodyMedium,
-                    color =
-                    if (metres != null) {
-                        widthColour(widthIsWide(metres))
-                    } else {
-                        MaterialTheme.colorScheme.onSurface
-                    },
-                )
-            }
-            // Only while it is true, the way the left-out rows are: a phone
-            // that has been up an hour has nothing to explain here. Placed
-            // under the width because that is the reading it corrects — a
-            // receiver still coming up answers narrowly and wrongly, and a
-            // width of eighty metres read without this says the phone is
-            // within eighty metres of the marker.
-            if (member.settling) {
-                DetailRow(R.string.map_detail_settling) {
                     Text(
-                        text = stringResource(R.string.map_detail_settling_note),
+                        text =
+                        metres
+                            ?.let { widthText(positionWidth(it)) }
+                            ?: stringResource(R.string.map_detail_unknown),
                         style = MaterialTheme.typography.bodyMedium,
-                        color = leftOutColour(),
+                        color =
+                        if (metres != null) {
+                            widthColour(widthIsWide(metres))
+                        } else {
+                            MaterialTheme.colorScheme.onSurface
+                        },
                     )
                 }
-            }
-            DetailRow(R.string.map_detail_battery) {
-                val percent = member.batteryPercent
-
-                Text(
-                    text =
-                    percent
-                        ?.let { stringResource(R.string.map_battery, it) }
-                        ?: stringResource(R.string.map_detail_unknown),
-                    style = MaterialTheme.typography.bodyMedium,
-                    color =
-                    if (percent != null && member.charging) {
-                        batteryColour(charging = true)
-                    } else {
-                        MaterialTheme.colorScheme.onSurface
-                    },
+                DetailRow(
+                    R.string.map_detail_position,
+                    stringResource(
+                        R.string.map_detail_coordinates,
+                        member.latitude,
+                        member.longitude,
+                    ),
                 )
             }
-            DetailRow(
-                R.string.map_detail_position,
-                stringResource(R.string.map_detail_coordinates, member.latitude, member.longitude),
+
+            TextButton(onClick = onToggleDetails, modifier = Modifier.fillMaxWidth()) {
+                Text(
+                    text =
+                    stringResource(
+                        if (detailsOpen) R.string.map_detail_fewer else R.string.map_detail_more,
+                    ),
+                )
+            }
+        }
+    }
+}
+
+/**
+ * The line under the name: how far, how old the position, how long since the
+ * phone was online, and the charge.
+ *
+ * The two ages side by side because under a spoof they are hours apart, and a
+ * card naming only one of them is read as naming the other. The page draws
+ * the same line.
+ */
+@OptIn(ExperimentalLayoutApi::class)
+@Composable
+private fun DetailSummary(member: MemberPosition, away: Double?, now: Instant) {
+    FlowRow(
+        horizontalArrangement = Arrangement.spacedBy(6.dp),
+        verticalArrangement = Arrangement.spacedBy(6.dp),
+        modifier = Modifier.padding(top = 6.dp),
+    ) {
+        away?.let {
+            Capsule(stringResource(R.string.map_detail_from_you, widthText(distanceUnits(it))))
+        }
+        Capsule(
+            stringResource(
+                R.string.map_detail_position_ago,
+                ageText(positionAge(member.positionAt, now)),
+            ),
+        )
+        Capsule(
+            stringResource(
+                R.string.map_detail_online_ago,
+                ageText(positionAge(member.knownAt, now)),
+            ),
+        )
+
+        val percent = member.batteryPercent
+
+        Capsule(
+            text =
+            percent
+                ?.let { stringResource(R.string.map_battery, it) }
+                ?: stringResource(R.string.map_detail_unknown),
+            colour =
+            if (percent != null && member.charging) {
+                batteryColour(charging = true)
+            } else {
+                MaterialTheme.colorScheme.onSurface
+            },
+        )
+    }
+}
+
+/** One fact of the summary, in a capsule of its own so that the four read apart when they wrap. */
+@Composable
+private fun Capsule(text: String, colour: Color = MaterialTheme.colorScheme.onSurface) {
+    Surface(shape = CircleShape, color = MaterialTheme.colorScheme.surfaceVariant) {
+        Text(
+            text = text,
+            style = MaterialTheme.typography.bodySmall,
+            color = colour,
+            modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp),
+        )
+    }
+}
+
+/**
+ * What is wrong with the position, as one paragraph, or nothing when nothing is.
+ *
+ * Each sentence only while it is true: a marker left behind by a phone that is
+ * still online, answers being rejected, a receiver that has not settled. Put
+ * together rather than as rows, because they are read as one account of why
+ * the marker should not be trusted. The reason is underlined and pressed like
+ * the mode: it names what the phone saw without saying what it means.
+ */
+@Composable
+private fun DetailWarnings(member: MemberPosition, now: Instant) {
+    val stuck = isStuck(member.positionAt, member.knownAt, now)
+    val count = member.leftOutCount?.takeIf { it > 0 }
+
+    if (!stuck && count == null && !member.settling) {
+        return
+    }
+
+    var helpOpen by remember { mutableStateOf(false) }
+
+    val stuckSentence =
+        stringResource(
+            R.string.map_detail_stuck_sentence,
+            ageText(positionAge(member.knownAt, now)),
+        ).takeIf { stuck }
+    val lead =
+        count?.let {
+            stringResource(
+                R.string.map_detail_left_out_lead,
+                pluralStringResource(R.plurals.map_detail_left_out_answers, it, it),
             )
         }
+    // A source the member switched off is named: which of the five it was is
+    // what they open the card to find out.
+    val reason =
+        sourceLeftOut(member.leftOutReason)
+            ?.let {
+                stringResource(
+                    R.string.left_out_by_source_named,
+                    stringResource(sourceChoiceLabel(it)),
+                )
+            }
+            ?: stringResource(leftOutReasonLabel(member.leftOutReason))
+    val settling = stringResource(R.string.map_detail_settling_sentence).takeIf { member.settling }
+
+    val paragraph =
+        buildAnnotatedString {
+            stuckSentence?.let { append(it) }
+
+            if (lead != null) {
+                if (length > 0) append(' ')
+
+                append(lead)
+                append(' ')
+                withLink(
+                    LinkAnnotation.Clickable(
+                        tag = "reason",
+                        styles =
+                        TextLinkStyles(SpanStyle(textDecoration = TextDecoration.Underline)),
+                    ) { helpOpen = true },
+                ) {
+                    append(reason.replaceFirstChar { it.lowercase(Locale.getDefault()) })
+                }
+                append('.')
+            }
+
+            settling?.let {
+                if (length > 0) append(' ')
+
+                append(it)
+            }
+        }
+
+    Text(
+        text = paragraph,
+        style = MaterialTheme.typography.bodyMedium,
+        color = leftOutColour(),
+        modifier = Modifier.padding(top = 6.dp),
+    )
+
+    if (helpOpen) {
+        ReasonHelp(onClose = { helpOpen = false })
     }
 }
 

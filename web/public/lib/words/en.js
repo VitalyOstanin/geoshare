@@ -55,11 +55,9 @@ export const EN = {
         + 'card does not go grey.',
 
     // The card a marker opens.
-    lastSeen: 'Last seen',
     at: 'Taken at',
     online: 'Online',
     mode: 'Mode',
-    battery: 'Battery',
     position: 'Position',
     unknown: 'unknown',
 
@@ -76,29 +74,28 @@ export const EN = {
     foundPretended: 'Another application on the phone',
     foundUnsaid: 'Source not stated',
 
-    // What the phone said about its receiver when it was switched on. The row
-    // appears only while it is true, and it stands under the width because
-    // that is the reading it corrects: a receiver still coming up answers
-    // narrowly and wrongly.
-    // The phone is online, and no new position has been taken for half an
-    // hour or more: the marker stands where it was and cannot be trusted.
-    // The row appears only while it is true, under the two moments it
-    // explains.
-    stuck: 'Location',
-    stuckNote: 'The phone is online, but no new location has been accepted',
-    // How far the member is from the viewer: from the freshest place of the
-    // viewer's own phones. No row when there is nothing to measure from, nor
-    // on the card of the place measured from.
-    fromYou: 'From you',
+    // The summary under the name: what a card is opened for most often — how
+    // far the member is, when their position was taken and when the phone was
+    // last online, how much charge is left. The distance is measured from the
+    // freshest place of the viewer's own phones, and is missing when there is
+    // nothing to measure from.
+    fromYou: (distance) => `${distance} from you`,
+    positionAgo: (age) => `position ${age}`,
+    onlineAgo: (age) => `online ${age}`,
 
-    settling: 'Receiver',
-    settlingNote: 'Had not settled since the phone was switched on',
+    // The warnings as one paragraph, each only while it is true: the phone is
+    // online and no new position has been accepted for half an hour or more;
+    // positions are being rejected; the receiver has not settled since the
+    // phone was switched on and answers narrowly and wrongly.
+    stuckSentence: (age) => `Online ${age}, but no new location has been accepted.`,
+    leftOutLead: (answers) => `Rejected ${answers}:`,
+    settlingSentence: 'The receiver had not settled since the phone was switched on.',
 
-    // What the phone has thrown away since the last position it wrote. The
-    // rows appear only while it is happening: a phone whose answers get
-    // through has nothing to explain.
-    leftOut: 'Rejected',
-    leftOutReason: 'Why it was rejected',
+    // The rest behind a button: the two moments, mode, source, width, position.
+    moreDetails: 'More details',
+    fewerDetails: 'Fewer details',
+
+    // How many answers were rejected since the last position written, and why.
     leftOutAnswers: (count) => (count === 1 ? '1 answer' : `${count} answers`),
     leftOutDrifted: 'Drift while the phone lay still',
     leftOutHurried: 'A speed the phone was never carried at',

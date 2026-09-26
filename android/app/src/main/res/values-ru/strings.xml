@@ -37,7 +37,14 @@
     <string name="map_width_metres">%1$d м</string>
     <string name="map_width_kilometres">%1$.1f км</string>
     <string name="map_age_just_now">только что</string>
-    <string name="map_detail_last_seen">Обновлено</string>
+    <string name="map_detail_from_you">%1$s от вас</string>
+    <string name="map_detail_position_ago">позиция %1$s</string>
+    <string name="map_detail_online_ago">в сети %1$s</string>
+    <string name="map_detail_stuck_sentence">В сети %1$s, но новое место не принято.</string>
+    <string name="map_detail_left_out_lead">Отказ %1$s:</string>
+    <string name="map_detail_settling_sentence">Приёмник не устоялся после включения телефона.</string>
+    <string name="map_detail_more">Подробнее</string>
+    <string name="map_detail_fewer">Свернуть</string>
     <string name="map_detail_at">Время позиции</string>
     <string name="map_detail_online">В сети</string>
     <string name="map_detail_mode">Режим</string>
@@ -49,13 +56,6 @@
     <string name="found_other_radios">Вышки и Wi-Fi</string>
     <string name="found_pretended">Другое приложение на телефоне</string>
     <string name="found_unsaid">Источник не назван</string>
-    <string name="map_detail_stuck">Место</string>
-    <string name="map_detail_stuck_note">Телефон на связи, но новое место не принято</string>
-    <string name="map_detail_from_you">От вас</string>
-    <string name="map_detail_settling">Приёмник</string>
-    <string name="map_detail_settling_note">Не устоялся после включения телефона</string>
-    <string name="map_detail_left_out">Отказ точки</string>
-    <string name="map_detail_left_out_reason">Причина отказа</string>
     <string name="left_out_drifted">Увод при лежащем телефоне</string>
     <string name="left_out_hurried">Скорость, с которой телефон не носили</string>
     <string name="left_out_contradicted">От вышек другая позиция</string>
@@ -72,7 +72,6 @@
     <string name="left_out_settling">Приёмник не устоялся</string>
     <string name="left_out_by_source">Источник выключен</string>
     <string name="left_out_by_source_named">Источник выключен: %1$s</string>
-    <string name="map_detail_battery">Заряд</string>
     <string name="map_detail_position">Координаты</string>
     <string name="map_detail_unknown">неизвестно</string>
     <string name="map_detail_close">Закрыть</string>
