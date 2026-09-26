@@ -127,6 +127,9 @@ private val SKY_NOTED_WHILE_SILENT: Duration = Duration.ofSeconds(30)
  */
 private val LEFT_OUT_TOLD_EVERY: Duration = Duration.ofMinutes(1)
 
+/** How often the phone says how it is when nothing else has made it say so. */
+private val STATUS_EVERY: Duration = Duration.ofHours(1)
+
 /**
  * A position as it goes into the document: where the phone was, and whether
  * the cable was in it at the moment that was decided.
@@ -194,6 +197,7 @@ class SharingService : LifecycleService() {
      * moment the loop is not looking.
      */
     private var writer: PositionWriter? = null
+    private var status: PhoneStatusWriter? = null
     private var lastFix: Fix? = null
 
     /**
@@ -413,17 +417,17 @@ class SharingService : LifecycleService() {
     private val fenceCentre = MutableStateFlow<Fix?>(null)
 
     /**
-     * The cable going in or coming out, written down at once.
+     * The cable going in or coming out, said at once.
      *
      * Waiting for the next fix would leave a phone reading "12%" for the
      * fifteen minutes it is already filling up, which is the case the reader
-     * most wants told.
+     * most wants told — and under a transmitter there is no next fix at all.
      */
     private val power =
         object : BroadcastReceiver() {
             override fun onReceive(context: Context, intent: Intent) {
                 AppLog.i(TAG, "power changed: ${intent.action}")
-                writeWherePossible()
+                tellHowThePhoneIs()
             }
         }
 
@@ -487,26 +491,41 @@ class SharingService : LifecycleService() {
     }
 
     /**
-     * A position written because something other than the position changed.
+     * Says how the phone is, apart from where it is: in touch now, in this
+     * mode, this charged, on a cable or off it.
      *
-     * What changed is the cable, not the place, so the known position goes
-     * first and goes at once: asking the provider first would leave the reader
-     * looking at "12%" for the half minute the phone is already filling up,
-     * which is the case this exists for.
-     *
-     * The fresh fix follows when the provider answers, and only if it has
-     * somewhere new to report — the same fix a second time would be the same
-     * document written twice.
+     * Not through the position, and not past the filter: a phone whose
+     * answers are all being thrown away is still in touch and still on its
+     * cable, and a reader deciding whether it has gone quiet or run flat needs
+     * to hear that. A failure costs nothing but the news, which the next mode,
+     * cable or hour says again.
      */
-    private fun writeWherePossible() {
-        val writer = writer ?: return
+    private fun tellHowThePhoneIs() {
+        val status = status ?: return
+        val mode = lastMode
+        val percent = batteryPercent()
+        val cable = charging()
 
         lifecycleScope.launch {
-            lastFix?.let { known -> writeIfWorth(writer, known, lastMode, always = true) }
-
-            firstPosition(lastMode)?.let { fresh ->
-                writeIfWorth(writer, fresh, lastMode, always = true)
+            try {
+                status.write(mode, percent, cable)
+            } catch (cancellation: CancellationException) {
+                throw cancellation
+            } catch (error: Exception) {
+                AppLog.w(TAG, "could not say how the phone is", error)
             }
+        }
+    }
+
+    /**
+     * Says how the phone is once an hour, whatever else it is or is not
+     * writing: the moment it was last in touch is what tells a working phone
+     * whose position is held back from one that has gone quiet.
+     */
+    private suspend fun keepTellingHowThePhoneIs() {
+        while (true) {
+            delay(STATUS_EVERY.toMillis())
+            tellHowThePhoneIs()
         }
     }
 
@@ -736,11 +755,19 @@ class SharingService : LifecycleService() {
             ContextCompat.RECEIVER_NOT_EXPORTED,
         )
 
+        status = PhoneStatusWriter(memberId, device)
+
         collection =
             lifecycleScope.launch {
+                launch { keepTellingHowThePhoneIs() }
+
                 modes(memberId, device).collectLatest { mode ->
                     AppLog.i(TAG, "collecting in mode $mode")
                     lastMode = mode
+                    // A mode beginning is news about the phone as well as a
+                    // reason to ask for a position, and the first of them is
+                    // the service starting.
+                    tellHowThePhoneIs()
 
                     val spec = requestSpec(mode)
 

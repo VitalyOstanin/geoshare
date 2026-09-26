@@ -755,6 +755,127 @@ describe('grants', () => {
     });
 });
 
+// The phones a member carries, apart from whom they share with. The
+// administrator sees the phones; only the people given a permission see them
+// and the positions too.
+describe('devices', () => {
+    const devicesOf = (db, uid) => doc(db, `groups/${GROUP}/devices/${uid}`);
+    const someDevices = {
+        phone: { model: 'MAR-LX1', onlineAt: new Date(), mode: 'Standby', batteryPercent: 80 },
+    };
+
+    beforeEach(async () => {
+        await testEnv.withSecurityRulesDisabled(async (context) => {
+            await setDoc(devicesOf(context.firestore(), BOB), someDevices);
+        });
+    });
+
+    it('a member writes and reads their own phones', async () => {
+        const db = testEnv.authenticatedContext(ALICE).firestore();
+
+        await assertSucceeds(setDoc(devicesOf(db, ALICE), someDevices));
+        await assertSucceeds(getDoc(devicesOf(db, ALICE)));
+    });
+
+    it('a reader with a permission reads the phones', async () => {
+        const db = testEnv.authenticatedContext(ALICE).firestore();
+
+        await assertSucceeds(getDoc(devicesOf(db, BOB)));
+    });
+
+    it('a member without a permission reads nothing of the phones', async () => {
+        await testEnv.withSecurityRulesDisabled(async (context) => {
+            await setDoc(grantOf(context.firestore(), BOB), someGrant({ [ALICE]: LONG_OVER }));
+        });
+
+        const db = testEnv.authenticatedContext(ALICE).firestore();
+
+        await assertFails(getDoc(devicesOf(db, BOB)));
+    });
+
+    // What the administrator is shown in place of the grant: the phones and
+    // whether they are in touch, not whom they are shared with.
+    it('the administrator reads the phones without a permission', async () => {
+        await plantAnAdministrator();
+        await testEnv.withSecurityRulesDisabled(async (context) => {
+            await setDoc(grantOf(context.firestore(), BOB), someGrant({}));
+        });
+
+        const db = testEnv.authenticatedContext(ALICE).firestore();
+
+        await assertSucceeds(getDoc(devicesOf(db, BOB)));
+        await assertFails(getDoc(grantOf(db, BOB)));
+    });
+
+    it('a member cannot list the phones', async () => {
+        const db = testEnv.authenticatedContext(ALICE).firestore();
+
+        await assertFails(getDocs(collection(db, `groups/${GROUP}/devices`)));
+    });
+
+    it("a member cannot write another member's phones", async () => {
+        const db = testEnv.authenticatedContext(ALICE).firestore();
+
+        await assertFails(setDoc(devicesOf(db, BOB), someDevices));
+    });
+
+    it('more phones than a member carries are refused', async () => {
+        const db = testEnv.authenticatedContext(ALICE).firestore();
+        const many = Object.fromEntries(
+            Array.from({ length: 11 }, (unused, index) => [`phone-${index}`, { model: 'x' }]),
+        );
+
+        await assertFails(setDoc(devicesOf(db, ALICE), many));
+    });
+
+    it('a stranger reads no phones', async () => {
+        const db = testEnv.authenticatedContext(STRANGER).firestore();
+
+        await assertFails(getDoc(devicesOf(db, BOB)));
+    });
+});
+
+// What a member calls the phones and the people of the group, for themselves.
+describe('labels', () => {
+    const labelsOf = (db, uid) => doc(db, `groups/${GROUP}/labels/${uid}`);
+    const someLabels = {
+        devices: { [`${BOB}.phone`]: 'new phone' },
+        members: { [BOB]: 'grandma' },
+    };
+
+    it('a member writes and reads their own names', async () => {
+        const db = testEnv.authenticatedContext(ALICE).firestore();
+
+        await assertSucceeds(setDoc(labelsOf(db, ALICE), someLabels));
+        await assertSucceeds(getDoc(labelsOf(db, ALICE)));
+    });
+
+    // Not even the person named, and not the administrator.
+    it('nobody else reads them', async () => {
+        await plantAnAdministrator();
+        await testEnv.withSecurityRulesDisabled(async (context) => {
+            await setDoc(labelsOf(context.firestore(), BOB), someLabels);
+        });
+
+        const db = testEnv.authenticatedContext(ALICE).firestore();
+
+        await assertFails(getDoc(labelsOf(db, BOB)));
+        await assertFails(setDoc(labelsOf(db, BOB), someLabels));
+    });
+
+    it('names with a field of their own are refused', async () => {
+        const db = testEnv.authenticatedContext(ALICE).firestore();
+
+        await assertFails(setDoc(labelsOf(db, ALICE), { ...someLabels, note: 'anything' }));
+    });
+
+    it('a stranger keeps no names in the group', async () => {
+        const db = testEnv.authenticatedContext(STRANGER).firestore();
+
+        await assertFails(setDoc(labelsOf(db, STRANGER), someLabels));
+    });
+});
+
 // What an invitation looks like, and how long one lasts. Eight characters
 // without the letters and digits that are read for each other, so that a code
 // read aloud arrives as it was sent.
@@ -1052,6 +1173,74 @@ describe('running a group', () => {
         const db = testEnv.authenticatedContext(ALICE).firestore();
 
         await assertFails(setDoc(groupDoc(db), { members: [BOB], admins: [ALICE] }));
+    });
+});
+
+// A group named after its founder, run by the founder and one more
+// administrator, with one member who runs nothing. The founder owns the
+// project and sees all of it anyway; the other administrator does not, and
+// what they may do to the roster is narrower.
+describe('running a group somebody founded', () => {
+    const CAROL = 'carol-uid';
+    const DAVE = 'dave-uid';
+    const founded = (db) => doc(db, `groups/${ALICE}`);
+
+    beforeEach(async () => {
+        await testEnv.withSecurityRulesDisabled(async (context) => {
+            await setDoc(founded(context.firestore()), {
+                members: [ALICE, BOB, CAROL, DAVE],
+                admins: [ALICE, BOB, CAROL],
+            });
+        });
+    });
+
+    it('the founder takes another administrator off the roster in one write', async () => {
+        const db = testEnv.authenticatedContext(ALICE).firestore();
+
+        await assertSucceeds(
+            setDoc(founded(db), { members: [ALICE, BOB, DAVE], admins: [ALICE, BOB] }),
+        );
+    });
+
+    it('an administrator takes off a member who runs nothing', async () => {
+        const db = testEnv.authenticatedContext(BOB).firestore();
+
+        await assertSucceeds(
+            setDoc(founded(db), { members: [ALICE, BOB, CAROL], admins: [ALICE, BOB, CAROL] }),
+        );
+    });
+
+    it('an administrator makes a member an administrator', async () => {
+        const db = testEnv.authenticatedContext(BOB).firestore();
+
+        await assertSucceeds(updateDoc(founded(db), { admins: [ALICE, BOB, CAROL, DAVE] }));
+    });
+
+    // Two writes rather than one, so that a tap in the wrong row costs a role
+    // and not a place in the group.
+    it('an administrator takes another administrator off in two steps', async () => {
+        const db = testEnv.authenticatedContext(BOB).firestore();
+
+        await assertFails(
+            setDoc(founded(db), { members: [ALICE, BOB, DAVE], admins: [ALICE, BOB] }),
+        );
+        await assertSucceeds(updateDoc(founded(db), { admins: [ALICE, BOB] }));
+        await assertSucceeds(updateDoc(founded(db), { members: [ALICE, BOB, DAVE] }));
+    });
+
+    it('an administrator cannot take the founder off the roster', async () => {
+        const db = testEnv.authenticatedContext(BOB).firestore();
+
+        await assertFails(updateDoc(founded(db), { admins: [BOB, CAROL] }));
+        await assertFails(
+            setDoc(founded(db), { members: [BOB, CAROL, DAVE], admins: [BOB, CAROL] }),
+        );
+    });
+
+    it('an administrator steps down on their own', async () => {
+        const db = testEnv.authenticatedContext(BOB).firestore();
+
+        await assertSucceeds(updateDoc(founded(db), { admins: [ALICE, CAROL] }));
     });
 });
 

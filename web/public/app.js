@@ -26,6 +26,7 @@ import {
     positionDocuments,
     shortName,
 } from './lib/members.js';
+import { withPhones } from './lib/phones.js';
 import { applyTheme, readTheme, writeTheme } from './lib/theme.js';
 import { watchingMembers } from './lib/watchers.js';
 import { readLanguage, writeLanguage } from './lib/language.js';
@@ -113,6 +114,9 @@ const state = {
     // What the members give out, by member: the phones to subscribe to, and
     // nothing at all for a member who shares with somebody else.
     grants: new Map(),
+    // The positions as the database holds them, before what their phones said
+    // about themselves since is laid over them.
+    written: [],
     view: null,
     stopPositions: null,
     // The documents the current position subscriptions cover, joined into one
@@ -404,6 +408,7 @@ function followGrants(profiles) {
     state.grantMembers = wanted;
     state.stopGrants = watchGrants(memberIds, (grants) => {
         state.grants = grants;
+        state.positions = withPhones(state.written, grants);
         followPositions(grants);
         // What the panel counts beside each member is how many of their phones
         // this viewer may watch, which is exactly what has just changed.
@@ -436,7 +441,8 @@ function followPositions(grants) {
     state.stopPositions = watchPositions(
         documents,
         (positions) => {
-            state.positions = positions;
+            state.written = positions;
+            state.positions = withPhones(positions, state.grants);
             render();
         },
         (refused) => {
@@ -473,6 +479,7 @@ function stop() {
     state.groupTrouble = null;
     state.groupSaid = null;
 
+    state.written = [];
     state.positions = [];
     state.refused = 0;
     state.reachable = true;

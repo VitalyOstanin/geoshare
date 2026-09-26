@@ -22,6 +22,7 @@ import {
 } from 'https://www.gstatic.com/firebasejs/12.19.0/firebase-firestore.js';
 import { firebaseConfig } from '../firebase-config.js';
 import { positionMoments } from './age.js';
+import { combinedGrants, phonesOf } from './phones.js';
 import {
     INVITATION_LASTS_MS,
     invitationText,
@@ -498,38 +499,74 @@ function profileOf(document) {
 }
 
 /**
- * What each member gives out, as far as this viewer is allowed to know.
+ * What each member gives out, as far as this viewer is allowed to know, and
+ * what their phones last said about themselves.
  *
- * One subscription per member rather than one over the collection: the grants
- * cannot be listed, because listing them would hand the phones of the whole
- * household to a member who was given nothing. A member who shares with this
- * viewer answers with their phones; one who does not answers with a refusal,
- * which is simply an absence here — the same member is already missing from
- * the map. The subscription is made again on a timer, so a permission handed
- * back arrives without a reload.
+ * One subscription per member and document rather than one over a collection:
+ * neither the grants nor the phones can be listed, because listing them would
+ * hand the phones of the whole household to a member who was given nothing. A
+ * member who shares with this viewer answers with their phones; one who does
+ * not answers with a refusal, which is simply an absence here — the same member
+ * is already missing from the map. The subscriptions are made again on a
+ * timer, so a permission handed back arrives without a reload.
+ *
+ * The phones are followed apart from the positions: whether a phone is in
+ * touch, how charged it is and whether it is on a cable are not a place, and
+ * a phone whose answers are all being thrown away still says them. An
+ * administrator reads them without being given a permission, which is why the
+ * list of documents to follow still comes from the grant alone.
  */
 export function watchGrants(memberIds, onGrants) {
-    const known = new Map();
+    const named = new Map();
+    const phones = new Map();
+
+    const publish = () => onGrants(combinedGrants(named, phones));
+
+    const stopGrants = followEach(memberIds, 'grants', (memberId, snapshot) => {
+        if (snapshot === null) {
+            named.delete(memberId);
+        } else {
+            named.set(memberId, snapshot.exists() ? devicesOf(snapshot) : []);
+        }
+        publish();
+    });
+    const stopPhones = followEach(memberIds, 'devices', (memberId, snapshot) => {
+        if (snapshot === null || !snapshot.exists()) {
+            phones.delete(memberId);
+        } else {
+            phones.set(memberId, phonesOf(snapshot.data()));
+        }
+        publish();
+    });
+
+    // Said once at the start, so that a viewer nobody shares with draws an
+    // empty map rather than waiting for an answer that never comes.
+    publish();
+
+    return () => {
+        stopGrants();
+        stopPhones();
+    };
+}
+
+/**
+ * One document of each member of a collection, followed and asked for again a
+ * minute after a refusal. The callback hears a snapshot, or null for a
+ * refusal.
+ */
+function followEach(memberIds, collectionName, onDocument) {
     const stops = new Map();
     const waiting = new Set();
     let wanted = true;
-
-    const publish = () => onGrants(new Map(known));
 
     const follow = (memberId) => {
         stops.set(
             memberId,
             onSnapshot(
-                doc(store, 'groups', currentGroup(), 'grants', memberId),
-                (snapshot) => {
-                    const devices = snapshot.exists() ? devicesOf(snapshot) : [];
-
-                    known.set(memberId, { memberId, devices });
-                    publish();
-                },
+                doc(store, 'groups', currentGroup(), collectionName, memberId),
+                (snapshot) => onDocument(memberId, snapshot),
                 () => {
-                    known.delete(memberId);
-                    publish();
+                    onDocument(memberId, null);
                     askAgainLater(memberId);
                 },
             ),
@@ -556,10 +593,6 @@ export function watchGrants(memberIds, onGrants) {
     };
 
     memberIds.forEach(follow);
-
-    // Said once at the start, so that a viewer nobody shares with draws an
-    // empty map rather than waiting for an answer that never comes.
-    publish();
 
     return () => {
         wanted = false;

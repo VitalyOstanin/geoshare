@@ -10,6 +10,7 @@ import io.github.vitalyostanin.geoshare.service.ProfileField
 import io.github.vitalyostanin.geoshare.service.comingBack
 import io.github.vitalyostanin.geoshare.service.grantsOf
 import io.github.vitalyostanin.geoshare.service.membersOf
+import io.github.vitalyostanin.geoshare.service.phonesOf
 import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
@@ -88,10 +89,12 @@ fun memberGrants(
     store: FirebaseFirestore = FirebaseFirestore.getInstance(),
 ): Flow<Map<String, MemberGrant>> = callbackFlow {
     val known = mutableMapOf<String, MemberGrant>()
+    val phones = mutableMapOf<String, Map<String, PhoneStatus>>()
     val subscriptions = mutableMapOf<String, ListenerRegistration>()
     val grants = grantsOf(store)
+    val phoneDocuments = phonesOf(store)
 
-    fun publish() = trySend(known.toMap())
+    fun publish() = trySend(combinedGrants(known, phones))
 
     fun follow(memberId: String) {
         subscriptions[memberId] =
@@ -123,7 +126,41 @@ fun memberGrants(
             }
     }
 
-    memberIds.forEach { follow(it) }
+    // What the phones say about themselves, followed apart from the grant: an
+    // administrator reads these without a permission, and a phone of an
+    // older build has not written them at all.
+    fun followPhones(memberId: String) {
+        val key = "phones:$memberId"
+
+        subscriptions[key] =
+            phoneDocuments.document(memberId).addSnapshotListener { snapshot, error ->
+                if (error != null) {
+                    phones.remove(memberId)
+                    publish()
+
+                    launch {
+                        delay(RETRY_AFTER.toMillis())
+                        subscriptions.remove(key)?.remove()
+                        followPhones(memberId)
+                    }
+
+                    return@addSnapshotListener
+                }
+
+                if (snapshot?.exists() != true) {
+                    phones.remove(memberId)
+                } else {
+                    phones[memberId] = phonesFrom(snapshot.data)
+                }
+
+                publish()
+            }
+    }
+
+    memberIds.forEach {
+        follow(it)
+        followPhones(it)
+    }
 
     // Said once, so that a screen with nobody to follow draws an empty map
     // instead of waiting for an answer that is not coming.

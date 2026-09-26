@@ -49,6 +49,18 @@ fun grantsOf(store: FirebaseFirestore): CollectionReference =
     groupDocument(store).collection("grants")
 
 /**
+ * The phones of each member and what each last said about itself: when it was
+ * in touch, in which mode, how charged and whether on a cable.
+ *
+ * Apart from the positions because none of it is a place, and a phone whose
+ * answers are all being held back as forged is still in touch and still on its
+ * cable. Apart from the grants because an administrator reads it, and whom a
+ * member shares with is not theirs to see.
+ */
+fun phonesOf(store: FirebaseFirestore): CollectionReference =
+    groupDocument(store).collection("devices")
+
+/**
  * The invitations of the group: one document per code, named by the code.
  *
  * Nobody reads this collection, the application included. The rules read it
@@ -196,6 +208,16 @@ object ProfileField {
 object GrantField {
     const val DEVICES = "devices"
     const val SHARED_WITH = "sharedWith"
+}
+
+/** The fields of one phone's entry in its member's document of phones. */
+object PhoneField {
+    const val MODEL = "model"
+    const val NAME = "name"
+    const val ONLINE_AT = "onlineAt"
+    const val MODE = "mode"
+    const val BATTERY_PERCENT = "batteryPercent"
+    const val CHARGING = "charging"
 }
 
 /** The fields of a place a false signal is known to use. */

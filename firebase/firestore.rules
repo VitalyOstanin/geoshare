@@ -112,6 +112,41 @@ service cloud.firestore {
                  .data.expiresAt > request.time;
       }
 
+      // The person the group is named after, who made it. Nothing is hidden
+      // from them that the roster could hide: whoever owns the project reads
+      // the whole database from the console anyway, and the founder of the
+      // household is that person. The other administrators own nothing, and
+      // what they may do is narrower.
+      //
+      // The household that started before groups were named after anybody has
+      // no founder by this test, and there every administrator is an ordinary
+      // one.
+      function isFounder() {
+        return request.auth != null && request.auth.uid == groupId;
+      }
+
+      // Who left the roster in this write, and who left the administrators.
+      function leftTheRoster() {
+        return resource.data.members.toSet()
+                 .difference(request.resource.data.members.toSet());
+      }
+
+      function leftTheAdmins() {
+        return resource.data.get('admins', []).toSet()
+                 .difference(request.resource.data.admins.toSet());
+      }
+
+      // What an administrator who is not the founder may not do. They take
+      // off the roster only a member who runs nothing, so taking off another
+      // administrator is two writes — the role first, the place second — and
+      // neither can be done by accident in one tap. And the founder stays
+      // where they are: on the roster and among the administrators.
+      function withinAnAdministrator() {
+        return !leftTheRoster().hasAny(resource.data.get('admins', [])) &&
+               !leftTheRoster().hasAny([groupId]) &&
+               !leftTheAdmins().hasAny([groupId]);
+      }
+
       // What an administrator may do: take somebody off the roster, put
       // somebody on it, hand the running of the group to another member.
       //
@@ -124,7 +159,8 @@ service cloud.firestore {
                request.resource.data.keys().hasOnly(['members', 'admins']) &&
                rosterFits() &&
                request.resource.data.admins.size() >= 1 &&
-               request.resource.data.admins.hasOnly(request.resource.data.members);
+               request.resource.data.admins.hasOnly(request.resource.data.members) &&
+               (isFounder() || withinAnAdministrator());
       }
 
       allow read: if isMember();
@@ -315,6 +351,12 @@ service cloud.firestore {
         // that somebody is in it, not how many phones they own or who else
         // they share with.
         //
+        // The phones have moved to `devices` above, where an administrator
+        // can see them without seeing whom they are shared with. The field
+        // stays allowed here while phones of an older build still write it,
+        // and readers fall back on it for a member none of whose phones has
+        // written the new document yet.
+        //
         // The sizes are there because a reader acts on this document: one
         // subscription per device named here, so a list of thousands would put
         // every screen that may read it out of action. Rules cannot walk a
@@ -350,6 +392,71 @@ service cloud.firestore {
         allow get: if isMember() && (isOwner() || mayReadGrant());
         allow create, update: if isOwner() && grantShape();
         allow delete: if isOwner();
+      }
+
+      match /devices/{uid} {
+        // The phones this member carries, one entry per phone under its id:
+        // the model, the name its owner gave it, and when it was last in touch
+        // with the mode and the charge it had then. No place: an administrator
+        // reads this to tell a phone that went quiet from one whose marker is
+        // stuck, and neither needs to know where the phone is.
+        //
+        // Kept apart from the grant so that an administrator can be shown the
+        // phones without being shown whom their owner shares with.
+        //
+        // The rules hold the number of phones and not the fields of each: a
+        // rule cannot walk a map, and the readers weigh every entry as they
+        // take it, dropping what is not a phone.
+        function devicesShape() {
+          return request.resource.data.size() <= 10;
+        }
+
+        function isOwner() {
+          return isMember() && request.auth.uid == uid;
+        }
+
+        // The same permission that opens the positions: a reader who may watch
+        // the member learns which phones there are to watch.
+        function mayWatch() {
+          return exists(/databases/$(database)/documents/groups/$(groupId)/grants/$(uid)) &&
+                 get(/databases/$(database)/documents/groups/$(groupId)/grants/$(uid))
+                   .data.get('sharedWith', {}).get(request.auth.uid, null) != null &&
+                 get(/databases/$(database)/documents/groups/$(groupId)/grants/$(uid))
+                   .data.sharedWith[request.auth.uid] > request.time;
+        }
+
+        // One document at a time, as with the grants: a listing would hand a
+        // member the phones of everybody they were not given.
+        allow get: if isMember() && (isOwner() || isGroupAdmin() || mayWatch());
+        allow create, update: if isOwner() && devicesShape();
+        allow delete: if isOwner();
+      }
+
+      match /labels/{uid} {
+        // What a member calls the phones and the people of the group, for
+        // themselves alone: "new phone" rather than a model number, "grandma"
+        // rather than the name on her account. Nobody else reads it, the
+        // person named included.
+        //
+        // A phone is named by its full address, account and phone joined by a
+        // dot, so that two phones of one model are two names.
+        function labelsShape() {
+          return request.resource.data.keys().hasOnly(['devices', 'members']) &&
+                 (!('devices' in request.resource.data) ||
+                  (request.resource.data.devices is map &&
+                   request.resource.data.devices.size() <= 500)) &&
+                 (!('members' in request.resource.data) ||
+                  (request.resource.data.members is map &&
+                   request.resource.data.members.size() <= 50));
+        }
+
+        function isSelf() {
+          return isMember() && request.auth.uid == uid;
+        }
+
+        allow get: if isSelf();
+        allow create, update: if isSelf() && labelsShape();
+        allow delete: if isSelf();
       }
 
       match /positions/{positionId} {

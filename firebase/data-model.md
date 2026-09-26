@@ -11,7 +11,9 @@ groups/{groupId}/joins/{uid}                the code somebody is holding, while 
 groups/{groupId}/falsePlaces/{placeId}      where a false signal is known to put phones
 groups/{groupId}/settings/{key}             what the group has settled about judging answers
 groups/{groupId}/members/{uid}              what a member says about themselves
-groups/{groupId}/grants/{uid}               which phones a member carries, and who may watch
+groups/{groupId}/grants/{uid}               who may watch a member (and, for older builds, their phones)
+groups/{groupId}/devices/{uid}              a member's phones and what each last said about itself
+groups/{groupId}/labels/{uid}               what a member calls the others' phones and people, for themselves
 groups/{groupId}/positions/{uid}.{deviceId} last known position of one phone
 groups/{groupId}/watch/{uid}.{deviceId}     viewing marker of one phone
 ```
@@ -56,6 +58,13 @@ else:
    running of the group to another member. The administrators have to stay a
    non-empty subset of the members, so the last one cannot resign into thin air
    and somebody outside the group cannot go on running it.
+
+   The founder — the member the group is named after — may do all of that.
+   Any other administrator takes off the roster only a member who runs
+   nothing, so removing an administrator is two writes: the role first, the
+   place second. Nor can they touch the founder's role or place. The founder
+   owns the project and reads the whole database from the console anyway, so
+   nothing is hidden from them; the other administrators own nothing.
 
 The group document is never deleted: its members, profiles, grants and
 positions would be left behind with nothing to say who may read them.
@@ -212,6 +221,47 @@ The counts are held by the rules because every other client acts on this
 document: one subscription per device named, one document per permission
 weighed. Rules cannot walk a list, so the size is what can be checked, and both
 clients cut the list to the same number before they subscribe.
+
+## devices/{uid}
+
+One entry per phone of the member, under the phone's id:
+
+| Field            | Type      | Meaning                                                        |
+|------------------|-----------|----------------------------------------------------------------|
+| `model`          | string    | The model as the manufacturer writes it                        |
+| `name`           | string    | What the owner calls the phone, shown to everybody who sees it |
+| `onlineAt`       | timestamp | When the phone was last in touch, set by the server            |
+| `mode`           | string    | The collection mode it was in                                  |
+| `batteryPercent` | int       | The charge left, 0 to 100                                      |
+| `charging`       | bool      | Whether it was on a cable                                      |
+
+None of it is a place, so it is written apart from the position: when a mode
+begins, when the cable goes in or out, and once an hour whatever else happens.
+The filter that holds a position back when the answers look forged does not hold
+these back, so a phone under a transmitter still says it is in touch and on its
+cable. Readers lay an entry over the phone's position when it is the newer of
+the two.
+
+Read one document at a time by the member, by the readers their grant names,
+and by the administrators: an administrator is shown the phones and whether
+they are working, not whom they are shared with or where they are. The rules
+hold the number of phones to ten and not the fields of each, since a rule
+cannot walk a map; the readers drop an entry that is not what a phone writes.
+
+A phone also names itself in `grants/{uid}.devices`, which is what the builds
+before this document read, and the readers follow the phones of both lists —
+but only where the grant could be read, since the grant is the permission.
+
+## labels/{uid}
+
+| Field     | Type | Meaning                                                         |
+|-----------|------|-----------------------------------------------------------------|
+| `devices` | map  | A phone's address, `{uid}.{deviceId}`, to the name this member gives it |
+| `members` | map  | A member's id to the name this member gives them                |
+
+The member's own names for the others, read and written by the member alone —
+not by the person named and not by an administrator. Up to five hundred phones
+and fifty people.
 
 ## positions/{uid}.{deviceId}
 

@@ -3,6 +3,7 @@ package io.github.vitalyostanin.geoshare.map
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.State
+import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.Lifecycle
@@ -35,8 +36,16 @@ fun rememberMemberPositions(grants: Map<String, MemberGrant>): State<MembersInVi
     val writing = groupNow()
     val documents = remember(grants) { positionDocuments(grants) }
     val positions = remember(writing, documents) { memberPositions(documents) }
+    val written = positions.collectAsStateWithLifecycle(initialValue = MembersInView())
 
-    return positions.collectAsStateWithLifecycle(initialValue = MembersInView())
+    // What the phones said about themselves since their positions were
+    // written is laid over them here, so that every screen reading a position
+    // reads the charge, the cable and the moment of contact as they are now.
+    return remember(written, grants) {
+        derivedStateOf {
+            written.value.let { seen -> seen.copy(positions = withPhones(seen.positions, grants)) }
+        }
+    }
 }
 
 /**

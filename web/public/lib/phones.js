@@ -1,0 +1,100 @@
+// What the phones of a member say about themselves, apart from where they are.
+//
+// A phone writes these into a document of its member's own, beside the
+// position rather than inside it: whether it is in touch, how charged it is
+// and whether it is on a cable are not a place, and the filter that holds a
+// position back when the answers look forged has nothing to say about them.
+
+/** How many phones of one member this page will follow. The rules say the same. */
+const PHONES_PER_MEMBER = 10;
+
+/** As much of a name as fits on a card. The phones cut it to the same. */
+const NAME_LIMIT = 40;
+
+/**
+ * The phones in one document, by the id of each, with whatever in an entry is
+ * not what a phone writes left out: the rules hold the number of phones and
+ * not their fields.
+ */
+export function phonesOf(data) {
+    const phones = new Map();
+
+    for (const [deviceId, entry] of Object.entries(data ?? {}).slice(0, PHONES_PER_MEMBER)) {
+        if (entry === null || typeof entry !== 'object') {
+            continue;
+        }
+
+        phones.set(deviceId, {
+            model: shortText(entry.model),
+            name: shortText(entry.name),
+            onlineAt: typeof entry.onlineAt?.toMillis === 'function' ? entry.onlineAt.toMillis() : null,
+            mode: typeof entry.mode === 'string' ? entry.mode : null,
+            batteryPercent: percent(entry.batteryPercent),
+            charging: entry.charging === true,
+        });
+    }
+
+    return phones;
+}
+
+function shortText(value) {
+    return typeof value === 'string' && value !== '' ? value.slice(0, NAME_LIMIT) : null;
+}
+
+function percent(value) {
+    return typeof value === 'number' && value >= 0 && value <= 100 ? Math.round(value) : null;
+}
+
+/**
+ * The grants as the rest of the page reads them: which phones of a member this
+ * viewer may follow, and what those phones said about themselves.
+ *
+ * The phones to follow are the ones the grant names together with the ones
+ * the member's own document names, and only where the grant could be read:
+ * the grant is what says this viewer may watch, and an administrator reads the
+ * phones of everybody without being allowed to see where any of them is. A
+ * grant is still read for its list because a phone of an older build names
+ * itself there and nowhere else.
+ */
+export function combinedGrants(named, phones) {
+    const grants = new Map();
+
+    for (const memberId of new Set([...named.keys(), ...phones.keys()])) {
+        const own = phones.get(memberId) ?? new Map();
+        const listed = named.get(memberId);
+        const devices = listed === undefined ? [] : [...new Set([...listed, ...own.keys()])];
+
+        grants.set(memberId, { memberId, devices, phones: own });
+    }
+
+    return grants;
+}
+
+/**
+ * A position with what its phone said about itself laid over it, where the
+ * phone said so after the position was written.
+ *
+ * The later of the two wins: a position carries the charge it was written
+ * with, and while the answers are being thrown away that is the charge of an
+ * hour ago. The moment the phone was last in touch moves on with it, which is
+ * what keeps the marker of a phone that is working from going grey merely
+ * because its position is being held back.
+ */
+export function withPhones(positions, grants) {
+    return positions.map((position) => {
+        const deviceId = position.positionId.slice(position.positionId.indexOf('.') + 1);
+        const phone = grants.get(position.memberId)?.phones?.get(deviceId);
+
+        if (!phone || phone.onlineAt === null || phone.onlineAt <= position.knownAt) {
+            return position;
+        }
+
+        return {
+            ...position,
+            knownAt: phone.onlineAt,
+            mode: phone.mode ?? position.mode,
+            batteryPercent: phone.batteryPercent ?? position.batteryPercent,
+            charging: phone.charging,
+        };
+    });
+}

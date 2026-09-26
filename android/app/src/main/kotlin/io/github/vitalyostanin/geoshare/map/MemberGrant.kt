@@ -28,4 +28,11 @@ data class MemberGrant(
      * writes the same permissions and a new phone inherits them.
      */
     val sharedWith: Map<String, Instant> = emptyMap(),
+    /**
+     * What each of the member's phones last said about itself, by the id of
+     * the phone. Read from a document of its own, which an administrator may
+     * read too; a grant made up of nothing else is one this phone could not
+     * read, and names no phones to follow.
+     */
+    val phones: Map<String, PhoneStatus> = emptyMap(),
 )
