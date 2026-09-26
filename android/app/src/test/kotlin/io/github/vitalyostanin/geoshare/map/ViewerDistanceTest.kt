@@ -2,7 +2,6 @@ package io.github.vitalyostanin.geoshare.map
 
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
-import org.junit.Assert.assertTrue
 import org.junit.Test
 import java.time.Duration
 import java.time.Instant
@@ -32,8 +31,6 @@ class ViewerDistanceTest {
             accuracyMetres = width,
         )
     }
-
-    private fun away(distance: ViewerDistance?): Double = (distance as ViewerDistance.Away).metres
 
     @Test
     fun `a degree of latitude is a hundred and eleven kilometres`() {
@@ -97,7 +94,7 @@ class ViewerDistanceTest {
         val phone = at("me.phone", 61.0, 4.0)
         val other = at("me.other", 61.01, 4.0, minutes = 5)
 
-        assertEquals(1_112.0, away(distanceFromViewer(other, listOf(phone, other), "me", now)), 5.0)
+        assertEquals(1_112.0, distanceFromViewer(other, listOf(phone, other), "me", now)!!, 5.0)
     }
 
     @Test
@@ -107,20 +104,26 @@ class ViewerDistanceTest {
         assertNull(distanceFromViewer(oona, listOf(oona), "me", now))
     }
 
-    // Forty metres between two answers sixty metres wide is one flat.
+    // Forty metres between two answers sixty metres wide is still forty
+    // metres: the owner asked for the figure rather than a word.
     @Test
-    fun `two answers inside each other's width are near, not a figure`() {
+    fun `two answers inside each other's width still get a figure`() {
         val own = at("me.one", 61.0, 4.0, width = 60.0)
         val oona = at("oona.one", 61.00036, 4.0, width = 15.0)
 
-        assertEquals(ViewerDistance.Near, distanceFromViewer(oona, listOf(own, oona), "me", now))
+        assertEquals(40.0, distanceFromViewer(oona, listOf(own, oona), "me", now)!!, 1.0)
     }
 
     @Test
-    fun `a width the phone did not name counts as none`() {
-        val own = at("me.one", 61.0, 4.0, width = null)
-        val oona = at("oona.one", 61.00036, 4.0, width = null)
+    fun `a distance is said in whole metres, nought included`() {
+        assertEquals(PositionWidth.Metres(0), distanceUnits(0.06))
+        assertEquals(PositionWidth.Metres(40), distanceUnits(39.6))
+        assertEquals(PositionWidth.Metres(999), distanceUnits(999.4))
+    }
 
-        assertTrue(distanceFromViewer(oona, listOf(own, oona), "me", now) is ViewerDistance.Away)
+    @Test
+    fun `a distance past a kilometre is said in kilometres to one place`() {
+        assertEquals(PositionWidth.Kilometres(1.0), distanceUnits(999.6))
+        assertEquals(PositionWidth.Kilometres(2.3), distanceUnits(2_345.0))
     }
 }

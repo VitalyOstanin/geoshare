@@ -6,11 +6,24 @@
 // different answers.
 
 import { isStale, isStuck } from './age.js';
+import { WORDS, SPEAKING } from './words.js';
 
 /** The radius the distance is measured on: the mean sphere the width uses. */
 const EARTH_RADIUS_METRES = 6371008.8;
 
 const RADIANS_IN_A_DEGREE = Math.PI / 180;
+
+/** Where metres stop being the unit worth writing and kilometres start. */
+const METRES_IN_A_KILOMETRE = 1000;
+
+/** How a tenth of a kilometre is arrived at: hundreds of metres, then back. */
+const METRES_IN_A_TENTH = 100;
+const TENTHS_IN_A_KILOMETRE = 10;
+
+const TENTHS = new Intl.NumberFormat(SPEAKING, {
+    minimumFractionDigits: 1,
+    maximumFractionDigits: 1,
+});
 
 /**
  * Where the viewer is: the freshest place any of their own phones has written.
@@ -56,15 +69,9 @@ export function metresBetween(from, to) {
 }
 
 /**
- * How far the member on a card is from the viewer, or null when the card has
- * nothing to say about it.
- *
- * Nothing on the card of the very place measured from, and nothing when the
- * viewer has no place of their own to measure from.
- *
- * Near rather than a number while the two are inside each other's width: forty
- * metres between two answers each sixty metres wide is two answers about one
- * flat, and a figure would say the member is across the street.
+ * How far the member on a card is from the viewer, in metres, or null when the
+ * card has nothing to say about it: on the card of the very place measured
+ * from, and when the viewer has no place of their own to measure from.
  */
 export function distanceFromViewer(position, positions, ownMemberId, now) {
     const own = ownPlace(positions, ownMemberId, now);
@@ -73,8 +80,23 @@ export function distanceFromViewer(position, positions, ownMemberId, now) {
         return null;
     }
 
-    const metres = metresBetween(own, position);
-    const widest = Math.max(own.accuracyMetres ?? 0, position.accuracyMetres ?? 0);
+    return metresBetween(own, position);
+}
 
-    return metres <= widest ? { near: true } : { near: false, metres };
+/**
+ * The distance as the card writes it: whole metres up to a kilometre and
+ * kilometres to one place above it, the units the width is written in.
+ *
+ * Unlike a width, nought metres is an answer: two phones on one table.
+ */
+export function distanceText(metres) {
+    const whole = Math.round(metres);
+
+    if (whole < METRES_IN_A_KILOMETRE) {
+        return WORDS.widthMetres(whole);
+    }
+
+    return WORDS.widthKilometres(
+        TENTHS.format(Math.round(metres / METRES_IN_A_TENTH) / TENTHS_IN_A_KILOMETRE),
+    );
 }

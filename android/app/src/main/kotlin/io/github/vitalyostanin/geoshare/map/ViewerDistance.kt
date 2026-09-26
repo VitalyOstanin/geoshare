@@ -3,28 +3,21 @@ package io.github.vitalyostanin.geoshare.map
 import java.time.Instant
 import kotlin.math.asin
 import kotlin.math.cos
-import kotlin.math.max
 import kotlin.math.min
 import kotlin.math.pow
+import kotlin.math.roundToLong
 import kotlin.math.sin
 import kotlin.math.sqrt
 
 /** The radius the distance is measured on: the mean sphere the ring uses. */
 private const val EARTH_RADIUS_METRES = 6_371_008.8
 
-/**
- * How far the member on a card is from the viewer.
- *
- * Near rather than a number while the two answers lie inside each other's
- * width: forty metres between two answers each sixty metres wide is two
- * answers about one flat, and a figure would say the member is across the
- * street. The page holds the same rules.
- */
-sealed interface ViewerDistance {
-    data object Near : ViewerDistance
+/** Where metres stop being the unit worth writing and kilometres start. */
+private const val METRES_IN_A_KILOMETRE = 1_000.0
 
-    data class Away(val metres: Double) : ViewerDistance
-}
+/** How a tenth of a kilometre is arrived at: hundreds of metres, then back. */
+private const val METRES_IN_A_TENTH = 100.0
+private const val TENTHS_IN_A_KILOMETRE = 10.0
 
 /**
  * Where the viewer is: the freshest place any of their own phones has written.
@@ -60,24 +53,40 @@ fun metresBetween(from: MemberPosition, to: MemberPosition): Double {
 }
 
 /**
- * How far [position] is from the viewer, or null when the card has nothing to
- * say about it: on the card of the very place measured from, and when the
- * viewer has no place of their own to measure from.
+ * How far [position] is from the viewer, in metres, or null when the card has
+ * nothing to say about it: on the card of the very place measured from, and
+ * when the viewer has no place of their own to measure from. The page holds
+ * the same rules.
  */
 fun distanceFromViewer(
     position: MemberPosition,
     positions: List<MemberPosition>,
     ownMemberId: String,
     now: Instant,
-): ViewerDistance? {
+): Double? {
     val own = ownPlace(positions, ownMemberId, now)
 
     if (own == null || own.positionId == position.positionId) {
         return null
     }
 
-    val metres = metresBetween(own, position)
-    val widest = max(own.accuracyMetres ?: 0.0, position.accuracyMetres ?: 0.0)
+    return metresBetween(own, position)
+}
 
-    return if (metres <= widest) ViewerDistance.Near else ViewerDistance.Away(metres)
+/**
+ * The distance in the units the width is written in: whole metres up to a
+ * kilometre and kilometres to one place above it.
+ *
+ * Unlike a width, nought metres is an answer: two phones on one table.
+ */
+fun distanceUnits(metres: Double): PositionWidth {
+    val whole = metres.roundToLong()
+
+    if (whole < METRES_IN_A_KILOMETRE) {
+        return PositionWidth.Metres(whole)
+    }
+
+    return PositionWidth.Kilometres(
+        (metres / METRES_IN_A_TENTH).roundToLong() / TENTHS_IN_A_KILOMETRE,
+    )
 }

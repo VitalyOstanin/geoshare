@@ -45,7 +45,7 @@ import { markerOrder } from './stacking.js';
 import { modeText } from './modes.js';
 import { accuracyRing, widthIsWide, widthText } from './width.js';
 import { foundText, leftOutText } from './found.js';
-import { distanceFromViewer } from './distance.js';
+import { distanceFromViewer, distanceText } from './distance.js';
 import { WORDS } from './words.js';
 
 /**
@@ -1056,7 +1056,7 @@ function detail(view, position, name, faces, now) {
     const rows = [
         // First, because it is what a member opens somebody else's card to
         // learn more often than anything below it: how far off they are.
-        ...(away ? [[WORDS.fromYou, away.near ? WORDS.nearYou : widthText(away.metres)]] : []),
+        ...(away === null ? [] : [[WORDS.fromYou, distanceText(away)]]),
         [WORDS.lastSeen, ageText(positionAge(position.positionAt, now))],
         // Two moments, because under a spoof they are days apart: when the
         // phone last had a position it believed, and when it last reached the

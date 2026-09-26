@@ -937,7 +937,7 @@ private fun MemberDetail(
     name: String,
     face: Bitmap?,
     now: Instant,
-    away: ViewerDistance?,
+    away: Double?,
     onClose: () -> Unit,
     onNamePhone: () -> Unit,
     onNamePerson: (() -> Unit)?,
@@ -994,13 +994,7 @@ private fun MemberDetail(
             // First, because it is what a member opens somebody else's card
             // to learn more often than anything below it: how far off they are.
             away?.let {
-                DetailRow(
-                    R.string.map_detail_from_you,
-                    when (it) {
-                        ViewerDistance.Near -> stringResource(R.string.map_detail_near_you)
-                        is ViewerDistance.Away -> widthText(positionWidth(it.metres))
-                    },
-                )
+                DetailRow(R.string.map_detail_from_you, widthText(distanceUnits(it)))
             }
             DetailRow(R.string.map_detail_last_seen, ageText(positionAge(member.positionAt, now)))
             // Two moments, because under a spoof they are days apart: when the

@@ -1,7 +1,12 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 
-import { distanceFromViewer, metresBetween, ownPlace } from '../public/lib/distance.js';
+import {
+    distanceFromViewer,
+    distanceText,
+    metresBetween,
+    ownPlace,
+} from '../public/lib/distance.js';
 
 const MINUTE = 60 * 1000;
 const NOW = Date.parse('2026-09-27T12:00:00Z');
@@ -75,8 +80,7 @@ test('another phone of the viewer\'s own is measured like anybody else', () => {
 
     const away = distanceFromViewer(other, [phone, other], 'me', NOW);
 
-    assert.equal(away.near, false);
-    assert.ok(Math.abs(away.metres - 1112) < 5, `${away.metres}`);
+    assert.ok(Math.abs(away - 1112) < 5, `${away}`);
 });
 
 test('a viewer with no place of their own is told nothing', () => {
@@ -85,17 +89,22 @@ test('a viewer with no place of their own is told nothing', () => {
     assert.equal(distanceFromViewer(oona, [oona], 'me', NOW), null);
 });
 
-// Forty metres between two answers sixty metres wide is one flat.
-test('two answers inside each other\'s width are near, not a figure', () => {
+// Forty metres between two answers sixty metres wide is still forty metres:
+// the owner asked for the figure rather than a word.
+test('two answers inside each other\'s width still get a figure', () => {
     const own = at('me.one', 'me', 60, 30, { width: 60 });
     const oona = at('oona.one', 'oona', 60.00036, 30, { width: 15 });
 
-    assert.deepEqual(distanceFromViewer(oona, [own, oona], 'me', NOW), { near: true });
+    assert.ok(Math.abs(distanceFromViewer(oona, [own, oona], 'me', NOW) - 40) < 1);
 });
 
-test('a width the phone did not name counts as none', () => {
-    const own = { ...at('me.one', 'me', 60, 30), accuracyMetres: undefined };
-    const oona = { ...at('oona.one', 'oona', 60.00036, 30), accuracyMetres: undefined };
+test('a distance is said in whole metres, nought included', () => {
+    assert.equal(distanceText(0.06), '0 m');
+    assert.equal(distanceText(39.6), '40 m');
+    assert.equal(distanceText(999.4), '999 m');
+});
 
-    assert.equal(distanceFromViewer(oona, [own, oona], 'me', NOW).near, false);
+test('a distance past a kilometre is said in kilometres to one place', () => {
+    assert.equal(distanceText(999.6), '1.0 km');
+    assert.equal(distanceText(2345), '2.3 km');
 });
