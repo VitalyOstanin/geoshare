@@ -983,7 +983,9 @@ private fun MemberDetail(
                 }
             }
 
-            Row {
+            // One under the other: side by side the longer label broke in the
+            // middle of a word on a narrow phone.
+            Column {
                 onNamePerson?.let { onClick ->
                     TextButton(onClick = onClick) {
                         Text(text = stringResource(R.string.name_person))
