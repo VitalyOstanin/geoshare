@@ -127,8 +127,16 @@ private val SKY_NOTED_WHILE_SILENT: Duration = Duration.ofSeconds(30)
  */
 private val LEFT_OUT_TOLD_EVERY: Duration = Duration.ofMinutes(1)
 
-/** How often the phone says how it is when nothing else has made it say so. */
-private val STATUS_EVERY: Duration = Duration.ofHours(1)
+/**
+ * How often the phone says how it is when nothing else has made it say so.
+ *
+ * On the beat a phone at rest writes its position again, for the same reason:
+ * under a transmitter no position is written at all, and this is the only
+ * news that keeps the marker out of the grey. An hour let it go grey for half
+ * of every hour, and the card then read a phone that is working and being
+ * lied to as a phone that has gone quiet.
+ */
+private val STATUS_EVERY: Duration = IDLE_REPEAT
 
 /**
  * A position as it goes into the document: where the phone was, and whether
