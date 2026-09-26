@@ -821,7 +821,7 @@ function askName(kind, key) {
 
     state.naming = { kind, key };
     elements.namingTitle.textContent = kind === 'devices' ? WORDS.namePhone : WORDS.namePerson;
-    elements.namingNote.textContent = WORDS.nameForYou;
+    sayNaming(WORDS.nameForYou, false);
     elements.namingTyped.value = current ?? '';
     elements.namingReset.hidden = current === undefined;
 
@@ -842,21 +842,43 @@ function closeNaming() {
  * Writes the name, or takes it away for null, and leaves the answer to the
  * subscription: the name shows up once the database has it, the same way it
  * does when it was given on a phone.
+ *
+ * The window stays until the database has answered. Closed at once, a refused
+ * write left nothing on the screen: the page showed the new name for as long
+ * as the write was pending, dropped it on the refusal, and the reason went
+ * only to the console.
  */
 async function saveName(name) {
     const naming = state.naming;
-
-    closeNaming();
 
     if (!naming) {
         return;
     }
 
+    sayNaming(WORDS.nameSaving, true);
+
     try {
         await writeLabel(state.member.memberId, naming.kind, naming.key, name);
+
+        if (state.naming === naming) {
+            closeNaming();
+        }
     } catch (error) {
         console.error('labels:', error);
+
+        if (state.naming === naming) {
+            sayNaming(WORDS.nameFailed(error?.code ?? error?.message ?? String(error)), false);
+        }
     }
+}
+
+/** What the naming window says under its title, and whether it is busy saving. */
+function sayNaming(note, busy) {
+    elements.namingNote.textContent = note;
+    elements.namingNote.classList.toggle('naming-failed', !busy && note !== WORDS.nameForYou);
+    elements.namingSave.disabled = busy;
+    elements.namingReset.disabled = busy;
+    elements.namingTyped.disabled = busy;
 }
 
 elements.namingSave.addEventListener('click', () => saveName(labelText(elements.namingTyped.value)));

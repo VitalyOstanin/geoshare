@@ -1058,6 +1058,11 @@ button {
     opacity: 0.8;
 }
 
+.naming #naming-note.naming-failed {
+    color: var(--error);
+    opacity: 1;
+}
+
 .naming #naming-typed {
     box-sizing: border-box;
     width: 100%;
