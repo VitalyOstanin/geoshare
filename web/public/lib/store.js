@@ -10,6 +10,7 @@ import {
     signOut,
 } from 'https://www.gstatic.com/firebasejs/12.19.0/firebase-auth.js';
 import {
+    arrayRemove,
     arrayUnion,
     collection,
     deleteDoc,
@@ -524,6 +525,18 @@ export function removeMember(roster, memberId) {
     // founder and the name of the group, and the rules refuse a write that
     // touches either.
     return updateDoc(doc(store, 'groups', currentGroup()), rosterWithout(roster, memberId));
+}
+
+/**
+ * Hands the running of the group to a member, or takes it back.
+ *
+ * One element added or taken rather than the list written whole, so that two
+ * administrators changing different members at once do not undo each other.
+ */
+export function setRunning(memberId, runs) {
+    return updateDoc(doc(store, 'groups', currentGroup()), {
+        admins: runs ? arrayUnion(memberId) : arrayRemove(memberId),
+    });
 }
 
 export function watchProfiles(onProfiles, onError) {

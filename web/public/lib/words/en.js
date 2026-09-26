@@ -259,6 +259,9 @@ export const EN = {
     groupCopied: 'Invitation copied',
     groupRunsIt: 'admin',
     groupRemove: 'Remove from the group',
+    groupMakeAdmin: 'Make admin',
+    groupStopRunning: 'Remove admin role',
+    groupGiveUpRunning: 'Give up your admin role? Only another admin can give it back.',
     groupUnrun: 'Nobody runs this group, so its members are set from the Firebase console.',
 
     // The panel the member running the group opens: the household seen whole,

@@ -7,7 +7,7 @@
 
 import { compareIds } from './order.js';
 import { NO_LABELS } from './labels.js';
-import { mayBeRemoved, runsTheGroup } from './membership.js';
+import { mayBeMadeAdmin, mayBeRemoved, mayStopRunning, runsTheGroup } from './membership.js';
 
 /** As much of a phone's id as stands in for a name nobody wrote. */
 const PHONE_ID_SHOWN = 8;
@@ -33,6 +33,8 @@ export function groupOverview(roster, profiles, grants, ownMemberId, labels = NO
             // act as taking somebody out of it, and the rules refuse a roster
             // left with nobody to run it.
             removable: memberId !== ownMemberId && mayBeRemoved(roster, memberId, ownMemberId),
+            mayBeMadeAdmin: mayBeMadeAdmin(roster, memberId, ownMemberId),
+            mayStopRunning: mayStopRunning(roster, memberId, ownMemberId),
             phones: phoneLines(memberId, grants.get(memberId)?.phones ?? new Map(), labels),
         }))
         .sort(inReadingOrder);

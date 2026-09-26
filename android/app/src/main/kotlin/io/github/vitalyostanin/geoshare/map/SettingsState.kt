@@ -105,6 +105,8 @@ data class SettingsActions(
     val onMakeInvitation: () -> Unit,
     val onJoinGroup: (Invitation) -> Unit,
     val onRemoveMember: (String) -> Unit,
+    /** Hands a member the running of the group, or takes it back. */
+    val onSetRunning: (String, Boolean) -> Unit,
     val onPhoneNameChange: (String?) -> Unit,
     val onSignOut: () -> Unit,
 )

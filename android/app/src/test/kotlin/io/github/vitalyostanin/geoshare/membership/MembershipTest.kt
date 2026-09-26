@@ -170,4 +170,60 @@ class MembershipTest {
         assertFalse(looksLikeAGroupName(""))
         assertFalse(looksLikeAGroupName("a".repeat(129)))
     }
+
+    private val carol = "carol-uid"
+
+    @Test
+    fun `whoever runs the group hands it to a member who does not run it yet`() {
+        val roster = Roster(members = listOf(alice, bob, carol), admins = listOf(alice, bob))
+
+        assertTrue(mayBeMadeAdmin(roster, carol, alice))
+        assertFalse(mayBeMadeAdmin(roster, bob, alice))
+        assertFalse(mayBeMadeAdmin(roster, stranger, alice))
+        assertFalse(mayBeMadeAdmin(roster, alice, carol))
+    }
+
+    @Test
+    fun `the founder is handed nothing, running the group unnamed`() {
+        val roster = Roster(members = listOf(alice, bob), founder = alice)
+
+        assertFalse(mayBeMadeAdmin(roster, alice, alice))
+        assertTrue(mayBeMadeAdmin(roster, bob, alice))
+    }
+
+    // The rules let an administrator who is not the founder relieve another,
+    // and themselves: only the founder's place is out of their reach.
+    @Test
+    fun `an administrator relieves another, and may give the role up`() {
+        val roster = Roster(members = listOf(alice, bob, carol), admins = listOf(alice, bob))
+
+        assertTrue(mayStopRunning(roster, bob, alice))
+        assertTrue(mayStopRunning(roster, alice, alice))
+        assertFalse(mayStopRunning(roster, carol, alice))
+        assertFalse(mayStopRunning(roster, alice, carol))
+    }
+
+    @Test
+    fun `the last administrator keeps the role while no founder runs the group`() {
+        val roster = Roster(members = listOf(alice, bob), admins = listOf(alice))
+
+        assertFalse(mayStopRunning(roster, alice, alice))
+    }
+
+    @Test
+    fun `with the founder there, the last named administrator may go`() {
+        val roster = Roster(members = listOf(alice, bob), admins = listOf(bob), founder = alice)
+
+        assertTrue(mayStopRunning(roster, bob, alice))
+        assertTrue(mayStopRunning(roster, bob, bob))
+    }
+
+    @Test
+    fun `the founder is not offered to be relieved even when named`() {
+        val roster =
+            Roster(members = listOf(alice, bob), admins = listOf(alice, bob), founder = alice)
+
+        assertFalse(mayStopRunning(roster, alice, bob))
+        assertFalse(mayStopRunning(roster, alice, alice))
+    }
 }

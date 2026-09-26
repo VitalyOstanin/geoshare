@@ -193,6 +193,12 @@
     <string name="group_copied">Invitation copied</string>
     <string name="group_runs_it">admin</string>
     <string name="group_remove">Remove from the group</string>
+    <string name="group_make_admin">Make admin</string>
+    <string name="group_stop_running">Remove admin role</string>
+    <string name="group_give_up_title">Give up your admin role?</string>
+    <string name="group_give_up_text">Only another admin can give it back.</string>
+    <string name="group_give_up">Give it up</string>
+    <string name="group_keep_running">Keep it</string>
     <string name="group_unrun">Nobody runs this group, so its members are set from the Firebase console.</string>
     <!-- What a refused write says. The rules weigh several things at once - a
          code that has run out, a group already made, a member the last

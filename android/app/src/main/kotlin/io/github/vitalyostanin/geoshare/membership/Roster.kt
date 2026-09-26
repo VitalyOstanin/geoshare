@@ -111,3 +111,28 @@ fun mayBeRemoved(roster: Roster, uid: String, by: String? = null): Boolean {
         (uid !in roster.admins || byFounder) &&
         (left.admins.isNotEmpty() || roster.founder in left.members)
 }
+
+/**
+ * Whether a member may be handed the running of the group by [by]: anybody who
+ * runs it hands it to anybody on the roster who does not run it yet.
+ */
+fun mayBeMadeAdmin(roster: Roster, uid: String, by: String): Boolean =
+    runsTheGroup(roster, by) && uid in roster.members && !runsTheGroup(roster, uid)
+
+/**
+ * Whether a member may be relieved of running the group by [by].
+ *
+ * Asked the way the rules ask it:
+ * - the founder is not offered: they run the group without being named, so
+ *   taking the name away would change nothing on the screen, and nobody else
+ *   may take it;
+ * - the last administrator keeps the role while the founder is not there to
+ *   run the group, for the reason the last one is not removed either.
+ *
+ * An administrator may give up the role themselves; the screen asks twice,
+ * since only another administrator can hand it back.
+ */
+fun mayStopRunning(roster: Roster, uid: String, by: String): Boolean = runsTheGroup(roster, by) &&
+    uid in roster.admins &&
+    uid != roster.founder &&
+    (roster.admins.any { it != uid } || roster.founder in roster.members)

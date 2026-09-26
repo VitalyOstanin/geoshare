@@ -81,6 +81,7 @@ import io.github.vitalyostanin.geoshare.service.leavePreviousId
 import io.github.vitalyostanin.geoshare.service.makeInvitation
 import io.github.vitalyostanin.geoshare.service.refusalToStart
 import io.github.vitalyostanin.geoshare.service.removeFromGroup
+import io.github.vitalyostanin.geoshare.service.setRunning
 import io.github.vitalyostanin.geoshare.service.startConditions
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.launch
@@ -406,6 +407,14 @@ class MainActivity : AppCompatActivity() {
                                                     roster?.let {
                                                         removeFromGroup(it, memberId)
                                                     }
+                                                }
+                                        }
+                                    },
+                                    onSetRunning = { memberId, runs ->
+                                        lifecycleScope.launch {
+                                            groupTrouble =
+                                                !withGroup("changed who runs the group") {
+                                                    setRunning(memberId, runs)
                                                 }
                                         }
                                     },

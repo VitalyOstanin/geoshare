@@ -1,7 +1,9 @@
 package io.github.vitalyostanin.geoshare.map
 
 import io.github.vitalyostanin.geoshare.membership.Roster
+import io.github.vitalyostanin.geoshare.membership.mayBeMadeAdmin
 import io.github.vitalyostanin.geoshare.membership.mayBeRemoved
+import io.github.vitalyostanin.geoshare.membership.mayStopRunning
 import io.github.vitalyostanin.geoshare.membership.runsTheGroup
 import io.github.vitalyostanin.geoshare.service.positionId
 import java.time.Instant
@@ -32,6 +34,10 @@ data class GroupLine(
     val phonesShared: Int,
     /** Whether the administrator looking at the panel may take them off the roster. */
     val removable: Boolean,
+    /** Whether the administrator looking at the panel may hand them the running of the group. */
+    val mayBeMadeAdmin: Boolean = false,
+    /** Whether the administrator looking at the panel may relieve them of it. */
+    val mayStopRunning: Boolean = false,
     /**
      * The member's phones as they last said how they are, whether or not this
      * phone may see where they are: an administrator reads these to tell a
@@ -102,6 +108,8 @@ fun groupOverview(
             // act as taking somebody out of it, and the rules refuse a roster
             // left with nobody to run it.
             removable = memberId != ownMemberId && mayBeRemoved(roster, memberId, ownMemberId),
+            mayBeMadeAdmin = mayBeMadeAdmin(roster, memberId, ownMemberId),
+            mayStopRunning = mayStopRunning(roster, memberId, ownMemberId),
             phones = phoneLines(memberId, grants[memberId]?.phones.orEmpty(), labels),
         )
     }.sortedWith(compareByDescending(GroupLine::isYou).thenBy { it.displayName ?: it.memberId })

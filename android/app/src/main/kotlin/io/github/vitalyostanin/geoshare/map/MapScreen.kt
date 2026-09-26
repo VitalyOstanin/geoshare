@@ -497,6 +497,7 @@ fun MapScreen(
             trouble = settings.groupTrouble,
             onMakeInvitation = actions.onMakeInvitation,
             onRemoveMember = actions.onRemoveMember,
+            onSetRunning = actions.onSetRunning,
             onClose = { adminOpen = false },
         )
     }

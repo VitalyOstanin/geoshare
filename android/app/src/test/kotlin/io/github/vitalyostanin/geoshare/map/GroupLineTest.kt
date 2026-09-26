@@ -101,6 +101,18 @@ class GroupLineTest {
     // the panel lists them for: whether a phone is in touch is not a secret
     // of whom its owner shares with.
     @Test
+    fun `the panel offers the role to a member and takes it from an administrator`() {
+        val two = Roster(members = listOf(parent, spouse, child), admins = listOf(parent, spouse))
+        val lines = groupOverview(two, profiles, emptyMap(), parent)
+
+        assertTrue(lines.single { it.memberId == child }.mayBeMadeAdmin)
+        assertFalse(lines.single { it.memberId == child }.mayStopRunning)
+        assertFalse(lines.single { it.memberId == spouse }.mayBeMadeAdmin)
+        assertTrue(lines.single { it.memberId == spouse }.mayStopRunning)
+        assertTrue(lines.single { it.memberId == parent }.mayStopRunning)
+    }
+
+    @Test
     fun `the phones are listed by the names the map gives them`() {
         val roster = Roster(members = listOf(parent, child), admins = listOf(parent))
         val grants =

@@ -265,6 +265,9 @@ export const RU = {
     groupCopied: 'Приглашение скопировано',
     groupRunsIt: 'админ',
     groupRemove: 'Удалить из группы',
+    groupMakeAdmin: 'Сделать админом',
+    groupStopRunning: 'Снять роль админа',
+    groupGiveUpRunning: 'Снять с себя роль админа? Вернуть её сможет только другой админ.',
     groupUnrun: 'Группу никто не ведёт, её состав задаётся в консоли Firebase.',
 
     // The panel the member running the group opens.

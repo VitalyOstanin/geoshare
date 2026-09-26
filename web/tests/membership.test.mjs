@@ -10,7 +10,9 @@ import {
     invitationText,
     looksLikeACode,
     looksLikeAGroupName,
+    mayBeMadeAdmin,
     mayBeRemoved,
+    mayStopRunning,
     newInvitationCode,
     rosterWithout,
     runsTheGroup,
@@ -155,4 +157,55 @@ test('a code carries neither the letters nor the digits read for each other', ()
     assert.equal(codes.every((code) => looksLikeACode(code)), true);
     assert.equal(codes.some((code) => /[IO01]/u.test(code)), false);
     assert.equal(new Set(codes).size > 190, true);
+});
+
+const CAROL = 'carol-uid';
+
+test('whoever runs the group hands it to a member who does not run it yet', () => {
+    const roster = { members: [ALICE, BOB, CAROL], admins: [ALICE, BOB] };
+
+    assert.equal(mayBeMadeAdmin(roster, CAROL, ALICE), true);
+    assert.equal(mayBeMadeAdmin(roster, BOB, ALICE), false);
+    assert.equal(mayBeMadeAdmin(roster, STRANGER, ALICE), false);
+    assert.equal(mayBeMadeAdmin(roster, ALICE, CAROL), false);
+});
+
+test('the founder is handed nothing: they run the group unnamed', () => {
+    const roster = { members: [ALICE, BOB], admins: [], founder: ALICE };
+
+    assert.equal(mayBeMadeAdmin(roster, ALICE, ALICE), false);
+    assert.equal(mayBeMadeAdmin(roster, BOB, ALICE), true);
+});
+
+// The rules let an administrator who is not the founder relieve another, and
+// themselves: only the founder's place is out of their reach.
+test('an administrator relieves another, and may give the role up', () => {
+    const roster = { members: [ALICE, BOB, CAROL], admins: [ALICE, BOB] };
+
+    assert.equal(mayStopRunning(roster, BOB, ALICE), true);
+    assert.equal(mayStopRunning(roster, ALICE, ALICE), true);
+    assert.equal(mayStopRunning(roster, CAROL, ALICE), false);
+    assert.equal(mayStopRunning(roster, ALICE, CAROL), false);
+});
+
+test('the last administrator keeps the role while no founder runs the group', () => {
+    const roster = { members: [ALICE, BOB], admins: [ALICE] };
+
+    assert.equal(mayStopRunning(roster, ALICE, ALICE), false);
+});
+
+test('with the founder there, the last named administrator may go', () => {
+    const roster = { members: [ALICE, BOB], admins: [BOB], founder: ALICE };
+
+    assert.equal(mayStopRunning(roster, BOB, ALICE), true);
+    assert.equal(mayStopRunning(roster, BOB, BOB), true);
+});
+
+// The household of the project owner names them among the administrators as
+// well; taking the name off would change nothing, and only they may.
+test('the founder is not offered to be relieved even when named', () => {
+    const roster = { members: [ALICE, BOB], admins: [ALICE, BOB], founder: ALICE };
+
+    assert.equal(mayStopRunning(roster, ALICE, BOB), false);
+    assert.equal(mayStopRunning(roster, ALICE, ALICE), false);
 });

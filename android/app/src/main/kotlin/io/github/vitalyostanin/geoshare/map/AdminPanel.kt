@@ -14,12 +14,17 @@ import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
@@ -61,10 +66,12 @@ fun AdminPanel(
     trouble: Boolean,
     onMakeInvitation: () -> Unit,
     onRemoveMember: (String) -> Unit,
+    onSetRunning: (String, Boolean) -> Unit,
     onClose: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val lines = groupOverview(roster, profiles, grants, ownMemberId, labels)
+    var givingUp by remember { mutableStateOf(false) }
 
     Surface(modifier = modifier.fillMaxSize()) {
         // Scrolled and inset the way the settings screen is, and for the same
@@ -94,7 +101,15 @@ fun AdminPanel(
             HorizontalDivider()
 
             for (line in lines) {
-                AdminMemberRow(line = line, now = now, onRemove = { onRemoveMember(line.memberId) })
+                AdminMemberRow(
+                    line = line,
+                    now = now,
+                    onMakeAdmin = { onSetRunning(line.memberId, true) },
+                    onStopRunning = {
+                        if (line.isYou) givingUp = true else onSetRunning(line.memberId, false)
+                    },
+                    onRemove = { onRemoveMember(line.memberId) },
+                )
             }
 
             HorizontalDivider()
@@ -111,6 +126,31 @@ fun AdminPanel(
             }
         }
     }
+
+    // Giving up one's own role cannot be undone from here: only another
+    // administrator can hand it back.
+    if (givingUp) {
+        AlertDialog(
+            onDismissRequest = { givingUp = false },
+            title = { Text(text = stringResource(R.string.group_give_up_title)) },
+            text = { Text(text = stringResource(R.string.group_give_up_text)) },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        givingUp = false
+                        onSetRunning(ownMemberId, false)
+                    },
+                ) {
+                    Text(text = stringResource(R.string.group_give_up))
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { givingUp = false }) {
+                    Text(text = stringResource(R.string.group_keep_running))
+                }
+            },
+        )
+    }
 }
 
 /**
@@ -121,7 +161,13 @@ fun AdminPanel(
  * the member has a phone in this at all.
  */
 @Composable
-private fun AdminMemberRow(line: GroupLine, now: Instant, onRemove: () -> Unit) {
+private fun AdminMemberRow(
+    line: GroupLine,
+    now: Instant,
+    onMakeAdmin: () -> Unit,
+    onStopRunning: () -> Unit,
+    onRemove: () -> Unit,
+) {
     Row(
         modifier = Modifier.fillMaxWidth().padding(start = 16.dp, end = 8.dp, top = 8.dp),
         verticalAlignment = Alignment.CenterVertically,
@@ -150,9 +196,25 @@ private fun AdminMemberRow(line: GroupLine, now: Instant, onRemove: () -> Unit) 
             }
         }
 
-        if (line.removable) {
-            TextButton(onClick = onRemove) {
-                Text(text = stringResource(R.string.group_remove))
+        // One action under another rather than side by side: the names take
+        // the width.
+        Column(horizontalAlignment = Alignment.End) {
+            if (line.mayBeMadeAdmin) {
+                TextButton(onClick = onMakeAdmin) {
+                    Text(text = stringResource(R.string.group_make_admin))
+                }
+            }
+
+            if (line.mayStopRunning) {
+                TextButton(onClick = onStopRunning) {
+                    Text(text = stringResource(R.string.group_stop_running))
+                }
+            }
+
+            if (line.removable) {
+                TextButton(onClick = onRemove) {
+                    Text(text = stringResource(R.string.group_remove))
+                }
             }
         }
     }

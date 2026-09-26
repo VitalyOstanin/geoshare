@@ -517,34 +517,6 @@ What it costs:
   makes the first way the one to start with, and it means the screen works only
   for the owner.
 
-## Who runs the group, said in the data and edited on a screen
-
-Being an administrator is a fact in the group document — the `admins` list —
-and the rules already read it: administrators edit the roster, make and
-withdraw invitations, and name the places a false signal uses. Owning the
-Firebase project is a billing fact and nothing else; the two must not be
-confused, and today they are only because one person happens to be both.
-
-What is missing is the screen that edits the list. A member who runs the group
-should be able to hand that to another member, and to take it back, without
-anybody opening the console:
-
-- The screen shows every member with a mark against those who run the group,
-  and the marks are what the write changes. The rules already hold the two
-  invariants — the administrators stay a non-empty subset of the members, and
-  leaving the group takes the power with it — so the screen has to show what
-  is refused rather than enforce it.
-- The household that started before invitations existed has no `admins` field
-  at all, and its roster is still edited from the console. The screen has to
-  offer the first write that fills the list in, and it can only be offered to
-  somebody the console named, since nothing else says who should run a group
-  that nobody runs.
-- Handing over the last administration is worth a second question: a group
-  whose only administrator hands it to somebody who never opens the
-  application is a group that goes back to the console.
-- The page needs the same screen, since the member who runs the group is not
-  necessarily the member holding a phone with the application on it.
-
 ## The phones fetch their own updates
 
 Every phone in the household is updated by cable: a build is made, `adb

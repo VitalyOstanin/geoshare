@@ -177,6 +177,12 @@
     <string name="group_copied">Приглашение скопировано</string>
     <string name="group_runs_it">админ</string>
     <string name="group_remove">Удалить из группы</string>
+    <string name="group_make_admin">Сделать админом</string>
+    <string name="group_stop_running">Снять роль админа</string>
+    <string name="group_give_up_title">Снять с себя роль админа?</string>
+    <string name="group_give_up_text">Вернуть её сможет только другой админ.</string>
+    <string name="group_give_up">Снять</string>
+    <string name="group_keep_running">Оставить</string>
     <string name="group_unrun">Группу никто не ведёт, её состав задаётся в консоли Firebase.</string>
     <string name="group_refused">База отказала. Возможно, приглашение истекло или группа уже создана.</string>
     <string name="admin_title">Управление группой</string>

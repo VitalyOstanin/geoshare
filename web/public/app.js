@@ -56,6 +56,7 @@ import {
     makeInvitation,
     publishProfile,
     removeMember,
+    setRunning,
     signIn,
     watchFalsePlaces,
     watchPositions,
@@ -773,18 +774,52 @@ function adminRow(line) {
     }
     row.append(about);
 
-    if (line.removable) {
-        const remove = document.createElement('button');
+    const actions = document.createElement('div');
 
-        remove.type = 'button';
-        remove.textContent = WORDS.groupRemove;
-        remove.addEventListener('click', () =>
-            tryGroupWrite(() => removeMember(state.roster, line.memberId)),
+    actions.className = 'admin-actions';
+
+    if (line.mayBeMadeAdmin) {
+        actions.append(
+            adminButton(WORDS.groupMakeAdmin, () => setRunning(line.memberId, true)),
         );
-        row.append(remove);
+    }
+
+    if (line.mayStopRunning) {
+        actions.append(
+            adminButton(WORDS.groupStopRunning, () => setRunning(line.memberId, false), {
+                // Giving up one's own role cannot be undone from here: only
+                // another administrator can hand it back.
+                asked: line.isYou ? WORDS.groupGiveUpRunning : null,
+            }),
+        );
+    }
+
+    if (line.removable) {
+        actions.append(
+            adminButton(WORDS.groupRemove, () => removeMember(state.roster, line.memberId)),
+        );
+    }
+
+    if (actions.childElementCount > 0) {
+        row.append(actions);
     }
 
     return row;
+}
+
+/** A button of the panel that makes one write to the group. */
+function adminButton(text, write, { asked = null } = {}) {
+    const button = document.createElement('button');
+
+    button.type = 'button';
+    button.textContent = text;
+    button.addEventListener('click', () => {
+        if (asked === null || window.confirm(asked)) {
+            tryGroupWrite(write);
+        }
+    });
+
+    return button;
 }
 
 /** A phone, when it was last in touch, and its charge. */

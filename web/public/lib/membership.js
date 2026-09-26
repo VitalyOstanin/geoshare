@@ -90,6 +90,45 @@ export function mayBeRemoved(roster, memberId, by) {
 }
 
 /**
+ * Whether a member may be handed the running of the group by the one looking
+ * at the roster: anybody who runs it hands it to anybody on the roster who does
+ * not run it yet.
+ */
+export function mayBeMadeAdmin(roster, memberId, by) {
+    return runsTheGroup(roster, by) &&
+        roster.members.includes(memberId) &&
+        !runsTheGroup(roster, memberId);
+}
+
+/**
+ * Whether a member may be relieved of running the group by the one looking at
+ * the roster.
+ *
+ * Asked the way the rules ask it:
+ * - the founder is not offered: they run the group without being named, so
+ *   taking the name away would change nothing on the screen, and nobody else
+ *   may take it;
+ * - the last administrator keeps the role while the founder is not there to
+ *   run the group, for the reason the last one is not removed either.
+ *
+ * An administrator may give up the role themselves; the screen asks twice,
+ * since only another administrator can hand it back.
+ */
+export function mayStopRunning(roster, memberId, by) {
+    if (
+        !runsTheGroup(roster, by) ||
+        !roster.admins.includes(memberId) ||
+        memberId === roster.founder
+    ) {
+        return false;
+    }
+
+    const left = roster.admins.filter((id) => id !== memberId);
+
+    return left.length > 0 || roster.members.includes(roster.founder);
+}
+
+/**
  * The roster as it stands once somebody has been taken out of it.
  *
  * The two lists alone, because they are all a write may change: the founder

@@ -184,5 +184,23 @@ suspend fun removeFromGroup(
     AppLog.i(TAG, "a member has been taken off the roster")
 }
 
+/**
+ * Hands the running of the group to a member, or takes it back.
+ *
+ * One element added or taken rather than the list written whole, so that two
+ * administrators changing different members at once do not undo each other.
+ */
+suspend fun setRunning(
+    uid: String,
+    runs: Boolean,
+    store: FirebaseFirestore = FirebaseFirestore.getInstance(),
+) {
+    val change = if (runs) FieldValue.arrayUnion(uid) else FieldValue.arrayRemove(uid)
+
+    groupDocument(store).update(GroupField.ADMINS, change).await()
+
+    AppLog.i(TAG, if (runs) "a member has been handed the group" else "a member has given it back")
+}
+
 private fun Roster.asDocument(): Map<String, Any> =
     mapOf(GroupField.MEMBERS to members, GroupField.ADMINS to admins)

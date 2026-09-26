@@ -79,6 +79,17 @@ test('the last administrator is not offered for removal', () => {
     assert.equal(lineFor(lines, PARENT).removable, false);
 });
 
+test('the panel offers the role to a member and takes it from an administrator', () => {
+    const two = { members: [PARENT, SPOUSE, CHILD], admins: [PARENT, SPOUSE] };
+    const lines = groupOverview(two, profiles, nothingShared, PARENT);
+
+    assert.equal(lineFor(lines, CHILD).mayBeMadeAdmin, true);
+    assert.equal(lineFor(lines, CHILD).mayStopRunning, false);
+    assert.equal(lineFor(lines, SPOUSE).mayBeMadeAdmin, false);
+    assert.equal(lineFor(lines, SPOUSE).mayStopRunning, true);
+    assert.equal(lineFor(lines, PARENT).mayStopRunning, true);
+});
+
 // The panel is drawn before the first answer about the profiles arrives, and a
 // list with no names in it is still a list of the household.
 test('a panel drawn before the profiles arrive still lists everybody', () => {
