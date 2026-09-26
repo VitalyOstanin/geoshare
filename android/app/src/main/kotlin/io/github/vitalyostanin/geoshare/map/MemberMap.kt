@@ -722,7 +722,7 @@ private class MapHolder(val view: MapView) {
                 context = view.context,
                 name = label(single),
                 colour = memberColour(single.memberId),
-                stale = isStale(single.knownAt, now),
+                stale = isGrey(single, now),
                 face = faces[single.memberId],
             )
         }
@@ -739,7 +739,7 @@ private class MapHolder(val view: MapView) {
                     picture = faces[position.memberId],
                     initial = memberInitial(label(position)),
                     colour = memberColour(position.memberId),
-                    stale = isStale(position.knownAt, now),
+                    stale = isGrey(position, now),
                 )
             },
             // A plus and a number, which is the same in every language the
@@ -763,7 +763,7 @@ private class MapHolder(val view: MapView) {
     ) { position ->
         val face = faces[position.memberId] != null
 
-        "${position.positionId}:${label(position)}:${isStale(position.knownAt, now)}:$face"
+        "${position.positionId}:${label(position)}:${isGrey(position, now)}:$face"
     }
 
     private fun label(position: MemberPosition): String =

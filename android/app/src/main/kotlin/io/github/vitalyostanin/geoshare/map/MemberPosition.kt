@@ -73,6 +73,15 @@ data class MemberPosition(
     val leftOutReason: String? = null,
     /** When the run of left-out answers began. */
     val leftOutSince: Instant? = null,
+    /**
+     * Whether the position lies where a false signal is known to put phones.
+     *
+     * Not a field of the document: the screen works it out against the
+     * group's list of such places, because a position written before a place
+     * was named stays in the database until the phone has something true to
+     * write over it. See FalseMarks.kt.
+     */
+    val inFalsePlace: Boolean = false,
 ) {
     /**
      * The moment the age is counted from.

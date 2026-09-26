@@ -24,6 +24,7 @@ import {
 import { firebaseConfig } from '../firebase-config.js';
 import { positionMoments } from './age.js';
 import { labelsFrom } from './labels.js';
+import { placesOf } from './false-places.js';
 import { combinedGrants, phonesOf } from './phones.js';
 import {
     INVITATION_LASTS_MS,
@@ -381,6 +382,21 @@ export function watchRoster(onRoster) {
 }
 
 /**
+ * The places this group says a false signal puts phones at, and again
+ * whenever an administrator names or moves one.
+ *
+ * A refusal is read as no places at all: the list only greys markers, and a
+ * page that cannot read it draws them the way it did before any was named.
+ */
+export function watchFalsePlaces(onPlaces) {
+    return onSnapshot(
+        collection(store, 'groups', currentGroup(), 'falsePlaces'),
+        (snapshot) => onPlaces(placesOf(snapshot.docs.map((document) => document.data()))),
+        () => onPlaces([]),
+    );
+}
+
+/**
  * What this member calls the others, and again whenever that changes — here,
  * on one of their phones or in another tab.
  *
@@ -730,7 +746,8 @@ const ATTENTION = ['pointerdown', 'pointermove', 'keydown', 'wheel', 'touchstart
  * Looking means a visible tab with somebody in front of it. A tab in the
  * background is not looking — the phones of the group would go on spending
  * their battery for a window nobody can see — and neither is a tab left open
- * on a desk for a quarter of an hour. The Android client says the same thing
+ * on a desk for a quarter of an hour, nor a window left showing while its
+ * viewer works in another one. The Android client says the same thing
  * by tying its claim to the screen being on and the map being in front.
  *
  * The claim carries the moment it was written by the server's clock rather
@@ -750,7 +767,9 @@ export function keepWatching(memberId, onError, onClaim = () => {}) {
     const push = () => setDoc(marker, { memberId, since: serverTimestamp() }).catch(onError);
     const withdraw = () => deleteDoc(marker).catch(onError);
     const looking = () =>
-        document.visibilityState !== 'hidden' && Date.now() - touched < IDLE_AFTER_MS;
+        document.visibilityState !== 'hidden'
+        && document.hasFocus()
+        && Date.now() - touched < IDLE_AFTER_MS;
 
     const claim = () => {
         if (timer) {
@@ -786,12 +805,16 @@ export function keepWatching(memberId, onError, onClaim = () => {}) {
     };
 
     document.addEventListener('visibilitychange', review);
+    window.addEventListener('focus', review);
+    window.addEventListener('blur', review);
     ATTENTION.forEach((event) => window.addEventListener(event, noticed, { passive: true }));
 
     review();
 
     return () => {
         document.removeEventListener('visibilitychange', review);
+        window.removeEventListener('focus', review);
+        window.removeEventListener('blur', review);
         ATTENTION.forEach((event) => window.removeEventListener(event, noticed));
 
         if (timer) {

@@ -108,3 +108,17 @@ test('a distance past a kilometre is said in kilometres to one place', () => {
     assert.equal(distanceText(999.6), '1.0 km');
     assert.equal(distanceText(2345), '2.3 km');
 });
+
+test('a place of the viewer inside a false place is not measured from', () => {
+    const own = { ...at('me.one', 'me', 61.14561, 5.4036), inFalsePlace: true };
+    const oona = at('oona.one', 'oona', 61.03249, 4.4);
+
+    assert.equal(distanceFromViewer(oona, [own, oona], 'me', NOW), null);
+});
+
+test('a member inside a false place is not measured to', () => {
+    const own = at('me.one', 'me', 61.03249, 4.4);
+    const oona = { ...at('oona.one', 'oona', 61.14561, 5.4036), inFalsePlace: true };
+
+    assert.equal(distanceFromViewer(oona, [own, oona], 'me', NOW), null);
+});

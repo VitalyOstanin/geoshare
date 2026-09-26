@@ -44,6 +44,9 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.clipToBounds
+import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.graphics.ColorMatrix
@@ -63,6 +66,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.text.withLink
 import androidx.compose.ui.unit.dp
 import io.github.vitalyostanin.geoshare.R
+import io.github.vitalyostanin.geoshare.collection.JumpReason
 import io.github.vitalyostanin.geoshare.collection.Watcher
 import io.github.vitalyostanin.geoshare.collection.foundByLabel
 import io.github.vitalyostanin.geoshare.collection.leftOutReasonLabel
@@ -664,7 +668,7 @@ private fun MemberButton(
                     memberId = member.memberId,
                     name = name,
                     picture = face,
-                    stale = isStale(member.knownAt, now),
+                    stale = isGrey(member, now),
                 )
 
                 Text(
@@ -740,7 +744,7 @@ private fun MemberRow(
             memberId = member.memberId,
             name = name,
             picture = face,
-            stale = isStale(member.knownAt, now),
+            stale = isGrey(member, now),
         )
 
         Column(modifier = Modifier.weight(1f)) {
@@ -877,7 +881,7 @@ private fun AgeText(member: MemberPosition, now: Instant, short: Boolean = false
         // Grey is the whole point of the stale mark: an old position still
         // shows where the member was, and should not read as where they are.
         color =
-        if (isStale(member.knownAt, now)) {
+        if (isGrey(member, now)) {
             MaterialTheme.colorScheme.onSurfaceVariant
         } else {
             MaterialTheme.colorScheme.onSurface
@@ -980,7 +984,7 @@ private fun MemberDetail(
                     memberId = member.memberId,
                     name = name,
                     picture = face,
-                    stale = isStale(member.knownAt, now),
+                    stale = isGrey(member, now),
                 )
 
                 // The two names are what is pressed to rename them, underlined
@@ -1098,21 +1102,23 @@ private val HEADER_BUTTON_PADDING = PaddingValues(horizontal = 8.dp, vertical = 
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
 private fun DetailSummary(member: MemberPosition, away: Double?, now: Instant) {
+    // Clipped at its own edge: the dot before the first fact of every line
+    // falls outside it, so a line never starts with a separator.
     FlowRow(
-        horizontalArrangement = Arrangement.spacedBy(6.dp),
-        verticalArrangement = Arrangement.spacedBy(6.dp),
-        modifier = Modifier.padding(top = 6.dp),
+        horizontalArrangement = Arrangement.spacedBy(FACT_GAP),
+        verticalArrangement = Arrangement.spacedBy(2.dp),
+        modifier = Modifier.padding(top = 6.dp).clipToBounds(),
     ) {
         away?.let {
-            Capsule(stringResource(R.string.map_detail_from_you, widthText(distanceUnits(it))))
+            Fact(stringResource(R.string.map_detail_from_you, widthText(distanceUnits(it))))
         }
-        Capsule(
+        Fact(
             stringResource(
                 R.string.map_detail_position_ago,
                 ageText(positionAge(member.positionAt, now)),
             ),
         )
-        Capsule(
+        Fact(
             stringResource(
                 R.string.map_detail_online_ago,
                 ageText(positionAge(member.knownAt, now)),
@@ -1121,7 +1127,7 @@ private fun DetailSummary(member: MemberPosition, away: Double?, now: Instant) {
 
         val percent = member.batteryPercent
 
-        Capsule(
+        Fact(
             text =
             percent
                 ?.let { stringResource(R.string.map_battery, it) }
@@ -1136,17 +1142,35 @@ private fun DetailSummary(member: MemberPosition, away: Double?, now: Instant) {
     }
 }
 
-/** One fact of the summary, in a capsule of its own so that the four read apart when they wrap. */
+/** The room between two facts of the summary, the dot between them in its middle. */
+private val FACT_GAP = 14.dp
+
+/**
+ * One fact of the summary, kept whole on one line, with a dot drawn in the gap
+ * before it.
+ *
+ * Drawn rather than written, so that TalkBack reads the facts one by one and
+ * says nothing about the dots.
+ */
 @Composable
-private fun Capsule(text: String, colour: Color = MaterialTheme.colorScheme.onSurface) {
-    Surface(shape = CircleShape, color = MaterialTheme.colorScheme.surfaceVariant) {
-        Text(
-            text = text,
-            style = MaterialTheme.typography.bodySmall,
-            color = colour,
-            modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp),
-        )
-    }
+private fun Fact(text: String, colour: Color = MaterialTheme.colorScheme.onSurface) {
+    val dot = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.45f)
+
+    Text(
+        text = text,
+        style = MaterialTheme.typography.bodySmall,
+        color = colour,
+        maxLines = 1,
+        softWrap = false,
+        modifier =
+        Modifier.drawBehind {
+            drawCircle(
+                color = dot,
+                radius = 1.5.dp.toPx(),
+                center = Offset(-FACT_GAP.toPx() / 2, size.height / 2),
+            )
+        },
+    )
 }
 
 /**
@@ -1163,7 +1187,7 @@ private fun DetailWarnings(member: MemberPosition, now: Instant) {
     val stuck = isStuck(member.positionAt, member.knownAt, now)
     val count = member.leftOutCount?.takeIf { it > 0 }
 
-    if (!stuck && count == null && !member.settling) {
+    if (!member.inFalsePlace && !stuck && count == null && !member.settling) {
         return
     }
 
@@ -1193,23 +1217,38 @@ private fun DetailWarnings(member: MemberPosition, now: Instant) {
             }
             ?: stringResource(leftOutReasonLabel(member.leftOutReason))
     val settling = stringResource(R.string.map_detail_settling_sentence).takeIf { member.settling }
+    val falsePlaceLead =
+        stringResource(R.string.map_detail_false_place_lead).takeIf { member.inFalsePlace }
+    val falsePlace =
+        stringResource(leftOutReasonLabel(JumpReason.FalsePlace.name))
+            .replaceFirstChar { it.lowercase(Locale.getDefault()) }
+    val reasonLink =
+        LinkAnnotation.Clickable(
+            tag = "reason",
+            styles = TextLinkStyles(SpanStyle(textDecoration = TextDecoration.Underline)),
+        ) { helpOpen = true }
 
     val paragraph =
         buildAnnotatedString {
-            stuckSentence?.let { append(it) }
+            falsePlaceLead?.let {
+                append(it)
+                append(' ')
+                withLink(reasonLink) { append(falsePlace) }
+                append('.')
+            }
+
+            stuckSentence?.let {
+                if (length > 0) append(' ')
+
+                append(it)
+            }
 
             if (lead != null) {
                 if (length > 0) append(' ')
 
                 append(lead)
                 append(' ')
-                withLink(
-                    LinkAnnotation.Clickable(
-                        tag = "reason",
-                        styles =
-                        TextLinkStyles(SpanStyle(textDecoration = TextDecoration.Underline)),
-                    ) { helpOpen = true },
-                ) {
+                withLink(reasonLink) {
                     append(reason.replaceFirstChar { it.lowercase(Locale.getDefault()) })
                 }
                 append('.')

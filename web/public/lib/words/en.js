@@ -87,6 +87,7 @@ export const EN = {
     // online and no new position has been accepted for half an hour or more;
     // positions are being rejected; the receiver has not settled since the
     // phone was switched on and answers narrowly and wrongly.
+    falsePlaceLead: 'The position is most likely false:',
     stuckSentence: (age) => `Online ${age}, but no new location has been accepted.`,
     leftOutLead: (answers) => `Rejected ${answers}:`,
     settlingSentence: 'The receiver had not settled since the phone was switched on.',

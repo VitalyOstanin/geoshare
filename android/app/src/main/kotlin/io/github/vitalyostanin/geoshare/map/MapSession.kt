@@ -15,6 +15,7 @@ import io.github.vitalyostanin.geoshare.membership.Roster
 import io.github.vitalyostanin.geoshare.service.CurrentGroup
 import io.github.vitalyostanin.geoshare.service.MapOnScreen
 import io.github.vitalyostanin.geoshare.service.groupRoster
+import io.github.vitalyostanin.geoshare.service.namedFalsePlaces
 import io.github.vitalyostanin.geoshare.service.positionId
 import io.github.vitalyostanin.geoshare.service.watchers
 import kotlinx.coroutines.NonCancellable
@@ -37,13 +38,20 @@ fun rememberMemberPositions(grants: Map<String, MemberGrant>): State<MembersInVi
     val documents = remember(grants) { positionDocuments(grants) }
     val positions = remember(writing, documents) { memberPositions(documents) }
     val written = positions.collectAsStateWithLifecycle(initialValue = MembersInView())
+    val falsePlaces = remember(writing) { namedFalsePlaces() }
+    val places = falsePlaces.collectAsStateWithLifecycle(initialValue = emptyList())
 
     // What the phones said about themselves since their positions were
     // written is laid over them here, so that every screen reading a position
-    // reads the charge, the cable and the moment of contact as they are now.
-    return remember(written, grants) {
+    // reads the charge, the cable and the moment of contact as they are now;
+    // and so is whether the position lies where the lie puts phones.
+    return remember(written, places, grants) {
         derivedStateOf {
-            written.value.let { seen -> seen.copy(positions = withPhones(seen.positions, grants)) }
+            written.value.let { seen ->
+                val current = withPhones(seen.positions, grants)
+
+                seen.copy(positions = withFalsePlaces(current, places.value))
+            }
         }
     }
 }

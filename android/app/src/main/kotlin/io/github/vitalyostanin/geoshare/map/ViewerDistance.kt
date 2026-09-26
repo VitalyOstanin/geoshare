@@ -28,12 +28,14 @@ private const val TENTHS_IN_A_KILOMETRE = 10.0
  * A place that has gone grey is no place to measure from: the viewer has had
  * half an hour to walk off, and a distance from where they were is read as a
  * distance from where they are. A marker left behind by a phone that is still
- * online is the same place gone grey, only without the colour.
+ * online is the same place gone grey, only without the colour, and so is one
+ * inside a place a false signal is known to put phones at.
  */
 fun ownPlace(positions: List<MemberPosition>, ownMemberId: String, now: Instant): MemberPosition? =
     positions
         .filter {
             it.memberId == ownMemberId &&
+                !it.inFalsePlace &&
                 !isStale(it.knownAt, now) &&
                 !isStuck(it.positionAt, it.knownAt, now)
         }.maxByOrNull { it.positionAt }
@@ -54,8 +56,9 @@ fun metresBetween(from: MemberPosition, to: MemberPosition): Double {
 
 /**
  * How far [position] is from the viewer, in metres, or null when the card has
- * nothing to say about it: on the card of the very place measured from, and
- * when the viewer has no place of their own to measure from. The page holds
+ * nothing to say about it: on the card of the very place measured from, on the
+ * card of a position a false signal is known to have put there, and when the
+ * viewer has no place of their own to measure from. The page holds
  * the same rules.
  */
 fun distanceFromViewer(
@@ -66,7 +69,7 @@ fun distanceFromViewer(
 ): Double? {
     val own = ownPlace(positions, ownMemberId, now)
 
-    if (own == null || own.positionId == position.positionId) {
+    if (own == null || own.positionId == position.positionId || position.inFalsePlace) {
         return null
     }
 

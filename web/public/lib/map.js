@@ -20,7 +20,8 @@ import { Map as MapLibre, Marker, NavigationControl } from './vendor/maplibre-gl
 import { STALE_COLOUR, memberColour, shortName } from './members.js';
 import { showFace } from './faces.js';
 
-import { ageText, isStale, isStuck, positionAge, timeText } from './age.js';
+import { ageText, isStuck, positionAge, timeText } from './age.js';
+import { isGrey } from './false-places.js';
 import { clusterMembers, facesShown } from './clusters.js';
 import {
     FOLLOW_ALL,
@@ -742,7 +743,7 @@ function showPin(entry, names, faces, now) {
     if (group.length === 1) {
         const member = group[0];
         const name = nameOf(member, names);
-        const stale = isStale(member.knownAt, now);
+        const stale = isGrey(member, now);
         const colour = stale ? STALE_COLOUR : memberColour(member.memberId);
 
         entry.label.textContent = name;
@@ -755,7 +756,7 @@ function showPin(entry, names, faces, now) {
 
     // Grey only when everybody under the marker has gone quiet: one member
     // still reporting is a reason to trust the marker.
-    const stale = group.every((member) => isStale(member.knownAt, now));
+    const stale = group.every((member) => isGrey(member, now));
 
     entry.label.textContent = groupLabel(group.length);
     entry.pin.style.setProperty('--pin', stale ? STALE_COLOUR : GROUP_COLOUR);
@@ -765,7 +766,7 @@ function showPin(entry, names, faces, now) {
 
     shown.forEach((member, index) => {
         const name = nameOf(member, names);
-        const old = isStale(member.knownAt, now);
+        const old = isGrey(member, now);
         const face = entry.faces[index];
 
         const colour = old ? STALE_COLOUR : memberColour(member.memberId);
@@ -926,7 +927,7 @@ function groupList(view, entry, names, faces, now) {
         row.type = 'button';
         row.className = 'group-row';
 
-        const stale = isStale(member.knownAt, now);
+        const stale = isGrey(member, now);
         const colour = stale ? STALE_COLOUR : memberColour(member.memberId);
         const label = nameOf(member, names);
 
@@ -1022,7 +1023,7 @@ function detail(view, position, name, faces, now) {
 
     // Old means grey here as well as on the pin and in the strip: a card in
     // full colour beside a faded pin reads as a member who is there right now.
-    const stale = isStale(position.knownAt, now);
+    const stale = isGrey(position, now);
     const colour = stale ? STALE_COLOUR : memberColour(position.memberId);
 
     const face = document.createElement('span');
@@ -1134,6 +1135,13 @@ function warningsOf(position, now) {
     // Each sentence is a list of pieces: the one about rejected answers holds
     // the reason as a word to press.
     const sentences = [];
+
+    if (position.inFalsePlace) {
+        const place = reasonButton('FalsePlace');
+
+        place.textContent = lowerFirst(place.textContent);
+        sentences.push([WORDS.falsePlaceLead, ' ', place, '.']);
+    }
 
     if (isStuck(position.positionAt, position.knownAt, now)) {
         sentences.push([WORDS.stuckSentence(ageText(positionAge(position.knownAt, now)))]);

@@ -1,6 +1,6 @@
 // The page: sign in, then everyone on a map with a panel to jump between them.
 
-import { ageText, isStale, positionAge } from './lib/age.js';
+import { ageText, positionAge } from './lib/age.js';
 import { showFace } from './lib/faces.js';
 import { FOLLOW_ALL, FOLLOW_ONE } from './lib/following.js';
 import { groupOverview } from './lib/group-lines.js';
@@ -34,6 +34,7 @@ import {
     labelledProfiles,
     readKeptLabels,
 } from './lib/labels.js';
+import { isGrey, withFalsePlaces } from './lib/false-places.js';
 import { withPhones } from './lib/phones.js';
 import { applyTheme, readTheme, writeTheme } from './lib/theme.js';
 import { watchingBesides, watchingMembers } from './lib/watchers.js';
@@ -56,6 +57,7 @@ import {
     publishProfile,
     removeMember,
     signIn,
+    watchFalsePlaces,
     watchPositions,
     watchGrants,
     watchLabels,
@@ -192,6 +194,10 @@ const state = {
     // read.
     roster: null,
     stopRoster: null,
+    // Where a false signal is known to put phones: a position there is drawn
+    // grey and measured from by nobody.
+    falsePlaces: [],
+    stopFalsePlaces: null,
     // The invitation just made, held until the menu is closed. Nothing reads
     // it back from the database: nobody may read that collection at all.
     invitation: null,
@@ -453,6 +459,12 @@ function start() {
         drawGroup();
     });
 
+    state.stopFalsePlaces ??= watchFalsePlaces((places) => {
+        state.falsePlaces = places;
+        showPositions();
+        render();
+    });
+
     state.stopWatching ??= keepWatching(state.member.memberId, () => {}, notePageLooking);
 
     state.stopWatchers ??= watchWatchers(state.member.memberId, (watchers) => {
@@ -533,7 +545,7 @@ function followPositions(grants) {
  */
 function showPositions() {
     state.positions = labelledPositions(
-        withPhones(state.written, state.grants),
+        withFalsePlaces(withPhones(state.written, state.grants), state.falsePlaces),
         state.labels,
         state.grants,
     );
@@ -568,6 +580,10 @@ function stop() {
     state.stopRoster?.();
     state.stopRoster = null;
     state.roster = null;
+
+    state.stopFalsePlaces?.();
+    state.stopFalsePlaces = null;
+    state.falsePlaces = [];
     state.invitation = null;
     state.groupTrouble = null;
     state.groupSaid = null;
@@ -1301,7 +1317,7 @@ function memberEntry(position, labels, pictures, shown, now) {
     entry.className = shown.has(position.positionId) ? 'member shown' : 'member';
     entry.addEventListener('click', () => lookAt(state.view, position));
 
-    const stale = isStale(position.knownAt, now);
+    const stale = isGrey(position, now);
     // The same expression the pin and the card use, rather than colour here
     // and a filter in the stylesheet: one rule written two ways is one rule
     // that can be half-changed.

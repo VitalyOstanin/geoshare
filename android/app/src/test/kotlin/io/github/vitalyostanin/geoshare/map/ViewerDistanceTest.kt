@@ -126,4 +126,20 @@ class ViewerDistanceTest {
         assertEquals(PositionWidth.Kilometres(1.0), distanceUnits(999.6))
         assertEquals(PositionWidth.Kilometres(2.3), distanceUnits(2_345.0))
     }
+
+    @Test
+    fun `a place of the viewer inside a false place is not measured from`() {
+        val own = at("me.one", 61.14561, 5.4036).copy(inFalsePlace = true)
+        val oona = at("oona.one", 61.03249, 4.4)
+
+        assertNull(distanceFromViewer(oona, listOf(own, oona), "me", now))
+    }
+
+    @Test
+    fun `a member inside a false place is not measured to`() {
+        val own = at("me.one", 61.03249, 4.4)
+        val oona = at("oona.one", 61.14561, 5.4036).copy(inFalsePlace = true)
+
+        assertNull(distanceFromViewer(oona, listOf(own, oona), "me", now))
+    }
 }

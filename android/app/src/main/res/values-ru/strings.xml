@@ -42,6 +42,7 @@
     <string name="map_detail_online_ago">в сети %1$s</string>
     <string name="map_detail_stuck_sentence">В сети %1$s, но новое место не принято.</string>
     <string name="map_detail_left_out_lead">Отказ %1$s:</string>
+    <string name="map_detail_false_place_lead">Позиция, скорее всего, ложная:</string>
     <string name="map_detail_settling_sentence">Приёмник не устоялся после включения телефона.</string>
     <string name="map_detail_more">Подробнее</string>
     <string name="map_detail_fewer">Свернуть</string>
