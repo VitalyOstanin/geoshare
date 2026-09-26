@@ -167,13 +167,13 @@
     <string name="group_found">Создать группу</string>
     <string name="group_code_label">Приглашение</string>
     <string name="group_join">Вступить</string>
-    <string name="group_make_invitation">Создать приглашение</string>
+    <string name="group_make_invitation">Пригласить нового участника в группу</string>
     <string name="group_make_another_invitation">Создать другое приглашение</string>
     <string name="group_code_lasts">Приглашение действует сутки и впускает всех, до кого дойдёт за это время. Передавайте его целиком: в нём названа и группа, и код.</string>
     <string name="group_copy">Скопировать</string>
     <string name="group_copied">Приглашение скопировано</string>
-    <string name="group_runs_it">ведёт группу</string>
-    <string name="group_remove">Убрать</string>
+    <string name="group_runs_it">админ</string>
+    <string name="group_remove">Удалить из группы</string>
     <string name="group_unrun">Группу никто не ведёт, её состав задаётся в консоли Firebase.</string>
     <string name="group_refused">База отказала. Возможно, приглашение истекло или группа уже создана.</string>
     <string name="admin_title">Управление группой</string>

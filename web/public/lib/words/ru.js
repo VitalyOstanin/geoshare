@@ -254,14 +254,14 @@ export const RU = {
     groupFound: 'Создать группу',
     groupInvitation: 'Приглашение',
     groupJoin: 'Вступить',
-    groupMakeInvitation: 'Создать приглашение',
+    groupMakeInvitation: 'Пригласить нового участника в группу',
     groupMakeAnotherInvitation: 'Создать другое приглашение',
     groupCodeLasts: 'Приглашение действует сутки и впускает всех, до кого дойдёт за это '
         + 'время. Передавайте его целиком: в нём названа и группа, и код.',
     groupCopy: 'Скопировать',
     groupCopied: 'Приглашение скопировано',
-    groupRunsIt: 'ведёт группу',
-    groupRemove: 'Убрать',
+    groupRunsIt: 'админ',
+    groupRemove: 'Удалить из группы',
     groupUnrun: 'Группу никто не ведёт, её состав задаётся в консоли Firebase.',
 
     // The panel the member running the group opens.

@@ -183,13 +183,13 @@
     <string name="group_found">Make a group</string>
     <string name="group_code_label">Invitation</string>
     <string name="group_join">Join</string>
-    <string name="group_make_invitation">Make an invitation</string>
+    <string name="group_make_invitation">Invite a new member to the group</string>
     <string name="group_make_another_invitation">Make another invitation</string>
     <string name="group_code_lasts">The invitation lets somebody in for a day, and lets in everybody it reaches in that time. Send it whole: it names the group as well as the code.</string>
     <string name="group_copy">Copy</string>
     <string name="group_copied">Invitation copied</string>
-    <string name="group_runs_it">runs the group</string>
-    <string name="group_remove">Remove</string>
+    <string name="group_runs_it">admin</string>
+    <string name="group_remove">Remove from the group</string>
     <string name="group_unrun">Nobody runs this group, so its members are set from the Firebase console.</string>
     <!-- What a refused write says. The rules weigh several things at once - a
          code that has run out, a group already made, a member the last

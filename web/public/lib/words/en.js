@@ -247,14 +247,14 @@ export const EN = {
     groupFound: 'Make a group',
     groupInvitation: 'Invitation',
     groupJoin: 'Join',
-    groupMakeInvitation: 'Make an invitation',
+    groupMakeInvitation: 'Invite a new member to the group',
     groupMakeAnotherInvitation: 'Make another invitation',
     groupCodeLasts: 'The invitation lets somebody in for a day, and lets in everybody it '
         + 'reaches in that time. Send it whole: it names the group as well as the code.',
     groupCopy: 'Copy',
     groupCopied: 'Invitation copied',
-    groupRunsIt: 'runs the group',
-    groupRemove: 'Remove',
+    groupRunsIt: 'admin',
+    groupRemove: 'Remove from the group',
     groupUnrun: 'Nobody runs this group, so its members are set from the Firebase console.',
 
     // The panel the member running the group opens: the household seen whole,
