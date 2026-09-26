@@ -984,17 +984,12 @@ private fun MemberDetail(
             }
 
             // One under the other: side by side the longer label broke in the
-            // middle of a word on a narrow phone.
-            Column {
-                onNamePerson?.let { onClick ->
-                    TextButton(onClick = onClick) {
-                        Text(text = stringResource(R.string.name_person))
-                    }
-                }
-
-                TextButton(onClick = onNamePhone) {
-                    Text(text = stringResource(R.string.name_phone))
-                }
+            // middle of a word on a narrow phone. Words to press rather than
+            // buttons, whose height of their own left a gap between the two
+            // as tall as a line of the card.
+            Column(modifier = Modifier.padding(vertical = 4.dp)) {
+                onNamePerson?.let { NamingLink(R.string.name_person, it) }
+                NamingLink(R.string.name_phone, onNamePhone)
             }
 
             DetailRow(R.string.map_detail_last_seen, ageText(positionAge(member.positionAt, now)))
@@ -1248,6 +1243,17 @@ private fun ReasonHelp(onClose: () -> Unit) {
                 }
             }
         },
+    )
+}
+
+/** A word of the card that opens the naming dialog, with room around it to press. */
+@Composable
+private fun NamingLink(label: Int, onClick: () -> Unit) {
+    Text(
+        text = stringResource(label),
+        style = MaterialTheme.typography.bodyMedium,
+        color = MaterialTheme.colorScheme.primary,
+        modifier = Modifier.clickable(onClick = onClick).padding(vertical = 6.dp),
     )
 }
 
