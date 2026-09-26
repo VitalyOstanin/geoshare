@@ -156,15 +156,25 @@ class JumpsTest {
         assertEquals(JumpReason.Width, whyAJump(one, other))
     }
 
-    // A spoofed signal draws a road: every pair of its fixes agrees, so a rule
-    // that lets agreement overrule the speed hands the anchor over in the time
-    // between two answers. Against the speed the clock is the way out instead.
+    // A spoofed signal draws a road: every pair of its fixes agrees, so no
+    // rule is overruled by agreement alone. The ones that may be overruled at
+    // all are the width and the rules measured against the last position; the
+    // rules about the answer itself are not.
     @Test
-    fun `agreement overrules a width and never a speed`() {
-        assertTrue(mayBeConfirmed(JumpReason.Width))
-        assertFalse(mayBeConfirmed(JumpReason.Speed))
-        assertFalse(mayBeConfirmed(JumpReason.Contradiction))
-        assertFalse(mayBeConfirmed(JumpReason.Unmoved))
+    fun `only the width and the rules against the last position may be confirmed`() {
+        val confirmable =
+            listOf(
+                JumpReason.Width,
+                JumpReason.Speed,
+                JumpReason.Contradiction,
+                JumpReason.Unmoved,
+                JumpReason.Drifted,
+                JumpReason.Hurried,
+            )
+
+        for (reason in JumpReason.entries) {
+            assertEquals(reason.name, reason in confirmable, mayBeConfirmed(reason))
+        }
     }
 
     // The pair that took the anchor seventy-three kilometres in seventeen
@@ -172,17 +182,47 @@ class JumpsTest {
     // that caught them the speed rather than the width. The place the spoofer
     // actually used is now caught by the list of false places before the speed
     // is ever asked about, so the same geometry is mirrored west of the city to
-    // leave this test about the speed rule alone.
+    // leave this test about the speed rule alone. The Wi-Fi named the flat.
     @Test
     fun `a narrow pair far from the anchor cannot confirm each other`() {
         val anchor = fixAt(61.03268, 4.40300, 0, accuracy = 20.0)
         val first = fixAt(61.42545, 3.36127, 17, accuracy = 7.0)
         val second = fixAt(61.42291, 3.36874, 34, accuracy = 13.0)
+        val wifi = fixAt(61.03270, 4.40310, 30, accuracy = 60.0)
 
         assertEquals(JumpReason.Speed, whyAJump(anchor, first))
         assertEquals(JumpReason.Speed, whyAJump(anchor, second))
         assertTrue(fixesAgree(first, second))
-        assertFalse(mayBeConfirmed(whyAJump(anchor, second)!!))
+        assertFalse(agreementStands(JumpReason.Speed, first, second))
+        assertFalse(agreementStands(JumpReason.Speed, first, second, wifi, second.takenAt))
+    }
+
+    // The marker left standing: the last position written is five kilometres
+    // from where the phone is, and every true answer after it is too far to
+    // have been reached. The Wi-Fi around the phone names the place the
+    // answers do, and that is what the anchor was missing.
+    @Test
+    fun `a last position gone wrong gives way where the wi-fi names the new place`() {
+        val anchor = fixAt(61.03268, 4.40300, 0, accuracy = 20.0)
+        val first = fixAt(61.07768, 4.40300, 17, accuracy = 15.0)
+        val second = fixAt(61.07770, 4.40310, 34, accuracy = 12.0)
+        val wifi = fixAt(61.07775, 4.40290, 30, accuracy = 60.0)
+
+        assertEquals(JumpReason.Speed, whyAJump(anchor, second))
+        assertTrue(agreementStands(JumpReason.Speed, first, second, wifi, second.takenAt))
+    }
+
+    // A tower names a district, and a district agrees with an answer a
+    // kilometre from the phone: enough to overrule a width, whose answer is
+    // that vague already, and not enough to overrule a speed.
+    @Test
+    fun `a tower answer is too wide to overrule the speed`() {
+        val first = fixAt(61.07768, 4.40300, 17, accuracy = 15.0)
+        val second = fixAt(61.07770, 4.40310, 34, accuracy = 12.0)
+        val tower = fixAt(61.07000, 4.41000, 30, accuracy = 1_700.0)
+
+        assertFalse(agreementStands(JumpReason.Speed, first, second, tower, second.takenAt))
+        assertTrue(agreementStands(JumpReason.Width, first, second, tower, second.takenAt))
     }
 
     // The pair that carried the second phone out of its own city: answers

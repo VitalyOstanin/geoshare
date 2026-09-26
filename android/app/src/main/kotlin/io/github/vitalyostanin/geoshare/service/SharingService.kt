@@ -597,11 +597,11 @@ class SharingService : LifecycleService() {
         // marker can be left standing somewhere the phone has long left: a
         // wrong last position turns every true fix that follows into a jump.
         // A second fix that agrees with the one before it is the way out of a
-        // width nothing can outlive — and only out of that one, because a
-        // spoofed signal draws a road whose fixes all agree, and against the
-        // speed rule the clock is the way out anyway. The agreement is not
-        // taken on the word of the two wide answers alone: the towers or the
-        // Wi-Fi around the phone have to name the same place.
+        // width nothing can outlive, and of the rules that measure against
+        // that last position. Never on the word of the two answers alone,
+        // because a spoofed signal draws a road whose fixes all agree: the
+        // towers or the Wi-Fi around the phone have to name the same place,
+        // and past the width only an answer as narrow as the Wi-Fi's will do.
         val agreed =
             jump != null && agreementStands(jump, candidate, fix, networkSaid, Instant.now())
 

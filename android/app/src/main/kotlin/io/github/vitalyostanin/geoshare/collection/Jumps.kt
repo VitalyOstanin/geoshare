@@ -297,25 +297,55 @@ fun fixesAgree(one: Fix, other: Fix): Boolean = whyOutOfReach(one, other) == nul
 /**
  * Whether a second, agreeing fix may overrule the rule that caught the first.
  *
- * Only the width rule, and the reason is what a spoofed signal looks like. A
- * receiver fed a false signal does not jitter: it draws a road, and any two of
- * its fixes agree with each other perfectly. Letting agreement overrule the
- * speed rule therefore hands the anchor to the spoofer in the time between two
- * fixes — seventeen seconds, in the case this was written for, to move the
- * phone seventy-three kilometres.
+ * Agreement alone overrules nothing, and the reason is what a spoofed signal
+ * looks like. A receiver fed a false signal does not jitter: it draws a road,
+ * and any two of its fixes agree with each other perfectly. Letting agreement
+ * overrule the speed rule on its own therefore hands the anchor to the spoofer
+ * in the time between two fixes — seventeen seconds, in the case this was
+ * written for, to move the phone seventy-three kilometres. So every rule named
+ * here is overruled only where the other radios put the phone at the same
+ * place too; see [agreementStands].
  *
- * Against the speed rule nothing needs to be done anyway: the speed it
- * measures falls as the clock runs, so a phone that really did travel is
- * believed as soon as the journey has had time to happen. A width has no such
- * clock — an answer half a kilometre wide stays half a kilometre wide however
- * long the phone waits — which is why agreement is left to overrule that one.
+ * The width is one such rule, and the others are the ones that measure the
+ * answer against the last position written rather than against the answer
+ * itself: the speed, two places at one time, and the three readings of a phone
+ * lying where it was put down. Each of them is only as right as that position,
+ * and a position gone wrong turns every true answer after it into a jump — a
+ * marker left standing where the phone has long left. The towers and the
+ * Wi-Fi are what can say so, being out of the transmitter's reach.
  *
- * A known false place is not up for confirmation either, and for the same
- * reason as the speed: agreement is exactly what a spoofer produces. Neither
- * is a phone that was never carried anywhere — two answers agreeing about a
- * place a kilometre away are two answers of the same jammed receiver.
+ * Not confirmable are the rules that say something about the answer on its
+ * own. A known false place is one: agreement there is exactly what a spoofer
+ * produces, and the other radios are not asked about such a place at all. The
+ * other radios contradicting the answer is another, and so is every reading of
+ * the sky the answer was built out of — those say the answer came from a
+ * transmitter, and an answer that came from a transmitter is not made true by
+ * landing near the truth.
  */
-fun mayBeConfirmed(jump: JumpReason): Boolean = jump == JumpReason.Width
+fun mayBeConfirmed(jump: JumpReason): Boolean = jump == JumpReason.Width || jump in ANCHORED
+
+/** The rules that measure an answer against the last position written. */
+private val ANCHORED =
+    setOf(
+        JumpReason.Speed,
+        JumpReason.Contradiction,
+        JumpReason.Unmoved,
+        JumpReason.Drifted,
+        JumpReason.Hurried,
+    )
+
+/**
+ * The widest an answer from the other radios may be and still overrule a rule
+ * that measures against the last position.
+ *
+ * A quarter of a kilometre: what the Wi-Fi around a phone answers — fifty to a
+ * hundred metres in the flat these phones live in — and well short of what a
+ * tower answers, a kilometre and a half and more. A tower that wide agrees
+ * with a false answer a kilometre from the phone, and against the speed rule
+ * that is a jump of a kilometre let through; the width rule tolerates it only
+ * because an answer it catches is that wide already.
+ */
+const val CONFIRMING_NETWORK_WIDTH_METRES: Double = 250.0
 
 /**
  * The widest an answer may be and still be confirmable by an agreeing one.
@@ -346,6 +376,9 @@ const val CONFIRMABLE_WIDTH_METRES: Double = 2_000.0
  * A phone out of reach of the towers and the Wi-Fi around it confirms nothing
  * here, and that is intended: its way back is the one that does not depend on
  * a radio at all, a place it has answered from three times over an hour.
+ *
+ * Past the width, the other radios have to answer as narrowly as the Wi-Fi
+ * does: see [CONFIRMING_NETWORK_WIDTH_METRES].
  */
 fun agreementStands(
     jump: JumpReason,
@@ -361,6 +394,12 @@ fun agreementStands(
     val widest = maxOf(candidate.accuracyMetres ?: 0.0, next.accuracyMetres ?: 0.0)
 
     if (widest > CONFIRMABLE_WIDTH_METRES) {
+        return false
+    }
+
+    if (jump != JumpReason.Width &&
+        (networkSays?.accuracyMetres ?: Double.MAX_VALUE) > CONFIRMING_NETWORK_WIDTH_METRES
+    ) {
         return false
     }
 
