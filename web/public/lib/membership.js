@@ -31,29 +31,70 @@ export function standingIn(roster, memberId) {
         return UNGROUPED;
     }
 
-    if (roster.admins.length === 0) {
-        return UNRUN;
+    if (runsTheGroup(roster, memberId)) {
+        return ADMINISTRATOR;
     }
 
-    return roster.admins.includes(memberId) ? ADMINISTRATOR : MEMBER;
+    const founderIn = roster.founder !== undefined && roster.members.includes(roster.founder);
+
+    return roster.admins.length === 0 && !founderIn ? UNRUN : MEMBER;
 }
 
 /**
- * Whether a member may be taken off the roster.
+ * Whether a member runs the group: named among its administrators, or its
+ * founder.
  *
- * The last administrator may not: a group whose roster nobody may change is a
- * group that goes back to the console. The rules refuse such a write, and
- * asking here is what keeps the screen from offering it.
+ * The founder runs it without being named, the way the rules have it: the
+ * person who owns the project reads the whole database from the console
+ * anyway, and a list of administrators that left them out would only take the
+ * screens away from them. On the roster, though — leaving the group takes the
+ * power with it.
  */
-export function mayBeRemoved(roster, memberId) {
+export function runsTheGroup(roster, memberId) {
+    return (
+        roster.members.includes(memberId) &&
+        (roster.admins.includes(memberId) || roster.founder === memberId)
+    );
+}
+
+/**
+ * Whether a member may be taken off the roster by the one looking at it.
+ *
+ * Asked the way the rules ask it, so the screen offers nothing a write would
+ * be refused:
+ * - the last administrator may not go while the founder is not there to run
+ *   the group: a group whose roster nobody may change is a group that goes
+ *   back to the console;
+ * - the founder is taken off by nobody but themselves;
+ * - an administrator is taken off only by the founder — anybody else first
+ *   takes the role, and the place is a second write.
+ */
+export function mayBeRemoved(roster, memberId, by) {
     if (!roster.members.includes(memberId)) {
         return false;
     }
 
-    return !roster.admins.includes(memberId) || roster.admins.length > 1;
+    const byFounder = roster.founder !== undefined && by === roster.founder;
+
+    if (memberId === roster.founder && !byFounder) {
+        return false;
+    }
+
+    if (roster.admins.includes(memberId) && !byFounder) {
+        return false;
+    }
+
+    const left = rosterWithout(roster, memberId);
+
+    return left.admins.length > 0 || left.members.includes(roster.founder);
 }
 
-/** The roster as it stands once somebody has been taken out of it. */
+/**
+ * The roster as it stands once somebody has been taken out of it.
+ *
+ * The two lists alone, because they are all a write may change: the founder
+ * and the name of the group stay as they are.
+ */
 export function rosterWithout(roster, memberId) {
     return {
         members: roster.members.filter((id) => id !== memberId),

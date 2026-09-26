@@ -424,6 +424,9 @@ function rosterOf(snapshot) {
     return {
         members: idsOf(data.members),
         admins: idsOf(data.admins),
+        // Whoever the document names as its owner, or else the account the
+        // group is named after: the rules read the founder the same way.
+        founder: typeof data.owner === 'string' ? data.owner : snapshot.id,
     };
 }
 
@@ -501,7 +504,10 @@ export async function joinGroup(memberId, invitation) {
  * rather than perform half of it.
  */
 export function removeMember(roster, memberId) {
-    return setDoc(doc(store, 'groups', currentGroup()), rosterWithout(roster, memberId));
+    // The two lists alone: a whole document written back would drop the
+    // founder and the name of the group, and the rules refuse a write that
+    // touches either.
+    return updateDoc(doc(store, 'groups', currentGroup()), rosterWithout(roster, memberId));
 }
 
 export function watchProfiles(onProfiles, onError) {

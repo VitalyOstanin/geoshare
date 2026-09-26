@@ -57,6 +57,9 @@ fun groupRoster(store: FirebaseFirestore = FirebaseFirestore.getInstance()): Flo
 private fun rosterOf(snapshot: DocumentSnapshot): Roster = Roster(
     members = snapshot.get(GroupField.MEMBERS).asIds(),
     admins = snapshot.get(GroupField.ADMINS).asIds(),
+    // Whoever the document names as its owner, or else the account the group
+    // is named after: the rules read the founder the same way.
+    founder = snapshot.get(GroupField.OWNER) as? String ?: snapshot.id,
 )
 
 /**
@@ -173,7 +176,10 @@ suspend fun removeFromGroup(
     uid: String,
     store: FirebaseFirestore = FirebaseFirestore.getInstance(),
 ) {
-    groupDocument(store).set(rosterWithout(roster, uid).asDocument()).await()
+    // The two lists alone: a whole document written back would drop the
+    // founder and the name of the group, and the rules refuse a write that
+    // touches either.
+    groupDocument(store).update(rosterWithout(roster, uid).asDocument()).await()
 
     AppLog.i(TAG, "a member has been taken off the roster")
 }

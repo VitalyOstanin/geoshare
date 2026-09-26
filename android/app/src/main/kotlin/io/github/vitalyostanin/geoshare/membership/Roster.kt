@@ -7,8 +7,19 @@ package io.github.vitalyostanin.geoshare.membership
 // application has to know which of the four positions the person in front of
 // it is standing in.
 
-/** Who is in the group and who runs it, as the group document holds them. */
-data class Roster(val members: List<String> = emptyList(), val admins: List<String> = emptyList())
+/**
+ * Who is in the group and who runs it, as the group document holds them.
+ *
+ * [founder] is whoever the document names as its owner, or else the account
+ * the group is named after — the rules read it the same way. It runs the group
+ * without being listed among [admins], and nobody else takes it off the
+ * roster.
+ */
+data class Roster(
+    val members: List<String> = emptyList(),
+    val admins: List<String> = emptyList(),
+    val founder: String? = null,
+)
 
 /** Where the person signed in stands with respect to the group. */
 enum class Standing {
@@ -38,10 +49,23 @@ enum class Standing {
 fun standingIn(roster: Roster?, uid: String): Standing = when {
     roster == null -> Standing.Ungrouped
     uid !in roster.members -> Standing.Outsider
-    uid in roster.admins -> Standing.Administrator
-    roster.admins.isEmpty() -> Standing.Unrun
+    runsTheGroup(roster, uid) -> Standing.Administrator
+    roster.admins.isEmpty() && roster.founder !in roster.members -> Standing.Unrun
     else -> Standing.Member
 }
+
+/**
+ * Whether a member runs the group: named among its administrators, or its
+ * founder.
+ *
+ * The founder runs it without being named, the way the rules have it: the
+ * person who owns the project reads the whole database from the console
+ * anyway, and a list of administrators that left them out would only take the
+ * screens away from them. On the roster, though — leaving the group takes the
+ * power with it.
+ */
+fun runsTheGroup(roster: Roster, uid: String): Boolean =
+    uid in roster.members && (uid in roster.admins || uid == roster.founder)
 
 /**
  * The roster a founder writes, which is themselves and nothing else.
@@ -61,15 +85,29 @@ fun rosterFounded(uid: String): Roster = Roster(members = listOf(uid), admins = 
 fun rosterWithout(roster: Roster, uid: String): Roster = Roster(
     members = roster.members.filterNot { it == uid },
     admins = roster.admins.filterNot { it == uid },
+    founder = roster.founder,
 )
 
 /**
- * Whether a member may be taken off the roster by the administrator looking at
- * it.
+ * Whether a member may be taken off the roster by the administrator [by]
+ * looking at it.
  *
- * Not the last administrator, and not while they are the only one: a group
- * whose administrators have all gone is a group nobody can add to or remove
- * from, which is the console again.
+ * Asked the way the rules ask it, so the screen offers nothing a write would
+ * be refused:
+ * - not the last administrator while the founder is not there to run the
+ *   group: a group nobody runs is a group nobody can add to or remove from,
+ *   which is the console again;
+ * - not the founder, by anybody but themselves;
+ * - not another administrator, by anybody but the founder — anybody else
+ *   first takes the role, and the place is a second write.
  */
-fun mayBeRemoved(roster: Roster, uid: String): Boolean =
-    uid in roster.members && rosterWithout(roster, uid).admins.isNotEmpty()
+fun mayBeRemoved(roster: Roster, uid: String, by: String? = null): Boolean {
+    val byFounder = roster.founder != null && by == roster.founder
+
+    val left = rosterWithout(roster, uid)
+
+    return uid in roster.members &&
+        (uid != roster.founder || byFounder) &&
+        (uid !in roster.admins || byFounder) &&
+        (left.admins.isNotEmpty() || roster.founder in left.members)
+}

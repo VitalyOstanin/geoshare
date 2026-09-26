@@ -1244,6 +1244,59 @@ describe('running a group somebody founded', () => {
     });
 });
 
+// The household made in the console: its document carries a name, and the
+// owner of the project is named in it rather than in the path.
+describe('running a group whose owner is named in it', () => {
+    const CAROL = 'carol-uid';
+    const household = (db) => doc(db, 'groups/household');
+
+    beforeEach(async () => {
+        await testEnv.withSecurityRulesDisabled(async (context) => {
+            await setDoc(household(context.firestore()), {
+                name: 'household',
+                members: [ALICE, BOB, CAROL],
+                admins: [BOB],
+                owner: ALICE,
+            });
+        });
+    });
+
+    it('the owner runs the group without being named among its administrators', async () => {
+        const db = testEnv.authenticatedContext(ALICE).firestore();
+
+        await assertSucceeds(updateDoc(household(db), { members: [ALICE, BOB] }));
+    });
+
+    it('an administrator writes the roster of a group that has a name', async () => {
+        const db = testEnv.authenticatedContext(BOB).firestore();
+
+        await assertSucceeds(updateDoc(household(db), { members: [ALICE, BOB] }));
+    });
+
+    it('nobody writes the owner or the name from a client', async () => {
+        const owner = testEnv.authenticatedContext(ALICE).firestore();
+        const administrator = testEnv.authenticatedContext(BOB).firestore();
+
+        await assertFails(updateDoc(household(owner), { owner: BOB }));
+        await assertFails(updateDoc(household(administrator), { owner: BOB }));
+        await assertFails(updateDoc(household(administrator), { name: 'elsewhere' }));
+    });
+
+    it('an administrator cannot take the owner off the roster', async () => {
+        const db = testEnv.authenticatedContext(BOB).firestore();
+
+        await assertFails(updateDoc(household(db), { members: [BOB, CAROL] }));
+    });
+
+    // Nobody named, and the group is still run: by its owner.
+    it('the owner leaves no administrator named and still runs the group', async () => {
+        const db = testEnv.authenticatedContext(ALICE).firestore();
+
+        await assertSucceeds(updateDoc(household(db), { admins: [] }));
+        await assertSucceeds(updateDoc(household(db), { members: [ALICE, BOB] }));
+    });
+});
+
 // Where a false signal is known to put the phones of this group. The list is
 // in the database rather than in the build, because which places those are is
 // a fact about one household's surroundings.

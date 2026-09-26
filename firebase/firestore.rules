@@ -44,8 +44,24 @@ service cloud.firestore {
         return groupDocument().data.get('admins', []);
       }
 
+      // The founder runs the group without being named among its
+      // administrators, as long as they are on the roster: whoever owns the
+      // project reads the whole database from the console anyway, and a list
+      // that left them out would only take the screens away from them.
       function isGroupAdmin() {
-        return request.auth != null && request.auth.uid in groupAdmins();
+        return request.auth != null &&
+               (request.auth.uid in groupAdmins() ||
+                (request.auth.uid == founderOf(groupDocument().data) &&
+                 request.auth.uid in groupMembers()));
+      }
+
+      // Who founded the group: whoever the document names as its owner, or
+      // else the account the group is named after. The household made in the
+      // console before groups were named after anybody names its owner in a
+      // field instead, written from the console; no write from a client may
+      // touch it.
+      function founderOf(data) {
+        return data.get('owner', groupId);
       }
 
       // How many people one group holds. Not a limit anybody is expected to
@@ -122,7 +138,7 @@ service cloud.firestore {
       // no founder by this test, and there every administrator is an ordinary
       // one.
       function isFounder() {
-        return request.auth != null && request.auth.uid == groupId;
+        return request.auth != null && request.auth.uid == founderOf(resource.data);
       }
 
       // Who left the roster in this write, and who left the administrators.
@@ -133,7 +149,7 @@ service cloud.firestore {
 
       function leftTheAdmins() {
         return resource.data.get('admins', []).toSet()
-                 .difference(request.resource.data.admins.toSet());
+                 .difference(request.resource.data.get('admins', []).toSet());
       }
 
       // What an administrator who is not the founder may not do. They take
@@ -143,8 +159,8 @@ service cloud.firestore {
       // where they are: on the roster and among the administrators.
       function withinAnAdministrator() {
         return !leftTheRoster().hasAny(resource.data.get('admins', [])) &&
-               !leftTheRoster().hasAny([groupId]) &&
-               !leftTheAdmins().hasAny([groupId]);
+               !leftTheRoster().hasAny([founderOf(resource.data)]) &&
+               !leftTheAdmins().hasAny([founderOf(resource.data)]);
       }
 
       // What an administrator may do: take somebody off the roster, put
@@ -154,12 +170,17 @@ service cloud.firestore {
       // roster nobody may change is one that goes back to the console — and
       // an administrator has to be on the roster, so that leaving the group
       // takes the power with it.
+      //
+      // The two lists are all such a write changes. The owner and the name of
+      // a group made in the console stay as they are, whoever is running it.
       function administering() {
         return isGroupAdmin() &&
-               request.resource.data.keys().hasOnly(['members', 'admins']) &&
+               request.resource.data.diff(resource.data).affectedKeys()
+                 .hasOnly(['members', 'admins']) &&
                rosterFits() &&
-               request.resource.data.admins.size() >= 1 &&
-               request.resource.data.admins.hasOnly(request.resource.data.members) &&
+               (request.resource.data.get('admins', []).size() >= 1 ||
+                founderOf(resource.data) in request.resource.data.members) &&
+               request.resource.data.get('admins', []).hasOnly(request.resource.data.members) &&
                (isFounder() || withinAnAdministrator());
       }
 

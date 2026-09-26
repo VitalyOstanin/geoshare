@@ -13,6 +13,7 @@ import {
     mayBeRemoved,
     newInvitationCode,
     rosterWithout,
+    runsTheGroup,
     standingIn,
     tidyCode,
 } from '../public/lib/membership.js';
@@ -59,6 +60,38 @@ test('the last administrator cannot be removed', () => {
     assert.equal(mayBeRemoved(roster, ALICE), false);
     assert.equal(mayBeRemoved(roster, BOB), true);
     assert.equal(mayBeRemoved(roster, STRANGER), false);
+});
+
+// The household made in the console names no administrators, and its owner
+// runs it all the same once the document says who that is.
+test('the founder runs the group without being named among its administrators', () => {
+    const roster = { members: [ALICE, BOB], admins: [], founder: ALICE };
+
+    assert.equal(standingIn(roster, ALICE), ADMINISTRATOR);
+    assert.equal(standingIn(roster, BOB), MEMBER);
+    assert.equal(runsTheGroup(roster, ALICE), true);
+});
+
+test('a founder who has left the roster runs nothing', () => {
+    const roster = { members: [BOB], admins: [], founder: ALICE };
+
+    assert.equal(runsTheGroup(roster, ALICE), false);
+    assert.equal(standingIn(roster, BOB), UNRUN);
+});
+
+test('the founder is taken off by nobody but themselves', () => {
+    const roster = { members: [ALICE, BOB], admins: [ALICE, BOB], founder: ALICE };
+
+    assert.equal(mayBeRemoved(roster, ALICE, BOB), false);
+    assert.equal(mayBeRemoved(roster, BOB, ALICE), true);
+});
+
+test('an administrator is taken off only by the founder', () => {
+    const CAROL = 'carol-uid';
+    const roster = { members: [ALICE, BOB, CAROL], admins: [ALICE, BOB, CAROL], founder: ALICE };
+
+    assert.equal(mayBeRemoved(roster, CAROL, BOB), false);
+    assert.equal(mayBeRemoved(roster, CAROL, ALICE), true);
 });
 
 test('an invitation says which group it lets somebody into', () => {

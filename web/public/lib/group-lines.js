@@ -7,7 +7,7 @@
 
 import { compareIds } from './order.js';
 import { NO_LABELS } from './labels.js';
-import { mayBeRemoved } from './membership.js';
+import { mayBeRemoved, runsTheGroup } from './membership.js';
 
 /** As much of a phone's id as stands in for a name nobody wrote. */
 const PHONE_ID_SHOWN = 8;
@@ -26,13 +26,13 @@ export function groupOverview(roster, profiles, grants, ownMemberId, labels = NO
         .map((memberId) => ({
             memberId,
             displayName: profiles?.get(memberId)?.displayName ?? null,
-            runsTheGroup: roster.admins.includes(memberId),
+            runsTheGroup: runsTheGroup(roster, memberId),
             isYou: memberId === ownMemberId,
             phonesShared: grants.get(memberId)?.devices.length ?? 0,
             // Nobody removes themselves here: leaving a group is not the same
             // act as taking somebody out of it, and the rules refuse a roster
             // left with nobody to run it.
-            removable: memberId !== ownMemberId && mayBeRemoved(roster, memberId),
+            removable: memberId !== ownMemberId && mayBeRemoved(roster, memberId, ownMemberId),
             phones: phoneLines(memberId, grants.get(memberId)?.phones ?? new Map(), labels),
         }))
         .sort(inReadingOrder);

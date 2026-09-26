@@ -63,6 +63,43 @@ class MembershipTest {
         assertFalse(mayBeRemoved(roster, stranger))
     }
 
+    // The household made in the console names no administrators, and its
+    // owner runs it all the same once the document says who that is.
+    @Test
+    fun `the founder runs the group without being named among its administrators`() {
+        val roster = Roster(members = listOf(alice, bob), founder = alice)
+
+        assertEquals(Standing.Administrator, standingIn(roster, alice))
+        assertEquals(Standing.Member, standingIn(roster, bob))
+    }
+
+    @Test
+    fun `a founder who has left the roster runs nothing`() {
+        val roster = Roster(members = listOf(bob), founder = alice)
+
+        assertFalse(runsTheGroup(roster, alice))
+        assertEquals(Standing.Unrun, standingIn(roster, bob))
+    }
+
+    @Test
+    fun `the founder is taken off by nobody but themselves`() {
+        val both = listOf(alice, bob)
+        val roster = Roster(members = both, admins = both, founder = alice)
+
+        assertFalse(mayBeRemoved(roster, alice, by = bob))
+        assertTrue(mayBeRemoved(roster, bob, by = alice))
+    }
+
+    @Test
+    fun `an administrator is taken off only by the founder`() {
+        val carol = "carol-uid"
+        val everybody = listOf(alice, bob, carol)
+        val roster = Roster(members = everybody, admins = everybody, founder = alice)
+
+        assertFalse(mayBeRemoved(roster, carol, by = bob))
+        assertTrue(mayBeRemoved(roster, carol, by = alice))
+    }
+
     @Test
     fun `a code carries neither the letters nor the digits read for each other`() {
         val codes = (1..200).map { newInvitationCode() }

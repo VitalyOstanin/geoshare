@@ -2,6 +2,7 @@ package io.github.vitalyostanin.geoshare.map
 
 import io.github.vitalyostanin.geoshare.membership.Roster
 import io.github.vitalyostanin.geoshare.membership.mayBeRemoved
+import io.github.vitalyostanin.geoshare.membership.runsTheGroup
 import io.github.vitalyostanin.geoshare.service.positionId
 import java.time.Instant
 
@@ -94,13 +95,13 @@ fun groupOverview(
         GroupLine(
             memberId = memberId,
             displayName = profiles[memberId]?.displayName,
-            runsTheGroup = memberId in roster.admins,
+            runsTheGroup = runsTheGroup(roster, memberId),
             isYou = memberId == ownMemberId,
             phonesShared = grants[memberId]?.devices?.size ?: 0,
             // Nobody removes themselves here: leaving a group is not the same
             // act as taking somebody out of it, and the rules refuse a roster
             // left with nobody to run it.
-            removable = memberId != ownMemberId && mayBeRemoved(roster, memberId),
+            removable = memberId != ownMemberId && mayBeRemoved(roster, memberId, ownMemberId),
             phones = phoneLines(memberId, grants[memberId]?.phones.orEmpty(), labels),
         )
     }.sortedWith(compareByDescending(GroupLine::isYou).thenBy { it.displayName ?: it.memberId })

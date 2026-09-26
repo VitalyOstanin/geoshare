@@ -5,7 +5,7 @@ does. History is deliberately not kept: each new fix overwrites the previous one
 which keeps both storage and read counts flat.
 
 ```
-groups/{groupId}                            members: [uid, ...], admins: [uid, ...]
+groups/{groupId}                            members: [uid, ...], admins: [uid, ...], owner?
 groups/{groupId}/invitations/{code}         a code that lets one more person in
 groups/{groupId}/joins/{uid}                the code somebody is holding, while they join
 groups/{groupId}/falsePlaces/{placeId}      where a false signal is known to put phones
@@ -35,10 +35,11 @@ opposite of the roster: they write it and nobody else does.
 
 ## groups/{groupId}
 
-| Field     | Type | Meaning                                                     |
-|-----------|------|-------------------------------------------------------------|
-| `members` | list | Who is in the group; every other rule reads membership here  |
-| `admins`  | list | Who may change the roster; a subset of `members`, never empty |
+| Field     | Type   | Meaning                                                              |
+|-----------|--------|----------------------------------------------------------------------|
+| `members` | list   | Who is in the group; every other rule reads membership here           |
+| `admins`  | list   | Who may change the roster besides the founder; a subset of `members` |
+| `owner`   | string | The founder, where the group is not named after them; console only   |
 
 A group is created by the person who will run it, alone on both lists, and is
 named after their account: the rules allow a group to be made under the
@@ -76,10 +77,20 @@ else:
 The group document is never deleted: its members, profiles, grants and
 positions would be left behind with nothing to say who may read them.
 
-A household that started before invitations existed has no `admins` field at
-all. Its roster is therefore still edited from the console, which is what the
-rules do when nobody is named: `admins` is read through a default of nothing,
-and nothing is what may change the roster.
+The founder is whoever `owner` names, or else the account the group is named
+after. The founder runs the group without being listed in `admins`, as long as
+they are on the roster, and nobody else takes them off it or out of the running
+of it; an administrator who is not the founder takes another administrator off
+the roster in two writes, the role first. `admins` may be empty only while the
+founder is on the roster. A write from a client changes `members` and `admins`
+and nothing else, so `owner` and any other field of the document are written
+from the console.
+
+A household that started before invitations existed has no `admins` field and
+no `owner`. Its roster is therefore still edited from the console, which is
+what the rules do when nobody is named: `admins` is read through a default of
+nothing, and nothing is what may change the roster. Naming its owner in
+`owner` hands it to them.
 
 ## invitations/{code}
 

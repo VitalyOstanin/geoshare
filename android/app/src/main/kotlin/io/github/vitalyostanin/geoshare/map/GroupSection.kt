@@ -23,6 +23,7 @@ import io.github.vitalyostanin.geoshare.membership.Invitation
 import io.github.vitalyostanin.geoshare.membership.Roster
 import io.github.vitalyostanin.geoshare.membership.Standing
 import io.github.vitalyostanin.geoshare.membership.invitationFrom
+import io.github.vitalyostanin.geoshare.membership.runsTheGroup
 import io.github.vitalyostanin.geoshare.membership.standingIn
 
 /**
@@ -154,7 +155,7 @@ private fun TheGroup(
     for (memberId in roster.members) {
         MemberRow(
             name = profiles[memberId]?.displayName ?: memberId.take(NAME_FALLBACK_LENGTH),
-            runsTheGroup = memberId in roster.admins,
+            runsTheGroup = runsTheGroup(roster, memberId),
         )
     }
 

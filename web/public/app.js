@@ -44,6 +44,7 @@ import {
     UNGROUPED,
     UNRUN,
     invitationFrom,
+    runsTheGroup,
     standingIn,
 } from './lib/membership.js';
 import {
@@ -659,7 +660,7 @@ function memberRow(memberId) {
     );
     row.append(name);
 
-    if (state.roster?.admins.includes(memberId)) {
+    if (state.roster && runsTheGroup(state.roster, memberId)) {
         const runs = document.createElement('span');
 
         runs.className = 'group-runs';

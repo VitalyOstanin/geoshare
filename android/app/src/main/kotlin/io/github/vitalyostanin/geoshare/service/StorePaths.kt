@@ -121,6 +121,9 @@ fun circlingSetting(store: FirebaseFirestore): DocumentReference =
 object GroupField {
     const val MEMBERS = "members"
     const val ADMINS = "admins"
+
+    /** Who owns the group, where it is not named after them. */
+    const val OWNER = "owner"
 }
 
 /** The fields of an invitation. */
