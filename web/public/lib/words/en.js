@@ -265,4 +265,17 @@ export const EN = {
     // something a refusal says.
     groupRefused: 'The database refused that. The invitation may have run out, or the group '
         + 'may already exist.',
+
+    // Naming a phone or a person for oneself, from the card.
+    namePhone: 'Name the phone',
+    namePerson: 'Name the person',
+    nameForYou: 'Only you see this name.',
+    nameSave: 'Save',
+    nameReset: 'Reset',
+    nameCancel: 'Cancel',
+
+    // A phone in the panel that runs the group, and whether it is in touch.
+    adminPhoneOnline: (name, age) => `${name}: in touch ${age}`,
+    adminPhoneSilent: (name) => `${name}: not in touch yet`,
+    adminPhoneCharging: 'charging',
 };

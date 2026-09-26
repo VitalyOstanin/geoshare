@@ -71,6 +71,53 @@ private fun ForgetPlaceRow(onForgetPlace: () -> Unit) {
 }
 
 /**
+ * What this phone is called by everybody who sees it, where its owner named
+ * it; the model otherwise.
+ *
+ * Here rather than on the card: the card is about somebody else's phone, and
+ * the name given there is for the viewer alone.
+ */
+@Composable
+private fun PhoneNameRow(name: String?, onPhoneNameChange: (String?) -> Unit) {
+    var asking by remember { mutableStateOf(false) }
+
+    Row(
+        modifier =
+        Modifier
+            .fillMaxWidth()
+            .padding(start = 16.dp, end = 8.dp)
+            .padding(vertical = 4.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Column(modifier = Modifier.weight(1f)) {
+            Text(text = stringResource(R.string.phone_name_title))
+            Text(
+                text = name ?: stringResource(R.string.phone_name_none),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
+
+        TextButton(onClick = { asking = true }) {
+            Text(text = stringResource(R.string.phone_name_change))
+        }
+    }
+
+    if (asking) {
+        NameDialog(
+            title = stringResource(R.string.phone_name_title),
+            note = stringResource(R.string.phone_name_for_all),
+            current = name,
+            onSave = { typed ->
+                onPhoneNameChange(typed)
+                asking = false
+            },
+            onClose = { asking = false },
+        )
+    }
+}
+
+/**
  * Everything that is not the map.
  *
  * A screen of its own rather than a strip under the map: sharing is set once
@@ -222,6 +269,10 @@ fun SettingsScreen(
                 onOpenStartup = actions.onOpenStartup,
                 onStartupSetChange = actions.onStartupSetChange,
             )
+
+            HorizontalDivider()
+
+            PhoneNameRow(name = settings.phoneName, onPhoneNameChange = actions.onPhoneNameChange)
 
             HorizontalDivider()
 

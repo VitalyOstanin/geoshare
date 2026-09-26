@@ -23,6 +23,13 @@ the part before the dot, so a member writes only their own documents; the reader
 group the markers by the `memberId` inside, which is what gives a phone its
 owner's colour, face and name.
 
+A phone's `deviceId` is the id the system gives it for this application
+(`ANDROID_ID`), which survives a reinstall, so the names given to the phone and
+its place on the map survive it too. Where the system gives none, the
+application makes a random one and keeps it. A phone that went by a random id
+before takes back, once, everything it wrote under it: the position, the
+viewing marker, its entry in `devices` and its place in `grants.devices`.
+
 The group document is the roster. A member's own document under it is the
 opposite of the roster: they write it and nobody else does.
 
@@ -262,6 +269,12 @@ but only where the grant could be read, since the grant is the permission.
 The member's own names for the others, read and written by the member alone —
 not by the person named and not by an administrator. Up to five hundred phones
 and fifty people.
+
+A phone is shown under the viewer's own name for it, else the `name` its owner
+gave it in `devices`, else its `model`. A person is shown under the viewer's own
+name for them, else the name in their profile, else the start of their id. Both
+clients keep a copy of the document — the application in its own storage, the
+page in `localStorage` — so the names are there before the database answers.
 
 ## positions/{uid}.{deviceId}
 

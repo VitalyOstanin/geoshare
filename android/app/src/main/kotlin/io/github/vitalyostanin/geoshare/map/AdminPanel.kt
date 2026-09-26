@@ -29,6 +29,7 @@ import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.unit.dp
 import io.github.vitalyostanin.geoshare.R
 import io.github.vitalyostanin.geoshare.membership.Roster
+import java.time.Instant
 
 /**
  * The group seen whole, by the member who runs it.
@@ -50,6 +51,10 @@ fun AdminPanel(
     /** What each member gives out, as far as this phone has been let see. */
     grants: Map<String, MemberGrant>,
     ownMemberId: String,
+    /** What this member calls the phones, for themselves. */
+    labels: Labels,
+    /** The clock the ages on the panel are read against. */
+    now: Instant,
     /** The code just made, held until the screen is left. */
     invitation: String?,
     /** Whether the last write to the group was refused. */
@@ -59,7 +64,7 @@ fun AdminPanel(
     onClose: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    val lines = groupOverview(roster, profiles, grants, ownMemberId)
+    val lines = groupOverview(roster, profiles, grants, ownMemberId, labels)
 
     Surface(modifier = modifier.fillMaxSize()) {
         // Scrolled and inset the way the settings screen is, and for the same
@@ -89,7 +94,7 @@ fun AdminPanel(
             HorizontalDivider()
 
             for (line in lines) {
-                AdminMemberRow(line = line, onRemove = { onRemoveMember(line.memberId) })
+                AdminMemberRow(line = line, now = now, onRemove = { onRemoveMember(line.memberId) })
             }
 
             HorizontalDivider()
@@ -116,7 +121,7 @@ fun AdminPanel(
  * the member has a phone in this at all.
  */
 @Composable
-private fun AdminMemberRow(line: GroupLine, onRemove: () -> Unit) {
+private fun AdminMemberRow(line: GroupLine, now: Instant, onRemove: () -> Unit) {
     Row(
         modifier = Modifier.fillMaxWidth().padding(start = 16.dp, end = 8.dp, top = 8.dp),
         verticalAlignment = Alignment.CenterVertically,
@@ -132,6 +137,17 @@ private fun AdminMemberRow(line: GroupLine, onRemove: () -> Unit) {
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
+
+            // One line per phone: whether it is in touch is the question the
+            // panel is opened with, and a marker stuck in one place does not
+            // answer it.
+            for (phone in line.phones) {
+                Text(
+                    text = phoneText(phone, now),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
         }
 
         if (line.removable) {
@@ -140,6 +156,22 @@ private fun AdminMemberRow(line: GroupLine, onRemove: () -> Unit) {
             }
         }
     }
+}
+
+/** A phone, when it was last in touch, and its charge. */
+@Composable
+private fun phoneText(phone: PhoneLine, now: Instant): String {
+    val onlineAt = phone.onlineAt ?: return stringResource(R.string.admin_phone_silent, phone.name)
+    val age = ageText(positionAge(onlineAt, now))
+    val said = mutableListOf(stringResource(R.string.admin_phone_online, phone.name, age))
+
+    phone.batteryPercent?.let { said.add(stringResource(R.string.map_battery, it)) }
+
+    if (phone.charging) {
+        said.add(stringResource(R.string.admin_phone_charging))
+    }
+
+    return said.joinToString(", ")
 }
 
 /**

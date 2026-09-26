@@ -78,6 +78,8 @@ data class SettingsState(
      * be guessing if it named one of them.
      */
     val groupTrouble: Boolean,
+    /** What this phone's owner named it for everybody, if they did. */
+    val phoneName: String?,
 )
 
 /** What the settings screen can ask for, as one value, and for the same reason. */
@@ -103,5 +105,6 @@ data class SettingsActions(
     val onMakeInvitation: () -> Unit,
     val onJoinGroup: (Invitation) -> Unit,
     val onRemoveMember: (String) -> Unit,
+    val onPhoneNameChange: (String?) -> Unit,
     val onSignOut: () -> Unit,
 )

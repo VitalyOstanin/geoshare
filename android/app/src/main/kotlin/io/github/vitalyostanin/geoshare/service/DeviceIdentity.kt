@@ -1,7 +1,9 @@
 package io.github.vitalyostanin.geoshare.service
 
+import android.annotation.SuppressLint
 import android.content.Context
 import android.os.Build
+import android.provider.Settings
 import java.util.UUID
 
 private const val FILE = "device"
@@ -10,6 +12,9 @@ private const val KEY_ID = "id"
 /** As much of a phone's name as fits above a marker without pushing it off screen. */
 private const val NAME_LIMIT = 40
 
+/** What the system's id of a phone looks like: sixteen hexadecimal digits, give or take. */
+private val SYSTEM_ID = Regex("[0-9A-Za-z]{1,64}")
+
 /**
  * Which phone this is.
  *
@@ -17,26 +22,51 @@ private const val NAME_LIMIT = 40
  * its own: without this they wrote into one document and the marker showed
  * whichever of them wrote last.
  *
- * Made up here rather than read off the system, because the identifiers a
- * phone offers are either unavailable without a permission, shared between
- * applications, or both. What this needs is only that two phones differ and
- * that one phone keeps its answer, which a stored random value does.
+ * The system's id of the phone for this application, which outlives a
+ * reinstall: the names the other members give a phone are kept under its id,
+ * and a random value made on first use was lost with every reinstall, taking
+ * the names with it and leaving a second marker behind. The id is one per
+ * phone, account on the phone and signing key, so it says nothing another
+ * application could join up with.
+ *
+ * A random value kept by the application is still made where the system has
+ * no id to give, and a phone that had one before this read the system's id is
+ * told what it was, so the documents written under it can be taken back.
  */
 class DeviceIdentity(context: Context) {
+    private val resolver = context.applicationContext.contentResolver
     private val store = context.getSharedPreferences(FILE, Context.MODE_PRIVATE)
 
-    /**
-     * The identifier itself, made on first use and kept from then on.
-     *
-     * Reinstalling the application makes a new one, which leaves the old
-     * document behind until it is deleted; a stale marker ages on screen like
-     * any other and says so.
-     */
+    /** The identifier itself: the system's where there is one, a made one otherwise. */
     val id: String
-        get() =
-            store.getString(KEY_ID, null) ?: UUID.randomUUID().toString().also { made ->
-                store.edit().putString(KEY_ID, made).apply()
-            }
+        get() = systemIdFrom(readSystemId()) ?: madeId()
+
+    /**
+     * The random id this phone went by before it went by the system's, where
+     * it did and the documents under it have not yet been taken back.
+     */
+    val previousId: String?
+        get() = store.getString(KEY_ID, null)?.takeIf { it != id }
+
+    /** Says that the documents under [previousId] are gone, so it need not be asked about again. */
+    fun forgetPrevious(previous: String) {
+        if (store.getString(KEY_ID, null) == previous) {
+            store.edit().remove(KEY_ID).apply()
+        }
+    }
+
+    // Lint warns that a hardware id can follow a person across applications.
+    // This one cannot: since Android 8 it differs for every signing key, and
+    // what it is used for — telling the phones of one member apart and keeping
+    // the names given to them — is what it is for.
+    @SuppressLint("HardwareIds")
+    private fun readSystemId(): String? =
+        Settings.Secure.getString(resolver, Settings.Secure.ANDROID_ID)
+
+    private fun madeId(): String =
+        store.getString(KEY_ID, null) ?: UUID.randomUUID().toString().also { made ->
+            store.edit().putString(KEY_ID, made).apply()
+        }
 
     /**
      * What the phone is called on the other screens.
@@ -57,3 +87,10 @@ class DeviceIdentity(context: Context) {
  * written inside the document.
  */
 fun positionId(memberId: String, deviceId: String): String = "$memberId.$deviceId"
+
+/**
+ * The system's id as this application uses it, or nothing where it is missing
+ * or does not look like one: an id with a dot in it would split the documents
+ * of one phone between two owners.
+ */
+fun systemIdFrom(value: String?): String? = value?.takeIf { SYSTEM_ID.matches(it) }

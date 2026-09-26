@@ -26,6 +26,14 @@ import {
     positionDocuments,
     shortName,
 } from './lib/members.js';
+import {
+    NO_LABELS,
+    keepLabels,
+    labelText,
+    labelledPositions,
+    labelledProfiles,
+    readKeptLabels,
+} from './lib/labels.js';
 import { withPhones } from './lib/phones.js';
 import { applyTheme, readTheme, writeTheme } from './lib/theme.js';
 import { watchingMembers } from './lib/watchers.js';
@@ -49,10 +57,12 @@ import {
     signIn,
     watchPositions,
     watchGrants,
+    watchLabels,
     watchProfiles,
     watchRoster,
     watchSignIn,
     watchWatchers,
+    writeLabel,
 } from './lib/store.js';
 
 /** How often the ages on screen are recounted. Half a minute keeps "5 minutes ago" honest. */
@@ -102,6 +112,13 @@ const elements = {
     adminCopy: document.querySelector('#admin-copy'),
     adminSaid: document.querySelector('#admin-said'),
     adminError: document.querySelector('#admin-error'),
+    naming: document.querySelector('#naming'),
+    namingTitle: document.querySelector('#naming-title'),
+    namingNote: document.querySelector('#naming-note'),
+    namingTyped: document.querySelector('#naming-typed'),
+    namingSave: document.querySelector('#naming-save'),
+    namingReset: document.querySelector('#naming-reset'),
+    namingCancel: document.querySelector('#naming-cancel'),
 };
 
 const state = {
@@ -111,6 +128,15 @@ const state = {
     // profile" apart from "the answer is still on its way". Writing before it
     // lands would put the same profile in again on every visit.
     profiles: null,
+    // The profiles as the members wrote them, before this viewer's own names
+    // for them are put in: the profile this viewer publishes is compared with
+    // their own words, not with what they call themselves here.
+    accountProfiles: null,
+    // What this viewer calls the phones and the people, for themselves.
+    labels: NO_LABELS,
+    stopLabels: null,
+    // The name being asked for: which of the two maps, and under what key.
+    naming: null,
     // What the members give out, by member: the phones to subscribe to, and
     // nothing at all for a member who shares with somebody else.
     grants: new Map(),
@@ -306,6 +332,9 @@ function sayMarkup() {
     elements.signInExplanation.textContent = WORDS.signInExplanation;
     elements.signInButton.textContent = WORDS.signInAction;
     elements.signOutButton.textContent = WORDS.signOut;
+    elements.namingSave.textContent = WORDS.nameSave;
+    elements.namingReset.textContent = WORDS.nameReset;
+    elements.namingCancel.textContent = WORDS.nameCancel;
     elements.themeLabel.textContent = WORDS.appearance;
     elements.languageLabel.textContent = WORDS.language;
     // The group section says its own words, since what stands there depends on
@@ -351,6 +380,7 @@ function start() {
 
     if (!state.view) {
         state.view = createMap(elements.map, render, elements.card);
+        state.view.onName = askName;
     }
 
     // The map measures its element when it is created, and until the sign-in
@@ -359,7 +389,8 @@ function start() {
 
     state.stopProfiles ??= watchProfiles(
         (profiles) => {
-            state.profiles = profiles;
+            state.accountProfiles = profiles;
+            state.profiles = labelledProfiles(profiles, state.labels);
             state.reachable = true;
             publishProfile(state.member, profiles.get(state.member.memberId), () => {});
             followGrants(profiles);
@@ -373,6 +404,20 @@ function start() {
             render();
         },
     );
+
+    if (!state.stopLabels) {
+        const memberId = state.member.memberId;
+
+        state.labels = readKeptLabels(memberId);
+        state.stopLabels = watchLabels(memberId, (labels) => {
+            keepLabels(memberId, labels);
+            state.labels = labels;
+            state.profiles = labelledProfiles(state.accountProfiles, labels);
+            showPositions();
+            drawGroup();
+            render();
+        });
+    }
 
     state.stopRoster ??= watchRoster((roster) => {
         state.roster = roster;
@@ -408,7 +453,7 @@ function followGrants(profiles) {
     state.grantMembers = wanted;
     state.stopGrants = watchGrants(memberIds, (grants) => {
         state.grants = grants;
-        state.positions = withPhones(state.written, grants);
+        showPositions();
         followPositions(grants);
         // What the panel counts beside each member is how many of their phones
         // this viewer may watch, which is exactly what has just changed.
@@ -442,13 +487,26 @@ function followPositions(grants) {
         documents,
         (positions) => {
             state.written = positions;
-            state.positions = withPhones(positions, state.grants);
+            showPositions();
             render();
         },
         (refused) => {
             state.refused = refused;
             render();
         },
+    );
+}
+
+/**
+ * The positions as the strip and the map show them: what the phones said about
+ * themselves since laid over what they wrote, and each phone called what this
+ * viewer or its owner called it.
+ */
+function showPositions() {
+    state.positions = labelledPositions(
+        withPhones(state.written, state.grants),
+        state.labels,
+        state.grants,
     );
 }
 
@@ -464,6 +522,12 @@ function stop() {
     state.stopProfiles?.();
     state.stopProfiles = null;
     state.profiles = null;
+    state.accountProfiles = null;
+
+    state.stopLabels?.();
+    state.stopLabels = null;
+    state.labels = NO_LABELS;
+    closeNaming();
 
     state.stopWatching?.();
     state.stopWatching = null;
@@ -603,6 +667,7 @@ function drawAdmin(running) {
             state.profiles,
             state.grants,
             state.member.memberId,
+            state.labels,
         ).map(adminRow),
     );
 
@@ -649,6 +714,18 @@ function adminRow(line) {
     said.textContent = aboutThem(line);
 
     about.append(name, said);
+
+    // One line per phone: whether it is in touch is the question the panel is
+    // opened with, and a marker stuck in one place does not answer it.
+    const now = Date.now();
+
+    for (const phone of line.phones) {
+        const told = document.createElement('span');
+
+        told.className = 'admin-about';
+        told.textContent = phoneText(phone, now);
+        about.append(told);
+    }
     row.append(about);
 
     if (line.removable) {
@@ -663,6 +740,25 @@ function adminRow(line) {
     }
 
     return row;
+}
+
+/** A phone, when it was last in touch, and its charge. */
+function phoneText(phone, now) {
+    if (phone.onlineAt === null) {
+        return WORDS.adminPhoneSilent(phone.name);
+    }
+
+    const said = [WORDS.adminPhoneOnline(phone.name, ageText(positionAge(phone.onlineAt, now)))];
+
+    if (phone.batteryPercent !== null) {
+        said.push(`${phone.batteryPercent}%`);
+    }
+
+    if (phone.charging) {
+        said.push(WORDS.adminPhoneCharging);
+    }
+
+    return said.join(', ');
 }
 
 /**
@@ -689,6 +785,78 @@ function aboutThem(line) {
 
     return said.join(', ');
 }
+
+/**
+ * Asks for a name for a phone or a person, for this viewer alone.
+ *
+ * `kind` is the map the name goes into — `devices` or `members` — and `key`
+ * what it is filed under there: the phone's full address, or the account.
+ */
+function askName(kind, key) {
+    const current = (kind === 'devices' ? state.labels.phones : state.labels.members).get(key);
+
+    state.naming = { kind, key };
+    elements.namingTitle.textContent = kind === 'devices' ? WORDS.namePhone : WORDS.namePerson;
+    elements.namingNote.textContent = WORDS.nameForYou;
+    elements.namingTyped.value = current ?? '';
+    elements.namingReset.hidden = current === undefined;
+
+    if (!elements.naming.open) {
+        elements.naming.showModal();
+    }
+}
+
+function closeNaming() {
+    state.naming = null;
+
+    if (elements.naming.open) {
+        elements.naming.close();
+    }
+}
+
+/**
+ * Writes the name, or takes it away for null, and leaves the answer to the
+ * subscription: the name shows up once the database has it, the same way it
+ * does when it was given on a phone.
+ */
+async function saveName(name) {
+    const naming = state.naming;
+
+    closeNaming();
+
+    if (!naming) {
+        return;
+    }
+
+    try {
+        await writeLabel(state.member.memberId, naming.kind, naming.key, name);
+    } catch (error) {
+        console.error('labels:', error);
+    }
+}
+
+elements.namingSave.addEventListener('click', () => saveName(labelText(elements.namingTyped.value)));
+elements.namingReset.addEventListener('click', () => saveName(null));
+elements.namingTyped.addEventListener('keydown', (event) => {
+    if (event.key === 'Enter') {
+        event.preventDefault();
+        saveName(labelText(elements.namingTyped.value));
+    }
+});
+elements.namingCancel.addEventListener('click', closeNaming);
+elements.naming.addEventListener('close', () => {
+    state.naming = null;
+});
+// The escape key that closes this window is not also meant for the card
+// behind it, which would close on the same press.
+elements.naming.addEventListener('keydown', (event) => event.stopPropagation());
+// A click beside the window closes it, as it does for the panel.
+elements.naming.addEventListener('click', (event) => {
+    if (event.target === elements.naming
+        && outsideTheBox(elements.naming.getBoundingClientRect(), event)) {
+        closeNaming();
+    }
+});
 
 function openAdmin() {
     if (!elements.admin.open) {
@@ -1104,7 +1272,15 @@ function memberEntry(position, labels, pictures, shown, now) {
 
 // The ages have to move on their own: a member who has gone quiet — the case
 // worth noticing — is exactly the one whose entry no write would ever refresh.
-setInterval(render, AGE_TICK_MS);
+setInterval(() => {
+    render();
+
+    // The panel names how long ago each phone was in touch, and those ages
+    // move on with the clock as the strip's do.
+    if (elements.admin.open) {
+        drawGroup();
+    }
+}, AGE_TICK_MS);
 
 // The strip holds a different number of members at a different width, and the
 // fade at its edge has to follow.

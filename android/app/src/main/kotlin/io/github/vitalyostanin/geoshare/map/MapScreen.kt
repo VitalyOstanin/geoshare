@@ -138,9 +138,16 @@ fun MapScreen(
     settings: SettingsState,
     /** What the settings screen can ask for, likewise. */
     actions: SettingsActions,
+    /** What this member calls the phones and the people, for themselves. */
+    labels: Labels,
+    /** Gives a phone or a person a name for this member alone, or takes it away. */
+    onLabel: (LabelKind, String, String?) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val now by currentTime()
+    // The name being asked for, held by what it names rather than by the card:
+    // the card may be closed and the dialog still up.
+    var naming by remember { mutableStateOf<Pair<LabelKind, String>?>(null) }
     val members = orderedForNavigation(positions, ownMemberId)
     var focus by remember { mutableStateOf<MapFocus?>(null) }
     var followMode by remember { mutableStateOf(FollowMode.NONE) }
@@ -339,6 +346,11 @@ fun MapScreen(
                     face = faces[opened.memberId],
                     now = now,
                     onClose = { openedPositionId = null },
+                    onNamePhone = { naming = LabelKind.PHONE to opened.positionId },
+                    // Oneself is named on the account, not here.
+                    onNamePerson =
+                    { naming = LabelKind.MEMBER to opened.memberId }
+                        .takeIf { opened.memberId != ownMemberId },
                     modifier =
                     Modifier
                         .align(Alignment.BottomCenter)
@@ -453,11 +465,29 @@ fun MapScreen(
             profiles = profiles,
             grants = settings.grants,
             ownMemberId = ownMemberId,
+            labels = labels,
+            now = now,
             invitation = settings.invitation,
             trouble = settings.groupTrouble,
             onMakeInvitation = actions.onMakeInvitation,
             onRemoveMember = actions.onRemoveMember,
             onClose = { adminOpen = false },
+        )
+    }
+
+    naming?.let { (kind, key) ->
+        val phone = kind == LabelKind.PHONE
+        val shelf = if (phone) labels.phones else labels.members
+
+        NameDialog(
+            title = stringResource(if (phone) R.string.name_phone else R.string.name_person),
+            note = stringResource(R.string.name_for_you),
+            current = shelf[key],
+            onSave = { name ->
+                onLabel(kind, key, name)
+                naming = null
+            },
+            onClose = { naming = null },
         )
     }
 }
@@ -902,6 +932,8 @@ private fun MemberDetail(
     face: Bitmap?,
     now: Instant,
     onClose: () -> Unit,
+    onNamePhone: () -> Unit,
+    onNamePerson: (() -> Unit)?,
     modifier: Modifier = Modifier,
 ) {
     Surface(
@@ -948,6 +980,18 @@ private fun MemberDetail(
                 // of their own, and this is the only one the screen needs.
                 TextButton(onClick = onClose) {
                     Text(text = stringResource(R.string.map_detail_close))
+                }
+            }
+
+            Row {
+                onNamePerson?.let { onClick ->
+                    TextButton(onClick = onClick) {
+                        Text(text = stringResource(R.string.name_person))
+                    }
+                }
+
+                TextButton(onClick = onNamePhone) {
+                    Text(text = stringResource(R.string.name_phone))
                 }
             }
 
@@ -1244,7 +1288,7 @@ private fun momentText(moment: Instant): String {
 }
 
 @Composable
-private fun ageText(age: PositionAge): String = when (age) {
+internal fun ageText(age: PositionAge): String = when (age) {
     PositionAge.JustNow -> stringResource(R.string.map_age_just_now)
     is PositionAge.Minutes -> pluralAge(R.plurals.map_age_minutes, age.count)
     is PositionAge.Hours -> pluralAge(R.plurals.map_age_hours, age.count)

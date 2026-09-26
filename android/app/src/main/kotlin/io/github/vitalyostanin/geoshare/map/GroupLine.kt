@@ -2,6 +2,8 @@ package io.github.vitalyostanin.geoshare.map
 
 import io.github.vitalyostanin.geoshare.membership.Roster
 import io.github.vitalyostanin.geoshare.membership.mayBeRemoved
+import io.github.vitalyostanin.geoshare.service.positionId
+import java.time.Instant
 
 /**
  * One member as the panel that shows the group whole has to draw them.
@@ -29,7 +31,47 @@ data class GroupLine(
     val phonesShared: Int,
     /** Whether the administrator looking at the panel may take them off the roster. */
     val removable: Boolean,
+    /**
+     * The member's phones as they last said how they are, whether or not this
+     * phone may see where they are: an administrator reads these to tell a
+     * phone that went quiet from one whose marker is stuck.
+     */
+    val phones: List<PhoneLine> = emptyList(),
 )
+
+/** One phone of a member, named the way the map names it. */
+data class PhoneLine(
+    val name: String,
+    /** When the phone was last in touch, by the server's clock. */
+    val onlineAt: Instant?,
+    val batteryPercent: Int?,
+    val charging: Boolean,
+)
+
+/**
+ * A member's phones, each called what the viewer called it, else what its
+ * owner called it, else its model, and in the order of those names.
+ */
+fun phoneLines(
+    memberId: String,
+    phones: Map<String, PhoneStatus>,
+    labels: Labels,
+): List<PhoneLine> = phones
+    .map { (deviceId, phone) ->
+        PhoneLine(
+            name =
+            labels.phones[positionId(memberId, deviceId)]
+                ?: phone.name
+                ?: phone.model
+                ?: deviceId.take(PHONE_ID_SHOWN),
+            onlineAt = phone.onlineAt,
+            batteryPercent = phone.batteryPercent,
+            charging = phone.charging,
+        )
+    }.sortedBy { it.name }
+
+/** As much of a phone's id as stands in for a name nobody wrote. */
+private const val PHONE_ID_SHOWN = 8
 
 /**
  * The group as one list, the person looking at it first.
@@ -46,6 +88,7 @@ fun groupOverview(
     profiles: Map<String, MemberProfile>,
     grants: Map<String, MemberGrant>,
     ownMemberId: String,
+    labels: Labels = Labels(),
 ): List<GroupLine> = roster.members
     .map { memberId ->
         GroupLine(
@@ -58,5 +101,6 @@ fun groupOverview(
             // act as taking somebody out of it, and the rules refuse a roster
             // left with nobody to run it.
             removable = memberId != ownMemberId && mayBeRemoved(roster, memberId),
+            phones = phoneLines(memberId, grants[memberId]?.phones.orEmpty(), labels),
         )
     }.sortedWith(compareByDescending(GroupLine::isYou).thenBy { it.displayName ?: it.memberId })

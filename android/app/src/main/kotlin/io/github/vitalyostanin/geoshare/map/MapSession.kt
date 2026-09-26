@@ -146,6 +146,24 @@ fun rememberOwnSharedWith(memberId: String): State<Map<String, Instant>> {
 }
 
 /**
+ * What this member calls the others, collected while a screen is up.
+ *
+ * Starts from the copy kept on the phone, so the names are there from the
+ * first frame rather than from the first answer of the database.
+ */
+@Composable
+fun rememberOwnLabels(memberId: String): State<Labels> {
+    val writing = groupNow()
+    val context = LocalContext.current
+    val cache = remember(context) { LabelCache(context) }
+    val labels = remember(writing, memberId) { ownLabels(memberId, cache) }
+
+    val kept = remember(memberId) { cache.read(memberId) }
+
+    return labels.collectAsStateWithLifecycle(initialValue = kept)
+}
+
+/**
  * Tells the group who this member is, when the account says something this
  * phone has not had accepted yet.
  *

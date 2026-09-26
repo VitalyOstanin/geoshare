@@ -757,6 +757,10 @@ class SharingService : LifecycleService() {
 
         status = PhoneStatusWriter(memberId, device)
 
+        // Once, after the move to the system's id: the old position would
+        // otherwise stay on the map beside the new one.
+        lifecycleScope.launch { leavePreviousId(memberId, device) }
+
         collection =
             lifecycleScope.launch {
                 launch { keepTellingHowThePhoneIs() }

@@ -997,3 +997,62 @@ button {
     font-size: 0.75rem;
     opacity: 0.8;
 }
+
+/* The two ways to name what a card is about, as links under its title: they
+   are asked for now and then, and a row of boxed buttons would outweigh the
+   facts the card is for. */
+.detail-naming {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.2rem 0.8rem;
+    margin-bottom: 0.4rem;
+}
+
+.detail-naming button {
+    border: 0;
+    padding: 0;
+    background: none;
+    color: var(--link);
+    font: inherit;
+    font-size: 0.8rem;
+    cursor: pointer;
+}
+
+.naming #naming-note {
+    margin: 0 0 0.5rem;
+    font-size: 0.8rem;
+    opacity: 0.8;
+}
+
+.naming #naming-typed {
+    box-sizing: border-box;
+    width: 100%;
+    padding: 0.35rem 0.5rem;
+    border: 1px solid var(--edge);
+    border-radius: 0.4rem;
+    background: transparent;
+    color: inherit;
+    font: inherit;
+}
+
+#naming-buttons {
+    display: flex;
+    justify-content: flex-end;
+    gap: 0.3rem;
+    margin-top: 0.6rem;
+}
+
+#naming-buttons button {
+    border: 1px solid var(--edge);
+    border-radius: 0.4rem;
+    padding: 0.3rem 0.6rem;
+    background: transparent;
+    color: var(--link);
+    font: inherit;
+    font-size: 0.8rem;
+    cursor: pointer;
+}
+
+#naming-buttons button[hidden] {
+    display: none;
+}

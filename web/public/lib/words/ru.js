@@ -265,4 +265,17 @@ export const RU = {
 
     // What a refused write says.
     groupRefused: 'База отказала. Возможно, приглашение истекло или группа уже создана.',
+
+    // Naming a phone or a person for oneself, from the card.
+    namePhone: 'Назвать телефон',
+    namePerson: 'Назвать человека',
+    nameForYou: 'Это имя видите только вы.',
+    nameSave: 'Сохранить',
+    nameReset: 'Сбросить',
+    nameCancel: 'Отмена',
+
+    // A phone in the panel that runs the group, and whether it is in touch.
+    adminPhoneOnline: (name, age) => `${name}: на связи ${age}`,
+    adminPhoneSilent: (name) => `${name}: ещё не выходил на связь`,
+    adminPhoneCharging: 'на зарядке',
 };

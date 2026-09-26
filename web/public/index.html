@@ -139,6 +139,20 @@
             <p id="admin-error" class="error" hidden></p>
         </dialog>
 
+        <!-- A name for a phone or a person, seen by this viewer alone. The
+             buttons are not a form's: the dialog is closed by the page once
+             the name is on its way, and a submit would reload nothing here. -->
+        <dialog id="naming" class="admin naming">
+            <h2 id="naming-title"></h2>
+            <p id="naming-note"></p>
+            <input id="naming-typed" type="text" maxlength="40" autocomplete="off">
+            <div id="naming-buttons">
+                <button id="naming-save" type="button"></button>
+                <button id="naming-reset" type="button"></button>
+                <button id="naming-cancel" type="button"></button>
+            </div>
+        </dialog>
+
         <section id="panel" hidden>
             <!-- The card belongs to the strip below it rather than to a
                  marker on the map, so it lives here, drawn over the top of

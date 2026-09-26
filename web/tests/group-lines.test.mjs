@@ -2,6 +2,8 @@ import assert from 'node:assert/strict';
 import { test } from 'node:test';
 
 import { groupOverview } from '../public/lib/group-lines.js';
+import { labelsFrom } from '../public/lib/labels.js';
+import { combinedGrants, phonesOf } from '../public/lib/phones.js';
 
 const PARENT = 'uid-parent';
 const SPOUSE = 'uid-spouse';
@@ -84,4 +86,22 @@ test('a panel drawn before the profiles arrive still lists everybody', () => {
 
     assert.equal(lines.length, 3);
     assert.deepEqual(lines.map((line) => line.displayName), [null, null, null]);
+});
+
+// An administrator reads the phones without the grant, which is the case the
+// panel lists them for: whether a phone is in touch is not a secret of whom
+// its owner shares with.
+test('the phones are listed by the names the map gives them', () => {
+    const phones = phonesOf({
+        old: { model: 'MAR-LX1', onlineAt: { toMillis: () => 5 } },
+        new: { model: 'MAR-LX1', name: 'school phone' },
+    });
+    const grants = combinedGrants(new Map(), new Map([[CHILD, phones]]));
+    const labels = labelsFrom({ devices: { [`${CHILD}.old`]: 'the old one' } });
+
+    const lines = groupOverview(roster, profiles, grants, PARENT, labels);
+    const listed = lines.find((line) => line.memberId === CHILD).phones;
+
+    assert.deepEqual(listed.map((phone) => phone.name), ['school phone', 'the old one']);
+    assert.equal(listed[1].onlineAt, 5);
 });

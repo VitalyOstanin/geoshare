@@ -61,6 +61,13 @@ fun phonesOf(store: FirebaseFirestore): CollectionReference =
     groupDocument(store).collection("devices")
 
 /**
+ * What each member calls the phones and the people of the group, for
+ * themselves: one document per member, read and written by that member alone.
+ */
+fun labelsOf(store: FirebaseFirestore): CollectionReference =
+    groupDocument(store).collection("labels")
+
+/**
  * The invitations of the group: one document per code, named by the code.
  *
  * Nobody reads this collection, the application included. The rules read it
@@ -218,6 +225,12 @@ object PhoneField {
     const val MODE = "mode"
     const val BATTERY_PERCENT = "batteryPercent"
     const val CHARGING = "charging"
+}
+
+/** The fields of a member's own names for the others. */
+object LabelField {
+    const val PHONES = "devices"
+    const val MEMBERS = "members"
 }
 
 /** The fields of a place a false signal is known to use. */

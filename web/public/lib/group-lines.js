@@ -6,7 +6,11 @@
 // so nothing new has to be asked of anybody for the panel to be drawn.
 
 import { compareIds } from './order.js';
+import { NO_LABELS } from './labels.js';
 import { mayBeRemoved } from './membership.js';
+
+/** As much of a phone's id as stands in for a name nobody wrote. */
+const PHONE_ID_SHOWN = 8;
 
 /**
  * One member as the panel has to draw them.
@@ -17,7 +21,7 @@ import { mayBeRemoved } from './membership.js';
  * the member owns — a grant is closed to everybody it does not name — and the
  * panel says as much beside it.
  */
-export function groupOverview(roster, profiles, grants, ownMemberId) {
+export function groupOverview(roster, profiles, grants, ownMemberId, labels = NO_LABELS) {
     return roster.members
         .map((memberId) => ({
             memberId,
@@ -29,6 +33,7 @@ export function groupOverview(roster, profiles, grants, ownMemberId) {
             // act as taking somebody out of it, and the rules refuse a roster
             // left with nobody to run it.
             removable: memberId !== ownMemberId && mayBeRemoved(roster, memberId),
+            phones: phoneLines(memberId, grants.get(memberId)?.phones ?? new Map(), labels),
         }))
         .sort(inReadingOrder);
 }
@@ -50,4 +55,24 @@ function inReadingOrder(one, other) {
     }
 
     return compareIds(one.displayName ?? one.memberId, other.displayName ?? other.memberId);
+}
+
+/**
+ * A member's phones as they last said how they are, whether or not this viewer
+ * may see where they are: an administrator reads these to tell a phone that
+ * went quiet from one whose marker is stuck. Each is called what the viewer
+ * called it, else what its owner called it, else its model.
+ */
+export function phoneLines(memberId, phones, labels = NO_LABELS) {
+    return [...phones]
+        .map(([deviceId, phone]) => ({
+            name: labels.phones.get(`${memberId}.${deviceId}`)
+                ?? phone.name
+                ?? phone.model
+                ?? deviceId.slice(0, PHONE_ID_SHOWN),
+            onlineAt: phone.onlineAt,
+            batteryPercent: phone.batteryPercent,
+            charging: phone.charging,
+        }))
+        .sort((one, other) => compareIds(one.name, other.name));
 }

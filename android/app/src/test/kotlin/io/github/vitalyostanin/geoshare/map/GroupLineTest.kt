@@ -5,6 +5,7 @@ import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
+import java.time.Instant
 
 class GroupLineTest {
     private val parent = "uid-parent"
@@ -94,5 +95,33 @@ class GroupLineTest {
         val lines = groupOverview(alone, profiles, emptyMap(), ownMemberId = child)
 
         assertFalse(lines.single { it.memberId == parent }.removable)
+    }
+
+    // An administrator reads the phones without the grant, which is the case
+    // the panel lists them for: whether a phone is in touch is not a secret
+    // of whom its owner shares with.
+    @Test
+    fun `the phones are listed by the names the map gives them`() {
+        val roster = Roster(members = listOf(parent, child), admins = listOf(parent))
+        val grants =
+            combinedGrants(
+                named = emptyMap(),
+                phones =
+                mapOf(
+                    child to
+                        mapOf(
+                            "old" to
+                                PhoneStatus(model = "MAR-LX1", onlineAt = Instant.ofEpochSecond(5)),
+                            "new" to PhoneStatus(model = "MAR-LX1", name = "school phone"),
+                        ),
+                ),
+            )
+        val labels = Labels(phones = mapOf("$child.old" to "the old one"))
+
+        val lines = groupOverview(roster, profiles, grants, ownMemberId = parent, labels)
+        val phones = lines.single { it.memberId == child }.phones
+
+        assertEquals(listOf("school phone", "the old one"), phones.map { it.name })
+        assertEquals(Instant.ofEpochSecond(5), phones.last().onlineAt)
     }
 }

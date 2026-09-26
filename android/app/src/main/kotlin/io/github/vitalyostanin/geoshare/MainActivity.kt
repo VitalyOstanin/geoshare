@@ -39,14 +39,19 @@ import io.github.vitalyostanin.geoshare.map.MapScreen
 import io.github.vitalyostanin.geoshare.map.PublishProfile
 import io.github.vitalyostanin.geoshare.map.SettingsActions
 import io.github.vitalyostanin.geoshare.map.SettingsState
+import io.github.vitalyostanin.geoshare.map.labelledPositions
+import io.github.vitalyostanin.geoshare.map.labelledProfiles
 import io.github.vitalyostanin.geoshare.map.publishSharing
 import io.github.vitalyostanin.geoshare.map.rememberGroupRoster
 import io.github.vitalyostanin.geoshare.map.rememberMemberGrants
 import io.github.vitalyostanin.geoshare.map.rememberMemberPositions
 import io.github.vitalyostanin.geoshare.map.rememberMemberProfiles
+import io.github.vitalyostanin.geoshare.map.rememberOwnLabels
 import io.github.vitalyostanin.geoshare.map.rememberOwnSharedWith
 import io.github.vitalyostanin.geoshare.map.rememberWatchers
 import io.github.vitalyostanin.geoshare.map.withShare
+import io.github.vitalyostanin.geoshare.map.writeLabel
+import io.github.vitalyostanin.geoshare.map.writePhoneName
 import io.github.vitalyostanin.geoshare.permission.PermissionStep
 import io.github.vitalyostanin.geoshare.permission.batteryExemptionRequest
 import io.github.vitalyostanin.geoshare.permission.batteryExemptionWanted
@@ -72,6 +77,7 @@ import io.github.vitalyostanin.geoshare.service.foundGroup
 import io.github.vitalyostanin.geoshare.service.joinGroup
 import io.github.vitalyostanin.geoshare.service.languageChosen
 import io.github.vitalyostanin.geoshare.service.languageTag
+import io.github.vitalyostanin.geoshare.service.leavePreviousId
 import io.github.vitalyostanin.geoshare.service.makeInvitation
 import io.github.vitalyostanin.geoshare.service.refusalToStart
 import io.github.vitalyostanin.geoshare.service.removeFromGroup
@@ -213,6 +219,7 @@ class MainActivity : AppCompatActivity() {
                             val profiles by rememberMemberProfiles()
                             val grants by rememberMemberGrants(profiles)
                             val onTheMap by rememberMemberPositions(grants)
+                            val labels by rememberOwnLabels(current.memberId)
                             val sharedWith by rememberOwnSharedWith(current.memberId)
                             val roster by rememberGroupRoster()
                             // Kept on the screen rather than in the database:
@@ -225,6 +232,12 @@ class MainActivity : AppCompatActivity() {
                             // reason: nothing in the database says it, and the
                             // person who pressed the button is owed an answer.
                             var groupTrouble by remember { mutableStateOf(false) }
+
+                            // The service does the same; whichever starts
+                            // first takes the old documents back.
+                            LaunchedEffect(current.memberId) {
+                                leavePreviousId(current.memberId, device)
+                            }
 
                             KeepWatching(current.memberId, device.id)
 
@@ -240,12 +253,15 @@ class MainActivity : AppCompatActivity() {
                             )
 
                             MapScreen(
-                                positions = onTheMap.positions,
+                                // Called what this member called them, where
+                                // they did; the rest of the screen never
+                                // needs to know which name is whose.
+                                positions = labelledPositions(onTheMap.positions, labels, grants),
                                 // Those whose position this phone is refused:
                                 // an empty map with a reason is not the same
                                 // thing as an empty map without one.
                                 outOfReach = onTheMap.outOfReach,
-                                profiles = profiles.orEmpty(),
+                                profiles = labelledProfiles(profiles.orEmpty(), labels),
                                 watchers = watching,
                                 ownMemberId = current.memberId,
                                 ownDisplayName = current.displayName,
@@ -267,6 +283,8 @@ class MainActivity : AppCompatActivity() {
                                     grants = grants,
                                     invitation = invitation,
                                     groupTrouble = groupTrouble,
+                                    phoneName =
+                                    grants[current.memberId]?.phones?.get(device.id)?.name,
                                 ),
                                 actions =
                                 SettingsActions(
@@ -329,6 +347,13 @@ class MainActivity : AppCompatActivity() {
                                             )
                                         }
                                     },
+                                    // Read back through the phones of this
+                                    // member, like every other phone reads it.
+                                    onPhoneNameChange = { name ->
+                                        lifecycleScope.launch {
+                                            writePhoneName(current.memberId, device.id, name)
+                                        }
+                                    },
                                     onOpenSettings = ::openApplicationSettings,
                                     onAllowBattery = ::askBatteryExemption,
                                     onOpenStartup = ::openStartupScreen,
@@ -386,6 +411,12 @@ class MainActivity : AppCompatActivity() {
                                     },
                                     onSignOut = { lifecycleScope.launch { signIn.signOut() } },
                                 ),
+                                labels = labels,
+                                onLabel = { kind, key, name ->
+                                    lifecycleScope.launch {
+                                        writeLabel(current.memberId, kind, key, name)
+                                    }
+                                },
                             )
                         }
 

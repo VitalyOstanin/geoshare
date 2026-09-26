@@ -13,6 +13,7 @@ import {
     arrayUnion,
     collection,
     deleteDoc,
+    deleteField,
     doc,
     getFirestore,
     onSnapshot,
@@ -22,6 +23,7 @@ import {
 } from 'https://www.gstatic.com/firebasejs/12.19.0/firebase-firestore.js';
 import { firebaseConfig } from '../firebase-config.js';
 import { positionMoments } from './age.js';
+import { labelsFrom } from './labels.js';
 import { combinedGrants, phonesOf } from './phones.js';
 import {
     INVITATION_LASTS_MS,
@@ -375,6 +377,37 @@ export function watchRoster(onRoster) {
         doc(store, 'groups', currentGroup()),
         (snapshot) => onRoster(snapshot.exists() ? rosterOf(snapshot) : null),
         () => onRoster(null),
+    );
+}
+
+/**
+ * What this member calls the others, and again whenever that changes — here,
+ * on one of their phones or in another tab.
+ *
+ * A refusal means the browser is out of the group, and there is nobody left
+ * for the names to name; a document not made yet is a member with no names.
+ */
+export function watchLabels(memberId, onLabels) {
+    return onSnapshot(
+        doc(store, 'groups', currentGroup(), 'labels', memberId),
+        (snapshot) => onLabels(labelsFrom(snapshot.exists() ? snapshot.data() : null)),
+        () => onLabels(labelsFrom(null)),
+    );
+}
+
+/**
+ * Gives a phone or a person a name for this member alone, or takes it away
+ * when the name is null. `kind` is `devices` or `members`.
+ *
+ * Merged into the one map, so the other names stay as they were. The address
+ * of a phone has a dot in it, which a merge takes as it is: only a field path
+ * written as a string splits on dots.
+ */
+export async function writeLabel(memberId, kind, key, name) {
+    await setDoc(
+        doc(store, 'groups', currentGroup(), 'labels', memberId),
+        { [kind]: { [key]: name ?? deleteField() } },
+        { merge: true },
     );
 }
 

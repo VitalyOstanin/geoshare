@@ -234,6 +234,11 @@ export function createMap(element, onCardChange = () => {}, cardElement) {
         // The rectangle "follow everybody" last fitted the map to, so that a
         // rectangle barely different from it does not nudge the view again.
         followedBounds: null,
+        // Asked to name a phone or a person, from the card: `(kind, key)`,
+        // where kind is `devices` or `members`. Set by the page; a card with
+        // nobody to ask offers no names.
+        onName: null,
+        ownMemberId: null,
     };
 
     // The ring's source and layers come with the style; what has to wait is the
@@ -365,6 +370,9 @@ export function showMembers(view, positions, names, faces, ownMemberId, now) {
     // Held so that the map can redraw itself when it is moved: grouping is
     // about the screen, and the screen changes without the positions doing so.
     view.last = { positions, names, faces, now };
+    // The card offers to name a person to everybody but the viewer, who is
+    // named on their account.
+    view.ownMemberId = ownMemberId;
 
     draw(view, view.last);
     applyFollowMode(view);
@@ -803,11 +811,11 @@ function showCard(view, names, faces, now) {
     let content;
 
     if (group.length === 1) {
-        content = detail(group[0], nameOf(group[0], names), faces, now);
+        content = detail(view, group[0], nameOf(group[0], names), faces, now);
     } else if (!chosen) {
         content = groupList(view, entry, names, faces, now);
     } else {
-        content = detail(chosen, nameOf(chosen, names), faces, now);
+        content = detail(view, chosen, nameOf(chosen, names), faces, now);
 
         const back = document.createElement('button');
 
@@ -978,7 +986,7 @@ function wrapDegrees(degrees) {
  * Built as elements rather than as text, so that a member id — written by
  * whoever holds the account — has no way of being read as markup.
  */
-function detail(position, name, faces, now) {
+function detail(view, position, name, faces, now) {
     const card = document.createElement('div');
     card.className = 'detail';
 
@@ -1016,6 +1024,8 @@ function detail(position, name, faces, now) {
     }
 
     heading.append(face, titles);
+
+    const naming = namingButtons(view, position);
 
     const table = document.createElement('table');
 
@@ -1077,9 +1087,41 @@ function detail(position, name, faces, now) {
         table.append(row);
     }
 
-    card.append(heading, table);
+    card.append(heading, ...naming, table);
 
     return card;
+}
+
+/**
+ * The two ways to name what the card is about, for the viewer alone: the
+ * person, unless it is the viewer, and the phone. Nothing where the page has
+ * not asked to be told.
+ */
+function namingButtons(view, position) {
+    if (!view.onName) {
+        return [];
+    }
+
+    const row = document.createElement('div');
+
+    row.className = 'detail-naming';
+
+    const offer = (words, kind, key) => {
+        const button = document.createElement('button');
+
+        button.type = 'button';
+        button.textContent = words;
+        button.addEventListener('click', () => view.onName(kind, key));
+        row.append(button);
+    };
+
+    if (position.memberId !== view.ownMemberId) {
+        offer(WORDS.namePerson, 'members', position.memberId);
+    }
+
+    offer(WORDS.namePhone, 'devices', position.positionId);
+
+    return [row];
 }
 
 /**
