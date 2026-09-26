@@ -43,6 +43,7 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.draw.drawBehind
@@ -106,6 +107,9 @@ private val WIDE_NIGHT = Color(0xFFD99149)
 /** Above this a surface counts as pale, below it as dark. */
 private const val HALF_LIT = 0.5f
 
+/** How faded the follow button is while a hand holds the following still, as on the page. */
+private const val PAUSED_ALPHA = 0.75f
+
 /** The circle a card carries: large enough for a face, small enough for a strip of cards. */
 private val FACE_SIZE = 22.dp
 
@@ -166,6 +170,8 @@ fun MapScreen(
     val members = orderedForNavigation(positions, ownMemberId)
     var focus by remember { mutableStateOf<MapFocus?>(null) }
     var followMode by remember { mutableStateOf(FollowMode.NONE) }
+    // Whether a hand is holding the following still; the button says so.
+    var followPaused by remember { mutableStateOf(false) }
     var followTarget by remember { mutableStateOf<FollowTarget?>(null) }
     var showAll by remember { mutableStateOf(false) }
     var openedPositionId by remember { mutableStateOf<String?>(null) }
@@ -299,6 +305,7 @@ fun MapScreen(
                 selected = openedPositionId,
                 followMode = followMode,
                 followTarget = followTarget?.positionId,
+                onPausedChange = { followPaused = it },
                 onSelect = { positionId ->
                     openedPositionId = positionId
                     openedGroup = emptyList()
@@ -348,6 +355,7 @@ fun MapScreen(
 
                 FollowButton(
                     mode = followMode,
+                    paused = followPaused,
                     targetName = followTarget?.name,
                     targetAvailable =
                     followTarget?.let { targetPosition(positions, it.positionId) != null }
@@ -537,6 +545,12 @@ private fun FollowButton(
     targetAvailable: Boolean,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
+    /**
+     * Whether a hand is holding the following still. The button is faded
+     * rather than changed, so that a map that has stopped following reads as
+     * deliberately left alone rather than as stuck; the page does the same.
+     */
+    paused: Boolean = false,
 ) {
     val label = when (mode) {
         FollowMode.NONE -> stringResource(R.string.map_follow_none)
@@ -554,7 +568,7 @@ private fun FollowButton(
     }
 
     Surface(
-        modifier = modifier.clickable { onClick() },
+        modifier = modifier.alpha(if (paused) PAUSED_ALPHA else 1f).clickable { onClick() },
         shape = MaterialTheme.shapes.medium,
         tonalElevation = if (mode == FollowMode.NONE) 2.dp else 8.dp,
     ) {

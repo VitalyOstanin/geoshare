@@ -10,6 +10,16 @@ import java.time.format.DateTimeFormatter
 /** What one file may reach before the log rolls over; two files are kept. */
 const val LOG_FILE_LIMIT_BYTES: Long = 256L * 1024
 
+/**
+ * What one file of the kept log may reach.
+ *
+ * Half the ordinary log, and it holds far longer: only the rare lines go
+ * there. The ordinary log on a phone under a false signal fills in about an
+ * hour, and what the kept one is for is a question asked over a day of the
+ * phone being carried about.
+ */
+const val KEPT_FILE_LIMIT_BYTES: Long = 128L * 1024
+
 private val STAMP = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss.SSS")
 
 /**
@@ -27,12 +37,14 @@ class FileLog(
     directory: File,
     limitBytes: Long = LOG_FILE_LIMIT_BYTES,
     private val zone: ZoneId = ZoneId.systemDefault(),
+    currentName: String = "current.log",
+    previousName: String = "previous.log",
 ) {
     private val files =
         RollingFiles(
             directory = directory,
-            currentName = "current.log",
-            previousName = "previous.log",
+            currentName = currentName,
+            previousName = previousName,
             limitBytes = limitBytes,
             threadName = "geoshare-log",
         )

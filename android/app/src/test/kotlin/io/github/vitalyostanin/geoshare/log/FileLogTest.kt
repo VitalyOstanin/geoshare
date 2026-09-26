@@ -106,4 +106,27 @@ class FileLogTest {
         assertTrue("the first line should have been dropped", !written.contains("first"))
         assertEquals(2, directory.listFiles().orEmpty().size)
     }
+
+    // The kept log lives beside the ordinary one, in the same directory, and
+    // must not write into its files.
+    @Test
+    fun `a log given its own names keeps to its own files`() {
+        val directory = folder.newFolder()
+        val ordinary = logIn(directory)
+        val kept =
+            FileLog(
+                directory,
+                KEPT_FILE_LIMIT_BYTES,
+                ZoneId.of("UTC"),
+                currentName = "kept.log",
+                previousName = "kept-previous.log",
+            )
+
+        ordinary.append('I', "geoshare.app", "ordinary", at = moment)
+        kept.append('W', "geoshare.service", "kept", at = moment)
+
+        assertEquals("2026-09-11 14:45:12.345 W/geoshare.service: kept\n", kept.read())
+        assertEquals("2026-09-11 14:45:12.345 I/geoshare.app: ordinary\n", ordinary.read())
+        assertTrue(File(directory, "kept.log").exists())
+    }
 }

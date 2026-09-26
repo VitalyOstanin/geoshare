@@ -177,11 +177,9 @@ fun MemberMap(
      * A gesture that pauses this is a different matter, and is not a
      * parameter here. It is read off the map's own camera, through
      * [MapLibreMap.addOnCameraMoveStartedListener], which only [MapHolder]
-     * is in a position to hear; carrying it out to this composable and back
-     * in would add a round trip for a fact nothing outside the map ever
-     * needs, and the map is redrawn often enough on its own -- a tick of
-     * [now], a fresh batch of [positions] -- that the pause is still noticed
-     * once it has worn off.
+     * is in a position to hear, and the camera is moved again by a timer of
+     * the holder's own when the pause wears off. What leaves the map is only
+     * the fact that it is paused, through [onPausedChange], for the button.
      */
     followMode: FollowMode,
     /** The position [FollowMode.ONE] centres on; whose card was last opened. */
@@ -192,6 +190,8 @@ fun MemberMap(
     onSelectGroup: (List<String>) -> Unit,
     /** Called when a tap lands on the map itself rather than on a marker. */
     onDismiss: () -> Unit,
+    /** Called with true when a hand pauses the following, and false when the pause ends. */
+    onPausedChange: (Boolean) -> Unit = {},
     modifier: Modifier = Modifier,
 ) {
     val context = LocalContext.current
@@ -203,6 +203,7 @@ fun MemberMap(
     holder.onSelect = onSelect
     holder.onSelectGroup = onSelectGroup
     holder.onDismiss = onDismiss
+    holder.onPausedChange = onPausedChange
     holder.groupLabel = groupLabel
 
     val lifecycleOwner = LocalLifecycleOwner.current
@@ -328,6 +329,16 @@ private class MapHolder(val view: MapView) {
      */
     private var pausedAt: Instant? = null
 
+    /** Told whether a hand is holding the following still, for the button to show. */
+    var onPausedChange: (Boolean) -> Unit = {}
+
+    /** Moves the camera once a hand's pause has worn off. */
+    private val pauseEnds =
+        Runnable {
+            onPausedChange(false)
+            map?.takeIf { !destroyed }?.let { followCamera(it) }
+        }
+
     /** The rectangle [FollowMode.ALL] last fit the camera to, for [boundsAreClose]. */
     private var lastAppliedBounds: MapBounds? = null
 
@@ -381,6 +392,14 @@ private class MapHolder(val view: MapView) {
                 // request to be left alone the way a hand on the screen is.
                 if (reason == MapLibreMap.OnCameraMoveStartedListener.REASON_API_GESTURE) {
                     pausedAt = Instant.now()
+                    // Nothing else is bound to move the camera when the pause
+                    // wears off: the next batch of positions may be half an
+                    // hour away for a member standing still, and the age
+                    // clock ticks only every half minute. So the end of the
+                    // pause is an event of its own.
+                    view.removeCallbacks(pauseEnds)
+                    view.postDelayed(pauseEnds, PAUSE_AFTER_A_GESTURE.toMillis())
+                    onPausedChange(true)
                     // The hand has taken the camera off the place these two
                     // remember putting it. Without forgetting them, a
                     // household that has not moved hands back the same
@@ -445,6 +464,8 @@ private class MapHolder(val view: MapView) {
         // again instead of finding it near enough to leave alone.
         if (followMode != this.followMode || followTarget != this.followTarget) {
             pausedAt = null
+            view.removeCallbacks(pauseEnds)
+            onPausedChange(false)
             forgetWhereTheCameraWas()
         }
 
@@ -505,6 +526,7 @@ private class MapHolder(val view: MapView) {
         }
 
         destroyed = true
+        view.removeCallbacks(pauseEnds)
 
         view.onStop()
         view.onDestroy()

@@ -14,9 +14,32 @@ object AppLog {
     @Volatile
     private var file: FileLog? = null
 
+    @Volatile
+    private var kept: FileLog? = null
+
     /** Called once, from the application object. */
     fun start(directory: File) {
         file = FileLog(directory)
+        kept =
+            FileLog(
+                directory,
+                limitBytes = KEPT_FILE_LIMIT_BYTES,
+                currentName = "kept.log",
+                previousName = "kept-previous.log",
+            )
+    }
+
+    /**
+     * A warning that is also kept apart from the ordinary log, where it would
+     * be rolled away within the hour.
+     *
+     * For the few observations a threshold is waiting to be measured on: the
+     * ordinary log holds an hour of a phone under a false signal, and the
+     * question is asked of a day.
+     */
+    fun keep(tag: String, message: String) {
+        w(tag, message)
+        kept?.append('W', tag, message)
     }
 
     fun i(tag: String, message: String) {

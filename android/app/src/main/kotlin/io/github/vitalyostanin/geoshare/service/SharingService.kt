@@ -1001,10 +1001,18 @@ class SharingService : LifecycleService() {
             return
         }
 
-        val away = "%.0f m from where the walk began, ±%.0f m"
-            .format(Locale.ROOT, distanceMetres(from, fix), fix.accuracyMetres ?: 0.0)
+        val away = "%.0f m from where the walk began, ±%.0f m, at %.5f,%.5f"
+            .format(
+                Locale.ROOT,
+                distanceMetres(from, fix),
+                fix.accuracyMetres ?: 0.0,
+                fix.latitude,
+                fix.longitude,
+            )
 
-        AppLog.w(TAG, "carried ${walk.steps} steps and the answer has not followed: $away")
+        // Kept apart: PINNED_STEPS is waiting on a day of the phone being
+        // carried, and the ordinary log does not hold a day.
+        AppLog.keep(TAG, "carried ${walk.steps} steps and the answer has not followed: $away")
     }
 
     /** Where an anchor stands, for the one line that says it was set. */

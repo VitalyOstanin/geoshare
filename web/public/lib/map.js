@@ -27,6 +27,7 @@ import {
     FOLLOW_ALL,
     FOLLOW_NONE,
     FOLLOW_ONE,
+    PAUSE_AFTER_A_GESTURE_MS,
     boundsAreClose,
     boundsOf,
     isPaused,
@@ -233,6 +234,8 @@ export function createMap(element, onCardChange = () => {}, cardElement) {
         // Read through isPaused rather than compared directly, because the
         // window it opens is a duration rather than a single moment.
         pausedAt: null,
+        // The timer that moves the map once the pause has worn off.
+        pauseEnds: null,
         // The rectangle "follow everybody" last fitted the map to, so that a
         // rectangle barely different from it does not nudge the view again.
         followedBounds: null,
@@ -302,6 +305,17 @@ export function createMap(element, onCardChange = () => {}, cardElement) {
             // rectangle, it is found close to the one already fitted, and the
             // map stays where the hand left it with the mode still on.
             view.followedBounds = null;
+            // Nothing else is bound to move the map when the pause wears off:
+            // the next batch of positions may be half an hour away for a
+            // member standing still, and a map left where the hand put it
+            // with the mode on reads as broken. So the end of the pause is
+            // an event of its own, and the button is drawn again both ways.
+            clearTimeout(view.pauseEnds);
+            view.pauseEnds = setTimeout(() => {
+                applyFollowMode(view);
+                view.onCardChange();
+            }, PAUSE_AFTER_A_GESTURE_MS);
+            view.onCardChange();
         }
     });
 
@@ -1438,6 +1452,7 @@ export function advanceFollow(view) {
     // rectangle last fitted describes a view the viewer may since have left.
     view.pausedAt = null;
     view.followedBounds = null;
+    clearTimeout(view.pauseEnds);
 
     view.onCardChange();
     applyFollowMode(view);
