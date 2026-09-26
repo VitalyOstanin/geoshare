@@ -41,14 +41,15 @@ test('the text of a card stops before the cross that closes it', async () => {
 });
 
 // Every line that can run the width of such a window keeps the same distance:
-// a name, the model under it, the heading of a group, the way back to it, and
-// the title of the help.
+// the button beside a member's name (the name and the model under it stop at
+// the button), the heading of a group, the way back to it, and the title of
+// the help.
 test('each line that can reach the corner keeps that distance', async () => {
     const styles = await stylesheet();
 
-    for (const selector of ['.detail h2', '.detail-device', '.group h2', '.group-back',
+    for (const selector of ['.detail-more', '.group h2', '.group-back',
         '.mode-help h2', '.admin h2']) {
-        const rule = new RegExp(`\\${selector.replace(' ', ' ')} \\{[^}]*padding-right:\\s*var\\(--cross-clear\\)`);
+        const rule = new RegExp(`\\${selector.replace(' ', ' ')} \\{[^}]*(?:padding|margin)-right:\\s*var\\(--cross-clear\\)`);
 
         assert.match(styles, rule, `${selector} does not keep clear of the cross`);
     }

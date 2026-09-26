@@ -1082,7 +1082,11 @@ function detail(view, position, name, faces, now) {
         showDetails(view.detailsOpen);
     });
 
-    card.append(details, more);
+    // Beside the name rather than under the details: opened, the details
+    // reach the bottom of the card, and a button below them had to be
+    // scrolled to.
+    heading.append(more);
+    card.append(details);
 
     return card;
 }

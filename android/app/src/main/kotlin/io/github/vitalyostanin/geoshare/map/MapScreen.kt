@@ -13,6 +13,7 @@ import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.fillMaxSize
@@ -1001,9 +1002,23 @@ private fun MemberDetail(
                     )
                 }
 
-                // A word rather than an icon: the icon packs are a dependency
-                // of their own, and this is the only one the screen needs.
-                TextButton(onClick = onClose) {
+                // Beside the close rather than under the details: opened, the
+                // details reach the bottom of the card, and a button below
+                // them was cut off by its edge. Words rather than icons: the
+                // icon packs are a dependency of their own.
+                TextButton(onClick = onToggleDetails, contentPadding = HEADER_BUTTON_PADDING) {
+                    Text(
+                        text =
+                        stringResource(
+                            if (detailsOpen) {
+                                R.string.map_detail_fewer
+                            } else {
+                                R.string.map_detail_more
+                            },
+                        ),
+                    )
+                }
+                TextButton(onClick = onClose, contentPadding = HEADER_BUTTON_PADDING) {
                     Text(text = stringResource(R.string.map_detail_close))
                 }
             }
@@ -1065,18 +1080,12 @@ private fun MemberDetail(
                     ),
                 )
             }
-
-            TextButton(onClick = onToggleDetails, modifier = Modifier.fillMaxWidth()) {
-                Text(
-                    text =
-                    stringResource(
-                        if (detailsOpen) R.string.map_detail_fewer else R.string.map_detail_more,
-                    ),
-                )
-            }
         }
     }
 }
+
+/** Narrower than a text button's own, so that two of them fit beside the names. */
+private val HEADER_BUTTON_PADDING = PaddingValues(horizontal = 8.dp, vertical = 4.dp)
 
 /**
  * The line under the name: how far, how old the position, how long since the
