@@ -60,8 +60,10 @@ export function colourIndex(memberId) {
 }
 
 /** Enough characters of an id to tell two members apart at a glance. */
+const SHORT_ID_LENGTH = 6;
+
 export function shortName(memberId) {
-    return memberId.slice(0, 6);
+    return memberId.slice(0, SHORT_ID_LENGTH);
 }
 
 /**
