@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 
-import { STALE_AFTER_MS, ageText, isStale, positionAge, positionMoments } from '../public/lib/age.js';
+import { STALE_AFTER_MS, ageText, isStale, isStuck, positionAge, positionMoments } from '../public/lib/age.js';
 
 const NOW = Date.parse('2026-09-11T12:00:00Z');
 const MINUTE = 60 * 1000;
@@ -91,4 +91,15 @@ test('a position not yet stamped is dated by the phone that took it', () => {
     const takenAt = NOW - MINUTE;
 
     assert.deepEqual(positionMoments(takenAt, null), { knownAt: takenAt, positionAt: takenAt });
+});
+
+test('a phone online with a position as old as the grey is stuck', () => {
+    assert.equal(isStuck(NOW - STALE_AFTER_MS, NOW, NOW), true);
+    assert.equal(isStuck(NOW - STALE_AFTER_MS + MINUTE, NOW, NOW), false);
+});
+
+test('a phone gone quiet is old rather than stuck', () => {
+    const knownAt = NOW - STALE_AFTER_MS;
+
+    assert.equal(isStuck(knownAt - 3 * HOUR, knownAt, NOW), false);
 });

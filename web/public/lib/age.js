@@ -43,6 +43,20 @@ export function isStale(knownAt, now) {
 }
 
 /**
+ * Whether the phone is still reaching the server but has had no position it
+ * believed for as long as it takes a marker to go grey.
+ *
+ * That is a marker stuck where it last was: every answer since has been left
+ * out, and the card should say so rather than leave the viewer to compare two
+ * clock times. A phone gone quiet is not stuck, only old, and the grey already
+ * says that. The same mark as the grey on purpose, so that the two clients
+ * need no second number to agree on.
+ */
+export function isStuck(positionAt, knownAt, now) {
+    return !isStale(knownAt, now) && knownAt - positionAt >= STALE_AFTER_MS;
+}
+
+/**
  * The two moments a position carries: when the phone last reached the server,
  * and when it last had a position it believed.
  *

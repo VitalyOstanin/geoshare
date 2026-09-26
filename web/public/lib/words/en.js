@@ -80,6 +80,13 @@ export const EN = {
     // appears only while it is true, and it stands under the width because
     // that is the reading it corrects: a receiver still coming up answers
     // narrowly and wrongly.
+    // The phone is online, and no new position has been taken for half an
+    // hour or more: the marker stands where it was and cannot be trusted.
+    // The row appears only while it is true, under the two moments it
+    // explains.
+    stuck: 'Location',
+    stuckNote: 'The phone is online, but no new location has been accepted',
+
     settling: 'Receiver',
     settlingNote: 'Had not settled since the phone was switched on',
 

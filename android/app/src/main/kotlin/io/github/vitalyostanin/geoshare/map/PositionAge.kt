@@ -34,3 +34,16 @@ fun positionAge(knownAt: Instant, now: Instant): PositionAge {
 }
 
 fun isStale(knownAt: Instant, now: Instant): Boolean = Duration.between(knownAt, now) >= STALE_AFTER
+
+/**
+ * Whether the phone is still reaching the server but has had no position it
+ * believed for as long as it takes a marker to go grey.
+ *
+ * That is a marker stuck where it last was: every answer since has been left
+ * out, and the card should say so rather than leave the viewer to compare two
+ * clock times. A phone gone quiet is not stuck, only old, and the grey already
+ * says that. The same mark as the grey on purpose, so that the page and this
+ * screen need no second number to agree on.
+ */
+fun isStuck(positionAt: Instant, knownAt: Instant, now: Instant): Boolean =
+    !isStale(knownAt, now) && Duration.between(positionAt, knownAt) >= STALE_AFTER

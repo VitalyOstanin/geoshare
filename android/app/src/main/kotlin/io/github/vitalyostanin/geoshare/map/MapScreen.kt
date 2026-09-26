@@ -998,6 +998,19 @@ private fun MemberDetail(
             // depending on which the viewer assumed.
             DetailRow(R.string.map_detail_at, momentText(member.positionAt))
             DetailRow(R.string.map_detail_online, momentText(member.knownAt))
+            // Only while it is true, directly under the two moments it
+            // explains: a viewer does not subtract one clock time from
+            // another, and a marker that has stood still for hours while the
+            // phone keeps reaching the server is a marker not to be trusted.
+            if (isStuck(member.positionAt, member.knownAt, now)) {
+                DetailRow(R.string.map_detail_stuck) {
+                    Text(
+                        text = stringResource(R.string.map_detail_stuck_note),
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = leftOutColour(),
+                    )
+                }
+            }
             // Only while it is happening. A phone getting its answers through
             // is a phone with nothing to explain, and two rows saying nought
             // would be two rows of noise on every card in the household.

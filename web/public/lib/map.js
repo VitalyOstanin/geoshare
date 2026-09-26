@@ -20,7 +20,7 @@ import { Map as MapLibre, Marker, NavigationControl } from './vendor/maplibre-gl
 import { STALE_COLOUR, memberColour, shortName } from './members.js';
 import { showFace } from './faces.js';
 
-import { ageText, isStale, positionAge, timeText } from './age.js';
+import { ageText, isStale, isStuck, positionAge, timeText } from './age.js';
 import { clusterMembers, facesShown } from './clusters.js';
 import {
     FOLLOW_ALL,
@@ -1038,6 +1038,13 @@ function detail(view, position, name, faces, now) {
         // viewer assumed.
         [WORDS.at, timeText(position.positionAt)],
         [WORDS.online, timeText(position.knownAt)],
+        // Only while it is true, directly under the two moments it explains:
+        // a viewer does not subtract one clock time from another, and a
+        // marker that has stood still for hours while the phone keeps
+        // reaching the server is a marker not to be trusted.
+        ...(isStuck(position.positionAt, position.knownAt, now)
+            ? [[WORDS.stuck, WORDS.stuckNote]]
+            : []),
         // Only while it is happening, and directly under the two moments,
         // because that is the reading these correct: an old marker on its own
         // says the phone has gone quiet, and these say it is working and being
