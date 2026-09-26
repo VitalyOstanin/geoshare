@@ -49,6 +49,7 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -199,15 +200,19 @@ fun MapScreen(
     // the same name on them says nothing about which phone is where; the name
     // of the phone is added only then, because most members have one.
     val carried = positions.groupingBy { it.memberId }.eachCount()
-    val names =
+    val people =
         positions.associate { position ->
-            val name =
+            position.positionId to
                 memberName(
                     profile = profiles[position.memberId],
                     memberId = position.memberId,
                     own = position.memberId == ownMemberId,
                     ownName = ownName,
                 )
+        }
+    val names =
+        positions.associate { position ->
+            val name = people.getValue(position.positionId)
             val device = position.deviceName
 
             position.positionId to
@@ -342,7 +347,7 @@ fun MapScreen(
             if (opened != null) {
                 MemberDetail(
                     member = opened,
-                    name = names[opened.positionId] ?: shortName(opened.memberId),
+                    name = people[opened.positionId] ?: shortName(opened.memberId),
                     face = faces[opened.memberId],
                     now = now,
                     onClose = { openedPositionId = null },
@@ -958,22 +963,23 @@ private fun MemberDetail(
                     stale = isStale(member.knownAt, now),
                 )
 
+                // The two names are what is pressed to rename them, underlined
+                // the way the other words of the card that can be pressed are:
+                // a row of its own for renaming took two lines of a card that
+                // is short of them. Oneself is named on the account, not here.
                 Column(modifier = Modifier.weight(1f).padding(start = 8.dp)) {
-                    Text(text = name, style = MaterialTheme.typography.titleMedium)
-
-                    // Which phone this is, the way the web page says it, and
-                    // only when the name does not carry it already: a member
-                    // with two phones has the model in their name, and a
-                    // member with one has it nowhere else.
-                    val device = member.deviceName
-
-                    if (!device.isNullOrBlank() && !name.contains(device)) {
-                        Text(
-                            text = device,
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        )
-                    }
+                    NameText(
+                        text = name,
+                        style = MaterialTheme.typography.titleMedium,
+                        onClick = onNamePerson,
+                    )
+                    NameText(
+                        text =
+                        member.deviceName?.takeIf { it.isNotBlank() }
+                            ?: stringResource(R.string.unnamed_device),
+                        style = MaterialTheme.typography.bodyMedium,
+                        onClick = onNamePhone,
+                    )
                 }
 
                 // A word rather than an icon: the icon packs are a dependency
@@ -981,15 +987,6 @@ private fun MemberDetail(
                 TextButton(onClick = onClose) {
                     Text(text = stringResource(R.string.map_detail_close))
                 }
-            }
-
-            // One under the other: side by side the longer label broke in the
-            // middle of a word on a narrow phone. Words to press rather than
-            // buttons, whose height of their own left a gap between the two
-            // as tall as a line of the card.
-            Column(modifier = Modifier.padding(vertical = 4.dp)) {
-                onNamePerson?.let { NamingLink(R.string.name_person, it) }
-                NamingLink(R.string.name_phone, onNamePhone)
             }
 
             DetailRow(R.string.map_detail_last_seen, ageText(positionAge(member.positionAt, now)))
@@ -1246,14 +1243,14 @@ private fun ReasonHelp(onClose: () -> Unit) {
     )
 }
 
-/** A word of the card that opens the naming dialog, with room around it to press. */
+/** A name at the head of the card, pressed to rename it where it can be. */
 @Composable
-private fun NamingLink(label: Int, onClick: () -> Unit) {
+private fun NameText(text: String, style: TextStyle, onClick: (() -> Unit)?) {
     Text(
-        text = stringResource(label),
-        style = MaterialTheme.typography.bodyMedium,
-        color = MaterialTheme.colorScheme.primary,
-        modifier = Modifier.clickable(onClick = onClick).padding(vertical = 6.dp),
+        text = text,
+        style = style,
+        textDecoration = onClick?.let { TextDecoration.Underline },
+        modifier = onClick?.let { Modifier.clickable(onClick = it) } ?: Modifier,
     )
 }
 

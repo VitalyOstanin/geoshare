@@ -78,6 +78,7 @@
     <string name="admin_phone_charging">на зарядке</string>
     <string name="name_phone">Переименовать устройство</string>
     <string name="name_person">Переименовать человека</string>
+    <string name="unnamed_device">Устройство</string>
     <string name="name_for_you">Это имя видите только вы.</string>
     <string name="name_save">Сохранить</string>
     <string name="name_reset">Сбросить</string>

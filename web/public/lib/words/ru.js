@@ -276,6 +276,7 @@ export const RU = {
     nameCancel: 'Отмена',
     nameSaving: 'Сохраняем…',
     nameFailed: (reason) => `Имя не сохранено: ${reason}`,
+    unnamedDevice: 'Устройство',
 
     // A phone in the panel that runs the group, and whether it is in touch.
     adminPhoneOnline: (name, age) => `${name}: на связи ${age}`,

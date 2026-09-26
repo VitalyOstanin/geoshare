@@ -90,6 +90,7 @@
     <string name="admin_phone_charging">charging</string>
     <string name="name_phone">Rename device</string>
     <string name="name_person">Rename person</string>
+    <string name="unnamed_device">Device</string>
     <string name="name_for_you">Only you see this name.</string>
     <string name="name_save">Save</string>
     <string name="name_reset">Reset</string>

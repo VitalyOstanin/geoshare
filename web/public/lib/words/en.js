@@ -276,6 +276,7 @@ export const EN = {
     nameCancel: 'Cancel',
     nameSaving: 'Saving…',
     nameFailed: (reason) => `The name was not saved: ${reason}`,
+    unnamedDevice: 'Device',
 
     // A phone in the panel that runs the group, and whether it is in touch.
     adminPhoneOnline: (name, age) => `${name}: in touch ${age}`,

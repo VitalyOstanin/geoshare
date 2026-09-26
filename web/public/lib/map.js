@@ -239,6 +239,7 @@ export function createMap(element, onCardChange = () => {}, cardElement) {
         // nobody to ask offers no names.
         onName: null,
         ownMemberId: null,
+        personName: null,
     };
 
     // The ring's source and layers come with the style; what has to wait is the
@@ -1009,23 +1010,21 @@ function detail(view, position, name, faces, now) {
 
     const titles = document.createElement('div');
     const title = document.createElement('h2');
+    const device = document.createElement('span');
+    const own = position.memberId === view.ownMemberId;
 
-    title.textContent = name;
-    titles.append(title);
+    // The person and the phone on lines of their own, whatever the markers
+    // say, because each of the two is what is pressed to rename it: a row of
+    // its own for renaming took a line of a card that is short of them.
+    // Oneself is named on the account, not here.
+    const person = view.personName?.(position) ?? name;
 
-    // Only when the name does not carry it already: a member with one phone
-    // has no use for its model, and a member with two has it in their name.
-    if (position.deviceName && !name.includes(position.deviceName)) {
-        const device = document.createElement('span');
-
-        device.className = 'detail-device';
-        device.textContent = position.deviceName;
-        titles.append(device);
-    }
+    title.append(nameWord(view, person, own ? null : ['members', position.memberId]));
+    device.className = 'detail-device';
+    device.append(nameWord(view, position.deviceName || WORDS.unnamedDevice, ['devices', position.positionId]));
+    titles.append(title, device);
 
     heading.append(face, titles);
-
-    const naming = namingButtons(view, position);
 
     const table = document.createElement('table');
 
@@ -1087,41 +1086,28 @@ function detail(view, position, name, faces, now) {
         table.append(row);
     }
 
-    card.append(heading, ...naming, table);
+    card.append(heading, table);
 
     return card;
 }
 
 /**
- * The two ways to name what the card is about, for the viewer alone: the
- * person, unless it is the viewer, and the phone. Nothing where the page has
- * not asked to be told.
+ * A name at the head of the card: a word to press where the page has asked to
+ * be told and the name is one the viewer may give, plain text otherwise.
  */
-function namingButtons(view, position) {
-    if (!view.onName) {
-        return [];
+function nameWord(view, text, naming) {
+    if (!view.onName || !naming) {
+        return document.createTextNode(text);
     }
 
-    const row = document.createElement('div');
+    const button = document.createElement('button');
 
-    row.className = 'detail-naming';
+    button.type = 'button';
+    button.className = 'detail-rename';
+    button.textContent = text;
+    button.addEventListener('click', () => view.onName(...naming));
 
-    const offer = (words, kind, key) => {
-        const button = document.createElement('button');
-
-        button.type = 'button';
-        button.textContent = words;
-        button.addEventListener('click', () => view.onName(kind, key));
-        row.append(button);
-    };
-
-    if (position.memberId !== view.ownMemberId) {
-        offer(WORDS.namePerson, 'members', position.memberId);
-    }
-
-    offer(WORDS.namePhone, 'devices', position.positionId);
-
-    return [row];
+    return button;
 }
 
 /**

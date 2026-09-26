@@ -1032,23 +1032,18 @@ button {
     opacity: 0.8;
 }
 
-/* The two ways to name what a card is about, as links under its title: they
-   are asked for now and then, and a row of boxed buttons would outweigh the
-   facts the card is for. */
-.detail-naming {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 0.2rem 0.8rem;
-    margin-bottom: 0.4rem;
-}
-
-.detail-naming button {
+/* The names at the head of a card, pressed to rename them: underlined like
+   the other words of the card that can be pressed, and otherwise the text
+   they stand in. */
+.detail-rename {
     border: 0;
     padding: 0;
     background: none;
-    color: var(--link);
+    color: inherit;
     font: inherit;
-    font-size: 0.8rem;
+    text-align: inherit;
+    text-decoration: underline;
+    text-underline-offset: 0.15em;
     cursor: pointer;
 }
 

@@ -405,6 +405,7 @@ function start() {
     if (!state.view) {
         state.view = createMap(elements.map, render, elements.card);
         state.view.onName = askName;
+        state.view.personName = personName;
     }
 
     // The map measures its element when it is created, and until the sign-in
@@ -1245,17 +1246,22 @@ function names() {
 }
 
 function nameOf(position, carried) {
-    const name = memberName(
-        state.profiles?.get(position.memberId),
-        position.memberId,
-        position.memberId === state.member.memberId,
-    );
+    const name = personName(position);
 
     if ((carried.get(position.memberId) ?? 1) > 1 && position.deviceName) {
         return `${name} · ${position.deviceName}`;
     }
 
     return name;
+}
+
+/** Who carries the phone, without the phone: the head of a card says it apart. */
+function personName(position) {
+    return memberName(
+        state.profiles?.get(position.memberId),
+        position.memberId,
+        position.memberId === state.member.memberId,
+    );
 }
 
 /**
