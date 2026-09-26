@@ -215,6 +215,7 @@ export const EN = {
     // paint, and these replace it as soon as the modules run.
     signInExplanation: 'Sign in with the Google account the family shares positions under.',
     signInAction: 'Sign in with Google',
+    signInWaiting: 'Signing in…',
     signOut: 'Sign out',
     appearance: 'Appearance',
     themeLight: 'Light',
@@ -267,8 +268,8 @@ export const EN = {
         + 'may already exist.',
 
     // Naming a phone or a person for oneself, from the card.
-    namePhone: 'Name the phone',
-    namePerson: 'Name the person',
+    namePhone: 'Rename device',
+    namePerson: 'Rename person',
     nameForYou: 'Only you see this name.',
     nameSave: 'Save',
     nameReset: 'Reset',

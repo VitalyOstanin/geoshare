@@ -226,6 +226,7 @@ export const RU = {
     // The words index.html is written with.
     signInExplanation: 'Войдите в тот аккаунт Google, под которым семья делится своими геопозициями.',
     signInAction: 'Войти через Google',
+    signInWaiting: 'Входим в аккаунт…',
     signOut: 'Выйти',
     appearance: 'Оформление',
     themeLight: 'Светлое',
@@ -267,8 +268,8 @@ export const RU = {
     groupRefused: 'База отказала. Возможно, приглашение истекло или группа уже создана.',
 
     // Naming a phone or a person for oneself, from the card.
-    namePhone: 'Назвать телефон',
-    namePerson: 'Назвать человека',
+    namePhone: 'Переименовать устройство',
+    namePerson: 'Переименовать человека',
     nameForYou: 'Это имя видите только вы.',
     nameSave: 'Сохранить',
     nameReset: 'Сбросить',

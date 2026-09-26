@@ -65,6 +65,9 @@ import {
     writeLabel,
 } from './lib/store.js';
 
+/** Where the page remembers a sign-in; boot-sign-in.js spells it out too. */
+const SIGNED_IN_KEY = 'geoshare.signedIn';
+
 /** How often the ages on screen are recounted. Half a minute keeps "5 minutes ago" honest. */
 const AGE_TICK_MS = 30 * 1000;
 
@@ -72,6 +75,7 @@ const elements = {
     signIn: document.querySelector('#sign-in'),
     signInExplanation: document.querySelector('#sign-in-explanation'),
     signInButton: document.querySelector('#sign-in-button'),
+    signInWaiting: document.querySelector('#sign-in-waiting-text'),
     signInError: document.querySelector('#sign-in-error'),
     map: document.querySelector('#map'),
     card: document.querySelector('#card'),
@@ -331,6 +335,7 @@ function sayMarkup() {
 
     elements.signInExplanation.textContent = WORDS.signInExplanation;
     elements.signInButton.textContent = WORDS.signInAction;
+    elements.signInWaiting.textContent = WORDS.signInWaiting;
     elements.signOutButton.textContent = WORDS.signOut;
     elements.namingSave.textContent = WORDS.nameSave;
     elements.namingReset.textContent = WORDS.nameReset;
@@ -358,6 +363,7 @@ function showLanguage() {
 
 watchSignIn((member) => {
     state.member = member;
+    rememberSignIn(member !== null);
 
     if (member) {
         start();
@@ -367,6 +373,24 @@ watchSignIn((member) => {
 
     render();
 });
+
+/**
+ * Keeps whether this browser is signed in for boot-sign-in.js to read on the
+ * next load, and ends the waiting it started: the answer is in either way.
+ */
+function rememberSignIn(signedIn) {
+    try {
+        if (signedIn) {
+            localStorage.setItem(SIGNED_IN_KEY, 'yes');
+        } else {
+            localStorage.removeItem(SIGNED_IN_KEY);
+        }
+    } catch {
+        // Only the next load is worse off: it shows the button while waiting.
+    }
+
+    delete document.documentElement.dataset.signIn;
+}
 
 function start() {
     elements.signIn.hidden = true;

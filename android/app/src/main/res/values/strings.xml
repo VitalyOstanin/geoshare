@@ -88,16 +88,16 @@
     <string name="admin_phone_online">%1$s: in touch %2$s</string>
     <string name="admin_phone_silent">%1$s: not in touch yet</string>
     <string name="admin_phone_charging">charging</string>
-    <string name="name_phone">Name the phone</string>
-    <string name="name_person">Name the person</string>
+    <string name="name_phone">Rename device</string>
+    <string name="name_person">Rename person</string>
     <string name="name_for_you">Only you see this name.</string>
     <string name="name_save">Save</string>
     <string name="name_reset">Reset</string>
     <string name="name_cancel">Cancel</string>
-    <string name="phone_name_title">Name of this phone</string>
+    <string name="phone_name_title">Name of this device</string>
     <string name="phone_name_none">Not set: the model is shown</string>
     <string name="phone_name_change">Change</string>
-    <string name="phone_name_for_all">Everyone who sees this phone sees this name.</string>
+    <string name="phone_name_for_all">Everyone who sees this device sees this name.</string>
     <string name="map_open_settings">Settings</string>
     <string name="map_account_nameless" translatable="false">?</string>
     <string name="settings_title">Settings</string>

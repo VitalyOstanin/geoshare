@@ -130,6 +130,40 @@ body {
     text-align: center;
 }
 
+/* A remembered account coming back: the button would read as having been
+   signed out, so it waits out of sight until the first answer. */
+#sign-in-waiting {
+    display: none;
+    align-items: center;
+    justify-content: center;
+    gap: 0.6rem;
+}
+
+:root[data-sign-in="waiting"] #sign-in-waiting {
+    display: flex;
+}
+
+:root[data-sign-in="waiting"] #sign-in-explanation,
+:root[data-sign-in="waiting"] #sign-in-button {
+    display: none;
+}
+
+.spinner {
+    width: 1.2rem;
+    height: 1.2rem;
+    flex: none;
+    border: 2px solid var(--edge);
+    border-top-color: var(--link);
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
 #map {
     flex: 1;
     min-height: 0;

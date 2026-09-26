@@ -20,6 +20,10 @@
              A file rather than a few lines written here, so that the page can
              be served under a policy that allows no inline script at all. -->
         <script src="boot-theme.js"></script>
+        <!-- The same for a sign-in this browser remembers: the account comes
+             back on its own a moment later, and a sign-in button standing in
+             the meantime reads as having been signed out. -->
+        <script src="boot-sign-in.js"></script>
     </head>
     <body>
         <section id="sign-in">
@@ -29,6 +33,12 @@
                  as the modules run. -->
             <p id="sign-in-explanation">Sign in with the Google account the family shares positions under.</p>
             <button id="sign-in-button" type="button">Sign in with Google</button>
+            <!-- Shown instead of the two above while a remembered account is
+                 coming back; the words arrive with the modules. -->
+            <p id="sign-in-waiting">
+                <span class="spinner"></span>
+                <span id="sign-in-waiting-text"></span>
+            </p>
             <p id="sign-in-error" class="error"></p>
         </section>
 
