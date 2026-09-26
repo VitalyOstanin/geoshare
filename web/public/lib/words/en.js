@@ -88,6 +88,8 @@ export const EN = {
     // positions are being rejected; the receiver has not settled since the
     // phone was switched on and answers narrowly and wrongly.
     falsePlaceLead: 'The position is most likely false:',
+    falsePlaceAndAfter: (count) => `This position and ${count} more after it are in`,
+    falsePlaceWhere: 'a known spoofed area',
     stuckSentence: (age) => `Online ${age}, but no new location has been accepted.`,
     leftOutLead: (answers) => `Rejected ${answers}:`,
     settlingSentence: 'The receiver had not settled since the phone was switched on.',

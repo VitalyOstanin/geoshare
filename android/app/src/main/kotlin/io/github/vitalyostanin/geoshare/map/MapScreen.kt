@@ -1217,11 +1217,23 @@ private fun DetailWarnings(member: MemberPosition, now: Instant) {
             }
             ?: stringResource(leftOutReasonLabel(member.leftOutReason))
     val settling = stringResource(R.string.map_detail_settling_sentence).takeIf { member.settling }
+    // The answers refused for lying in the same place are that place again, so
+    // they are counted into its sentence rather than given one of their own.
+    val refusedHere = member.inFalsePlace && count != null &&
+        member.leftOutReason == JumpReason.FalsePlace.name
     val falsePlaceLead =
-        stringResource(R.string.map_detail_false_place_lead).takeIf { member.inFalsePlace }
+        when {
+            refusedHere -> stringResource(R.string.map_detail_false_place_and_after, count ?: 0)
+            member.inFalsePlace -> stringResource(R.string.map_detail_false_place_lead)
+            else -> null
+        }
     val falsePlace =
-        stringResource(leftOutReasonLabel(JumpReason.FalsePlace.name))
-            .replaceFirstChar { it.lowercase(Locale.getDefault()) }
+        if (refusedHere) {
+            stringResource(R.string.map_detail_false_place_where)
+        } else {
+            stringResource(leftOutReasonLabel(JumpReason.FalsePlace.name))
+                .replaceFirstChar { it.lowercase(Locale.getDefault()) }
+        }
     val reasonLink =
         LinkAnnotation.Clickable(
             tag = "reason",
@@ -1243,7 +1255,7 @@ private fun DetailWarnings(member: MemberPosition, now: Instant) {
                 append(it)
             }
 
-            if (lead != null) {
+            if (lead != null && !refusedHere) {
                 if (length > 0) append(' ')
 
                 append(lead)

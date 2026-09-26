@@ -50,6 +50,8 @@
     <string name="map_detail_stuck_sentence">Online %1$s, but no new location has been accepted.</string>
     <string name="map_detail_left_out_lead">Rejected %1$s:</string>
     <string name="map_detail_false_place_lead">The position is most likely false:</string>
+    <string name="map_detail_false_place_and_after">This position and %1$d more after it are in</string>
+    <string name="map_detail_false_place_where">a known spoofed area</string>
     <string name="map_detail_settling_sentence">The receiver had not settled since the phone was switched on.</string>
     <string name="map_detail_more">More details</string>
     <string name="map_detail_fewer">Fewer details</string>

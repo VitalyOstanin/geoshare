@@ -1136,7 +1136,18 @@ function warningsOf(position, now) {
     // the reason as a word to press.
     const sentences = [];
 
-    if (position.inFalsePlace) {
+    // The answers refused for lying in the same place are that place again,
+    // so they are counted into its sentence rather than given one of their own.
+    const refusedHere = position.inFalsePlace
+        && position.leftOutCount > 0
+        && position.leftOutReason === 'FalsePlace';
+
+    if (refusedHere) {
+        const place = reasonButton('FalsePlace');
+
+        place.textContent = WORDS.falsePlaceWhere;
+        sentences.push([WORDS.falsePlaceAndAfter(position.leftOutCount), ' ', place, '.']);
+    } else if (position.inFalsePlace) {
         const place = reasonButton('FalsePlace');
 
         place.textContent = lowerFirst(place.textContent);
@@ -1147,7 +1158,7 @@ function warningsOf(position, now) {
         sentences.push([WORDS.stuckSentence(ageText(positionAge(position.knownAt, now)))]);
     }
 
-    if (position.leftOutCount > 0) {
+    if (position.leftOutCount > 0 && !refusedHere) {
         const reason = reasonButton(position.leftOutReason);
 
         reason.textContent = lowerFirst(reason.textContent);
