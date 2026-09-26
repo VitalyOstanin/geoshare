@@ -60,11 +60,11 @@ test('the colour index matches the one the Android client takes', () => {
     assert.equal(colourIndex(''), 0);
     assert.equal(colourIndex('a'), 2);
     assert.equal(colourIndex('member'), 4);
-    assert.equal(colourIndex('u7ExampleOwnerUid00000000000'), 1);
+    assert.equal(colourIndex('Qm7d0Kh8oOOL8dKLzdocJ2isAjIh'), 1);
 });
 
 test('a name is the first characters of the id', () => {
-    assert.equal(shortName('u7ExampleOwnerUid00000000000'), 'E9WyZT');
+    assert.equal(shortName('Qm7d0Kh8oOOL8dKLzdocJ2isAjIh'), 'Qm7d0K');
 });
 
 // The same four cases the Android client checks, so that a member is called
@@ -74,7 +74,7 @@ test('a member is called what their profile says', () => {
 });
 
 test('a member without a profile is called by the start of their id', () => {
-    assert.equal(memberName(undefined, 'u7ExampleOwnerUid00000000000', false), 'E9WyZT');
+    assert.equal(memberName(undefined, 'Qm7d0Kh8oOOL8dKLzdocJ2isAjIh', false), 'Qm7d0K');
 });
 
 test('our own entry says "you", profile or not', () => {

@@ -13,7 +13,7 @@ class MarkerIconTest {
         assertEquals(0, colourIndex(""))
         assertEquals(2, colourIndex("a"))
         assertEquals(4, colourIndex("member"))
-        assertEquals(1, colourIndex("u7ExampleOwnerUid00000000000"))
+        assertEquals(1, colourIndex("Qm7d0Kh8oOOL8dKLzdocJ2isAjIh"))
     }
 
     // The same three cases the web page checks: a member without a picture is

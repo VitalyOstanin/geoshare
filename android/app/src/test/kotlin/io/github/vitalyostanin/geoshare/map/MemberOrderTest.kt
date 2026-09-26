@@ -63,8 +63,8 @@ class MemberOrderTest {
     @Test
     fun `a member without a profile is called by the start of their id`() {
         assertEquals(
-            "E9WyZT",
-            memberName(null, "u7ExampleOwnerUid00000000000", own = false, ownName = "You"),
+            "Qm7d0K",
+            memberName(null, "Qm7d0Kh8oOOL8dKLzdocJ2isAjIh", own = false, ownName = "You"),
         )
     }
 
