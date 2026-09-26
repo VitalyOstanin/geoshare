@@ -391,6 +391,13 @@ export function showMembers(view, positions, names, faces, ownMemberId, now) {
     // named on their account.
     view.ownMemberId = ownMemberId;
 
+    // Not while the map is on its way somewhere, for the reason moveend waits:
+    // grouping at the height of a flight joins members the destination tells
+    // apart. The moveend at the end draws what is kept above.
+    if (view.map.isMoving()) {
+        return;
+    }
+
     draw(view, view.last);
     applyFollowMode(view);
 }
