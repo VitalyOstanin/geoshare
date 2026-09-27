@@ -333,6 +333,9 @@ export const EN = {
     adminPhoneOnline: (name, age) => `${name}: in touch ${age}`,
     adminPhoneSilent: (name) => `${name}: not in touch yet`,
     adminPhoneCharging: 'charging',
+    // The same in My devices, where the device's name is the line above.
+    phoneOnline: (age) => `In touch ${age}`,
+    phoneSilent: 'Not in touch yet',
 
     // The group looking for a member: an administrator opens a search, and
     // while it stands everybody in the group sees where the member is.

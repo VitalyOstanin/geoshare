@@ -94,6 +94,8 @@
     <string name="admin_phone_online">%1$s: in touch %2$s</string>
     <string name="admin_phone_silent">%1$s: not in touch yet</string>
     <string name="admin_phone_charging">charging</string>
+    <string name="phone_online">In touch %1$s</string>
+    <string name="phone_silent">Not in touch yet</string>
     <string name="name_phone">Rename device</string>
     <string name="name_person">Rename person</string>
     <string name="unnamed_device">Device</string>

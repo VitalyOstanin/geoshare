@@ -207,7 +207,8 @@ fun MyPhonesScreen(
                             if (phone.phoneId == ownPhoneId) {
                                 stringResource(R.string.my_phones_this)
                             } else {
-                                phoneText(phone, now)
+                                // The name stands just above.
+                                phoneText(phone, now, named = false)
                             },
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,

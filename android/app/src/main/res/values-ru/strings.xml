@@ -82,6 +82,8 @@
     <string name="admin_phone_online">%1$s: на связи %2$s</string>
     <string name="admin_phone_silent">%1$s: ещё не выходил на связь</string>
     <string name="admin_phone_charging">на зарядке</string>
+    <string name="phone_online">На связи %1$s</string>
+    <string name="phone_silent">Ещё не выходило на связь</string>
     <string name="name_phone">Переименовать устройство</string>
     <string name="name_person">Переименовать человека</string>
     <string name="unnamed_device">Устройство</string>

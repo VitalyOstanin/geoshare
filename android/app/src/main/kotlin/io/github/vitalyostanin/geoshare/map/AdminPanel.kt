@@ -616,12 +616,27 @@ private fun AdminSearchSummary(
     }
 }
 
-/** A phone, when it was last in touch, and its charge. */
+/**
+ * A phone, when it was last in touch, and its charge: after its name where the
+ * line stands for the member, and without it where the name is the line above.
+ */
 @Composable
-internal fun phoneText(phone: PhoneLine, now: Instant): String {
-    val onlineAt = phone.onlineAt ?: return stringResource(R.string.admin_phone_silent, phone.name)
+internal fun phoneText(phone: PhoneLine, now: Instant, named: Boolean = true): String {
+    val onlineAt =
+        phone.onlineAt ?: return if (named) {
+            stringResource(R.string.admin_phone_silent, phone.name)
+        } else {
+            stringResource(R.string.phone_silent)
+        }
     val age = ageText(positionAge(onlineAt, now))
-    val said = mutableListOf(stringResource(R.string.admin_phone_online, phone.name, age))
+    val said =
+        mutableListOf(
+            if (named) {
+                stringResource(R.string.admin_phone_online, phone.name, age)
+            } else {
+                stringResource(R.string.phone_online, age)
+            },
+        )
 
     phone.batteryPercent?.let { said.add(stringResource(R.string.map_battery, it)) }
 

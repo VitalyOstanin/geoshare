@@ -971,7 +971,8 @@ function drawPhones() {
             name.className = 'admin-name';
             name.textContent = phone.name;
             said.className = 'admin-about';
-            said.textContent = phoneText(phone, now);
+            // The name stands just above, so the line does not say it again.
+            said.textContent = phoneText(phone, now, false);
             about.append(name, said);
             actions.className = 'admin-actions';
 
@@ -1529,13 +1530,17 @@ elements.confirm.addEventListener('close', () => {
     confirmedWrite = null;
 });
 
-/** A phone, when it was last in touch, and its charge. */
-function phoneText(phone, now) {
+/**
+ * A phone, when it was last in touch, and its charge: after its name where the
+ * line stands for the member, and without it where the name is the line above.
+ */
+function phoneText(phone, now, named = true) {
     if (phone.onlineAt === null) {
-        return WORDS.adminPhoneSilent(phone.name);
+        return named ? WORDS.adminPhoneSilent(phone.name) : WORDS.phoneSilent;
     }
 
-    const said = [WORDS.adminPhoneOnline(phone.name, ageText(positionAge(phone.onlineAt, now)))];
+    const age = ageText(positionAge(phone.onlineAt, now));
+    const said = [named ? WORDS.adminPhoneOnline(phone.name, age) : WORDS.phoneOnline(age)];
 
     if (phone.batteryPercent !== null) {
         said.push(`${phone.batteryPercent}%`);
