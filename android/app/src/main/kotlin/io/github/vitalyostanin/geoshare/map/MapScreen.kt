@@ -54,6 +54,7 @@ import androidx.compose.ui.graphics.ColorMatrix
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
@@ -85,7 +86,6 @@ import java.time.Instant
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 import java.time.format.FormatStyle
-import java.util.Locale
 
 /** How often the ages on screen are recounted. Half a minute keeps "5 minutes ago" honest. */
 private const val AGE_TICK_MILLIS = 30_000L
@@ -1214,6 +1214,9 @@ private fun DetailWarnings(member: MemberPosition, now: Instant) {
     }
 
     var helpOpen by remember { mutableStateOf(false) }
+    // The language the card is written in, read so that a change of it
+    // redraws the card: the default locale changes under Compose unseen.
+    val locale = LocalConfiguration.current.locales[0]
 
     val stuckSentence =
         stringResource(
@@ -1254,7 +1257,7 @@ private fun DetailWarnings(member: MemberPosition, now: Instant) {
             stringResource(R.string.map_detail_false_place_where)
         } else {
             stringResource(leftOutReasonLabel(JumpReason.FalsePlace.name))
-                .replaceFirstChar { it.lowercase(Locale.getDefault()) }
+                .replaceFirstChar { it.lowercase(locale) }
         }
     val reasonLink =
         LinkAnnotation.Clickable(
@@ -1283,7 +1286,7 @@ private fun DetailWarnings(member: MemberPosition, now: Instant) {
                 append(lead)
                 append(' ')
                 withLink(reasonLink) {
-                    append(reason.replaceFirstChar { it.lowercase(Locale.getDefault()) })
+                    append(reason.replaceFirstChar { it.lowercase(locale) })
                 }
                 append('.')
             }
