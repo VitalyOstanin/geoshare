@@ -7,7 +7,7 @@ import {
     getAuth,
     getRedirectResult,
     onAuthStateChanged,
-    signInWithPopup,
+    signInWithRedirect,
     signOut,
 } from 'https://www.gstatic.com/firebasejs/12.19.0/firebase-auth.js';
 import {
@@ -145,24 +145,22 @@ export function watchSignIn(onChange) {
 }
 
 /**
- * Gets the sign-in popup ready before the button is pressed.
+ * Whatever became of a sign-in the page was left for, or nothing when it was
+ * not.
  *
- * The popup needs a script and a frame from Google first, and a browser lets
- * a page open a window only for a short while after a tap. Firebase fetches
- * them ahead of time on the browsers it takes for phones, but a phone
- * browser asked for the desktop version of the page is taken for a desktop
- * one, the fetch starts with the tap, and on a slow connection the window
- * comes too late and is blocked. Asking for a redirect result is the public
- * call that makes the same preparation; there is never a redirect to find.
+ * The account itself arrives through watchSignIn; this is only for the
+ * failure, which would otherwise be lost with the page that asked.
  */
-export function prepareSignIn() {
-    getRedirectResult(auth).catch(() => {});
+export function signInReturned() {
+    return getRedirectResult(auth);
 }
 
 export function signIn() {
-    // A popup rather than a redirect: the page keeps its state, and there is
-    // no return trip to get wrong.
-    return signInWithPopup(auth, new GoogleAuthProvider());
+    // A trip to Google and back rather than a popup: phone browsers ask
+    // before opening a window, open it as a tab, and block it outright when
+    // it comes too long after the tap. The page is loaded afresh on the way
+    // back, and nothing on the sign-in screen is lost with it.
+    return signInWithRedirect(auth, new GoogleAuthProvider());
 }
 
 export function leave() {

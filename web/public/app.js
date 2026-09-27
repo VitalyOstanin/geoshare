@@ -54,11 +54,11 @@ import {
     keepWatching,
     leave,
     makeInvitation,
-    prepareSignIn,
     publishProfile,
     removeMember,
     setRunning,
     signIn,
+    signInReturned,
     watchFalsePlaces,
     watchPositions,
     watchGrants,
@@ -230,17 +230,12 @@ elements.signInButton.addEventListener('click', async () => {
 /**
  * What to say when signing in did not happen.
  *
- * The same four answers the phone gives, because the same four things go
- * wrong: the viewer changed their mind, the network is not there, this build
- * is pointed at a project that does not want it, or something else.
+ * The answers the phone gives, less the one for a viewer who changed their
+ * mind: leaving Google's page brings them back with no error at all. What is
+ * left is the network not being there, this build pointed at a project that
+ * does not want it, and something else.
  */
 function signInTrouble(error) {
-    // A closed popup is the viewer saying "not now"; answering it with an
-    // error message would be arguing.
-    if (error.code === 'auth/popup-closed-by-user' || error.code === 'auth/cancelled-popup-request') {
-        return '';
-    }
-
     if (error.code === 'auth/network-request-failed') {
         return WORDS.signInOffline;
     }
@@ -253,6 +248,12 @@ function signInTrouble(error) {
     // viewer who reads it out is often the only way it reaches anybody.
     return error.code ? `${WORDS.signInFailed} (${error.code})` : WORDS.signInFailed;
 }
+
+// A sign-in that went to Google and came back failed is said here, on the
+// page it came back to.
+signInReturned().catch((error) => {
+    elements.signInError.textContent = signInTrouble(error);
+});
 
 elements.signOutButton.addEventListener('click', () => leave());
 
@@ -609,7 +610,6 @@ function stop() {
     state.stripEntries = new Map();
 
     elements.signIn.hidden = false;
-    prepareSignIn();
     elements.map.hidden = true;
     elements.followButton.hidden = true;
     elements.panel.hidden = true;
