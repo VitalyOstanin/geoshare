@@ -182,6 +182,22 @@ for (const member of MEMBERS) {
         devices: { arrayValue: { values: [stringValue(member.device)] } },
     });
 
+    // How each phone last said it is, which the admin panel lists and the
+    // siren is called on: without it a member shows no phones to ring.
+    await write(`groups/${GROUP}/devices/${uid}`, {
+        [member.device]: {
+            mapValue: {
+                fields: {
+                    model: stringValue(member.device),
+                    onlineAt: timeValue(new Date().toISOString()),
+                    mode: stringValue('Standby'),
+                    batteryPercent: { integerValue: '74' },
+                    charging: { booleanValue: false },
+                },
+            },
+        },
+    });
+
     const place = PLACES[member.email];
 
     if (place === undefined) {

@@ -1,5 +1,6 @@
 package io.github.vitalyostanin.geoshare.map
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.WindowInsets
@@ -14,8 +15,8 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedIconButton
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -193,11 +194,13 @@ fun MyPhonesScreen(
                                 Icon(
                                     painter = painterResource(R.drawable.ic_siren_off),
                                     contentDescription = null,
+                                    modifier = Modifier.padding(end = 4.dp),
                                 )
                                 Text(text = stringResource(R.string.siren_stop_short))
                             }
                         } else {
-                            IconButton(
+                            OutlinedIconButton(
+                                border = BorderStroke(1.dp, Color(SOUGHT_COLOUR)),
                                 onClick = {
                                     sirenTrouble = false
                                     sirenAsk = phone

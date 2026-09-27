@@ -223,7 +223,7 @@
     <string name="sought_banner_note">Открыли поиск: %1$s. Если с вами всё в порядке, закройте поиск.</string>
     <string name="sought_found">Меня нашли</string>
     <string name="siren_notification_title">Включили сирену: %1$s</string>
-    <string name="siren_notification_text">Телефон звучит, чтобы его нашли</string>
+    <string name="siren_notification_text">Телефон звучит, чтобы его нашли.</string>
     <string name="siren_called_by_you">Вы</string>
     <string name="siren_seconds_left">Ещё %1$d с.</string>
     <string name="siren_off">Выключить сирену</string>

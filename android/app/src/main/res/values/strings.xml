@@ -247,7 +247,7 @@
     <string name="sought_banner_note">Opened by %1$s. If you are all right, end the search.</string>
     <string name="sought_found">I\'m found</string>
     <string name="siren_notification_title">Siren switched on by %1$s</string>
-    <string name="siren_notification_text">The phone is sounding so that it can be found</string>
+    <string name="siren_notification_text">The phone is sounding so that it can be found.</string>
     <string name="siren_called_by_you">you</string>
     <string name="siren_seconds_left">%1$d s left.</string>
     <string name="siren_off">Stop the siren</string>
@@ -262,7 +262,7 @@
     <string name="siren_status_sounding">siren on %1$s · %2$d s · the phone answered</string>
     <string name="siren_status_no_answer">%1$s did not answer the siren</string>
     <string name="siren_status_stopped">siren on %1$s stopped</string>
-    <string name="siren_silence_title">Siren in "Do Not Disturb"</string>
+    <string name="siren_silence_title">Siren in \"Do Not Disturb\"</string>
     <string name="siren_silence_note">Optional: without it the siren is silent when the phone is set to total silence</string>
     <string name="siren_silence_granted">allowed</string>
     <string name="my_phones_title">My phones</string>

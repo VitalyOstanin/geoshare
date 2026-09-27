@@ -3,6 +3,7 @@ package io.github.vitalyostanin.geoshare.map
 import android.content.ClipData
 import android.content.ClipboardManager
 import android.widget.Toast
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
@@ -21,8 +22,8 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedIconButton
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -496,11 +497,17 @@ private fun AdminMemberRow(
                     Icon(
                         painter = painterResource(R.drawable.ic_siren_off),
                         contentDescription = null,
+                        modifier = Modifier.padding(end = 4.dp),
                     )
                     Text(text = stringResource(R.string.siren_stop_short))
                 }
             } else if (sirenPhones.isNotEmpty()) {
-                IconButton(onClick = { onSiren(sirenPhones) }) {
+                // Round and red, as on the page: the one button in the row
+                // that makes a phone somewhere loud.
+                OutlinedIconButton(
+                    onClick = { onSiren(sirenPhones) },
+                    border = BorderStroke(1.dp, Color(SOUGHT_COLOUR)),
+                ) {
                     Icon(
                         painter = painterResource(R.drawable.ic_siren),
                         contentDescription = stringResource(R.string.siren_hint),
