@@ -51,11 +51,11 @@ enum class SkyDrift {
  *
  * Read off the logs, at the twenty seconds apart the pairs are read at. Over
  * the phone being spoofed the GPS band drifts apart by 0,2—0,3 dB; over the
- * hours of 14.09 when the same phone still took GLONASS into the fix, by
- * 0,9—1,0 dB; over the phone in another part of the city, by 1,2—1,5 dB. The
- * evening hours of 14.09, when about half the epochs read flat, sit at
- * 0,3—0,5 dB, which is why the limit for a real sky is set above them rather
- * than between: an hour half spoofed is not an hour to call honest.
+ * hours when the same phone still took GLONASS into the fix, by 0,9—1,0 dB;
+ * over the phone in another part of the city, by 1,2—1,5 dB. The hours when
+ * about half the epochs read flat sit at 0,3—0,5 dB, which is why the limit
+ * for a real sky is set above them rather than between: an hour half spoofed
+ * is not an hour to call honest.
  */
 const val TOGETHER_DRIFT_DB: Double = 0.6
 const val APART_DRIFT_DB: Double = 0.9
@@ -79,8 +79,8 @@ const val DRIFT_MIN_SATELLITES: Int = 8
  * Far enough that the satellites have had the chance to move against one
  * another, near enough that the pair is still about one sky. A second apart —
  * which is how often the receiver reports — the honest sky reads as narrow as
- * the false one: the logs of 14.09 give 0,2 dB either way. By fifteen seconds
- * the honest hour is at 0,95 dB and the spoofed ones at 0,3, and the gap only
+ * the false one: the logs give 0,2 dB either way. By fifteen seconds the
+ * honest hour is at 0,95 dB and the spoofed ones at 0,3, and the gap only
  * widens after that.
  */
 const val DRIFT_LEAST_APART_MS: Long = 15_000L

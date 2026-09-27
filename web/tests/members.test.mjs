@@ -86,7 +86,7 @@ test('our own entry says "you", profile or not', () => {
 // takes it the same way; these are the cases where the two could drift apart.
 test('the initial is the first letter of the name, in capitals', () => {
     assert.equal(memberInitial('Ann'), 'A');
-    assert.equal(memberInitial('  oona  '), 'O');
+    assert.equal(memberInitial('  anna  '), 'A');
 });
 
 test('a name with nothing in it leaves no initial', () => {

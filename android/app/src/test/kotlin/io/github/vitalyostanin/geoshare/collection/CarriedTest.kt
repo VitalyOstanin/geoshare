@@ -20,7 +20,7 @@ class CarriedTest {
 
     @Test
     fun `an answer a kilometre from a phone nobody touched has walked away`() {
-        // The one this phone actually gave at 11:00 on 15.09.2026: four
+        // The one this phone actually gave at 11:00 that morning: four
         // satellites, a quarter of a kilometre of doubt, and a place a
         // kilometre from the flat it was lying in.
         val elsewhere = fix(61.04170, 4.40300, noon.plusSeconds(60), width = 246.0)
@@ -28,11 +28,11 @@ class CarriedTest {
         assertTrue(driftedWhilePutDown(putDown, elsewhere, untouched))
     }
 
-    // The answer the towers and the Wi-Fi handed phone 3 at 13:35 on
-    // 16.09.2026, while it lay at home: five metres of claimed doubt, and
-    // within two metres of the false satellite answer rejected a second
-    // earlier. The rescue branch writes such an answer past the rest of the
-    // filter, so this rule is the only one that stands in its way.
+    // The answer the towers and the Wi-Fi handed a phone at 13:35, while it
+    // lay at home: five metres of claimed doubt, and within two metres of the
+    // false satellite answer rejected a second earlier. The rescue branch
+    // writes such an answer past the rest of the filter, so this rule is the
+    // only one that stands in its way.
     @Test
     fun `an answer from the other radios is measured from the anchor as well`() {
         val anchor = PutDown(at = fix(61.03268, 4.40299, noon, width = 100.0), since = noon)
@@ -271,9 +271,10 @@ class CarriedTest {
 
     private fun walk(steps: Long) = Walk(since = noon.minusSeconds(60), steps = steps)
 
-    // The speed phone 1 was given while lying on a table on 16.09.2026, when
-    // the answers it was handed stood fifty-five kilometres away: thirty-three
-    // metres a second, which is a hundred and twenty kilometres an hour.
+    // On a phone left on a table overnight, when the answers it was handed
+    // stood fifty-five kilometres away, the speed it was given was
+    // thirty-three metres a second, which is a hundred and twenty kilometres
+    // an hour.
     @Test
     fun `a phone nobody touched is not travelling at the speed of a car`() {
         val moving = fix(61.11864, 5.38881, noon.plusSeconds(60), width = 15.0, speedMps = 33.3)
@@ -292,7 +293,7 @@ class CarriedTest {
         assertTrue(hurriedWhilePutDown(putDown, nearby, untouched))
     }
 
-    // Of 6,405 answers the phones gave from home over 14—16.09.2026, nine in
+    // Of 6,405 answers the phones gave from home over three days, nine in
     // ten claimed exactly this.
     @Test
     fun `a phone lying still is told it is going nowhere`() {

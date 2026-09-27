@@ -11,12 +11,13 @@ import java.time.Duration
 // cannot do is tell aiding data that has gone wrong from aiding data that is
 // merely old, and it will sit on the wrong kind for as long as it is left to.
 //
-// Phone 1 spent a whole day on 15.09.2026 in exactly that state: GLONASS was
-// heard in three hundred and forty-two epochs out of six hundred and eighteen
-// and not one of those satellites had an ephemeris or entered a single fix,
-// and BeiDou was heard in three hundred and nine with six. Eleven minutes
-// after the aiding data was erased every heard satellite of every system had
-// its ephemeris, and GLONASS, Galileo and BeiDou were all in the answer.
+// A phone under observation spent a whole day in exactly that state: GLONASS
+// was heard in three hundred and forty-two epochs out of six hundred and
+// eighteen and not one of those satellites had an ephemeris or entered a
+// single fix, and BeiDou was heard in three hundred and nine with six. Eleven
+// minutes after the aiding data was erased every heard satellite of every
+// system had its ephemeris, and GLONASS, Galileo and BeiDou were all in the
+// answer.
 //
 // Nothing in the collecting rules would ever have said so: the fixes were
 // ordinary GPS fixes of ordinary width, and the sky file carried the fact on
@@ -38,7 +39,7 @@ val AIDING_DOUBT_AFTER: Duration = Duration.ofMinutes(30)
  *
  * Sixty. The clock alone is not enough, because a constellation low on the
  * horizon is heard in a handful of epochs an hour and would pass the half hour
- * without the receiver ever having had a chance at it: phone 2 heard BeiDou in
+ * without the receiver ever having had a chance at it: a phone heard BeiDou in
  * fourteen epochs out of five hundred and eleven over two and a half hours,
  * which is a sky and not a fault. On the phone that did have the fault the
  * count was three hundred and forty-two, so the two are nowhere near each
@@ -81,10 +82,10 @@ fun useOf(sky: List<Satellite>): Map<Constellation, ConstellationUse> =
  * is the receiver saying it has decoded that satellite's own broadcast, which
  * is precisely what the stuck aiding data prevents; a fix is the receiver's
  * own bookkeeping, and these phones put a satellite in a fix while saying they
- * hold no orbit for it — phone 1 did so in a hundred and thirty epochs of the
- * night of 16.09.2026, every one of them a single GLONASS satellite with no
- * ephemeris. Counting those as the constellation having come good would have
- * cleared the count twice an hour throughout the fault.
+ * hold no orbit for it — a phone under observation did so in a hundred and
+ * thirty epochs of one night, every one of them a single GLONASS satellite
+ * with no ephemeris. Counting those as the constellation having come good
+ * would have cleared the count twice an hour throughout the fault.
  *
  * A constellation out of the answer with its orbits in hand is the other
  * fault: a receiver preferring other satellites, which is what a false sky

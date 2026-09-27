@@ -21,7 +21,7 @@ class MarkerIconTest {
     @Test
     fun `the initial is the first letter of the name, in capitals`() {
         assertEquals("A", memberInitial("Ann"))
-        assertEquals("O", memberInitial("  oona  "))
+        assertEquals("A", memberInitial("  anna  "))
     }
 
     @Test

@@ -271,7 +271,7 @@
 
     <string name="map_follow_none">Not following</string>
     <!-- The member's name inside a phrase rather than on its own: a button
-         reading only "Oona" beside captions like "Following everyone" says
+         reading only "Anna" beside captions like "Following everyone" says
          who without saying what is being done about them. -->
     <string name="map_follow_one">Following %1$s</string>
     <string name="map_follow_all">Following everyone</string>

@@ -53,7 +53,7 @@ class ViewerDistanceTest {
             listOf(
                 at("me.old", 61.0, 4.0, minutes = 10),
                 at("me.new", 61.1, 4.0, minutes = 2),
-                at("oona.one", 61.2, 4.0),
+                at("anna.one", 61.2, 4.0),
             )
 
         assertEquals("me.new", ownPlace(positions, "me", now)?.positionId)
@@ -63,13 +63,14 @@ class ViewerDistanceTest {
     // where the viewer was is read as a distance from where they are.
     @Test
     fun `a place of the viewer gone grey is not measured from`() {
-        val oona = at("oona.one", 61.2, 4.0)
-        val positions = listOf(at("me.one", 61.0, 4.0, minutes = 31), oona)
+        val anna = at("anna.one", 61.2, 4.0)
+        val positions = listOf(at("me.one", 61.0, 4.0, minutes = 31), anna)
 
-        assertNull(distanceFromViewer(oona, positions, "me", now))
+        assertNull(distanceFromViewer(anna, positions, "me", now))
     }
 
-    // Phone 3 on 26.09: online every minute, the marker in the lake since 20:22.
+    // A phone under observation: online every minute, the marker stuck in a
+    // lake since a fix went wrong.
     @Test
     fun `a marker the viewer's phone has left behind is not measured from`() {
         val stuck =
@@ -77,9 +78,9 @@ class ViewerDistanceTest {
                 takenAt = now.minus(Duration.ofMinutes(90)),
                 writtenAt = now.minus(Duration.ofMinutes(1)),
             )
-        val oona = at("oona.one", 61.03249, 4.4)
+        val anna = at("anna.one", 61.03249, 4.4)
 
-        assertNull(distanceFromViewer(oona, listOf(stuck, oona), "me", now))
+        assertNull(distanceFromViewer(anna, listOf(stuck, anna), "me", now))
     }
 
     @Test
@@ -99,9 +100,9 @@ class ViewerDistanceTest {
 
     @Test
     fun `a viewer with no place of their own is told nothing`() {
-        val oona = at("oona.one", 61.0, 4.0)
+        val anna = at("anna.one", 61.0, 4.0)
 
-        assertNull(distanceFromViewer(oona, listOf(oona), "me", now))
+        assertNull(distanceFromViewer(anna, listOf(anna), "me", now))
     }
 
     // Forty metres between two answers sixty metres wide is still forty
@@ -109,9 +110,9 @@ class ViewerDistanceTest {
     @Test
     fun `two answers inside each other's width still get a figure`() {
         val own = at("me.one", 61.0, 4.0, width = 60.0)
-        val oona = at("oona.one", 61.00036, 4.0, width = 15.0)
+        val anna = at("anna.one", 61.00036, 4.0, width = 15.0)
 
-        assertEquals(40.0, distanceFromViewer(oona, listOf(own, oona), "me", now)!!, 1.0)
+        assertEquals(40.0, distanceFromViewer(anna, listOf(own, anna), "me", now)!!, 1.0)
     }
 
     @Test
@@ -130,16 +131,16 @@ class ViewerDistanceTest {
     @Test
     fun `a place of the viewer inside a false place is not measured from`() {
         val own = at("me.one", 61.14561, 5.4036).copy(inFalsePlace = true)
-        val oona = at("oona.one", 61.03249, 4.4)
+        val anna = at("anna.one", 61.03249, 4.4)
 
-        assertNull(distanceFromViewer(oona, listOf(own, oona), "me", now))
+        assertNull(distanceFromViewer(anna, listOf(own, anna), "me", now))
     }
 
     @Test
     fun `a member inside a false place is not measured to`() {
         val own = at("me.one", 61.03249, 4.4)
-        val oona = at("oona.one", 61.14561, 5.4036).copy(inFalsePlace = true)
+        val anna = at("anna.one", 61.14561, 5.4036).copy(inFalsePlace = true)
 
-        assertNull(distanceFromViewer(oona, listOf(own, oona), "me", now))
+        assertNull(distanceFromViewer(anna, listOf(own, anna), "me", now))
     }
 }

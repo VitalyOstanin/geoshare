@@ -1304,9 +1304,10 @@ class SharingService : LifecycleService() {
         }
 
         // The one rule that is asked of this answer too, and the reason is
-        // what the logs of 16.09 showed: a phone lying at home was offered a
-        // place four kilometres away, and the answer that came back from the
-        // other radios stood within two metres of the false one just rejected.
+        // what a field measurement showed: a phone lying at home was offered
+        // a place four kilometres away, and the answer that came back from
+        // the other radios stood within two metres of the false one just
+        // rejected.
         // Whatever built it, it was not a receiver that had been carried
         // there, and the sensors are the thing that says so. Everything else
         // the filter asks stays waived, as above.

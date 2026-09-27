@@ -39,7 +39,7 @@ test('the viewer is where the freshest of their own phones is', () => {
     const positions = [
         at('me.old', 'me', 60, 30, { minutes: 10 }),
         at('me.new', 'me', 60.1, 30, { minutes: 2 }),
-        at('oona.one', 'oona', 60.2, 30, { minutes: 1 }),
+        at('anna.one', 'anna', 60.2, 30, { minutes: 1 }),
     ];
 
     assert.equal(ownPlace(positions, 'me', NOW).positionId, 'me.new');
@@ -50,22 +50,22 @@ test('the viewer is where the freshest of their own phones is', () => {
 test('a place of the viewer gone grey is not measured from', () => {
     const positions = [
         at('me.one', 'me', 60, 30, { minutes: 31 }),
-        at('oona.one', 'oona', 60.2, 30),
+        at('anna.one', 'anna', 60.2, 30),
     ];
 
     assert.equal(distanceFromViewer(positions[1], positions, 'me', NOW), null);
 });
 
-// Phone 3 on 26.09: online every minute, the marker in the lake since 20:22.
+// A phone online every minute, the marker in the lake since 20:22.
 test('a marker the viewer\'s phone has left behind is not measured from', () => {
     const stuck = {
         ...at('me.one', 'me', 61.14561, 5.4036),
         positionAt: NOW - 90 * MINUTE,
         knownAt: NOW - MINUTE,
     };
-    const oona = at('oona.one', 'oona', 61.03249, 4.4);
+    const anna = at('anna.one', 'anna', 61.03249, 4.4);
 
-    assert.equal(distanceFromViewer(oona, [stuck, oona], 'me', NOW), null);
+    assert.equal(distanceFromViewer(anna, [stuck, anna], 'me', NOW), null);
 });
 
 test('the card of the very place measured from says nothing', () => {
@@ -84,18 +84,18 @@ test('another phone of the viewer\'s own is measured like anybody else', () => {
 });
 
 test('a viewer with no place of their own is told nothing', () => {
-    const oona = at('oona.one', 'oona', 60, 30);
+    const anna = at('anna.one', 'anna', 60, 30);
 
-    assert.equal(distanceFromViewer(oona, [oona], 'me', NOW), null);
+    assert.equal(distanceFromViewer(anna, [anna], 'me', NOW), null);
 });
 
 // Forty metres between two answers sixty metres wide is still forty metres:
 // the owner asked for the figure rather than a word.
 test('two answers inside each other\'s width still get a figure', () => {
     const own = at('me.one', 'me', 60, 30, { width: 60 });
-    const oona = at('oona.one', 'oona', 60.00036, 30, { width: 15 });
+    const anna = at('anna.one', 'anna', 60.00036, 30, { width: 15 });
 
-    assert.ok(Math.abs(distanceFromViewer(oona, [own, oona], 'me', NOW) - 40) < 1);
+    assert.ok(Math.abs(distanceFromViewer(anna, [own, anna], 'me', NOW) - 40) < 1);
 });
 
 test('a distance is said in whole metres, nought included', () => {
@@ -111,14 +111,14 @@ test('a distance past a kilometre is said in kilometres to one place', () => {
 
 test('a place of the viewer inside a false place is not measured from', () => {
     const own = { ...at('me.one', 'me', 61.14561, 5.4036), inFalsePlace: true };
-    const oona = at('oona.one', 'oona', 61.03249, 4.4);
+    const anna = at('anna.one', 'anna', 61.03249, 4.4);
 
-    assert.equal(distanceFromViewer(oona, [own, oona], 'me', NOW), null);
+    assert.equal(distanceFromViewer(anna, [own, anna], 'me', NOW), null);
 });
 
 test('a member inside a false place is not measured to', () => {
     const own = at('me.one', 'me', 61.03249, 4.4);
-    const oona = { ...at('oona.one', 'oona', 61.14561, 5.4036), inFalsePlace: true };
+    const anna = { ...at('anna.one', 'anna', 61.14561, 5.4036), inFalsePlace: true };
 
-    assert.equal(distanceFromViewer(oona, [own, oona], 'me', NOW), null);
+    assert.equal(distanceFromViewer(anna, [own, anna], 'me', NOW), null);
 });

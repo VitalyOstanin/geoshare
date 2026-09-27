@@ -8,12 +8,12 @@ import java.time.Instant
 //
 // Every rule that compares one answer with another is arguing with a
 // transmitter about geometry, and a transmitter that draws its road slowly
-// enough wins that argument: the answers that came out of the phone on
-// 13.09.2026 crept about thirty metres apiece while the phone lay indoors, and
-// no speed, width or shape catches a creep. The accelerometer is not on that
-// signal. It answers a smaller question than the receiver does — was this
-// thing picked up and taken somewhere — and answers it about the phone rather
-// than about the sky.
+// enough wins that argument: a field measurement showed the answers creeping
+// about thirty metres apiece while the phone lay indoors, and no speed, width
+// or shape catches a creep. The accelerometer is not on that signal. It
+// answers a smaller question than the receiver does — was this thing picked
+// up and taken somewhere — and answers it about the phone rather than about
+// the sky.
 //
 // The other half of the same idea is already here in [movedWhileStanding],
 // which weighs a fix against the position written before it. That catches a
@@ -36,11 +36,11 @@ const val CARRIED_STEPS: Int = 20
  * How far an answer may wander from where a put-down phone is lying.
  *
  * A hundred and fifty metres. Measured rather than chosen: of 477 answers this
- * phone gave over an hour and a half of lying indoors on 15.09.2026, nine in
- * ten stood within twenty metres of the middle of them, and the ones that did
- * not stood at 115, 313, 885 and 1025 metres — every one of them a place the
- * phone was not. The threshold sits above the honest spread with room to
- * spare and below the nearest of the lies.
+ * phone gave over an hour and a half of lying indoors, nine in ten stood
+ * within twenty metres of the middle of them, and the ones that did not stood
+ * at 115, 313, 885 and 1025 metres — every one of them a place the phone was
+ * not. The threshold sits above the honest spread with room to spare and
+ * below the nearest of the lies.
  *
  * The width of the two answers is added to it where they are wider than that,
  * so a phone answering from a courtyard with a hundred metres of doubt on each
@@ -64,12 +64,12 @@ val PUT_DOWN_AFTER: Duration = Duration.ofMinutes(2)
  * Three metres a second. The receiver reports a speed of its own alongside
  * every position, and on a phone lying still that number is not noisy — it is
  * zero. Of 6,405 answers the three phones gave from within two hundred metres
- * of home over 14—16.09.2026, the median was 0.00 m/s and so was the ninetieth
- * percentile; of the 5,381 answers given while the same phones, still lying
- * where they were, were being told they stood a kilometre or more away, the
- * median was 33.00 m/s and four in five were above 20. The threshold sits an
- * order of magnitude below the lie and above anything a phone on a table has
- * ever been seen to claim.
+ * of home, the median was 0.00 m/s and so was the ninetieth percentile; of the
+ * 5,381 answers given while the same phones, still lying where they were,
+ * were being told they stood a kilometre or more away, the median was 33.00
+ * m/s and four in five were above 20. The threshold sits an order of
+ * magnitude below the lie and above anything a phone on a table has ever been
+ * seen to claim.
  *
  * What the rule it belongs to has over the ordinary speed rule is that it
  * needs no second position: the claim is inside a single answer, so it is

@@ -7,7 +7,7 @@ import org.junit.Test
 import java.time.Duration
 
 /**
- * The counts are those of phone 1's own sky files, cut down to what each
+ * The counts are those of one phone's own sky files, cut down to what each
  * question needs: GLONASS heard in about half the epochs of an hour with no
  * ephemeris among them and nothing in a fix, which is the state the aiding
  * data had left it in, against the same constellation eleven minutes after
@@ -28,10 +28,10 @@ class AidingDoubtTest {
         assertEquals(false, heardForNothing(working))
     }
 
-    // Phone 1 reported single GLONASS satellites in a fix while saying it
-    // held no orbit for them, a hundred and thirty times in one night. Read
-    // as the constellation having come good, that would have cleared the
-    // count twice an hour for as long as the fault lasted.
+    // A phone under observation reported single GLONASS satellites in a fix
+    // while saying it held no orbit for them, a hundred and thirty times in
+    // one night. Read as the constellation having come good, that would have
+    // cleared the count twice an hour for as long as the fault lasted.
     @Test
     fun `a satellite in the fix without an orbit does not count as coming good`() {
         val odd = ConstellationUse(heard = 1, withEphemeris = 0, usedInFix = 1)
@@ -52,7 +52,7 @@ class AidingDoubtTest {
     }
 
     // Half an hour is the window, and the epochs are what tells a fault from
-    // a constellation that is merely low: phone 2 heard BeiDou in fourteen
+    // a constellation that is merely low: a phone heard BeiDou in fourteen
     // epochs over two and a half hours, which is a sky.
     @Test
     fun `an hour of hearing it in a handful of epochs is not`() {
@@ -89,7 +89,7 @@ class AidingDoubtTest {
         assertEquals(emptySet<Constellation>(), doubt.doubted(Duration.ofHours(2)))
     }
 
-    // The constellations are watched apart from one another: on phone 1 GPS
+    // The constellations are watched apart from one another: on one phone GPS
     // was in every fix while GLONASS and BeiDou were being wasted.
     @Test
     fun `one constellation being wasted says nothing about the others`() {

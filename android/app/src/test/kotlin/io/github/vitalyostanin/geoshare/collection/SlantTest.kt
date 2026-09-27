@@ -11,10 +11,10 @@ import kotlin.math.abs
  * the logs hold are told apart by it.
  *
  * The numbers in the two epochs below are not invented: the flat one is the
- * GPS band of the phone under a false signal on 15.09.2026, every satellite
- * between 32,8 and 34,3 dB-Hz whether it sat at seven degrees or at
- * seventy-six; the sloped one is the other phone the same evening, where the
- * low satellites are ten decibels down on the high ones.
+ * GPS band of the phone under a false signal, every satellite between 32,8 and
+ * 34,3 dB-Hz whether it sat at seven degrees or at seventy-six; the sloped one
+ * is the other phone the same evening, where the low satellites are ten
+ * decibels down on the high ones.
  */
 class SlantTest {
     private fun satellite(

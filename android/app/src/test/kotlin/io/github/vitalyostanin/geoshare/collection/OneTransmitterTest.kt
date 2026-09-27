@@ -8,8 +8,8 @@ import org.junit.Test
 /**
  * That a sky from one transmitter is told from a thin one.
  *
- * The epochs below are the shape of the logs of 14.09: under the transmitter
- * the receiver held orbits for nine GLONASS satellites and heard none of them
+ * The epochs below are the shape of the logs: under the transmitter the
+ * receiver held orbits for nine GLONASS satellites and heard none of them
  * while a dozen of the 1575 MHz band carried the fix; on the honest morning
  * the same phone heard GLONASS and built on it.
  */

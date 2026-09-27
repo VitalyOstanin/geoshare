@@ -7,7 +7,7 @@ import org.junit.Assert.assertTrue
 import org.junit.Test
 
 /**
- * The numbers are phone 1's own raw measurements, one pair of epochs ten
+ * The numbers are a phone's own raw measurements, one pair of epochs ten
  * seconds apart: GPS 11 and GPS 20 as the receiver reported them, satellite
  * time, receiver clock and clock since boot alike.
  */

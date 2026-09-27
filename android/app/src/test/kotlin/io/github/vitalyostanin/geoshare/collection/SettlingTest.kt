@@ -9,11 +9,11 @@ import java.time.Duration
 import java.time.Instant
 
 /**
- * The numbers here are the run of phone 3 on 14.09.2026: a boot at 22:11:55,
- * an answer twenty-three seconds later a hundred and twenty-two metres wide
- * with no GPS satellite in it, and two moves of sixty-six and two hundred and
- * twenty-three metres in the four minutes after, while the phone lay untouched
- * on a table.
+ * The numbers here are the run of a phone left on a table overnight: a boot at
+ * 22:11:55, an answer twenty-three seconds later a hundred and twenty-two
+ * metres wide with no GPS satellite in it, and two moves of sixty-six and two
+ * hundred and twenty-three metres in the four minutes after, while the phone
+ * lay untouched on a table.
  */
 class SettlingTest {
     @Test

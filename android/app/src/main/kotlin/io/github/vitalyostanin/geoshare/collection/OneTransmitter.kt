@@ -5,9 +5,9 @@ package io.github.vitalyostanin.geoshare.collection
 // Constellations.kt asks of a single epoch whether the fix rests on the band a
 // false signal is transmitted in while the other band was there to rest on.
 // That rule wants GLONASS heard, and the phone this was written against, under
-// the transmitter, hears almost none: over the logs of 14.09 the receiver
-// listed its GLONASS satellites and heard not one of them for six hours on
-// end, while the 1575 MHz band carried a dozen at a steady thirty decibels.
+// the transmitter, hears almost none: over the logs the receiver listed its
+// GLONASS satellites and heard not one of them for six hours on end, while
+// the 1575 MHz band carried a dozen at a steady thirty decibels.
 //
 // So the case is read the other way round here: the band that cannot be
 // reached from the ground is not quiet because the sky is thin — the receiver
@@ -19,8 +19,8 @@ package io.github.vitalyostanin.geoshare.collection
 // The time the signals take to arrive was measured against this and dropped.
 // A transmitter that repeats one signal would hand every satellite the same
 // flight time, and the spread within an epoch would collapse; the one here
-// does not repeat, it writes times that agree with the position it is selling.
-// Over the epochs of 14.09 marked by the rule below, the GPS spread came to
+// does not repeat, it writes times that agree with the position it is
+// selling. Over the epochs marked by the rule below, the GPS spread came to
 // 16.17 ms against 13.72 ms under an honest sky, and the measurements sat
 // closer to the geometry of the orbit (0.12 ms off) than the honest ones did
 // (0.42 ms). Nothing was left over: of 13480 measurements not one under the
@@ -54,11 +54,11 @@ fun presenceOf(sky: List<Satellite>): Map<Constellation, Presence> = sky
 /**
  * How much has to be true before one band's silence is held against it.
  *
- * Read off the logs of 14.09 rather than chosen. Under the transmitter the
- * receiver held orbits for eight to twelve GLONASS satellites and heard none
- * of them, while ten to nineteen of the 1575 MHz band were in the fix; on the
- * same phone the same morning, and on the phone across the city, GLONASS was
- * both heard and used every epoch.
+ * Read off the logs rather than chosen. Under the transmitter the receiver
+ * held orbits for eight to twelve GLONASS satellites and heard none of them,
+ * while ten to nineteen of the 1575 MHz band were in the fix; on the same
+ * phone the same morning, and on the phone across the city, GLONASS was both
+ * heard and used every epoch.
  */
 data class SilentBandLimits(
     /** How many GLONASS orbits the receiver has to hold for their silence to mean anything. */
@@ -135,8 +135,8 @@ data class SkySays(
  * the silence fired on two fifths of the windows of the worst hours under the
  * transmitter; the block moving together fires on half to nine tenths of them,
  * which is why it is worth having as the second way in. Neither pair fires on
- * any honest record: the hours of 14.09 when the same phone still took GLONASS
- * into the fix give none in 1366 windows, and the phone in another part of the
+ * any honest record: the hours when the same phone still took GLONASS into
+ * the fix give none in 1366 windows, and the phone in another part of the
  * city none in 146.
  */
 fun fromOneTransmitter(says: SkySays): Boolean = says.shape == SkyShape.Flat &&

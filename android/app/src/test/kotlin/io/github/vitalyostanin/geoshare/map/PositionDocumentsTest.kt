@@ -48,8 +48,8 @@ class PositionDocumentsTest {
         assertEquals(one, other)
     }
 
-    // Phone 2 on 11.09: signed in, positions in hand, and a screen saying
-    // nobody shares — its own grant was not written yet.
+    // A phone under observation: signed in, positions in hand, and a screen
+    // saying nobody shares — its own grant was not written yet.
     @Test
     fun `this phone's own document is followed before its grant names it`() {
         assertEquals(listOf("me.phone"), positionDocuments(emptyMap(), own = "me.phone"))

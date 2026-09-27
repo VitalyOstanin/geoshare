@@ -188,9 +188,10 @@ for oneself.
 
 A phone calls itself whatever the manufacturer wrote in `Build.MODEL`, and that
 string is written into the position document as `deviceName`. Two phones of one
-model are then indistinguishable — the card says "BVL-N49" twice — and the
-model itself reaches every reader who may see the position, which is a fact
-about somebody's hardware that sharing a position did not have to include.
+model are then indistinguishable — the card says the same model name twice —
+and the model itself reaches every reader who may see the position, which is a
+fact about somebody's hardware that sharing a position did not have to
+include.
 
 Wanted: names people choose. Two readings of that, and they are not exclusive:
 

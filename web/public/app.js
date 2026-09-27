@@ -1365,7 +1365,7 @@ function announceFollow() {
  * the title a pointer shows over the mark.
  *
  * The member's name is said inside a phrase rather than on its own: a button
- * reading only "Oona" among captions like "Following everyone" says who
+ * reading only "Anna" among captions like "Following everyone" says who
  * without saying what is being done about them.
  */
 function followCaption(mode) {

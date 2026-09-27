@@ -86,10 +86,9 @@ const val SLANT_MIN_SATELLITES: Int = 5
  * Read off the logs rather than chosen. Over the phone being spoofed the
  * spread of the GPS band sits at 0,7—1,2 dB an epoch and the line within a
  * decibel of level; over the phone in another part of the city the spread is
- * 4,5—7,6 dB and the line runs to several. The hours of 14.09 when GLONASS
- * was still being taken into the fix read the same way as the other phone:
- * spread 2,8—3,9 dB. Nothing between the two pairs of limits is called
- * anything.
+ * 4,5—7,6 dB and the line runs to several. The hours when GLONASS was still
+ * being taken into the fix read the same way as the other phone: spread
+ * 2,8—3,9 dB. Nothing between the two pairs of limits is called anything.
  */
 const val FLAT_SPREAD_DB: Double = 1.5
 const val FLAT_SLOPE_DB: Double = 1.0

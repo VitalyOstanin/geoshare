@@ -7,11 +7,11 @@ import java.time.Duration
 // A receiver coming up has no almanac it trusts, no clock correction and no
 // satellites it has locked on to, and it answers anyway: the platform hands
 // over whatever it can put together, and what it puts together in that state
-// is a position several hundred metres wide built out of nothing. Phone 3
-// answered twenty-three seconds after a boot on 14.09.2026 with a fix a
-// hundred and twenty-two metres wide and no GPS satellite in it at all, and
-// went on to report moving sixty-six metres at 6.6 m/s and two hundred and
-// twenty-three metres at 18.8 m/s while lying untouched on a table.
+// is a position several hundred metres wide built out of nothing. A phone left
+// on a table answered twenty-three seconds after a boot with a fix a hundred
+// and twenty-two metres wide and no GPS satellite in it at all, and went on to
+// report moving sixty-six metres at 6.6 m/s and two hundred and twenty-three
+// metres at 18.8 m/s while lying untouched there.
 //
 // None of the rules of Jumps.kt caught any of that, and none of them could:
 // the speeds are those of somebody walking and driving, the widths are inside
@@ -46,9 +46,9 @@ const val SETTLED_SATELLITES: Int = 4
  *
  * A hundred metres is a courtyard: a fix that wide places a phone at the right
  * building, which is the whole of what a member wants out of the minutes after
- * a phone is switched on. The number is read off the run of 14.09.2026 rather
- * than chosen for its roundness — the first answer of that boot was a hundred
- * and twenty-two metres wide and named a place the phone had never been.
+ * a phone is switched on. The number is read off a real run rather than chosen
+ * for its roundness — the first answer of that boot was a hundred and
+ * twenty-two metres wide and named a place the phone had never been.
  *
  * Away from this window the same rule stands at five hundred — see
  * [USELESS_ACCURACY_METRES] — because a phone whose receiver is working has

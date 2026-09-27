@@ -13,8 +13,8 @@ private const val TAG = "geoshare.boot"
  *
  * Without this the phone goes quiet until somebody opens the application, and
  * a position nobody is updating is worse than no position at all: it looks
- * current. The update case cost two phones several hours of silence on
- * 14.09.2026 — installing a build stops every process of the package, and
+ * current. The update case cost two phones several hours of silence during
+ * testing — installing a build stops every process of the package, and
  * nothing here was listening for it.
  */
 class BootReceiver : BroadcastReceiver() {
