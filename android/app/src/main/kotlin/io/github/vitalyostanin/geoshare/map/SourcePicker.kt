@@ -1,12 +1,12 @@
 package io.github.vitalyostanin.geoshare.map
 
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.offset
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.material3.AssistChip
-import androidx.compose.material3.AssistChipDefaults
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.MaterialTheme
@@ -20,7 +20,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import io.github.vitalyostanin.geoshare.R
@@ -38,10 +37,10 @@ import io.github.vitalyostanin.geoshare.collection.sourceChoiceLabel
  *
  * A button and a menu rather than a row of chips: five chips take a strip of
  * map from everybody, including the members who never touch this, while the
- * button says in one line how many sources are counted and asks for a tap
- * only from whoever wants to change that. The count is what carries the news —
- * a phone counting fewer than all of them is a phone leaving answers out, and
- * that is worth seeing without opening anything.
+ * button carries how many sources are counted and asks for a tap only from
+ * whoever wants to change that. A round one with the count on it, like the
+ * other controls over the map, rather than a line of words that stood apart
+ * from them.
  */
 @Composable
 fun SourcePicker(
@@ -53,69 +52,66 @@ fun SourcePicker(
     val all = SourceChoice.entries
     val counted = all.count { it.name !in leftOut }
 
-    Surface(
-        modifier = modifier,
-        shape = CircleShape,
-        // Over a map rather than over a page: without a ground of its own the
-        // label sits on whatever the tiles happen to be.
-        color = MaterialTheme.colorScheme.surface,
-        tonalElevation = 3.dp,
-        shadowElevation = 3.dp,
-    ) {
-        AssistChip(
-            onClick = { open = true },
-            label = { Text(text = stringResource(R.string.sources_button, counted, all.size)) },
-            leadingIcon = {
-                // Only when something is being left out: a mark that is always
-                // there is a mark nobody reads.
-                if (counted < all.size) {
-                    Surface(
-                        modifier = Modifier.size(8.dp),
-                        shape = CircleShape,
-                        color = MaterialTheme.colorScheme.error,
-                    ) {}
-                }
+    val label = stringResource(R.string.sources_button, counted, all.size)
+
+    // The menu opens where the box is, which is the button's own corner.
+    Box(modifier = modifier) {
+        MapRoundButton(icon = R.drawable.ic_sources, label = label, onClick = { open = true })
+
+        // The count stays on the button: a phone counting fewer than all of
+        // them is leaving answers out, and that is worth seeing without
+        // opening anything. Red only then; a mark that is always loud is a
+        // mark nobody reads.
+        Surface(
+            modifier = Modifier.align(Alignment.TopEnd).offset(x = 6.dp, y = (-6).dp),
+            shape = CircleShape,
+            color =
+            if (counted < all.size) {
+                MaterialTheme.colorScheme.error
+            } else {
+                MaterialTheme.colorScheme.primary
             },
-            colors = AssistChipDefaults.assistChipColors(
-                // The ground is the surface behind, which is lifted and round.
-                // A chip painting its own ground over that paints a rectangle
-                // of a slightly different grey inside the circle, and the
-                // corners of it show along the round edge as grey streaks.
-                containerColor = Color.Transparent,
-            ),
-            // For the same reason: the chip's own outline is a rounded
-            // rectangle of the outline colour, and it does not follow the
-            // circle it sits in. The edge of the button is the surface's.
-            border = null,
-        )
-    }
-
-    DropdownMenu(expanded = open, onDismissRequest = { open = false }) {
-        all.forEach { source ->
-            val on = source.name !in leftOut
-
-            DropdownMenuItem(
-                text = {
-                    Row(
-                        modifier = Modifier.width(260.dp),
-                        horizontalArrangement = Arrangement.spacedBy(12.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                    ) {
-                        Text(
-                            text = stringResource(sourceChoiceLabel(source)),
-                            modifier = Modifier.weight(1f),
-                        )
-
-                        Switch(
-                            checked = on,
-                            onCheckedChange = { wanted -> onSourceUseChange(source, wanted) },
-                        )
-                    }
+        ) {
+            Text(
+                text = "$counted/${all.size}",
+                style = MaterialTheme.typography.labelSmall,
+                color =
+                if (counted < all.size) {
+                    MaterialTheme.colorScheme.onError
+                } else {
+                    MaterialTheme.colorScheme.onPrimary
                 },
-                // The row itself switches too: a menu where only the switch
-                // answers is a menu half of whose taps do nothing.
-                onClick = { onSourceUseChange(source, !on) },
+                modifier = Modifier.padding(horizontal = 4.dp, vertical = 1.dp),
             )
+        }
+
+        DropdownMenu(expanded = open, onDismissRequest = { open = false }) {
+            all.forEach { source ->
+                val on = source.name !in leftOut
+
+                DropdownMenuItem(
+                    text = {
+                        Row(
+                            modifier = Modifier.width(260.dp),
+                            horizontalArrangement = Arrangement.spacedBy(12.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                        ) {
+                            Text(
+                                text = stringResource(sourceChoiceLabel(source)),
+                                modifier = Modifier.weight(1f),
+                            )
+
+                            Switch(
+                                checked = on,
+                                onCheckedChange = { wanted -> onSourceUseChange(source, wanted) },
+                            )
+                        }
+                    },
+                    // The row itself switches too: a menu where only the switch
+                    // answers is a menu half of whose taps do nothing.
+                    onClick = { onSourceUseChange(source, !on) },
+                )
+            }
         }
     }
 }

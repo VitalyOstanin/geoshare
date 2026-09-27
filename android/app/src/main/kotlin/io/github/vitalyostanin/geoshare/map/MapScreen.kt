@@ -119,8 +119,11 @@ private val GREYSCALE = ColorFilter.colorMatrix(ColorMatrix().apply { setToSatur
 /** As much of the screen as the full list may take before it starts scrolling instead. */
 private val LIST_MAX_HEIGHT = 220.dp
 
-/** The gap between the account button and the follow button stacked under it. */
-private val TOP_BUTTONS_GAP = 8.dp
+/**
+ * The gap between the controls in the row over the map; wider than the count
+ * on the sources button sticks out past its circle.
+ */
+private val TOP_BUTTONS_GAP = 12.dp
 
 /**
  * Who the follow button's [FollowMode.ONE] centres on.
@@ -322,35 +325,23 @@ fun MapScreen(
                 modifier = Modifier.fillMaxSize(),
             )
 
-            SourcePicker(
-                leftOut = settings.sourcesLeftOut,
-                onSourceUseChange = actions.onSourceUseChange,
+            // The controls on one side and the account on the other, the way
+            // map applications lay them out: a row keeps a second control from
+            // ever landing on top of the first whatever either measures.
+            Row(
+                horizontalArrangement = Arrangement.spacedBy(TOP_BUTTONS_GAP),
+                verticalAlignment = Alignment.CenterVertically,
+                // The map is drawn to the edges of the window on purpose; what
+                // stands over it is not, or the clock is what the member taps.
                 modifier =
                 Modifier
                     .align(Alignment.TopStart)
                     .statusBarsPadding()
                     .padding(12.dp),
-            )
-
-            // Stacked in one corner rather than each finding its own: the two
-            // buttons are the only controls drawn over the map, and a column
-            // keeps a second one from ever landing on top of the first
-            // whatever either of them turns out to measure.
-            Column(
-                horizontalAlignment = Alignment.End,
-                verticalArrangement = Arrangement.spacedBy(TOP_BUTTONS_GAP),
-                // The map is drawn to the edges of the window on purpose; what
-                // stands over it is not, or the clock is what the member taps.
-                modifier =
-                Modifier
-                    .align(Alignment.TopEnd)
-                    .statusBarsPadding()
-                    .padding(12.dp),
             ) {
-                AccountButton(
-                    displayName = ownDisplayName,
-                    pictureUrl = ownPictureUrl,
-                    onClick = { settingsOpen = true },
+                SourcePicker(
+                    leftOut = settings.sourcesLeftOut,
+                    onSourceUseChange = actions.onSourceUseChange,
                 )
 
                 FollowButton(
@@ -369,6 +360,17 @@ fun MapScreen(
                     },
                 )
             }
+
+            AccountButton(
+                displayName = ownDisplayName,
+                pictureUrl = ownPictureUrl,
+                onClick = { settingsOpen = true },
+                modifier =
+                Modifier
+                    .align(Alignment.TopEnd)
+                    .statusBarsPadding()
+                    .padding(12.dp),
+            )
 
             if (opened != null) {
                 MemberDetail(
@@ -531,10 +533,10 @@ fun MapScreen(
  * The single button that walks the camera through [FollowMode].
  *
  * A press advances the ring; what it lands on next is [nextMode]'s decision,
- * and this composable only reports the mode already chosen. The label is the
- * state itself rather than a caption beside a fixed word, the way
- * [MoreButton] below reads "More" or "Hide" depending on whether the rest of
- * the strip is open.
+ * and this composable only reports the mode already chosen. The mark is the
+ * state itself rather than a caption beside a fixed word, and the words of
+ * that state are what TalkBack reads: a round mark keeps the button the size
+ * of the others over the map, where a line of words stood out from them.
  */
 @Composable
 private fun FollowButton(
@@ -567,25 +569,20 @@ private fun FollowButton(
                 ?: stringResource(R.string.map_follow_one_unnamed)
     }
 
-    Surface(
-        modifier = modifier.alpha(if (paused) PAUSED_ALPHA else 1f).clickable { onClick() },
-        shape = MaterialTheme.shapes.medium,
-        tonalElevation = if (mode == FollowMode.NONE) 2.dp else 8.dp,
-    ) {
-        Text(
-            text = label,
-            style = MaterialTheme.typography.bodyMedium,
-            color =
-            if (targetAvailable) {
-                MaterialTheme.colorScheme.onSurface
-            } else {
-                MaterialTheme.colorScheme.onSurfaceVariant
-            },
-            maxLines = 1,
-            overflow = TextOverflow.Ellipsis,
-            modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
-        )
+    val icon = when (mode) {
+        FollowMode.NONE -> R.drawable.ic_follow_none
+        FollowMode.ALL -> R.drawable.ic_follow_all
+        FollowMode.ONE -> R.drawable.ic_follow_one
     }
+
+    MapRoundButton(
+        icon = icon,
+        label = label,
+        onClick = onClick,
+        modifier = modifier.alpha(if (paused) PAUSED_ALPHA else 1f),
+        active = mode != FollowMode.NONE,
+        dimmed = !targetAvailable,
+    )
 }
 
 @Composable
