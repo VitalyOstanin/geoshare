@@ -1,5 +1,6 @@
 package io.github.vitalyostanin.geoshare.service
 
+import android.app.NotificationManager
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
@@ -72,12 +73,15 @@ import io.github.vitalyostanin.geoshare.collection.whyAJump
 import io.github.vitalyostanin.geoshare.collection.word
 import io.github.vitalyostanin.geoshare.log.AppLog
 import io.github.vitalyostanin.geoshare.log.SkyLog
+import io.github.vitalyostanin.geoshare.map.stands
+import io.github.vitalyostanin.geoshare.permission.devicePermissions
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.channelFlow
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.distinctUntilChanged
@@ -476,6 +480,28 @@ class SharingService : LifecycleService() {
             return START_NOT_STICKY
         }
 
+        if (intent?.action == ACTION_FOUND) {
+            AppLog.i(TAG, "the member says they have been found")
+
+            val memberId = FirebaseAuth.getInstance().currentUser?.uid
+
+            // Not a reason to stop sharing: only the search is over, and the
+            // service goes on exactly as it was. The notification comes down
+            // on its own, once [keepSearchNotification] hears the document is
+            // gone.
+            if (memberId != null) {
+                lifecycleScope.launch {
+                    try {
+                        endSearch(memberId)
+                    } catch (cancellation: CancellationException) {
+                        throw cancellation
+                    } catch (refusal: Exception) {
+                        AppLog.w(TAG, "could not end the search from its own notification", refusal)
+                    }
+                }
+            }
+        }
+
         return if (enterForeground()) {
             AppLog.i(TAG, "running")
             startCollecting()
@@ -494,6 +520,10 @@ class SharingService : LifecycleService() {
         radio.stop()
         collection?.cancel()
         runCatching { unregisterReceiver(power) }
+        // [keepSearchNotification] is cancelled along with [collection] and
+        // leaves nothing to take its own notification down; the phone may
+        // still be being looked for when the service stops.
+        cancelSearchNotification(this)
         AppLog.i(TAG, "stopped")
         super.onDestroy()
     }
@@ -772,6 +802,7 @@ class SharingService : LifecycleService() {
         collection =
             lifecycleScope.launch {
                 launch { keepTellingHowThePhoneIs() }
+                launch { keepSearchNotification(memberId) }
 
                 modes(memberId, device).collectLatest { mode ->
                     AppLog.i(TAG, "collecting in mode $mode")
@@ -837,12 +868,32 @@ class SharingService : LifecycleService() {
 
         val claims = watchers(positionId(memberId, device.id)).onStart { emit(emptyList()) }
         val permissions: Flow<Map<String, Instant>?> = ownSharedWith(memberId)
+        // Said again, as none, at the moment the search runs out: nothing
+        // arrives from the database then, and without it every viewer would
+        // go on counting until the claims themselves happened to change.
+        val search =
+            channelFlow {
+                ownSearch(memberId).collectLatest { found ->
+                    send(found)
+
+                    if (found != null && found.stands(Instant.now())) {
+                        delay(Duration.between(Instant.now(), found.endsAt).toMillis())
+                        send(null)
+                    }
+                }
+            }.onStart { emit(null) }
 
         // Who is looking is the screen's business; the service needs only the
-        // moments the claims of those allowed to see this phone run out.
+        // moments the claims of those allowed to see this phone run out. While
+        // the group is looking for this phone's own member every claim counts,
+        // whatever the grant says: the rules already answer every viewer, and
+        // a phone still gating them by who it shares with would be fast for
+        // fewer of the group than can actually see it.
         val looking =
-            combine(claims, permissions.onStart { emit(null) }) { seen, shared ->
-                watchedUntil(seen, memberId, shared)
+            combine(claims, permissions.onStart { emit(null) }, search) { seen, shared, standing ->
+                val sought = standing?.stands(Instant.now()) == true
+
+                watchedUntil(seen, memberId, shared, sought)
             }
 
         return combine(
@@ -855,6 +906,46 @@ class SharingService : LifecycleService() {
             noteMovement(moving)
             currentMode(untils, moving.going, standing, ownMap)
         }.distinctUntilChanged()
+    }
+
+    /**
+     * Shows the notification that says this phone's own member is being
+     * looked for, for as long as the search stands, and takes it down once it
+     * does not.
+     *
+     * A search ending is nothing arriving from the database: nothing deletes
+     * the document at that moment, and this is what would otherwise leave the
+     * notification up past the end everybody else's screen already reads.
+     * Shown again once a minute while it stands, in case the process is killed
+     * and restarted with the notification's own state lost with it.
+     */
+    private suspend fun keepSearchNotification(memberId: String) {
+        ownSearch(memberId).collectLatest { search ->
+            if (search == null) {
+                cancelSearchNotification(this)
+
+                return@collectLatest
+            }
+
+            val openedByName = memberDisplayName(search.openedBy)
+
+            while (search.stands(Instant.now())) {
+                // A member who refused notifications still gets the banner over
+                // the map; the service goes on either way.
+                if (devicePermissions(this).notificationsGranted) {
+                    getSystemService<NotificationManager>()?.notify(
+                        SEARCH_NOTIFICATION_ID,
+                        searchNotification(this, search, openedByName),
+                    )
+                }
+
+                val left = Duration.between(Instant.now(), search.endsAt)
+
+                delay(minOf(left, SEARCH_NOTICE_REFRESH).toMillis().coerceAtLeast(0))
+            }
+
+            cancelSearchNotification(this)
+        }
     }
 
     /**
@@ -1924,7 +2015,17 @@ class SharingService : LifecycleService() {
          */
         private val NETWORK_ANSWER_WAIT: Duration = Duration.ofSeconds(30)
 
+        /**
+         * How often the notification that says a search is standing is shown
+         * again while it does, in case the process was killed and restarted
+         * with its own memory of having shown it lost along with it.
+         */
+        private val SEARCH_NOTICE_REFRESH: Duration = Duration.ofMinutes(1)
+
         const val ACTION_STOP = "io.github.vitalyostanin.geoshare.STOP"
+
+        /** The member being looked for says they have been found. */
+        const val ACTION_FOUND = "io.github.vitalyostanin.geoshare.FOUND"
 
         fun start(context: Context) = ContextCompat.startForegroundService(
             context,

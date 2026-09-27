@@ -4,7 +4,10 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.State
 import androidx.compose.runtime.derivedStateOf
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LocalLifecycleOwner
@@ -15,11 +18,13 @@ import io.github.vitalyostanin.geoshare.membership.Roster
 import io.github.vitalyostanin.geoshare.service.CurrentGroup
 import io.github.vitalyostanin.geoshare.service.MapOnScreen
 import io.github.vitalyostanin.geoshare.service.groupRoster
+import io.github.vitalyostanin.geoshare.service.groupSearches
 import io.github.vitalyostanin.geoshare.service.namedFalsePlaces
 import io.github.vitalyostanin.geoshare.service.ownSharedWith
 import io.github.vitalyostanin.geoshare.service.positionId
 import io.github.vitalyostanin.geoshare.service.watchers
 import kotlinx.coroutines.NonCancellable
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.withContext
 import java.time.Instant
 
@@ -78,17 +83,77 @@ private fun groupNow(): CurrentGroup.Writing =
     CurrentGroup.writings.collectAsStateWithLifecycle().value
 
 /**
+ * The group's searches, collected while a screen is up.
+ *
+ * Followed the same way the roster is: everybody in the group reads the
+ * collection, and a refusal is read as no searches rather than as a reason to
+ * stop asking.
+ */
+@Composable
+fun rememberSearches(): State<Map<String, Search>> {
+    val writing = groupNow()
+    val searches = remember(writing) { groupSearches() }
+
+    return searches.collectAsStateWithLifecycle(initialValue = emptyMap())
+}
+
+/**
+ * How often [rememberMemberGrants] checks the searches against the clock, to
+ * notice one running out without anything else changing.
+ *
+ * Half a minute, the same age the map's own clock ticks at: a search ending
+ * is worth being current about, and nothing this short costs a subscription
+ * that only reads a moment already held in memory.
+ */
+private const val SOUGHT_CHECK_MILLIS = 30_000L
+
+/**
+ * Who the group is looking for right now, joined into one string that changes
+ * exactly when the set does.
+ *
+ * A search starting or ending changes what this phone may read of the member
+ * concerned — their grant, their phones, their position — and a subscription
+ * already refused stays refused until it is taken out again: see
+ * [memberGrants]. This is what [rememberMemberGrants] rebuilds itself on, so
+ * that a change reaches the affected member's marker within the half minute
+ * this ticks at, rather than the full minute a refusal is otherwise retried
+ * after.
+ */
+@Composable
+private fun soughtKey(searches: Map<String, Search>): String {
+    var now by remember { mutableStateOf(Instant.now()) }
+
+    LaunchedEffect(Unit) {
+        while (true) {
+            delay(SOUGHT_CHECK_MILLIS)
+            now = Instant.now()
+        }
+    }
+
+    return remember(searches, now) { soughtMembers(searches, now).sorted().joinToString(",") }
+}
+
+/**
  * What the members give out, collected while a screen is up.
  *
  * Follows the profiles, which is the one list of the household every member
  * may read: the grants themselves cannot be listed, so who to ask about has to
  * come from somewhere else.
+ *
+ * Also follows [searches]: a member who was refused before a search opened
+ * for them stays refused until the subscription is taken out again, so a
+ * change to who is being looked for rebuilds this one whole, asking again for
+ * everybody rather than waiting out the retry each refusal is already on.
  */
 @Composable
-fun rememberMemberGrants(profiles: Map<String, MemberProfile>?): State<Map<String, MemberGrant>> {
+fun rememberMemberGrants(
+    profiles: Map<String, MemberProfile>?,
+    searches: Map<String, Search> = emptyMap(),
+): State<Map<String, MemberGrant>> {
     val writing = groupNow()
     val memberIds = remember(profiles) { profiles.orEmpty().keys.sorted() }
-    val grants = remember(writing, memberIds) { memberGrants(memberIds) }
+    val sought = soughtKey(searches)
+    val grants = remember(writing, memberIds, sought) { memberGrants(memberIds) }
 
     return grants.collectAsStateWithLifecycle(initialValue = emptyMap())
 }

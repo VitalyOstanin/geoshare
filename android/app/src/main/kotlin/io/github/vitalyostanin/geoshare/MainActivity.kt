@@ -48,6 +48,7 @@ import io.github.vitalyostanin.geoshare.map.rememberMemberPositions
 import io.github.vitalyostanin.geoshare.map.rememberMemberProfiles
 import io.github.vitalyostanin.geoshare.map.rememberOwnLabels
 import io.github.vitalyostanin.geoshare.map.rememberOwnSharedWith
+import io.github.vitalyostanin.geoshare.map.rememberSearches
 import io.github.vitalyostanin.geoshare.map.rememberWatchers
 import io.github.vitalyostanin.geoshare.map.withShare
 import io.github.vitalyostanin.geoshare.map.writeLabel
@@ -72,6 +73,7 @@ import io.github.vitalyostanin.geoshare.service.SharingSetting
 import io.github.vitalyostanin.geoshare.service.SourcesSetting
 import io.github.vitalyostanin.geoshare.service.ThemeSetting
 import io.github.vitalyostanin.geoshare.service.darkWanted
+import io.github.vitalyostanin.geoshare.service.endSearch
 import io.github.vitalyostanin.geoshare.service.forgetAidingData
 import io.github.vitalyostanin.geoshare.service.foundGroup
 import io.github.vitalyostanin.geoshare.service.joinGroup
@@ -79,9 +81,11 @@ import io.github.vitalyostanin.geoshare.service.languageChosen
 import io.github.vitalyostanin.geoshare.service.languageTag
 import io.github.vitalyostanin.geoshare.service.leavePreviousId
 import io.github.vitalyostanin.geoshare.service.makeInvitation
+import io.github.vitalyostanin.geoshare.service.openSearch
 import io.github.vitalyostanin.geoshare.service.positionId
 import io.github.vitalyostanin.geoshare.service.refusalToStart
 import io.github.vitalyostanin.geoshare.service.removeFromGroup
+import io.github.vitalyostanin.geoshare.service.renewSearch
 import io.github.vitalyostanin.geoshare.service.setRunning
 import io.github.vitalyostanin.geoshare.service.startConditions
 import kotlinx.coroutines.CancellationException
@@ -219,7 +223,8 @@ class MainActivity : AppCompatActivity() {
                         // screen has nothing left to say.
                         is AuthState.SignedIn -> {
                             val profiles by rememberMemberProfiles()
-                            val grants by rememberMemberGrants(profiles)
+                            val searches by rememberSearches()
+                            val grants by rememberMemberGrants(profiles, searches)
                             val ownDocument =
                                 remember(current.memberId) {
                                     positionId(current.memberId, device.id)
@@ -272,6 +277,7 @@ class MainActivity : AppCompatActivity() {
                                 ownMemberId = current.memberId,
                                 ownDisplayName = current.displayName,
                                 ownPictureUrl = current.pictureUrl,
+                                searches = searches,
                                 settings =
                                 SettingsState(
                                     sharing = sharingOn,
@@ -291,6 +297,7 @@ class MainActivity : AppCompatActivity() {
                                     groupTrouble = groupTrouble,
                                     phoneName =
                                     grants[current.memberId]?.phones?.get(device.id)?.name,
+                                    searches = searches,
                                 ),
                                 actions =
                                 SettingsActions(
@@ -424,6 +431,38 @@ class MainActivity : AppCompatActivity() {
                                         }
                                     },
                                     onSignOut = { lifecycleScope.launch { signIn.signOut() } },
+                                    // A suspend function called from the
+                                    // dialog's own coroutine rather than
+                                    // wrapped in lifecycleScope.launch here:
+                                    // the dialog has to stay open on a
+                                    // refusal and say so, which nothing
+                                    // fire-and-forget could tell it.
+                                    onSearch = { memberId, renew, hours ->
+                                        try {
+                                            if (renew) {
+                                                renewSearch(memberId, current.memberId, hours)
+                                            } else {
+                                                openSearch(memberId, current.memberId, hours)
+                                            }
+
+                                            true
+                                        } catch (cancellation: CancellationException) {
+                                            throw cancellation
+                                        } catch (refusal: Exception) {
+                                            AppLog.w(TAG, "a search could not be written", refusal)
+
+                                            false
+                                        }
+                                    },
+                                    onEndSearch = { memberId ->
+                                        try {
+                                            endSearch(memberId)
+                                        } catch (cancellation: CancellationException) {
+                                            throw cancellation
+                                        } catch (refusal: Exception) {
+                                            AppLog.w(TAG, "a search could not be ended", refusal)
+                                        }
+                                    },
                                 ),
                                 labels = labels,
                                 onLabel = { kind, key, name ->

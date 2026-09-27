@@ -54,6 +54,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -100,6 +101,7 @@ import io.github.vitalyostanin.geoshare.membership.Roster
 import io.github.vitalyostanin.geoshare.membership.Standing
 import io.github.vitalyostanin.geoshare.membership.standingIn
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 import java.time.Instant
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
@@ -201,6 +203,8 @@ fun MapScreen(
     ownMemberId: String,
     ownDisplayName: String?,
     ownPictureUrl: String?,
+    /** The group's searches, by the member each is looking for. */
+    searches: Map<String, Search>,
     /** Everything the settings screen shows, which the map only carries through. */
     settings: SettingsState,
     /** What the settings screen can ask for, likewise. */
@@ -212,6 +216,15 @@ fun MapScreen(
     modifier: Modifier = Modifier,
 ) {
     val now by currentTime()
+    // Who the group is looking for right now, worked out against the same
+    // clock the ages tick by: nothing arrives from the database at the moment
+    // a search runs out, so this is read afresh whenever [now] moves.
+    val sought = remember(searches, now) { soughtMembers(searches, now) }
+    // Read here rather than only where the admin panel is opened, because the
+    // card of a member being looked for offers "Found" on this same
+    // condition, and a phone that stops running the group should lose the
+    // button on both at once.
+    val runsTheGroup = standingIn(settings.roster, ownMemberId) == Standing.Administrator
     // The name being asked for, held by what it names rather than by the card:
     // the card may be closed and the dialog still up.
     var naming by remember { mutableStateOf<Pair<LabelKind, String>?>(null) }
@@ -378,6 +391,7 @@ fun MapScreen(
                 faces = faces,
                 ownMemberId = ownMemberId,
                 now = now,
+                soughtMembers = sought,
                 // The tiles follow the screen they are looked at on: a white
                 // map under a dark card at night is a lamp in the face, which
                 // is the reason the page turns its own canvas over.
@@ -462,13 +476,52 @@ fun MapScreen(
                     .padding(12.dp),
             )
 
+            // Told to the member being looked for, over the map and below the
+            // row of round buttons rather than on top of it: the two are read
+            // in different moments, and a banner covering the buttons would
+            // be in the way of the one thing this screen is for.
+            if (ownMemberId in sought) {
+                searches[ownMemberId]?.let { search ->
+                    SoughtBanner(
+                        search = search,
+                        openedByName =
+                        memberName(
+                            profile = profiles[search.openedBy],
+                            memberId = search.openedBy,
+                            own = search.openedBy == ownMemberId,
+                            ownName = ownName,
+                        ),
+                        onFound = { actions.onEndSearch(ownMemberId) },
+                        modifier =
+                        Modifier
+                            .align(Alignment.TopCenter)
+                            .statusBarsPadding()
+                            .padding(top = 64.dp, start = 12.dp, end = 12.dp),
+                    )
+                }
+            }
+
             if (opened != null) {
+                val openedSearch = searches[opened.memberId]?.takeIf { opened.memberId in sought }
+
                 MemberDetail(
                     member = opened,
                     name = people[opened.positionId] ?: shortName(opened.memberId),
                     face = faces[opened.memberId],
                     now = now,
                     away = distanceFromViewer(opened, positions, ownMemberId, now),
+                    search = openedSearch,
+                    openedByName =
+                    openedSearch?.let {
+                        memberName(
+                            profile = profiles[it.openedBy],
+                            memberId = it.openedBy,
+                            own = it.openedBy == ownMemberId,
+                            ownName = ownName,
+                        )
+                    },
+                    runsTheGroup = runsTheGroup,
+                    onFound = { actions.onEndSearch(opened.memberId) },
                     detailsOpen = detailsOpen,
                     onToggleDetails = { detailsOpen = !detailsOpen },
                     onClose = { openedPositionId = null },
@@ -489,6 +542,7 @@ fun MapScreen(
                     names = names,
                     faces = faces,
                     now = now,
+                    searches = searches,
                     onSelect = { positionId ->
                         openedPositionId = positionId
                         openedGroup = emptyList()
@@ -540,6 +594,7 @@ fun MapScreen(
                 openedPositionId?.let { setOf(it) }
                     ?: group.map { it.positionId }.toSet(),
                 now = now,
+                searches = searches,
                 showAll = showAll,
                 awaitingTarget = awaitingTarget,
                 onSelect = ::lookAt,
@@ -579,13 +634,11 @@ fun MapScreen(
     // Over the settings rather than instead of them: the way back out is the
     // screen it was opened from, whichever of the two ways back is used.
     //
-    // Weighed again on every draw rather than only when it was opened: an
-    // administrator can stop being one while the panel is up — somebody else
-    // takes the role away, or this phone is taken off the roster and the
-    // refused subscription empties it — and a panel left standing would go on
-    // offering writes that are now refused.
-    val runsTheGroup = standingIn(settings.roster, ownMemberId) == Standing.Administrator
-
+    // [runsTheGroup] is weighed again on every draw rather than only when the
+    // panel was opened: an administrator can stop being one while it is up —
+    // somebody else takes the role away, or this phone is taken off the
+    // roster and the refused subscription empties it — and a panel left
+    // standing would go on offering writes that are now refused.
     if (settingsOpen && adminOpen && runsTheGroup) {
         AdminPanel(
             roster = settings.roster ?: Roster(),
@@ -596,9 +649,12 @@ fun MapScreen(
             now = now,
             invitation = settings.invitation,
             trouble = settings.groupTrouble,
+            searches = searches,
             onMakeInvitation = actions.onMakeInvitation,
             onRemoveMember = actions.onRemoveMember,
             onSetRunning = actions.onSetRunning,
+            onSearch = actions.onSearch,
+            onEndSearch = actions.onEndSearch,
             onClose = { adminOpen = false },
         )
     }
@@ -841,6 +897,8 @@ private fun MemberButtons(
     /** The positions whose card is open, marked in the strip. */
     openCards: Set<String>,
     now: Instant,
+    /** The group's searches, so a member being looked for is marked in the strip too. */
+    searches: Map<String, Search>,
     showAll: Boolean,
     /** Whether ONE is waiting for a member to be chosen off this very strip. */
     awaitingTarget: Boolean,
@@ -903,6 +961,7 @@ private fun MemberButtons(
                     shown = member.positionId in openCards,
                     ringAlpha = ringAlpha,
                     now = now,
+                    sought = searches[member.memberId]?.takeIf { it.stands(now) },
                     onSelect = onSelect,
                     modifier = Modifier.weight(1f),
                 )
@@ -926,6 +985,7 @@ private fun MemberButtons(
                         name = names[member.positionId] ?: shortName(member.memberId),
                         face = faces[member.memberId],
                         now = now,
+                        sought = searches[member.memberId]?.takeIf { it.stands(now) },
                         onSelect = onSelect,
                     )
                 }
@@ -944,6 +1004,8 @@ private fun MemberButton(
     /** How bright the ring waiting for ONE's target is, or null while nobody is waiting. */
     ringAlpha: Float?,
     now: Instant,
+    /** The search standing for this member, or null while nobody is looking for them. */
+    sought: Search?,
     onSelect: (String) -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -954,8 +1016,22 @@ private fun MemberButton(
         // surface of its own, and a tint alone was not the difference between
         // the member being looked at and the rest.
         tonalElevation = if (shown) 8.dp else 2.dp,
+        // The tint the search puts on this card is the whole surface, the
+        // same way the page reads it: a card being looked for is red before
+        // anything on it is read.
+        color =
+        if (sought != null) {
+            MaterialTheme.colorScheme.errorContainer
+        } else {
+            MaterialTheme.colorScheme.surface
+        },
         border =
         when {
+            // A search takes over from every other border a card can wear:
+            // it is a fact about the member, not about what this screen is
+            // waiting on right now.
+            sought != null -> BorderStroke(width = 2.dp, color = Color(SOUGHT_COLOUR))
+
             // The ring waiting to be answered takes over from the plainer
             // one below: a card cannot at once be the one already open and
             // the one ONE is waiting to be given, since opening it is what
@@ -1003,6 +1079,19 @@ private fun MemberButton(
 
                 BatteryText(member = member)
             }
+
+            if (sought != null) {
+                Text(
+                    text =
+                    stringResource(
+                        R.string.sought_until,
+                        SOUGHT_ENDS_AT.format(sought.endsAt.atZone(ZoneId.systemDefault())),
+                    ),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = Color(SOUGHT_COLOUR),
+                    maxLines = 1,
+                )
+            }
         }
     }
 }
@@ -1041,6 +1130,8 @@ private fun MemberRow(
     name: String,
     face: Bitmap?,
     now: Instant,
+    /** The search standing for this member, or null while nobody is looking for them. */
+    sought: Search?,
     onSelect: (String) -> Unit,
 ) {
     Row(
@@ -1066,6 +1157,18 @@ private fun MemberRow(
             )
 
             AgeText(member = member, now = now)
+
+            if (sought != null) {
+                Text(
+                    text =
+                    stringResource(
+                        R.string.sought_until,
+                        SOUGHT_ENDS_AT.format(sought.endsAt.atZone(ZoneId.systemDefault())),
+                    ),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = Color(SOUGHT_COLOUR),
+                )
+            }
         }
 
         BatteryText(member = member)
@@ -1214,6 +1317,7 @@ private fun GroupDetail(
     names: Map<String, String>,
     faces: Map<String, Bitmap>,
     now: Instant,
+    searches: Map<String, Search>,
     onSelect: (String) -> Unit,
     onClose: () -> Unit,
     modifier: Modifier = Modifier,
@@ -1248,6 +1352,7 @@ private fun GroupDetail(
                         name = names[member.positionId] ?: shortName(member.memberId),
                         face = faces[member.memberId],
                         now = now,
+                        sought = searches[member.memberId]?.takeIf { it.stands(now) },
                         onSelect = onSelect,
                     )
                 }
@@ -1270,6 +1375,13 @@ private fun MemberDetail(
     face: Bitmap?,
     now: Instant,
     away: Double?,
+    /** The search standing for this member, or null while nobody is looking for them. */
+    search: Search?,
+    /** Who opened [search], said the way the card says who is looking at the map. */
+    openedByName: String?,
+    /** Whether this viewer runs the group, and so may say the member has been found. */
+    runsTheGroup: Boolean,
+    onFound: suspend () -> Unit,
     detailsOpen: Boolean,
     onToggleDetails: () -> Unit,
     onClose: () -> Unit,
@@ -1340,6 +1452,16 @@ private fun MemberDetail(
             }
 
             DetailSummary(member = member, away = away, now = now)
+
+            if (search != null && openedByName != null) {
+                DetailSought(
+                    search = search,
+                    openedByName = openedByName,
+                    showFound = runsTheGroup,
+                    onFound = onFound,
+                )
+            }
+
             DetailWarnings(member = member, now = now)
 
             // Everything else behind one button: the summary above is what a
@@ -1490,6 +1612,64 @@ private fun Fact(text: String, colour: Color = MaterialTheme.colorScheme.onSurfa
             )
         },
     )
+}
+
+/** When a search ends: the day as well as the time, the same reading a permission's end has. */
+private val SOUGHT_ENDS_AT: DateTimeFormatter = DateTimeFormatter.ofPattern("d MMM HH:mm")
+
+/**
+ * Told on the card of a member the group is looking for: until when, who
+ * opened the search, and, to whoever runs the group, the button that ends it.
+ *
+ * A row of its own rather than one more fact in [DetailSummary]: this is not a
+ * fact about the position, it is a fact about what reading it means, and it
+ * carries a colour of its own for the same reason a warning does.
+ */
+@Composable
+private fun DetailSought(
+    search: Search,
+    openedByName: String,
+    showFound: Boolean,
+    onFound: suspend () -> Unit,
+) {
+    var busy by remember { mutableStateOf(false) }
+    val scope = rememberCoroutineScope()
+
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        modifier = Modifier.padding(top = 4.dp),
+    ) {
+        // One line rather than two: "ищем до … · Открыл(а): …" is read as one
+        // fact about the position, the way the summary above it is.
+        Text(
+            text =
+            stringResource(
+                R.string.sought_until,
+                SOUGHT_ENDS_AT.format(search.endsAt.atZone(ZoneId.systemDefault())),
+            ) + " · " + stringResource(R.string.search_opened_by, openedByName),
+            style = MaterialTheme.typography.bodySmall,
+            color = Color(SOUGHT_COLOUR),
+            modifier = Modifier.weight(1f),
+        )
+
+        if (showFound) {
+            TextButton(
+                onClick = {
+                    busy = true
+                    scope.launch {
+                        try {
+                            onFound()
+                        } finally {
+                            busy = false
+                        }
+                    }
+                },
+                enabled = !busy,
+            ) {
+                Text(text = stringResource(R.string.search_found), color = Color(SOUGHT_COLOUR))
+            }
+        }
+    }
 }
 
 /**

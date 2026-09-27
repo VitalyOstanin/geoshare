@@ -95,4 +95,18 @@ class WatchingTest {
 
         assertEquals(listOf(now.plusSeconds(300)), watchedUntil(watchers, "anna", null))
     }
+
+    // While the group is looking for this member, the rules open their
+    // position to everybody in it -- a viewer the grant would otherwise leave
+    // out is exactly the one the search is for.
+    @Test
+    fun `a search open for the owner counts every viewer, shared with or not`() {
+        val claim = now.plusSeconds(300)
+        val watchers = listOf(Watcher("boris", claim))
+
+        assertEquals(
+            listOf(claim),
+            watchedUntil(watchers, "anna", emptyMap(), sought = true),
+        )
+    }
 }

@@ -80,6 +80,15 @@ data class SettingsState(
     val groupTrouble: Boolean,
     /** What this phone's owner named it for everybody, if they did. */
     val phoneName: String?,
+    /**
+     * The group's searches, by the member each one is looking for.
+     *
+     * Carried whole rather than narrowed to what still stands: the panel lists
+     * a search until it is called off, and what still stands is worked out
+     * against the clock wherever it is read, the same as everywhere else this
+     * is used.
+     */
+    val searches: Map<String, Search> = emptyMap(),
 )
 
 /** What the settings screen can ask for, as one value, and for the same reason. */
@@ -109,4 +118,16 @@ data class SettingsActions(
     val onSetRunning: (String, Boolean) -> Unit,
     val onPhoneNameChange: (String?) -> Unit,
     val onSignOut: () -> Unit,
+    /**
+     * Opens a search for a member, or renews one already standing; answers
+     * whether the database allowed it.
+     *
+     * A suspend function returning the answer rather than a fire-and-forget
+     * callback, unlike the actions above: the dialog that calls this has to
+     * stay open on a refusal and say so, which a callback with nothing to
+     * return could not tell it.
+     */
+    val onSearch: suspend (memberId: String, renew: Boolean, hours: Int) -> Boolean,
+    /** Ends a search: the member has been found, or has said so themselves. */
+    val onEndSearch: suspend (memberId: String) -> Unit,
 )

@@ -104,6 +104,16 @@ fun falsePlacesOf(store: FirebaseFirestore): CollectionReference =
     groupDocument(store).collection("falsePlaces")
 
 /**
+ * The group's searches: one document per member the group is looking for.
+ *
+ * Everybody in the group reads the collection, because everybody's map marks
+ * the member being looked for; only an administrator writes it, and the
+ * member being looked for may delete their own, once they are found.
+ */
+fun searchesOf(store: FirebaseFirestore): CollectionReference =
+    groupDocument(store).collection("searches")
+
+/**
  * What the group has settled about how its phones judge an answer.
  *
  * One document per subject rather than fields on the group document: the
@@ -264,4 +274,13 @@ object CirclingField {
 object WatchField {
     const val MEMBER_ID = "memberId"
     const val SINCE = "since"
+}
+
+/** The fields of a search: the group looking for a member. */
+object SearchField {
+    const val OPENED_BY = "openedBy"
+    const val STARTED_AT = "startedAt"
+    const val RENEWED_BY = "renewedBy"
+    const val RENEWED_AT = "renewedAt"
+    const val HOURS = "hours"
 }

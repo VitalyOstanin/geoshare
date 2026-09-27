@@ -28,6 +28,15 @@ private val MEMBER_COLOURS =
 val STALE_COLOUR = Color.rgb(0x9E, 0x9E, 0x9E)
 
 /**
+ * The colour the group is looking for somebody in: the same red everywhere it
+ * is said, on the pin, on the card and on the strip.
+ */
+val SOUGHT_COLOUR: Int = Color.rgb(0xC6, 0x28, 0x28)
+
+/** How wide the ring around a sought member's head is, outside the white edge. */
+private const val SOUGHT_RING_DP = 3f
+
+/**
  * The colour a group of members wears.
  *
  * Deliberately none of the member colours: a wide pin in somebody's own colour
@@ -164,6 +173,8 @@ fun markerIcon(
     stale: Boolean,
     /** The member's account picture, already loaded; a member without one gets their initial. */
     face: Bitmap?,
+    /** The word to ring the pin with and write above the name, or null where nobody is sought. */
+    soughtMark: String? = null,
 ): Bitmap {
     val body = if (stale) STALE_COLOUR else colour
 
@@ -180,6 +191,7 @@ fun markerIcon(
                 fade = stale,
             ),
         ),
+        soughtMark = soughtMark,
     )
 }
 
@@ -198,6 +210,8 @@ fun groupIcon(
     faces: List<PinFace>,
     /** The count of the members there was no room for, written as text; absent when all fit. */
     counter: String?,
+    /** The word to ring the pin with, where anybody standing under it is being looked for. */
+    soughtMark: String? = null,
 ): Bitmap {
     val body = if (faces.all { it.stale }) STALE_COLOUR else GROUP_COLOUR
 
@@ -216,7 +230,13 @@ fun groupIcon(
             listOf(Circle(picture = null, text = it, textColour = body, fade = false))
         }.orEmpty()
 
-    return pinBitmap(context = context, label = label, body = body, circles = circles + rest)
+    return pinBitmap(
+        context = context,
+        label = label,
+        body = body,
+        circles = circles + rest,
+        soughtMark = soughtMark,
+    )
 }
 
 /** What goes inside one circle of a pin: a picture, or text in place of one. */
@@ -229,7 +249,14 @@ private class Circle(val picture: Bitmap?, val text: String, val textColour: Int
  * ends stay round however many circles are put in it, and a single member is
  * the case where the capsule is as wide as it is tall — a circle.
  */
-private fun pinBitmap(context: Context, label: String, body: Int, circles: List<Circle>): Bitmap {
+private fun pinBitmap(
+    context: Context,
+    label: String,
+    body: Int,
+    circles: List<Circle>,
+    /** The word to ring the head with and write above the name, or null to draw neither. */
+    soughtMark: String? = null,
+): Bitmap {
     val head = dpToPx(context, PIN_HEAD_DP)
     val step = dpToPx(context, FACE_STEP_DP)
     val faceSide = dpToPx(context, FACE_DP)
@@ -239,6 +266,7 @@ private fun pinBitmap(context: Context, label: String, body: Int, circles: List<
     val edge = dpToPx(context, PIN_EDGE_DP)
     val gap = dpToPx(context, LABEL_GAP_DP)
     val padding = dpToPx(context, LABEL_PADDING_DP)
+    val ring = if (soughtMark != null) dpToPx(context, SOUGHT_RING_DP) else 0
 
     val headWidth = head + step * (circles.size - 1).coerceAtLeast(0)
 
@@ -253,8 +281,31 @@ private fun pinBitmap(context: Context, label: String, body: Int, circles: List<
     val metrics = textPaint.fontMetrics
     val labelHeight = (metrics.descent - metrics.ascent).toInt() + padding * 2
     val labelWidth = textPaint.measureText(label).toInt() + padding * 2
-    val width = maxOf(labelWidth, headWidth + edge * 2)
-    val height = labelHeight + gap + head + point + edge
+
+    // The capsule above the name, in white on the sought colour rather than
+    // the name's dark on white: it is what the whole group is scanning the
+    // map for, and it has to be found before the name is read.
+    val soughtPaint =
+        Paint(Paint.ANTI_ALIAS_FLAG).apply {
+            color = Color.WHITE
+            textSize = dpToPx(context, LABEL_TEXT_DP).toFloat()
+            textAlign = Paint.Align.CENTER
+            isFakeBoldText = true
+        }
+    val soughtMetrics = soughtPaint.fontMetrics
+    val soughtHeight =
+        if (soughtMark != null) {
+            (soughtMetrics.descent - soughtMetrics.ascent).toInt() + padding * 2
+        } else {
+            0
+        }
+    val soughtWidth =
+        if (soughtMark != null) soughtPaint.measureText(soughtMark).toInt() + padding * 2 else 0
+    val soughtStack = if (soughtMark != null) soughtHeight + gap else 0
+
+    val width = maxOf(labelWidth, soughtWidth, headWidth + (edge + ring) * 2)
+    val headTop = soughtStack + labelHeight + gap + edge + ring
+    val height = headTop + head + point
 
     // Handed the screen's metrics rather than left at the default: the library
     // reads the density off the bitmap to work out how many of its own pixels
@@ -270,23 +321,38 @@ private fun pinBitmap(context: Context, label: String, body: Int, circles: List<
 
     val canvas = Canvas(bitmap)
     val middle = width / 2f
-
-    val boxPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = LABEL_BACKGROUND }
     val corner = dpToPx(context, LABEL_CORNER_DP).toFloat()
+
+    if (soughtMark != null) {
+        val soughtBoxPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = SOUGHT_COLOUR }
+
+        canvas.drawRoundRect(
+            middle - soughtWidth / 2f,
+            0f,
+            middle + soughtWidth / 2f,
+            soughtHeight.toFloat(),
+            corner,
+            corner,
+            soughtBoxPaint,
+        )
+        canvas.drawText(soughtMark, middle, padding - soughtMetrics.ascent, soughtPaint)
+    }
+
+    val labelTop = soughtStack.toFloat()
+    val boxPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = LABEL_BACKGROUND }
 
     canvas.drawRoundRect(
         middle - labelWidth / 2f,
-        0f,
+        labelTop,
         middle + labelWidth / 2f,
-        labelHeight.toFloat(),
+        labelTop + labelHeight,
         corner,
         corner,
         boxPaint,
     )
 
-    canvas.drawText(label, middle, padding - metrics.ascent, textPaint)
+    canvas.drawText(label, middle, labelTop + padding - metrics.ascent, textPaint)
 
-    val headTop = labelHeight + gap + edge
     val headCentre = headTop + head / 2f
     val shape =
         pinShape(
@@ -298,6 +364,30 @@ private fun pinBitmap(context: Context, label: String, body: Int, circles: List<
             point = point.toFloat(),
             inset = pointInset.toFloat(),
         )
+
+    if (soughtMark != null) {
+        // Drawn before the outline and the fill, which cover the part of it
+        // that lies inside the head: what is left once they are drawn is the
+        // ring outside the white edge, the way a box-shadow sits behind an
+        // element on the page.
+        val ringPaint =
+            Paint(Paint.ANTI_ALIAS_FLAG).apply {
+                color = SOUGHT_COLOUR
+                style = Paint.Style.STROKE
+                strokeWidth = ring.toFloat()
+            }
+        val ringRadius = head / 2f + edge + ring / 2f
+
+        canvas.drawRoundRect(
+            middle - headWidth / 2f - edge - ring / 2f,
+            headCentre - ringRadius,
+            middle + headWidth / 2f + edge + ring / 2f,
+            headCentre + ringRadius,
+            ringRadius,
+            ringRadius,
+            ringPaint,
+        )
+    }
 
     val outline =
         Paint(Paint.ANTI_ALIAS_FLAG).apply {

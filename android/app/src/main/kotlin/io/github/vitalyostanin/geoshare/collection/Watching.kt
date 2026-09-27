@@ -71,14 +71,20 @@ fun watchingMembers(watchers: List<Watcher>, now: Instant): List<String> = watch
  * [sharedWith] is null until the grant has been read: a phone that does not
  * know yet whom it shares with answers everybody, as it did before, rather
  * than nobody for the second or so the subscription takes.
+ *
+ * [sought] is whether the group is looking for this member right now: while a
+ * search stands the rules open this phone's position to everybody in the
+ * group, whatever the grant says, and a viewer this phone would otherwise
+ * leave out of the fast mode is exactly the one the search is for.
  */
 fun watchedUntil(
     watchers: List<Watcher>,
     ownerId: String,
     sharedWith: Map<String, Instant>?,
+    sought: Boolean = false,
 ): List<Instant> = watchers.mapNotNull { watcher ->
     when {
-        sharedWith == null || watcher.memberId == ownerId -> watcher.until
+        sought || sharedWith == null || watcher.memberId == ownerId -> watcher.until
         else -> sharedWith[watcher.memberId]?.let { minOf(watcher.until, it) }
     }
 }

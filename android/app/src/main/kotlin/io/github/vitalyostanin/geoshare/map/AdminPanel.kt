@@ -15,6 +15,8 @@ import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
@@ -24,9 +26,11 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
@@ -34,7 +38,10 @@ import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.unit.dp
 import io.github.vitalyostanin.geoshare.R
 import io.github.vitalyostanin.geoshare.membership.Roster
+import kotlinx.coroutines.launch
 import java.time.Instant
+import java.time.ZoneId
+import java.time.format.DateTimeFormatter
 
 /**
  * The group seen whole, by the member who runs it.
@@ -64,14 +71,54 @@ fun AdminPanel(
     invitation: String?,
     /** Whether the last write to the group was refused. */
     trouble: Boolean,
+    /** The group's searches, by the member each is looking for. */
+    searches: Map<String, Search>,
     onMakeInvitation: () -> Unit,
     onRemoveMember: (String) -> Unit,
     onSetRunning: (String, Boolean) -> Unit,
+    /** Opens a search for a member, or renews one already standing; answers whether it stuck. */
+    onSearch: suspend (memberId: String, renew: Boolean, hours: Int) -> Boolean,
+    /** Ends a search: the member has been found. */
+    onEndSearch: suspend (memberId: String) -> Unit,
     onClose: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val lines = groupOverview(roster, profiles, grants, ownMemberId, labels)
+    val standing = remember(searches, now) { standingSearches(searches, now) }
     var givingUp by remember { mutableStateOf(false) }
+    // Who is being asked about, in which of the two ways, and the length
+    // picked so far -- held apart from whether the write is refused, so a
+    // refusal on one member's search does not linger once a different one is
+    // opened.
+    var searchAsk by remember { mutableStateOf<SearchAsk?>(null) }
+    var searchHours by remember { mutableStateOf(DEFAULT_SEARCH_HOURS) }
+    var searchTrouble by remember { mutableStateOf(false) }
+    var searchBusy by remember { mutableStateOf(false) }
+    val scope = rememberCoroutineScope()
+
+    fun askSearch(memberId: String, name: String, renew: Boolean) {
+        searchAsk = SearchAsk(memberId, name, renew)
+        searchHours = DEFAULT_SEARCH_HOURS
+        searchTrouble = false
+    }
+
+    fun writeSearch() {
+        val ask = searchAsk ?: return
+
+        searchBusy = true
+        scope.launch {
+            val allowed = onSearch(ask.memberId, ask.renew, searchHours)
+
+            searchBusy = false
+
+            if (allowed) {
+                searchAsk = null
+                searchTrouble = false
+            } else {
+                searchTrouble = true
+            }
+        }
+    }
 
     Surface(modifier = modifier.fillMaxSize()) {
         // Scrolled and inset the way the settings screen is, and for the same
@@ -104,11 +151,45 @@ fun AdminPanel(
                 AdminMemberRow(
                     line = line,
                     now = now,
+                    search = standing[line.memberId],
                     onMakeAdmin = { onSetRunning(line.memberId, true) },
                     onStopRunning = {
                         if (line.isYou) givingUp = true else onSetRunning(line.memberId, false)
                     },
                     onRemove = { onRemoveMember(line.memberId) },
+                    onSearch = {
+                        askSearch(
+                            line.memberId,
+                            line.displayName ?: line.memberId.take(NAME_SHOWN_INSTEAD),
+                            renew = false,
+                        )
+                    },
+                    onEndSearch = { scope.launch { onEndSearch(line.memberId) } },
+                )
+            }
+
+            // Every search standing now, under the rows rather than in them: a
+            // search is the group's own state, not a detail of one member's
+            // line.
+            for (search in standing.values) {
+                AdminSearchSummary(
+                    search = search,
+                    name =
+                    lines.firstOrNull { it.memberId == search.memberId }?.displayName
+                        ?: search.memberId.take(NAME_SHOWN_INSTEAD),
+                    openedByYou = search.openedBy == ownMemberId,
+                    openedByName =
+                    profiles[search.openedBy]?.displayName
+                        ?: search.openedBy.take(NAME_SHOWN_INSTEAD),
+                    onRenew = {
+                        askSearch(
+                            search.memberId,
+                            lines.firstOrNull { it.memberId == search.memberId }?.displayName
+                                ?: search.memberId.take(NAME_SHOWN_INSTEAD),
+                            renew = true,
+                        )
+                    },
+                    onEndSearch = { scope.launch { onEndSearch(search.memberId) } },
                 )
             }
 
@@ -151,7 +232,24 @@ fun AdminPanel(
             },
         )
     }
+
+    searchAsk?.let { ask ->
+        SearchDialog(
+            memberName = ask.name,
+            renew = ask.renew,
+            hours = searchHours,
+            onHoursChange = { searchHours = it },
+            now = now,
+            trouble = searchTrouble,
+            busy = searchBusy,
+            onGo = ::writeSearch,
+            onCancel = { searchAsk = null },
+        )
+    }
 }
+
+/** Who is being asked about, in which of the two ways a search is opened. */
+private data class SearchAsk(val memberId: String, val name: String, val renew: Boolean)
 
 /**
  * One member, with what the household knows about them from here.
@@ -164,9 +262,13 @@ fun AdminPanel(
 private fun AdminMemberRow(
     line: GroupLine,
     now: Instant,
+    /** The search standing for this member, or null while nobody is looking for them. */
+    search: Search?,
     onMakeAdmin: () -> Unit,
     onStopRunning: () -> Unit,
     onRemove: () -> Unit,
+    onSearch: () -> Unit,
+    onEndSearch: () -> Unit,
 ) {
     Row(
         modifier = Modifier.fillMaxWidth().padding(start = 16.dp, end = 8.dp, top = 8.dp),
@@ -194,6 +296,18 @@ private fun AdminMemberRow(
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
             }
+
+            if (search != null) {
+                Text(
+                    text =
+                    stringResource(
+                        R.string.sought_until,
+                        SEARCH_ENDS_AT.format(search.endsAt.atZone(ZoneId.systemDefault())),
+                    ),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = Color(SOUGHT_COLOUR),
+                )
+            }
         }
 
         // One action under another rather than side by side: the names take
@@ -215,6 +329,81 @@ private fun AdminMemberRow(
                 TextButton(onClick = onRemove) {
                     Text(text = stringResource(R.string.group_remove))
                 }
+            }
+
+            // Anybody but oneself may be looked for, administrators included:
+            // the one who is lost is not always the one who does not run the
+            // group.
+            if (!line.isYou) {
+                val alarmText =
+                    ButtonDefaults.textButtonColors(contentColor = Color(SOUGHT_COLOUR))
+
+                if (search != null) {
+                    TextButton(onClick = onEndSearch, colors = alarmText) {
+                        Text(text = stringResource(R.string.search_found))
+                    }
+                } else {
+                    TextButton(onClick = onSearch, colors = alarmText) {
+                        Text(text = stringResource(R.string.search_start))
+                    }
+                }
+            }
+        }
+    }
+}
+
+/** When a search ends: the day as well as the time, the same reading a permission's end has. */
+private val SEARCH_ENDS_AT: DateTimeFormatter = DateTimeFormatter.ofPattern("d MMM HH:mm")
+
+/**
+ * Every search standing now, under the rows: who is looked for, who opened it
+ * and when it ends, with the two things to do about it.
+ */
+@Composable
+private fun AdminSearchSummary(
+    search: Search,
+    name: String,
+    openedByYou: Boolean,
+    openedByName: String,
+    onRenew: () -> Unit,
+    onEndSearch: () -> Unit,
+) {
+    Column(
+        modifier =
+        Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 16.dp, vertical = 6.dp),
+    ) {
+        Text(
+            text =
+            stringResource(
+                R.string.search_summary,
+                name,
+                SEARCH_ENDS_AT.format(search.endsAt.atZone(ZoneId.systemDefault())),
+            ),
+            style = MaterialTheme.typography.bodyMedium,
+            color = Color(SOUGHT_COLOUR),
+        )
+        Text(
+            text =
+            stringResource(
+                if (openedByYou) R.string.search_opened_by_you else R.string.search_opened_by,
+                openedByName,
+            ),
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+
+        Row {
+            TextButton(onClick = onRenew) {
+                Text(text = stringResource(R.string.search_renew))
+            }
+
+            Button(
+                onClick = onEndSearch,
+                colors = ButtonDefaults.buttonColors(containerColor = Color(SOUGHT_COLOUR)),
+            ) {
+                Text(text = stringResource(R.string.search_found))
             }
         }
     }

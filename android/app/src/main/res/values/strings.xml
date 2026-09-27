@@ -219,6 +219,38 @@
         <item quantity="one">%1$d phone shared with you</item>
         <item quantity="other">%1$d phones shared with you</item>
     </plurals>
+
+    <!-- The group looking for a member: an administrator opens a search, and
+         while it stands everybody in the group sees where the member is. The
+         same words the page uses for the same things. -->
+    <string name="search_mark">Searching</string>
+    <string name="search_start">Search</string>
+    <string name="search_found">Found</string>
+    <string name="search_renew">Extend</string>
+    <string name="search_open_title">Show the whole group where %1$s is?</string>
+    <string name="search_renew_title">Extend the search for %1$s?</string>
+    <string name="search_note">Everybody in the group will see this member on the map, even those they do not share with. Their phone will say who opened the search and until when.</string>
+    <string name="search_hours_6">6 hours</string>
+    <string name="search_hours_24">A day</string>
+    <string name="search_hours_72">3 days</string>
+    <string name="search_until">Until %1$s. \"Found\" ends it sooner.</string>
+    <string name="search_go">Open</string>
+    <string name="search_cancel">Cancel</string>
+    <string name="sought_until">searching until %1$s</string>
+    <string name="search_summary">Searching for %1$s until %2$s</string>
+    <string name="search_opened_by">Opened by %1$s.</string>
+    <string name="search_opened_by_you">Opened by you.</string>
+    <string name="sought_banner">The whole group sees where you are until %1$s</string>
+    <string name="sought_banner_note">Opened by %1$s. If you are all right, end the search.</string>
+    <string name="sought_found">I\'m found</string>
+    <!-- Shown to the member being looked for, as a notification of its own:
+         being watched by the whole group is worth waking the phone for in a
+         way that sharing quietly never is. -->
+    <string name="sought_channel_name">Being looked for</string>
+    <string name="sought_channel_description">Shown while the group is looking for you.</string>
+    <string name="sought_notification_title">Your position is seen by the whole group</string>
+    <string name="sought_notification_text">Opened by %1$s, until %2$s</string>
+
     <string name="visibility_title">Who sees where I am</string>
     <string name="visibility_empty">Nobody else has signed in yet.</string>
     <string name="visibility_none">not shared</string>
