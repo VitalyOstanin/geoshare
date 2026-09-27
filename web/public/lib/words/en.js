@@ -204,6 +204,15 @@ export const EN = {
     followOne: (name) => `Following ${name}`,
     followAll: 'Following everyone',
     followTargetMissing: 'No current position for this member',
+    followMenuNone: 'Don’t follow',
+    followMenuNoneNote: 'The map stays where it is',
+    followMenuOne: 'Follow a member',
+    followMenuOneNamed: (name) => `Follow ${name}`,
+    followMenuOneNote: 'Keeps the chosen member in the middle',
+    followMenuAll: 'Follow everyone',
+    followMenuAllNote: 'Everyone in view',
+    followMenuHint: 'To choose whom to follow, tap their card below or their marker on the map.',
+    followWait: 'Choose a member: tap their card or their marker on the map.',
 
     // Who else has the map open right now, named rather than counted, and said
     // once for the household rather than on a card: one open map puts every

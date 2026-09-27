@@ -15,29 +15,6 @@ export const FOLLOW_ONE = 'one';
 export const FOLLOW_ALL = 'all';
 
 /**
- * Advances the circle a tap on the follow button walks.
- *
- * The full circle is none -> one -> all -> none, but "one" only exists once a
- * member has actually been picked (`hasTarget`); a first tap with nobody
- * chosen yet has nothing to centre on, so it skips straight to "all". The same
- * skip applies leaving "one": if the previously followed member has since
- * gone quiet and dropped out of the position set, there is no target left to
- * hand the circle back to, and the tap moves on to "all" instead of getting
- * stuck.
- */
-export function nextMode(mode, hasTarget) {
-    if (mode === FOLLOW_NONE) {
-        return hasTarget ? FOLLOW_ONE : FOLLOW_ALL;
-    }
-
-    if (mode === FOLLOW_ONE) {
-        return FOLLOW_ALL;
-    }
-
-    return FOLLOW_NONE;
-}
-
-/**
  * How long a manual pan or zoom holds the map still afterwards.
  *
  * Without a pause, a viewer who nudges the map to look at a neighbourhood

@@ -6,9 +6,10 @@ import { FOLLOW_ALL, FOLLOW_NONE, FOLLOW_ONE } from './lib/following.js';
 import { groupOverview } from './lib/group-lines.js';
 import { outsideTheBox } from './lib/mode-help.js';
 import {
-    advanceFollow,
+    awaitingFollowTarget,
     batteryText,
     centreOnce,
+    chooseFollow,
     createMap,
     followMode,
     followPaused,
@@ -17,6 +18,7 @@ import {
     remeasure,
     showMembers,
     shownPositions,
+    stopAwaitingFollowTarget,
 } from './lib/map.js';
 import {
     STALE_COLOUR,
@@ -85,6 +87,11 @@ const elements = {
     map: document.querySelector('#map'),
     card: document.querySelector('#card'),
     followButton: document.querySelector('#follow-button'),
+    followCaption: document.querySelector('#follow-caption'),
+    followMenu: document.querySelector('#follow-menu'),
+    followMenuButtons: document.querySelectorAll('#follow-menu button'),
+    followHint: document.querySelector('#follow-hint'),
+    followWait: document.querySelector('#follow-wait'),
     panel: document.querySelector('#panel'),
     panelNote: document.querySelector('#panel-note'),
     panelWatching: document.querySelector('#panel-watching'),
@@ -185,6 +192,11 @@ const state = {
     // that member goes quiet; the name is kept here so the button still has
     // something to say about them once their position drops out of the set.
     followTargetName: null,
+    // The follow mode last drawn, to tell a change from a redrawing; null
+    // before the first drawing after a sign-in.
+    shownFollowMode: null,
+    followAnnounceEnds: null,
+    followWaitEnds: null,
     // Whose cards the strip highlighted on the last drawing, so that render
     // can tell a highlight that has actually changed from the same one drawn
     // again — the strip redraws on every clock tick regardless, and scrolling
@@ -257,9 +269,92 @@ signInReturned().catch((error) => {
 
 elements.signOutButton.addEventListener('click', () => leave());
 
-// advanceFollow moves the map itself and calls the map's own onCardChange,
-// which is render — nothing further is needed here.
-elements.followButton.addEventListener('click', () => advanceFollow(state.view));
+// How long the name of a newly chosen mode stands beside its mark.
+const FOLLOW_ANNOUNCE_MS = 2500;
+
+// How long the page waits for a member to be picked after "follow a member"
+// was asked for with nobody to follow. Long enough to find somebody in the
+// strip, short enough that the strip does not stay outlined all afternoon.
+const FOLLOW_WAIT_MS = 15000;
+
+elements.followButton.addEventListener('click', (event) => {
+    event.stopPropagation();
+    showMenu(false);
+    showFollowMenu(elements.followMenu.hidden);
+});
+
+elements.followMenu.addEventListener('click', (event) => event.stopPropagation());
+
+for (const button of elements.followMenuButtons) {
+    // Each entry carries the same mark as the button does in that mode.
+    const marks = elements.followButton.querySelectorAll('svg');
+    const mark = [...marks].find((each) => each.dataset.mode === button.dataset.mode);
+
+    button.prepend(mark.cloneNode(true));
+    button.querySelector('svg').removeAttribute('hidden');
+
+    // chooseFollow moves the map itself and calls the map's own
+    // onCardChange, which is render; the wait it may start is timed here.
+    button.addEventListener('click', () => {
+        showFollowMenu(false);
+
+        clearTimeout(state.followWaitEnds);
+
+        if (!chooseFollow(state.view, button.dataset.mode)) {
+            state.followWaitEnds = setTimeout(
+                () => stopAwaitingFollowTarget(state.view),
+                FOLLOW_WAIT_MS,
+            );
+        }
+    });
+}
+
+document.addEventListener('keydown', (event) => {
+    if (event.key !== 'Escape') {
+        return;
+    }
+
+    if (!elements.followMenu.hidden) {
+        showFollowMenu(false);
+        elements.followButton.focus();
+    } else if (state.view !== null && awaitingFollowTarget(state.view)) {
+        stopAwaitingFollowTarget(state.view);
+    }
+});
+
+function showFollowMenu(open) {
+    if (open) {
+        sayFollowMenu();
+    }
+
+    elements.followMenu.hidden = !open;
+    elements.followButton.setAttribute('aria-expanded', String(open));
+}
+
+/** The menu's words, with the current mode marked and the member named. */
+function sayFollowMenu() {
+    const mode = followMode(state.view);
+    const titles = {
+        [FOLLOW_NONE]: WORDS.followMenuNone,
+        [FOLLOW_ONE]: state.followTargetName
+            ? WORDS.followMenuOneNamed(state.followTargetName)
+            : WORDS.followMenuOne,
+        [FOLLOW_ALL]: WORDS.followMenuAll,
+    };
+    const notes = {
+        [FOLLOW_NONE]: WORDS.followMenuNoneNote,
+        [FOLLOW_ONE]: WORDS.followMenuOneNote,
+        [FOLLOW_ALL]: WORDS.followMenuAllNote,
+    };
+
+    for (const button of elements.followMenuButtons) {
+        button.querySelector('.follow-item-title').textContent = titles[button.dataset.mode];
+        button.querySelector('.follow-item-note').textContent = notes[button.dataset.mode];
+        button.setAttribute('aria-checked', String(button.dataset.mode === mode));
+    }
+
+    elements.followHint.textContent = WORDS.followMenuHint;
+}
 
 elements.accountButton.addEventListener('click', (event) => {
     event.stopPropagation();
@@ -268,7 +363,10 @@ elements.accountButton.addEventListener('click', (event) => {
 
 // Anywhere else means "not that": the menu is a corner of the map, and the map
 // is what the viewer came for.
-document.addEventListener('click', () => showMenu(false));
+document.addEventListener('click', () => {
+    showMenu(false);
+    showFollowMenu(false);
+});
 
 // Inside the menu is not anywhere else: the theme buttons live there, and a
 // menu that shuts on the first press hides the change it was pressed for.
@@ -606,12 +704,15 @@ function stop() {
     // A new sign-in is a different group, and its members are not the one
     // this name belonged to.
     state.followTargetName = null;
+    state.shownFollowMode = null;
     state.shownPositionIds = new Set();
     state.stripEntries = new Map();
 
     elements.signIn.hidden = false;
     elements.map.hidden = true;
     elements.followButton.hidden = true;
+    showFollowMenu(false);
+    clearTimeout(state.followWaitEnds);
     elements.panel.hidden = true;
     elements.account.hidden = true;
     showMenu(false);
@@ -1221,11 +1322,42 @@ function showFollow(labels) {
         mark.toggleAttribute('hidden', mark.dataset.mode !== mode);
     }
 
-    elements.followButton.setAttribute('aria-label', caption);
+    elements.followCaption.textContent = caption;
+    elements.followButton.setAttribute(
+        'aria-label',
+        missing ? `${caption}. ${WORDS.followTargetMissing}` : caption,
+    );
     elements.followButton.classList.toggle('active', mode !== FOLLOW_NONE);
     elements.followButton.classList.toggle('paused', followPaused(state.view));
     elements.followButton.classList.toggle('missing', missing);
-    elements.followButton.title = missing ? `${caption}. ${WORDS.followTargetMissing}` : caption;
+
+    // Said once per change, not on every drawing: the first drawing after a
+    // sign-in is the mode the map starts in, which nobody chose.
+    if (state.shownFollowMode !== null && state.shownFollowMode !== mode) {
+        announceFollow();
+    }
+
+    state.shownFollowMode = mode;
+
+    const awaiting = awaitingFollowTarget(state.view);
+
+    elements.followWait.textContent = WORDS.followWait;
+    elements.followWait.hidden = !awaiting;
+    elements.members.classList.toggle('awaiting', awaiting);
+
+    if (!awaiting) {
+        clearTimeout(state.followWaitEnds);
+    }
+}
+
+/** Unfolds the mode's name beside its mark for a moment. */
+function announceFollow() {
+    elements.followButton.classList.add('announce');
+    clearTimeout(state.followAnnounceEnds);
+    state.followAnnounceEnds = setTimeout(
+        () => elements.followButton.classList.remove('announce'),
+        FOLLOW_ANNOUNCE_MS,
+    );
 }
 
 /**

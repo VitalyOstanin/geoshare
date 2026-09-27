@@ -3,38 +3,14 @@ import { test } from 'node:test';
 
 import {
     BOUNDS_TOLERANCE_DEGREES,
-    FOLLOW_ALL,
-    FOLLOW_NONE,
-    FOLLOW_ONE,
     PAUSE_AFTER_A_GESTURE_MS,
     boundsAreClose,
     boundsOf,
     isPaused,
-    nextMode,
     targetPosition,
 } from '../public/lib/following.js';
 
 const at = (positionId, latitude, longitude) => ({ positionId, latitude, longitude });
-
-// With a member already chosen, the button walks the full three-state circle.
-test('the full circle with a target: none -> one -> all -> none', () => {
-    assert.equal(nextMode(FOLLOW_NONE, true), FOLLOW_ONE);
-    assert.equal(nextMode(FOLLOW_ONE, true), FOLLOW_ALL);
-    assert.equal(nextMode(FOLLOW_ALL, true), FOLLOW_NONE);
-});
-
-// Nobody has been picked yet: "one" has nothing to centre on, so the first
-// tap skips it and goes straight to "all".
-test('the circle without a target skips "one": none -> all -> none', () => {
-    assert.equal(nextMode(FOLLOW_NONE, false), FOLLOW_ALL);
-    assert.equal(nextMode(FOLLOW_ALL, false), FOLLOW_NONE);
-});
-
-// The previously followed member went quiet and dropped out of the set
-// while "one" was active: the tap still has to move the circle forward.
-test('leaving "one" without a target still advances to "all"', () => {
-    assert.equal(nextMode(FOLLOW_ONE, false), FOLLOW_ALL);
-});
 
 test('a gesture pauses the map immediately and for exactly the held duration', () => {
     const pausedAt = 1000;

@@ -220,6 +220,17 @@ export const RU = {
     followOne: (name) => `Следовать за: ${name}`,
     followAll: 'Следовать за всеми',
     followTargetMissing: 'У этого участника сейчас нет позиции',
+    // The menu the follow button opens: what each mode does, and how the
+    // member followed is picked, which is not in the menu itself.
+    followMenuNone: 'Не следовать',
+    followMenuNoneNote: 'Карта стоит на месте',
+    followMenuOne: 'За участником',
+    followMenuOneNamed: (name) => `За участником: ${name}`,
+    followMenuOneNote: 'Карта держит в центре выбранного участника',
+    followMenuAll: 'За всеми',
+    followMenuAllNote: 'Все участники в кадре',
+    followMenuHint: 'Чтобы выбрать, за кем следовать, нажмите на его карточку внизу или на метку на карте.',
+    followWait: 'Выберите участника: нажмите на его карточку или метку на карте.',
 
     // Who else has the map open right now, named rather than counted.
     mapOpen: (names) => `Карту смотрят: ${names.join(', ')}`,

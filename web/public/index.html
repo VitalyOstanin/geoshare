@@ -52,8 +52,11 @@
              looked at last, and everybody at once. Kept at the top left so a
              tap never lands on the account button at the top right or the
              zoom buttons at the bottom right. A round mark per mode, the same
-             marks as the Android app; the words of the mode are its label. -->
-        <button id="follow-button" type="button" hidden>
+             marks as the Android app; the words of the mode are its label,
+             and for a moment after a change they stand beside the mark. A
+             press opens the menu below rather than stepping through the modes:
+             the menu says what each one does and how to pick a member. -->
+        <button id="follow-button" type="button" aria-haspopup="menu" aria-expanded="false" hidden>
             <svg data-mode="none" viewBox="0 0 24 24" aria-hidden="true">
                 <path class="stroke" d="M5,12a7,7 0 1,0 14,0a7,7 0 1,0 -14,0 M12,1v4 M12,19v4 M1,12h4 M19,12h4" />
             </svg>
@@ -65,7 +68,24 @@
                 <path class="stroke" d="M3,8V3h5 M16,3h5v5 M21,16v5h-5 M8,21H3v-5" />
                 <path class="fill" d="M7,10a2,2 0 1,0 4,0a2,2 0 1,0 -4,0 Z M13,15a2,2 0 1,0 4,0a2,2 0 1,0 -4,0 Z" />
             </svg>
+            <span id="follow-caption"></span>
         </button>
+
+        <div id="follow-menu" role="menu" hidden>
+            <button type="button" role="menuitemradio" data-mode="none" aria-checked="false">
+                <span class="follow-item-title"></span>
+                <span class="follow-item-note"></span>
+            </button>
+            <button type="button" role="menuitemradio" data-mode="one" aria-checked="false">
+                <span class="follow-item-title"></span>
+                <span class="follow-item-note"></span>
+            </button>
+            <button type="button" role="menuitemradio" data-mode="all" aria-checked="false">
+                <span class="follow-item-title"></span>
+                <span class="follow-item-note"></span>
+            </button>
+            <p id="follow-hint"></p>
+        </div>
 
         <!-- The way into everything that is not the map: who is signed in,
              and where to change it. -->
@@ -193,6 +213,9 @@
                  which is about what the strip cannot show; this one is about
                  the household, and both can be true at once. -->
             <p id="panel-watching" hidden></p>
+            <!-- Asked for by "follow a member" with nobody to follow: the
+                 strip right under it is where the answer is given. -->
+            <p id="follow-wait" hidden></p>
             <div id="members"></div>
         </section>
 

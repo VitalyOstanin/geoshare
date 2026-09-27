@@ -31,7 +31,6 @@ import {
     boundsAreClose,
     boundsOf,
     isPaused,
-    nextMode,
     targetPosition,
 } from './following.js';
 import { openModeHelp } from './mode-help.js';
@@ -242,11 +241,14 @@ export function createMap(element, onCardChange = () => {}, cardElement) {
         // question, so the answer is kept here as plain data, by the rules in
         // lib/selection.js, rather than inside whatever happens to be drawn.
         selection: null,
-        // The circle the follow button walks, and who it currently follows.
-        // Read and advanced from outside through the exported follow* and
-        // advanceFollow functions rather than written here directly.
+        // The mode picked in the follow menu, and who it currently follows.
+        // Read and set from outside through the exported follow* functions
+        // rather than written here directly.
         mode: FOLLOW_NONE,
         targetPositionId: null,
+        // "Follow a member" picked while there was nobody to follow: the next
+        // member whose card opens becomes the one followed.
+        awaitingTarget: false,
         // When the last manual pan or zoom happened; null before any gesture.
         // Read through isPaused rather than compared directly, because the
         // window it opens is a duration rather than a single moment.
@@ -463,9 +465,33 @@ function applyFollowMode(view) {
     );
 }
 
-/** Remembers who a card just opened for, for the "one" follow mode to centre on. */
+/**
+ * Remembers who a card just opened for, for the "one" follow mode to centre on.
+ *
+ * A viewer who asked to follow a member before there was one is answered
+ * here: every way a card opens comes through this function, so the card that
+ * opens next is the choice they were asked to make.
+ */
 function setFollowTarget(view, positionId) {
     view.targetPositionId = positionId;
+
+    if (view.awaitingTarget) {
+        view.awaitingTarget = false;
+        startFollowing(view, FOLLOW_ONE);
+    }
+}
+
+/** Switches to `mode` as a press asks for, which is right away. */
+function startFollowing(view, mode) {
+    view.mode = mode;
+
+    // Choosing a mode is a viewer asking for the map to move now. The pause
+    // exists to keep a followed member from yanking the view out from under
+    // a hand, which is the opposite of what a choice means; and the
+    // rectangle last fitted describes a view the viewer may since have left.
+    view.pausedAt = null;
+    view.followedBounds = null;
+    clearTimeout(view.pauseEnds);
 }
 
 function draw(view, { positions, names, faces, now }) {
@@ -1494,33 +1520,49 @@ export function remeasure(view) {
 }
 
 /**
- * Walks the follow button's circle one tap forward and moves the map to
- * match straight away, unless a gesture is holding it still. Returns the mode
- * the button is on after the tap, which is what the caption is drawn from.
+ * Switches the map to the mode picked in the follow menu and moves it to
+ * match straight away. Returns false, and changes nothing but the wait, when
+ * "one" is picked with nobody left to centre on: the viewer is then asked to
+ * pick a member, and setFollowTarget finishes the switch.
  *
  * Whether the member behind "one" is still worth landing on comes from the
  * current positions rather than from the target id alone: an id kept from
- * before is still remembered once the member goes quiet, but nextMode has to
- * be told there is nowhere left to centre on, or the circle would stall on a
- * mode that does nothing.
+ * before is still remembered once the member goes quiet, and following a
+ * member who is not on the map would be a mode that does nothing.
  */
-export function advanceFollow(view) {
-    const hasTarget = targetPosition(view.last?.positions ?? [], view.targetPositionId) !== null;
+export function chooseFollow(view, mode) {
+    if (mode === FOLLOW_ONE && !hasFollowTarget(view)) {
+        view.awaitingTarget = true;
+        view.onCardChange();
 
-    view.mode = nextMode(view.mode, hasTarget);
+        return false;
+    }
 
-    // Pressing the button is a viewer asking for the map to move now. The
-    // pause exists to keep a followed member from yanking the view out from
-    // under a hand, which is the opposite of what a press means; and the
-    // rectangle last fitted describes a view the viewer may since have left.
-    view.pausedAt = null;
-    view.followedBounds = null;
-    clearTimeout(view.pauseEnds);
+    view.awaitingTarget = false;
+    startFollowing(view, mode);
 
     view.onCardChange();
     applyFollowMode(view);
 
-    return view.mode;
+    return true;
+}
+
+/** Whether "one" has a member on the map to centre on. */
+export function hasFollowTarget(view) {
+    return targetPosition(view.last?.positions ?? [], view.targetPositionId) !== null;
+}
+
+/** Whether the page is waiting for the viewer to pick a member to follow. */
+export function awaitingFollowTarget(view) {
+    return view.awaitingTarget;
+}
+
+/** Stops waiting for a member to follow; the mode stays what it was. */
+export function stopAwaitingFollowTarget(view) {
+    if (view.awaitingTarget) {
+        view.awaitingTarget = false;
+        view.onCardChange();
+    }
 }
 
 /** The mode the follow button is on right now. */
