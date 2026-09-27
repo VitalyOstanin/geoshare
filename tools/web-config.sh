@@ -3,6 +3,9 @@
 #
 #   tools/web-config.sh
 #
+# FIREBASE_PROJECT names another project than the working copy's default, and
+# WEB_CONFIG_TARGET another file to write; tools/new-project.sh uses both.
+#
 # The result names the project, and the project is not the repository's
 # business — the file is ignored by git, the same way the Android one is. Run
 # this once per working copy, and again if the web app is ever re-registered.
@@ -12,11 +15,17 @@ set -euo pipefail
 # versions from: a copy of either is a copy that stops matching.
 source "$(dirname "${BASH_SOURCE[0]}")/lib.sh"
 
-readonly TARGET="${REPO_ROOT}/web/public/firebase-config.js"
+readonly TARGET="${WEB_CONFIG_TARGET:-${REPO_ROOT}/web/public/firebase-config.js}"
+
+project_args=()
+
+if [[ -n "${FIREBASE_PROJECT:-}" ]]; then
+    project_args=(--project "${FIREBASE_PROJECT}")
+fi
 
 # The one web app of the project. Passed by platform rather than by id, so that
 # this keeps working if the app is registered again under a new one.
-npx --yes "firebase-tools@${FIREBASE_TOOLS_VERSION}" apps:sdkconfig WEB --json |
+npx --yes "firebase-tools@${FIREBASE_TOOLS_VERSION}" apps:sdkconfig WEB "${project_args[@]}" --json |
     python3 -c '
 import json, sys
 
