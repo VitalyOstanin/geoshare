@@ -28,6 +28,7 @@ import { positionMoments } from './age.js';
 import { labelsFrom } from './labels.js';
 import { placesOf } from './false-places.js';
 import { combinedGrants, phonesOf } from './phones.js';
+import { searchOf } from './searches.js';
 import {
     INVITATION_LASTS_MS,
     invitationText,
@@ -425,6 +426,72 @@ export function watchFalsePlaces(onPlaces) {
         (snapshot) => onPlaces(placesOf(snapshot.docs.map((document) => document.data()))),
         () => onPlaces([]),
     );
+}
+
+/**
+ * The searches of this group, by member, and again whenever an administrator
+ * opens, renews or ends one, or the member looked for says they were found.
+ *
+ * The server's times come as its estimate while a write is on its way, so the
+ * administrator who opened a search sees its end at once rather than after the
+ * server has answered. A refusal is read as no searches: the page then draws
+ * nobody as looked for, which is what it did before searches existed.
+ */
+export function watchSearches(onSearches) {
+    return onSnapshot(
+        collection(store, 'groups', currentGroup(), 'searches'),
+        (snapshot) => {
+            const searches = new Map();
+
+            for (const document of snapshot.docs) {
+                const data = document.data({ serverTimestamps: 'estimate' });
+                const search = searchOf(document.id, {
+                    ...data,
+                    startedAt: data.startedAt?.toMillis?.(),
+                    renewedAt: data.renewedAt?.toMillis?.(),
+                });
+
+                if (search !== null) {
+                    searches.set(document.id, search);
+                }
+            }
+
+            onSearches(searches);
+        },
+        () => onSearches(new Map()),
+    );
+}
+
+/**
+ * Opens a search for a member: their place is open to the whole group for the
+ * hours chosen. Written whole, so that one opened again after an earlier one
+ * ran out starts from now and names whoever opened it this time.
+ */
+export function openSearch(memberId, adminId, hours) {
+    return setDoc(doc(store, 'groups', currentGroup(), 'searches', memberId), {
+        openedBy: adminId,
+        startedAt: serverTimestamp(),
+        renewedBy: adminId,
+        renewedAt: serverTimestamp(),
+        hours,
+    });
+}
+
+/**
+ * Moves the end of a standing search on to the hours chosen from now, keeping
+ * who opened it and when.
+ */
+export function renewSearch(memberId, adminId, hours) {
+    return updateDoc(doc(store, 'groups', currentGroup(), 'searches', memberId), {
+        renewedBy: adminId,
+        renewedAt: serverTimestamp(),
+        hours,
+    });
+}
+
+/** Ends a search: the member was found, and their place closes to all but whom they share with. */
+export function endSearch(memberId) {
+    return deleteDoc(doc(store, 'groups', currentGroup(), 'searches', memberId));
 }
 
 /**

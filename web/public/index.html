@@ -171,6 +171,11 @@
             <button id="admin-close" class="close-cross" type="button">×</button>
             <h2 id="admin-title"></h2>
             <div id="admin-members"></div>
+            <!-- Every search standing now, with who opened it, when it ends
+                 and the two things to do about it. Below the rows rather
+                 than in them: a search is the group's state, not a detail of
+                 one member's line. -->
+            <div id="admin-searches"></div>
 
             <div id="admin-invitation" hidden>
                 <code id="admin-code"></code>
@@ -185,6 +190,28 @@
             <p id="admin-said" hidden></p>
             <p id="admin-error" class="error" hidden></p>
         </dialog>
+
+        <!-- Opening or renewing a search: what it does, for how long, and
+             the end that choice comes to, before anything is written. -->
+        <dialog id="search" class="admin naming search">
+            <h2 id="search-title"></h2>
+            <p id="search-note"></p>
+            <div id="search-hours" class="choice" role="group"></div>
+            <p id="search-until"></p>
+            <p id="search-error" class="error" hidden></p>
+            <div id="search-buttons">
+                <button id="search-go" type="button" class="alarm"></button>
+                <button id="search-cancel" type="button"></button>
+            </div>
+        </dialog>
+
+        <!-- Told to the member being looked for, over the map: their place is
+             open to the whole group, and they can say they are found. -->
+        <div id="sought-banner" class="sought-banner" role="alert" hidden>
+            <b id="sought-text"></b>
+            <span id="sought-note"></span>
+            <button id="sought-found" type="button" class="alarm-fill"></button>
+        </div>
 
         <!-- A name for a phone or a person, seen by this viewer alone. The
              buttons are not a form's: the dialog is closed by the page once

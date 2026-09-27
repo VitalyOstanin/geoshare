@@ -38,6 +38,14 @@ import {
 } from './lib/labels.js';
 import { isGrey, withFalsePlaces } from './lib/false-places.js';
 import { withPhones } from './lib/phones.js';
+import {
+    DEFAULT_SEARCH_HOURS,
+    SEARCH_HOURS,
+    endIfChosen,
+    nextSearchEnd,
+    standingSearches,
+    withSearches,
+} from './lib/searches.js';
 import { applyTheme, readTheme, writeTheme } from './lib/theme.js';
 import { watchingBesides, watchingMembers } from './lib/watchers.js';
 import { readLanguage, writeLanguage } from './lib/language.js';
@@ -58,6 +66,9 @@ import {
     makeInvitation,
     publishProfile,
     removeMember,
+    endSearch,
+    openSearch,
+    renewSearch,
     setRunning,
     signIn,
     signInReturned,
@@ -67,6 +78,7 @@ import {
     watchLabels,
     watchProfiles,
     watchRoster,
+    watchSearches,
     watchSignIn,
     watchWatchers,
     writeLabel,
@@ -135,6 +147,19 @@ const elements = {
     namingSave: document.querySelector('#naming-save'),
     namingReset: document.querySelector('#naming-reset'),
     namingCancel: document.querySelector('#naming-cancel'),
+    adminSearches: document.querySelector('#admin-searches'),
+    search: document.querySelector('#search'),
+    searchTitle: document.querySelector('#search-title'),
+    searchNote: document.querySelector('#search-note'),
+    searchHours: document.querySelector('#search-hours'),
+    searchUntil: document.querySelector('#search-until'),
+    searchError: document.querySelector('#search-error'),
+    searchGo: document.querySelector('#search-go'),
+    searchCancel: document.querySelector('#search-cancel'),
+    soughtBanner: document.querySelector('#sought-banner'),
+    soughtText: document.querySelector('#sought-text'),
+    soughtNote: document.querySelector('#sought-note'),
+    soughtFound: document.querySelector('#sought-found'),
 };
 
 const state = {
@@ -226,6 +251,21 @@ const state = {
     // What went right and is worth one line: the invitation reaching the
     // clipboard, which leaves nothing on screen to show for itself.
     groupSaid: null,
+    // The group's searches by member, as the database holds them, standing or
+    // run out: which of them still stand is worked out against the clock.
+    searches: new Map(),
+    stopSearches: null,
+    // The members searched for when the grants were last followed, joined
+    // into one string: a search that starts or ends changes what this viewer
+    // may read, and the refused grants are asked for again at once rather
+    // than a minute later.
+    searchedMembers: '',
+    // The moment the next standing search runs out, when nothing arrives to
+    // say so.
+    searchEnds: null,
+    // The search being opened or renewed in the window: whose, which of the
+    // two, and the length picked.
+    searchAsk: null,
 };
 
 elements.signInButton.addEventListener('click', async () => {
@@ -525,6 +565,7 @@ function start() {
         state.view = createMap(elements.map, render, elements.card);
         state.view.onName = askName;
         state.view.personName = personName;
+        state.view.soughtLine = soughtLine;
     }
 
     // The map measures its element when it is created, and until the sign-in
@@ -566,6 +607,11 @@ function start() {
     state.stopRoster ??= watchRoster((roster) => {
         state.roster = roster;
         drawGroup();
+    });
+
+    state.stopSearches ??= watchSearches((searches) => {
+        state.searches = searches;
+        searchesChanged();
     });
 
     state.stopFalsePlaces ??= watchFalsePlaces((places) => {
@@ -653,10 +699,14 @@ function followPositions(grants) {
  * viewer or its owner called it.
  */
 function showPositions() {
-    state.positions = labelledPositions(
-        withFalsePlaces(withPhones(state.written, state.grants), state.falsePlaces),
-        state.labels,
-        state.grants,
+    state.positions = withSearches(
+        labelledPositions(
+            withFalsePlaces(withPhones(state.written, state.grants), state.falsePlaces),
+            state.labels,
+            state.grants,
+        ),
+        state.searches,
+        Date.now(),
     );
 }
 
@@ -693,6 +743,14 @@ function stop() {
     state.stopFalsePlaces?.();
     state.stopFalsePlaces = null;
     state.falsePlaces = [];
+
+    state.stopSearches?.();
+    state.stopSearches = null;
+    state.searches = new Map();
+    state.searchedMembers = '';
+    clearTimeout(state.searchEnds);
+    closeSearch();
+    drawSought();
     state.invitation = null;
     state.groupTrouble = null;
     state.groupSaid = null;
@@ -829,6 +887,10 @@ function drawAdmin(running) {
         ).map(adminRow),
     );
 
+    elements.adminSearches.replaceChildren(
+        ...[...standingSearches(state.searches, Date.now()).values()].map(adminSearch),
+    );
+
     elements.adminMakeInvitation.textContent =
         state.invitation === null ? WORDS.groupMakeInvitation : WORDS.groupMakeAnotherInvitation;
 
@@ -904,6 +966,33 @@ function adminRow(line) {
                 asked: line.isYou ? WORDS.groupGiveUpRunning : null,
             }),
         );
+    }
+
+    // Anybody but oneself may be looked for, administrators included: the
+    // one who is lost is not always the one who does not run the group.
+    if (!line.isYou) {
+        const search = standingSearches(state.searches, now).get(line.memberId);
+
+        if (search) {
+            const until = document.createElement('span');
+
+            until.className = 'admin-about sought-until';
+            until.textContent = WORDS.soughtUntil(untilText(search.endsAt));
+            about.append(until);
+
+            const found = adminButton(WORDS.searchFound, () => endSearch(line.memberId));
+
+            found.className = 'alarm';
+            actions.append(found);
+        } else {
+            const start = document.createElement('button');
+
+            start.type = 'button';
+            start.className = 'alarm';
+            start.textContent = WORDS.searchStart;
+            start.addEventListener('click', () => askSearch(line.memberId, false));
+            actions.append(start);
+        }
     }
 
     if (line.removable) {
@@ -1104,6 +1193,272 @@ async function tryGroupWrite(write) {
 
     drawGroup();
 }
+
+/**
+ * What a change to the searches changes: who is marked on the map and in the
+ * strip, what the panel offers, what this viewer is told about themselves —
+ * and what this viewer may read, which is why the grants are followed again
+ * when the set of members searched for is different.
+ *
+ * Also run when the next standing search runs out, since nothing arrives from
+ * the database at that moment.
+ */
+function searchesChanged() {
+    const now = Date.now();
+    const searched = [...standingSearches(state.searches, now).keys()].sort().join(',');
+
+    clearTimeout(state.searchEnds);
+
+    const next = nextSearchEnd(state.searches, now);
+
+    if (next !== null) {
+        // A second past the end, so that the rules and this page agree the
+        // search is over by the time the grants are asked for again.
+        state.searchEnds = setTimeout(searchesChanged, next - now + 1000);
+    }
+
+    if (searched !== state.searchedMembers) {
+        state.searchedMembers = searched;
+
+        if (state.accountProfiles) {
+            state.grantMembers = null;
+            followGrants(state.accountProfiles);
+        }
+    }
+
+    showPositions();
+    drawSought();
+    drawGroup();
+    render();
+}
+
+/** A moment a search ends at, the way a person reads a date and a time. */
+function untilText(millis) {
+    return new Date(millis).toLocaleString(SPEAKING, {
+        day: '2-digit',
+        month: '2-digit',
+        hour: '2-digit',
+        minute: '2-digit',
+    });
+}
+
+/** What the group calls a member, for the sentences about a search. */
+function searchName(memberId) {
+    return memberName(state.profiles?.get(memberId), memberId, false);
+}
+
+/** Who opened a search, said to the one reading it. */
+function openedByText(search) {
+    return search.openedBy === state.member?.memberId
+        ? WORDS.searchOpenedByYou
+        : WORDS.searchOpenedBy(searchName(search.openedBy));
+}
+
+function runningTheGroup() {
+    return (
+        state.member !== null &&
+        standingIn(state.roster, state.member.memberId) === ADMINISTRATOR
+    );
+}
+
+/**
+ * The line a card about a member looked for carries: until when, who opened
+ * the search, and to an administrator the button that ends it.
+ */
+function soughtLine(position) {
+    const search = position.sought;
+
+    if (!search) {
+        return null;
+    }
+
+    const line = document.createElement('div');
+
+    line.className = 'detail-sought';
+
+    const until = document.createElement('b');
+
+    until.textContent = WORDS.soughtUntil(untilText(search.endsAt));
+
+    const who = document.createElement('span');
+
+    who.textContent = openedByText(search);
+    line.append(until, who);
+
+    if (runningTheGroup()) {
+        const found = document.createElement('button');
+
+        found.type = 'button';
+        found.className = 'alarm-fill';
+        found.textContent = WORDS.searchFound;
+        found.addEventListener('click', () => tryGroupWrite(() => endSearch(search.memberId)));
+        line.append(found);
+    }
+
+    return line;
+}
+
+/**
+ * Told to the member being looked for: their place is open to the whole group
+ * until the end of the search, and they can end it themselves.
+ */
+function drawSought() {
+    const search = state.member
+        ? standingSearches(state.searches, Date.now()).get(state.member.memberId)
+        : undefined;
+
+    elements.soughtBanner.hidden = !search;
+
+    if (!search) {
+        return;
+    }
+
+    elements.soughtText.textContent = WORDS.soughtBanner(untilText(search.endsAt));
+    elements.soughtNote.textContent = WORDS.soughtBannerNote(searchName(search.openedBy));
+    elements.soughtFound.textContent = WORDS.soughtFound;
+}
+
+elements.soughtFound.addEventListener('click', async () => {
+    elements.soughtFound.disabled = true;
+
+    try {
+        await endSearch(state.member.memberId);
+    } catch {
+        // The banner stays up, which says the search is still on; the next
+        // press tries again.
+    } finally {
+        elements.soughtFound.disabled = false;
+    }
+});
+
+/** The searches standing now, as the panel lists them under the rows. */
+function adminSearch(search) {
+    const block = document.createElement('div');
+
+    block.className = 'admin-search';
+
+    const title = document.createElement('b');
+
+    title.textContent = WORDS.searchSummary(searchName(search.memberId), untilText(search.endsAt));
+
+    const who = document.createElement('small');
+
+    who.textContent = openedByText(search);
+
+    const buttons = document.createElement('div');
+    const renew = document.createElement('button');
+
+    renew.type = 'button';
+    renew.textContent = WORDS.searchRenew;
+    renew.addEventListener('click', () => askSearch(search.memberId, true));
+
+    const found = document.createElement('button');
+
+    found.type = 'button';
+    found.className = 'alarm-fill';
+    found.textContent = WORDS.searchFound;
+    found.addEventListener('click', () => tryGroupWrite(() => endSearch(search.memberId)));
+
+    buttons.append(renew, found);
+    block.append(title, who, buttons);
+
+    return block;
+}
+
+/**
+ * Opens the window that opens a search, or renews one: what happens, for how
+ * long, and the end the length picked comes to.
+ */
+function askSearch(memberId, renew) {
+    state.searchAsk = { memberId, renew, hours: DEFAULT_SEARCH_HOURS };
+    drawSearchAsk();
+
+    if (!elements.search.open) {
+        elements.search.showModal();
+    }
+}
+
+function drawSearchAsk() {
+    const ask = state.searchAsk;
+
+    if (!ask) {
+        return;
+    }
+
+    const name = searchName(ask.memberId);
+
+    elements.searchTitle.textContent = ask.renew
+        ? WORDS.searchRenewTitle(name)
+        : WORDS.searchOpenTitle(name);
+    elements.searchNote.textContent = WORDS.searchNote;
+    elements.searchHours.replaceChildren(
+        ...SEARCH_HOURS.map((hours) => {
+            const button = document.createElement('button');
+
+            button.type = 'button';
+            button.textContent = WORDS.searchHours(hours);
+            button.setAttribute('aria-pressed', String(hours === ask.hours));
+            button.addEventListener('click', () => {
+                ask.hours = hours;
+                drawSearchAsk();
+            });
+
+            return button;
+        }),
+    );
+    elements.searchUntil.textContent = WORDS.searchUntil(
+        untilText(endIfChosen(ask.hours, Date.now())),
+    );
+    elements.searchGo.textContent = ask.renew ? WORDS.searchRenew : WORDS.searchGo;
+    elements.searchCancel.textContent = WORDS.searchCancel;
+}
+
+function closeSearch() {
+    state.searchAsk = null;
+    elements.searchError.hidden = true;
+    elements.searchGo.disabled = false;
+
+    if (elements.search.open) {
+        elements.search.close();
+    }
+}
+
+/**
+ * Writes the search and waits for the database: a refusal stays on the
+ * window, where the administrator is still looking, rather than closing it
+ * on a search that never started.
+ */
+elements.searchGo.addEventListener('click', async () => {
+    const ask = state.searchAsk;
+
+    if (!ask) {
+        return;
+    }
+
+    const adminId = state.member.memberId;
+
+    elements.searchGo.disabled = true;
+    elements.searchError.hidden = true;
+
+    try {
+        await (ask.renew
+            ? renewSearch(ask.memberId, adminId, ask.hours)
+            : openSearch(ask.memberId, adminId, ask.hours));
+
+        if (state.searchAsk === ask) {
+            closeSearch();
+        }
+    } catch {
+        elements.searchError.textContent = WORDS.groupRefused;
+        elements.searchError.hidden = false;
+        elements.searchGo.disabled = false;
+    }
+});
+
+elements.searchCancel.addEventListener('click', closeSearch);
+elements.search.addEventListener('close', () => {
+    state.searchAsk = null;
+});
 
 /**
  * Everything on this page is read out of one group, so joining another means
@@ -1523,9 +1878,13 @@ function faces() {
 function memberEntry(position, labels, pictures, shown, now) {
     const entry =
         state.stripEntries.get(position.positionId) ?? newMemberEntry(position.positionId);
-    const [face, name, age, battery] = entry.children;
+    const [face, name, age, battery, sought] = entry.children;
 
     entry.className = shown.has(position.positionId) ? 'member shown' : 'member';
+    entry.classList.toggle('sought', Boolean(position.sought));
+    sought.textContent = position.sought
+        ? WORDS.soughtUntil(untilText(position.sought.endsAt))
+        : '';
 
     const stale = isGrey(position, now);
     // The same expression the pin and the card use, rather than colour here
@@ -1582,8 +1941,10 @@ function newMemberEntry(positionId) {
     const age = document.createElement('span');
     const battery = document.createElement('span');
     battery.className = 'battery';
+    const sought = document.createElement('span');
+    sought.className = 'sought-until';
 
-    entry.append(face, name, age, battery);
+    entry.append(face, name, age, battery, sought);
 
     return entry;
 }

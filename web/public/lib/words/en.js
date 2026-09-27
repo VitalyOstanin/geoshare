@@ -306,4 +306,26 @@ export const EN = {
     adminPhoneOnline: (name, age) => `${name}: in touch ${age}`,
     adminPhoneSilent: (name) => `${name}: not in touch yet`,
     adminPhoneCharging: 'charging',
+
+    // The group looking for a member: an administrator opens a search, and
+    // while it stands everybody in the group sees where the member is.
+    searchMark: 'Searching',
+    searchStart: 'Search',
+    searchFound: 'Found',
+    searchRenew: 'Extend',
+    searchOpenTitle: (name) => `Show the whole group where ${name} is?`,
+    searchRenewTitle: (name) => `Extend the search for ${name}?`,
+    searchNote: 'Everybody in the group will see this member on the map, even those they do '
+        + 'not share with. Their phone will say who opened the search and until when.',
+    searchHours: (hours) => ({ 6: '6 hours', 24: 'A day', 72: '3 days' })[hours] ?? `${hours} h`,
+    searchUntil: (until) => `Until ${until}. "Found" ends it sooner.`,
+    searchGo: 'Open',
+    searchCancel: 'Cancel',
+    soughtUntil: (until) => `searching until ${until}`,
+    searchSummary: (name, until) => `Searching for ${name} until ${until}`,
+    searchOpenedBy: (name) => `Opened by ${name}.`,
+    searchOpenedByYou: 'Opened by you.',
+    soughtBanner: (until) => `The whole group sees where you are until ${until}`,
+    soughtBannerNote: (name) => `Opened by ${name}. If you are all right, end the search.`,
+    soughtFound: "I'm found",
 };

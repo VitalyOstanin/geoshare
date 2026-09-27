@@ -793,7 +793,14 @@ function addMarker(view, key, group) {
         faces.push(face);
     }
 
-    element.append(label, pin);
+    // The word over a member the group is looking for, above their name: a
+    // red capsule found before any name is read. Kept in every marker and
+    // shown only while a search stands.
+    const soughtMark = document.createElement('span');
+    soughtMark.className = 'sought-mark';
+    soughtMark.hidden = true;
+
+    element.append(soughtMark, label, pin);
 
     // Held before the click handler, which reads it back on every tap rather
     // than closing over the group this marker happened to have when it was
@@ -804,6 +811,8 @@ function addMarker(view, key, group) {
         pin,
         faces,
         label,
+        element,
+        soughtMark,
         members: group,
         // What the last drawing knew, kept for the moment the card is opened
         // between two drawings.
@@ -876,6 +885,14 @@ function circleCount(count) {
 /** What the marker looks like: its colour, its label and the faces in it. */
 function showPin(entry, names, faces, now) {
     const group = entry.members;
+    const sought = group.some((member) => member.sought);
+
+    // A marker holding somebody looked for is ringed whoever else stands
+    // under it: the ring is what the rest of the group is scanning the map
+    // for.
+    entry.element.classList.toggle('sought', sought);
+    entry.soughtMark.hidden = !sought;
+    entry.soughtMark.textContent = WORDS.searchMark;
 
     if (group.length === 1) {
         const member = group[0];
@@ -1189,6 +1206,12 @@ function detail(view, position, name, faces, now) {
     heading.append(face, titles);
 
     card.append(heading, summary(view, position, now));
+
+    const sought = view.soughtLine?.(position);
+
+    if (sought) {
+        card.append(sought);
+    }
 
     const warnings = warningsOf(position, now);
 

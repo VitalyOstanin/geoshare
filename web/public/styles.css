@@ -1303,3 +1303,228 @@ button {
 #naming-buttons button[hidden] {
     display: none;
 }
+
+/* A member the group is looking for. One red for every sign of it, day and
+   night: it sits on markers and cards the viewer has to find at a glance, and
+   a softer night red read as one more ochre. The tint behind a card is lighter
+   by day and darker by night, so the text on it keeps its contrast. */
+:root {
+    --alarm: #c62828;
+    --on-alarm: #ffffff;
+    --alarm-soft: #fdecea;
+}
+
+@media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+        --alarm-soft: rgba(198, 40, 40, 0.28);
+    }
+}
+
+:root[data-theme="dark"] {
+    --alarm-soft: rgba(198, 40, 40, 0.28);
+}
+
+/* Over the pin, the word the whole group reads: a red capsule rather than the
+   name's white one, so that it is found before any name is read. */
+.sought-mark {
+    background: var(--alarm);
+    color: var(--on-alarm);
+    border-radius: 999px;
+    font-size: 0.75rem;
+    font-weight: 700;
+    padding: 0.05rem 0.5rem;
+    margin-bottom: 0.2rem;
+    white-space: nowrap;
+    pointer-events: auto;
+}
+
+/* A red ring around the head, outside its white edge. */
+.member-marker.sought .pin-body {
+    box-shadow:
+        0 0 0 2px #ffffff,
+        0 0 0 5px var(--alarm),
+        0 1px 4px rgba(0, 0, 0, 0.35);
+}
+
+.member.sought {
+    border: 2px solid var(--alarm);
+    background: var(--alarm-soft);
+}
+
+.sought-until {
+    color: var(--alarm);
+    font-size: 0.8em;
+    font-weight: 600;
+}
+
+.sought-until:empty {
+    display: none;
+}
+
+.detail-sought {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.4rem;
+    margin: 0.3rem 0;
+    padding: 0.35rem 0.5rem;
+    border-left: 4px solid var(--alarm);
+    background: var(--alarm-soft);
+    border-radius: 0.3rem;
+    font-size: 0.85rem;
+}
+
+.detail-sought b {
+    color: var(--alarm);
+}
+
+button.alarm-fill {
+    border: 1px solid var(--alarm);
+    border-radius: 0.4rem;
+    padding: 0.3rem 0.7rem;
+    background: var(--alarm);
+    color: var(--on-alarm);
+    font: inherit;
+    font-size: 0.8rem;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+.admin-member button.alarm {
+    color: var(--alarm);
+}
+
+.admin-about.sought-until {
+    opacity: 1;
+}
+
+/* Every search standing, under the rows: who opened it and when it ends, with
+   the two things to do about it. */
+#admin-searches {
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+    margin-top: 0.4rem;
+}
+
+#admin-searches:empty {
+    display: none;
+}
+
+.admin-search {
+    display: flex;
+    flex-direction: column;
+    gap: 0.3rem;
+    padding: 0.5rem 0.6rem;
+    border-left: 4px solid var(--alarm);
+    background: var(--alarm-soft);
+    border-radius: 0.3rem;
+    font-size: 0.85rem;
+}
+
+.admin-search small {
+    opacity: 0.8;
+}
+
+.admin-search > div {
+    display: flex;
+    gap: 0.4rem;
+}
+
+.admin-search button:not(.alarm-fill),
+#search-buttons button:not(.alarm) {
+    border: 1px solid var(--edge);
+    border-radius: 0.4rem;
+    padding: 0.3rem 0.7rem;
+    background: transparent;
+    color: var(--link);
+    font: inherit;
+    font-size: 0.8rem;
+    cursor: pointer;
+}
+
+.search #search-note,
+.search #search-until {
+    margin: 0 0 0.5rem;
+    font-size: 0.8rem;
+}
+
+.search #search-note {
+    opacity: 0.8;
+}
+
+.search #search-hours {
+    margin-bottom: 0.5rem;
+}
+
+#search-buttons {
+    display: flex;
+    justify-content: flex-end;
+    gap: 0.3rem;
+}
+
+#search-buttons button.alarm {
+    border: 1px solid var(--alarm);
+    border-radius: 0.4rem;
+    padding: 0.3rem 0.7rem;
+    background: var(--alarm);
+    color: var(--on-alarm);
+    font: inherit;
+    font-size: 0.8rem;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+#search-buttons button:disabled {
+    opacity: 0.5;
+    cursor: default;
+}
+
+/* Told to the member being looked for, across the top of the map and clear of
+   the two round buttons in its corners. */
+.sought-banner {
+    position: absolute;
+    top: 3.6rem;
+    left: 0.6rem;
+    right: 0.6rem;
+    z-index: 3;
+    max-width: 28rem;
+    margin: 0 auto;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.3rem;
+    padding: 0.6rem 0.8rem;
+    border-left: 4px solid var(--alarm);
+    border-radius: 0.6rem;
+    background: var(--surface);
+    color: var(--on-surface);
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.25);
+    font-size: 0.85rem;
+}
+
+.sought-banner span {
+    opacity: 0.8;
+}
+
+/* The three lengths share one row, the way the theme's three do. */
+#search-hours button {
+    flex: 1;
+    padding: 0.35rem 0.2rem;
+    border: 0;
+    border-radius: 0;
+    background: transparent;
+    color: inherit;
+    font: inherit;
+    font-size: 0.8rem;
+}
+
+#search-hours button + button {
+    border-left: 1px solid var(--edge);
+}
+
+#search-hours button[aria-pressed="true"] {
+    background: var(--link);
+    color: var(--on-link);
+    font-weight: 600;
+}

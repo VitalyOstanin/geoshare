@@ -307,4 +307,26 @@ export const RU = {
     adminPhoneOnline: (name, age) => `${name}: на связи ${age}`,
     adminPhoneSilent: (name) => `${name}: ещё не выходил на связь`,
     adminPhoneCharging: 'на зарядке',
+
+    // Группа ищет участника: администратор открывает поиск, и пока он идёт,
+    // место участника видно всей группе.
+    searchMark: 'Ищем',
+    searchStart: 'Искать',
+    searchFound: 'Нашли',
+    searchRenew: 'Продлить',
+    searchOpenTitle: (name) => `Открыть всей группе, где ${name}?`,
+    searchRenewTitle: (name) => `Продлить поиск: ${name}?`,
+    searchNote: 'Все участники группы увидят этого человека на карте, даже те, кому он её не '
+        + 'открывал. На его телефоне появится сообщение: кто открыл и до какого времени.',
+    searchHours: (hours) => ({ 6: '6 часов', 24: 'Сутки', 72: '3 суток' })[hours] ?? `${hours} ч`,
+    searchUntil: (until) => `До ${until}. Снять раньше можно кнопкой «Нашли».`,
+    searchGo: 'Открыть',
+    searchCancel: 'Отмена',
+    soughtUntil: (until) => `ищем до ${until}`,
+    searchSummary: (name, until) => `${name}: ищем до ${until}`,
+    searchOpenedBy: (name) => `Открыл(а): ${name}.`,
+    searchOpenedByYou: 'Открыли вы.',
+    soughtBanner: (until) => `Вашу позицию видит вся группа до ${until}`,
+    soughtBannerNote: (name) => `Открыл(а): ${name}. Если с вами всё в порядке, закройте поиск.`,
+    soughtFound: 'Меня нашли',
 };

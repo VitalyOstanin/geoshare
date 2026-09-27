@@ -1586,7 +1586,10 @@ describe('searches', () => {
     it('a search stops opening the place once the member leaves', async () => {
         await plantASearch(24, 1);
         await testEnv.withSecurityRulesDisabled(async (context) => {
-            await setDoc(groupDoc(context.firestore()), { members: [ALICE, CAROL], admins: [ALICE] });
+            await setDoc(groupDoc(context.firestore()), {
+                members: [ALICE, CAROL],
+                admins: [ALICE],
+            });
         });
 
         await carolReadsBob(assertFails);
