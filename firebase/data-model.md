@@ -11,6 +11,7 @@ groups/{groupId}/joins/{uid}                the code somebody is holding, while 
 groups/{groupId}/falsePlaces/{placeId}      where a false signal is known to put phones
 groups/{groupId}/settings/{key}             what the group has settled about judging answers
 groups/{groupId}/searches/{uid}             the group looking for a member, which opens their place to all of it
+groups/{groupId}/sirens/{uid}.{deviceId}    a phone told to sound loud for a while, so it can be found
 groups/{groupId}/members/{uid}              what a member says about themselves
 groups/{groupId}/grants/{uid}               who may watch a member (and, for older builds, their phones)
 groups/{groupId}/devices/{uid}              a member's phones and what each last said about itself
@@ -217,6 +218,31 @@ roster is no longer searched for, whatever the document says.
 Three days at most, because a search forgotten on an administrator's screen
 would otherwise leave the member's place open to the whole group for good. The
 clients offer six hours, a day and three days.
+
+## sirens/{uid}.{deviceId}
+
+| Field       | Type      | Meaning                                                            |
+|-------------|-----------|--------------------------------------------------------------------|
+| `calledBy`  | string    | Who rang the phone                                                  |
+| `calledAt`  | timestamp | When; set by the server itself                                      |
+| `heardAt`   | timestamp | When the phone started sounding; set by the server, written by the phone's own account |
+| `stoppedBy` | string    | Who stopped it early: the phone's owner or a caller                 |
+| `stoppedAt` | timestamp | When it was stopped; set by the server itself                       |
+
+One document per phone, its id made the same way as a position's. The phone
+listens to its own document over the subscription its service already holds,
+and sounds for twenty seconds through the alarm stream when a call arrives
+that is newer than the last one it answered and at most a minute old — a phone
+switched back on an hour later does not ring for a call nobody is waiting on.
+
+An administrator rings any phone in the group, and a member their own phones:
+the phone looked for is most often the member's other phone, lost at home.
+Nobody else reads the document. A call is written whole and replaces what the
+last one left, so `heardAt` and `stopped*` always belong to the call beside
+them; the phone adds `heardAt` alone, and a stop adds the two `stopped*`
+fields alone. The caller's screen reads `heardAt` to tell a phone that answered
+from one that is switched off. Nothing deletes a siren; it is only called
+again.
 
 ## members/{uid}
 

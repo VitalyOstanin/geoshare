@@ -393,6 +393,61 @@ service cloud.firestore {
         allow delete: if isGroupAdmin() || (isMember() && request.auth.uid == uid);
       }
 
+      match /sirens/{sirenId} {
+        // A phone told to sound loud for a while, so that it can be found:
+        // one document per phone, its id the account and the phone joined by
+        // a dot, the same as a position's. The phone listens to its own
+        // document over the subscription its service already holds.
+        //
+        // An administrator may call any phone in the group, and a member their
+        // own phones: the one looked for is often the member's other phone,
+        // lost at home, and that needs nobody's permission but theirs. No one
+        // else reads it: which of the family's phones went missing when is
+        // nobody else's business.
+        function sirenOwner() {
+          return sirenId.split('\\.')[0];
+        }
+
+        function mayCall() {
+          return isMember() && sirenOwner() in groupMembers() &&
+                 (isGroupAdmin() || request.auth.uid == sirenOwner());
+        }
+
+        // A call is written whole, and so replaces whatever the last one left:
+        // who called and when, by the server's clock, so that a phone
+        // switched back on an hour later can tell a stale call from a new one.
+        function calledNow() {
+          let data = request.resource.data;
+          return data.keys().hasOnly(['calledBy', 'calledAt']) &&
+                 data.calledBy == request.auth.uid &&
+                 data.calledAt == request.time;
+        }
+
+        function onlyChanged(keys) {
+          return request.resource.data.diff(resource.data).affectedKeys().hasOnly(keys);
+        }
+
+        // The phone says it has started sounding: the caller's screen tells a
+        // phone that answered from one that is switched off. Only the phone's
+        // own account says so.
+        function heardNow() {
+          return request.auth.uid == sirenOwner() &&
+                 onlyChanged(['heardAt']) &&
+                 request.resource.data.heardAt == request.time;
+        }
+
+        // Stopped early, on the phone itself or from a caller's screen.
+        function stoppedNow() {
+          return onlyChanged(['stoppedBy', 'stoppedAt']) &&
+                 request.resource.data.stoppedBy == request.auth.uid &&
+                 request.resource.data.stoppedAt == request.time;
+        }
+
+        allow get: if mayCall();
+        allow create: if mayCall() && calledNow();
+        allow update: if mayCall() && (calledNow() || heardNow() || stoppedNow());
+      }
+
       match /members/{uid} {
         // What a member says about themselves: the name and the picture their
         // account carries, so that a marker can name a person rather than the
