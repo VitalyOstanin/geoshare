@@ -193,11 +193,12 @@ phones still sharing a name — two of one model nobody named — are numbered i
 the order of their ids, "(1)" and "(2)", alike on every screen.
 
 Left: the position document still carries `deviceName`, the model as the
-manufacturer wrote it in `Build.MODEL`. The names no longer need it — the
-devices document has the model for the fallback — so it can leave the
-position, and with it a fact about somebody's hardware that sharing a position
-did not have to include. Old builds read it, so it goes once every phone runs a
-build that names phones from the devices document alone.
+manufacturer wrote it in `Build.MODEL`, and the devices document carries it
+too. It goes from the position as a duplicate: the names take the model from
+the devices document, and nobody who reads a position is kept from the model
+by its going — the devices document is open to every reader of the positions.
+Old builds read it, so it goes once every phone runs a build that names phones
+from the devices document alone.
 
 ## What a stranger would have to do to use this
 
