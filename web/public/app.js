@@ -887,6 +887,8 @@ function drawPhones() {
     const own = state.grants.get(memberId)?.phones ?? new Map();
     const phones = phoneLines(memberId, own, state.labels);
     const now = Date.now();
+    const running = standingIn(state.roster, memberId) === ADMINISTRATOR;
+    const search = standingSearches(state.searches, now).get(memberId);
 
     elements.phonesTitle.textContent = WORDS.myPhonesTitle;
 
@@ -955,11 +957,46 @@ function drawPhones() {
                 actions.append(ring);
             }
 
+            // The search is on the member, not the phone, so it is offered
+            // beside every phone alike; only whoever runs the group opens one,
+            // and here the member is oneself, the one with a phone lost.
+            if (running) {
+                actions.append(searchButton(memberId, search));
+            }
+
+            if (search) {
+                const until = document.createElement('span');
+
+                until.className = 'admin-about sought-until';
+                until.textContent = WORDS.soughtUntil(untilText(search.endsAt));
+                about.append(until);
+            }
+
             row.append(about, actions);
 
             return row;
         }),
     );
+}
+
+/** "Look for" while nobody is looking for [memberId], "Found" while somebody is. */
+function searchButton(memberId, search) {
+    if (search) {
+        const found = adminButton(WORDS.searchFound, () => endSearch(memberId));
+
+        found.className = 'alarm';
+
+        return found;
+    }
+
+    const start = document.createElement('button');
+
+    start.type = 'button';
+    start.className = 'alarm';
+    start.textContent = WORDS.searchStart;
+    start.addEventListener('click', () => askSearch(memberId, false));
+
+    return start;
 }
 
 elements.groupPhones.addEventListener('click', () => {
@@ -970,6 +1007,26 @@ elements.groupPhones.addEventListener('click', () => {
     drawPhones();
 });
 elements.phonesClose.addEventListener('click', () => elements.phones.close());
+
+/**
+ * A click on the dark behind a window closes it, as a tap beside a sheet does
+ * on a phone; the same rule as the panel's, for every other window of the
+ * page. The click is kept from the menu underneath, which stays as it was.
+ */
+function closeOnClickOutside(dialog, close) {
+    dialog.addEventListener('click', (event) => {
+        event.stopPropagation();
+
+        if (event.target === dialog && outsideTheBox(dialog.getBoundingClientRect(), event)) {
+            close();
+        }
+    });
+}
+
+closeOnClickOutside(elements.phones, () => elements.phones.close());
+closeOnClickOutside(elements.siren, () => elements.siren.close());
+closeOnClickOutside(elements.confirm, () => elements.confirm.close());
+closeOnClickOutside(elements.search, () => closeSearch());
 
 /**
  * One person on the roster: their name, and whether they run the group.
@@ -1149,20 +1206,9 @@ function adminRow(line) {
             until.className = 'admin-about sought-until';
             until.textContent = WORDS.soughtUntil(untilText(search.endsAt));
             about.append(until);
-
-            const found = adminButton(WORDS.searchFound, () => endSearch(line.memberId));
-
-            found.className = 'alarm';
-            actions.append(found);
-        } else {
-            const start = document.createElement('button');
-
-            start.type = 'button';
-            start.className = 'alarm';
-            start.textContent = WORDS.searchStart;
-            start.addEventListener('click', () => askSearch(line.memberId, false));
-            actions.append(start);
         }
+
+        actions.append(searchButton(line.memberId, search));
     }
 
     if (line.mayBeMadeAdmin) {
@@ -1923,12 +1969,16 @@ function showAccount(member) {
     elements.accountName.textContent = member.name ?? WORDS.signedIn;
     elements.accountInitial.textContent = (member.name ?? '?').slice(0, 1).toUpperCase();
 
+    // The letter and the picture share one cell, the letter drawn over it:
+    // shown together, the letter lands on the face as a dark mark.
     elements.accountPicture.hidden = !member.picture;
+    elements.accountInitial.hidden = Boolean(member.picture);
 
     if (member.picture) {
         elements.accountPicture.src = member.picture;
         elements.accountPicture.onerror = () => {
             elements.accountPicture.hidden = true;
+            elements.accountInitial.hidden = false;
         };
     }
 }

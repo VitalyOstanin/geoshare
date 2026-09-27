@@ -23,6 +23,7 @@ import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedIconButton
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -520,15 +521,18 @@ private fun AdminMemberRow(
             // the one who is lost is not always the one who does not run the
             // group.
             if (!line.isYou) {
+                // Outlined in red, so that it reads as a button beside the
+                // round siren rather than as a word.
                 val alarmText =
-                    ButtonDefaults.textButtonColors(contentColor = Color(SOUGHT_COLOUR))
+                    ButtonDefaults.outlinedButtonColors(contentColor = Color(SOUGHT_COLOUR))
+                val alarmEdge = BorderStroke(1.dp, Color(SOUGHT_COLOUR))
 
                 if (search != null) {
-                    TextButton(onClick = onEndSearch, colors = alarmText) {
+                    OutlinedButton(onClick = onEndSearch, colors = alarmText, border = alarmEdge) {
                         Text(text = stringResource(R.string.search_found))
                     }
                 } else {
-                    TextButton(onClick = onSearch, colors = alarmText) {
+                    OutlinedButton(onClick = onSearch, colors = alarmText, border = alarmEdge) {
                         Text(text = stringResource(R.string.search_start))
                     }
                 }

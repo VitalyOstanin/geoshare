@@ -692,6 +692,10 @@ fun MapScreen(
             sirenOf = actions.sirenOf,
             onCallSiren = actions.onCallSiren,
             onStopSiren = actions.onStopSiren,
+            search = searches[ownMemberId]?.takeIf { it.stands(now) },
+            mayLookFor = runsTheGroup,
+            onSearch = { renew, hours -> actions.onSearch(ownMemberId, renew, hours) },
+            onEndSearch = { actions.onEndSearch(ownMemberId) },
             onClose = { myPhonesOpen = false },
         )
     }

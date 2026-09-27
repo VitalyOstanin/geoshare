@@ -1403,8 +1403,18 @@ button.alarm-fill {
     cursor: pointer;
 }
 
+/* "Look for" and "Found" in a member's row: a red outline, so that the two
+   read as buttons beside the round siren rather than as words. */
 .admin-member button.alarm {
+    border: 1px solid var(--alarm);
+    border-radius: 0.4rem;
+    padding: 0.3rem 0.7rem;
+    background: transparent;
     color: var(--alarm);
+    font: inherit;
+    font-size: 0.8rem;
+    font-weight: 600;
+    cursor: pointer;
 }
 
 .admin-about.sought-until {

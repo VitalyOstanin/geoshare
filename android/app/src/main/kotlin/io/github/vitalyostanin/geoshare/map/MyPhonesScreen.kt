@@ -1,7 +1,10 @@
 package io.github.vitalyostanin.geoshare.map
 
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
@@ -16,6 +19,7 @@ import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedIconButton
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -41,6 +45,8 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.launch
 import java.time.Instant
+import java.time.ZoneId
+import java.time.format.DateTimeFormatter
 
 /**
  * A member's own phones, seen by that member rather than by whoever runs the
@@ -52,6 +58,7 @@ import java.time.Instant
  * make one of them sound" — so it opens straight from the map rather than
  * from the group's own settings.
  */
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun MyPhonesScreen(
     /** All of this member's phones, this one included. */
@@ -62,6 +69,14 @@ fun MyPhonesScreen(
     sirenOf: (phoneId: String) -> Flow<Siren?>,
     onCallSiren: suspend (phoneId: String) -> Boolean,
     onStopSiren: suspend (phoneId: String) -> Unit,
+    /** The search standing for this member, or null while nobody is looking for them. */
+    search: Search?,
+    /** Whether this member runs the group: only they may open a search, here on themselves. */
+    mayLookFor: Boolean,
+    /** Opens a search on this member, or renews one; answers whether it stuck. */
+    onSearch: suspend (renew: Boolean, hours: Int) -> Boolean,
+    /** Ends the search: the member is found. */
+    onEndSearch: suspend () -> Unit,
     onClose: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -75,6 +90,13 @@ fun MyPhonesScreen(
     var sirenAsk by remember { mutableStateOf<PhoneLine?>(null) }
     var sirenTrouble by remember { mutableStateOf(false) }
     var sirenBusy by remember { mutableStateOf(false) }
+    // Whether the search dialog asks to open a search or to renew one, and the
+    // length picked so far -- held apart from whether the write is refused, the
+    // same way the siren state above is.
+    var searchAsk by remember { mutableStateOf<Boolean?>(null) }
+    var searchHours by remember { mutableStateOf(DEFAULT_SEARCH_HOURS) }
+    var searchTrouble by remember { mutableStateOf(false) }
+    var searchBusy by remember { mutableStateOf(false) }
     // The countdown reads seconds, and the screen's own clock ticks far slower.
     val sirenNow by produceState(now, siren) {
         while (siren != null) {
@@ -98,6 +120,30 @@ fun MyPhonesScreen(
                 sirenTrouble = false
             } else {
                 sirenTrouble = true
+            }
+        }
+    }
+
+    fun askSearch(renew: Boolean) {
+        searchAsk = renew
+        searchHours = DEFAULT_SEARCH_HOURS
+        searchTrouble = false
+    }
+
+    fun writeSearch() {
+        val renew = searchAsk ?: return
+
+        searchBusy = true
+        scope.launch {
+            val allowed = onSearch(renew, searchHours)
+
+            searchBusy = false
+
+            if (allowed) {
+                searchAsk = null
+                searchTrouble = false
+            } else {
+                searchTrouble = true
             }
         }
     }
@@ -167,6 +213,17 @@ fun MyPhonesScreen(
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                         )
 
+                        if (search != null) {
+                            val zoned = search.endsAt.atZone(ZoneId.systemDefault())
+                            val endsAt = SEARCH_ENDS_AT.format(zoned)
+
+                            Text(
+                                text = stringResource(R.string.sought_until, endsAt),
+                                style = MaterialTheme.typography.bodySmall,
+                                color = Color(SOUGHT_COLOUR),
+                            )
+                        }
+
                         if (phoneSiren != null && phoneSirenState != null) {
                             sirenText(phoneSiren, phoneSirenState, listOf(phone))?.let {
                                 Text(
@@ -179,38 +236,70 @@ fun MyPhonesScreen(
                         }
                     }
 
-                    // A phone does not ring itself: the button belongs to
-                    // every row but the one this screen is drawn on.
-                    if (phone.phoneId != ownPhoneId) {
-                        if (sounding) {
-                            Button(
-                                onClick = { scope.launch { onStopSiren(phone.phoneId) } },
-                                colors =
-                                ButtonDefaults.buttonColors(
-                                    containerColor = Color(SOUGHT_COLOUR),
-                                    contentColor = Color.White,
-                                ),
-                            ) {
-                                Icon(
-                                    painter = painterResource(R.drawable.ic_siren_off),
-                                    contentDescription = null,
-                                    modifier = Modifier.padding(end = 4.dp),
-                                )
-                                Text(text = stringResource(R.string.siren_stop_short))
+                    // Both buttons are outlined in the same red, and a row
+                    // this narrow does not always fit them side by side.
+                    FlowRow(verticalArrangement = Arrangement.Center) {
+                        // A phone does not ring itself: the button belongs to
+                        // every row but the one this screen is drawn on.
+                        if (phone.phoneId != ownPhoneId) {
+                            if (sounding) {
+                                Button(
+                                    onClick = { scope.launch { onStopSiren(phone.phoneId) } },
+                                    colors =
+                                    ButtonDefaults.buttonColors(
+                                        containerColor = Color(SOUGHT_COLOUR),
+                                        contentColor = Color.White,
+                                    ),
+                                ) {
+                                    Icon(
+                                        painter = painterResource(R.drawable.ic_siren_off),
+                                        contentDescription = null,
+                                        modifier = Modifier.padding(end = 4.dp),
+                                    )
+                                    Text(text = stringResource(R.string.siren_stop_short))
+                                }
+                            } else {
+                                OutlinedIconButton(
+                                    border = BorderStroke(1.dp, Color(SOUGHT_COLOUR)),
+                                    onClick = {
+                                        sirenTrouble = false
+                                        sirenAsk = phone
+                                    },
+                                ) {
+                                    Icon(
+                                        painter = painterResource(R.drawable.ic_siren),
+                                        contentDescription = stringResource(R.string.siren_hint),
+                                        tint = Color(SOUGHT_COLOUR),
+                                    )
+                                }
                             }
-                        } else {
-                            OutlinedIconButton(
-                                border = BorderStroke(1.dp, Color(SOUGHT_COLOUR)),
-                                onClick = {
-                                    sirenTrouble = false
-                                    sirenAsk = phone
-                                },
-                            ) {
-                                Icon(
-                                    painter = painterResource(R.drawable.ic_siren),
-                                    contentDescription = stringResource(R.string.siren_hint),
-                                    tint = Color(SOUGHT_COLOUR),
+                        }
+
+                        // Every phone offers it, this one included: the
+                        // search is opened on the member, not on a device.
+                        if (mayLookFor) {
+                            val alarmText =
+                                ButtonDefaults.outlinedButtonColors(
+                                    contentColor = Color(SOUGHT_COLOUR),
                                 )
+                            val alarmEdge = BorderStroke(1.dp, Color(SOUGHT_COLOUR))
+
+                            if (search != null) {
+                                OutlinedButton(
+                                    onClick = { scope.launch { onEndSearch() } },
+                                    colors = alarmText,
+                                    border = alarmEdge,
+                                ) {
+                                    Text(text = stringResource(R.string.search_found))
+                                }
+                            } else {
+                                OutlinedButton(
+                                    onClick = { askSearch(false) },
+                                    colors = alarmText,
+                                    border = alarmEdge,
+                                ) {
+                                    Text(text = stringResource(R.string.search_start))
+                                }
                             }
                         }
                     }
@@ -232,7 +321,24 @@ fun MyPhonesScreen(
             onCancel = { sirenAsk = null },
         )
     }
+
+    searchAsk?.let { renew ->
+        SearchDialog(
+            memberName = stringResource(R.string.map_member_you),
+            renew = renew,
+            hours = searchHours,
+            onHoursChange = { searchHours = it },
+            now = now,
+            trouble = searchTrouble,
+            busy = searchBusy,
+            onGo = ::writeSearch,
+            onCancel = { searchAsk = null },
+        )
+    }
 }
 
 /** How often the sounding countdown redraws, same cadence as [AdminPanel]'s own. */
 private const val MY_PHONES_TICK_MS = 1_000L
+
+/** Same pattern as [AdminPanel]'s own: private to each file, so each spells it out itself. */
+private val SEARCH_ENDS_AT: DateTimeFormatter = DateTimeFormatter.ofPattern("d MMM HH:mm")
