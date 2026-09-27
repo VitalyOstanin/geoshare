@@ -1,5 +1,7 @@
 package io.github.vitalyostanin.geoshare.map
 
+import io.github.vitalyostanin.geoshare.service.positionId
+
 /** As much of a name as fits on a card. The page cuts it to the same. */
 const val LABEL_LIMIT = 40
 
@@ -52,22 +54,79 @@ fun labelledProfiles(
 }
 
 /**
- * The positions with each phone called what this member called it, else what
- * its owner called it, else its model.
+ * A member's phones, each called what this member called it, else what its
+ * owner called it, else its model; null for a phone that has none of them.
+ *
+ * Phones left with one name between them — two of one model nobody named —
+ * are told apart by a number after it, counted in the order of their ids, so
+ * that the map, the panel and the application all number them alike.
+ *
+ * `phones` is what the member's phones say about themselves, by device id;
+ * `seen` is the model a position carries, for a phone known only from one.
  */
+fun phoneNames(
+    memberId: String,
+    phones: Map<String, PhoneStatus>,
+    labels: Labels,
+    seen: Map<String, String?> = emptyMap(),
+): Map<String, String?> {
+    val names = (phones.keys + seen.keys).associateWith { deviceId ->
+        val phone = phones[deviceId]
+
+        labels.phones[positionId(memberId, deviceId)]
+            ?: phone?.name
+            ?: phone?.model
+            ?: seen[deviceId]
+    }
+
+    val sharing = mutableMapOf<String, MutableList<String>>()
+
+    for ((deviceId, name) in names) {
+        if (name != null) {
+            sharing.getOrPut(name) { mutableListOf() }.add(deviceId)
+        }
+    }
+
+    val numbered = names.toMutableMap()
+
+    for ((name, deviceIds) in sharing) {
+        if (deviceIds.size > 1) {
+            deviceIds.sorted().forEachIndexed { index, deviceId ->
+                numbered[deviceId] = "$name (${index + 1})"
+            }
+        }
+    }
+
+    return numbered
+}
+
+/** The positions with each phone called what phoneNames calls it. */
 fun labelledPositions(
     positions: List<MemberPosition>,
     labels: Labels,
     grants: Map<String, MemberGrant>,
-): List<MemberPosition> = positions.map { position ->
-    val deviceId = position.positionId.substringAfter('.')
-    val named =
-        labels.phones[position.positionId]
-            ?: grants[position.memberId]?.phones?.get(deviceId)?.name
+): List<MemberPosition> {
+    val seen = mutableMapOf<String, MutableMap<String, String?>>()
 
-    if (named == null || named == position.deviceName) {
-        position
-    } else {
-        position.copy(deviceName = named)
+    for (position in positions) {
+        val deviceId = position.positionId.substringAfter('.')
+        val models = seen.getOrPut(position.memberId) { mutableMapOf() }
+
+        models[deviceId] = position.deviceName
+    }
+
+    val names = seen.mapValues { (memberId, models) ->
+        phoneNames(memberId, grants[memberId]?.phones ?: emptyMap(), labels, models)
+    }
+
+    return positions.map { position ->
+        val deviceId = position.positionId.substringAfter('.')
+        val named = names.getValue(position.memberId)[deviceId]
+
+        if (named == null || named == position.deviceName) {
+            position
+        } else {
+            position.copy(deviceName = named)
+        }
     }
 }

@@ -184,41 +184,20 @@ outside the group is also the one place where a member passes on where somebody
 else is, so it is worth deciding whether that is offered for everybody or only
 for oneself.
 
-## Naming the phones, and who does the naming
+## Naming the phones: what is left
 
-A phone calls itself whatever the manufacturer wrote in `Build.MODEL`, and that
-string is written into the position document as `deviceName`. Two phones of one
-model are then indistinguishable — the card says the same model name twice —
-and the model itself reaches every reader who may see the position, which is a
-fact about somebody's hardware that sharing a position did not have to
-include.
+Both readings of "names people choose" are built: the owner names their own
+phone for the whole group (the devices document), and every reader may name
+anybody's phone for themselves (the labels document), which comes first. Two
+phones still sharing a name — two of one model nobody named — are numbered in
+the order of their ids, "(1)" and "(2)", alike on every screen.
 
-Wanted: names people choose. Two readings of that, and they are not exclusive:
-
-**The owner names their own phones.** A setting listing this member's devices
-with a name for each, written into the profile beside the device id and read by
-everybody. One name per phone for the whole group, chosen by the person the
-phone belongs to. It is the smaller change and it is what lets `deviceName`
-leave the position document altogether: the model stops being published, and a
-phone is called "the old one" or "work" because somebody said so.
-
-**Each reader names the phones they watch.** The same list, but kept on the
-reading phone and never written to the database: a reader labels the devices of
-the members they watch, and those labels are theirs alone. It costs nothing in
-the data model — it is a local preference keyed by device id — and it answers
-the case the first reading does not: a member who never opens the setting still
-shows two identical names, and the reader can fix that for themselves.
-
-Worth building the first as the published answer and the second as the local
-override, with the position document carrying no model at all once the first
-exists. Until then the card falls back to what it has: the model, and the
-device id when even that is missing.
-
-Pieces to settle: where the name lives in the grant (a map of device id to
-name, beside the `devices` list, with a length limit the rules enforce), what
-the page and the application show when a member has one phone (nothing — a
-single phone needs no name), and whether a name is asked for when a second
-device of the same member first appears rather than being buried in a setting.
+Left: the position document still carries `deviceName`, the model as the
+manufacturer wrote it in `Build.MODEL`. The names no longer need it — the
+devices document has the model for the fallback — so it can leave the
+position, and with it a fact about somebody's hardware that sharing a position
+did not have to include. Old builds read it, so it goes once every phone runs a
+build that names phones from the devices document alone.
 
 ## What a stranger would have to do to use this
 

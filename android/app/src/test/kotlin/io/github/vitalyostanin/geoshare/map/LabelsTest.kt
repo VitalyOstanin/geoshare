@@ -82,4 +82,83 @@ class LabelsTest {
         assertNull(labelText("   "))
         assertEquals(LABEL_LIMIT, labelText("x".repeat(LABEL_LIMIT + 10))?.length)
     }
+
+    // Two phones of one model that nobody named read the same everywhere; a
+    // number after the name tells them apart, in the order of their ids so
+    // that every screen numbers them alike.
+    @Test
+    fun `phones sharing a name are numbered in the order of their ids`() {
+        val phones =
+            mapOf(
+                "zulu" to PhoneStatus(model = "BVL-N49"),
+                "alpha" to PhoneStatus(model = "BVL-N49"),
+                "other" to PhoneStatus(model = "MAR-LX1"),
+            )
+
+        val names = phoneNames("her", phones, Labels())
+
+        assertEquals("BVL-N49 (1)", names["alpha"])
+        assertEquals("BVL-N49 (2)", names["zulu"])
+        assertEquals("MAR-LX1", names["other"])
+    }
+
+    @Test
+    fun `a phone named apart from its twin leaves the other unnumbered`() {
+        val phones =
+            mapOf(
+                "alpha" to PhoneStatus(model = "BVL-N49"),
+                "zulu" to PhoneStatus(model = "BVL-N49"),
+            )
+        val labels = Labels(phones = mapOf("her.zulu" to "old phone"))
+
+        val names = phoneNames("her", phones, labels)
+
+        assertEquals("BVL-N49", names["alpha"])
+        assertEquals("old phone", names["zulu"])
+    }
+
+    @Test
+    fun `the map numbers twins the way the panel does`() {
+        val grants =
+            combinedGrants(
+                named = emptyMap(),
+                phones =
+                mapOf(
+                    "her" to
+                        mapOf(
+                            "alpha" to PhoneStatus(model = "BVL-N49"),
+                            "zulu" to PhoneStatus(model = "BVL-N49"),
+                        ),
+                ),
+            )
+        val twins = listOf("zulu", "alpha").map { deviceId ->
+            position.copy(positionId = "her.$deviceId", deviceName = "BVL-N49")
+        }
+
+        val shown = labelledPositions(twins, Labels(), grants)
+
+        assertEquals(listOf("BVL-N49 (2)", "BVL-N49 (1)"), shown.map { it.deviceName })
+    }
+
+    @Test
+    fun `phones of two members are numbered apart`() {
+        val grants =
+            combinedGrants(
+                named = emptyMap(),
+                phones =
+                mapOf(
+                    "her" to mapOf("alpha" to PhoneStatus(model = "BVL-N49")),
+                    "him" to mapOf("beta" to PhoneStatus(model = "BVL-N49")),
+                ),
+            )
+        val positions =
+            listOf(
+                position.copy(positionId = "her.alpha", deviceName = "BVL-N49"),
+                position.copy(positionId = "him.beta", memberId = "him", deviceName = "BVL-N49"),
+            )
+
+        val shown = labelledPositions(positions, Labels(), grants)
+
+        assertEquals(listOf("BVL-N49", "BVL-N49"), shown.map { it.deviceName })
+    }
 }

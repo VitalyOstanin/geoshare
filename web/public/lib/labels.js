@@ -6,6 +6,8 @@
 // that two phones of one model are two names. The application keeps the same
 // document and takes the names in the same order.
 
+import { compareIds } from './order.js';
+
 /** As much of a name as fits on a card. The application cuts it to the same. */
 export const LABEL_LIMIT = 40;
 
@@ -95,18 +97,73 @@ export function labelledProfiles(profiles, labels) {
 }
 
 /**
- * The positions with each phone called what this member called it, else what
- * its owner called it, else its model.
+ * A member's phones, each called what this member called it, else what its
+ * owner called it, else its model; null for a phone that has none of them.
+ *
+ * Phones left with one name between them — two of one model nobody named —
+ * are told apart by a number after it, counted in the order of their ids, so
+ * that the map, the panel and the application all number them alike.
+ *
+ * `phones` is what the member's phones say about themselves, by device id;
+ * `seen` is the model a position carries, for a phone known only from one.
  */
+export function phoneNames(memberId, phones, labels, seen = new Map()) {
+    const names = new Map();
+
+    for (const deviceId of new Set([...phones.keys(), ...seen.keys()])) {
+        const phone = phones.get(deviceId);
+
+        names.set(deviceId, labels.phones.get(`${memberId}.${deviceId}`)
+            ?? phone?.name
+            ?? phone?.model
+            ?? seen.get(deviceId)
+            ?? null);
+    }
+
+    const sharing = new Map();
+
+    for (const [deviceId, name] of names) {
+        if (name !== null) {
+            sharing.set(name, [...(sharing.get(name) ?? []), deviceId]);
+        }
+    }
+
+    for (const [name, deviceIds] of sharing) {
+        if (deviceIds.length > 1) {
+            deviceIds
+                .sort(compareIds)
+                .forEach((deviceId, index) => names.set(deviceId, `${name} (${index + 1})`));
+        }
+    }
+
+    return names;
+}
+
+/** The positions with each phone called what phoneNames calls it. */
 export function labelledPositions(positions, labels, grants) {
+    const seen = new Map();
+
+    for (const position of positions) {
+        const models = seen.get(position.memberId) ?? new Map();
+
+        models.set(deviceIdOf(position), position.deviceName ?? null);
+        seen.set(position.memberId, models);
+    }
+
+    const names = new Map([...seen].map(([memberId, models]) => [
+        memberId,
+        phoneNames(memberId, grants.get(memberId)?.phones ?? new Map(), labels, models),
+    ]));
+
     return positions.map((position) => {
-        const deviceId = position.positionId.slice(position.positionId.indexOf('.') + 1);
-        const named = labels.phones.get(position.positionId)
-            ?? grants.get(position.memberId)?.phones?.get(deviceId)?.name
-            ?? null;
+        const named = names.get(position.memberId).get(deviceIdOf(position));
 
         return named === null || named === position.deviceName
             ? position
             : { ...position, deviceName: named };
     });
+}
+
+function deviceIdOf(position) {
+    return position.positionId.slice(position.positionId.indexOf('.') + 1);
 }

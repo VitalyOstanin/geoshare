@@ -58,27 +58,27 @@ data class PhoneLine(
 )
 
 /**
- * A member's phones, each called what the viewer called it, else what its
- * owner called it, else its model, and in the order of those names.
+ * A member's phones, in the order of their names. Each is called what the map
+ * calls it (phoneNames), else by the start of its id.
  */
 fun phoneLines(
     memberId: String,
     phones: Map<String, PhoneStatus>,
     labels: Labels,
-): List<PhoneLine> = phones
-    .map { (deviceId, phone) ->
-        PhoneLine(
-            phoneId = positionId(memberId, deviceId),
-            name =
-            labels.phones[positionId(memberId, deviceId)]
-                ?: phone.name
-                ?: phone.model
-                ?: deviceId.take(PHONE_ID_SHOWN),
-            onlineAt = phone.onlineAt,
-            batteryPercent = phone.batteryPercent,
-            charging = phone.charging,
-        )
-    }.sortedBy { it.name }
+): List<PhoneLine> {
+    val names = phoneNames(memberId, phones, labels)
+
+    return phones
+        .map { (deviceId, phone) ->
+            PhoneLine(
+                phoneId = positionId(memberId, deviceId),
+                name = names[deviceId] ?: deviceId.take(PHONE_ID_SHOWN),
+                onlineAt = phone.onlineAt,
+                batteryPercent = phone.batteryPercent,
+                charging = phone.charging,
+            )
+        }.sortedBy { it.name }
+}
 
 /** As much of a phone's id as stands in for a name nobody wrote. */
 private const val PHONE_ID_SHOWN = 8

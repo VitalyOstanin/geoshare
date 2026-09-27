@@ -8,6 +8,7 @@ import {
     labelText,
     labelledPositions,
     labelledProfiles,
+    phoneNames,
     labelsFrom,
     readKeptLabels,
 } from '../public/lib/labels.js';
@@ -97,4 +98,60 @@ test('a browser that refuses storage starts without names', () => {
     const refusing = { getItem: () => { throw new Error('refused'); } };
 
     assert.equal(readKeptLabels(HER, refusing), NO_LABELS);
+});
+
+// Two phones of one model that nobody named read the same everywhere; a number
+// after the name tells them apart, in the order of their ids so that every
+// screen numbers them alike.
+test('phones sharing a name are numbered in the order of their ids', () => {
+    const phones = phonesOf({
+        zulu: { model: 'BVL-N49' },
+        alpha: { model: 'BVL-N49' },
+        other: { model: 'MAR-LX1' },
+    });
+
+    const names = phoneNames(HER, phones, NO_LABELS);
+
+    assert.equal(names.get('alpha'), 'BVL-N49 (1)');
+    assert.equal(names.get('zulu'), 'BVL-N49 (2)');
+    assert.equal(names.get('other'), 'MAR-LX1');
+});
+
+test('a phone named apart from its twin leaves the other unnumbered', () => {
+    const phones = phonesOf({ alpha: { model: 'BVL-N49' }, zulu: { model: 'BVL-N49' } });
+    const labels = labelsFrom({ devices: { [`${HER}.zulu`]: 'old phone' } });
+
+    const names = phoneNames(HER, phones, labels);
+
+    assert.equal(names.get('alpha'), 'BVL-N49');
+    assert.equal(names.get('zulu'), 'old phone');
+});
+
+test('the map numbers twins the way the panel does', () => {
+    const grants = combinedGrants(
+        new Map(),
+        new Map([[HER, phonesOf({ alpha: { model: 'BVL-N49' }, zulu: { model: 'BVL-N49' } })]]),
+    );
+    const twins = ['zulu', 'alpha'].map((deviceId) => ({
+        positionId: `${HER}.${deviceId}`,
+        memberId: HER,
+        deviceName: 'BVL-N49',
+    }));
+
+    const shown = labelledPositions(twins, NO_LABELS, grants);
+
+    assert.deepEqual(shown.map((one) => one.deviceName), ['BVL-N49 (2)', 'BVL-N49 (1)']);
+});
+
+test('phones of two members are numbered apart', () => {
+    const grants = combinedGrants(new Map(), new Map([
+        [HER, phonesOf({ alpha: { model: 'BVL-N49' } })],
+        ['uid-him', phonesOf({ beta: { model: 'BVL-N49' } })],
+    ]));
+    const shown = labelledPositions([
+        { positionId: `${HER}.alpha`, memberId: HER, deviceName: 'BVL-N49' },
+        { positionId: 'uid-him.beta', memberId: 'uid-him', deviceName: 'BVL-N49' },
+    ], NO_LABELS, grants);
+
+    assert.deepEqual(shown.map((one) => one.deviceName), ['BVL-N49', 'BVL-N49']);
 });

@@ -6,7 +6,7 @@
 // so nothing new has to be asked of anybody for the panel to be drawn.
 
 import { compareIds } from './order.js';
-import { NO_LABELS } from './labels.js';
+import { NO_LABELS, phoneNames } from './labels.js';
 import { mayBeMadeAdmin, mayBeRemoved, mayStopRunning, runsTheGroup } from './membership.js';
 
 /** As much of a phone's id as stands in for a name nobody wrote. */
@@ -62,18 +62,17 @@ function inReadingOrder(one, other) {
 /**
  * A member's phones as they last said how they are, whether or not this viewer
  * may see where they are: an administrator reads these to tell a phone that
- * went quiet from one whose marker is stuck. Each is called what the viewer
- * called it, else what its owner called it, else its model.
+ * went quiet from one whose marker is stuck. Each is called what the map calls
+ * it (phoneNames), else by the start of its id.
  */
 export function phoneLines(memberId, phones, labels = NO_LABELS) {
+    const names = phoneNames(memberId, phones, labels);
+
     return [...phones]
         .map(([deviceId, phone]) => ({
             // The address the phone's siren is called at.
             phoneId: `${memberId}.${deviceId}`,
-            name: labels.phones.get(`${memberId}.${deviceId}`)
-                ?? phone.name
-                ?? phone.model
-                ?? deviceId.slice(0, PHONE_ID_SHOWN),
+            name: names.get(deviceId) ?? deviceId.slice(0, PHONE_ID_SHOWN),
             onlineAt: phone.onlineAt,
             batteryPercent: phone.batteryPercent,
             charging: phone.charging,
