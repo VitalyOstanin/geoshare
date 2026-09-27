@@ -50,12 +50,16 @@ import { distanceFromViewer, distanceText } from './distance.js';
 import { SPEAKING, WORDS } from './words.js';
 
 /**
- * How far the fitted view is padded from the window's edge, in screen pixels.
+ * How far the fitted view is padded from the window's edge, in screen pixels,
+ * at the least.
  *
  * Enough that a marker at the corner of the rectangle is not touching the
  * account button or the zoom controls that sit over the same corners.
  */
 const FOLLOW_ALL_PADDING = 60;
+
+/** The gap left between a fitted marker's outermost edge and the window's. */
+const FOLLOW_ALL_MARKER_GAP = 16;
 
 /**
  * How close "following everybody" is ever allowed to come.
@@ -461,8 +465,39 @@ function applyFollowMode(view) {
     view.followedBounds = bounds;
     view.map.fitBounds(
         [[bounds.west, bounds.south], [bounds.east, bounds.north]],
-        { padding: FOLLOW_ALL_PADDING, maxZoom: FOLLOW_ALL_MAX_ZOOM },
+        { padding: followAllPadding(view), maxZoom: FOLLOW_ALL_MAX_ZOOM },
     );
+}
+
+/**
+ * The padding that keeps every marker whole inside the fitted view.
+ *
+ * The rectangle is fitted by the points of the pins, and a pin hangs above its
+ * point with the name over it, and reaches half its width to either side. A
+ * padding the same on all four sides left the member at the top with the
+ * head of their pin past the edge of the window. Measured off the markers
+ * themselves rather than written down: a pin for several members is wider
+ * than one for a single member, and a long name wider still.
+ */
+function followAllPadding(view) {
+    let tallest = 0;
+    let widest = 0;
+
+    for (const entry of view.markers.values()) {
+        const element = entry.marker.getElement();
+
+        tallest = Math.max(tallest, element.offsetHeight);
+        widest = Math.max(widest, element.offsetWidth);
+    }
+
+    const side = Math.max(FOLLOW_ALL_PADDING, widest / 2 + FOLLOW_ALL_MARKER_GAP);
+
+    return {
+        top: Math.max(FOLLOW_ALL_PADDING, tallest + FOLLOW_ALL_MARKER_GAP),
+        bottom: FOLLOW_ALL_PADDING,
+        left: side,
+        right: side,
+    };
 }
 
 /**
