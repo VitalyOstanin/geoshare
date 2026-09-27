@@ -279,8 +279,8 @@ export const EN = {
         'Only a new invitation brings them back.',
     groupRemoveGo: 'Remove',
     sirenHint: 'Siren for 20 seconds',
-    myPhonesTitle: 'My phones',
-    myPhonesNone: 'No phones have shared from this account yet',
+    myPhonesTitle: 'My devices',
+    myPhonesNone: 'No device has shared its position from this account yet',
     sirenTitle: (name) => `Switch on the siren: ${name}?`,
     sirenPhoneChip: (name, age) => `${name} · ${age}`,
     sirenNote:

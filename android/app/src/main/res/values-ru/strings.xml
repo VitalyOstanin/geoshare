@@ -241,10 +241,10 @@
     <string name="siren_silence_title">Сирена в режиме «Не беспокоить»</string>
     <string name="siren_silence_note">Необязательно: без этого сирена молчит в режиме полной тишины</string>
     <string name="siren_silence_granted">выдано</string>
-    <string name="my_phones_title">Мои телефоны</string>
-    <string name="my_phones_this">этот телефон</string>
-    <string name="my_phones_none">С этого аккаунта ещё не делился ни один телефон</string>
-    <string name="my_phones_open">Мои телефоны</string>
+    <string name="my_phones_title">Мои устройства</string>
+    <string name="my_phones_this">это устройство</string>
+    <string name="my_phones_none">С этого аккаунта ещё ни одно устройство не делилось позицией</string>
+    <string name="my_phones_open">Мои устройства</string>
     <!-- Показывается тому, кого ищут, отдельным уведомлением: то, что позицию
          видит вся группа, стоит того, чтобы разбудить телефон, а тихая
          передача места — нет. -->

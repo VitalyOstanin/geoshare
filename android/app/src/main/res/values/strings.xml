@@ -265,10 +265,10 @@
     <string name="siren_silence_title">Siren in \"Do Not Disturb\"</string>
     <string name="siren_silence_note">Optional: without it the siren is silent when the phone is set to total silence</string>
     <string name="siren_silence_granted">allowed</string>
-    <string name="my_phones_title">My phones</string>
-    <string name="my_phones_this">this phone</string>
-    <string name="my_phones_none">No phones have shared from this account yet</string>
-    <string name="my_phones_open">My phones</string>
+    <string name="my_phones_title">My devices</string>
+    <string name="my_phones_this">this device</string>
+    <string name="my_phones_none">No device has shared its position from this account yet</string>
+    <string name="my_phones_open">My devices</string>
     <!-- Shown to the member being looked for, as a notification of its own:
          being watched by the whole group is worth waking the phone for in a
          way that sharing quietly never is. -->
