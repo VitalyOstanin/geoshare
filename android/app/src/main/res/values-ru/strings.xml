@@ -214,10 +214,10 @@
     <string name="search_cancel">Отмена</string>
     <string name="sought_until">ищем до %1$s</string>
     <string name="search_summary">%1$s: ищем до %2$s</string>
-    <string name="search_opened_by">Открыл(а): %1$s.</string>
+    <string name="search_opened_by">Открыли поиск: %1$s.</string>
     <string name="search_opened_by_you">Открыли вы.</string>
     <string name="sought_banner">Вашу позицию видит вся группа до %1$s</string>
-    <string name="sought_banner_note">Открыл(а): %1$s. Если с вами всё в порядке, закройте поиск.</string>
+    <string name="sought_banner_note">Открыли поиск: %1$s. Если с вами всё в порядке, закройте поиск.</string>
     <string name="sought_found">Меня нашли</string>
     <!-- Показывается тому, кого ищут, отдельным уведомлением: то, что позицию
          видит вся группа, стоит того, чтобы разбудить телефон, а тихая
@@ -225,7 +225,7 @@
     <string name="sought_channel_name">Вас ищут</string>
     <string name="sought_channel_description">Показывается, пока вас ищет группа.</string>
     <string name="sought_notification_title">Вашу позицию видит вся группа</string>
-    <string name="sought_notification_text">Открыл(а): %1$s, до %2$s</string>
+    <string name="sought_notification_text">Открыли поиск: %1$s, до %2$s</string>
 
     <string name="visibility_title">Кто видит, где я</string>
     <string name="visibility_empty">Больше никто ещё не входил.</string>

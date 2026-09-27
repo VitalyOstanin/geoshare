@@ -326,9 +326,10 @@ export const RU = {
     searchCancel: 'Отмена',
     soughtUntil: (until) => `ищем до ${until}`,
     searchSummary: (name, until) => `${name}: ищем до ${until}`,
-    searchOpenedBy: (name) => `Открыл(а): ${name}.`,
+    searchOpenedBy: (name) => `Открыли поиск: ${name}.`,
     searchOpenedByYou: 'Открыли вы.',
     soughtBanner: (until) => `Вашу позицию видит вся группа до ${until}`,
-    soughtBannerNote: (name) => `Открыл(а): ${name}. Если с вами всё в порядке, закройте поиск.`,
+    soughtBannerNote: (name) =>
+        `Открыли поиск: ${name}. Если с вами всё в порядке, закройте поиск.`,
     soughtFound: 'Меня нашли',
 };
