@@ -15,6 +15,8 @@ export const EN = {
     nobodyYet: 'Nobody has shared a position yet.',
     looking: 'Looking for the group…',
     unreachable: 'No connection to the group. Trying again.',
+    outsideGroup: 'You are not in a group yet. The account menu makes one or joins one by '
+        + 'invitation.',
     nobodySharing: 'Nobody is sharing a position with you right now.',
     oneMoreRefused: 'One more member is not sharing with you right now.',
     moreRefused: (count) => `${count} more members are not sharing with you right now.`,

@@ -212,6 +212,9 @@ const state = {
     // Whether the group itself is out of reach: the profiles are what every
     // other subscription is built from, so their failure is the connection.
     reachable: true,
+    // Whether the database refused the group outright, which is an account
+    // on no roster rather than a connection gone.
+    outsideGroup: false,
     // The name of whoever the follow button last had a target for. The map
     // only remembers a position id, which stops meaning anything the moment
     // that member goes quiet; the name is kept here so the button still has
@@ -577,6 +580,7 @@ function start() {
             state.accountProfiles = profiles;
             state.profiles = labelledProfiles(profiles, state.labels);
             state.reachable = true;
+            state.outsideGroup = false;
             publishProfile(state.member, profiles.get(state.member.memberId), () => {});
             followGrants(profiles);
             // The names in the menu and in the panel are read from the
@@ -584,8 +588,16 @@ function start() {
             drawGroup();
             render();
         },
-        () => {
-            state.reachable = false;
+        (error) => {
+            // A refusal is not a lost connection: it is the database saying
+            // this account is on no roster of the group it asked about —
+            // one that has not joined any, or one taken off — and "trying
+            // again" would promise something no retry will bring.
+            if (error?.code === 'permission-denied') {
+                state.outsideGroup = true;
+            } else {
+                state.reachable = false;
+            }
             render();
         },
     );
@@ -759,6 +771,7 @@ function stop() {
     state.positions = [];
     state.refused = 0;
     state.reachable = true;
+    state.outsideGroup = false;
     // A new sign-in is a different group, and its members are not the one
     // this name belonged to.
     state.followTargetName = null;
@@ -1793,6 +1806,10 @@ function notePageLooking(looking) {
 }
 
 function noteText() {
+    if (state.outsideGroup) {
+        return WORDS.outsideGroup;
+    }
+
     if (!state.reachable) {
         return WORDS.unreachable;
     }
