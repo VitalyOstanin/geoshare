@@ -369,7 +369,7 @@ fun AdminPanel(
  * left while it sounds, or that it never answered. Nothing once it is over.
  */
 @Composable
-private fun sirenText(siren: Siren, state: SirenState, phones: List<PhoneLine>): String? {
+internal fun sirenText(siren: Siren, state: SirenState, phones: List<PhoneLine>): String? {
     val phone =
         phones.firstOrNull { it.phoneId == siren.phoneId }?.name
             ?: siren.phoneId.substringAfter('.').take(NAME_SHOWN_INSTEAD)
@@ -607,7 +607,7 @@ private fun AdminSearchSummary(
 
 /** A phone, when it was last in touch, and its charge. */
 @Composable
-private fun phoneText(phone: PhoneLine, now: Instant): String {
+internal fun phoneText(phone: PhoneLine, now: Instant): String {
     val onlineAt = phone.onlineAt ?: return stringResource(R.string.admin_phone_silent, phone.name)
     val age = ageText(positionAge(onlineAt, now))
     val said = mutableListOf(stringResource(R.string.admin_phone_online, phone.name, age))

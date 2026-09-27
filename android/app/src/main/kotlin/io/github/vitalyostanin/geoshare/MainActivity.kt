@@ -74,6 +74,7 @@ import io.github.vitalyostanin.geoshare.service.SourcesSetting
 import io.github.vitalyostanin.geoshare.service.ThemeSetting
 import io.github.vitalyostanin.geoshare.service.callSiren
 import io.github.vitalyostanin.geoshare.service.darkWanted
+import io.github.vitalyostanin.geoshare.service.dndAccessGranted
 import io.github.vitalyostanin.geoshare.service.endSearch
 import io.github.vitalyostanin.geoshare.service.forgetAidingData
 import io.github.vitalyostanin.geoshare.service.foundGroup
@@ -120,6 +121,7 @@ class MainActivity : AppCompatActivity() {
 
     /** How the phone stands on restricting us, read again every time the screen comes up. */
     private var batteryFree by mutableStateOf(false)
+    private var sirenLoud by mutableStateOf(false)
 
     /** Whether this phone has a startup list of its own, asked once at the start. */
     private var startupAvailable = false
@@ -189,6 +191,7 @@ class MainActivity : AppCompatActivity() {
         sources = SourcesSetting(this)
         aidingDoubt = AidingDoubtSetting(this)
         batteryFree = batteryUnrestricted(this)
+        sirenLoud = dndAccessGranted(this)
 
         // Before anything is drawn: the window is what shows while the screen
         // is still being built, and a white flash on the way into a dark map
@@ -290,6 +293,7 @@ class MainActivity : AppCompatActivity() {
                                     language = language,
                                     sharedWith = sharedWith,
                                     batteryUnrestricted = batteryFree,
+                                    sirenThroughSilence = sirenLoud,
                                     startupScreen = startupAvailable,
                                     startupSet = startupSet,
                                     jumpsFiltered = jumpsFiltered,
@@ -373,6 +377,8 @@ class MainActivity : AppCompatActivity() {
                                     },
                                     onOpenSettings = ::openApplicationSettings,
                                     onAllowBattery = ::askBatteryExemption,
+                                    // Read back in onStart, as the battery row is.
+                                    onAllowSirenThroughSilence = ::askSirenThroughSilence,
                                     onOpenStartup = ::openStartupScreen,
                                     onStartupSetChange = { set ->
                                         startupSet = set
@@ -671,6 +677,10 @@ class MainActivity : AppCompatActivity() {
         askBatteryExemption()
     }
 
+    private fun askSirenThroughSilence() {
+        startActivity(Intent(Settings.ACTION_NOTIFICATION_POLICY_ACCESS_SETTINGS))
+    }
+
     private fun askBatteryExemption() {
         askBattery.launch(batteryExemptionRequest(this))
     }
@@ -738,6 +748,7 @@ class MainActivity : AppCompatActivity() {
         // Coming back from the settings screen is the usual way a permission
         // changes, and nothing tells the application about it.
         batteryFree = batteryUnrestricted(this)
+        sirenLoud = dndAccessGranted(this)
         continueSharingSetup()
     }
 

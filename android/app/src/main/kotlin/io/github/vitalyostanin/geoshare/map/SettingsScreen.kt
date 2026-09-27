@@ -136,6 +136,7 @@ fun SettingsScreen(
     onClose: () -> Unit,
     /** The way to the screen where the group is run, offered to whoever runs it. */
     onOpenAdmin: () -> Unit,
+    onOpenMyPhones: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     Surface(modifier = modifier.fillMaxSize()) {
@@ -247,6 +248,7 @@ fun SettingsScreen(
                 onFoundGroup = actions.onFoundGroup,
                 onJoinGroup = actions.onJoinGroup,
                 onOpenAdmin = onOpenAdmin,
+                onOpenMyPhones = onOpenMyPhones,
             )
 
             HorizontalDivider()
@@ -263,9 +265,11 @@ fun SettingsScreen(
 
             BackgroundWorkSection(
                 batteryUnrestricted = settings.batteryUnrestricted,
+                sirenThroughSilence = settings.sirenThroughSilence,
                 startupScreen = settings.startupScreen,
                 startupSet = settings.startupSet,
                 onAllowBattery = actions.onAllowBattery,
+                onAllowSirenThroughSilence = actions.onAllowSirenThroughSilence,
                 onOpenStartup = actions.onOpenStartup,
                 onStartupSetChange = actions.onStartupSetChange,
             )
@@ -451,9 +455,11 @@ private fun SourcesSection(
 @Composable
 private fun BackgroundWorkSection(
     batteryUnrestricted: Boolean,
+    sirenThroughSilence: Boolean,
     startupScreen: Boolean,
     startupSet: Boolean,
     onAllowBattery: () -> Unit,
+    onAllowSirenThroughSilence: () -> Unit,
     onOpenStartup: () -> Unit,
     onStartupSetChange: (Boolean) -> Unit,
 ) {
@@ -478,6 +484,35 @@ private fun BackgroundWorkSection(
             )
         } else {
             TextButton(onClick = onAllowBattery) {
+                Text(text = stringResource(R.string.background_battery_allow))
+            }
+        }
+    }
+
+    // Optional, and said so: without it the siren is still heard through
+    // every "Do Not Disturb" setting but total silence.
+    Row(
+        modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 4.dp),
+        horizontalArrangement = Arrangement.spacedBy(12.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Column(modifier = Modifier.weight(1f)) {
+            Text(text = stringResource(R.string.siren_silence_title))
+            Text(
+                text = stringResource(R.string.siren_silence_note),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
+
+        if (sirenThroughSilence) {
+            Text(
+                text = stringResource(R.string.siren_silence_granted),
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        } else {
+            TextButton(onClick = onAllowSirenThroughSilence) {
                 Text(text = stringResource(R.string.background_battery_allow))
             }
         }

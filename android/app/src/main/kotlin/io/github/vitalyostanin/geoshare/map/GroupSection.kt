@@ -51,6 +51,8 @@ fun GroupSection(
     onFoundGroup: () -> Unit,
     onJoinGroup: (Invitation) -> Unit,
     onOpenAdmin: () -> Unit,
+    /** The way to this member's own phones, to ring one of them. */
+    onOpenMyPhones: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val standing = standingIn(roster, ownMemberId)
@@ -72,6 +74,7 @@ fun GroupSection(
                     profiles = profiles,
                     standing = standing,
                     onOpenAdmin = onOpenAdmin,
+                    onOpenMyPhones = onOpenMyPhones,
                 )
         }
 
@@ -151,6 +154,7 @@ private fun TheGroup(
     profiles: Map<String, MemberProfile>,
     standing: Standing,
     onOpenAdmin: () -> Unit,
+    onOpenMyPhones: () -> Unit,
 ) {
     for (memberId in roster.members) {
         MemberRow(
@@ -176,6 +180,15 @@ private fun TheGroup(
             )
 
         else -> Unit
+    }
+
+    // Everybody in the group, not only whoever runs it: the phone lost at
+    // home is most often one's own other phone.
+    TextButton(
+        onClick = onOpenMyPhones,
+        modifier = Modifier.padding(start = 8.dp),
+    ) {
+        Text(text = stringResource(R.string.my_phones_open))
     }
 }
 

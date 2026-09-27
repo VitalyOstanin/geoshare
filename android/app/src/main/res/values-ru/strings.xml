@@ -238,6 +238,13 @@
     <string name="siren_status_sounding">сирена на %1$s · %2$d с · телефон принял</string>
     <string name="siren_status_no_answer">%1$s не ответил на сирену</string>
     <string name="siren_status_stopped">сирена на %1$s выключена</string>
+    <string name="siren_silence_title">Сирена в режиме «Не беспокоить»</string>
+    <string name="siren_silence_note">Необязательно: без этого сирена молчит в режиме полной тишины</string>
+    <string name="siren_silence_granted">выдано</string>
+    <string name="my_phones_title">Мои телефоны</string>
+    <string name="my_phones_this">этот телефон</string>
+    <string name="my_phones_none">С этого аккаунта ещё не делился ни один телефон</string>
+    <string name="my_phones_open">Мои телефоны</string>
     <!-- Показывается тому, кого ищут, отдельным уведомлением: то, что позицию
          видит вся группа, стоит того, чтобы разбудить телефон, а тихая
          передача места — нет. -->

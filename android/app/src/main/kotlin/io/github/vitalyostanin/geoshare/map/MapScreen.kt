@@ -273,6 +273,7 @@ fun MapScreen(
     // Opened from within the settings and drawn over them, so that closing it
     // puts the member back where they were rather than on the map.
     var adminOpen by remember { mutableStateOf(false) }
+    var myPhonesOpen by remember { mutableStateOf(false) }
     // Held by id rather than by value: the position keeps arriving, and a card
     // showing the one from when it was opened would quietly go stale.
     val opened = positions.firstOrNull { it.positionId == openedPositionId }
@@ -377,7 +378,8 @@ fun MapScreen(
     // settings screen, which is not what anybody means by it.
     BackHandler(enabled = awaitingTarget) { awaitingTarget = false }
     BackHandler(enabled = adminOpen) { adminOpen = false }
-    BackHandler(enabled = settingsOpen && !adminOpen) { settingsOpen = false }
+    BackHandler(enabled = myPhonesOpen) { myPhonesOpen = false }
+    BackHandler(enabled = settingsOpen && !adminOpen && !myPhonesOpen) { settingsOpen = false }
     BackHandler(enabled = !settingsOpen && (opened != null || group.isNotEmpty())) {
         openedPositionId = null
         openedGroup = emptyList()
@@ -671,6 +673,26 @@ fun MapScreen(
             now = now,
             onClose = { settingsOpen = false },
             onOpenAdmin = { adminOpen = true },
+            onOpenMyPhones = { myPhonesOpen = true },
+        )
+    }
+
+    // Over the settings, as the admin panel is. The phones are read from this
+    // member's own grant, which the member always may read.
+    if (settingsOpen && myPhonesOpen) {
+        MyPhonesScreen(
+            phones =
+            phoneLines(
+                ownMemberId,
+                settings.grants[ownMemberId]?.phones.orEmpty(),
+                labels,
+            ),
+            ownPhoneId = ownPhoneId,
+            now = now,
+            sirenOf = actions.sirenOf,
+            onCallSiren = actions.onCallSiren,
+            onStopSiren = actions.onStopSiren,
+            onClose = { myPhonesOpen = false },
         )
     }
 

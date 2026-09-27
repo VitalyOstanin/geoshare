@@ -51,6 +51,8 @@ data class SettingsState(
     val aidingDoubted: Set<Constellation>,
     /** Whether the phone leaves the application out of its battery saving. */
     val batteryUnrestricted: Boolean,
+    /** Whether the siren may loosen "Do Not Disturb" set to total silence. */
+    val sirenThroughSilence: Boolean,
     /** Whether this phone has a startup list of its own to open. */
     val startupScreen: Boolean,
     /** Whether the member says that list is already set. */
@@ -109,6 +111,8 @@ data class SettingsActions(
     val onShare: (String, ShareSpan) -> Unit,
     val onOpenSettings: () -> Unit,
     val onAllowBattery: () -> Unit,
+    /** Opens the system screen that lets the application change "Do Not Disturb". */
+    val onAllowSirenThroughSilence: () -> Unit,
     val onOpenStartup: () -> Unit,
     val onStartupSetChange: (Boolean) -> Unit,
     val onFoundGroup: () -> Unit,
