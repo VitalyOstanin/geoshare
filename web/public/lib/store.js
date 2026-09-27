@@ -5,6 +5,7 @@ import { initializeApp } from 'https://www.gstatic.com/firebasejs/12.19.0/fireba
 import {
     GoogleAuthProvider,
     getAuth,
+    getRedirectResult,
     onAuthStateChanged,
     signInWithPopup,
     signOut,
@@ -141,6 +142,21 @@ export function watchSignIn(onChange) {
             },
         ),
     );
+}
+
+/**
+ * Gets the sign-in popup ready before the button is pressed.
+ *
+ * The popup needs a script and a frame from Google first, and a browser lets
+ * a page open a window only for a short while after a tap. Firebase fetches
+ * them ahead of time on the browsers it takes for phones, but a phone
+ * browser asked for the desktop version of the page is taken for a desktop
+ * one, the fetch starts with the tap, and on a slow connection the window
+ * comes too late and is blocked. Asking for a redirect result is the public
+ * call that makes the same preparation; there is never a redirect to find.
+ */
+export function prepareSignIn() {
+    getRedirectResult(auth).catch(() => {});
 }
 
 export function signIn() {

@@ -54,6 +54,7 @@ import {
     keepWatching,
     leave,
     makeInvitation,
+    prepareSignIn,
     publishProfile,
     removeMember,
     setRunning,
@@ -221,6 +222,7 @@ elements.signInButton.addEventListener('click', async () => {
     try {
         await signIn();
     } catch (error) {
+        console.warn('sign-in failed', error);
         elements.signInError.textContent = signInTrouble(error);
     }
 });
@@ -247,7 +249,9 @@ function signInTrouble(error) {
         return WORDS.signInMisconfigured;
     }
 
-    return WORDS.signInFailed;
+    // The code is what tells one unexpected failure from another, and the
+    // viewer who reads it out is often the only way it reaches anybody.
+    return error.code ? `${WORDS.signInFailed} (${error.code})` : WORDS.signInFailed;
 }
 
 elements.signOutButton.addEventListener('click', () => leave());
@@ -605,6 +609,7 @@ function stop() {
     state.stripEntries = new Map();
 
     elements.signIn.hidden = false;
+    prepareSignIn();
     elements.map.hidden = true;
     elements.followButton.hidden = true;
     elements.panel.hidden = true;
