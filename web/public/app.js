@@ -107,6 +107,7 @@ const elements = {
     followMenu: document.querySelector('#follow-menu'),
     followMenuButtons: document.querySelectorAll('#follow-menu button'),
     followHint: document.querySelector('#follow-hint'),
+    fullScreenButton: document.querySelector('#fullscreen-button'),
     followWait: document.querySelector('#follow-wait'),
     panel: document.querySelector('#panel'),
     panelNote: document.querySelector('#panel-note'),
@@ -123,6 +124,10 @@ const elements = {
     themeButtons: document.querySelectorAll('#theme-choice button'),
     languageLabel: document.querySelector('#language-label'),
     languageButtons: document.querySelectorAll('#language-choice button'),
+    settings: document.querySelector('#settings'),
+    settingsButton: document.querySelector('#settings-button'),
+    settingsTitle: document.querySelector('#settings-title'),
+    settingsClose: document.querySelector('#settings-close'),
     groupLabel: document.querySelector('#group-label'),
     groupNote: document.querySelector('#group-note'),
     groupMembers: document.querySelector('#group-members'),
@@ -471,6 +476,13 @@ function showTheme() {
 }
 
 function showMenu(open) {
+    // The roster is drawn when it changes, but which of its names lead to a
+    // card depends on the positions, which change all the time: drawn again
+    // as the menu opens rather than on every position.
+    if (open) {
+        drawGroup();
+    }
+
     elements.accountMenu.hidden = !open;
     elements.accountButton.setAttribute('aria-expanded', String(open));
 }
@@ -500,6 +512,43 @@ for (const button of elements.languageButtons) {
         // documents, and the subscriptions open again on their own.
         window.location.reload();
     });
+}
+
+elements.settingsButton.addEventListener('click', () => {
+    showMenu(false);
+    elements.settings.showModal();
+});
+elements.settingsClose.addEventListener('click', () => elements.settings.close());
+
+/**
+ * The map on the whole screen, and back. Offered only where the browser has a
+ * full screen to give: a phone's browser that has none would leave a button
+ * that does nothing. The mark follows the browser rather than the press, since
+ * the browser leaves full screen on its own gestures too.
+ */
+const FULL_SCREEN = document.fullscreenEnabled === true;
+
+elements.fullScreenButton.addEventListener('click', () => {
+    const asked = document.fullscreenElement
+        ? document.exitFullscreen()
+        : document.documentElement.requestFullscreen();
+
+    // A refusal leaves the page as it was, and the mark says so already.
+    asked.catch(() => {});
+});
+document.addEventListener('fullscreenchange', () => showFullScreen());
+
+function showFullScreen() {
+    const full = document.fullscreenElement !== null;
+    const words = full ? WORDS.fullScreenLeave : WORDS.fullScreen;
+
+    for (const mark of elements.fullScreenButton.querySelectorAll('svg')) {
+        mark.hidden = (mark.dataset.full === 'on') !== full;
+    }
+
+    elements.fullScreenButton.setAttribute('aria-pressed', String(full));
+    elements.fullScreenButton.setAttribute('aria-label', words);
+    elements.fullScreenButton.title = words;
 }
 
 /**
@@ -534,12 +583,18 @@ function sayMarkup() {
     elements.namingCancel.textContent = WORDS.nameCancel;
     elements.themeLabel.textContent = WORDS.appearance;
     elements.languageLabel.textContent = WORDS.language;
+    elements.settingsButton.textContent = WORDS.settings;
+    elements.settingsTitle.textContent = WORDS.settings;
+    elements.settingsClose.textContent = WORDS.close;
     // The group section says its own words, since what stands there depends on
     // the roster rather than on the markup alone.
     drawGroup();
 
+    // The theme buttons are marks: their words are what a screen reader says
+    // and what a pointer resting on one shows.
     for (const button of elements.themeButtons) {
-        button.textContent = themes[button.dataset.theme];
+        button.setAttribute('aria-label', themes[button.dataset.theme]);
+        button.title = themes[button.dataset.theme];
     }
 
     for (const button of elements.languageButtons) {
@@ -588,6 +643,8 @@ function start() {
     elements.signIn.hidden = true;
     elements.map.hidden = false;
     elements.followButton.hidden = false;
+    elements.fullScreenButton.hidden = !FULL_SCREEN;
+    showFullScreen();
     elements.panel.hidden = false;
     elements.account.hidden = false;
 
@@ -812,6 +869,7 @@ function stop() {
     elements.signIn.hidden = false;
     elements.map.hidden = true;
     elements.followButton.hidden = true;
+    elements.fullScreenButton.hidden = true;
     showFollowMenu(false);
     clearTimeout(state.followWaitEnds);
     elements.panel.hidden = true;
@@ -1027,20 +1085,39 @@ closeOnClickOutside(elements.phones, () => elements.phones.close());
 closeOnClickOutside(elements.siren, () => elements.siren.close());
 closeOnClickOutside(elements.confirm, () => elements.confirm.close());
 closeOnClickOutside(elements.search, () => closeSearch());
+closeOnClickOutside(elements.settings, () => elements.settings.close());
 
 /**
  * One person on the roster: their name, and whether they run the group.
  *
  * Nobody is taken off the roster from here — that, and the invitations, are in
  * the panel the button below opens. What is left is a list a member reads to
- * see who else is in this.
+ * see who else is in this, and a way to their card: the name of somebody whose
+ * position this page has leads to it, as a press on their marker would. A
+ * member who shares nothing with this viewer is only a name.
  */
 function memberRow(memberId) {
     const row = document.createElement('div');
 
     row.className = 'group-member';
 
-    const name = document.createElement('span');
+    const position = freshestPositionOf(memberId);
+    const name = document.createElement(position ? 'button' : 'span');
+
+    if (position) {
+        name.type = 'button';
+        name.className = 'group-member-link';
+        name.addEventListener('click', () => {
+            showMenu(false);
+
+            // Looked up again: the menu may have stood open a while.
+            const now = freshestPositionOf(memberId);
+
+            if (now && state.view) {
+                lookAt(state.view, now);
+            }
+        });
+    }
 
     name.textContent = memberName(
         state.profiles?.get(memberId),
@@ -1058,6 +1135,23 @@ function memberRow(memberId) {
     }
 
     return row;
+}
+
+/**
+ * The position a member was last heard from at, of all their phones: the one
+ * a viewer asking for them by name most likely means.
+ */
+function freshestPositionOf(memberId) {
+    let freshest = null;
+
+    for (const position of state.positions) {
+        if (position.memberId === memberId
+            && (freshest === null || position.knownAt > freshest.knownAt)) {
+            freshest = position;
+        }
+    }
+
+    return freshest;
 }
 
 /**

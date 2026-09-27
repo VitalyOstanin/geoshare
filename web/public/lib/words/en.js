@@ -252,6 +252,12 @@ export const EN = {
     languageEnglish: 'English',
     languageSystem: 'System',
 
+    // The window the language moved to, and the button that gives the map the
+    // whole screen.
+    settings: 'Settings',
+    fullScreen: 'Full screen',
+    fullScreenLeave: 'Leave full screen',
+
     // The group: who is in it, and what the person looking may do about it.
     // An invitation is a single string naming the group as well as the code,
     // because somebody joining has to reach a document nobody has named to

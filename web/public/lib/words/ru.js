@@ -263,6 +263,12 @@ export const RU = {
     languageEnglish: 'English',
     languageSystem: 'Как в системе',
 
+    // The window the language moved to, and the button that gives the map the
+    // whole screen.
+    settings: 'Настройки',
+    fullScreen: 'Во весь экран',
+    fullScreenLeave: 'Выйти из полноэкранного режима',
+
     // The group: who is in it, and what the person looking may do about it.
     group: 'Группа',
     groupNone: 'Вы пока не в группе. Создайте её и раздайте приглашение или вставьте '
