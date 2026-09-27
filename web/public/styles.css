@@ -1349,6 +1349,19 @@ button {
 .member.sought {
     border: 2px solid var(--alarm);
     background: var(--alarm-soft);
+    /* The end on a line of its own under the rest, as in the mockup: on one
+       line with the name, age and charge it ran past the edge of a phone's
+       screen and was cut off exactly where the time is. */
+    flex-wrap: wrap;
+    row-gap: 0.1rem;
+}
+
+.member.sought .sought-until {
+    flex-basis: 100%;
+    /* Under the name rather than centred: the entry is a button, and a
+       button centres its text. */
+    padding-left: 2rem;
+    text-align: left;
 }
 
 .sought-until {
