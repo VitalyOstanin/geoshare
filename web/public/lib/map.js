@@ -105,8 +105,14 @@ const RING_SHARE_OF_THE_VIEW = 0.5;
  */
 const CLOSEST_ZOOM = 18;
 
-/** How many metres a pixel covers at the equator at zoom nought. */
-const EQUATOR_METRES_PER_PIXEL = 156543.03392;
+/**
+ * How many metres a pixel covers at the equator at zoom nought.
+ *
+ * On this library's tiles, which are 512 pixels across: the figure usually
+ * quoted, 156543, is for tiles of 256, and with it every ring came out twice
+ * the size it was aimed at.
+ */
+const EQUATOR_METRES_PER_PIXEL = 78271.51696;
 
 /**
  * How many pixels across a ring may come out before a card opened on the map
