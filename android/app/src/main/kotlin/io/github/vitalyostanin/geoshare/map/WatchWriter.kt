@@ -3,6 +3,7 @@ package io.github.vitalyostanin.geoshare.map
 import com.google.firebase.firestore.FieldValue
 import com.google.firebase.firestore.FirebaseFirestore
 import io.github.vitalyostanin.geoshare.collection.WATCH_REFRESH
+import io.github.vitalyostanin.geoshare.collection.WATCH_RETRY
 import io.github.vitalyostanin.geoshare.log.AppLog
 import io.github.vitalyostanin.geoshare.service.WatchField
 import io.github.vitalyostanin.geoshare.service.positionId
@@ -38,6 +39,8 @@ class WatchWriter(
      */
     suspend fun keepLooking(): Nothing {
         while (true) {
+            var next = WATCH_REFRESH
+
             try {
                 // The moment of the claim by the server's clock, not an end by
                 // this phone's: whoever reads it adds the same few minutes, so
@@ -55,12 +58,13 @@ class WatchWriter(
                 throw cancellation
             } catch (error: Exception) {
                 // The old claim is still out there and has minutes left on it,
-                // so a failed write is worth a line and another try, not a
-                // message on screen.
+                // so a failed write is worth a line and another try soon, not
+                // a message on screen.
                 AppLog.w(TAG, "could not say that we are looking", error)
+                next = WATCH_RETRY
             }
 
-            delay(WATCH_REFRESH.toMillis())
+            delay(next.toMillis())
         }
     }
 

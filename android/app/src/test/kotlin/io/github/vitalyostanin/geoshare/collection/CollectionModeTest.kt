@@ -27,9 +27,15 @@ class CollectionModeTest {
     fun `the mode somebody is watching writes more readily than the quiet ones`() {
         assertTrue(CollectionMode.Viewing.writeSilence < CollectionMode.Standby.writeSilence)
         assertTrue(CollectionMode.Viewing.writeDistance < CollectionMode.Standby.writeDistance)
-        assertTrue(
-            CollectionMode.Viewing.writeSilence <= CollectionMode.Viewing.interval.multipliedBy(2),
-        )
+    }
+
+    // A still phone keeps quiet longer than it collects, because every phone of
+    // the group is in this mode while anybody looks; but not longer than one
+    // claim lasts, or a watcher could look at a still phone and never see it
+    // say anything.
+    @Test
+    fun `a still phone somebody is watching speaks within one claim`() {
+        assertTrue(CollectionMode.Viewing.writeSilence < WATCH_AHEAD)
     }
 
     @Test

@@ -35,7 +35,6 @@ import io.github.vitalyostanin.geoshare.collection.STIRS_KEPT
 import io.github.vitalyostanin.geoshare.collection.SkyDrift
 import io.github.vitalyostanin.geoshare.collection.Stir
 import io.github.vitalyostanin.geoshare.collection.Trail
-import io.github.vitalyostanin.geoshare.collection.WATCH_AHEAD
 import io.github.vitalyostanin.geoshare.collection.agreementStands
 import io.github.vitalyostanin.geoshare.collection.anchorFrom
 import io.github.vitalyostanin.geoshare.collection.andThen
@@ -68,6 +67,7 @@ import io.github.vitalyostanin.geoshare.collection.secondOpinion
 import io.github.vitalyostanin.geoshare.collection.shouldWrite
 import io.github.vitalyostanin.geoshare.collection.stillSettling
 import io.github.vitalyostanin.geoshare.collection.walkingNow
+import io.github.vitalyostanin.geoshare.collection.watchedUntil
 import io.github.vitalyostanin.geoshare.collection.whyAJump
 import io.github.vitalyostanin.geoshare.collection.word
 import io.github.vitalyostanin.geoshare.log.AppLog
@@ -835,19 +835,25 @@ class SharingService : LifecycleService() {
                 }
             }
 
-        val looking = watchers(positionId(memberId, device.id)).onStart { emit(emptyList()) }
+        val claims = watchers(positionId(memberId, device.id)).onStart { emit(emptyList()) }
+        val permissions: Flow<Map<String, Instant>?> = ownSharedWith(memberId)
 
         // Who is looking is the screen's business; the service needs only the
-        // moments their claims run out.
+        // moments the claims of those allowed to see this phone run out.
+        val looking =
+            combine(claims, permissions.onStart { emit(null) }) { seen, shared ->
+                watchedUntil(seen, memberId, shared)
+            }
+
         return combine(
             looking,
             movement(this),
             standingStill(this, fenceCentre),
             MapOnScreen.state,
             reviews,
-        ) { seen, moving, standing, ownMap, _ ->
+        ) { untils, moving, standing, ownMap, _ ->
             noteMovement(moving)
-            currentMode(seen.map { it.until }, moving.going, standing, ownMap)
+            currentMode(untils, moving.going, standing, ownMap)
         }.distinctUntilChanged()
     }
 
@@ -1892,13 +1898,15 @@ class SharingService : LifecycleService() {
         /**
          * How often the mode is reconsidered while the service runs.
          *
-         * No rarer than a claim to be looking runs out. A viewer who leaves
-         * quietly — a closed lid, a flat battery — writes nothing more, so the
-         * subscription brings no change and the claim simply ages; reviewing
-         * more slowly than it ages would keep the phone in the fifteen-second
-         * mode for minutes after the last watcher was gone.
+         * A viewer who leaves quietly — a closed lid, a flat battery — writes
+         * nothing more, so the subscription brings no change and the claim
+         * simply ages; the phone learns it has run out only on a review. Once
+         * a minute, rather than once a claim, keeps the fifteen-second mode
+         * from outliving the last watcher by as long again as the claim
+         * itself. A review reads nothing: it only asks the same question of
+         * the clock.
          */
-        private val MODE_REVIEW: Duration = WATCH_AHEAD
+        private val MODE_REVIEW: Duration = Duration.ofMinutes(1)
 
         /** How long a freshly started service waits for the account to be restored. */
         private val SESSION_WAIT: Duration = Duration.ofMinutes(1)

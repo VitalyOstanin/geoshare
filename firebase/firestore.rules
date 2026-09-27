@@ -653,7 +653,7 @@ service cloud.firestore {
         }
 
         // The claim says when it was made, by the clock of the server, and the
-        // phones add the three minutes themselves. Written the other way round
+        // phones add the minutes it is worth. Written the other way round
         // — an expiry chosen by the viewer — it would be worth whatever that
         // viewer's clock says: a clock running slow would never start the fast
         // mode at all, and a claim dated years ahead would hold every phone of

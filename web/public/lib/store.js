@@ -90,21 +90,37 @@ function rememberGroup(group, storage = window.localStorage) {
  *
  * How long each one is worth is not said here and not said by this page: the
  * claim carries the moment the server wrote it, and the phone reading it adds
- * the three minutes both clients agree on. A viewer whose clock is wrong can
+ * the seven minutes both clients agree on. A viewer whose clock is wrong can
  * then neither hold the group longer nor fail to hold it at all.
+ *
+ * Every phone of the group reads each push, so in a group of twenty a push a
+ * minute is over a thousand reads an hour for one open page; leaving the page
+ * properly withdraws the claim at once, so the length only matters for a
+ * viewer who vanished.
  */
-const WATCH_REFRESH_MS = 60 * 1000;
+const WATCH_REFRESH_MS = 5 * 60 * 1000;
+
+/**
+ * How often the page asks itself whether it is still being looked at, and
+ * tries again a push that failed.
+ *
+ * Apart from the refresh above: a tab left alone is noticed by this, not by
+ * an event, and waiting five minutes to notice would keep the phones in their
+ * fast mode that much longer; and a lost push waited for five minutes would
+ * let the claim run out before the next one.
+ */
+const WATCH_CHECK_MS = 60 * 1000;
 
 /**
  * How long a claim to be looking is worth, counted from the moment the server
  * wrote it down.
  *
- * The same three minutes the phones add, and for the same reason: the claim
+ * The same seven minutes the phones add, and for the same reason: the claim
  * carries when it was made rather than when it ends, so whoever reads it
  * decides how long to believe it. Longer than the refresh above, so that one
  * write lost to a bad connection does not drop a viewer off the line.
  */
-const WATCH_AHEAD_MS = 3 * 60 * 1000;
+const WATCH_AHEAD_MS = 7 * 60 * 1000;
 
 /**
  * How long a tab nobody touches goes on claiming to be looking.
@@ -779,7 +795,7 @@ const ATTENTION = ['pointerdown', 'pointermove', 'keydown', 'wheel', 'touchstart
  *
  * The claim carries the moment it was written by the server's clock rather
  * than the moment it runs out by this browser's: the phone that reads it adds
- * the same three minutes, so a viewer whose clock is wrong cannot hold the
+ * the same seven minutes, so a viewer whose clock is wrong cannot hold the
  * group longer, and cannot fail to hold it at all.
  */
 export function keepWatching(memberId, onError, onClaim = () => {}) {
@@ -790,8 +806,20 @@ export function keepWatching(memberId, onError, onClaim = () => {}) {
 
     let timer = null;
     let touched = Date.now();
+    // When a push last reached the server; a failed one leaves it where it
+    // was, so the next check tries again rather than the next refresh.
+    let pushed = 0;
 
-    const push = () => setDoc(marker, { memberId, since: serverTimestamp() }).catch(onError);
+    const push = () => setDoc(marker, { memberId, since: serverTimestamp() })
+        .then(() => {
+            pushed = Date.now();
+        })
+        .catch(onError);
+    const pushWhenDue = () => {
+        if (Date.now() - pushed >= WATCH_REFRESH_MS) {
+            push();
+        }
+    };
     const withdraw = () => deleteDoc(marker).catch(onError);
     const looking = () =>
         document.visibilityState !== 'hidden'
@@ -804,7 +832,7 @@ export function keepWatching(memberId, onError, onClaim = () => {}) {
         }
 
         push();
-        timer = setInterval(() => (looking() ? push() : release()), WATCH_REFRESH_MS);
+        timer = setInterval(() => (looking() ? pushWhenDue() : release()), WATCH_CHECK_MS);
         onClaim(true);
     };
 

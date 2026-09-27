@@ -314,10 +314,12 @@ explain.
 
 A write happens when the position moved far enough from the last written one, or
 enough time passed without a write — both by the standards of the mode: 75 metres
-or 10 minutes in the quiet modes, 25 metres or 30 seconds while somebody is
+or 10 minutes in the quiet modes, 25 metres or 3 minutes while somebody is
 watching. Jitter therefore produces no writes and wakes no subscribers, and the
 mode that spends the battery on frequent fixes is the mode that says what they
-found.
+found. The time in the watched mode is long because one open map puts every
+phone of the group into it: twenty phones lying still and repeating their place
+every half minute would spend the free quota of writes within a working day.
 
 One document per phone rather than per member, because a member can carry two: a
 second phone used to overwrite the first, and the marker showed whichever of them
@@ -332,8 +334,11 @@ document to age on screen until it is deleted.
 | `memberId` | string    | The account looking; the rules require it to be the writer |
 | `since`    | timestamp | When the claim was made; set by the server itself    |
 
-A claim is worth three minutes from `since`, and the viewer refreshes it every
-minute. The moment comes from the server rather than from the viewer, and the
+A claim is worth seven minutes from `since`, and the viewer refreshes it every
+five, trying a failed refresh again within a minute. Every phone of the group
+listens to the whole collection and reads each refresh, so in a group of twenty
+a refresh a minute would cost over a thousand reads an hour for one open map.
+The moment comes from the server rather than from the viewer, and the
 rules accept no other: an end named by the viewer would be worth whatever their
 clock said — a clock running slow would never start the fast mode at all, and a
 claim dated years ahead would hold every phone of the group in it for good.
@@ -346,6 +351,13 @@ fast mode.
 A browser claims only while its tab is visible and somebody has touched it within
 the last quarter of an hour: a tab left open on a desk would otherwise hold every
 phone of the group in the most expensive mode there is.
+
+A phone answers only the markers of those who may see it: its owner's other
+phones, and the members its owner's grant names in `sharedWith`, for no longer
+than that permission lasts. A viewer who cannot see a phone has nothing to gain
+from it being fast, and in a group of twenty one open map would otherwise hold
+every phone in the most expensive mode for the sake of the few on that map.
+Until the phone has read its grant it answers every marker, as it did before.
 
 A phone ignores its own marker: answering it would mean keeping the receiver on
 for its own map. Only its own, not every marker of its account: a member looking

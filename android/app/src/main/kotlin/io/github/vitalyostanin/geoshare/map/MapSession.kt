@@ -16,6 +16,7 @@ import io.github.vitalyostanin.geoshare.service.CurrentGroup
 import io.github.vitalyostanin.geoshare.service.MapOnScreen
 import io.github.vitalyostanin.geoshare.service.groupRoster
 import io.github.vitalyostanin.geoshare.service.namedFalsePlaces
+import io.github.vitalyostanin.geoshare.service.ownSharedWith
 import io.github.vitalyostanin.geoshare.service.positionId
 import io.github.vitalyostanin.geoshare.service.watchers
 import kotlinx.coroutines.NonCancellable
