@@ -287,6 +287,8 @@ export const RU = {
         'Вернуться в группу можно будет только по новому приглашению.',
     groupRemoveGo: 'Удалить',
     sirenHint: 'Сирена на 20 секунд',
+    myPhonesTitle: 'Мои телефоны',
+    myPhonesNone: 'С этого аккаунта ещё не делился ни один телефон',
     sirenTitle: (name) => `Включить сирену: ${name}?`,
     sirenPhoneChip: (name, age) => `${name} · ${age}`,
     sirenNote:

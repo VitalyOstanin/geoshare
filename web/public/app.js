@@ -3,7 +3,7 @@
 import { ageText, positionAge } from './lib/age.js';
 import { showFace } from './lib/faces.js';
 import { FOLLOW_ALL, FOLLOW_NONE, FOLLOW_ONE } from './lib/following.js';
-import { groupOverview } from './lib/group-lines.js';
+import { groupOverview, phoneLines } from './lib/group-lines.js';
 import { outsideTheBox } from './lib/mode-help.js';
 import {
     awaitingFollowTarget,
@@ -128,6 +128,11 @@ const elements = {
     groupMembers: document.querySelector('#group-members'),
     groupFound: document.querySelector('#group-found'),
     groupAdmin: document.querySelector('#group-admin'),
+    groupPhones: document.querySelector('#group-phones'),
+    phones: document.querySelector('#phones'),
+    phonesClose: document.querySelector('#phones-close'),
+    phonesTitle: document.querySelector('#phones-title'),
+    phonesList: document.querySelector('#phones-list'),
     groupJoin: document.querySelector('#group-join'),
     groupTyped: document.querySelector('#group-typed'),
     groupJoinButton: document.querySelector('#group-join-button'),
@@ -851,6 +856,9 @@ function drawGroup() {
     elements.groupAdmin.hidden = !running;
     elements.groupAdmin.textContent = WORDS.adminTitle;
 
+    elements.groupPhones.hidden = !(state.roster?.members ?? []).includes(state.member.memberId);
+    elements.groupPhones.textContent = WORDS.myPhonesTitle;
+
     elements.groupJoin.hidden = !ungrouped;
     elements.groupTyped.placeholder = WORDS.groupInvitation;
     elements.groupJoinButton.textContent = WORDS.groupJoin;
@@ -862,7 +870,106 @@ function drawGroup() {
     elements.groupError.textContent = state.groupTrouble ?? '';
 
     drawAdmin(running);
+    drawPhones();
 }
+
+/**
+ * This member's phones, drawn whenever the panel is open and something it shows
+ * has changed. Every one of them may be rung from here: this page is not a
+ * phone, so none of them is the one in hand.
+ */
+function drawPhones() {
+    if (!elements.phones.open) {
+        return;
+    }
+
+    const memberId = state.member.memberId;
+    const own = state.grants.get(memberId)?.phones ?? new Map();
+    const phones = phoneLines(memberId, own, state.labels);
+    const now = Date.now();
+
+    elements.phonesTitle.textContent = WORDS.myPhonesTitle;
+
+    if (phones.length === 0) {
+        const none = document.createElement('p');
+
+        none.textContent = WORDS.myPhonesNone;
+        elements.phonesList.replaceChildren(none);
+
+        return;
+    }
+
+    elements.phonesList.replaceChildren(
+        ...phones.map((phone) => {
+            const row = document.createElement('div');
+            const about = document.createElement('div');
+            const name = document.createElement('span');
+            const said = document.createElement('span');
+            const actions = document.createElement('div');
+
+            row.className = 'admin-member';
+            name.className = 'admin-name';
+            name.textContent = phone.name;
+            said.className = 'admin-about';
+            said.textContent = phoneText(phone, now);
+            about.append(name, said);
+            actions.className = 'admin-actions';
+
+            const siren = state.siren?.phoneId === phone.phoneId ? state.siren : null;
+            const sirenNow = siren === null ? null : sirenState(siren, now);
+
+            if (siren !== null) {
+                const told = sirenText(siren, sirenNow, [phone]);
+
+                if (told !== null) {
+                    const status = document.createElement('span');
+
+                    status.className = 'admin-about siren-status';
+                    status.textContent = told;
+                    about.append(status);
+                }
+            }
+
+            if (sirenNow?.kind === 'waiting' || sirenNow?.kind === 'sounding') {
+                const stop = document.createElement('button');
+
+                stop.type = 'button';
+                stop.className = 'siren-stop';
+                stop.innerHTML = MUTE_ICON;
+                stop.append(WORDS.sirenStop);
+                stop.addEventListener('click', () => {
+                    tryGroupWrite(() => stopSiren(phone.phoneId, memberId));
+                });
+                actions.append(stop);
+            } else {
+                const ring = document.createElement('button');
+
+                ring.type = 'button';
+                ring.className = 'siren-ring';
+                ring.title = WORDS.sirenHint;
+                ring.setAttribute('aria-label', WORDS.sirenHint);
+                ring.innerHTML = SPEAKER_ICON;
+                ring.addEventListener('click', () => {
+                    askSiren({ displayName: phone.name, memberId, phones: [phone] });
+                });
+                actions.append(ring);
+            }
+
+            row.append(about, actions);
+
+            return row;
+        }),
+    );
+}
+
+elements.groupPhones.addEventListener('click', () => {
+    if (!elements.phones.open) {
+        elements.phones.showModal();
+    }
+
+    drawPhones();
+});
+elements.phonesClose.addEventListener('click', () => elements.phones.close());
 
 /**
  * One person on the roster: their name, and whether they run the group.

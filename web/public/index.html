@@ -139,6 +139,9 @@
                              them, and only the member running the group is
                              offered it. -->
                         <button id="group-admin" type="button" hidden></button>
+                        <!-- Every member's own phones, to ring the one lost at
+                             home: not only for whoever runs the group. -->
+                        <button id="group-phones" type="button" hidden></button>
                     </div>
 
                     <!-- Nothing here is capitalised for the person typing:
@@ -167,6 +170,14 @@
              Kept in the markup rather than built on opening, the way the help
              windows are: the roster behind it changes while it stands, and
              what it shows has to be drawn again when it does. -->
+        <!-- This member's phones, each with the siren that finds it. -->
+        <dialog id="phones" class="admin">
+            <button id="phones-close" class="close-cross" type="button">×</button>
+            <h2 id="phones-title"></h2>
+            <div id="phones-list"></div>
+            <p id="phones-error" class="error" hidden></p>
+        </dialog>
+
         <dialog id="admin" class="admin">
             <button id="admin-close" class="close-cross" type="button">×</button>
             <h2 id="admin-title"></h2>
