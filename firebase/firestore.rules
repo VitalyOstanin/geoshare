@@ -64,6 +64,23 @@ service cloud.firestore {
         return data.get('owner', groupId);
       }
 
+      // Whether the group is searching for this member right now. A search
+      // opens the member's place to everybody in the group, over whatever
+      // their grant says, for as long as it stands; the rules that open a
+      // place read it here, so ending the search closes the place at once and
+      // not when the phone next writes.
+      //
+      // The end is counted from the server's clock, as with a viewing claim:
+      // an end the administrator's phone chose would be worth whatever that
+      // phone's clock said. A member who has left the roster is not searched
+      // for by the group they left.
+      function searchStands(uid) {
+        let path = /databases/$(database)/documents/groups/$(groupId)/searches/$(uid);
+        return uid in groupMembers() &&
+               exists(path) &&
+               get(path).data.renewedAt + duration.value(get(path).data.hours, 'h') > request.time;
+      }
+
       // How many people one group holds. Not a limit anybody is expected to
       // reach: it is what keeps a stolen code, or a mistake, from growing the
       // document without end, since a rule cannot walk a list to check it.
@@ -332,6 +349,50 @@ service cloud.firestore {
         allow delete: if isGroupAdmin();
       }
 
+      match /searches/{uid} {
+        // The group is looking for this member: their place is open to
+        // everybody in the group until the search is called off or runs out.
+        //
+        // Everybody in the group reads the collection, because everybody's
+        // map marks the member being looked for, and it names nobody's place.
+        // An administrator opens a search, renews it or opens it again once
+        // it has run out; any administrator ends it, and so does the member
+        // being looked for, who has been found the moment they say so.
+        //
+        // The length is a number of hours from the last renewal, both by the
+        // server's clock. Three days at most: a search forgotten on the
+        // administrator's screen would otherwise leave the member's place
+        // open to the whole group for good.
+        function searchShape() {
+          let data = request.resource.data;
+          return data.keys().hasOnly(['openedBy', 'startedAt', 'renewedBy', 'renewedAt', 'hours']) &&
+                 data.renewedBy == request.auth.uid &&
+                 data.renewedAt == request.time &&
+                 data.hours is int && data.hours >= 1 && data.hours <= 72;
+        }
+
+        // A search opened now names whoever opened it and when; a renewal
+        // leaves both as they were, so the family sees how long the member
+        // has been looked for rather than since the last tap.
+        function openedNow() {
+          return request.resource.data.openedBy == request.auth.uid &&
+                 request.resource.data.startedAt == request.time;
+        }
+
+        function openedBefore() {
+          return resource != null &&
+                 request.resource.data.openedBy == resource.data.openedBy &&
+                 request.resource.data.startedAt == resource.data.startedAt;
+        }
+
+        allow read: if isMember();
+        allow create: if isGroupAdmin() && uid in groupMembers() &&
+                         searchShape() && openedNow();
+        allow update: if isGroupAdmin() && uid in groupMembers() &&
+                         searchShape() && (openedBefore() || openedNow());
+        allow delete: if isGroupAdmin() || (isMember() && request.auth.uid == uid);
+      }
+
       match /members/{uid} {
         // What a member says about themselves: the name and the picture their
         // account carries, so that a marker can name a person rather than the
@@ -410,7 +471,7 @@ service cloud.firestore {
         // One document at a time: listing the collection would hand every
         // member the whole household's phones, which is the leak this
         // collection exists to close.
-        allow get: if isMember() && (isOwner() || mayReadGrant());
+        allow get: if isMember() && (isOwner() || mayReadGrant() || searchStands(uid));
         allow create, update: if isOwner() && grantShape();
         allow delete: if isOwner();
       }
@@ -448,7 +509,7 @@ service cloud.firestore {
 
         // One document at a time, as with the grants: a listing would hand a
         // member the phones of everybody they were not given.
-        allow get: if isMember() && (isOwner() || isGroupAdmin() || mayWatch());
+        allow get: if isMember() && (isOwner() || isGroupAdmin() || mayWatch() || searchStands(uid));
         allow create, update: if isOwner() && devicesShape();
         allow delete: if isOwner();
       }
@@ -635,7 +696,8 @@ service cloud.firestore {
                    .hasOnly(['leftOutCount', 'leftOutReason', 'leftOutSince']);
         }
 
-        allow get: if isMember() && (ownsPosition() || mayRead());
+        allow get: if isMember() &&
+                     (ownsPosition() || mayRead() || searchStands(positionId.split('\\.')[0]));
         allow create, update: if ownsPosition() &&
                                  ((positionShape() && leftOutShape()) ||
                                   (onlyTheLeftOutChanged() && leftOutShape()));

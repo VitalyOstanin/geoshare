@@ -10,6 +10,7 @@ groups/{groupId}/invitations/{code}         a code that lets one more person in
 groups/{groupId}/joins/{uid}                the code somebody is holding, while they join
 groups/{groupId}/falsePlaces/{placeId}      where a false signal is known to put phones
 groups/{groupId}/settings/{key}             what the group has settled about judging answers
+groups/{groupId}/searches/{uid}             the group looking for a member, which opens their place to all of it
 groups/{groupId}/members/{uid}              what a member says about themselves
 groups/{groupId}/grants/{uid}               who may watch a member (and, for older builds, their phones)
 groups/{groupId}/devices/{uid}              a member's phones and what each last said about itself
@@ -187,6 +188,35 @@ nothing or refuse honest positions. The rules hold the fields to numbers of the
 right kind; what the numbers mean together is weighed on the phone, and a
 document that does not stand as limits is ignored whole rather than applied in
 part.
+
+## searches/{uid}
+
+| Field       | Type      | Meaning                                                        |
+|-------------|-----------|-----------------------------------------------------------------|
+| `openedBy`  | string    | The administrator who opened the search                          |
+| `startedAt` | timestamp | When it was opened; set by the server itself                     |
+| `renewedBy` | string    | The administrator who last wrote it, the opener included         |
+| `renewedAt` | timestamp | When it was last written; set by the server itself               |
+| `hours`     | int       | How long it lasts from `renewedAt`; 1 to 72                      |
+
+The group is looking for this member. While the search stands — from
+`renewedAt` for `hours` by the server's clock — everybody in the group reads
+the member's position, grant and phones, whatever the grant's `sharedWith`
+says. The rules that open those documents read the search here, so calling it
+off closes them at once rather than when the phone next writes, for the same
+reason the permissions are read from the grant.
+
+Everybody in the group reads the collection: every map marks the member looked
+for, and a search names nobody's place. Only an administrator opens one, renews
+it, or opens it again once it has run out; a renewal keeps `openedBy` and
+`startedAt`, so the family sees how long the member has been looked for. Any
+administrator calls it off by deleting the document, and so does the member
+looked for: they are found the moment they say so. A member who leaves the
+roster is no longer searched for, whatever the document says.
+
+Three days at most, because a search forgotten on an administrator's screen
+would otherwise leave the member's place open to the whole group for good. The
+clients offer six hours, a day and three days.
 
 ## members/{uid}
 
