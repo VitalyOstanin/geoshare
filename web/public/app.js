@@ -990,24 +990,6 @@ function adminRow(line) {
 
     actions.className = 'admin-actions';
 
-    if (line.mayBeMadeAdmin) {
-        actions.append(
-            adminButton(WORDS.groupMakeAdmin, () => setRunning(line.memberId, true)),
-        );
-    }
-
-    if (line.mayStopRunning) {
-        actions.append(
-            adminButton(WORDS.groupStopRunning, () => setRunning(line.memberId, false), {
-                // Giving up one's own role cannot be undone from here: only
-                // another administrator can hand it back.
-                asked: line.isYou
-                    ? { title: WORDS.groupGiveUpRunning, go: WORDS.groupStopRunning }
-                    : null,
-            }),
-        );
-    }
-
     // Every phone of the member may be rung, one's own included: this page
     // is not a phone, and the phone looked for is most often one's other one.
     const siren = state.siren?.memberId === line.memberId ? state.siren : null;
@@ -1074,6 +1056,24 @@ function adminRow(line) {
             start.addEventListener('click', () => askSearch(line.memberId, false));
             actions.append(start);
         }
+    }
+
+    if (line.mayBeMadeAdmin) {
+        actions.append(
+            adminButton(WORDS.groupMakeAdmin, () => setRunning(line.memberId, true)),
+        );
+    }
+
+    if (line.mayStopRunning) {
+        actions.append(
+            adminButton(WORDS.groupStopRunning, () => setRunning(line.memberId, false), {
+                // Giving up one's own role cannot be undone from here: only
+                // another administrator can hand it back.
+                asked: line.isYou
+                    ? { title: WORDS.groupGiveUpRunning, go: WORDS.groupStopRunning }
+                    : null,
+            }),
+        );
     }
 
     if (line.removable) {
