@@ -182,4 +182,4 @@ suspend fun memberDisplayName(
 }
 
 /** How much of an account id stands in for a name nobody has published. */
-private const val SHORTENED_ID_LENGTH = 6
+internal const val SHORTENED_ID_LENGTH = 6

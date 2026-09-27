@@ -1,0 +1,106 @@
+package io.github.vitalyostanin.geoshare.map
+
+import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
+import org.junit.Assert.assertNull
+import org.junit.Assert.assertTrue
+import org.junit.Test
+import java.time.Duration
+import java.time.Instant
+
+/**
+ * The same expectations the page's own `sirens.test.mjs` checks: the phone and
+ * the caller's screen read the same document, and have to agree on whether a
+ * call is still worth answering.
+ */
+class SirensTest {
+    private val now: Instant = Instant.parse("2026-09-27T19:40:00Z")
+
+    private fun called(
+        calledSecondsAgo: Long,
+        heardAt: Instant? = null,
+        stoppedBy: String? = null,
+        stoppedAt: Instant? = null,
+    ): Siren = sirenOf(
+        phoneId = "grandma.tablet",
+        calledBy = "anna",
+        calledAt = now.minusSeconds(calledSecondsAgo),
+        heardAt = heardAt,
+        stoppedBy = stoppedBy,
+        stoppedAt = stoppedAt,
+    )!!
+
+    @Test
+    fun `a document that is not a siren is none`() {
+        assertNull(sirenOf("grandma.tablet", null, now, null, null, null))
+        assertNull(sirenOf("grandma.tablet", "anna", null, null, null, null))
+        assertNull(sirenOf("grandma", "anna", now, null, null, null))
+    }
+
+    @Test
+    fun `the member is the phone id up to its dot`() {
+        assertEquals("grandma", called(0).memberId)
+    }
+
+    @Test
+    fun `a stale call is not sounded`() {
+        assertFalse(shouldSound(called(61), lastAnswered = null, now = now))
+    }
+
+    @Test
+    fun `a call already answered is not sounded again`() {
+        val siren = called(10)
+
+        assertFalse(shouldSound(siren, lastAnswered = siren.calledAt, now = now))
+        assertFalse(shouldSound(siren, lastAnswered = now, now = now))
+    }
+
+    @Test
+    fun `a stopped call is not sounded`() {
+        val siren = called(10, stoppedBy = "boris", stoppedAt = now)
+
+        assertFalse(shouldSound(siren, lastAnswered = null, now = now))
+    }
+
+    @Test
+    fun `a fresh unanswered call is sounded`() {
+        val siren = called(10)
+
+        assertTrue(shouldSound(siren, lastAnswered = now.minusSeconds(20), now = now))
+        assertTrue(shouldSound(siren, lastAnswered = null, now = now))
+    }
+
+    @Test
+    fun `called and still within reach is waiting`() {
+        assertEquals(SirenState.Waiting, sirenState(called(59), now))
+    }
+
+    @Test
+    fun `heard and within its seconds is sounding`() {
+        val siren = called(30, heardAt = now.minusSeconds(5))
+
+        assertEquals(
+            SirenState.Sounding(siren.heardAt!!.plus(Duration.ofSeconds(SIREN_SECONDS))),
+            sirenState(siren, now),
+        )
+    }
+
+    @Test
+    fun `heard and past its seconds is over`() {
+        val siren = called(30, heardAt = now.minusSeconds(SIREN_SECONDS + 1))
+
+        assertEquals(SirenState.Over, sirenState(siren, now))
+    }
+
+    @Test
+    fun `unheard and past the fresh window is no answer`() {
+        assertEquals(SirenState.NoAnswer, sirenState(called(61), now))
+    }
+
+    @Test
+    fun `stopped wins over every other state`() {
+        val siren = called(61, heardAt = now.minusSeconds(30), stoppedBy = "boris", stoppedAt = now)
+
+        assertEquals(SirenState.Stopped("boris"), sirenState(siren, now))
+    }
+}

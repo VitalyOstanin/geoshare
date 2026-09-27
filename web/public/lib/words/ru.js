@@ -281,6 +281,23 @@ export const RU = {
     groupMakeAdmin: 'Сделать админом',
     groupStopRunning: 'Снять роль админа',
     groupGiveUpRunning: 'Снять с себя роль админа? Вернуть её сможет только другой админ.',
+    groupRemoveTitle: (name) => `Удалить из группы: ${name}?`,
+    groupRemoveNote:
+        'Участник перестанет видеть группу, а группа — его. ' +
+        'Вернуться в группу можно будет только по новому приглашению.',
+    groupRemoveGo: 'Удалить',
+    sirenHint: 'Сирена на 20 секунд',
+    sirenTitle: (name) => `Включить сирену: ${name}?`,
+    sirenPhoneChip: (name, age) => `${name} · ${age}`,
+    sirenNote:
+        'Телефон будет громко звучать 20 секунд, даже если на нём выключен звук. ' +
+        'Выключить сирену можно на самом телефоне или здесь.',
+    sirenGo: 'Включить',
+    sirenStop: 'Выключить',
+    sirenWaiting: (phone) => `сирена на ${phone} · ждём ответа телефона`,
+    sirenSounding: (phone, seconds) => `сирена на ${phone} · ${seconds} с · телефон принял`,
+    sirenNoAnswer: (phone) => `${phone} не ответил на сирену`,
+    sirenStopped: (phone) => `сирена на ${phone} выключена`,
     groupUnrun: 'Группу никто не ведёт, её состав задаётся в консоли Firebase.',
 
     // The panel the member running the group opens.

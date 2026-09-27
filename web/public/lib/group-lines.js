@@ -68,6 +68,8 @@ function inReadingOrder(one, other) {
 export function phoneLines(memberId, phones, labels = NO_LABELS) {
     return [...phones]
         .map(([deviceId, phone]) => ({
+            // The address the phone's siren is called at.
+            phoneId: `${memberId}.${deviceId}`,
             name: labels.phones.get(`${memberId}.${deviceId}`)
                 ?? phone.name
                 ?? phone.model

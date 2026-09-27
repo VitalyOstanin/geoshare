@@ -114,6 +114,18 @@ fun searchesOf(store: FirebaseFirestore): CollectionReference =
     groupDocument(store).collection("searches")
 
 /**
+ * The group's sirens: one document per phone, addressed by `{uid}.{deviceId}`
+ * the same as a position.
+ *
+ * An administrator may call a siren on any phone in the group; a member may
+ * call one only on their own. Reading a document is likewise limited to
+ * whoever may call it, so the collection as a whole is never listened to —
+ * only the one document a phone or a caller's screen cares about.
+ */
+fun sirensOf(store: FirebaseFirestore): CollectionReference =
+    groupDocument(store).collection("sirens")
+
+/**
  * What the group has settled about how its phones judge an answer.
  *
  * One document per subject rather than fields on the group document: the
@@ -283,4 +295,13 @@ object SearchField {
     const val RENEWED_BY = "renewedBy"
     const val RENEWED_AT = "renewedAt"
     const val HOURS = "hours"
+}
+
+/** The fields of a siren: a call that rings one phone in the group. */
+object SirenField {
+    const val CALLED_BY = "calledBy"
+    const val CALLED_AT = "calledAt"
+    const val HEARD_AT = "heardAt"
+    const val STOPPED_BY = "stoppedBy"
+    const val STOPPED_AT = "stoppedAt"
 }

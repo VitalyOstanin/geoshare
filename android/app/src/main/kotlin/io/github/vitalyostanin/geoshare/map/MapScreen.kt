@@ -50,6 +50,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.produceState
@@ -101,6 +102,7 @@ import io.github.vitalyostanin.geoshare.membership.Roster
 import io.github.vitalyostanin.geoshare.membership.Standing
 import io.github.vitalyostanin.geoshare.membership.standingIn
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.launch
 import java.time.Instant
 import java.time.ZoneId
@@ -201,6 +203,8 @@ fun MapScreen(
     /** Who else has the map open, as they themselves claim. */
     watchers: List<Watcher>,
     ownMemberId: String,
+    /** This phone's own `{uid}.{deviceId}`: the admin panel rings every phone but this one. */
+    ownPhoneId: String?,
     ownDisplayName: String?,
     ownPictureUrl: String?,
     /** The group's searches, by the member each is looking for. */
@@ -501,6 +505,45 @@ fun MapScreen(
                 }
             }
 
+            // The siren sounding on this very phone, with the one button that
+            // matters while it does; the notification carries the same one
+            // for a phone that is locked or showing something else.
+            val ownSirenFlow =
+                remember(ownPhoneId) {
+                    ownPhoneId?.let(actions.sirenOf) ?: flowOf(null)
+                }
+            val ownSiren by ownSirenFlow.collectAsState(initial = null)
+            val sirenNow by produceState(Instant.now(), ownSiren) {
+                while (ownSiren != null) {
+                    value = Instant.now()
+                    delay(SIREN_BANNER_TICK_MS)
+                }
+            }
+            val sirenScope = rememberCoroutineScope()
+
+            ownSiren?.let { siren ->
+                val state = sirenState(siren, sirenNow)
+
+                if (state is SirenState.Sounding) {
+                    SirenBanner(
+                        callerName =
+                        memberName(
+                            profile = profiles[siren.calledBy],
+                            memberId = siren.calledBy,
+                            own = siren.calledBy == ownMemberId,
+                            ownName = ownName,
+                        ),
+                        until = state.until,
+                        onStop = { sirenScope.launch { actions.onStopSiren(siren.phoneId) } },
+                        modifier =
+                        Modifier
+                            .align(Alignment.TopCenter)
+                            .statusBarsPadding()
+                            .padding(top = 64.dp, start = 12.dp, end = 12.dp),
+                    )
+                }
+            }
+
             if (opened != null) {
                 val openedSearch = searches[opened.memberId]?.takeIf { opened.memberId in sought }
 
@@ -655,6 +698,10 @@ fun MapScreen(
             onSetRunning = actions.onSetRunning,
             onSearch = actions.onSearch,
             onEndSearch = actions.onEndSearch,
+            ownPhoneId = ownPhoneId,
+            sirenOf = actions.sirenOf,
+            onCallSiren = actions.onCallSiren,
+            onStopSiren = actions.onStopSiren,
             onClose = { adminOpen = false },
         )
     }
@@ -1980,3 +2027,6 @@ private fun currentTime() = produceState(initialValue = Instant.now()) {
         value = Instant.now()
     }
 }
+
+/** How often the siren banner decides whether the phone is still sounding. */
+private const val SIREN_BANNER_TICK_MS = 1_000L

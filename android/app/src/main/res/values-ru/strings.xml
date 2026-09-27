@@ -178,6 +178,9 @@
     <string name="group_copied">Приглашение скопировано</string>
     <string name="group_runs_it">админ</string>
     <string name="group_remove">Удалить из группы</string>
+    <string name="group_remove_title">Удалить из группы: %1$s?</string>
+    <string name="group_remove_text">Участник перестанет видеть группу, а группа — его. Вернуться в группу можно будет только по новому приглашению.</string>
+    <string name="group_remove_go">Удалить</string>
     <string name="group_make_admin">Сделать админом</string>
     <string name="group_stop_running">Снять роль админа</string>
     <string name="group_give_up_title">Снять с себя роль админа?</string>
@@ -219,6 +222,22 @@
     <string name="sought_banner">Вашу позицию видит вся группа до %1$s</string>
     <string name="sought_banner_note">Открыли поиск: %1$s. Если с вами всё в порядке, закройте поиск.</string>
     <string name="sought_found">Меня нашли</string>
+    <string name="siren_notification_title">Включили сирену: %1$s</string>
+    <string name="siren_notification_text">Телефон звучит, чтобы его нашли</string>
+    <string name="siren_called_by_you">Вы</string>
+    <string name="siren_seconds_left">Ещё %1$d с.</string>
+    <string name="siren_off">Выключить сирену</string>
+    <string name="siren_channel">Сирена</string>
+    <string name="siren_title">Включить сирену: %1$s?</string>
+    <string name="siren_phone_chip">%1$s · %2$s</string>
+    <string name="siren_note">Телефон будет громко звучать 20 секунд, даже если на нём выключен звук. Выключить сирену можно на самом телефоне или здесь.</string>
+    <string name="siren_go">Включить</string>
+    <string name="siren_hint">Сирена на 20 секунд</string>
+    <string name="siren_stop_short">Выключить</string>
+    <string name="siren_status_waiting">сирена на %1$s · ждём ответа телефона</string>
+    <string name="siren_status_sounding">сирена на %1$s · %2$d с · телефон принял</string>
+    <string name="siren_status_no_answer">%1$s не ответил на сирену</string>
+    <string name="siren_status_stopped">сирена на %1$s выключена</string>
     <!-- Показывается тому, кого ищут, отдельным уведомлением: то, что позицию
          видит вся группа, стоит того, чтобы разбудить телефон, а тихая
          передача места — нет. -->

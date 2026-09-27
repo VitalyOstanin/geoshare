@@ -46,6 +46,7 @@ import {
     standingSearches,
     withSearches,
 } from './lib/searches.js';
+import { sirenState } from './lib/sirens.js';
 import { applyTheme, readTheme, writeTheme } from './lib/theme.js';
 import { watchingBesides, watchingMembers } from './lib/watchers.js';
 import { readLanguage, writeLanguage } from './lib/language.js';
@@ -66,11 +67,13 @@ import {
     makeInvitation,
     publishProfile,
     removeMember,
+    callSiren,
     endSearch,
     openSearch,
     renewSearch,
     setRunning,
     signIn,
+    stopSiren,
     signInReturned,
     watchFalsePlaces,
     watchPositions,
@@ -80,6 +83,7 @@ import {
     watchRoster,
     watchSearches,
     watchSignIn,
+    watchSiren,
     watchWatchers,
     writeLabel,
 } from './lib/store.js';
@@ -156,6 +160,18 @@ const elements = {
     searchError: document.querySelector('#search-error'),
     searchGo: document.querySelector('#search-go'),
     searchCancel: document.querySelector('#search-cancel'),
+    siren: document.querySelector('#siren'),
+    sirenTitle: document.querySelector('#siren-title'),
+    sirenPhones: document.querySelector('#siren-phones'),
+    sirenNote: document.querySelector('#siren-note'),
+    sirenError: document.querySelector('#siren-error'),
+    sirenGo: document.querySelector('#siren-go'),
+    sirenCancel: document.querySelector('#siren-cancel'),
+    confirm: document.querySelector('#confirm'),
+    confirmTitle: document.querySelector('#confirm-title'),
+    confirmNote: document.querySelector('#confirm-note'),
+    confirmGo: document.querySelector('#confirm-go'),
+    confirmCancel: document.querySelector('#confirm-cancel'),
     soughtBanner: document.querySelector('#sought-banner'),
     soughtText: document.querySelector('#sought-text'),
     soughtNote: document.querySelector('#sought-note'),
@@ -269,6 +285,15 @@ const state = {
     // The search being opened or renewed in the window: whose, which of the
     // two, and the length picked.
     searchAsk: null,
+    // The phone this page last rang, and what its document says, followed
+    // until another is rung so that its row can say whether it answered.
+    sirenPhoneId: null,
+    siren: null,
+    stopSirenWatch: null,
+    sirenTick: null,
+    // The call being asked about in the window: whose, their phones, the one
+    // picked.
+    sirenAsk: null,
 };
 
 elements.signInButton.addEventListener('click', async () => {
@@ -976,9 +1001,52 @@ function adminRow(line) {
             adminButton(WORDS.groupStopRunning, () => setRunning(line.memberId, false), {
                 // Giving up one's own role cannot be undone from here: only
                 // another administrator can hand it back.
-                asked: line.isYou ? WORDS.groupGiveUpRunning : null,
+                asked: line.isYou
+                    ? { title: WORDS.groupGiveUpRunning, go: WORDS.groupStopRunning }
+                    : null,
             }),
         );
+    }
+
+    // Every phone of the member may be rung, one's own included: this page
+    // is not a phone, and the phone looked for is most often one's other one.
+    const siren = state.siren?.memberId === line.memberId ? state.siren : null;
+    const sirenNow = siren === null ? null : sirenState(siren, Date.now());
+    const sounding = sirenNow?.kind === 'waiting' || sirenNow?.kind === 'sounding';
+
+    if (siren !== null) {
+        const told = sirenText(siren, sirenNow, line.phones);
+
+        if (told !== null) {
+            const status = document.createElement('span');
+
+            status.className = 'admin-about siren-status';
+            status.textContent = told;
+            about.append(status);
+        }
+    }
+
+    if (sounding) {
+        const stop = document.createElement('button');
+
+        stop.type = 'button';
+        stop.className = 'siren-stop';
+        stop.innerHTML = MUTE_ICON;
+        stop.append(WORDS.sirenStop);
+        stop.addEventListener('click', () => {
+            tryGroupWrite(() => stopSiren(siren.phoneId, state.member.memberId));
+        });
+        actions.append(stop);
+    } else if (line.phones.length > 0) {
+        const ring = document.createElement('button');
+
+        ring.type = 'button';
+        ring.className = 'siren-ring';
+        ring.title = WORDS.sirenHint;
+        ring.setAttribute('aria-label', WORDS.sirenHint);
+        ring.innerHTML = SPEAKER_ICON;
+        ring.addEventListener('click', () => askSiren(line));
+        actions.append(ring);
     }
 
     // Anybody but oneself may be looked for, administrators included: the
@@ -1010,7 +1078,13 @@ function adminRow(line) {
 
     if (line.removable) {
         actions.append(
-            adminButton(WORDS.groupRemove, () => removeMember(state.roster, line.memberId)),
+            adminButton(WORDS.groupRemove, () => removeMember(state.roster, line.memberId), {
+                asked: {
+                    title: WORDS.groupRemoveTitle(name.textContent),
+                    note: WORDS.groupRemoveNote,
+                    go: WORDS.groupRemoveGo,
+                },
+            }),
         );
     }
 
@@ -1021,20 +1095,192 @@ function adminRow(line) {
     return row;
 }
 
-/** A button of the panel that makes one write to the group. */
+/**
+ * A button of the panel that makes one write to the group, after [asked]
+ * — a title, an optional note and the word on the button that goes ahead —
+ * when the write cannot be taken back from here.
+ */
 function adminButton(text, write, { asked = null } = {}) {
     const button = document.createElement('button');
 
     button.type = 'button';
     button.textContent = text;
     button.addEventListener('click', () => {
-        if (asked === null || window.confirm(asked)) {
+        if (asked === null) {
             tryGroupWrite(write);
+        } else {
+            askConfirm(asked, write);
         }
     });
 
     return button;
 }
+
+/** The loudspeaker on the button that rings a phone, and the one struck through that stops it. */
+const SPEAKER_ICON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 9v6h4l5 4V5L8 9z"/><path d="M16.5 8.5a5 5 0 0 1 0 7"/><path d="M19.5 5.5a9 9 0 0 1 0 13"/></svg>';
+const MUTE_ICON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 9v6h4l5 4V5L8 9z"/><path d="M17 9l5 6M22 9l-5 6"/></svg>';
+
+/**
+ * What a row says of the call this page made: which phone, the seconds left
+ * while it sounds, or that it never answered. Nothing once it is over.
+ */
+function sirenText(siren, now, phones) {
+    const phone = phones.find((one) => one.phoneId === siren.phoneId)?.name
+        ?? shortName(siren.phoneId.split('.')[1] ?? siren.phoneId);
+
+    switch (now.kind) {
+        case 'waiting':
+            return WORDS.sirenWaiting(phone);
+        case 'sounding':
+            return WORDS.sirenSounding(
+                phone,
+                Math.max(0, Math.ceil((now.until - Date.now()) / 1000)),
+            );
+        case 'noAnswer':
+            return WORDS.sirenNoAnswer(phone);
+        case 'stopped':
+            return WORDS.sirenStopped(phone);
+        default:
+            return null;
+    }
+}
+
+/** Follows the phone just rung, and redraws its row every second while the call lasts. */
+function followSiren(phoneId) {
+    state.stopSirenWatch?.();
+    state.sirenPhoneId = phoneId;
+    state.siren = null;
+    state.stopSirenWatch = watchSiren(phoneId, (siren) => {
+        state.siren = siren;
+        drawGroup();
+    });
+
+    clearInterval(state.sirenTick);
+    state.sirenTick = setInterval(() => {
+        const kind = state.siren ? sirenState(state.siren, Date.now()).kind : 'waiting';
+
+        drawGroup();
+
+        if (kind !== 'waiting' && kind !== 'sounding') {
+            clearInterval(state.sirenTick);
+            state.sirenTick = null;
+        }
+    }, 1000);
+}
+
+function askSiren(line) {
+    const last = [...line.phones]
+        .sort((one, other) => (other.onlineAt ?? 0) - (one.onlineAt ?? 0))[0];
+
+    state.sirenAsk = {
+        name: line.displayName ?? shortName(line.memberId),
+        phones: line.phones,
+        // The phone last in touch is the likeliest to hear it.
+        selected: last.phoneId,
+    };
+    elements.sirenError.hidden = true;
+    elements.sirenGo.disabled = false;
+    drawSirenAsk();
+
+    if (!elements.siren.open) {
+        elements.siren.showModal();
+    }
+}
+
+function drawSirenAsk() {
+    const ask = state.sirenAsk;
+
+    if (!ask) {
+        return;
+    }
+
+    const now = Date.now();
+
+    elements.sirenTitle.textContent = WORDS.sirenTitle(ask.name);
+    elements.sirenPhones.hidden = ask.phones.length < 2;
+    elements.sirenPhones.replaceChildren(
+        ...ask.phones.map((phone) => {
+            const button = document.createElement('button');
+
+            button.type = 'button';
+            button.textContent = phone.onlineAt === null
+                ? phone.name
+                : WORDS.sirenPhoneChip(phone.name, ageText(positionAge(phone.onlineAt, now)));
+            button.setAttribute('aria-pressed', String(phone.phoneId === ask.selected));
+            button.addEventListener('click', () => {
+                ask.selected = phone.phoneId;
+                drawSirenAsk();
+            });
+
+            return button;
+        }),
+    );
+    elements.sirenNote.textContent = WORDS.sirenNote;
+    elements.sirenGo.textContent = WORDS.sirenGo;
+    elements.sirenCancel.textContent = WORDS.searchCancel;
+}
+
+/**
+ * Rings the phone picked and waits for the database: a refusal stays on the
+ * window rather than closing it on a call that never went out.
+ */
+elements.sirenGo.addEventListener('click', async () => {
+    const ask = state.sirenAsk;
+
+    if (!ask) {
+        return;
+    }
+
+    elements.sirenGo.disabled = true;
+    elements.sirenError.hidden = true;
+
+    try {
+        await callSiren(ask.selected, state.member.memberId);
+        followSiren(ask.selected);
+
+        if (state.sirenAsk === ask) {
+            elements.siren.close();
+        }
+    } catch {
+        elements.sirenError.textContent = WORDS.groupRefused;
+        elements.sirenError.hidden = false;
+        elements.sirenGo.disabled = false;
+    }
+});
+elements.sirenCancel.addEventListener('click', () => elements.siren.close());
+elements.siren.addEventListener('close', () => {
+    state.sirenAsk = null;
+});
+
+/** The write waiting on the confirming window, or null while it is shut. */
+let confirmedWrite = null;
+
+function askConfirm({ title, note = '', go }, write) {
+    confirmedWrite = write;
+    elements.confirmTitle.textContent = title;
+    elements.confirmNote.textContent = note;
+    elements.confirmNote.hidden = note === '';
+    elements.confirmGo.textContent = go;
+    elements.confirmCancel.textContent = WORDS.searchCancel;
+
+    if (!elements.confirm.open) {
+        elements.confirm.showModal();
+    }
+}
+
+elements.confirmGo.addEventListener('click', () => {
+    const write = confirmedWrite;
+
+    elements.confirm.close();
+
+    if (write) {
+        tryGroupWrite(write);
+    }
+});
+elements.confirmCancel.addEventListener('click', () => elements.confirm.close());
+elements.confirm.addEventListener('close', () => {
+    confirmedWrite = null;
+});
 
 /** A phone, when it was last in touch, and its charge. */
 function phoneText(phone, now) {

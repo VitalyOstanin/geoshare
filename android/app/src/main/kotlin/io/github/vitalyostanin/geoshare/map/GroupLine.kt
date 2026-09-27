@@ -48,6 +48,8 @@ data class GroupLine(
 
 /** One phone of a member, named the way the map names it. */
 data class PhoneLine(
+    /** The phone's `{uid}.{deviceId}`, the address its siren is called at. */
+    val phoneId: String,
     val name: String,
     /** When the phone was last in touch, by the server's clock. */
     val onlineAt: Instant?,
@@ -66,6 +68,7 @@ fun phoneLines(
 ): List<PhoneLine> = phones
     .map { (deviceId, phone) ->
         PhoneLine(
+            phoneId = positionId(memberId, deviceId),
             name =
             labels.phones[positionId(memberId, deviceId)]
                 ?: phone.name

@@ -273,6 +273,23 @@ export const EN = {
     groupMakeAdmin: 'Make admin',
     groupStopRunning: 'Remove admin role',
     groupGiveUpRunning: 'Give up your admin role? Only another admin can give it back.',
+    groupRemoveTitle: (name) => `Remove ${name} from the group?`,
+    groupRemoveNote:
+        'They will no longer see the group, nor the group them. ' +
+        'Only a new invitation brings them back.',
+    groupRemoveGo: 'Remove',
+    sirenHint: 'Siren for 20 seconds',
+    sirenTitle: (name) => `Switch on the siren: ${name}?`,
+    sirenPhoneChip: (name, age) => `${name} · ${age}`,
+    sirenNote:
+        'The phone will sound loudly for 20 seconds, even with its sound off. ' +
+        'The siren can be stopped on the phone itself or here.',
+    sirenGo: 'Switch on',
+    sirenStop: 'Stop',
+    sirenWaiting: (phone) => `siren on ${phone} · waiting for the phone`,
+    sirenSounding: (phone, seconds) => `siren on ${phone} · ${seconds} s · the phone answered`,
+    sirenNoAnswer: (phone) => `${phone} did not answer the siren`,
+    sirenStopped: (phone) => `siren on ${phone} stopped`,
     groupUnrun: 'Nobody runs this group, so its members are set from the Firebase console.',
 
     // The panel the member running the group opens: the household seen whole,

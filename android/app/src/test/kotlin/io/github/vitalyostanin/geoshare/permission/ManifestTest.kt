@@ -82,6 +82,8 @@ class ManifestTest {
                 "android.permission.FOREGROUND_SERVICE",
                 "android.permission.FOREGROUND_SERVICE_LOCATION",
                 "android.permission.POST_NOTIFICATIONS",
+                // The siren sounds through "Do Not Disturb" set to total silence.
+                "android.permission.ACCESS_NOTIFICATION_POLICY",
                 "android.permission.RECEIVE_BOOT_COMPLETED",
                 "android.permission.REQUEST_IGNORE_BATTERY_OPTIMIZATIONS",
             )

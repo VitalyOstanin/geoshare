@@ -1411,6 +1411,48 @@ button.alarm-fill {
     opacity: 1;
 }
 
+/* The call this page made, in the siren's red: it is read at a glance. */
+.admin-about.siren-status {
+    opacity: 1;
+    color: var(--alarm);
+    font-weight: 600;
+}
+
+/* A round red loudspeaker ahead of "Look for": the siren on a phone. */
+.admin-actions button.siren-ring {
+    display: inline-grid;
+    place-items: center;
+    width: 2rem;
+    height: 2rem;
+    padding: 0.35rem;
+    border: 1px solid var(--alarm);
+    border-radius: 50%;
+    background: transparent;
+    color: var(--alarm);
+    cursor: pointer;
+}
+
+.admin-actions button.siren-stop {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
+    border: 1px solid var(--alarm);
+    border-radius: 0.4rem;
+    padding: 0.3rem 0.7rem;
+    background: var(--alarm);
+    color: var(--on-alarm);
+    font: inherit;
+    font-size: 0.8rem;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+.siren-ring svg,
+.siren-stop svg {
+    width: 1rem;
+    height: 1rem;
+}
+
 /* Every search standing, under the rows: who opened it and when it ends, with
    the two things to do about it. */
 #admin-searches {
@@ -1445,7 +1487,9 @@ button.alarm-fill {
 }
 
 .admin-search button:not(.alarm-fill),
-#search-buttons button:not(.alarm) {
+#search-buttons button:not(.alarm),
+#confirm-buttons button:not(.alarm),
+#siren-buttons button:not(.alarm) {
     border: 1px solid var(--edge);
     border-radius: 0.4rem;
     padding: 0.3rem 0.7rem;
@@ -1457,7 +1501,9 @@ button.alarm-fill {
 }
 
 .search #search-note,
-.search #search-until {
+.search #search-until,
+.search #confirm-note,
+.search #siren-note {
     margin: 0 0 0.5rem;
     font-size: 0.8rem;
 }
@@ -1470,13 +1516,17 @@ button.alarm-fill {
     margin-bottom: 0.5rem;
 }
 
-#search-buttons {
+#search-buttons,
+#confirm-buttons,
+#siren-buttons {
     display: flex;
     justify-content: flex-end;
     gap: 0.3rem;
 }
 
-#search-buttons button.alarm {
+#search-buttons button.alarm,
+#confirm-buttons button.alarm,
+#siren-buttons button.alarm {
     border: 1px solid var(--alarm);
     border-radius: 0.4rem;
     padding: 0.3rem 0.7rem;
@@ -1521,7 +1571,8 @@ button.alarm-fill {
 }
 
 /* The three lengths share one row, the way the theme's three do. */
-#search-hours button {
+#search-hours button,
+#siren-phones button {
     flex: 1;
     padding: 0.35rem 0.2rem;
     border: 0;
@@ -1532,11 +1583,13 @@ button.alarm-fill {
     font-size: 0.8rem;
 }
 
-#search-hours button + button {
+#search-hours button + button,
+#siren-phones button + button {
     border-left: 1px solid var(--edge);
 }
 
-#search-hours button[aria-pressed="true"] {
+#search-hours button[aria-pressed="true"],
+#siren-phones button[aria-pressed="true"] {
     background: var(--link);
     color: var(--on-link);
     font-weight: 600;

@@ -194,6 +194,9 @@
     <string name="group_copied">Invitation copied</string>
     <string name="group_runs_it">admin</string>
     <string name="group_remove">Remove from the group</string>
+    <string name="group_remove_title">Remove %1$s from the group?</string>
+    <string name="group_remove_text">They will no longer see the group, nor the group them. Only a new invitation brings them back.</string>
+    <string name="group_remove_go">Remove</string>
     <string name="group_make_admin">Make admin</string>
     <string name="group_stop_running">Remove admin role</string>
     <string name="group_give_up_title">Give up your admin role?</string>
@@ -243,6 +246,22 @@
     <string name="sought_banner">The whole group sees where you are until %1$s</string>
     <string name="sought_banner_note">Opened by %1$s. If you are all right, end the search.</string>
     <string name="sought_found">I\'m found</string>
+    <string name="siren_notification_title">Siren switched on by %1$s</string>
+    <string name="siren_notification_text">The phone is sounding so that it can be found</string>
+    <string name="siren_called_by_you">you</string>
+    <string name="siren_seconds_left">%1$d s left.</string>
+    <string name="siren_off">Stop the siren</string>
+    <string name="siren_channel">Siren</string>
+    <string name="siren_title">Switch on the siren: %1$s?</string>
+    <string name="siren_phone_chip">%1$s · %2$s</string>
+    <string name="siren_note">The phone will sound loudly for 20 seconds, even with its sound off. The siren can be stopped on the phone itself or here.</string>
+    <string name="siren_go">Switch on</string>
+    <string name="siren_hint">Siren for 20 seconds</string>
+    <string name="siren_stop_short">Stop</string>
+    <string name="siren_status_waiting">siren on %1$s · waiting for the phone</string>
+    <string name="siren_status_sounding">siren on %1$s · %2$d s · the phone answered</string>
+    <string name="siren_status_no_answer">%1$s did not answer the siren</string>
+    <string name="siren_status_stopped">siren on %1$s stopped</string>
     <!-- Shown to the member being looked for, as a notification of its own:
          being watched by the whole group is worth waking the phone for in a
          way that sharing quietly never is. -->

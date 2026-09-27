@@ -29,6 +29,7 @@ import { labelsFrom } from './labels.js';
 import { placesOf } from './false-places.js';
 import { combinedGrants, phonesOf } from './phones.js';
 import { searchOf } from './searches.js';
+import { sirenOf } from './sirens.js';
 import {
     INVITATION_LASTS_MS,
     invitationText,
@@ -492,6 +493,57 @@ export function renewSearch(memberId, adminId, hours) {
 /** Ends a search: the member was found, and their place closes to all but whom they share with. */
 export function endSearch(memberId) {
     return deleteDoc(doc(store, 'groups', currentGroup(), 'searches', memberId));
+}
+
+/**
+ * A phone's siren, and again whenever it changes. There is one document per
+ * phone, so a refusal — or a phone that was never called — is read as no
+ * siren, not as an error to show.
+ */
+export function watchSiren(phoneId, onSiren) {
+    return onSnapshot(
+        doc(store, 'groups', currentGroup(), 'sirens', phoneId),
+        (document) => {
+            if (!document.exists()) {
+                onSiren(null);
+
+                return;
+            }
+
+            const data = document.data({ serverTimestamps: 'estimate' });
+
+            onSiren(
+                sirenOf(phoneId, {
+                    ...data,
+                    calledAt: data.calledAt?.toMillis?.(),
+                    heardAt: data.heardAt?.toMillis?.(),
+                    stoppedAt: data.stoppedAt?.toMillis?.(),
+                }),
+            );
+        },
+        () => onSiren(null),
+    );
+}
+
+/**
+ * Calls a phone's siren. Written whole rather than merged, since the rule
+ * allows only these two fields on a call: a document left over from an
+ * earlier one wipes its `heardAt` and `stopped*` along with it, so this call
+ * starts from a clean one, as ringing again should.
+ */
+export function callSiren(phoneId, callerId) {
+    return setDoc(doc(store, 'groups', currentGroup(), 'sirens', phoneId), {
+        calledBy: callerId,
+        calledAt: serverTimestamp(),
+    });
+}
+
+/** Stops a phone's siren, naming whoever stopped it. */
+export function stopSiren(phoneId, stopperId) {
+    return updateDoc(doc(store, 'groups', currentGroup(), 'sirens', phoneId), {
+        stoppedBy: stopperId,
+        stoppedAt: serverTimestamp(),
+    });
 }
 
 /**

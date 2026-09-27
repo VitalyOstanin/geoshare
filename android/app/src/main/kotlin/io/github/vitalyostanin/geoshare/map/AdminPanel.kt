@@ -5,6 +5,8 @@ import android.content.ClipboardManager
 import android.widget.Toast
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
@@ -18,13 +20,17 @@ import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
@@ -32,13 +38,19 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontFamily
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import io.github.vitalyostanin.geoshare.R
 import io.github.vitalyostanin.geoshare.membership.Roster
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.launch
+import java.time.Duration
 import java.time.Instant
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
@@ -80,12 +92,21 @@ fun AdminPanel(
     onSearch: suspend (memberId: String, renew: Boolean, hours: Int) -> Boolean,
     /** Ends a search: the member has been found. */
     onEndSearch: suspend (memberId: String) -> Unit,
+    /** This phone's own `{uid}.{deviceId}`: the one phone nobody here rings. */
+    ownPhoneId: String?,
+    /** A phone's siren as the database has it, followed for as long as asked. */
+    sirenOf: (phoneId: String) -> Flow<Siren?>,
+    /** Rings a phone; answers whether the call stuck. */
+    onCallSiren: suspend (phoneId: String) -> Boolean,
+    onStopSiren: suspend (phoneId: String) -> Unit,
     onClose: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val lines = groupOverview(roster, profiles, grants, ownMemberId, labels)
     val standing = remember(searches, now) { standingSearches(searches, now) }
     var givingUp by remember { mutableStateOf(false) }
+    // The member about to be removed and the name the dialog calls them by.
+    var removing by remember { mutableStateOf<Pair<String, String>?>(null) }
     // Who is being asked about, in which of the two ways, and the length
     // picked so far -- held apart from whether the write is refused, so a
     // refusal on one member's search does not linger once a different one is
@@ -95,6 +116,41 @@ fun AdminPanel(
     var searchTrouble by remember { mutableStateOf(false) }
     var searchBusy by remember { mutableStateOf(false) }
     val scope = rememberCoroutineScope()
+
+    // The phone this screen last rang, followed until the panel is closed so
+    // that its row can say whether it answered.
+    var sirenPhoneId by remember { mutableStateOf<String?>(null) }
+    val siren by remember(sirenPhoneId) { sirenPhoneId?.let(sirenOf) ?: flowOf(null) }
+        .collectAsState(initial = null)
+    var sirenAsk by remember { mutableStateOf<SirenAsk?>(null) }
+    var sirenTrouble by remember { mutableStateOf(false) }
+    var sirenBusy by remember { mutableStateOf(false) }
+    // The countdown reads seconds, and the panel's own clock ticks far slower.
+    val sirenNow by produceState(now, siren) {
+        while (siren != null) {
+            value = Instant.now()
+            delay(SIREN_TICK_MS)
+        }
+    }
+
+    fun writeSiren() {
+        val ask = sirenAsk ?: return
+
+        sirenBusy = true
+        scope.launch {
+            val allowed = onCallSiren(ask.selected)
+
+            sirenBusy = false
+
+            if (allowed) {
+                sirenPhoneId = ask.selected
+                sirenAsk = null
+                sirenTrouble = false
+            } else {
+                sirenTrouble = true
+            }
+        }
+    }
 
     fun askSearch(memberId: String, name: String, renew: Boolean) {
         searchAsk = SearchAsk(memberId, name, renew)
@@ -156,7 +212,11 @@ fun AdminPanel(
                     onStopRunning = {
                         if (line.isYou) givingUp = true else onSetRunning(line.memberId, false)
                     },
-                    onRemove = { onRemoveMember(line.memberId) },
+                    onRemove = {
+                        removing =
+                            line.memberId to
+                            (line.displayName ?: line.memberId.take(NAME_SHOWN_INSTEAD))
+                    },
                     onSearch = {
                         askSearch(
                             line.memberId,
@@ -165,6 +225,20 @@ fun AdminPanel(
                         )
                     },
                     onEndSearch = { scope.launch { onEndSearch(line.memberId) } },
+                    sirenPhones = line.phones.filter { it.phoneId != ownPhoneId },
+                    siren = siren?.takeIf { it.memberId == line.memberId },
+                    sirenNow = sirenNow,
+                    onSiren = { phones ->
+                        sirenTrouble = false
+                        sirenAsk =
+                            SirenAsk(
+                                name = line.displayName ?: line.memberId.take(NAME_SHOWN_INSTEAD),
+                                phones = phones,
+                                // The phone last in touch is the likeliest to hear it.
+                                selected = phones.maxBy { it.onlineAt ?: Instant.MIN }.phoneId,
+                            )
+                    },
+                    onStopSiren = { phoneId -> scope.launch { onStopSiren(phoneId) } },
                 )
             }
 
@@ -233,6 +307,48 @@ fun AdminPanel(
         )
     }
 
+    // Removal is not undone from here either: the member comes back only by a
+    // new invitation.
+    removing?.let { (memberId, name) ->
+        AlertDialog(
+            onDismissRequest = { removing = null },
+            title = { Text(text = stringResource(R.string.group_remove_title, name)) },
+            text = { Text(text = stringResource(R.string.group_remove_text)) },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        removing = null
+                        onRemoveMember(memberId)
+                    },
+                ) {
+                    Text(
+                        text = stringResource(R.string.group_remove_go),
+                        color = MaterialTheme.colorScheme.error,
+                    )
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { removing = null }) {
+                    Text(text = stringResource(R.string.search_cancel))
+                }
+            },
+        )
+    }
+
+    sirenAsk?.let { ask ->
+        SirenDialog(
+            memberName = ask.name,
+            phones = ask.phones,
+            selected = ask.selected,
+            onSelect = { sirenAsk = ask.copy(selected = it) },
+            now = now,
+            trouble = sirenTrouble,
+            busy = sirenBusy,
+            onGo = ::writeSiren,
+            onCancel = { sirenAsk = null },
+        )
+    }
+
     searchAsk?.let { ask ->
         SearchDialog(
             memberName = ask.name,
@@ -248,8 +364,42 @@ fun AdminPanel(
     }
 }
 
+/**
+ * What the row says of the call this screen made: which phone, the seconds
+ * left while it sounds, or that it never answered. Nothing once it is over.
+ */
+@Composable
+private fun sirenText(siren: Siren, state: SirenState, phones: List<PhoneLine>): String? {
+    val phone =
+        phones.firstOrNull { it.phoneId == siren.phoneId }?.name
+            ?: siren.phoneId.substringAfter('.').take(NAME_SHOWN_INSTEAD)
+
+    return when (state) {
+        SirenState.Waiting -> stringResource(R.string.siren_status_waiting, phone)
+
+        is SirenState.Sounding ->
+            stringResource(
+                R.string.siren_status_sounding,
+                phone,
+                Duration.between(Instant.now(), state.until).seconds.coerceAtLeast(0),
+            )
+
+        SirenState.NoAnswer -> stringResource(R.string.siren_status_no_answer, phone)
+
+        is SirenState.Stopped -> stringResource(R.string.siren_status_stopped, phone)
+
+        SirenState.Over -> null
+    }
+}
+
 /** Who is being asked about, in which of the two ways a search is opened. */
 private data class SearchAsk(val memberId: String, val name: String, val renew: Boolean)
+
+/** Whose phone is about to be rung, and which of their phones is picked. */
+private data class SirenAsk(val name: String, val phones: List<PhoneLine>, val selected: String)
+
+/** How often the siren's countdown on the row is redrawn. */
+private const val SIREN_TICK_MS = 1_000L
 
 /**
  * One member, with what the household knows about them from here.
@@ -258,6 +408,7 @@ private data class SearchAsk(val memberId: String, val name: String, val renew: 
  * anybody reading, and what the person running the group is asking is whether
  * the member has a phone in this at all.
  */
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 private fun AdminMemberRow(
     line: GroupLine,
@@ -269,12 +420,16 @@ private fun AdminMemberRow(
     onRemove: () -> Unit,
     onSearch: () -> Unit,
     onEndSearch: () -> Unit,
+    /** The member's phones that may be rung from here: all but this one. */
+    sirenPhones: List<PhoneLine>,
+    /** The call this screen last made, when it was to one of this member's phones. */
+    siren: Siren?,
+    sirenNow: Instant,
+    onSiren: (List<PhoneLine>) -> Unit,
+    onStopSiren: (phoneId: String) -> Unit,
 ) {
-    Row(
-        modifier = Modifier.fillMaxWidth().padding(start = 16.dp, end = 8.dp, top = 8.dp),
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        Column(modifier = Modifier.weight(1f)) {
+    Column(modifier = Modifier.fillMaxWidth().padding(start = 16.dp, end = 8.dp, top = 8.dp)) {
+        Column {
             Text(
                 text = line.displayName ?: line.memberId.take(NAME_SHOWN_INSTEAD),
                 style = MaterialTheme.typography.bodyLarge,
@@ -308,26 +463,49 @@ private fun AdminMemberRow(
                     color = Color(SOUGHT_COLOUR),
                 )
             }
+
+            val sirenState = siren?.let { sirenState(it, sirenNow) }
+
+            if (siren != null && sirenState != null) {
+                sirenText(siren, sirenState, line.phones)?.let {
+                    Text(
+                        text = it,
+                        style = MaterialTheme.typography.bodySmall,
+                        fontWeight = FontWeight.SemiBold,
+                        color = Color(SOUGHT_COLOUR),
+                    )
+                }
+            }
         }
 
-        // One action under another rather than side by side: the names take
-        // the width.
-        Column(horizontalAlignment = Alignment.End) {
-            if (line.mayBeMadeAdmin) {
-                TextButton(onClick = onMakeAdmin) {
-                    Text(text = stringResource(R.string.group_make_admin))
-                }
-            }
+        // Under the name rather than beside it, so that "Remove from the
+        // group" fits whole on a phone.
+        FlowRow(verticalArrangement = Arrangement.Center) {
+            val sirenState = siren?.let { sirenState(it, sirenNow) }
+            val sounding = sirenState is SirenState.Waiting || sirenState is SirenState.Sounding
 
-            if (line.mayStopRunning) {
-                TextButton(onClick = onStopRunning) {
-                    Text(text = stringResource(R.string.group_stop_running))
+            if (siren != null && sounding) {
+                Button(
+                    onClick = { onStopSiren(siren.phoneId) },
+                    colors =
+                    ButtonDefaults.buttonColors(
+                        containerColor = Color(SOUGHT_COLOUR),
+                        contentColor = Color.White,
+                    ),
+                ) {
+                    Icon(
+                        painter = painterResource(R.drawable.ic_siren_off),
+                        contentDescription = null,
+                    )
+                    Text(text = stringResource(R.string.siren_stop_short))
                 }
-            }
-
-            if (line.removable) {
-                TextButton(onClick = onRemove) {
-                    Text(text = stringResource(R.string.group_remove))
+            } else if (sirenPhones.isNotEmpty()) {
+                IconButton(onClick = { onSiren(sirenPhones) }) {
+                    Icon(
+                        painter = painterResource(R.drawable.ic_siren),
+                        contentDescription = stringResource(R.string.siren_hint),
+                        tint = Color(SOUGHT_COLOUR),
+                    )
                 }
             }
 
@@ -346,6 +524,24 @@ private fun AdminMemberRow(
                     TextButton(onClick = onSearch, colors = alarmText) {
                         Text(text = stringResource(R.string.search_start))
                     }
+                }
+            }
+
+            if (line.mayBeMadeAdmin) {
+                TextButton(onClick = onMakeAdmin) {
+                    Text(text = stringResource(R.string.group_make_admin))
+                }
+            }
+
+            if (line.mayStopRunning) {
+                TextButton(onClick = onStopRunning) {
+                    Text(text = stringResource(R.string.group_stop_running))
+                }
+            }
+
+            if (line.removable) {
+                TextButton(onClick = onRemove) {
+                    Text(text = stringResource(R.string.group_remove))
                 }
             }
         }

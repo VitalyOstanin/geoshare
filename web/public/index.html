@@ -205,6 +205,30 @@
             </div>
         </dialog>
 
+        <!-- Ringing a phone: which of the member's phones, and what the
+             twenty seconds will do, before anything is written. -->
+        <dialog id="siren" class="admin naming search">
+            <h2 id="siren-title"></h2>
+            <div id="siren-phones" class="choice" role="group"></div>
+            <p id="siren-note"></p>
+            <p id="siren-error" class="error" hidden></p>
+            <div id="siren-buttons">
+                <button id="siren-go" type="button" class="alarm"></button>
+                <button id="siren-cancel" type="button"></button>
+            </div>
+        </dialog>
+
+        <!-- A write that cannot be taken back from the panel, asked about in
+             the page's own words first rather than in the browser's window. -->
+        <dialog id="confirm" class="admin naming search">
+            <h2 id="confirm-title"></h2>
+            <p id="confirm-note"></p>
+            <div id="confirm-buttons">
+                <button id="confirm-go" type="button" class="alarm"></button>
+                <button id="confirm-cancel" type="button"></button>
+            </div>
+        </dialog>
+
         <!-- Told to the member being looked for, over the map: their place is
              open to the whole group, and they can say they are found. -->
         <div id="sought-banner" class="sought-banner" role="alert" hidden>

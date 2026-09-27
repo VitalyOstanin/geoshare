@@ -14,6 +14,7 @@ import androidx.core.content.getSystemService
 import androidx.lifecycle.LifecycleService
 import androidx.lifecycle.lifecycleScope
 import com.google.firebase.auth.FirebaseAuth
+import io.github.vitalyostanin.geoshare.R
 import io.github.vitalyostanin.geoshare.collection.Accuracy
 import io.github.vitalyostanin.geoshare.collection.Answered
 import io.github.vitalyostanin.geoshare.collection.CARRIED_STEPS
@@ -73,6 +74,9 @@ import io.github.vitalyostanin.geoshare.collection.whyAJump
 import io.github.vitalyostanin.geoshare.collection.word
 import io.github.vitalyostanin.geoshare.log.AppLog
 import io.github.vitalyostanin.geoshare.log.SkyLog
+import io.github.vitalyostanin.geoshare.map.SIREN_SECONDS
+import io.github.vitalyostanin.geoshare.map.Siren
+import io.github.vitalyostanin.geoshare.map.shouldSound
 import io.github.vitalyostanin.geoshare.map.stands
 import io.github.vitalyostanin.geoshare.permission.devicePermissions
 import kotlinx.coroutines.CancellationException
@@ -210,6 +214,15 @@ class SharingService : LifecycleService() {
      */
     private var writer: PositionWriter? = null
     private var status: PhoneStatusWriter? = null
+
+    /** The alarm stream at full volume while a call to this phone sounds. */
+    private val sirenPlayer by lazy { SirenPlayer(this) }
+
+    /** This phone's siren address while the service collects, for the stop action. */
+    private var ownPhoneId: String? = null
+
+    /** The twenty seconds of one call sounding, outlived by nothing else. */
+    private var sounding: Job? = null
     private var lastFix: Fix? = null
 
     /**
@@ -502,6 +515,28 @@ class SharingService : LifecycleService() {
             }
         }
 
+        if (intent?.action == ACTION_SIREN_OFF) {
+            AppLog.i(TAG, "the siren is stopped on the phone itself")
+            sounding?.cancel()
+
+            val memberId = FirebaseAuth.getInstance().currentUser?.uid
+            val phoneId = ownPhoneId
+
+            // Written so that the caller's screen reads "stopped" rather than
+            // counting down twenty seconds that are no longer sounding.
+            if (memberId != null && phoneId != null) {
+                lifecycleScope.launch {
+                    try {
+                        stopSiren(phoneId, memberId)
+                    } catch (cancellation: CancellationException) {
+                        throw cancellation
+                    } catch (refusal: Exception) {
+                        AppLog.w(TAG, "could not say the siren was stopped", refusal)
+                    }
+                }
+            }
+        }
+
         return if (enterForeground()) {
             AppLog.i(TAG, "running")
             startCollecting()
@@ -524,6 +559,9 @@ class SharingService : LifecycleService() {
         // leaves nothing to take its own notification down; the phone may
         // still be being looked for when the service stops.
         cancelSearchNotification(this)
+        sounding?.cancel()
+        sirenPlayer.stop()
+        cancelSirenNotification(this)
         AppLog.i(TAG, "stopped")
         super.onDestroy()
     }
@@ -803,6 +841,7 @@ class SharingService : LifecycleService() {
             lifecycleScope.launch {
                 launch { keepTellingHowThePhoneIs() }
                 launch { keepSearchNotification(memberId) }
+                launch { answerSirens(memberId, positionId(memberId, device.id)) }
 
                 modes(memberId, device).collectLatest { mode ->
                     AppLog.i(TAG, "collecting in mode $mode")
@@ -945,6 +984,88 @@ class SharingService : LifecycleService() {
             }
 
             cancelSearchNotification(this)
+        }
+    }
+
+    /**
+     * Sounds the phone when somebody calls its siren, and stops it when
+     * somebody stops the call.
+     *
+     * Each call sounds once: the call answered is kept on the phone, so the
+     * same document heard again after a restart stays quiet, and a call more
+     * than a minute old is left alone — the phone switched back on later
+     * rings for nobody.
+     */
+    private suspend fun answerSirens(memberId: String, phoneId: String) {
+        ownPhoneId = phoneId
+
+        val answered = AnsweredSiren(this)
+
+        phoneSiren(phoneId).collect { called ->
+            if (called == null) {
+                return@collect
+            }
+
+            if (called.stoppedBy != null) {
+                sounding?.cancel()
+
+                return@collect
+            }
+
+            if (!shouldSound(called, answered.calledAt, Instant.now())) {
+                return@collect
+            }
+
+            answered.calledAt = called.calledAt
+            sounding?.cancel()
+            // Apart from the subscription: the phone's own "heard" write
+            // comes back through it, and must not cut the sound short.
+            sounding = lifecycleScope.launch { soundSiren(memberId, phoneId, called) }
+        }
+    }
+
+    /** One call: twenty seconds of sound and the notification that stops it early. */
+    private suspend fun soundSiren(memberId: String, phoneId: String, called: Siren) {
+        val until = Instant.now().plusSeconds(SIREN_SECONDS)
+
+        AppLog.i(TAG, "the siren sounds")
+
+        try {
+            sirenPlayer.start()
+
+            // On its own: a write waits for the server, and a phone without a
+            // network still sounds.
+            lifecycleScope.launch {
+                try {
+                    heardSiren(phoneId)
+                } catch (cancellation: CancellationException) {
+                    throw cancellation
+                } catch (refusal: Exception) {
+                    AppLog.w(TAG, "could not say the siren was heard", refusal)
+                }
+            }
+
+            val callerName =
+                if (called.calledBy == memberId) {
+                    getString(R.string.siren_called_by_you)
+                } else {
+                    withTimeoutOrNull(SIREN_NAME_WAIT.toMillis()) {
+                        memberDisplayName(called.calledBy)
+                    } ?: called.calledBy.take(SHORTENED_ID_LENGTH)
+                }
+
+            if (devicePermissions(this).notificationsGranted) {
+                getSystemService<NotificationManager>()?.notify(
+                    SIREN_NOTIFICATION_ID,
+                    sirenNotification(this, callerName, until),
+                )
+            }
+
+            delay(Duration.between(Instant.now(), until).toMillis().coerceAtLeast(0))
+        } finally {
+            sirenPlayer.stop()
+            cancelSirenNotification(this)
+            AppLog.i(TAG, "the siren is quiet")
         }
     }
 
@@ -2022,10 +2143,16 @@ class SharingService : LifecycleService() {
          */
         private val SEARCH_NOTICE_REFRESH: Duration = Duration.ofMinutes(1)
 
+        /** How long the siren's notification waits for the caller's name before a short id. */
+        private val SIREN_NAME_WAIT: Duration = Duration.ofSeconds(3)
+
         const val ACTION_STOP = "io.github.vitalyostanin.geoshare.STOP"
 
         /** The member being looked for says they have been found. */
         const val ACTION_FOUND = "io.github.vitalyostanin.geoshare.FOUND"
+
+        /** Whoever holds this phone stops its siren before its twenty seconds are up. */
+        const val ACTION_SIREN_OFF = "io.github.vitalyostanin.geoshare.SIREN_OFF"
 
         fun start(context: Context) = ContextCompat.startForegroundService(
             context,

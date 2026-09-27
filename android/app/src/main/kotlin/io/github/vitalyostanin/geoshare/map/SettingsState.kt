@@ -8,6 +8,7 @@ import io.github.vitalyostanin.geoshare.permission.PermissionStep
 import io.github.vitalyostanin.geoshare.service.AidingErasure
 import io.github.vitalyostanin.geoshare.service.LanguageChoice
 import io.github.vitalyostanin.geoshare.service.ThemeChoice
+import kotlinx.coroutines.flow.Flow
 import java.time.Instant
 
 /**
@@ -130,4 +131,10 @@ data class SettingsActions(
     val onSearch: suspend (memberId: String, renew: Boolean, hours: Int) -> Boolean,
     /** Ends a search: the member has been found, or has said so themselves. */
     val onEndSearch: suspend (memberId: String) -> Unit,
+    /** A phone's siren as the database has it, for the screen that rang it. */
+    val sirenOf: (phoneId: String) -> Flow<Siren?>,
+    /** Rings a phone; answers whether the database allowed it, as [onSearch] does. */
+    val onCallSiren: suspend (phoneId: String) -> Boolean,
+    /** Stops a phone's siren before its twenty seconds are up. */
+    val onStopSiren: suspend (phoneId: String) -> Unit,
 )

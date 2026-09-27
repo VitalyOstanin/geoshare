@@ -72,6 +72,7 @@ import io.github.vitalyostanin.geoshare.service.SharingService
 import io.github.vitalyostanin.geoshare.service.SharingSetting
 import io.github.vitalyostanin.geoshare.service.SourcesSetting
 import io.github.vitalyostanin.geoshare.service.ThemeSetting
+import io.github.vitalyostanin.geoshare.service.callSiren
 import io.github.vitalyostanin.geoshare.service.darkWanted
 import io.github.vitalyostanin.geoshare.service.endSearch
 import io.github.vitalyostanin.geoshare.service.forgetAidingData
@@ -82,12 +83,14 @@ import io.github.vitalyostanin.geoshare.service.languageTag
 import io.github.vitalyostanin.geoshare.service.leavePreviousId
 import io.github.vitalyostanin.geoshare.service.makeInvitation
 import io.github.vitalyostanin.geoshare.service.openSearch
+import io.github.vitalyostanin.geoshare.service.phoneSiren
 import io.github.vitalyostanin.geoshare.service.positionId
 import io.github.vitalyostanin.geoshare.service.refusalToStart
 import io.github.vitalyostanin.geoshare.service.removeFromGroup
 import io.github.vitalyostanin.geoshare.service.renewSearch
 import io.github.vitalyostanin.geoshare.service.setRunning
 import io.github.vitalyostanin.geoshare.service.startConditions
+import io.github.vitalyostanin.geoshare.service.stopSiren
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.launch
 import java.time.Instant
@@ -275,6 +278,7 @@ class MainActivity : AppCompatActivity() {
                                 profiles = labelledProfiles(profiles.orEmpty(), labels),
                                 watchers = watching,
                                 ownMemberId = current.memberId,
+                                ownPhoneId = positionId(current.memberId, device.id),
                                 ownDisplayName = current.displayName,
                                 ownPictureUrl = current.pictureUrl,
                                 searches = searches,
@@ -452,6 +456,29 @@ class MainActivity : AppCompatActivity() {
                                             AppLog.w(TAG, "a search could not be written", refusal)
 
                                             false
+                                        }
+                                    },
+                                    sirenOf = ::phoneSiren,
+                                    onCallSiren = { phoneId ->
+                                        try {
+                                            callSiren(phoneId, current.memberId)
+
+                                            true
+                                        } catch (cancellation: CancellationException) {
+                                            throw cancellation
+                                        } catch (refusal: Exception) {
+                                            AppLog.w(TAG, "a siren could not be called", refusal)
+
+                                            false
+                                        }
+                                    },
+                                    onStopSiren = { phoneId ->
+                                        try {
+                                            stopSiren(phoneId, current.memberId)
+                                        } catch (cancellation: CancellationException) {
+                                            throw cancellation
+                                        } catch (refusal: Exception) {
+                                            AppLog.w(TAG, "a siren could not be stopped", refusal)
                                         }
                                     },
                                     onEndSearch = { memberId ->
