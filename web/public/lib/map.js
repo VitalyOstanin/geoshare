@@ -108,6 +108,17 @@ const CLOSEST_ZOOM = 18;
 /** How many metres a pixel covers at the equator at zoom nought. */
 const EQUATOR_METRES_PER_PIXEL = 156543.03392;
 
+/**
+ * How many pixels across a ring may come out before a card opened on the map
+ * brings it closer.
+ *
+ * A map fitted round everybody can span a region, and there a courtyard of
+ * doubt is smaller than a pixel: the card asks where exactly the member is and
+ * the map has no way to say. Twenty is about the head of the pin, the size at
+ * which a ring stops being hidden behind the marker it belongs to.
+ */
+const RING_TOO_SMALL_PIXELS = 20;
+
 
 /**
  * How close two pins have to come before they are drawn as one.
@@ -297,25 +308,7 @@ export function createMap(element, onCardChange = () => {}, cardElement) {
     // itself.
     map.on('movestart', (event) => {
         if (event.originalEvent) {
-            view.pausedAt = Date.now();
-            // The hand has taken the map somewhere the fitted rectangle no
-            // longer describes. Forgetting the rectangle is what lets
-            // "everybody" fit the view again once the pause wears off:
-            // otherwise a household that has not moved hands back the same
-            // rectangle, it is found close to the one already fitted, and the
-            // map stays where the hand left it with the mode still on.
-            view.followedBounds = null;
-            // Nothing else is bound to move the map when the pause wears off:
-            // the next batch of positions may be half an hour away for a
-            // member standing still, and a map left where the hand put it
-            // with the mode on reads as broken. So the end of the pause is
-            // an event of its own, and the button is drawn again both ways.
-            clearTimeout(view.pauseEnds);
-            view.pauseEnds = setTimeout(() => {
-                applyFollowMode(view);
-                view.onCardChange();
-            }, PAUSE_AFTER_A_GESTURE_MS);
-            view.onCardChange();
+            pauseFollowing(view);
         }
     });
 
@@ -558,6 +551,68 @@ function draw(view, { positions, names, faces, now }) {
 }
 
 /**
+ * Holds the follow mode off for a while, the way a hand on the map does.
+ *
+ * Also what a card opened on the map does when it has to bring a ring into
+ * sight: the viewer asked about one member, and a mode that fitted the view
+ * round everybody again a moment later would take the answer away.
+ */
+function pauseFollowing(view) {
+    view.pausedAt = Date.now();
+    // The hand has taken the map somewhere the fitted rectangle no longer
+    // describes. Forgetting the rectangle is what lets "everybody" fit the view
+    // again once the pause wears off: otherwise a household that has not moved
+    // hands back the same rectangle, it is found close to the one already
+    // fitted, and the map stays where the hand left it with the mode still on.
+    view.followedBounds = null;
+    // Nothing else is bound to move the map when the pause wears off: the next
+    // batch of positions may be half an hour away for a member standing still,
+    // and a map left where the hand put it with the mode on reads as broken. So
+    // the end of the pause is an event of its own, and the button is drawn
+    // again both ways.
+    clearTimeout(view.pauseEnds);
+    view.pauseEnds = setTimeout(() => {
+        applyFollowMode(view);
+        view.onCardChange();
+    }, PAUSE_AFTER_A_GESTURE_MS);
+    view.onCardChange();
+}
+
+/**
+ * Takes the map close enough to see the ring of the card just opened on it,
+ * where the ring would otherwise be lost under its pin.
+ *
+ * The strip always flies to the member, but a marker is tapped on the map the
+ * viewer already has, and a map already close stays where it is. One fitted
+ * round a family spread over a region is not a choice of zoom to respect: it
+ * is a mode, and it pauses the way a hand pauses it.
+ *
+ * Measured on the screen rather than worked out from the zoom, because what
+ * matters is the pixels the ring comes out at on this map.
+ */
+function bringTheRingIntoSight(view) {
+    const position = selectedPosition(view);
+
+    if (!position?.accuracyMetres) {
+        return;
+    }
+
+    const [north] = accuracyRing(position.latitude, position.longitude, position.accuracyMetres, 4);
+    const centre = view.map.project([position.longitude, position.latitude]);
+    const edge = view.map.project(north);
+
+    if (2 * (centre.y - edge.y) >= RING_TOO_SMALL_PIXELS) {
+        return;
+    }
+
+    pauseFollowing(view);
+    view.map.flyTo({
+        center: [position.longitude, position.latitude],
+        zoom: Math.max(view.map.getZoom(), START_ZOOM, closeEnoughForTheRing(view, position)),
+    });
+}
+
+/**
  * The circle around the member being looked at, or nothing at all.
  *
  * One at a time rather than all of them: four circles of a kilometre and a
@@ -728,6 +783,7 @@ function addMarker(view, key, group) {
 
         view.onCardChange();
         drawWidth(view);
+        bringTheRingIntoSight(view);
     });
 
     // Placed before it is added: a marker with nowhere to be cannot be put on
@@ -970,6 +1026,7 @@ function groupList(view, entry, names, faces, now) {
             showCard(view, names, faces, now);
             view.onCardChange();
             drawWidth(view);
+            bringTheRingIntoSight(view);
         });
 
         list.append(row);
