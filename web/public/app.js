@@ -2,7 +2,7 @@
 
 import { ageText, positionAge } from './lib/age.js';
 import { showFace } from './lib/faces.js';
-import { FOLLOW_ALL, FOLLOW_ONE } from './lib/following.js';
+import { FOLLOW_ALL, FOLLOW_NONE, FOLLOW_ONE } from './lib/following.js';
 import { groupOverview } from './lib/group-lines.js';
 import { outsideTheBox } from './lib/mode-help.js';
 import {
@@ -1193,8 +1193,8 @@ function sameIds(a, b) {
 }
 
 /**
- * The follow button's caption, and whether it needs to say its member has
- * gone quiet.
+ * The follow button's mark and label, and whether it needs to say its member
+ * has gone quiet.
  *
  * The map only remembers a target by position id, which stops resolving to
  * anything the moment that member's phone drops out of the set. The name is
@@ -1213,14 +1213,24 @@ function showFollow(labels) {
 
     const missing = targetId !== null && !known;
 
-    elements.followButton.textContent = followCaption(mode);
+    const caption = followCaption(mode);
+
+    // An svg has no hidden property, only the attribute the page's [hidden]
+    // rule reads.
+    for (const mark of elements.followButton.querySelectorAll('svg')) {
+        mark.toggleAttribute('hidden', mark.dataset.mode !== mode);
+    }
+
+    elements.followButton.setAttribute('aria-label', caption);
+    elements.followButton.classList.toggle('active', mode !== FOLLOW_NONE);
     elements.followButton.classList.toggle('paused', followPaused(state.view));
     elements.followButton.classList.toggle('missing', missing);
-    elements.followButton.title = missing ? WORDS.followTargetMissing : '';
+    elements.followButton.title = missing ? `${caption}. ${WORDS.followTargetMissing}` : caption;
 }
 
 /**
- * The words the follow button says.
+ * The words of the follow button's mode: its label for a screen reader and
+ * the title a pointer shows over the mark.
  *
  * The member's name is said inside a phrase rather than on its own: a button
  * reading only "Oona" among captions like "Following everyone" says who

@@ -701,28 +701,46 @@ button {
 }
 
 /* The corner control sits over the map rather than beside it, in the top
-   left corner the account button and the zoom buttons leave alone. Its
-   caption is a member's name or a mode word rather than a fixed word, so it
-   is a rounded chip that can hold a line of text rather than the account
-   button's plain circle. */
+   left corner the account button and the zoom buttons leave alone. The same
+   circle as the account button, so the two read as a pair of controls rather
+   than a chip and a circle; the mode is a mark, and its words are the
+   button's label and title. */
 #follow-button {
     position: absolute;
     top: 0.6rem;
     left: 0.6rem;
     z-index: 2;
-    max-width: min(12rem, calc(100% - 1.2rem));
-    padding: 0.4rem 0.8rem;
-    border-radius: 0.6rem;
+    width: 2.5rem;
+    height: 2.5rem;
+    padding: 0;
+    border-radius: 50%;
     border: 1px solid var(--edge);
     background: var(--surface);
     color: var(--on-surface);
-    font: inherit;
-    font-weight: 600;
-    font-size: 0.85rem;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
+    display: grid;
+    place-items: center;
     box-shadow: 0 1px 4px rgba(0, 0, 0, 0.3);
+}
+
+/* A mode that moves the map, set apart from the one that leaves it alone. */
+#follow-button.active {
+    background: color-mix(in srgb, var(--link) 22%, var(--surface));
+}
+
+#follow-button svg {
+    width: 1.5rem;
+    height: 1.5rem;
+}
+
+#follow-button .stroke {
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 2;
+    stroke-linecap: round;
+}
+
+#follow-button .fill {
+    fill: currentColor;
 }
 
 /* A gesture holds the map still for a while (lib/following.js). Dimmed

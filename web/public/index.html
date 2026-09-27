@@ -51,8 +51,21 @@
         <!-- Cycles the map between not following, the member whose card was
              looked at last, and everybody at once. Kept at the top left so a
              tap never lands on the account button at the top right or the
-             zoom buttons at the bottom right. -->
-        <button id="follow-button" type="button" hidden></button>
+             zoom buttons at the bottom right. A round mark per mode, the same
+             marks as the Android app; the words of the mode are its label. -->
+        <button id="follow-button" type="button" hidden>
+            <svg data-mode="none" viewBox="0 0 24 24" aria-hidden="true">
+                <path class="stroke" d="M5,12a7,7 0 1,0 14,0a7,7 0 1,0 -14,0 M12,1v4 M12,19v4 M1,12h4 M19,12h4" />
+            </svg>
+            <svg data-mode="one" viewBox="0 0 24 24" aria-hidden="true" hidden>
+                <path class="stroke" d="M5,12a7,7 0 1,0 14,0a7,7 0 1,0 -14,0 M12,1v4 M12,19v4 M1,12h4 M19,12h4" />
+                <path class="fill" d="M9,12a3,3 0 1,0 6,0a3,3 0 1,0 -6,0 Z" />
+            </svg>
+            <svg data-mode="all" viewBox="0 0 24 24" aria-hidden="true" hidden>
+                <path class="stroke" d="M3,8V3h5 M16,3h5v5 M21,16v5h-5 M8,21H3v-5" />
+                <path class="fill" d="M7,10a2,2 0 1,0 4,0a2,2 0 1,0 -4,0 Z M13,15a2,2 0 1,0 4,0a2,2 0 1,0 -4,0 Z" />
+            </svg>
+        </button>
 
         <!-- The way into everything that is not the map: who is signed in,
              and where to change it. -->
