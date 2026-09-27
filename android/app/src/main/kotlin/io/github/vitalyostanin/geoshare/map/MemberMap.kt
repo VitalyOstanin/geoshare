@@ -49,8 +49,11 @@ private const val START_ZOOM = 15.0
  */
 private const val MAX_ALL_MODE_ZOOM = START_ZOOM
 
-/** How much room is left around the group's rectangle when [FollowMode.ALL] fits it. */
+/** How much room is left around the group's rectangle when [FollowMode.ALL] fits it, at the least. */
 private const val ALL_MODE_PADDING_DP = 48f
+
+/** The gap left between a fitted marker's outermost edge and the screen's. */
+private const val ALL_MODE_MARKER_GAP_DP = 12f
 
 /** How far around a tap a marker still counts as the one that was meant. */
 private const val TOUCH_RADIUS_DP = 18f
@@ -298,6 +301,10 @@ private class MapHolder(val view: MapView) {
 
     /** The drawings already handed over, so that a tick does not copy them in again. */
     private val icons = mutableSetOf<String>()
+
+    /** The tallest and the widest drawing handed over, in pixels, for [followAll]'s padding. */
+    private var tallestIcon = 0
+    private var widestIcon = 0
 
     private var members: List<MemberPosition> = emptyList()
     private var names: Map<String, String> = emptyMap()
@@ -662,10 +669,18 @@ private class MapHolder(val view: MapView) {
                 .include(LatLng(bounds.south, bounds.west))
                 .include(LatLng(bounds.north, bounds.east))
                 .build()
+        // The rectangle is fitted by the points of the pins, and a pin hangs
+        // above its point with the name over it and reaches half its width to
+        // either side. The same padding on all four sides left the member at
+        // the top with the head of their pin past the edge of the screen.
         val density = view.context.resources.displayMetrics.density
         val padding = (ALL_MODE_PADDING_DP * density).toInt()
+        val gap = (ALL_MODE_MARKER_GAP_DP * density).toInt()
+        val top = maxOf(padding, tallestIcon + gap)
+        val side = maxOf(padding, widestIcon / 2 + gap)
+        // Left, top, right, bottom.
         val fitted =
-            ready.getCameraForLatLngBounds(target, intArrayOf(padding, padding, padding, padding))
+            ready.getCameraForLatLngBounds(target, intArrayOf(side, top, side, padding))
                 ?: return
         val zoom = fitted.zoom.coerceAtMost(MAX_ALL_MODE_ZOOM)
         val clamped = CameraPosition.Builder(fitted).zoom(zoom).build()
@@ -730,7 +745,11 @@ private class MapHolder(val view: MapView) {
         val name = iconName(group)
 
         if (icons.add(name)) {
-            loaded.addImage(name, drawing(group))
+            val drawn = drawing(group)
+
+            tallestIcon = maxOf(tallestIcon, drawn.height)
+            widestIcon = maxOf(widestIcon, drawn.width)
+            loaded.addImage(name, drawn)
         }
 
         return name

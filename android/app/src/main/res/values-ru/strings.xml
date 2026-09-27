@@ -239,6 +239,18 @@
     <string name="map_follow_all">Следовать за всеми</string>
     <string name="map_follow_one_unnamed">Следовать</string>
 
+    <!-- Меню кнопки слежения: три строки-предложения, а не отчёт о текущем режиме. -->
+    <string name="map_follow_menu_none_title">Не следовать</string>
+    <string name="map_follow_menu_none_subtitle">Карта стоит на месте</string>
+    <string name="map_follow_menu_one_title">За участником</string>
+    <string name="map_follow_menu_one_title_named">За участником: %1$s</string>
+    <string name="map_follow_menu_one_subtitle">Карта держит в центре выбранного участника</string>
+    <string name="map_follow_menu_all_title">За всеми</string>
+    <string name="map_follow_menu_all_subtitle">Все участники в кадре</string>
+    <string name="map_follow_menu_hint">Чтобы выбрать, за кем следовать, нажмите на его карточку внизу или на метку на карте.</string>
+
+    <string name="map_follow_awaiting_banner">Выберите участника: нажмите на его карточку или метку на карте.</string>
+
     <plurals name="map_group_count">
         <item quantity="one">%1$d участник</item>
         <item quantity="few">%1$d участника</item>

@@ -9,25 +9,10 @@ import kotlin.math.abs
  *
  * [NONE] leaves the camera wherever the last gesture put it. [ONE] keeps a
  * chosen member centred. [ALL] keeps every member's marker inside the view.
- * The states are entered by the same button pressed again, which is why they
- * are a ring rather than three switches.
+ * Picked from the follow button's own menu, one at a time, rather than
+ * stepped through in order.
  */
 enum class FollowMode { NONE, ONE, ALL }
-
-/**
- * What pressing the follow button turns [mode] into.
- *
- * The ring is NONE -> ONE -> ALL -> NONE, except that [ONE] has nothing to
- * offer before a member has ever been chosen: [hasTarget] false skips it, so
- * the button goes straight from NONE to ALL. It skips [ONE] the same way on
- * the way out of it, should the chosen member's position disappear between
- * presses — a phone that stopped sending is not a target to sit on.
- */
-fun nextMode(mode: FollowMode, hasTarget: Boolean): FollowMode = when (mode) {
-    FollowMode.NONE -> if (hasTarget) FollowMode.ONE else FollowMode.ALL
-    FollowMode.ONE -> FollowMode.ALL
-    FollowMode.ALL -> FollowMode.NONE
-}
 
 /**
  * How long the camera leaves off following after a hand drags the map.

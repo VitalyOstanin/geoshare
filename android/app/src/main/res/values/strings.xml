@@ -276,9 +276,34 @@
     <string name="map_follow_one">Following %1$s</string>
     <string name="map_follow_all">Following everyone</string>
     <!-- The follow button's word for FollowMode.ONE where, for some reason
-         the ring itself never allows, no member's name has been recorded to
+         the screen itself never allows, no member's name has been recorded to
          show instead. Not expected to be read. -->
     <string name="map_follow_one_unnamed">Following</string>
+
+    <!-- The follow button's own menu: three rows, each naming a mode and
+         saying underneath it what the mode does. Worded differently from the
+         button's own captions above, which say what is running now; a menu
+         row is an offer to switch to something, not a report of what is
+         already happening. -->
+    <string name="map_follow_menu_none_title">Don\'t follow</string>
+    <string name="map_follow_menu_none_subtitle">The map stays where it is</string>
+    <!-- Read when nobody has been chosen yet; %1$s in the sibling string
+         below is used instead once somebody has. -->
+    <string name="map_follow_menu_one_title">Follow a member</string>
+    <string name="map_follow_menu_one_title_named">Follow %1$s</string>
+    <string name="map_follow_menu_one_subtitle">Keeps the chosen member in the middle</string>
+    <string name="map_follow_menu_all_title">Follow everyone</string>
+    <string name="map_follow_menu_all_subtitle">Everyone in view</string>
+    <!-- Under the divider at the bottom of the menu, not a fourth row: what
+         the "Follow a member" row above needs explained, since picking it is
+         not itself enough to say whom to follow. -->
+    <string name="map_follow_menu_hint">To choose whom to follow, tap their card below or their marker on the map.</string>
+
+    <!-- The strip's own banner while ONE waits for a member to be chosen off
+         it, and the words spoken for the ring drawn around every card at the
+         same time — one saying what the strip is for right now, the other
+         pointing at where to answer it. -->
+    <string name="map_follow_awaiting_banner">Choose a member: tap their card or their marker on the map.</string>
 
     <plurals name="map_group_count">
         <item quantity="one">%1$d member</item>

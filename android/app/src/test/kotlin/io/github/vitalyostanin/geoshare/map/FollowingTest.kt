@@ -24,32 +24,6 @@ class FollowingTest {
         )
 
     @Test
-    fun `the ring runs NONE, ONE, ALL and back to NONE once a target exists`() {
-        assertEquals(FollowMode.ONE, nextMode(FollowMode.NONE, hasTarget = true))
-        assertEquals(FollowMode.ALL, nextMode(FollowMode.ONE, hasTarget = true))
-        assertEquals(FollowMode.NONE, nextMode(FollowMode.ALL, hasTarget = true))
-    }
-
-    // Nobody has been chosen yet, so there is no member for ONE to centre on.
-    @Test
-    fun `ONE is skipped on the way out of NONE before anybody has been chosen`() {
-        assertEquals(FollowMode.ALL, nextMode(FollowMode.NONE, hasTarget = false))
-    }
-
-    // The chosen member's position vanished between presses — a phone that
-    // stopped sending is not a target to sit on.
-    @Test
-    fun `ONE moves on to ALL even where its own target has disappeared`() {
-        assertEquals(FollowMode.ALL, nextMode(FollowMode.ONE, hasTarget = false))
-    }
-
-    @Test
-    fun `ALL always returns to NONE`() {
-        assertEquals(FollowMode.NONE, nextMode(FollowMode.ALL, hasTarget = true))
-        assertEquals(FollowMode.NONE, nextMode(FollowMode.ALL, hasTarget = false))
-    }
-
-    @Test
     fun `no gesture at all is never a pause`() {
         assertFalse(isPaused(null, noon))
     }

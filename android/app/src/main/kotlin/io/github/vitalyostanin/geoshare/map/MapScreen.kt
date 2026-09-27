@@ -2,6 +2,15 @@ package io.github.vitalyostanin.geoshare.map
 
 import android.graphics.Bitmap
 import androidx.activity.compose.BackHandler
+import androidx.annotation.DrawableRes
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.RepeatMode
+import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.rememberInfiniteTransition
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.expandHorizontally
+import androidx.compose.animation.shrinkHorizontally
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -18,23 +27,29 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.produceState
@@ -56,8 +71,11 @@ import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.clearAndSetSemantics
+import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.text.LinkAnnotation
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.TextLinkStyles
@@ -109,6 +127,33 @@ private const val HALF_LIT = 0.5f
 
 /** How faded the follow button is while a hand holds the following still, as on the page. */
 private const val PAUSED_ALPHA = 0.75f
+
+/** As tall as MapRoundButton's own circle, so the row does not jump when this one widens. */
+private val FOLLOW_BUTTON_HEIGHT = 40.dp
+
+/**
+ * How long the follow button spells its new mode out in words before it
+ * shrinks back down to the mark alone.
+ *
+ * Long enough to be read once, short enough that the row of controls over the
+ * map is not left wide for good: the button says what changed and then goes
+ * back to being one more circle among the others.
+ */
+private const val FOLLOW_LABEL_MILLIS = 2_500L
+
+/**
+ * How long [FollowMode.ONE] waits, once picked with nobody yet chosen to sit
+ * on, before giving up and letting the strip stop asking.
+ *
+ * Long enough that turning to tap a card is not a race against the menu
+ * closing on its own; short enough that a member who opened the menu by
+ * mistake is not left with a strip ringed in a colour they never meant to
+ * see.
+ */
+private const val AWAITING_TARGET_MILLIS = 15_000L
+
+/** As wide as the menu's own rows, so the hint under them wraps the same way. */
+private val FOLLOW_MENU_WIDTH = 260.dp
 
 /** The circle a card carries: large enough for a face, small enough for a strip of cards. */
 private val FACE_SIZE = 22.dp
@@ -176,6 +221,28 @@ fun MapScreen(
     // Whether a hand is holding the following still; the button says so.
     var followPaused by remember { mutableStateOf(false) }
     var followTarget by remember { mutableStateOf<FollowTarget?>(null) }
+    // Bumped on every real change of the follow mode — from the menu, or from
+    // a target finally being chosen for [awaitingTarget] — so the button's
+    // label can unroll again each time rather than only on the first change:
+    // a key that stayed the same (say, ALL picked while ALL already ran)
+    // would leave [LaunchedEffect] with nothing to restart.
+    var followModeChanges by remember { mutableStateOf(0) }
+    // Set once ONE is picked with nobody yet chosen to sit on, and cleared the
+    // moment a target is noted — by any of the three ways a card opens, by
+    // picking a different mode from the menu, by the back gesture, or on its
+    // own once nobody has answered it for a while.
+    var awaitingTarget by remember { mutableStateOf(false) }
+
+    // Nobody answering the strip for that long is a menu opened by mistake
+    // rather than a member still deciding, and the ring left running on the
+    // strip forever would read as broken rather than as waiting.
+    LaunchedEffect(awaitingTarget) {
+        if (awaitingTarget) {
+            delay(AWAITING_TARGET_MILLIS)
+            awaitingTarget = false
+        }
+    }
+
     var showAll by remember { mutableStateOf(false) }
     var openedPositionId by remember { mutableStateOf<String?>(null) }
 
@@ -255,6 +322,10 @@ fun MapScreen(
     // member's own marker, or a pick out of a group's list. All three end up
     // here so that the follow button's ONE mode always has a name for
     // whoever the last card was about, not only for the strip's own taps.
+    //
+    // Also where ONE's own wait ends: the same three ways of opening a card
+    // are the three ways the strip's ring is answered, and a name arriving
+    // now is exactly the one [awaitingTarget] was left waiting for.
     fun noteFollowTarget(positionId: String) {
         val memberId = positions.firstOrNull { it.positionId == positionId }?.memberId
 
@@ -263,6 +334,12 @@ fun MapScreen(
                 positionId = positionId,
                 name = names[positionId] ?: memberId?.let(::shortName) ?: positionId,
             )
+
+        if (awaitingTarget) {
+            followMode = FollowMode.ONE
+            awaitingTarget = false
+            followModeChanges++
+        }
     }
 
     // A tap is a request to look at somebody, not a state: tapping the same
@@ -276,10 +353,12 @@ fun MapScreen(
     }
 
     // The way back out of whatever is open, in the order things were opened
-    // in: the card first, the settings screen after it, and the application
-    // itself only when nothing of ours is left on screen. Without these the
-    // gesture leaves the application from a settings screen, which is not what
-    // anybody means by it.
+    // in: the strip's own wait first, because it is the most recent thing a
+    // press could have meant to cancel, then the card, then the settings
+    // screen, and the application itself only when nothing of ours is left
+    // on screen. Without these the gesture leaves the application from a
+    // settings screen, which is not what anybody means by it.
+    BackHandler(enabled = awaitingTarget) { awaitingTarget = false }
     BackHandler(enabled = adminOpen) { adminOpen = false }
     BackHandler(enabled = settingsOpen && !adminOpen) { settingsOpen = false }
     BackHandler(enabled = !settingsOpen && (opened != null || group.isNotEmpty())) {
@@ -351,12 +430,23 @@ fun MapScreen(
                     targetAvailable =
                     followTarget?.let { targetPosition(positions, it.positionId) != null }
                         ?: true,
-                    onClick = {
+                    changeCount = followModeChanges,
+                    onPick = { picked ->
                         val hasTarget =
                             followTarget?.let { targetPosition(positions, it.positionId) != null }
                                 ?: false
 
-                        followMode = nextMode(followMode, hasTarget)
+                        // ONE picked with nobody to sit on does not become the
+                        // mode yet: the strip is asked instead, and it is
+                        // noteFollowTarget, once somebody answers, that turns
+                        // the wait into the mode itself.
+                        if (picked == FollowMode.ONE && !hasTarget) {
+                            awaitingTarget = true
+                        } else {
+                            followMode = picked
+                            awaitingTarget = false
+                            followModeChanges++
+                        }
                     },
                 )
             }
@@ -451,6 +541,7 @@ fun MapScreen(
                     ?: group.map { it.positionId }.toSet(),
                 now = now,
                 showAll = showAll,
+                awaitingTarget = awaitingTarget,
                 onSelect = ::lookAt,
                 onToggleAll = { showAll = !showAll },
                 modifier = Modifier.navigationBarsPadding(),
@@ -530,13 +621,15 @@ fun MapScreen(
 }
 
 /**
- * The single button that walks the camera through [FollowMode].
+ * The button that opens a choice of [FollowMode] and, once it is closed
+ * again, says out loud what was just chosen.
  *
- * A press advances the ring; what it lands on next is [nextMode]'s decision,
- * and this composable only reports the mode already chosen. The mark is the
- * state itself rather than a caption beside a fixed word, and the words of
- * that state are what TalkBack reads: a round mark keeps the button the size
- * of the others over the map, where a line of words stood out from them.
+ * A press used to walk a ring of three modes; it now opens a menu naming all
+ * three at once, the way [SourcePicker] already does for its own five
+ * choices, because a ring hides two thirds of what pressing it could mean
+ * until it is pressed. Picking ONE with nobody chosen yet does not close the
+ * loop here — [onPick] reports the pick and the caller decides whether there
+ * is anybody to sit on.
  */
 @Composable
 private fun FollowButton(
@@ -545,7 +638,9 @@ private fun FollowButton(
     targetName: String?,
     /** False once the chosen member's position has dropped off the map entirely. */
     targetAvailable: Boolean,
-    onClick: () -> Unit,
+    /** Bumped by the caller on every real change of mode, to unroll the label again. */
+    changeCount: Int,
+    onPick: (FollowMode) -> Unit,
     modifier: Modifier = Modifier,
     /**
      * Whether a hand is holding the following still. The button is faded
@@ -554,15 +649,16 @@ private fun FollowButton(
      */
     paused: Boolean = false,
 ) {
+    var open by remember { mutableStateOf(false) }
     val label = when (mode) {
         FollowMode.NONE -> stringResource(R.string.map_follow_none)
 
         FollowMode.ALL -> stringResource(R.string.map_follow_all)
 
-        // targetName is null here only if nextMode was never given the
-        // chance to skip ONE for want of a target, which the ring's own
-        // rules do not allow; the fallback exists for the type rather than
-        // for a case this screen expects to reach.
+        // targetName is null here only where nobody has ever been chosen, or
+        // the menu's own ONE was picked and is still waiting for somebody —
+        // a case the button reports through targetAvailable, not through
+        // this fallback.
         FollowMode.ONE ->
             targetName
                 ?.let { stringResource(R.string.map_follow_one, it) }
@@ -575,13 +671,164 @@ private fun FollowButton(
         FollowMode.ONE -> R.drawable.ic_follow_one
     }
 
-    MapRoundButton(
-        icon = icon,
-        label = label,
+    // Shown for a few seconds after every real change of mode, then folded
+    // away again: [changeCount] rather than [mode] itself as the key, because
+    // a pick that lands on the mode already running — ALL chosen again while
+    // ALL was already the mode — is still worth saying out loud, and [mode]
+    // alone would not have changed to say it.
+    var showLabel by remember { mutableStateOf(false) }
+
+    LaunchedEffect(changeCount) {
+        if (changeCount == 0) return@LaunchedEffect
+
+        showLabel = true
+        delay(FOLLOW_LABEL_MILLIS)
+        showLabel = false
+    }
+
+    // The menu opens where the button is, which is the button's own corner,
+    // the same as SourcePicker's.
+    Box(modifier = modifier) {
+        Surface(
+            onClick = { open = true },
+            modifier =
+            Modifier
+                .height(FOLLOW_BUTTON_HEIGHT)
+                .alpha(if (paused) PAUSED_ALPHA else 1f),
+            shape = CircleShape,
+            color =
+            if (mode != FollowMode.NONE) {
+                MaterialTheme.colorScheme.secondaryContainer
+            } else {
+                MaterialTheme.colorScheme.surface
+            },
+            tonalElevation = 3.dp,
+            shadowElevation = 3.dp,
+        ) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Box(
+                    modifier = Modifier.size(FOLLOW_BUTTON_HEIGHT),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    // The description TalkBack reads for the whole button,
+                    // named on the icon the same way MapRoundButton names it:
+                    // the label beside it, once it is showing, would only
+                    // repeat the same words a second time.
+                    Icon(
+                        painter = painterResource(icon),
+                        contentDescription = label,
+                        tint =
+                        if (!targetAvailable) {
+                            MaterialTheme.colorScheme.onSurfaceVariant
+                        } else {
+                            MaterialTheme.colorScheme.onSurface
+                        },
+                    )
+                }
+
+                AnimatedVisibility(
+                    visible = showLabel,
+                    enter = expandHorizontally(),
+                    exit = shrinkHorizontally(),
+                ) {
+                    Text(
+                        text = label,
+                        style = MaterialTheme.typography.bodyMedium,
+                        maxLines = 1,
+                        softWrap = false,
+                        modifier = Modifier.padding(end = 14.dp).clearAndSetSemantics {},
+                    )
+                }
+            }
+        }
+
+        DropdownMenu(expanded = open, onDismissRequest = { open = false }) {
+            FollowModeItem(
+                icon = R.drawable.ic_follow_none,
+                title = stringResource(R.string.map_follow_menu_none_title),
+                subtitle = stringResource(R.string.map_follow_menu_none_subtitle),
+                current = mode == FollowMode.NONE,
+                onClick = {
+                    open = false
+                    onPick(FollowMode.NONE)
+                },
+            )
+            FollowModeItem(
+                icon = R.drawable.ic_follow_one,
+                title =
+                targetName
+                    ?.let { stringResource(R.string.map_follow_menu_one_title_named, it) }
+                    ?: stringResource(R.string.map_follow_menu_one_title),
+                subtitle = stringResource(R.string.map_follow_menu_one_subtitle),
+                current = mode == FollowMode.ONE,
+                onClick = {
+                    open = false
+                    onPick(FollowMode.ONE)
+                },
+            )
+            FollowModeItem(
+                icon = R.drawable.ic_follow_all,
+                title = stringResource(R.string.map_follow_menu_all_title),
+                subtitle = stringResource(R.string.map_follow_menu_all_subtitle),
+                current = mode == FollowMode.ALL,
+                onClick = {
+                    open = false
+                    onPick(FollowMode.ALL)
+                },
+            )
+
+            HorizontalDivider()
+
+            // Unselectable on purpose: this is not a fourth choice, it is what
+            // the second choice above needs explained, and a menu of three
+            // rows and a caption reads as three rows all the same.
+            Text(
+                text = stringResource(R.string.map_follow_menu_hint),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier =
+                Modifier
+                    .width(FOLLOW_MENU_WIDTH)
+                    .padding(horizontal = 12.dp, vertical = 8.dp),
+            )
+        }
+    }
+}
+
+/** One row of the follow menu: a mode's mark, its name and what it does. */
+@Composable
+private fun FollowModeItem(
+    @DrawableRes icon: Int,
+    title: String,
+    subtitle: String,
+    /** Whether this is the mode running right now, marked by the tint behind the row. */
+    current: Boolean,
+    onClick: () -> Unit,
+) {
+    DropdownMenuItem(
+        modifier =
+        if (current) {
+            Modifier.background(MaterialTheme.colorScheme.secondaryContainer)
+        } else {
+            Modifier
+        },
+        leadingIcon = {
+            // Decorative here: the row's own text already says what the
+            // icon marks, and the icon on the button itself is what carries
+            // the description once the menu is closed.
+            Icon(painter = painterResource(icon), contentDescription = null)
+        },
+        text = {
+            Column(modifier = Modifier.width(FOLLOW_MENU_WIDTH)) {
+                Text(text = title, style = MaterialTheme.typography.bodyLarge)
+                Text(
+                    text = subtitle,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
+        },
         onClick = onClick,
-        modifier = modifier.alpha(if (paused) PAUSED_ALPHA else 1f),
-        active = mode != FollowMode.NONE,
-        dimmed = !targetAvailable,
     )
 }
 
@@ -595,6 +842,8 @@ private fun MemberButtons(
     openCards: Set<String>,
     now: Instant,
     showAll: Boolean,
+    /** Whether ONE is waiting for a member to be chosen off this very strip. */
+    awaitingTarget: Boolean,
     onSelect: (String) -> Unit,
     onToggleAll: () -> Unit,
     modifier: Modifier = Modifier,
@@ -603,7 +852,45 @@ private fun MemberButtons(
     val shown = members.take(onStrip)
     val rest = members.drop(onStrip)
 
+    // How bright the ring around every card is while the strip is waiting to
+    // be answered. It fades in and out on its own rather than sitting at one
+    // strength, because a border that simply appeared and stayed would be
+    // missed by anybody not looking at the strip at that exact moment — the
+    // whole reason it is a card being chosen from rather than a mode already
+    // running.
+    val ringAlpha =
+        if (awaitingTarget) {
+            val blink = rememberInfiniteTransition(label = "followTargetRing")
+
+            blink.animateFloat(
+                initialValue = 0.35f,
+                targetValue = 1f,
+                animationSpec =
+                infiniteRepeatable(
+                    animation = tween(durationMillis = 700),
+                    repeatMode = RepeatMode.Reverse,
+                ),
+                label = "followTargetRingAlpha",
+            ).value
+        } else {
+            null
+        }
+
     Column(modifier = modifier) {
+        if (awaitingTarget) {
+            Surface(
+                color = MaterialTheme.colorScheme.inverseSurface,
+                contentColor = MaterialTheme.colorScheme.inverseOnSurface,
+                modifier = Modifier.fillMaxWidth(),
+            ) {
+                Text(
+                    text = stringResource(R.string.map_follow_awaiting_banner),
+                    style = MaterialTheme.typography.bodyMedium,
+                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
+                )
+            }
+        }
+
         Row(
             modifier = Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 8.dp),
             horizontalArrangement = Arrangement.spacedBy(8.dp),
@@ -614,6 +901,7 @@ private fun MemberButtons(
                     name = names[member.positionId] ?: shortName(member.memberId),
                     face = faces[member.memberId],
                     shown = member.positionId in openCards,
+                    ringAlpha = ringAlpha,
                     now = now,
                     onSelect = onSelect,
                     modifier = Modifier.weight(1f),
@@ -653,6 +941,8 @@ private fun MemberButton(
     face: Bitmap?,
     /** Whether the card over the map is about this member. */
     shown: Boolean,
+    /** How bright the ring waiting for ONE's target is, or null while nobody is waiting. */
+    ringAlpha: Float?,
     now: Instant,
     onSelect: (String) -> Unit,
     modifier: Modifier = Modifier,
@@ -665,10 +955,20 @@ private fun MemberButton(
         // the member being looked at and the rest.
         tonalElevation = if (shown) 8.dp else 2.dp,
         border =
-        if (shown) {
-            BorderStroke(width = 2.dp, color = MaterialTheme.colorScheme.primary)
-        } else {
-            null
+        when {
+            // The ring waiting to be answered takes over from the plainer
+            // one below: a card cannot at once be the one already open and
+            // the one ONE is waiting to be given, since opening it is what
+            // answers the wait.
+            ringAlpha != null ->
+                BorderStroke(
+                    width = 2.dp,
+                    color = MaterialTheme.colorScheme.primary.copy(alpha = ringAlpha),
+                )
+
+            shown -> BorderStroke(width = 2.dp, color = MaterialTheme.colorScheme.primary)
+
+            else -> null
         },
     ) {
         Column(modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp)) {
