@@ -30,6 +30,10 @@
     <uses-permission android:name="android.permission.ACCESS_NOTIFICATION_POLICY" />
     <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
 
+    <!-- Lights the screen while the siren sounds, so the button that stops it
+         is on the locked screen without anybody pressing power first. -->
+    <uses-permission android:name="android.permission.WAKE_LOCK" />
+
     <!-- Asked for in a dialog of the system's own: a phone that stops the
          service while nobody is looking at the screen stops answering the
          other members, whose fast collecting arrives over a subscription. -->

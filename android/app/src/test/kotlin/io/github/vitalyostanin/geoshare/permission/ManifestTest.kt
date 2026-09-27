@@ -85,6 +85,8 @@ class ManifestTest {
                 // The siren sounds through "Do Not Disturb" set to total silence.
                 "android.permission.ACCESS_NOTIFICATION_POLICY",
                 "android.permission.RECEIVE_BOOT_COMPLETED",
+                // The screen comes on while the siren sounds.
+                "android.permission.WAKE_LOCK",
                 "android.permission.REQUEST_IGNORE_BATTERY_OPTIMIZATIONS",
             )
 

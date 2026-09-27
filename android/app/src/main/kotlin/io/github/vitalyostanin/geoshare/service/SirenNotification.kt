@@ -6,6 +6,7 @@ import android.app.NotificationManager
 import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
+import android.widget.RemoteViews
 import androidx.core.app.NotificationCompat
 import androidx.core.content.getSystemService
 import io.github.vitalyostanin.geoshare.MainActivity
@@ -23,6 +24,11 @@ private const val CHANNEL_ID = "siren"
  * sound is turned off in the channel; otherwise the two would fight over the
  * same moment. Full-screen intent is left out on purpose: on a locked
  * screen this is meant to be seen, not to seize it.
+ *
+ * Laid out by hand rather than by the system: a locked screen shows a
+ * notification folded, and the buttons of an ordinary one appear only once it
+ * is unfolded. Somebody who has found the phone should not have to know that
+ * to stop the noise, so the folded one carries its own button.
  */
 fun sirenNotification(context: Context, callerName: String, until: Instant): Notification {
     createSirenChannel(context)
@@ -43,11 +49,31 @@ fun sirenNotification(context: Context, callerName: String, until: Instant): Not
             PendingIntent.FLAG_IMMUTABLE,
         )
 
+    val title = context.getString(R.string.siren_notification_title, callerName)
+    val text = context.getString(R.string.siren_notification_text)
+
+    val folded =
+        RemoteViews(context.packageName, R.layout.siren_notification_collapsed).apply {
+            setTextViewText(R.id.siren_title, title)
+            setTextViewText(R.id.siren_off, context.getString(R.string.siren_off_short))
+            setOnClickPendingIntent(R.id.siren_off, turnOff)
+        }
+
+    // The action below is the unfolded one's button, so this layout has none.
+    val unfolded =
+        RemoteViews(context.packageName, R.layout.siren_notification_expanded).apply {
+            setTextViewText(R.id.siren_title, title)
+            setTextViewText(R.id.siren_text, text)
+        }
+
     return NotificationCompat
         .Builder(context, CHANNEL_ID)
         .setSmallIcon(R.drawable.ic_notification)
-        .setContentTitle(context.getString(R.string.siren_notification_title, callerName))
-        .setContentText(context.getString(R.string.siren_notification_text))
+        .setContentTitle(title)
+        .setContentText(text)
+        .setStyle(NotificationCompat.DecoratedCustomViewStyle())
+        .setCustomContentView(folded)
+        .setCustomBigContentView(unfolded)
         .setContentIntent(open)
         .addAction(0, context.getString(R.string.siren_off), turnOff)
         .setCategory(NotificationCompat.CATEGORY_ALARM)

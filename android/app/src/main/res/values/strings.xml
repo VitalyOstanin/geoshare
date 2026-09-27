@@ -253,6 +253,7 @@
     <string name="siren_called_by_you">you</string>
     <string name="siren_seconds_left">%1$d s left.</string>
     <string name="siren_off">Stop the siren</string>
+    <string name="siren_off_short">Stop</string>
     <string name="siren_channel">Siren</string>
     <string name="siren_title">Switch on the siren: %1$s?</string>
     <string name="siren_phone_chip">%1$s · %2$s</string>

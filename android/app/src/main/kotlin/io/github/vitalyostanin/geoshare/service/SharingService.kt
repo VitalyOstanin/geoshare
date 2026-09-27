@@ -8,6 +8,7 @@ import android.content.IntentFilter
 import android.content.pm.ServiceInfo
 import android.location.LocationManager
 import android.os.BatteryManager
+import android.os.PowerManager
 import androidx.core.app.ServiceCompat
 import androidx.core.content.ContextCompat
 import androidx.core.content.getSystemService
@@ -1030,6 +1031,8 @@ class SharingService : LifecycleService() {
 
         AppLog.i(TAG, "the siren sounds")
 
+        var screen: PowerManager.WakeLock? = null
+
         try {
             sirenPlayer.start()
 
@@ -1061,9 +1064,13 @@ class SharingService : LifecycleService() {
                 )
             }
 
+            // After the notification, so the screen comes on with it there.
+            screen = lightScreen(this, SIREN_SECONDS)
+
             delay(Duration.between(Instant.now(), until).toMillis().coerceAtLeast(0))
         } finally {
             sirenPlayer.stop()
+            screen?.letGo()
             cancelSirenNotification(this)
             AppLog.i(TAG, "the siren is quiet")
         }

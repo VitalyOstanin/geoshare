@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- The siren's notification folded, as a locked screen shows it: the button
+     that stops the siren stands beside the title, since the buttons of an
+     ordinary notification appear only once it is unfolded. -->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:gravity="center_vertical"
+    android:orientation="horizontal">
+
+    <TextView
+        android:id="@+id/siren_title"
+        style="@style/TextAppearance.Compat.Notification.Title"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_weight="1"
+        android:ellipsize="end"
+        android:maxLines="2" />
+
+    <Button
+        android:id="@+id/siren_off"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="8dp" />
+</LinearLayout>
