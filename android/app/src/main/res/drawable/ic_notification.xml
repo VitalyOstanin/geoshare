@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- The icon in the status bar, which keeps nothing but the shape: the three
+     dots of the launcher icon and the streets between them, in white. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="24dp"
+    android:height="24dp"
+    android:viewportWidth="24"
+    android:viewportHeight="24">
+    <path
+        android:pathData="M2.2,8.9 L21.8,6.2"
+        android:strokeColor="#FFFFFFFF"
+        android:strokeAlpha="0.5"
+        android:strokeWidth="1"
+        android:strokeLineCap="round" />
+    <path
+        android:pathData="M7.6,1.8 L11.1,22.2"
+        android:strokeColor="#FFFFFFFF"
+        android:strokeAlpha="0.5"
+        android:strokeWidth="1"
+        android:strokeLineCap="round" />
+    <path
+        android:pathData="M13.8,6.7 L18.2,22.2"
+        android:strokeColor="#FFFFFFFF"
+        android:strokeAlpha="0.5"
+        android:strokeWidth="1"
+        android:strokeLineCap="round" />
+    <path
+        android:pathData="M1.8,16.9 C6.7,15.6 13.3,18.2 22.2,15.6"
+        android:strokeColor="#FFFFFFFF"
+        android:strokeAlpha="0.5"
+        android:strokeWidth="1"
+        android:strokeLineCap="round" />
+    <path
+        android:fillColor="#FFFFFFFF"
+        android:pathData="M5.84,7.56 a2.6,2.6 0 1,0 5.2,0 a2.6,2.6 0 1,0 -5.2,0 Z" />
+    <path
+        android:fillColor="#FFFFFFFF"
+        android:pathData="M13.4,11.56 a2.6,2.6 0 1,0 5.2,0 a2.6,2.6 0 1,0 -5.2,0 Z" />
+    <path
+        android:fillColor="#FFFFFFFF"
+        android:pathData="M7.620000000000001,16.44 a2.6,2.6 0 1,0 5.2,0 a2.6,2.6 0 1,0 -5.2,0 Z" />
+</vector>

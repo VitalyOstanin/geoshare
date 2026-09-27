@@ -42,7 +42,7 @@ fun sharingNotification(context: Context): Notification {
 
     return NotificationCompat
         .Builder(context, CHANNEL_ID)
-        .setSmallIcon(android.R.drawable.ic_menu_mylocation)
+        .setSmallIcon(R.drawable.ic_notification)
         .setContentTitle(context.getString(R.string.sharing_notification_title))
         .setContentText(context.getString(R.string.sharing_notification_text))
         .setContentIntent(open)

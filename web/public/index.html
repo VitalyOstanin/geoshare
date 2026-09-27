@@ -4,9 +4,13 @@
         <meta charset="utf-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1" />
         <title>Geoshare</title>
-        <!-- Nothing to show yet, and an empty one is quieter than a 404 on
-             every load. Replaced when the application gets its icon. -->
-        <link rel="icon" href="data:," />
+        <!-- The drawing the Android launcher icon is made of. The PNG is for
+             the browsers that take no SVG in a tab; the manifest and the
+             touch icon are what a shortcut on a home screen is drawn from. -->
+        <link rel="icon" href="favicon.svg" type="image/svg+xml" />
+        <link rel="icon" href="favicon-32.png" sizes="32x32" type="image/png" />
+        <link rel="apple-touch-icon" href="apple-touch-icon.png" />
+        <link rel="manifest" href="manifest.webmanifest" />
         <!-- Served from here rather than from somebody else's server: the
              library's own worker refuses to start when the library is read
              across origins, and the map then draws a background with nothing
