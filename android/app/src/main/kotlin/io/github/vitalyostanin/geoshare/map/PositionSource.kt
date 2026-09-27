@@ -3,6 +3,7 @@ package io.github.vitalyostanin.geoshare.map
 import com.google.firebase.firestore.DocumentSnapshot
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.ListenerRegistration
+import com.google.firebase.firestore.MetadataChanges
 import io.github.vitalyostanin.geoshare.log.AppLog
 import io.github.vitalyostanin.geoshare.service.PositionField
 import io.github.vitalyostanin.geoshare.service.positionId
@@ -102,7 +103,10 @@ fun memberPositions(
     // with it rather than waiting for the screen to be opened afresh.
     fun follow(id: String) {
         subscriptions[id] =
-            positions.document(id).addSnapshotListener { snapshot, error ->
+            // With the metadata changes as well: whether this phone's own write
+            // is still waiting is not part of the document, and a listener told
+            // only of the data would hear of it only as a side effect.
+            positions.document(id).addSnapshotListener(MetadataChanges.INCLUDE) { snapshot, error ->
                 if (error != null) {
                     AppLog.i(TAG, "$id is out of reach: ${error.code}")
                     refused.add(id)
@@ -195,6 +199,7 @@ private fun positionOf(document: DocumentSnapshot): MemberPosition? {
         document
             .getTimestamp(PositionField.LEFT_OUT_SINCE)
             ?.let { Instant.ofEpochSecond(it.seconds, it.nanoseconds.toLong()) },
+        unsent = document.metadata.hasPendingWrites(),
     )
 }
 

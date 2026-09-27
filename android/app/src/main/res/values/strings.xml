@@ -47,6 +47,7 @@
     <string name="map_detail_from_you">%1$s from you</string>
     <string name="map_detail_position_ago">position %1$s</string>
     <string name="map_detail_online_ago">online %1$s</string>
+    <string name="map_detail_unsent">waiting for the network</string>
     <string name="map_detail_stuck_sentence">Online %1$s, but no new location has been accepted.</string>
     <string name="map_detail_left_out_lead">Rejected %1$s:</string>
     <string name="map_detail_false_place_lead">The position is most likely false:</string>

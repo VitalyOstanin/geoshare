@@ -40,6 +40,7 @@
     <string name="map_detail_from_you">%1$s от вас</string>
     <string name="map_detail_position_ago">позиция %1$s</string>
     <string name="map_detail_online_ago">в сети %1$s</string>
+    <string name="map_detail_unsent">ждёт сети</string>
     <string name="map_detail_stuck_sentence">В сети %1$s, но новое место не принято.</string>
     <string name="map_detail_left_out_lead">Отказ %1$s:</string>
     <string name="map_detail_false_place_lead">Позиция, скорее всего, ложная:</string>

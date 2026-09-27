@@ -56,6 +56,17 @@ class PhoneStatusTest {
         assertEquals("Viewing", shown.mode)
     }
 
+    // The phone's own summary may have reached the database while the position
+    // has not; the later moment from it must not pass for the position leaving.
+    @Test
+    fun `a position still waiting to leave stays waiting under what the phone said`() {
+        val grants = grantsWith(PhoneStatus(onlineAt = Instant.ofEpochSecond(9_000)))
+
+        val shown = withPhones(listOf(position.copy(unsent = true)), grants).single()
+
+        assertEquals(true, shown.unsent)
+    }
+
     @Test
     fun `what the phone said before its position is not`() {
         val grants = grantsWith(PhoneStatus(onlineAt = Instant.ofEpochSecond(500), charging = true))

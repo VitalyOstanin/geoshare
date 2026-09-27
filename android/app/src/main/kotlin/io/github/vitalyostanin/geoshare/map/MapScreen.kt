@@ -1133,11 +1133,18 @@ private fun DetailSummary(member: MemberPosition, away: Double?, now: Instant) {
                 ageText(positionAge(member.positionAt, now)),
             ),
         )
+        // This phone's own position before it has left: there has been no
+        // moment of being online to count from, and what the reader needs to
+        // know is that nobody else sees it yet.
         Fact(
-            stringResource(
-                R.string.map_detail_online_ago,
-                ageText(positionAge(member.knownAt, now)),
-            ),
+            if (member.unsent) {
+                stringResource(R.string.map_detail_unsent)
+            } else {
+                stringResource(
+                    R.string.map_detail_online_ago,
+                    ageText(positionAge(member.knownAt, now)),
+                )
+            },
         )
 
         val percent = member.batteryPercent

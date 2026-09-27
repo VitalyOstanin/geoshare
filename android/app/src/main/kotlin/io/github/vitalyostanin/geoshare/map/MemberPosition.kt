@@ -82,6 +82,14 @@ data class MemberPosition(
      * write over it. See FalseMarks.kt.
      */
     val inFalsePlace: Boolean = false,
+    /**
+     * Whether this is the phone's own write, still waiting to reach the
+     * database: the rest of the group sees the position before it until then.
+     *
+     * Only ever true on the phone that wrote it, which draws its own position
+     * from the local copy without waiting for the server.
+     */
+    val unsent: Boolean = false,
 ) {
     /**
      * The moment the age is counted from.
