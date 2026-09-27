@@ -190,6 +190,11 @@ const state = {
     // it on every one of those would drag the view out from under a reader's
     // thumb for no reason at all.
     shownPositionIds: new Set(),
+    // The strip's entries by position id, kept from one drawing to the next:
+    // a clock tick changes an age and nothing else, and building every entry
+    // again for that would throw away the elements and their listeners with
+    // it.
+    stripEntries: new Map(),
     // Who is in the group, or nothing at all — which is both a group that has
     // not been made and a group this account is not on, since neither can be
     // read.
@@ -597,6 +602,7 @@ function stop() {
     // this name belonged to.
     state.followTargetName = null;
     state.shownPositionIds = new Set();
+    state.stripEntries = new Map();
 
     elements.signIn.hidden = false;
     elements.map.hidden = true;
@@ -1127,7 +1133,15 @@ function render() {
     const ordered = orderedForNavigation(state.positions, state.member.memberId);
     const entries = ordered.map((position) => memberEntry(position, labels, pictures, shown, now));
 
-    elements.members.replaceChildren(...entries);
+    // Put back only when who is in the strip or their order has changed:
+    // moving the same elements around on every tick is work for nothing.
+    if (!sameElements(elements.members.children, entries)) {
+        elements.members.replaceChildren(...entries);
+    }
+
+    state.stripEntries = new Map(
+        ordered.map((position, index) => [position.positionId, entries[index]]),
+    );
     scrollShownIntoView(ordered, entries, shown);
 
     showFollow(labels);
@@ -1158,6 +1172,14 @@ function scrollShownIntoView(ordered, entries, shown) {
     if (index !== -1) {
         entries[index].scrollIntoView({ block: 'nearest', inline: 'nearest' });
     }
+}
+
+/** Whether a parent already holds exactly these elements, in this order. */
+function sameElements(children, entries) {
+    return (
+        children.length === entries.length &&
+        entries.every((entry, index) => children[index] === entry)
+    );
 }
 
 /** Whether two sets of ids name exactly the same members, in any order. */
@@ -1347,10 +1369,16 @@ function faces() {
     );
 }
 
+/**
+ * One member's entry in the strip, the one from the last drawing brought up
+ * to date when there is one.
+ */
 function memberEntry(position, labels, pictures, shown, now) {
-    const entry = document.createElement('button');
+    const entry =
+        state.stripEntries.get(position.positionId) ?? newMemberEntry(position.positionId);
+    const [face, name, age, battery] = entry.children;
+
     entry.className = shown.has(position.positionId) ? 'member shown' : 'member';
-    entry.addEventListener('click', () => lookAt(state.view, position));
 
     const stale = isGrey(position, now);
     // The same expression the pin and the card use, rather than colour here
@@ -1362,26 +1390,51 @@ function memberEntry(position, labels, pictures, shown, now) {
     // The same face the pin on the map carries, ringed in the colour of that
     // pin: a card and a marker then say the same thing about the same member,
     // and the colour the dot used to carry is not lost.
-    const face = document.createElement('span');
-
     face.className = stale ? 'member-face stale' : 'member-face';
     face.style.setProperty('--ring', colour);
     showFace(face, pictures.get(position.memberId), label, colour);
 
-    const name = document.createElement('span');
-    name.className = 'name';
     name.textContent = label;
 
-    const age = document.createElement('span');
     age.className = stale ? 'age stale' : 'age';
     age.textContent = ageText(positionAge(position.positionAt, now));
 
-    const battery = document.createElement('span');
-    battery.className = 'battery';
-
-    if (position.batteryPercent !== null) {
+    if (position.batteryPercent === null) {
+        // Emptied as well as left empty: the entry may have held a
+        // percentage on the drawing before.
+        battery.textContent = '';
+        battery.classList.remove('charging');
+    } else {
         batteryText(position, battery);
     }
+
+    return entry;
+}
+
+/**
+ * The elements of an entry, with nothing in them yet.
+ *
+ * The click looks the position up when it happens rather than holding the
+ * one the entry was built with: the entry outlives many drawings, and the
+ * member will have moved since.
+ */
+function newMemberEntry(positionId) {
+    const entry = document.createElement('button');
+
+    entry.addEventListener('click', () => {
+        const position = state.positions.find((one) => one.positionId === positionId);
+
+        if (position) {
+            lookAt(state.view, position);
+        }
+    });
+
+    const face = document.createElement('span');
+    const name = document.createElement('span');
+    name.className = 'name';
+    const age = document.createElement('span');
+    const battery = document.createElement('span');
+    battery.className = 'battery';
 
     entry.append(face, name, age, battery);
 
