@@ -21,7 +21,7 @@ export const EN = {
     oneMoreRefused: 'One more member is not sharing with you right now.',
     moreRefused: (count) => `${count} more members are not sharing with you right now.`,
 
-    // The names of the five ways a phone collects its position. Names rather
+    // The names of the five ways a device collects its position. Names rather
     // than sentences describing them: what each one asks for and how often it
     // sends belongs in the help the card opens, where all five can be read
     // against each other. The document carries the entry of the enumeration,
@@ -36,17 +36,17 @@ export const EN = {
     // The help the mode on a card opens. All five are described in one place
     // rather than a sentence at a time on the cards: what a mode means is only
     // clear against the other four, and a member reads it once.
-    modeHelpTitle: 'How a phone collects its position',
+    modeHelpTitle: 'How a device collects its position',
     modeHelpIntro:
-        'The phone chooses one of these five by itself. Somebody with the map open outranks '
+        'The device chooses one of these five by itself. Somebody with the map open outranks '
         + 'everything else; the rest of the time it spends as little as it can and still be found.',
     modeHelpWhen: 'When',
-    modeHelpAsks: 'What the phone does',
+    modeHelpAsks: 'What the device does',
     close: 'Close',
     modeWhenViewing: 'Somebody has the map open.',
     modeAsksViewing: 'Asks for the most exact position every 15 seconds, and writes it as soon as '
         + 'the marker would move.',
-    modeWhenMoving: 'The phone noticed walking, running, cycling or riding.',
+    modeWhenMoving: 'The device noticed walking, running, cycling or riding.',
     modeAsksMoving: 'Asks every 5 minutes.',
     modeWhenStandby: 'Away from where it last wrote, with nobody looking.',
     modeAsksStandby: 'Asks every 15 minutes.',
@@ -63,7 +63,7 @@ export const EN = {
     position: 'Position',
     unknown: 'unknown',
 
-    // How the phone arrived at the answer, and how wide it called it. The two
+    // How the device arrived at the answer, and how wide it called it. The two
     // rows stand together: a word without a width does not separate the flat
     // from the district, and a width without the word does not say whether the
     // circle was measured off the sky or looked up in somebody's database.
@@ -73,28 +73,28 @@ export const EN = {
     foundAssistance: 'Towers and Wi-Fi',
     foundUnheard: 'Satellites with no measurements',
     foundOtherRadios: 'Towers and Wi-Fi',
-    foundPretended: 'Another application on the phone',
+    foundPretended: 'Another application on the device',
     foundUnsaid: 'Source not stated',
 
     // The summary under the name: what a card is opened for most often — how
-    // far the member is, when their position was taken and when the phone was
+    // far the member is, when their position was taken and when the device was
     // last online, how much charge is left. The distance is measured from the
-    // freshest place of the viewer's own phones, and is missing when there is
+    // freshest place of the viewer's own devices, and is missing when there is
     // nothing to measure from.
     fromYou: (distance) => `${distance} from you`,
     positionAgo: (age) => `position ${age}`,
     onlineAgo: (age) => `online ${age}`,
 
-    // The warnings as one paragraph, each only while it is true: the phone is
+    // The warnings as one paragraph, each only while it is true: the device is
     // online and no new position has been accepted for half an hour or more;
     // positions are being rejected; the receiver has not settled since the
-    // phone was switched on and answers narrowly and wrongly.
+    // device was switched on and answers narrowly and wrongly.
     falsePlaceLead: 'The position is most likely false:',
     falsePlaceAndAfter: (count) => `This position and ${count} more after it are in`,
     falsePlaceWhere: 'a known spoofed area',
     stuckSentence: (age) => `Online ${age}, but no new location has been accepted.`,
     leftOutLead: (answers) => `Rejected ${answers}:`,
-    settlingSentence: 'The receiver had not settled since the phone was switched on.',
+    settlingSentence: 'The receiver had not settled since the device was switched on.',
 
     // The rest behind a button: the two moments, mode, source, width, position.
     moreDetails: 'More details',
@@ -102,14 +102,14 @@ export const EN = {
 
     // How many answers were rejected since the last position written, and why.
     leftOutAnswers: (count) => (count === 1 ? '1 answer' : `${count} answers`),
-    leftOutDrifted: 'Drift while the phone lay still',
-    leftOutHurried: 'A speed the phone was never carried at',
+    leftOutDrifted: 'Drift while the device lay still',
+    leftOutHurried: 'A speed the device was never carried at',
     leftOutContradicted: 'The towers give another position',
     leftOutWidth: 'Too much doubt in the answer',
     leftOutSpeed: 'An impossible speed',
     leftOutContradiction: 'Two positions at one time',
     leftOutFalsePlace: 'A known spoofed area',
-    leftOutUnmoved: 'The phone was not moved',
+    leftOutUnmoved: 'The device was not moved',
     leftOutCircling: 'The track goes round a circle',
     leftOutOneBand: 'A fix without GLONASS',
     leftOutOneTransmitter: 'The signal is not from orbit',
@@ -117,20 +117,20 @@ export const EN = {
     leftOutRepeating: 'The track repeats itself',
     leftOutSettling: 'The receiver has not settled',
     leftOutBySource: 'The source is switched off',
-    leftOutBySourceNamed: (source) => `Switched off on the phone: ${source}`,
+    leftOutBySourceNamed: (source) => `Source switched off: ${source}`,
 
     // The help the rejection reason on a card opens.
     reasonHelpTitle: 'Why a position is rejected',
     reasonHelpIntro:
-        'The phone holds every position against several rules and rejects it as soon as the '
+        'The device holds every position against several rules and rejects it as soon as the '
         + 'first one speaks. A rejection is not a fault: where the signal is spoofed there are '
         + 'more rejected answers than accepted ones, and that is the work being done properly.',
     reasonHelpSign: 'What was seen',
     reasonHelpMeans: 'What it means',
-    reasonSignWidth: 'The phone named the radius it is somewhere inside, and the radius is over '
+    reasonSignWidth: 'The device named the radius it is somewhere inside, and the radius is over '
         + 'half a kilometre.',
     reasonMeansWidth: 'Such an answer names a district rather than a place. It is what the towers '
-        + 'give while the phone is indoors.',
+        + 'give while the device is indoors.',
     reasonSignSpeed: 'Reaching this place from the last one in the time between them would have '
         + 'taken over 200 km/h.',
     reasonMeansSpeed: 'One of the two is false. A spoof throws the marker far off rather than '
@@ -139,22 +139,22 @@ export const EN = {
     reasonMeansContradiction: 'The source is contradicting itself, which is what happens when a '
         + 'receiver is caught between a transmitter on the ground and the satellites.',
     reasonSignFalsePlace: 'The answer landed in an area you marked as somewhere the spoof puts '
-        + 'phones.',
+        + 'devices.',
     reasonMeansFalsePlace: 'A transmitter puts the marker there, not the satellites. The areas '
-        + 'belong to the group, so marking one from any phone is enough.',
-    reasonSignUnmoved: 'The movement sensors say the phone was not carried anywhere, and the '
+        + 'belong to the group, so marking one from any device is enough.',
+    reasonSignUnmoved: 'The movement sensors say the device was not carried anywhere, and the '
         + 'position changed.',
-    reasonMeansUnmoved: 'Only a false signal moves the marker of a phone lying still: steps and '
+    reasonMeansUnmoved: 'Only a false signal moves the marker of a device lying still: steps and '
         + 'journeys are counted by a chip of their own that a transmitter cannot reach.',
-    reasonSignDrifted: 'The phone is lying where it was put down, and the answers walk away from '
+    reasonSignDrifted: 'The device is lying where it was put down, and the answers walk away from '
         + 'it a little at a time.',
     reasonMeansDrifted: 'A slow drift. A step of thirty metres never trips a comparison between '
         + 'neighbours, but within an hour the marker is somewhere else, so the distance is '
-        + 'counted from where the phone was put down.',
-    reasonSignHurried: 'The phone has not been touched, and the answer says it is travelling at '
+        + 'counted from where the device was put down.',
+    reasonSignHurried: 'The device has not been touched, and the answer says it is travelling at '
         + 'the speed of a car.',
     reasonMeansHurried: 'The receiver reports a speed of its own alongside every position, and on '
-        + 'a phone lying still that speed is zero. A false signal draws a road and a speed along '
+        + 'a device lying still that speed is zero. A false signal draws a road and a speed along '
         + 'it, and the speed is inside the single answer — so this catches the first false '
         + 'position rather than the one after it.',
     reasonSignContradicted: 'The position from the satellites and the position from the towers '
@@ -166,7 +166,7 @@ export const EN = {
     reasonMeansCircling: 'Every stretch of such a track reads as ordinary driving. What gives it '
         + 'away is that the road closes, which is how a transmitter draws one and not how '
         + 'anybody drives.',
-    reasonSignRepeating: 'The phone has been through this same run of places before.',
+    reasonSignRepeating: 'The device has been through this same run of places before.',
     reasonMeansRepeating: 'A recorded false route is being played through again.',
     reasonSignOneBand: 'The fix rests on the satellites of the 1575 MHz band — GPS, Galileo, '
         + 'BeiDou — while GLONASS is heard and left out of it.',
@@ -178,20 +178,20 @@ export const EN = {
     reasonMeansOneTransmitter: 'A real sky grows quieter the lower the satellite. One strength '
         + 'for all of them means one point on the ground.',
     reasonSignTimeApart: 'Between two epochs the time the satellites carry advanced by a '
-        + 'different amount than the phone\'s own clock did.',
-    reasonMeansTimeApart: 'The phone counts the seconds since it was switched on, and nothing '
-        + 'transmitted can reach that count. A signal built to move the phone has to move the '
+        + 'different amount than the device\'s own clock did.',
+    reasonMeansTimeApart: 'The device counts the seconds since it was switched on, and nothing '
+        + 'transmitted can reach that count. A signal built to move the device has to move the '
         + 'time it carries, and the step shows up here.',
-    reasonSignSettling: 'The first five minutes after the phone was switched on, while the answer '
+    reasonSignSettling: 'The first five minutes after the device was switched on, while the answer '
         + 'rests on fewer than four satellites.',
-    reasonMeansSettling: 'In those minutes the receiver reports places the phone has never been. '
+    reasonMeansSettling: 'In those minutes the receiver reports places the device has never been. '
         + 'Answers of that window are held to tighter limits: wider than a hundred metres, or '
         + 'faster than 5 m/s, and they are rejected.',
     reasonSignSource: 'You switched this source of a position off in the settings.',
     reasonMeansSource: 'Nothing is wrong with the answer: it is collected and logged, but it '
         + 'moves no marker and reaches nobody. That is what the switch is for.',
 
-    // How wide the phone said its answer is. The sign is what turns a distance
+    // How wide the device said its answer is. The sign is what turns a distance
     // into a claim about where the marker might really be.
     widthMetres: (count) => `${count} m`,
     widthKilometres: (count) => `${count} km`,
@@ -218,7 +218,7 @@ export const EN = {
 
     // Who else has the map open right now, named rather than counted, and said
     // once for the household rather than on a card: one open map puts every
-    // phone of the group into the same way of collecting, so naming it per
+    // device of the group into the same way of collecting, so naming it per
     // member would repeat the same list under every face.
     mapOpen: (names) => `Map open: ${names.join(', ')}`,
     thisPage: 'you (this page)',
@@ -312,12 +312,12 @@ export const EN = {
     sirenTitle: (name) => `Switch on the siren: ${name}?`,
     sirenPhoneChip: (name, age) => `${name} · ${age}`,
     sirenNote:
-        'The phone will sound loudly for 20 seconds, even with its sound off. ' +
-        'The siren can be stopped on the phone itself or here.',
+        'The device will sound loudly for 20 seconds, even with its sound off. ' +
+        'The siren can be stopped on the device itself or here.',
     sirenGo: 'Switch on',
     sirenStop: 'Stop',
-    sirenWaiting: (phone) => `siren on ${phone} · waiting for the phone`,
-    sirenSounding: (phone, seconds) => `siren on ${phone} · ${seconds} s · the phone answered`,
+    sirenWaiting: (phone) => `siren on ${phone} · waiting for the device`,
+    sirenSounding: (phone, seconds) => `siren on ${phone} · ${seconds} s · the device answered`,
     sirenNoAnswer: (phone) => `${phone} did not answer the siren`,
     sirenStopped: (phone) => `siren on ${phone} stopped`,
     groupUnrun: 'Nobody runs this group, so its members are set from the Firebase console.',
@@ -327,11 +327,11 @@ export const EN = {
     // taking somebody off the roster.
     adminTitle: 'Running the group',
     adminYou: 'you',
-    // Said of a member whose phones this viewer may not read. Their phones are
+    // Said of a member whose devices this viewer may not read. Their devices are
     // named in their grant, which is closed to everybody they have not shared
     // with, so this is what is known here rather than what they own.
     adminNotShared: 'not sharing with you',
-    adminPhonesShared: (count) => `${count} ${count === 1 ? 'phone' : 'phones'} shared with you`,
+    adminPhonesShared: (count) => `${count} ${count === 1 ? 'device' : 'devices'} shared with you`,
 
     // What a refused write says. The rules weigh several things at once — a
     // code that has run out, a group already made, a member the last
@@ -340,7 +340,7 @@ export const EN = {
     groupRefused: 'The database refused that. The invitation may have run out, or the group '
         + 'may already exist.',
 
-    // Naming a phone or a person for oneself, from the card.
+    // Naming a device or a person for oneself, from the card.
     namePhone: 'Rename device',
     namePerson: 'Rename person',
     nameForYou: 'Only you see this name.',
@@ -351,7 +351,7 @@ export const EN = {
     nameFailed: (reason) => `The name was not saved: ${reason}`,
     unnamedDevice: 'Device',
 
-    // A phone in the panel that runs the group, and whether it is in touch.
+    // A device in the panel that runs the group, and whether it is in touch.
     adminPhoneOnline: (name, age) => `${name}: in touch ${age}`,
     adminPhoneSilent: (name) => `${name}: not in touch yet`,
     adminPhoneCharging: 'charging',
@@ -368,7 +368,7 @@ export const EN = {
     searchOpenTitle: (name) => `Show the whole group where ${name} is?`,
     searchRenewTitle: (name) => `Extend the search for ${name}?`,
     searchNote: 'Everybody in the group will see this member on the map, even those they do '
-        + 'not share with. Their phone will say who opened the search and until when.',
+        + 'not share with. Their devices will say who opened the search and until when.',
     searchHours: (hours) => ({ 6: '6 hours', 24: 'A day', 72: '3 days' })[hours] ?? `${hours} h`,
     searchUntil: (until) => `Until ${until}. "Found" ends it sooner.`,
     searchGo: 'Open',

@@ -6,9 +6,9 @@
     <string name="sign_in_explanation">Sign in with the Google account the family shares positions under.</string>
     <string name="sign_in_action">Sign in with Google</string>
     <string name="sign_in_running">Signing in…</string>
-    <string name="sign_in_failed_no_account">No Google account on this phone. Add one in the system settings, then sign in again.</string>
+    <string name="sign_in_failed_no_account">No Google account on this device. Add one in the system settings, then sign in again.</string>
     <string name="sign_in_failed_offline">No connection. Sign-in needs the network for a moment.</string>
-    <string name="sign_in_failed_misconfigured">This build cannot sign in on this phone: its Google services do not accept it.</string>
+    <string name="sign_in_failed_misconfigured">This build cannot sign in on this device: its Google services do not accept it.</string>
     <string name="sign_in_failed_unknown">Sign-in did not go through. Try again.</string>
 
     <string name="sign_out_action">Sign out</string>
@@ -20,18 +20,18 @@
     <string name="sharing_notification_text">The family can see where you are.</string>
     <string name="sharing_notification_stop">Stop</string>
 
-    <!-- The filter that leaves out positions the phone cannot have reached.
+    <!-- The filter that leaves out positions the device cannot have reached.
          Off unless asked for: it throws answers away, and only somebody whose
          satellites are being jammed wants that. -->
     <string name="jumps_title">Leave out impossible positions</string>
-    <string name="jumps_explained">Where the satellites are jammed, the phone is told it is somewhere it cannot be, and the marker jumps across the map. This leaves out any position that would have taken more than 200 km/h to reach.</string>
-    <string name="sources_title">Sources this phone counts</string>
-    <string name="sources_explained">Which kinds of answer count towards the point this phone reports. An answer from a source switched off is still collected and logged, but it moves no marker and reaches no one. Where the satellites are jammed, leaving only the towers and the Wi-Fi is the sensible setting: a wider answer, but not a false one. With every switch off the phone writes nothing at all.</string>
+    <string name="jumps_explained">Where the satellites are jammed, the device is told it is somewhere it cannot be, and the marker jumps across the map. This leaves out any position that would have taken more than 200 km/h to reach.</string>
+    <string name="sources_title">Sources this device counts</string>
+    <string name="sources_explained">Which kinds of answer count towards the point this device reports. An answer from a source switched off is still collected and logged, but it moves no marker and reaches no one. Where the satellites are jammed, leaving only the towers and the Wi-Fi is the sensible setting: a wider answer, but not a false one. With every switch off the device writes nothing at all.</string>
     <string name="sources_button">Sources: %1$d of %2$d</string>
     <string name="jumps_forget">Forget the last place</string>
     <string name="jumps_forgotten">Forgotten</string>
 
-    <string name="permission_location_needed">Sharing needs access to this phone\'s position. Allow it in the application settings.</string>
+    <string name="permission_location_needed">Sharing needs access to this device\'s position. Allow it in the application settings.</string>
     <string name="permission_notifications_needed">Allow notifications, so that a running service can say so.</string>
     <string name="permission_background_needed">To keep sharing while the application is closed, set the location access to \"Allow all the time\" in the application settings.</string>
     <string name="permission_open_settings">Open the settings</string>
@@ -39,7 +39,7 @@
     <string name="map_member_you">You</string>
     <!-- Nothing but a number and a sign; the same line in every language. -->
     <string name="map_battery" translatable="false">%1$d%%</string>
-    <!-- How wide the phone said its answer is. The sign is what turns a
+    <!-- How wide the device said its answer is. The sign is what turns a
          distance into a claim about where the marker might really be. -->
     <string name="map_width_metres">%1$d m</string>
     <string name="map_width_kilometres">%1$.1f km</string>
@@ -53,14 +53,14 @@
     <string name="map_detail_false_place_lead">The position is most likely false:</string>
     <string name="map_detail_false_place_and_after">This position and %1$d more after it are in</string>
     <string name="map_detail_false_place_where">a known spoofed area</string>
-    <string name="map_detail_settling_sentence">The receiver had not settled since the phone was switched on.</string>
+    <string name="map_detail_settling_sentence">The receiver had not settled since the device was switched on.</string>
     <string name="map_detail_more">More details</string>
     <string name="map_detail_fewer">Fewer details</string>
     <string name="map_detail_at">At</string>
     <string name="map_detail_online">Online</string>
     <string name="map_detail_mode">Mode</string>
-    <!-- How the phone arrived at the answer, and how wide it called it.
-         The two are read together: the towers place a phone in its
+    <!-- How the device arrived at the answer, and how wide it called it.
+         The two are read together: the towers place a device in its
          district and the satellites in its doorway, and a word without a
          width says half of that. -->
     <string name="map_detail_found_by">Found by</string>
@@ -69,16 +69,16 @@
     <string name="found_assistance">Towers and Wi-Fi</string>
     <string name="found_unheard">Satellites with no measurements</string>
     <string name="found_other_radios">Towers and Wi-Fi</string>
-    <string name="found_pretended">Another application on the phone</string>
+    <string name="found_pretended">Another application on the device</string>
     <string name="found_unsaid">Source not stated</string>
-    <string name="left_out_drifted">Drift while the phone lay still</string>
-    <string name="left_out_hurried">A speed the phone was never carried at</string>
+    <string name="left_out_drifted">Drift while the device lay still</string>
+    <string name="left_out_hurried">A speed the device was never carried at</string>
     <string name="left_out_contradicted">The towers give another position</string>
     <string name="left_out_width">Too much doubt in the answer</string>
     <string name="left_out_speed">An impossible speed</string>
     <string name="left_out_contradiction">Two positions at one time</string>
     <string name="left_out_false_place">A known spoofed area</string>
-    <string name="left_out_unmoved">The phone was not moved</string>
+    <string name="left_out_unmoved">The device was not moved</string>
     <string name="left_out_circling">The track goes round a circle</string>
     <string name="left_out_one_band">A fix without GLONASS</string>
     <string name="left_out_one_transmitter">The signal is not from orbit</string>
@@ -86,7 +86,7 @@
     <string name="left_out_repeating">The track repeats itself</string>
     <string name="left_out_settling">The receiver has not settled</string>
     <string name="left_out_by_source">The source is switched off</string>
-    <string name="left_out_by_source_named">Switched off on the phone: %1$s</string>
+    <string name="left_out_by_source_named">Source switched off: %1$s</string>
     <string name="map_detail_position">Position</string>
     <string name="map_detail_coordinates" translatable="false">%1$.5f, %2$.5f</string>
     <string name="map_detail_unknown">unknown</string>
@@ -121,38 +121,38 @@
     <string name="constellation_other">other</string>
     <string name="aiding_wasted">Heard for nothing: %1$s. The receiver holds no orbit for any of those satellites, which is what erasing the aiding data puts right.</string>
     <string name="reason_help_title">Why a position is rejected</string>
-    <string name="reason_help_intro">The phone holds every position against several rules and rejects it as soon as the first one speaks. A rejection is not a fault: where the signal is spoofed there are more rejected answers than accepted ones, and that is the work being done properly.</string>
+    <string name="reason_help_intro">The device holds every position against several rules and rejects it as soon as the first one speaks. A rejection is not a fault: where the signal is spoofed there are more rejected answers than accepted ones, and that is the work being done properly.</string>
     <string name="reason_help_sign">What was seen</string>
     <string name="reason_help_means">What it means</string>
 
-    <string name="reason_help_sign_width">The phone named the radius it is somewhere inside, and the radius is over half a kilometre.</string>
-    <string name="reason_help_means_width">Such an answer names a district rather than a place. It is what the towers give while the phone is indoors.</string>
+    <string name="reason_help_sign_width">The device named the radius it is somewhere inside, and the radius is over half a kilometre.</string>
+    <string name="reason_help_means_width">Such an answer names a district rather than a place. It is what the towers give while the device is indoors.</string>
     <string name="reason_help_sign_speed">Reaching this place from the last one in the time between them would have taken over 200 km/h.</string>
     <string name="reason_help_means_speed">One of the two is false. A spoof throws the marker far off rather than easing it along.</string>
     <string name="reason_help_sign_contradiction">Two different positions arrived carrying the same moment.</string>
     <string name="reason_help_means_contradiction">The source is contradicting itself, which is what happens when a receiver is caught between a transmitter on the ground and the satellites.</string>
-    <string name="reason_help_sign_false_place">The answer landed in an area you marked as somewhere the spoof puts phones.</string>
-    <string name="reason_help_means_false_place">A transmitter puts the marker there, not the satellites. The areas belong to the group, so marking one from any phone is enough.</string>
-    <string name="reason_help_sign_unmoved">The movement sensors say the phone was not carried anywhere, and the position changed.</string>
-    <string name="reason_help_means_unmoved">Only a false signal moves the marker of a phone lying still: steps and journeys are counted by a chip of their own that a transmitter cannot reach.</string>
-    <string name="reason_help_sign_drifted">The phone is lying where it was put down, and the answers walk away from it a little at a time.</string>
-    <string name="reason_help_means_drifted">A slow drift. A step of thirty metres never trips a comparison between neighbours, but within an hour the marker is somewhere else, so the distance is counted from where the phone was put down.</string>
-    <string name="reason_help_sign_hurried">The phone has not been touched, and the answer says it is travelling at the speed of a car.</string>
-    <string name="reason_help_means_hurried">The receiver reports a speed of its own alongside every position, and on a phone lying still that speed is zero. A false signal draws a road and a speed along it, and the speed is inside the single answer — so this catches the first false position rather than the one after it.</string>
+    <string name="reason_help_sign_false_place">The answer landed in an area you marked as somewhere the spoof puts devices.</string>
+    <string name="reason_help_means_false_place">A transmitter puts the marker there, not the satellites. The areas belong to the group, so marking one from any device is enough.</string>
+    <string name="reason_help_sign_unmoved">The movement sensors say the device was not carried anywhere, and the position changed.</string>
+    <string name="reason_help_means_unmoved">Only a false signal moves the marker of a device lying still: steps and journeys are counted by a chip of their own that a transmitter cannot reach.</string>
+    <string name="reason_help_sign_drifted">The device is lying where it was put down, and the answers walk away from it a little at a time.</string>
+    <string name="reason_help_means_drifted">A slow drift. A step of thirty metres never trips a comparison between neighbours, but within an hour the marker is somewhere else, so the distance is counted from where the device was put down.</string>
+    <string name="reason_help_sign_hurried">The device has not been touched, and the answer says it is travelling at the speed of a car.</string>
+    <string name="reason_help_means_hurried">The receiver reports a speed of its own alongside every position, and on a device lying still that speed is zero. A false signal draws a road and a speed along it, and the speed is inside the single answer — so this catches the first false position rather than the one after it.</string>
     <string name="reason_help_sign_contradicted">The position from the satellites and the position from the towers and the Wi-Fi are kilometres apart.</string>
     <string name="reason_help_means_contradicted">The towers are harder to imitate than the satellites. This is the one rule that does not compare an answer with an earlier one, so it catches both a slow drift and the very first false answer.</string>
     <string name="reason_help_sign_circling">The answers go round a closed circle at a steady speed.</string>
     <string name="reason_help_means_circling">Every stretch of such a track reads as ordinary driving. What gives it away is that the road closes, which is how a transmitter draws one and not how anybody drives.</string>
-    <string name="reason_help_sign_repeating">The phone has been through this same run of places before.</string>
+    <string name="reason_help_sign_repeating">The device has been through this same run of places before.</string>
     <string name="reason_help_means_repeating">A recorded false route is being played through again.</string>
     <string name="reason_help_sign_one_band">The fix rests on the satellites of the 1575 MHz band — GPS, Galileo, BeiDou — while GLONASS is heard and left out of it.</string>
     <string name="reason_help_means_one_band">A spoofing transmitter works in one band. GLONASS broadcasts at 1602 MHz, out of its reach, so the receiver could not reconcile it with the satellites it was handed.</string>
     <string name="reason_help_sign_one_transmitter">Every satellite arrives at the same strength however low it claims to be, and the far band is silent.</string>
     <string name="reason_help_means_one_transmitter">A real sky grows quieter the lower the satellite. One strength for all of them means one point on the ground.</string>
-    <string name="reason_help_sign_time_apart">Between two epochs the time the satellites carry advanced by a different amount than the phone\'s own clock did.</string>
-    <string name="reason_help_means_time_apart">The phone counts the seconds since it was switched on, and nothing transmitted can reach that count. A signal built to move the phone has to move the time it carries, and the step shows up here.</string>
-    <string name="reason_help_sign_settling">The first five minutes after the phone was switched on, while the answer rests on fewer than four satellites.</string>
-    <string name="reason_help_means_settling">In those minutes the receiver reports places the phone has never been. Answers of that window are held to tighter limits: wider than a hundred metres, or faster than 5 m/s, and they are rejected.</string>
+    <string name="reason_help_sign_time_apart">Between two epochs the time the satellites carry advanced by a different amount than the device\'s own clock did.</string>
+    <string name="reason_help_means_time_apart">The device counts the seconds since it was switched on, and nothing transmitted can reach that count. A signal built to move the device has to move the time it carries, and the step shows up here.</string>
+    <string name="reason_help_sign_settling">The first five minutes after the device was switched on, while the answer rests on fewer than four satellites.</string>
+    <string name="reason_help_means_settling">In those minutes the receiver reports places the device has never been. Answers of that window are held to tighter limits: wider than a hundred metres, or faster than 5 m/s, and they are rejected.</string>
     <string name="reason_help_sign_by_source">You switched this source of a position off in the settings.</string>
     <string name="reason_help_means_by_source">Nothing is wrong with the answer: it is collected and logged, but it moves no marker and reaches nobody. That is what the switch is for.</string>
 
@@ -169,15 +169,15 @@
     <string name="background_battery">Battery restriction</string>
     <string name="background_battery_lifted">Lifted</string>
     <string name="background_battery_allow">Allow</string>
-    <string name="background_startup">Startup list of the phone</string>
+    <string name="background_startup">Startup list of the device</string>
     <string name="background_startup_open">Open</string>
     <string name="background_startup_done">Set</string>
-    <string name="background_startup_explained">The phone keeps its own list of applications allowed to start. Nothing can read it, so mark it yourself once it is set.</string>
+    <string name="background_startup_explained">The device keeps its own list of applications allowed to start. Nothing can read it, so mark it yourself once it is set.</string>
     <string name="appearance_title">Appearance</string>
     <string name="appearance_light">Light</string>
     <string name="appearance_dark">Dark</string>
     <string name="appearance_system">System</string>
-    <!-- The language of the application, which a phone before Android 13 has
+    <!-- The language of the application, which a device before Android 13 has
          nowhere else to set. The two named languages say so in their own
          words: a member looking for theirs reads it before anything else. -->
     <string name="language_title">Language</string>
@@ -216,13 +216,13 @@
          a screen carrying its name. -->
     <string name="admin_title">Running the group</string>
     <string name="admin_you">you</string>
-    <!-- Said of a member whose phones this one may not read. Their phones are
+    <!-- Said of a member whose devices this one may not read. Their devices are
          in their grant, which is closed to everybody they have not shared
          with, so this is what is known here rather than what they own. -->
     <string name="admin_not_shared">not sharing with you</string>
     <plurals name="admin_phones_shared">
-        <item quantity="one">%1$d phone shared with you</item>
-        <item quantity="other">%1$d phones shared with you</item>
+        <item quantity="one">%1$d device shared with you</item>
+        <item quantity="other">%1$d devices shared with you</item>
     </plurals>
 
     <!-- The group looking for a member: an administrator opens a search, and
@@ -234,7 +234,7 @@
     <string name="search_renew">Extend</string>
     <string name="search_open_title">Show the whole group where %1$s is?</string>
     <string name="search_renew_title">Extend the search for %1$s?</string>
-    <string name="search_note">Everybody in the group will see this member on the map, even those they do not share with. Their phone will say who opened the search and until when.</string>
+    <string name="search_note">Everybody in the group will see this member on the map, even those they do not share with. Their devices will say who opened the search and until when.</string>
     <string name="search_hours_6">6 hours</string>
     <string name="search_hours_24">A day</string>
     <string name="search_hours_72">3 days</string>
@@ -249,7 +249,7 @@
     <string name="sought_banner_note">Opened by %1$s. If you are all right, end the search.</string>
     <string name="sought_found">I\'m found</string>
     <string name="siren_notification_title">Siren switched on by %1$s</string>
-    <string name="siren_notification_text">The phone is sounding so that it can be found.</string>
+    <string name="siren_notification_text">The device is sounding so that it can be found.</string>
     <string name="siren_called_by_you">you</string>
     <string name="siren_seconds_left">%1$d s left.</string>
     <string name="siren_off">Stop the siren</string>
@@ -257,16 +257,16 @@
     <string name="siren_channel">Siren</string>
     <string name="siren_title">Switch on the siren: %1$s?</string>
     <string name="siren_phone_chip">%1$s · %2$s</string>
-    <string name="siren_note">The phone will sound loudly for 20 seconds, even with its sound off. The siren can be stopped on the phone itself or here.</string>
+    <string name="siren_note">The device will sound loudly for 20 seconds, even with its sound off. The siren can be stopped on the device itself or here.</string>
     <string name="siren_go">Switch on</string>
     <string name="siren_hint">Siren for 20 seconds</string>
     <string name="siren_stop_short">Stop</string>
-    <string name="siren_status_waiting">siren on %1$s · waiting for the phone</string>
-    <string name="siren_status_sounding">siren on %1$s · %2$d s · the phone answered</string>
+    <string name="siren_status_waiting">siren on %1$s · waiting for the device</string>
+    <string name="siren_status_sounding">siren on %1$s · %2$d s · the device answered</string>
     <string name="siren_status_no_answer">%1$s did not answer the siren</string>
     <string name="siren_status_stopped">siren on %1$s stopped</string>
     <string name="siren_silence_title">Siren in \"Do Not Disturb\"</string>
-    <string name="siren_silence_note">Optional: without it the siren is silent when the phone is set to total silence</string>
+    <string name="siren_silence_note">Optional: without it the siren is silent when the device is set to total silence</string>
     <string name="siren_silence_granted">allowed</string>
     <string name="my_phones_title">My devices</string>
     <string name="my_phones_this">this device</string>
@@ -278,7 +278,7 @@
     <string name="phone_remove_go">Remove</string>
     <string name="phone_remove_refused">The device could not be removed. Check the connection and try again.</string>
     <!-- Shown to the member being looked for, as a notification of its own:
-         being watched by the whole group is worth waking the phone for in a
+         being watched by the whole group is worth waking the device for in a
          way that sharing quietly never is. -->
     <string name="sought_channel_name">Being looked for</string>
     <string name="sought_channel_description">Shown while the group is looking for you.</string>
@@ -294,7 +294,7 @@
     <string name="visibility_forever">with no end</string>
     <!-- A permission given earlier, counting down: %1$s is a time of day. -->
     <string name="visibility_until">until %1$s</string>
-    <!-- The name of the way a phone was collecting when it wrote the position.
+    <!-- The name of the way a device was collecting when it wrote the position.
          A name rather than a sentence describing it: what each one asks for and
          how often it sends belongs in the help the card opens, where all five
          can be read against each other. The document carries the entry of the
@@ -311,13 +311,13 @@
          rather than a sentence at a time on the cards: what a mode means is
          only clear against the other four, and a member reads it once. The page
          says the same. -->
-    <string name="mode_help_title">How a phone collects its position</string>
-    <string name="mode_help_intro">The phone chooses one of these five by itself. Somebody with the map open outranks everything else; the rest of the time it spends as little as it can and still be found.</string>
+    <string name="mode_help_title">How a device collects its position</string>
+    <string name="mode_help_intro">The device chooses one of these five by itself. Somebody with the map open outranks everything else; the rest of the time it spends as little as it can and still be found.</string>
     <string name="mode_help_when">When</string>
-    <string name="mode_help_asks">What the phone does</string>
+    <string name="mode_help_asks">What the device does</string>
     <string name="mode_help_when_viewing">Somebody has the map open.</string>
     <string name="mode_help_asks_viewing">Asks for the most exact position every 15 seconds, and writes it as soon as the marker would move.</string>
-    <string name="mode_help_when_moving">The phone noticed walking, running, cycling or riding.</string>
+    <string name="mode_help_when_moving">The device noticed walking, running, cycling or riding.</string>
     <string name="mode_help_asks_moving">Asks every 5 minutes.</string>
     <string name="mode_help_when_standby">Away from where it last wrote, with nobody looking.</string>
     <string name="mode_help_asks_standby">Asks every 15 minutes.</string>
@@ -329,7 +329,7 @@
     <!-- Who else has the map open right now: %1$s is the members, listed by
          name and separated by commas. Named rather than counted, and stated
          once for the whole household rather than on a card, because one open
-         map puts every phone of the group into the same way of collecting. -->
+         map puts every device of the group into the same way of collecting. -->
     <string name="map_watching">Map open: %1$s</string>
 
     <string name="map_more">More</string>
@@ -376,7 +376,7 @@
         <item quantity="other">%1$d members</item>
     </plurals>
 
-    <!-- Members whose position this phone is not allowed to read, or cannot
+    <!-- Members whose position this device is not allowed to read, or cannot
          reach: without this the map simply has fewer markers on it, and a
          refusal looks exactly like a member who is not sharing. -->
     <plurals name="map_out_of_reach">
