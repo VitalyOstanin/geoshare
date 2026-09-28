@@ -6,9 +6,9 @@
     <string name="sign_in_explanation">Войдите в тот аккаунт Google, под которым семья делится своими геопозициями.</string>
     <string name="sign_in_action">Войти через Google</string>
     <string name="sign_in_running">Входим…</string>
-    <string name="sign_in_failed_no_account">На телефоне нет аккаунта Google. Добавьте его в настройках телефона и войдите ещё раз.</string>
+    <string name="sign_in_failed_no_account">На устройстве нет аккаунта Google. Добавьте его в настройках устройства и войдите ещё раз.</string>
     <string name="sign_in_failed_offline">Нет связи. Для входа сеть нужна хотя бы на минуту.</string>
-    <string name="sign_in_failed_misconfigured">Эта сборка не может войти на этом телефоне: сервисы Google её не принимают.</string>
+    <string name="sign_in_failed_misconfigured">Эта сборка не может войти на этом устройстве: сервисы Google её не принимают.</string>
     <string name="sign_in_failed_unknown">Войти не удалось. Попробуйте ещё раз.</string>
 
     <string name="sign_out_action">Выйти</string>
@@ -21,14 +21,14 @@
     <string name="sharing_notification_stop">Остановить</string>
 
     <string name="jumps_title">Отбрасывать невозможные места</string>
-    <string name="jumps_explained">Там, где глушат спутники, телефону сообщают место, где он быть не может, и метка прыгает по карте. Так отбрасывается любое место, до которого пришлось бы добираться быстрее 200 км/ч.</string>
+    <string name="jumps_explained">Там, где глушат спутники, устройству сообщают место, где оно быть не может, и метка прыгает по карте. Так отбрасывается любое место, до которого пришлось бы добираться быстрее 200 км/ч.</string>
     <string name="sources_title">Источники позиции, которые учитывать</string>
-    <string name="sources_explained">Какие позиции телефон учитывает, определяя, где он находится. Позиция из выключенного источника по-прежнему собирается и попадает в журнал, но метку не двигает и никому не уходит. Там, где спутники глушат, разумно оставить только вышки и Wi-Fi: позиция менее точная, зато не подделанная. Если выключить все, телефон не запишет ни одной позиции.</string>
+    <string name="sources_explained">Какие позиции устройство учитывает, определяя, где он находится. Позиция из выключенного источника по-прежнему собирается и попадает в журнал, но метку не двигает и никому не уходит. Там, где спутники глушат, разумно оставить только вышки и Wi-Fi: позиция менее точная, зато не подделанная. Если выключить все, устройство не запишет ни одной позиции.</string>
     <string name="sources_button">Источники: %1$d из %2$d</string>
     <string name="jumps_forget">Забыть последнее место</string>
     <string name="jumps_forgotten">Забыто</string>
 
-    <string name="permission_location_needed">Чтобы делиться местом, нужен доступ к местоположению телефона. Разрешите его в настройках приложения.</string>
+    <string name="permission_location_needed">Чтобы делиться местом, нужен доступ к местоположению устройства. Разрешите его в настройках приложения.</string>
     <string name="permission_notifications_needed">Разрешите уведомления, чтобы работающая служба могла сказать о себе.</string>
     <string name="permission_background_needed">Чтобы делиться местом при закрытом приложении, поставьте доступ к местоположению «Разрешить всегда» в настройках приложения.</string>
     <string name="permission_open_settings">Открыть настройки</string>
@@ -46,7 +46,7 @@
     <string name="map_detail_false_place_lead">Позиция, скорее всего, ложная:</string>
     <string name="map_detail_false_place_and_after">Эта позиция и ещё %1$d после неё — в</string>
     <string name="map_detail_false_place_where">известной области подмены</string>
-    <string name="map_detail_settling_sentence">Приёмник не устоялся после включения телефона.</string>
+    <string name="map_detail_settling_sentence">Приёмник не устоялся после включения устройства.</string>
     <string name="map_detail_more">Подробнее</string>
     <string name="map_detail_fewer">Свернуть</string>
     <string name="map_detail_at">Время позиции</string>
@@ -58,16 +58,16 @@
     <string name="found_assistance">Вышки и Wi-Fi</string>
     <string name="found_unheard">Спутники без измерений</string>
     <string name="found_other_radios">Вышки и Wi-Fi</string>
-    <string name="found_pretended">Другое приложение на телефоне</string>
+    <string name="found_pretended">Другое приложение на устройстве</string>
     <string name="found_unsaid">Источник не назван</string>
-    <string name="left_out_drifted">Увод при лежащем телефоне</string>
-    <string name="left_out_hurried">Скорость, с которой телефон не носили</string>
+    <string name="left_out_drifted">Увод при лежащем устройстве</string>
+    <string name="left_out_hurried">Скорость, с которой устройство не носили</string>
     <string name="left_out_contradicted">От вышек другая позиция</string>
     <string name="left_out_width">Слишком большая погрешность</string>
     <string name="left_out_speed">Нереальная скорость</string>
     <string name="left_out_contradiction">Две одновременные позиции</string>
     <string name="left_out_false_place">Известная область подмены</string>
-    <string name="left_out_unmoved">Телефон не двигали</string>
+    <string name="left_out_unmoved">Устройство не двигали</string>
     <string name="left_out_circling">Трек по кругу</string>
     <string name="left_out_one_band">Позиция без ГЛОНАСС</string>
     <string name="left_out_one_transmitter">Сигнал не с орбиты</string>
@@ -108,39 +108,39 @@
     <string name="constellation_other">другое</string>
     <string name="aiding_wasted">Слышно, но без пользы: %1$s. Приёмник не держит ни одной орбиты этих спутников — это и лечит стирание данных помощи.</string>
     <string name="reason_help_title">Почему точка отброшена</string>
-    <string name="reason_help_intro">Телефон проверяет каждую позицию несколькими правилами и отказывает ей, как только сработало первое. Отказ не значит поломку: в районе с подменой сигнала отброшенных точек больше, чем принятых, и это правильная работа.</string>
+    <string name="reason_help_intro">Устройство проверяет каждую позицию несколькими правилами и отказывает ей, как только сработало первое. Отказ не значит поломку: в районе с подменой сигнала отброшенных точек больше, чем принятых, и это правильная работа.</string>
     <string name="reason_help_sign">Признак</string>
     <string name="reason_help_means">О чём говорит</string>
 
-    <string name="reason_help_sign_width">Телефон сам назвал радиус, в котором он где-то находится, и радиус больше полукилометра.</string>
-    <string name="reason_help_means_width">Такая точка показывает не место, а район целиком. Чаще всего так отвечают вышки, когда телефон в помещении.</string>
+    <string name="reason_help_sign_width">Устройство само назвало радиус, в котором оно где-то находится, и радиус больше полукилометра.</string>
+    <string name="reason_help_means_width">Такая точка показывает не место, а район целиком. Чаще всего так отвечают вышки, когда устройство в помещении.</string>
     <string name="reason_help_sign_speed">Чтобы попасть из прошлой точки в эту за прошедшее время, пришлось бы ехать быстрее 200 км/ч.</string>
     <string name="reason_help_means_speed">Одна из двух точек ложная. Подмена почти всегда бросает метку далеко в сторону, а не сдвигает её понемногу.</string>
     <string name="reason_help_sign_contradiction">На один и тот же момент времени пришли две разные позиции.</string>
     <string name="reason_help_means_contradiction">Источник противоречит сам себе. Так бывает, когда рядом работает передатчик подмены и приёмник мечется между ним и спутниками.</string>
-    <string name="reason_help_sign_false_place">Точка попала в область, которую вы отметили как место, куда подмена уводит телефоны.</string>
-    <string name="reason_help_means_false_place">Метку туда ставит передатчик, а не спутники. Области задаются на группу, поэтому их достаточно отметить один раз с любого телефона.</string>
-    <string name="reason_help_sign_unmoved">Датчики движения говорят, что телефон никуда не несли, а позиция сменилась.</string>
-    <string name="reason_help_means_unmoved">Сдвинуть метку у неподвижного телефона может только ложный сигнал: шаги и поездки считает отдельный чип, до которого подмена не достаёт.</string>
-    <string name="reason_help_sign_drifted">Телефон лежит на месте, а точки понемногу уходят в сторону, каждая недалеко от предыдущей.</string>
-    <string name="reason_help_means_drifted">Медленный увод. Шаг в тридцать метров не ловится сравнением соседних точек, но за час метка оказывается в другом месте, поэтому счёт идёт от места, где телефон положили.</string>
-    <string name="reason_help_sign_hurried">Телефон никто не трогал, а ответ говорит, что он едет со скоростью автомобиля.</string>
-    <string name="reason_help_means_hurried">Приёмник сообщает свою оценку скорости вместе с каждой позицией, и у лежащего телефона она равна нулю. Ложный сигнал рисует дорогу и скорость вдоль неё, и эта скорость находится внутри одного ответа — поэтому ловится первая же ложная точка, а не следующая за ней.</string>
+    <string name="reason_help_sign_false_place">Точка попала в область, которую вы отметили как место, куда подмена уводит устройства.</string>
+    <string name="reason_help_means_false_place">Метку туда ставит передатчик, а не спутники. Области задаются на группу, поэтому их достаточно отметить один раз с любого устройства.</string>
+    <string name="reason_help_sign_unmoved">Датчики движения говорят, что устройство никуда не несли, а позиция сменилась.</string>
+    <string name="reason_help_means_unmoved">Сдвинуть метку у неподвижного устройства может только ложный сигнал: шаги и поездки считает отдельный чип, до которого подмена не достаёт.</string>
+    <string name="reason_help_sign_drifted">Устройство лежит на месте, а точки понемногу уходят в сторону, каждая недалеко от предыдущей.</string>
+    <string name="reason_help_means_drifted">Медленный увод. Шаг в тридцать метров не ловится сравнением соседних точек, но за час метка оказывается в другом месте, поэтому счёт идёт от места, где устройство положили.</string>
+    <string name="reason_help_sign_hurried">Устройство никто не трогал, а ответ говорит, что оно едет со скоростью автомобиля.</string>
+    <string name="reason_help_means_hurried">Приёмник сообщает свою оценку скорости вместе с каждой позицией, и у лежащего устройства она равна нулю. Ложный сигнал рисует дорогу и скорость вдоль неё, и эта скорость находится внутри одного ответа — поэтому ловится первая же ложная точка, а не следующая за ней.</string>
     <string name="reason_help_sign_contradicted">Позиция по спутникам и позиция по вышкам и Wi-Fi расходятся на километры.</string>
     <string name="reason_help_means_contradicted">Вышки подделать труднее, чем спутники. Это единственное правило, которое не сравнивает точку с предыдущей, поэтому оно видит и медленный увод, и первую же ложную точку.</string>
     <string name="reason_help_sign_circling">Точки идут по замкнутому кругу с ровной скоростью.</string>
     <string name="reason_help_means_circling">Каждый отрезок такого трека выглядит как обычная поездка. Выдаёт его то, что дорога замыкается: так рисует маршрут передатчик, а не человек.</string>
-    <string name="reason_help_sign_repeating">Телефон уже проходил ровно этот набор точек раньше.</string>
+    <string name="reason_help_sign_repeating">Устройство уже проходило ровно этот набор точек раньше.</string>
     <string name="reason_help_means_repeating">Ложный маршрут прокручивают заново по записи.</string>
     <string name="reason_help_sign_one_band">Решение построено на спутниках полосы 1575 МГц — GPS, Galileo, BeiDou, — а ГЛОНАСС слышно, и в решение он не вошёл.</string>
     <string name="reason_help_means_one_band">Передатчик подмены работает в одной полосе. ГЛОНАСС вещает на 1602 МГц, туда передатчик не достаёт, и приёмник не смог согласовать его со своими ложными спутниками.</string>
     <string name="reason_help_sign_one_transmitter">Все спутники слышны одинаково громко, как бы низко над горизонтом они ни были, а дальняя полоса молчит.</string>
     <string name="reason_help_means_one_transmitter">Настоящее небо звучит тем тише, чем ниже спутник. Ровная громкость означает, что всё пришло из одной точки на земле.</string>
-    <string name="reason_help_sign_time_apart">За время между двумя измерениями время, которое несут спутники, продвинулось не на столько же, на сколько собственные часы телефона.</string>
-    <string name="reason_help_means_time_apart">Телефон считает секунды с момента включения, и до этого счёта не дотянуться ничем переданным по радио. Сигнал, который уводит телефон в другое место, вынужден сдвинуть переносимое им время — сдвиг здесь и виден.</string>
-    <string name="reason_help_sign_settling">Первые пять минут после включения телефона, пока решение строится меньше чем на четырёх спутниках.</string>
-    <string name="reason_help_means_settling">В эти минуты приёмник выдаёт места, где телефон никогда не был. Точки этого окна проверяются строже обычного: шире ста метров или быстрее 5 м/с — отказ.</string>
-    <string name="reason_help_sign_by_source">Вы выключили этот источник позиции в настройках телефона.</string>
+    <string name="reason_help_sign_time_apart">За время между двумя измерениями время, которое несут спутники, продвинулось не на столько же, на сколько собственные часы устройства.</string>
+    <string name="reason_help_means_time_apart">Устройство считает секунды с момента включения, и до этого счёта не дотянуться ничем переданным по радио. Сигнал, который уводит устройство в другое место, вынужден сдвинуть переносимое им время — сдвиг здесь и виден.</string>
+    <string name="reason_help_sign_settling">Первые пять минут после включения устройства, пока решение строится меньше чем на четырёх спутниках.</string>
+    <string name="reason_help_means_settling">В эти минуты приёмник выдаёт места, где устройство никогда не было. Точки этого окна проверяются строже обычного: шире ста метров или быстрее 5 м/с — отказ.</string>
+    <string name="reason_help_sign_by_source">Вы выключили этот источник позиции в настройках приложения на устройстве.</string>
     <string name="reason_help_means_by_source">С точкой всё в порядке: она собрана и записана в журнал, но метку не двигает и никому не уходит. Так и было задумано.</string>
 
     <string name="aiding_title">Данные помощи</string>
@@ -156,10 +156,10 @@
     <string name="background_battery">Ограничение батареи</string>
     <string name="background_battery_lifted">Снято</string>
     <string name="background_battery_allow">Снять</string>
-    <string name="background_startup">Список автозапуска телефона</string>
+    <string name="background_startup">Список автозапуска устройства</string>
     <string name="background_startup_open">Открыть</string>
     <string name="background_startup_done">Готово</string>
-    <string name="background_startup_explained">Телефон ведёт собственный список приложений, которым разрешено запускаться. Прочитать его нельзя, поэтому отметьте сами, когда разрешите.</string>
+    <string name="background_startup_explained">Устройство ведёт собственный список приложений, которым разрешено запускаться. Прочитать его нельзя, поэтому отметьте сами, когда разрешите.</string>
     <string name="appearance_title">Оформление</string>
     <string name="appearance_light">Светлое</string>
     <string name="appearance_dark">Тёмное</string>
@@ -195,10 +195,10 @@
     <string name="admin_you">это вы</string>
     <string name="admin_not_shared">не делится с вами</string>
     <plurals name="admin_phones_shared">
-        <item quantity="one">%1$d телефон доступен вам</item>
-        <item quantity="few">%1$d телефона доступны вам</item>
-        <item quantity="many">%1$d телефонов доступны вам</item>
-        <item quantity="other">%1$d телефона доступны вам</item>
+        <item quantity="one">%1$d устройство доступно вам</item>
+        <item quantity="few">%1$d устройства доступны вам</item>
+        <item quantity="many">%1$d устройств доступны вам</item>
+        <item quantity="other">%1$d устройства доступны вам</item>
     </plurals>
 
     <!-- Группа ищет участника: администратор открывает поиск, и пока он идёт,
@@ -210,7 +210,7 @@
     <string name="search_renew">Продлить</string>
     <string name="search_open_title">Открыть всей группе, где %1$s?</string>
     <string name="search_renew_title">Продлить поиск: %1$s?</string>
-    <string name="search_note">Все участники группы увидят этого человека на карте, даже те, кому он её не открывал. На его телефоне появится сообщение: кто открыл и до какого времени.</string>
+    <string name="search_note">Все участники группы увидят этого человека на карте, даже те, кому он её не открывал. На его устройствах появится сообщение: кто открыл и до какого времени.</string>
     <string name="search_hours_6">6 часов</string>
     <string name="search_hours_24">Сутки</string>
     <string name="search_hours_72">3 суток</string>
@@ -225,7 +225,7 @@
     <string name="sought_banner_note">Открыли поиск: %1$s. Если с вами всё в порядке, закройте поиск.</string>
     <string name="sought_found">Меня нашли</string>
     <string name="siren_notification_title">Включили сирену: %1$s</string>
-    <string name="siren_notification_text">Телефон звучит, чтобы его нашли.</string>
+    <string name="siren_notification_text">Устройство звучит, чтобы его нашли.</string>
     <string name="siren_called_by_you">Вы</string>
     <string name="siren_seconds_left">Ещё %1$d с.</string>
     <string name="siren_off">Выключить сирену</string>
@@ -233,13 +233,13 @@
     <string name="siren_channel">Сирена</string>
     <string name="siren_title">Включить сирену: %1$s?</string>
     <string name="siren_phone_chip">%1$s · %2$s</string>
-    <string name="siren_note">Телефон будет громко звучать 20 секунд, даже если на нём выключен звук. Выключить сирену можно на самом телефоне или здесь.</string>
+    <string name="siren_note">Устройство будет громко звучать 20 секунд, даже если на нём выключен звук. Выключить сирену можно на самом устройстве или здесь.</string>
     <string name="siren_go">Включить</string>
     <string name="siren_hint">Сирена на 20 секунд</string>
     <string name="siren_stop_short">Выключить</string>
-    <string name="siren_status_waiting">сирена на %1$s · ждём ответа телефона</string>
-    <string name="siren_status_sounding">сирена на %1$s · %2$d с · телефон принял</string>
-    <string name="siren_status_no_answer">%1$s не ответил на сирену</string>
+    <string name="siren_status_waiting">сирена на %1$s · ждём ответа устройства</string>
+    <string name="siren_status_sounding">сирена на %1$s · %2$d с · устройство приняло</string>
+    <string name="siren_status_no_answer">%1$s: нет ответа на сирену</string>
     <string name="siren_status_stopped">сирена на %1$s выключена</string>
     <string name="siren_silence_title">Сирена в режиме «Не беспокоить»</string>
     <string name="siren_silence_note">Необязательно: без этого сирена молчит в режиме полной тишины</string>
@@ -254,7 +254,7 @@
     <string name="phone_remove_go">Удалить</string>
     <string name="phone_remove_refused">Не удалось удалить устройство. Проверьте связь и попробуйте ещё раз.</string>
     <!-- Показывается тому, кого ищут, отдельным уведомлением: то, что позицию
-         видит вся группа, стоит того, чтобы разбудить телефон, а тихая
+         видит вся группа, стоит того, чтобы разбудить устройство, а тихая
          передача места — нет. -->
     <string name="sought_channel_name">Вас ищут</string>
     <string name="sought_channel_description">Показывается, пока вас ищет группа.</string>
@@ -279,19 +279,19 @@
     <string name="mode_viewing">Просмотр</string>
     <string name="mode_night">Ночь</string>
 
-    <string name="mode_help_title">Как телефон определяет своё место</string>
-    <string name="mode_help_intro">Телефон сам выбирает один из этих пяти способов. Открытая у кого-то карта важнее всего остального; в остальное время телефон тратит столько, сколько нужно, чтобы его можно было найти.</string>
+    <string name="mode_help_title">Как устройство определяет своё место</string>
+    <string name="mode_help_intro">Устройство само выбирает один из этих пяти способов. Открытая у кого-то карта важнее всего остального; в остальное время устройство тратит столько, сколько нужно, чтобы его можно было найти.</string>
     <string name="mode_help_when">Когда</string>
-    <string name="mode_help_asks">Что делает телефон</string>
+    <string name="mode_help_asks">Что делает устройство</string>
     <string name="mode_help_when_viewing">Кто-то смотрит карту.</string>
     <string name="mode_help_asks_viewing">Запрашивает самое точное место каждые 15 секунд и записывает его, как только метка сдвинулась бы.</string>
-    <string name="mode_help_when_moving">Телефон заметил ходьбу, бег, велосипед или поездку.</string>
+    <string name="mode_help_when_moving">Устройство заметило ходьбу, бег, велосипед или поездку.</string>
     <string name="mode_help_asks_moving">Запрашивает каждые 5 минут.</string>
-    <string name="mode_help_when_standby">Телефон не там, где записал место в прошлый раз, и карту никто не смотрит.</string>
+    <string name="mode_help_when_standby">Устройство не там, где записало место в прошлый раз, и карту никто не смотрит.</string>
     <string name="mode_help_asks_standby">Запрашивает каждые 15 минут.</string>
     <string name="mode_help_when_night">С 23:00 до 07:00 или заряд ниже 15 процентов.</string>
     <string name="mode_help_asks_night">Запрашивает каждые 20 минут самым экономным способом.</string>
-    <string name="mode_help_when_idle">Телефон стоит в 150 метрах от места, которое записал последним.</string>
+    <string name="mode_help_when_idle">Устройство стоит в 150 метрах от места, которое записало последним.</string>
     <string name="mode_help_asks_idle">Не запрашивает ничего и повторяет последнее место каждые 25 минут, чтобы карточка не помечалась как устаревшая.</string>
 
     <!-- Who else has the map open right now: %1$s is the members, by name. -->
