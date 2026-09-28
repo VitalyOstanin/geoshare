@@ -200,12 +200,40 @@ class SharingService : LifecycleService() {
      */
     private val session =
         FirebaseAuth.AuthStateListener { auth ->
-            if (auth.currentUser != null) {
-                sessionWait?.cancel()
-                sessionWait = null
-                startCollecting()
+            val memberId = auth.currentUser?.uid
+
+            when (sessionChange(collectingFor, memberId)) {
+                SessionChange.None -> Unit
+
+                SessionChange.Start -> {
+                    sessionWait?.cancel()
+                    sessionWait = null
+                    startCollecting()
+                }
+
+                SessionChange.Restart -> {
+                    AppLog.i(TAG, "another account signed in, collecting for it instead")
+                    stopCollecting()
+                    startCollecting()
+                }
+
+                SessionChange.Stop -> {
+                    AppLog.i(TAG, "signed out, no longer collecting")
+                    stopCollecting()
+                    awaitSession()
+                }
             }
         }
+
+    /**
+     * The account the running collection writes for, or nothing while none runs.
+     *
+     * The phone can change hands: signed out of one account and into another,
+     * it keeps the same id, and a collection left running for the first account
+     * would go on writing under its name with the second one's session — every
+     * write refused, and the notification saying it shares all the same.
+     */
+    private var collectingFor: String? = null
 
     /**
      * Everything a write outside the collection loop needs: where the phone
@@ -554,17 +582,31 @@ class SharingService : LifecycleService() {
     override fun onDestroy() {
         FirebaseAuth.getInstance().removeAuthStateListener(session)
         radio.stop()
+        stopCollecting()
+        AppLog.i(TAG, "stopped")
+        super.onDestroy()
+    }
+
+    /**
+     * Takes down everything [startCollecting] set up for one account: the
+     * collection, the writers made for it, the cable receiver and whatever it
+     * was showing or sounding for that account.
+     */
+    private fun stopCollecting() {
         collection?.cancel()
+        collection = null
+        collectingFor = null
+        writer = null
+        status = null
+        ownPhoneId = null
         runCatching { unregisterReceiver(power) }
         // [keepSearchNotification] is cancelled along with [collection] and
         // leaves nothing to take its own notification down; the phone may
-        // still be being looked for when the service stops.
+        // still be being looked for when the collection stops.
         cancelSearchNotification(this)
         sounding?.cancel()
         sirenPlayer.stop()
         cancelSirenNotification(this)
-        AppLog.i(TAG, "stopped")
-        super.onDestroy()
     }
 
     /**
@@ -815,6 +857,8 @@ class SharingService : LifecycleService() {
 
             return
         }
+
+        collectingFor = memberId
 
         val device = DeviceIdentity(this)
         val writer = PositionWriter(memberId, device)

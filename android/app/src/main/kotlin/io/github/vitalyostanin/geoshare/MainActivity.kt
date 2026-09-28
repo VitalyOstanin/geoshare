@@ -256,6 +256,14 @@ class MainActivity : AppCompatActivity() {
                                 leavePreviousId(current.memberId, device)
                             }
 
+                            // A service left without a session stops after a
+                            // minute, and the account signed in after that —
+                            // the phone handed to somebody else — would share
+                            // nothing until the screen was next opened.
+                            LaunchedEffect(current.memberId) {
+                                continueSharingSetup()
+                            }
+
                             KeepWatching(current.memberId, device.id)
 
                             // The other half of the same collection: this
