@@ -17,10 +17,10 @@ private const val TAG = "geoshare.device"
  * one; its readers would go on following a document nobody writes, and the
  * list of its phones would name one that is gone.
  *
- * One batch, so the four are taken back together or not at all, and the old
- * id is forgotten only once they are: a phone offline or not yet let into the
- * group tries again the next time it starts. Removing what is already gone
- * does nothing, so the screen and the service may both try at once.
+ * The old id is forgotten only once the documents are: a phone offline or not
+ * yet let into the group tries again the next time it starts. Removing what
+ * is already gone does nothing, so the screen and the service may both try at
+ * once.
  */
 suspend fun leavePreviousId(
     memberId: String,
@@ -28,26 +28,9 @@ suspend fun leavePreviousId(
     store: FirebaseFirestore = FirebaseFirestore.getInstance(),
 ) {
     val previous = device.previousId ?: return
-    val document = positionId(memberId, previous)
 
     try {
-        store
-            .batch()
-            .delete(positionsOf(store).document(document))
-            .delete(watchOf(store).document(document))
-            .set(
-                grantsOf(store).document(memberId),
-                mapOf(GrantField.DEVICES to FieldValue.arrayRemove(previous)),
-                SetOptions.merge(),
-            )
-            .set(
-                phonesOf(store).document(memberId),
-                mapOf(previous to FieldValue.delete()),
-                SetOptions.merge(),
-            )
-            .commit()
-            .await()
-
+        forgetPhone(memberId, previous, store)
         device.forgetPrevious(previous)
         AppLog.i(TAG, "the documents of the previous id are taken back")
     } catch (cancellation: CancellationException) {
@@ -55,4 +38,41 @@ suspend fun leavePreviousId(
     } catch (error: Exception) {
         AppLog.w(TAG, "could not take back the documents of the previous id", error)
     }
+}
+
+/**
+ * Removes one of a member's phones from the group: its position, its claim to
+ * be looking, its place among the phones the member gives out and its line in
+ * the member's list of phones, with the name the member gave it.
+ *
+ * What everybody sees goes with it: the marker on the map and the line in the
+ * lists. The names other members gave the phone stay with them, keyed by the
+ * same id, and come back if the phone does.
+ *
+ * One batch, so the four go together or not at all. Only the member may write
+ * any of them, so this is done by the member, never for them.
+ */
+suspend fun forgetPhone(
+    memberId: String,
+    deviceId: String,
+    store: FirebaseFirestore = FirebaseFirestore.getInstance(),
+) {
+    val document = positionId(memberId, deviceId)
+
+    store
+        .batch()
+        .delete(positionsOf(store).document(document))
+        .delete(watchOf(store).document(document))
+        .set(
+            grantsOf(store).document(memberId),
+            mapOf(GrantField.DEVICES to FieldValue.arrayRemove(deviceId)),
+            SetOptions.merge(),
+        )
+        .set(
+            phonesOf(store).document(memberId),
+            mapOf(deviceId to FieldValue.delete()),
+            SetOptions.merge(),
+        )
+        .commit()
+        .await()
 }

@@ -22,6 +22,7 @@ import {
     serverTimestamp,
     setDoc,
     updateDoc,
+    writeBatch,
 } from 'https://www.gstatic.com/firebasejs/12.19.0/firebase-firestore.js';
 import { firebaseConfig } from '../firebase-config.js';
 import { positionMoments } from './age.js';
@@ -544,6 +545,34 @@ export function stopSiren(phoneId, stopperId) {
         stoppedBy: stopperId,
         stoppedAt: serverTimestamp(),
     });
+}
+
+/**
+ * Removes one of the member's phones from the group: its position, its claim
+ * to be looking, its place among the phones the member gives out and its line
+ * in the member's list, with the name the member gave it. The marker and the
+ * line go for everybody. One batch, so the four go together or not at all;
+ * the phone comes back if it is ever in touch under this account again.
+ */
+export function forgetPhone(phoneId) {
+    const [memberId, deviceId] = phoneId.split('.');
+    const group = ['groups', currentGroup()];
+    const batch = writeBatch(store);
+
+    batch.delete(doc(store, ...group, 'positions', phoneId));
+    batch.delete(doc(store, ...group, 'watch', phoneId));
+    batch.set(
+        doc(store, ...group, 'grants', memberId),
+        { devices: arrayRemove(deviceId) },
+        { merge: true },
+    );
+    batch.set(
+        doc(store, ...group, 'devices', memberId),
+        { [deviceId]: deleteField() },
+        { merge: true },
+    );
+
+    return batch.commit();
 }
 
 /**

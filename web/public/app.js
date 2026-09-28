@@ -69,6 +69,7 @@ import {
     removeMember,
     callSiren,
     endSearch,
+    forgetPhone,
     openSearch,
     renewSearch,
     setRunning,
@@ -1031,6 +1032,27 @@ function drawPhones() {
                 about.append(until);
             }
 
+            // Last in the row: a phone handed on, reset or lost stays in every
+            // list until its member takes it out, and only they may.
+            const remove = document.createElement('button');
+
+            remove.type = 'button';
+            remove.className = 'phone-remove';
+            remove.title = WORDS.phoneRemove;
+            remove.setAttribute('aria-label', WORDS.phoneRemove);
+            remove.innerHTML = BIN_ICON;
+            remove.addEventListener('click', () => {
+                askConfirm(
+                    {
+                        title: WORDS.phoneRemoveTitle(phone.name),
+                        note: WORDS.phoneRemoveNote,
+                        go: WORDS.phoneRemoveGo,
+                    },
+                    () => forgetPhone(phone.phoneId),
+                );
+            });
+            actions.append(remove);
+
             row.append(about, actions);
 
             return row;
@@ -1366,6 +1388,7 @@ function adminButton(text, write, { asked = null } = {}) {
 
 /** The loudspeaker on the button that rings a phone, and the one struck through that stops it. */
 const SPEAKER_ICON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 9v6h4l5 4V5L8 9z"/><path d="M16.5 8.5a5 5 0 0 1 0 7"/><path d="M19.5 5.5a9 9 0 0 1 0 13"/></svg>';
+const BIN_ICON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3"/></svg>';
 const MUTE_ICON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 9v6h4l5 4V5L8 9z"/><path d="M17 9l5 6M22 9l-5 6"/></svg>';
 
 /**

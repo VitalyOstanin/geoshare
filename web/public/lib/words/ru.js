@@ -295,6 +295,13 @@ export const RU = {
     sirenHint: 'Сирена на 20 секунд',
     myPhonesTitle: 'Мои устройства',
     myPhonesNone: 'С этого аккаунта ещё ни одно устройство не делилось позицией',
+    phoneRemove: 'Удалить устройство',
+    phoneRemoveTitle: (name) => `Удалить «${name}»?`,
+    phoneRemoveNote:
+        'Устройство исчезнет с карты и из списков у всех участников группы. ' +
+        'Имя, которое вы ему дали, тоже удалится. ' +
+        'Если устройство снова выйдет на связь под вашим аккаунтом, оно появится опять.',
+    phoneRemoveGo: 'Удалить',
     sirenTitle: (name) => `Включить сирену: ${name}?`,
     sirenPhoneChip: (name, age) => `${name} · ${age}`,
     sirenNote:

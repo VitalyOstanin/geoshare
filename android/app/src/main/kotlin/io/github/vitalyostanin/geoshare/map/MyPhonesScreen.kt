@@ -14,6 +14,7 @@ import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.HorizontalDivider
@@ -69,6 +70,8 @@ fun MyPhonesScreen(
     sirenOf: (phoneId: String) -> Flow<Siren?>,
     onCallSiren: suspend (phoneId: String) -> Boolean,
     onStopSiren: suspend (phoneId: String) -> Unit,
+    /** Takes a phone out of the group; answers whether the database allowed it. */
+    onForgetPhone: suspend (phoneId: String) -> Boolean,
     /** The search standing for this member, or null while nobody is looking for them. */
     search: Search?,
     /** Whether this member runs the group: only they may open a search, here on themselves. */
@@ -97,6 +100,10 @@ fun MyPhonesScreen(
     var searchHours by remember { mutableStateOf(DEFAULT_SEARCH_HOURS) }
     var searchTrouble by remember { mutableStateOf(false) }
     var searchBusy by remember { mutableStateOf(false) }
+    // The phone the member asked to remove, held while the dialog is up.
+    var removeAsk by remember { mutableStateOf<PhoneLine?>(null) }
+    var removeTrouble by remember { mutableStateOf(false) }
+    var removeBusy by remember { mutableStateOf(false) }
     // The countdown reads seconds, and the screen's own clock ticks far slower.
     val sirenNow by produceState(now, siren) {
         while (siren != null) {
@@ -120,6 +127,24 @@ fun MyPhonesScreen(
                 sirenTrouble = false
             } else {
                 sirenTrouble = true
+            }
+        }
+    }
+
+    fun writeRemoval() {
+        val phone = removeAsk ?: return
+
+        removeBusy = true
+        scope.launch {
+            val removed = onForgetPhone(phone.phoneId)
+
+            removeBusy = false
+
+            if (removed) {
+                removeAsk = null
+                removeTrouble = false
+            } else {
+                removeTrouble = true
             }
         }
     }
@@ -303,10 +328,62 @@ fun MyPhonesScreen(
                                 }
                             }
                         }
+
+                        // Last in the row and as red as the siren: removing a
+                        // phone is as final. This phone is taken out by
+                        // signing out on it, so its row has no bin.
+                        if (phone.phoneId != ownPhoneId) {
+                            OutlinedIconButton(
+                                border = BorderStroke(1.dp, Color(SOUGHT_COLOUR)),
+                                onClick = {
+                                    removeTrouble = false
+                                    removeAsk = phone
+                                },
+                            ) {
+                                Icon(
+                                    painter = painterResource(R.drawable.ic_bin),
+                                    contentDescription = stringResource(R.string.phone_remove),
+                                    tint = Color(SOUGHT_COLOUR),
+                                )
+                            }
+                        }
                     }
                 }
             }
         }
+    }
+
+    removeAsk?.let { phone ->
+        AlertDialog(
+            onDismissRequest = { removeAsk = null },
+            title = { Text(text = stringResource(R.string.phone_remove_title, phone.name)) },
+            text = {
+                Column {
+                    Text(text = stringResource(R.string.phone_remove_text))
+
+                    if (removeTrouble) {
+                        Text(
+                            text = stringResource(R.string.phone_remove_refused),
+                            color = MaterialTheme.colorScheme.error,
+                            modifier = Modifier.padding(top = 8.dp),
+                        )
+                    }
+                }
+            },
+            confirmButton = {
+                TextButton(onClick = ::writeRemoval, enabled = !removeBusy) {
+                    Text(
+                        text = stringResource(R.string.phone_remove_go),
+                        color = MaterialTheme.colorScheme.error,
+                    )
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { removeAsk = null }) {
+                    Text(text = stringResource(R.string.search_cancel))
+                }
+            },
+        )
     }
 
     sirenAsk?.let { phone ->

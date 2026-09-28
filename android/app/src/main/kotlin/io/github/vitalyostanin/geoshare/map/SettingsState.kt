@@ -141,4 +141,6 @@ data class SettingsActions(
     val onCallSiren: suspend (phoneId: String) -> Boolean,
     /** Stops a phone's siren before its twenty seconds are up. */
     val onStopSiren: suspend (phoneId: String) -> Unit,
+    /** Takes one of the member's own phones out of the group; answers whether it went. */
+    val onForgetPhone: suspend (phoneId: String) -> Boolean,
 )

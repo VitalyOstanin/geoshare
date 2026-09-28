@@ -77,6 +77,7 @@ import io.github.vitalyostanin.geoshare.service.darkWanted
 import io.github.vitalyostanin.geoshare.service.dndAccessGranted
 import io.github.vitalyostanin.geoshare.service.endSearch
 import io.github.vitalyostanin.geoshare.service.forgetAidingData
+import io.github.vitalyostanin.geoshare.service.forgetPhone
 import io.github.vitalyostanin.geoshare.service.foundGroup
 import io.github.vitalyostanin.geoshare.service.joinGroup
 import io.github.vitalyostanin.geoshare.service.languageChosen
@@ -94,6 +95,7 @@ import io.github.vitalyostanin.geoshare.service.startConditions
 import io.github.vitalyostanin.geoshare.service.stopSiren
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withTimeoutOrNull
 import java.time.Instant
 
 /**
@@ -448,7 +450,12 @@ class MainActivity : AppCompatActivity() {
                                                 }
                                         }
                                     },
-                                    onSignOut = { lifecycleScope.launch { signIn.signOut() } },
+                                    onSignOut = {
+                                        lifecycleScope.launch {
+                                            forgetThisPhone(current.memberId)
+                                            signIn.signOut()
+                                        }
+                                    },
                                     // A suspend function called from the
                                     // dialog's own coroutine rather than
                                     // wrapped in lifecycleScope.launch here:
@@ -493,6 +500,20 @@ class MainActivity : AppCompatActivity() {
                                             throw cancellation
                                         } catch (refusal: Exception) {
                                             AppLog.w(TAG, "a siren could not be stopped", refusal)
+                                        }
+                                    },
+                                    onForgetPhone = { phoneId ->
+                                        try {
+                                            forgetPhone(
+                                                current.memberId,
+                                                phoneId.substringAfter('.'),
+                                            )
+                                            true
+                                        } catch (cancellation: CancellationException) {
+                                            throw cancellation
+                                        } catch (refusal: Exception) {
+                                            AppLog.w(TAG, "a phone could not be removed", refusal)
+                                            false
                                         }
                                     },
                                     onEndSearch = { memberId ->
@@ -765,7 +786,44 @@ class MainActivity : AppCompatActivity() {
         super.onStop()
     }
 
+    /**
+     * Takes this phone out of the group before its account signs out.
+     *
+     * A phone signed out is usually a phone changing hands, and what it wrote
+     * would otherwise stay behind for good: a marker greying on everybody's
+     * map, a line in the lists naming a phone the member no longer has. Only
+     * the member may remove them, so it has to happen while they are still
+     * signed in.
+     *
+     * The service is stopped first, so that no position written after the
+     * removal puts the phone back, and the switch is turned off: whoever signs
+     * in next decides for themselves whether to share. The wait is short, and a phone without
+     * a network signs out all the same; its line is then removed from another
+     * of the member's phones or from the page.
+     */
+    private suspend fun forgetThisPhone(memberId: String) {
+        sharing.enabled = false
+        stopService(Intent(this, SharingService::class.java))
+
+        val forgotten =
+            try {
+                withTimeoutOrNull(SIGN_OUT_WAIT_MS) { forgetPhone(memberId, device.id) } != null
+            } catch (cancellation: CancellationException) {
+                throw cancellation
+            } catch (error: Exception) {
+                AppLog.w(TAG, "could not take this phone out of the group", error)
+                false
+            }
+
+        if (!forgotten) {
+            AppLog.w(TAG, "signing out with this phone still listed")
+        }
+    }
+
     private companion object {
         const val TAG = "geoshare.main"
+
+        /** How long signing out waits for this phone to be taken out of the group. */
+        const val SIGN_OUT_WAIT_MS = 5_000L
     }
 }

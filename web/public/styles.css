@@ -1542,8 +1542,10 @@ button.alarm-fill {
     font-weight: 600;
 }
 
-/* A round red loudspeaker ahead of "Look for": the siren on a phone. */
-.admin-actions button.siren-ring {
+/* A round red loudspeaker ahead of "Look for": the siren on a phone. The bin
+   after it, last in the row, removes the phone: as red, since it is as final. */
+.admin-actions button.siren-ring,
+.admin-actions button.phone-remove {
     display: inline-grid;
     place-items: center;
     width: 2rem;
@@ -1572,6 +1574,7 @@ button.alarm-fill {
 }
 
 .siren-ring svg,
+.phone-remove svg,
 .siren-stop svg {
     width: 1rem;
     height: 1rem;

@@ -287,6 +287,13 @@ export const EN = {
     sirenHint: 'Siren for 20 seconds',
     myPhonesTitle: 'My devices',
     myPhonesNone: 'No device has shared its position from this account yet',
+    phoneRemove: 'Remove device',
+    phoneRemoveTitle: (name) => `Remove “${name}”?`,
+    phoneRemoveNote:
+        'The device will disappear from the map and the lists of everybody in the group. ' +
+        'The name you gave it goes too. ' +
+        'If the device is in touch under your account again, it comes back.',
+    phoneRemoveGo: 'Remove',
     sirenTitle: (name) => `Switch on the siren: ${name}?`,
     sirenPhoneChip: (name, age) => `${name} · ${age}`,
     sirenNote:
