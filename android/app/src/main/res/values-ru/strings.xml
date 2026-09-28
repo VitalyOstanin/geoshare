@@ -369,4 +369,16 @@
         <item quantity="many">%1$d дней назад</item>
         <item quantity="other">%1$d дня назад</item>
     </plurals>
+    <string name="help_open">Справка</string>
+    <string name="help_close">Понятно</string>
+    <string name="help_title_screen">Кнопки на этом экране</string>
+    <string name="help_title_map">Кнопки на карте</string>
+    <string name="help_siren">Сирена на 20 секунд: устройство громко звучит, даже если на нём выключен звук, — чтобы его нашли</string>
+    <string name="help_search">Открыть поиск: вся группа увидит участника на карте, даже те, кому он её не открывал</string>
+    <string name="help_search_standing">Поиск идёт. Нажмите, когда участник найден</string>
+    <string name="help_remove">Удалить устройство: оно исчезнет с карты и из списков у всех участников</string>
+    <string name="help_follow_none">Карта стоит на месте</string>
+    <string name="help_follow_one">Карта держит в центре выбранного участника</string>
+    <string name="help_follow_all">Все участники в кадре</string>
+    <string name="help_sources">Источники позиции: какие позиции устройство учитывает — спутники, Wi-Fi, вышки</string>
 </resources>

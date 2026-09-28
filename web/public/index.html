@@ -86,6 +86,9 @@
                     <path class="stroke" d="M9,4v5H4 M15,4v5h5 M9,20v-5H4 M15,20v-5h5" />
                 </svg>
             </button>
+
+            <!-- What the round buttons here and the marks in the menu do. -->
+            <button id="map-help" type="button" hidden>?</button>
         </div>
 
         <div id="follow-menu" role="menu" hidden>
@@ -217,6 +220,7 @@
 
         <!-- This member's phones, each with the siren that finds it. -->
         <dialog id="phones" class="admin">
+            <button id="phones-help" class="help-mark" type="button">?</button>
             <button id="phones-close" class="close-cross" type="button">×</button>
             <h2 id="phones-title"></h2>
             <div id="phones-list"></div>
@@ -224,6 +228,7 @@
         </dialog>
 
         <dialog id="admin" class="admin">
+            <button id="admin-help" class="help-mark" type="button">?</button>
             <button id="admin-close" class="close-cross" type="button">×</button>
             <h2 id="admin-title"></h2>
             <div id="admin-members"></div>
@@ -296,6 +301,16 @@
         <!-- A name for a phone or a person, seen by this viewer alone. The
              buttons are not a form's: the dialog is closed by the page once
              the name is on its way, and a submit would reload nothing here. -->
+        <!-- What the buttons of the screen it was opened from do: each drawn
+             the way that screen draws it, then a line on what it does. -->
+        <dialog id="help" class="admin naming">
+            <h2 id="help-title"></h2>
+            <div id="help-list"></div>
+            <div id="help-buttons">
+                <button id="help-close" type="button"></button>
+            </div>
+        </dialog>
+
         <dialog id="naming" class="admin naming">
             <h2 id="naming-title"></h2>
             <p id="naming-note"></p>

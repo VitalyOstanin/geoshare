@@ -23,7 +23,6 @@ import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedIconButton
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -107,6 +106,7 @@ fun AdminPanel(
     val lines = groupOverview(roster, profiles, grants, ownMemberId, labels)
     val standing = remember(searches, now) { standingSearches(searches, now) }
     var givingUp by remember { mutableStateOf(false) }
+    var helpOpen by remember { mutableStateOf(false) }
     // The member about to be removed and the name the dialog calls them by.
     var removing by remember { mutableStateOf<Pair<String, String>?>(null) }
     // Who is being asked about, in which of the two ways, and the length
@@ -198,6 +198,8 @@ fun AdminPanel(
                     modifier = Modifier.weight(1f),
                 )
 
+                HelpButton(onClick = { helpOpen = true })
+
                 TextButton(onClick = onClose) {
                     Text(text = stringResource(R.string.settings_close))
                 }
@@ -282,6 +284,27 @@ fun AdminPanel(
                 )
             }
         }
+    }
+
+    if (helpOpen) {
+        HelpSheet(
+            title = stringResource(R.string.help_title_screen),
+            entries =
+            listOf(
+                HelpEntry(R.drawable.ic_siren, HelpLook.Alarm, stringResource(R.string.help_siren)),
+                HelpEntry(
+                    R.drawable.ic_search_alarm,
+                    HelpLook.Alarm,
+                    stringResource(R.string.help_search),
+                ),
+                HelpEntry(
+                    R.drawable.ic_search_alarm,
+                    HelpLook.AlarmFilled,
+                    stringResource(R.string.help_search_standing),
+                ),
+            ),
+            onClose = { helpOpen = false },
+        )
     }
 
     // Giving up one's own role cannot be undone from here: only another
@@ -521,21 +544,10 @@ private fun AdminMemberRow(
             // the one who is lost is not always the one who does not run the
             // group.
             if (!line.isYou) {
-                // Outlined in red, so that it reads as a button beside the
-                // round siren rather than as a word.
-                val alarmText =
-                    ButtonDefaults.outlinedButtonColors(contentColor = Color(SOUGHT_COLOUR))
-                val alarmEdge = BorderStroke(1.dp, Color(SOUGHT_COLOUR))
-
-                if (search != null) {
-                    OutlinedButton(onClick = onEndSearch, colors = alarmText, border = alarmEdge) {
-                        Text(text = stringResource(R.string.search_found))
-                    }
-                } else {
-                    OutlinedButton(onClick = onSearch, colors = alarmText, border = alarmEdge) {
-                        Text(text = stringResource(R.string.search_start))
-                    }
-                }
+                SearchButton(
+                    standing = search != null,
+                    onClick = if (search != null) onEndSearch else onSearch,
+                )
             }
 
             if (line.mayBeMadeAdmin) {

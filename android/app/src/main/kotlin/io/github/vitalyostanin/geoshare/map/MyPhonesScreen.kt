@@ -20,7 +20,6 @@ import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedIconButton
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -100,6 +99,7 @@ fun MyPhonesScreen(
     var searchHours by remember { mutableStateOf(DEFAULT_SEARCH_HOURS) }
     var searchTrouble by remember { mutableStateOf(false) }
     var searchBusy by remember { mutableStateOf(false) }
+    var helpOpen by remember { mutableStateOf(false) }
     // The phone the member asked to remove, held while the dialog is up.
     var removeAsk by remember { mutableStateOf<PhoneLine?>(null) }
     var removeTrouble by remember { mutableStateOf(false) }
@@ -192,6 +192,8 @@ fun MyPhonesScreen(
                     style = MaterialTheme.typography.titleLarge,
                     modifier = Modifier.weight(1f),
                 )
+
+                HelpButton(onClick = { helpOpen = true })
 
                 TextButton(onClick = onClose) {
                     Text(text = stringResource(R.string.settings_close))
@@ -304,29 +306,16 @@ fun MyPhonesScreen(
                         // Every phone offers it, this one included: the
                         // search is opened on the member, not on a device.
                         if (mayLookFor) {
-                            val alarmText =
-                                ButtonDefaults.outlinedButtonColors(
-                                    contentColor = Color(SOUGHT_COLOUR),
-                                )
-                            val alarmEdge = BorderStroke(1.dp, Color(SOUGHT_COLOUR))
-
-                            if (search != null) {
-                                OutlinedButton(
-                                    onClick = { scope.launch { onEndSearch() } },
-                                    colors = alarmText,
-                                    border = alarmEdge,
-                                ) {
-                                    Text(text = stringResource(R.string.search_found))
-                                }
-                            } else {
-                                OutlinedButton(
-                                    onClick = { askSearch(false) },
-                                    colors = alarmText,
-                                    border = alarmEdge,
-                                ) {
-                                    Text(text = stringResource(R.string.search_start))
-                                }
-                            }
+                            SearchButton(
+                                standing = search != null,
+                                onClick = {
+                                    if (search != null) {
+                                        scope.launch { onEndSearch() }
+                                    } else {
+                                        askSearch(false)
+                                    }
+                                },
+                            )
                         }
 
                         // Last in the row and as red as the siren: removing a
@@ -351,6 +340,36 @@ fun MyPhonesScreen(
                 }
             }
         }
+    }
+
+    if (helpOpen) {
+        HelpSheet(
+            title = stringResource(R.string.help_title_screen),
+            entries =
+            listOfNotNull(
+                HelpEntry(R.drawable.ic_siren, HelpLook.Alarm, stringResource(R.string.help_siren)),
+                if (mayLookFor) {
+                    HelpEntry(
+                        R.drawable.ic_search_alarm,
+                        HelpLook.Alarm,
+                        stringResource(R.string.help_search),
+                    )
+                } else {
+                    null
+                },
+                if (mayLookFor) {
+                    HelpEntry(
+                        R.drawable.ic_search_alarm,
+                        HelpLook.AlarmFilled,
+                        stringResource(R.string.help_search_standing),
+                    )
+                } else {
+                    null
+                },
+                HelpEntry(R.drawable.ic_bin, HelpLook.Alarm, stringResource(R.string.help_remove)),
+            ),
+            onClose = { helpOpen = false },
+        )
     }
 
     removeAsk?.let { phone ->

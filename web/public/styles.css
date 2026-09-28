@@ -885,8 +885,9 @@ button {
 }
 
 /* The same circle as the follow button beside it, holding a mark that says
-   which way a press goes. */
-#fullscreen-button {
+   which way a press goes. The help after it is the same circle again. */
+#fullscreen-button,
+#map-help {
     width: 2.5rem;
     height: 2.5rem;
     padding: 0;
@@ -898,6 +899,12 @@ button {
     place-items: center;
     box-shadow: 0 1px 4px rgba(0, 0, 0, 0.3);
     cursor: pointer;
+}
+
+#map-help {
+    color: var(--link);
+    font: inherit;
+    font-weight: 700;
 }
 
 #fullscreen-button svg {
@@ -1545,6 +1552,7 @@ button.alarm-fill {
 /* A round red loudspeaker ahead of "Look for": the siren on a phone. The bin
    after it, last in the row, removes the phone: as red, since it is as final. */
 .admin-actions button.siren-ring,
+.admin-actions button.search-mark,
 .admin-actions button.phone-remove {
     display: inline-grid;
     place-items: center;
@@ -1556,6 +1564,26 @@ button.alarm-fill {
     background: transparent;
     color: var(--alarm);
     cursor: pointer;
+}
+
+/* A search standing: the same button filled, blinking so the row is seen
+   before it is read; steady for whoever has asked for less motion. */
+.admin-actions button.search-mark.standing {
+    background: var(--alarm);
+    color: var(--on-alarm);
+    animation: search-blink 1.2s ease-in-out infinite;
+}
+
+@keyframes search-blink {
+    50% {
+        opacity: 0.25;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .admin-actions button.search-mark.standing {
+        animation: none;
+    }
 }
 
 .admin-actions button.siren-stop {
@@ -1574,6 +1602,7 @@ button.alarm-fill {
 }
 
 .siren-ring svg,
+.search-mark svg,
 .phone-remove svg,
 .siren-stop svg {
     width: 1rem;
@@ -1720,4 +1749,90 @@ button.alarm-fill {
     background: var(--link);
     color: var(--on-link);
     font-weight: 600;
+}
+
+/* The question mark of a window, beside its cross: the same circle, in the
+   colour of a link, since it opens something rather than acting. */
+.help-mark {
+    position: absolute;
+    top: 0.4rem;
+    right: 2.4rem;
+    width: 1.75rem;
+    height: 1.75rem;
+    border: 1px solid var(--edge);
+    border-radius: 50%;
+    padding: 0;
+    background: none;
+    color: var(--link);
+    font: inherit;
+    font-weight: 700;
+    line-height: 1;
+    cursor: pointer;
+}
+
+.admin:has(.help-mark) > h2 {
+    padding-right: calc(var(--cross-clear) + 2rem);
+}
+
+/* One line per button: the button as its screen draws it, then what it does. */
+#help-list {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    gap: 0.6rem 0.8rem;
+    align-items: center;
+}
+
+.help-look {
+    display: grid;
+    place-items: center;
+    width: 2rem;
+    height: 2rem;
+    border: 1px solid var(--edge);
+    border-radius: 50%;
+    color: var(--on-surface);
+}
+
+.help-look.alarm {
+    border-color: var(--alarm);
+    color: var(--alarm);
+}
+
+.help-look.filled {
+    border-color: var(--alarm);
+    background: var(--alarm);
+    color: var(--on-alarm);
+}
+
+.help-look svg {
+    width: 1.1rem;
+    height: 1.1rem;
+}
+
+.help-look .stroke {
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 2;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+}
+
+.help-look .fill {
+    fill: currentColor;
+}
+
+#help-buttons {
+    display: flex;
+    justify-content: flex-end;
+    margin-top: 0.6rem;
+}
+
+#help-buttons button {
+    border: 1px solid var(--edge);
+    border-radius: 0.4rem;
+    padding: 0.3rem 0.8rem;
+    background: transparent;
+    color: var(--link);
+    font: inherit;
+    font-weight: 600;
+    cursor: pointer;
 }

@@ -235,6 +235,7 @@ fun MapScreen(
     val members = orderedForNavigation(positions, ownMemberId)
     var focus by remember { mutableStateOf<MapFocus?>(null) }
     var followMode by remember { mutableStateOf(FollowMode.NONE) }
+    var mapHelpOpen by remember { mutableStateOf(false) }
     // Whether a hand is holding the following still; the button says so.
     var followPaused by remember { mutableStateOf(false) }
     var followTarget by remember { mutableStateOf<FollowTarget?>(null) }
@@ -468,6 +469,42 @@ fun MapScreen(
                             followModeChanges++
                         }
                     },
+                )
+
+                MapRoundButton(
+                    icon = R.drawable.ic_help,
+                    label = stringResource(R.string.help_open),
+                    onClick = { mapHelpOpen = true },
+                )
+            }
+
+            if (mapHelpOpen) {
+                HelpSheet(
+                    title = stringResource(R.string.help_title_map),
+                    entries =
+                    listOf(
+                        HelpEntry(
+                            R.drawable.ic_follow_none,
+                            HelpLook.Plain,
+                            stringResource(R.string.help_follow_none),
+                        ),
+                        HelpEntry(
+                            R.drawable.ic_follow_one,
+                            HelpLook.Plain,
+                            stringResource(R.string.help_follow_one),
+                        ),
+                        HelpEntry(
+                            R.drawable.ic_follow_all,
+                            HelpLook.Plain,
+                            stringResource(R.string.help_follow_all),
+                        ),
+                        HelpEntry(
+                            R.drawable.ic_sources,
+                            HelpLook.Plain,
+                            stringResource(R.string.help_sources),
+                        ),
+                    ),
+                    onClose = { mapHelpOpen = false },
                 )
             }
 

@@ -137,6 +137,12 @@ const elements = {
     groupPhones: document.querySelector('#group-phones'),
     phones: document.querySelector('#phones'),
     phonesClose: document.querySelector('#phones-close'),
+    phonesHelp: document.querySelector('#phones-help'),
+    help: document.querySelector('#help'),
+    helpTitle: document.querySelector('#help-title'),
+    helpList: document.querySelector('#help-list'),
+    helpClose: document.querySelector('#help-close'),
+    mapHelp: document.querySelector('#map-help'),
     phonesTitle: document.querySelector('#phones-title'),
     phonesList: document.querySelector('#phones-list'),
     groupJoin: document.querySelector('#group-join'),
@@ -146,6 +152,7 @@ const elements = {
     groupError: document.querySelector('#group-error'),
     admin: document.querySelector('#admin'),
     adminClose: document.querySelector('#admin-close'),
+    adminHelp: document.querySelector('#admin-help'),
     adminTitle: document.querySelector('#admin-title'),
     adminMembers: document.querySelector('#admin-members'),
     adminInvitation: document.querySelector('#admin-invitation'),
@@ -587,6 +594,8 @@ function sayMarkup() {
     elements.settingsButton.textContent = WORDS.settings;
     elements.settingsTitle.textContent = WORDS.settings;
     elements.settingsClose.textContent = WORDS.close;
+    elements.mapHelp.title = WORDS.helpOpen;
+    elements.mapHelp.setAttribute('aria-label', WORDS.helpOpen);
     // The group section says its own words, since what stands there depends on
     // the roster rather than on the markup alone.
     drawGroup();
@@ -644,6 +653,7 @@ function start() {
     elements.signIn.hidden = true;
     elements.map.hidden = false;
     elements.followButton.hidden = false;
+    elements.mapHelp.hidden = false;
     elements.fullScreenButton.hidden = !FULL_SCREEN;
     showFullScreen();
     elements.panel.hidden = false;
@@ -870,6 +880,7 @@ function stop() {
     elements.signIn.hidden = false;
     elements.map.hidden = true;
     elements.followButton.hidden = true;
+    elements.mapHelp.hidden = true;
     elements.fullScreenButton.hidden = true;
     showFollowMenu(false);
     clearTimeout(state.followWaitEnds);
@@ -950,6 +961,8 @@ function drawPhones() {
     const search = standingSearches(state.searches, now).get(memberId);
 
     elements.phonesTitle.textContent = WORDS.myPhonesTitle;
+    elements.phonesHelp.title = WORDS.helpOpen;
+    elements.phonesHelp.setAttribute('aria-label', WORDS.helpOpen);
 
     if (phones.length === 0) {
         const none = document.createElement('p');
@@ -1060,24 +1073,30 @@ function drawPhones() {
     );
 }
 
-/** "Look for" while nobody is looking for [memberId], "Found" while somebody is. */
+/**
+ * The round button that opens a search for [memberId], outlined in red like
+ * the siren beside it, and ends it once they are found: filled and blinking
+ * while the search stands, so a row being looked for is seen before it is
+ * read. The words it used to carry are its hint and its label.
+ */
 function searchButton(memberId, search) {
-    if (search) {
-        const found = adminButton(WORDS.searchFound, () => endSearch(memberId));
+    const button = document.createElement('button');
+    const words = search ? WORDS.searchFound : WORDS.searchStart;
 
-        found.className = 'alarm';
+    button.type = 'button';
+    button.className = search ? 'search-mark standing' : 'search-mark';
+    button.title = words;
+    button.setAttribute('aria-label', words);
+    button.innerHTML = ALARM_ICON;
+    button.addEventListener('click', () => {
+        if (search) {
+            tryGroupWrite(() => endSearch(memberId));
+        } else {
+            askSearch(memberId, false);
+        }
+    });
 
-        return found;
-    }
-
-    const start = document.createElement('button');
-
-    start.type = 'button';
-    start.className = 'alarm';
-    start.textContent = WORDS.searchStart;
-    start.addEventListener('click', () => askSearch(memberId, false));
-
-    return start;
+    return button;
 }
 
 elements.groupPhones.addEventListener('click', () => {
@@ -1088,6 +1107,89 @@ elements.groupPhones.addEventListener('click', () => {
     drawPhones();
 });
 elements.phonesClose.addEventListener('click', () => elements.phones.close());
+
+/**
+ * Opens the help of one screen: each of its buttons drawn the way the screen
+ * draws it — [look] is 'plain', 'alarm' or 'filled' — and what it does.
+ * [mark] is the markup of the icon, or an svg of the page to copy.
+ */
+function showHelp(title, entries) {
+    elements.helpTitle.textContent = title;
+    elements.helpClose.textContent = WORDS.helpClose;
+    elements.helpList.replaceChildren(
+        ...entries.flatMap(({ mark, look, text }) => {
+            const shown = document.createElement('span');
+            const said = document.createElement('span');
+
+            shown.className = `help-look ${look}`;
+
+            if (typeof mark === 'string') {
+                shown.innerHTML = mark;
+            } else {
+                const copy = mark.cloneNode(true);
+
+                copy.removeAttribute('hidden');
+                shown.append(copy);
+            }
+
+            said.textContent = text;
+
+            return [shown, said];
+        }),
+    );
+
+    if (!elements.help.open) {
+        elements.help.showModal();
+    }
+}
+
+/** The siren and the search, as a row of the panel or of My devices draws them. */
+function alarmHelp() {
+    return [
+        { mark: SPEAKER_ICON, look: 'alarm', text: WORDS.helpSiren },
+        { mark: ALARM_ICON, look: 'alarm', text: WORDS.helpSearch },
+        { mark: ALARM_ICON, look: 'filled', text: WORDS.helpSearchStanding },
+    ];
+}
+
+elements.phonesHelp.addEventListener('click', () => {
+    const running = standingIn(state.roster, state.member.memberId) === ADMINISTRATOR;
+    // Only whoever runs the group has the search in these rows.
+    const alarms = alarmHelp().filter((entry) => running || entry.mark !== ALARM_ICON);
+
+    showHelp(WORDS.helpTitleScreen, [
+        ...alarms,
+        { mark: BIN_ICON, look: 'alarm', text: WORDS.helpRemove },
+    ]);
+});
+elements.adminHelp.addEventListener('click', () => showHelp(WORDS.helpTitleScreen, alarmHelp()));
+elements.mapHelp.addEventListener('click', () => {
+    const follow = (mode) => elements.followButton.querySelector(`svg[data-mode="${mode}"]`);
+    const theme = (name) => document.querySelector(`#theme-choice [data-theme="${name}"] svg`);
+    const entries = [
+        { mark: follow('none'), look: 'plain', text: WORDS.helpFollowNone },
+        { mark: follow('one'), look: 'plain', text: WORDS.helpFollowOne },
+        { mark: follow('all'), look: 'plain', text: WORDS.helpFollowAll },
+    ];
+
+    // Only where the browser has a full screen to give, as with the button.
+    if (!elements.fullScreenButton.hidden) {
+        entries.push({
+            mark: elements.fullScreenButton.querySelector('svg[data-full="off"]'),
+            look: 'plain',
+            text: WORDS.helpFullScreen,
+        });
+    }
+
+    entries.push(
+        { mark: theme('light'), look: 'plain', text: WORDS.helpThemeLight },
+        { mark: theme('dark'), look: 'plain', text: WORDS.helpThemeDark },
+        { mark: theme('system'), look: 'plain', text: WORDS.helpThemeSystem },
+    );
+    showHelp(WORDS.helpTitleMap, entries);
+});
+elements.helpClose.addEventListener('click', () => elements.help.close());
+closeOnClickOutside(elements.help, () => elements.help.close());
 
 /**
  * A click on the dark behind a window closes it, as a tap beside a sheet does
@@ -1195,6 +1297,8 @@ function drawAdmin(running) {
 
     elements.adminTitle.textContent = WORDS.adminTitle;
     elements.adminClose.setAttribute('aria-label', WORDS.close);
+    elements.adminHelp.title = WORDS.helpOpen;
+    elements.adminHelp.setAttribute('aria-label', WORDS.helpOpen);
 
     elements.adminMembers.replaceChildren(
         ...groupOverview(
@@ -1388,6 +1492,7 @@ function adminButton(text, write, { asked = null } = {}) {
 
 /** The loudspeaker on the button that rings a phone, and the one struck through that stops it. */
 const SPEAKER_ICON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 9v6h4l5 4V5L8 9z"/><path d="M16.5 8.5a5 5 0 0 1 0 7"/><path d="M19.5 5.5a9 9 0 0 1 0 13"/></svg>';
+const ALARM_ICON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><path d="M6 5v9M12 5v9M18 5v9"/><circle cx="6" cy="19" r="1.3" fill="currentColor" stroke="none"/><circle cx="12" cy="19" r="1.3" fill="currentColor" stroke="none"/><circle cx="18" cy="19" r="1.3" fill="currentColor" stroke="none"/></svg>';
 const BIN_ICON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3"/></svg>';
 const MUTE_ICON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 9v6h4l5 4V5L8 9z"/><path d="M17 9l5 6M22 9l-5 6"/></svg>';
 

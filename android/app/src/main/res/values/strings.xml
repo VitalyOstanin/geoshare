@@ -413,4 +413,16 @@
         <item quantity="one">%1$d day ago</item>
         <item quantity="other">%1$d days ago</item>
     </plurals>
+    <string name="help_open">Help</string>
+    <string name="help_close">Got it</string>
+    <string name="help_title_screen">Buttons on this screen</string>
+    <string name="help_title_map">Buttons on the map</string>
+    <string name="help_siren">Siren for 20 seconds: the device sounds loud, even with its sound off, so that it can be found</string>
+    <string name="help_search">Open a search: the whole group sees the member on the map, even those they never shared it with</string>
+    <string name="help_search_standing">A search is on. Press it once the member is found</string>
+    <string name="help_remove">Remove the device: it disappears from the map and the lists of everybody</string>
+    <string name="help_follow_none">The map stays where it is</string>
+    <string name="help_follow_one">The map keeps the chosen member in the middle</string>
+    <string name="help_follow_all">Everybody in view</string>
+    <string name="help_sources">Position sources: which positions the device counts — satellites, Wi-Fi, towers</string>
 </resources>
