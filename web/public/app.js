@@ -1065,12 +1065,34 @@ function drawPhones() {
                 );
             });
             actions.append(remove);
+            iconsInRow(actions);
 
             row.append(about, actions);
 
             return row;
         }),
     );
+}
+
+/**
+ * Gathers the round buttons of a row's [actions] into one line at its top:
+ * a column of them made every row three circles tall, while the worded
+ * buttons, too wide to share a line, stay one under another beneath it.
+ */
+function iconsInRow(actions) {
+    const icons = [...actions.children].filter((button) =>
+        button.matches('.siren-ring, .search-mark, .phone-remove'),
+    );
+
+    if (icons.length === 0) {
+        return;
+    }
+
+    const line = document.createElement('div');
+
+    line.className = 'admin-icons';
+    line.append(...icons);
+    actions.prepend(line);
 }
 
 /**
@@ -1463,6 +1485,7 @@ function adminRow(line) {
     }
 
     if (actions.childElementCount > 0) {
+        iconsInRow(actions);
         row.append(actions);
     }
 
