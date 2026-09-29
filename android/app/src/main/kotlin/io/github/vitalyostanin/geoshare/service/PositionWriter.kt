@@ -48,7 +48,6 @@ class PositionWriter(
         val position =
             mapOf(
                 PositionField.MEMBER_ID to memberId,
-                PositionField.DEVICE_NAME to device.name,
                 PositionField.LATITUDE to fix.latitude,
                 PositionField.LONGITUDE to fix.longitude,
                 PositionField.TAKEN_AT to Timestamp(Date.from(fix.takenAt)),

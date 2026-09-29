@@ -240,8 +240,8 @@ itself; it appears in its member's `devices`, as the second half of a position
 id and as the second half of a watch id.
 
 **Position** — `groups/{groupId}/positions/{uid}.{deviceId}`. Fields:
-`memberId`, `deviceName`, `latitude`, `longitude`, `takenAt`, `writtenAt`,
-`mode`, `batteryPercent`, `charging`, `accuracyMetres`, `foundBy`, `settling`,
+`memberId`, `latitude`, `longitude`, `takenAt`, `writtenAt`, `mode`,
+`batteryPercent`, `charging`, `accuracyMetres`, `foundBy`, `settling`,
 `leftOutCount`, `leftOutReason`, `leftOutSince`. One document per phone rather
 than per member. Written by the account named in its id; read by that account
 and by whoever holds an unexpired permission in the owner's grant.

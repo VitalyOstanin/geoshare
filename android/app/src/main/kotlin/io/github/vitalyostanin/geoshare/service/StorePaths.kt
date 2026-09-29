@@ -163,7 +163,6 @@ object JoinField {
 /** The fields of a position document, as the writer and the reader both call them. */
 object PositionField {
     const val MEMBER_ID = "memberId"
-    const val DEVICE_NAME = "deviceName"
     const val LATITUDE = "latitude"
     const val LONGITUDE = "longitude"
     const val TAKEN_AT = "takenAt"

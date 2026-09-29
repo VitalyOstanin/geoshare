@@ -206,7 +206,6 @@ for (const member of MEMBERS) {
 
     await write(`groups/${GROUP}/positions/${uid}.${member.device}`, {
         memberId: stringValue(uid),
-        deviceName: stringValue(member.device),
         latitude: { doubleValue: place.latitude },
         longitude: { doubleValue: place.longitude },
         takenAt: timeValue(new Date().toISOString()),

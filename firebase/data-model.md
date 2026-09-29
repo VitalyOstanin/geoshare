@@ -355,7 +355,7 @@ page in `localStorage` — so the names are there before the database answers.
 | Field            | Type      | Meaning                                                  |
 |------------------|-----------|----------------------------------------------------------|
 | `memberId`       | string    | The account the phone is signed in with; the rules require it to be the writer |
-| `deviceName`     | string    | The phone's model; still written, read by nobody: names come from `devices`. Goes once no phone reads it |
+| `deviceName`     | string    | No longer written: the name comes from `devices`. A document an older build wrote keeps it until the phone writes again |
 | `latitude`       | number    | Degrees                                                   |
 | `longitude`      | number    | Degrees                                                   |
 | `takenAt`        | timestamp | When the fix was taken, by the clock of the phone         |
