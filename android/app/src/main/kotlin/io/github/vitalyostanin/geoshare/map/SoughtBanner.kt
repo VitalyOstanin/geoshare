@@ -21,10 +21,6 @@ import androidx.compose.ui.unit.dp
 import io.github.vitalyostanin.geoshare.R
 import kotlinx.coroutines.launch
 import java.time.ZoneId
-import java.time.format.DateTimeFormatter
-
-/** Told to the member being looked for: the same day-and-time reading a permission ends with. */
-private val SOUGHT_ENDS_AT: DateTimeFormatter = DateTimeFormatter.ofPattern("d MMM HH:mm")
 
 /**
  * Told to the member whose phone is being looked for, over the map: its place
