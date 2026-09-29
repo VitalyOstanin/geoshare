@@ -26,6 +26,7 @@ import {
     stopSiren,
 } from '../lib/store.js';
 import { elements, state } from './state.js';
+import { linkIsLost, troubleOf } from './link-ui.js';
 import { showMenu } from './menus.js';
 import { start, stop } from '../app.js';
 import { aboutThem, askConfirm, phoneText } from './dialogs.js';
@@ -619,10 +620,19 @@ export async function tryGroupWrite(write) {
     state.groupTrouble = null;
     state.groupSaid = null;
 
+    if (linkIsLost()) {
+        // Not left in Firestore's queue: a siren or a search going out an
+        // hour later, when nobody is waiting for it, is worse than none.
+        state.groupTrouble = WORDS.linkLostAction;
+        drawGroup();
+
+        return;
+    }
+
     try {
         await write();
-    } catch {
-        state.groupTrouble = WORDS.groupRefused;
+    } catch (error) {
+        state.groupTrouble = troubleOf(error);
     }
 
     drawGroup();

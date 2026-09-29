@@ -323,3 +323,52 @@ button.alarm-fill {
     color: var(--on-link);
     font-weight: 600;
 }
+
+/* Told to everybody while the database is silent, where the banner of a
+   search goes; that one moves down under it. Ochre rather than red: a silent
+   database is to be noticed, and nothing on the page can be done about it. */
+.link-banner {
+    position: absolute;
+    top: 3.6rem;
+    left: 0.6rem;
+    right: 0.6rem;
+    z-index: 3;
+    max-width: 28rem;
+    margin: 0 auto;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.2rem;
+    padding: 0.6rem 0.8rem;
+    border-left: 4px solid var(--wide);
+    border-radius: 0.6rem;
+    background: var(--surface);
+    color: var(--on-surface);
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.25);
+    font-size: 0.85rem;
+}
+
+.link-banner span {
+    opacity: 0.8;
+}
+
+.link-banner:not([hidden]) ~ .sought-banner {
+    top: 8rem;
+}
+
+/* What the markers show is what the page last heard: grey, the way a phone
+   long out of touch is drawn. */
+.link-lost .member-pin {
+    opacity: 0.85;
+}
+
+.link-lost .member-pin .pin-face {
+    filter: grayscale(1);
+}
+
+/* The calls that would not get through, greyed where they are offered. */
+.link-lost .siren-ring,
+.link-lost .siren-stop,
+.link-lost .search-mark {
+    opacity: 0.45;
+}

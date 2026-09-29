@@ -30,7 +30,9 @@ import { AGE_TICK_MS, SIGNED_IN_KEY, elements, state } from './page/state.js';
 import { FULL_SCREEN, showFollowMenu, showFullScreen, showMenu } from './page/menus.js';
 import { closeAdmin, drawGroup } from './page/group-panel.js';
 import { askName, closeNaming } from './page/dialogs.js';
-import { closeSearch, drawSought, searchesChanged, soughtLine } from './page/search-ui.js';
+import { closeSearch, drawSearchAsk, drawSought, searchesChanged, soughtLine } from './page/search-ui.js';
+import { drawSirenAsk } from './page/siren-ui.js';
+import { followLink, unfollowLink } from './page/link-ui.js';
 import { notePageLooking, personName, render, showAccount, showStripEdge } from './page/strip.js';
 
 watchSignIn((member) => {
@@ -128,6 +130,15 @@ export function start() {
             render();
         });
     }
+
+    // A silent database changes the banner, the markers, the rows and any
+    // window offering a call, so all of them are drawn again.
+    followLink(() => {
+        render();
+        drawGroup();
+        drawSirenAsk();
+        drawSearchAsk();
+    });
 
     state.stopRoster ??= watchRoster((roster) => {
         state.roster = roster;
@@ -268,6 +279,7 @@ export function stop() {
 
     state.stopRoster?.();
     state.stopRoster = null;
+    unfollowLink();
     state.roster = null;
 
     state.stopFalsePlaces?.();

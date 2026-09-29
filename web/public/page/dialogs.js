@@ -7,6 +7,7 @@ import { WORDS } from '../lib/words.js';
 import { ADMINISTRATOR, standingIn } from '../lib/membership.js';
 import { writeLabel } from '../lib/store.js';
 import { elements, state } from './state.js';
+import { knownNote } from './link-ui.js';
 import { closeOnClickOutside, tryGroupWrite } from './group-panel.js';
 import { ALARM_ICON, BIN_ICON, SPEAKER_ICON } from './siren-ui.js';
 
@@ -141,6 +142,10 @@ export function phoneText(phone, now, named = true) {
 
     if (phone.charging) {
         said.push(WORDS.adminPhoneCharging);
+    }
+
+    if (knownNote() !== '') {
+        said.push(knownNote());
     }
 
     return said.join(', ');

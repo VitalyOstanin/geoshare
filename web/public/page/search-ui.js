@@ -12,6 +12,7 @@ import { SPEAKING, WORDS } from '../lib/words.js';
 import { ADMINISTRATOR, standingIn } from '../lib/membership.js';
 import { endSearch, openSearch, renewSearch } from '../lib/store.js';
 import { elements, state } from './state.js';
+import { linkIsLost, troubleOf } from './link-ui.js';
 import { followPositions, showPositions } from '../app.js';
 import { drawGroup, tryGroupWrite } from './group-panel.js';
 import { render } from './strip.js';
@@ -221,7 +222,7 @@ export function askSearch(phoneId, memberId, phoneName, renew) {
     }
 }
 
-function drawSearchAsk() {
+export function drawSearchAsk() {
     const ask = state.searchAsk;
 
     if (!ask) {
@@ -255,6 +256,10 @@ function drawSearchAsk() {
     );
     elements.searchGo.textContent = ask.renew ? WORDS.searchRenew : WORDS.searchGo;
     elements.searchCancel.textContent = WORDS.searchCancel;
+    // Asked again whenever the link changes, so a window left open follows it.
+    elements.searchGo.disabled = linkIsLost() || ask.sending === true;
+    elements.searchError.textContent = linkIsLost() ? WORDS.linkLostAction : ask.trouble ?? '';
+    elements.searchError.hidden = elements.searchError.textContent === '';
 }
 
 export function closeSearch() {
@@ -281,8 +286,13 @@ elements.searchGo.addEventListener('click', async () => {
 
     const adminId = state.member.memberId;
 
-    elements.searchGo.disabled = true;
-    elements.searchError.hidden = true;
+    if (linkIsLost()) {
+        return;
+    }
+
+    ask.sending = true;
+    ask.trouble = null;
+    drawSearchAsk();
 
     try {
         await (ask.renew
@@ -292,10 +302,10 @@ elements.searchGo.addEventListener('click', async () => {
         if (state.searchAsk === ask) {
             closeSearch();
         }
-    } catch {
-        elements.searchError.textContent = WORDS.groupRefused;
-        elements.searchError.hidden = false;
-        elements.searchGo.disabled = false;
+    } catch (error) {
+        ask.sending = error?.code === 'unanswered';
+        ask.trouble = troubleOf(error);
+        drawSearchAsk();
     }
 });
 

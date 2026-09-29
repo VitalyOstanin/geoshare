@@ -107,6 +107,9 @@ export const elements = {
     soughtText: document.querySelector('#sought-text'),
     soughtNote: document.querySelector('#sought-note'),
     soughtFound: document.querySelector('#sought-found'),
+    linkBanner: document.querySelector('#link-banner'),
+    linkText: document.querySelector('#link-text'),
+    linkNote: document.querySelector('#link-note'),
 };
 
 export const state = {
@@ -162,6 +165,14 @@ export const state = {
     // Whether the database refused the group outright, which is an account
     // on no roster rather than a connection gone.
     outsideGroup: false,
+    // What the snapshots of the group document say of the database answering
+    // (see `lib/link.js`), whether the page says it is silent, and the timer
+    // that says so once the grace is over.
+    link: null,
+    linkShown: false,
+    linkTimer: null,
+    linkChanged: null,
+    stopLink: null,
     // The name of whoever the follow button last had a target for. The map
     // only remembers a position id, which stops meaning anything the moment
     // that member goes quiet; the name is kept here so the button still has

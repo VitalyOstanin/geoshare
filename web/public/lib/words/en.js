@@ -15,6 +15,12 @@ export const EN = {
     nobodyYet: 'Nobody has shared a position yet.',
     looking: 'Looking for the group…',
     unreachable: 'No connection to the group. Trying again.',
+    linkLost: (since) => `No connection to the database since ${since}`,
+    linkKnownAt: (time) => `Showing what was known at ${time}. Markers are grey.`,
+    linkKnownNever: 'The database has not answered yet. Markers are grey.',
+    knownAt: (time) => `as of ${time}`,
+    linkLostAction: 'No connection to the database: this would not reach the device. Try again once the connection is back.',
+    unanswered: 'The database did not answer in 15 seconds. The write goes out once the connection is back; it cannot be called off.',
     outsideGroup: 'You are not in a group yet. The account menu makes one or joins one by '
         + 'invitation.',
     nobodySharing: 'Nobody is sharing a position with you right now.',

@@ -6,6 +6,7 @@ import { sirenState } from '../lib/sirens.js';
 import { WORDS } from '../lib/words.js';
 import { callSiren, watchSiren } from '../lib/store.js';
 import { elements, state } from './state.js';
+import { linkIsLost, troubleOf } from './link-ui.js';
 import { drawGroup } from './group-panel.js';
 
 /** The loudspeaker on the button that rings a phone, and the one struck through that stops it. */
@@ -90,8 +91,6 @@ export function askSiren(line) {
         // The phone last in touch is the likeliest to hear it.
         selected: last.phoneId,
     };
-    elements.sirenError.hidden = true;
-    elements.sirenGo.disabled = false;
     drawSirenAsk();
 
     if (!elements.siren.open) {
@@ -99,7 +98,7 @@ export function askSiren(line) {
     }
 }
 
-function drawSirenAsk() {
+export function drawSirenAsk() {
     const ask = state.sirenAsk;
 
     if (!ask) {
@@ -128,6 +127,10 @@ function drawSirenAsk() {
         }),
     );
     elements.sirenNote.textContent = WORDS.sirenNote;
+    // Asked again whenever the link changes, so a window left open follows it.
+    elements.sirenGo.disabled = linkIsLost() || ask.sending === true;
+    elements.sirenError.textContent = linkIsLost() ? WORDS.linkLostAction : ask.trouble ?? '';
+    elements.sirenError.hidden = elements.sirenError.textContent === '';
     elements.sirenGo.textContent = WORDS.sirenGo;
     elements.sirenCancel.textContent = WORDS.searchCancel;
 }
@@ -143,8 +146,13 @@ elements.sirenGo.addEventListener('click', async () => {
         return;
     }
 
-    elements.sirenGo.disabled = true;
-    elements.sirenError.hidden = true;
+    if (linkIsLost()) {
+        return;
+    }
+
+    ask.sending = true;
+    ask.trouble = null;
+    drawSirenAsk();
 
     try {
         await callSiren(ask.selected, state.member.memberId);
@@ -152,10 +160,10 @@ elements.sirenGo.addEventListener('click', async () => {
         if (state.sirenAsk === ask) {
             elements.siren.close();
         }
-    } catch {
-        elements.sirenError.textContent = WORDS.groupRefused;
-        elements.sirenError.hidden = false;
-        elements.sirenGo.disabled = false;
+    } catch (error) {
+        ask.sending = error?.code === 'unanswered';
+        ask.trouble = troubleOf(error);
+        drawSirenAsk();
     }
 });
 elements.sirenCancel.addEventListener('click', () => elements.siren.close());

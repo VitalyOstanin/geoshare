@@ -27,6 +27,7 @@ import {
 import { firebaseConfig } from '../firebase-config.js';
 import { positionMoments } from './age.js';
 import { labelsFrom } from './labels.js';
+import { withinAnswerWait } from './link.js';
 import { placesOf } from './false-places.js';
 import { combinedGrants, phonesOf } from './phones.js';
 import { searchOf } from './searches.js';
@@ -416,6 +417,23 @@ export function watchRoster(onRoster) {
 }
 
 /**
+ * Whether each snapshot of the group document came from the cache, and again
+ * whenever only that changes.
+ *
+ * The group document is the one every signed-in page is on, so its snapshots
+ * are what the link to the database is judged by (see `link.js`). A refusal
+ * is the server answering, so it is read as a confirmation.
+ */
+export function watchLink(onSnapshotFrom) {
+    return onSnapshot(
+        doc(store, 'groups', currentGroup()),
+        { includeMetadataChanges: true },
+        (snapshot) => onSnapshotFrom(snapshot.metadata.fromCache),
+        () => onSnapshotFrom(false),
+    );
+}
+
+/**
  * The places this group says a false signal puts phones at, and again
  * whenever an administrator names or moves one.
  *
@@ -473,14 +491,16 @@ export function watchSearches(onSearches) {
  * none, since the rules refuse anything but a string for a field they hold.
  */
 export function openSearch(phoneId, adminId, hours, phoneName) {
-    return setDoc(doc(store, 'groups', currentGroup(), 'searches', phoneId), {
-        openedBy: adminId,
-        startedAt: serverTimestamp(),
-        renewedBy: adminId,
-        renewedAt: serverTimestamp(),
-        hours,
-        ...(phoneName ? { phoneName } : {}),
-    });
+    return withinAnswerWait(
+        setDoc(doc(store, 'groups', currentGroup(), 'searches', phoneId), {
+            openedBy: adminId,
+            startedAt: serverTimestamp(),
+            renewedBy: adminId,
+            renewedAt: serverTimestamp(),
+            hours,
+            ...(phoneName ? { phoneName } : {}),
+        }),
+    );
 }
 
 /**
@@ -489,17 +509,21 @@ export function openSearch(phoneId, adminId, hours, phoneName) {
  * administrator sees now.
  */
 export function renewSearch(phoneId, adminId, hours, phoneName) {
-    return updateDoc(doc(store, 'groups', currentGroup(), 'searches', phoneId), {
-        renewedBy: adminId,
-        renewedAt: serverTimestamp(),
-        hours,
-        ...(phoneName ? { phoneName } : {}),
-    });
+    return withinAnswerWait(
+        updateDoc(doc(store, 'groups', currentGroup(), 'searches', phoneId), {
+            renewedBy: adminId,
+            renewedAt: serverTimestamp(),
+            hours,
+            ...(phoneName ? { phoneName } : {}),
+        }),
+    );
 }
 
 /** Ends a search: the phone was found, and its place closes to all but whom it is shared with. */
 export function endSearch(phoneId) {
-    return deleteDoc(doc(store, 'groups', currentGroup(), 'searches', phoneId));
+    return withinAnswerWait(
+        deleteDoc(doc(store, 'groups', currentGroup(), 'searches', phoneId)),
+    );
 }
 
 /**
@@ -539,18 +563,22 @@ export function watchSiren(phoneId, onSiren) {
  * starts from a clean one, as ringing again should.
  */
 export function callSiren(phoneId, callerId) {
-    return setDoc(doc(store, 'groups', currentGroup(), 'sirens', phoneId), {
-        calledBy: callerId,
-        calledAt: serverTimestamp(),
-    });
+    return withinAnswerWait(
+        setDoc(doc(store, 'groups', currentGroup(), 'sirens', phoneId), {
+            calledBy: callerId,
+            calledAt: serverTimestamp(),
+        }),
+    );
 }
 
 /** Stops a phone's siren, naming whoever stopped it. */
 export function stopSiren(phoneId, stopperId) {
-    return updateDoc(doc(store, 'groups', currentGroup(), 'sirens', phoneId), {
-        stoppedBy: stopperId,
-        stoppedAt: serverTimestamp(),
-    });
+    return withinAnswerWait(
+        updateDoc(doc(store, 'groups', currentGroup(), 'sirens', phoneId), {
+            stoppedBy: stopperId,
+            stoppedAt: serverTimestamp(),
+        }),
+    );
 }
 
 /**
