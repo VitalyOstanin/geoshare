@@ -138,3 +138,22 @@ fun anyLive(sirens: Collection<Siren>, now: Instant): Boolean = sirens.any {
 
     state is SirenState.Waiting || state is SirenState.Sounding
 }
+
+/** How long a call that is over — stopped, unanswered or sounded out — is still told of on a row. */
+val SIREN_TOLD: Duration = Duration.ofMinutes(5)
+
+/**
+ * Whether [siren] is still worth a line on its row at [now]: always while it
+ * is being called or sounding, and for [SIREN_TOLD] after it ended. A stop
+ * without its time — a write still on its way — counts from the call.
+ */
+fun sirenTold(siren: Siren, now: Instant): Boolean {
+    val endedAt =
+        when {
+            siren.stoppedBy != null -> siren.stoppedAt ?: siren.calledAt
+            siren.heardAt != null -> siren.heardAt.plus(Duration.ofSeconds(SIREN_SECONDS))
+            else -> siren.calledAt.plus(SIREN_FRESH)
+        }
+
+    return now.isBefore(endedAt.plus(SIREN_TOLD))
+}

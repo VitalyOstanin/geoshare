@@ -13,6 +13,9 @@ export const SIREN_SECONDS = 22;
 /** How long a call waits for its phone, and how long the caller's screen waits for an answer. */
 export const SIREN_FRESH_MS = 60_000;
 
+/** How long a call that is over — stopped, unanswered or sounded out — is told of on a row. */
+export const SIREN_TOLD_MS = 5 * 60_000;
+
 /**
  * One call as the phone or the caller's screen holds it, out of what the
  * document says, or null for a document that is not one.
@@ -74,4 +77,23 @@ export function sirenState(siren, now) {
     }
 
     return now < siren.calledAt + SIREN_FRESH_MS ? { kind: 'waiting' } : { kind: 'noAnswer' };
+}
+
+/**
+ * Whether `siren` is still worth a line on its row at `now`: always while it
+ * is being called or sounding, and for `SIREN_TOLD_MS` after it ended. A stop
+ * without its time — a write still on its way — counts from the call.
+ */
+export function sirenTold(siren, now) {
+    let endedAt;
+
+    if (siren.stoppedBy !== null) {
+        endedAt = siren.stoppedAt ?? siren.calledAt;
+    } else if (siren.heardAt !== null) {
+        endedAt = siren.heardAt + SIREN_SECONDS * 1000;
+    } else {
+        endedAt = siren.calledAt + SIREN_FRESH_MS;
+    }
+
+    return now < endedAt + SIREN_TOLD_MS;
 }

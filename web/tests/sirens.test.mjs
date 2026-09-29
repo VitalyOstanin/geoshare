@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 
-import { SIREN_SECONDS, shouldSound, sirenOf, sirenState } from '../public/lib/sirens.js';
+import { SIREN_SECONDS, shouldSound, sirenOf, sirenState, sirenTold } from '../public/lib/sirens.js';
 
 const NOW = Date.parse('2026-09-27T19:40:00Z');
 const SECOND = 1000;
@@ -78,4 +78,21 @@ test('stopped wins over every other state', () => {
     });
 
     assert.deepEqual(sirenState(siren, NOW), { kind: 'stopped', by: 'boris' });
+});
+
+test('a call over for more than five minutes is no longer told of', () => {
+    const minute = 60 * SECOND;
+    const stopped = called(10 * 60, { stoppedBy: 'anna', stoppedAt: NOW - 6 * minute });
+    const justStopped = called(10 * 60, { stoppedBy: 'anna', stoppedAt: NOW - 4 * minute });
+
+    assert.equal(sirenTold(stopped, NOW), false);
+    assert.equal(sirenTold(justStopped, NOW), true);
+    // Unanswered: over a minute after the call, told for five more.
+    assert.equal(sirenTold(called(5 * 60), NOW), true);
+    assert.equal(sirenTold(called(6 * 60 + 1), NOW), false);
+    // Heard: over when its seconds ran out.
+    assert.equal(sirenTold(called(10 * 60, { heardAt: NOW - 5 * minute }), NOW), true);
+    assert.equal(sirenTold(called(10 * 60, { heardAt: NOW - 6 * minute }), NOW), false);
+    // Still being called is always told.
+    assert.equal(sirenTold(called(1), NOW), true);
 });

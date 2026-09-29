@@ -405,10 +405,16 @@ fun AdminPanel(
 
 /**
  * What the row says of the call this screen made: which phone, the seconds
- * left while it sounds, or that it never answered. Nothing once it is over.
+ * left while it sounds, or that it never answered or was stopped. Nothing
+ * once it sounded out, nor [SIREN_TOLD] after it ended any other way.
  */
 @Composable
 internal fun sirenText(siren: Siren, state: SirenState, phones: List<PhoneLine>): String? {
+    // A call long over says nothing any more: a row is about now.
+    if (!sirenTold(siren, Instant.now())) {
+        return null
+    }
+
     val phone =
         phones.firstOrNull { it.phoneId == siren.phoneId }?.name
             ?: siren.phoneId.substringAfter('.').take(NAME_SHOWN_INSTEAD)

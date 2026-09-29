@@ -130,4 +130,30 @@ class SirensTest {
 
         assertEquals(mapOf("grandma.tablet" to rung), sirens)
     }
+
+    @Test
+    fun `a call over for more than five minutes is no longer told of`() {
+        val minute = 60L
+
+        assertFalse(
+            sirenTold(
+                called(10 * minute, stoppedBy = "anna", stoppedAt = now.minusSeconds(6 * minute)),
+                now,
+            ),
+        )
+        assertTrue(
+            sirenTold(
+                called(10 * minute, stoppedBy = "anna", stoppedAt = now.minusSeconds(4 * minute)),
+                now,
+            ),
+        )
+        // Unanswered: over a minute after the call, told for five more.
+        assertTrue(sirenTold(called(5 * minute), now))
+        assertFalse(sirenTold(called(6 * minute + 1), now))
+        // Heard: over when its seconds ran out.
+        assertTrue(sirenTold(called(10 * minute, heardAt = now.minusSeconds(5 * minute)), now))
+        assertFalse(sirenTold(called(10 * minute, heardAt = now.minusSeconds(6 * minute)), now))
+        // Still being called is always told.
+        assertTrue(sirenTold(called(1), now))
+    }
 }

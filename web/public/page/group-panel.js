@@ -5,7 +5,7 @@ import { outsideTheBox } from '../lib/mode-help.js';
 import { lookAt } from '../lib/map.js';
 import { memberName, shortName } from '../lib/members.js';
 import { standingSearches } from '../lib/searches.js';
-import { sirenState } from '../lib/sirens.js';
+import { sirenState, sirenTold } from '../lib/sirens.js';
 import { WORDS } from '../lib/words.js';
 import {
     ADMINISTRATOR,
@@ -249,7 +249,7 @@ function sirenButtonFor(phone, memberId, now, about) {
     const siren = state.sirens.get(phone.phoneId) ?? null;
     const sirenNow = siren === null ? null : sirenState(siren, now);
 
-    if (siren !== null) {
+    if (siren !== null && sirenTold(siren, now)) {
         const told = sirenText(siren, sirenNow, [phone]);
 
         if (told !== null) {
