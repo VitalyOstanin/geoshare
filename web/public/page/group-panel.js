@@ -1,6 +1,6 @@
 // The group in the menu, "Мои устройства" and the panel that runs the group.
 
-import { phoneLines } from '../lib/group-lines.js';
+import { phoneLines, groupOverview } from '../lib/group-lines.js';
 import { outsideTheBox } from '../lib/mode-help.js';
 import { lookAt } from '../lib/map.js';
 import { memberName, shortName } from '../lib/members.js';

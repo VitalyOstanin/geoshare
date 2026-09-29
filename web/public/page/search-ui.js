@@ -1,7 +1,13 @@
 // Looking for a phone: the window that opens one, the line for the one sought, the list.
 
 import { memberName } from '../lib/members.js';
-import { DEFAULT_SEARCH_HOURS, endIfChosen, nextSearchEnd } from '../lib/searches.js';
+import {
+    DEFAULT_SEARCH_HOURS,
+    endIfChosen,
+    nextSearchEnd,
+    standingSearches,
+    SEARCH_HOURS,
+} from '../lib/searches.js';
 import { SPEAKING, WORDS } from '../lib/words.js';
 import { ADMINISTRATOR, standingIn } from '../lib/membership.js';
 import { endSearch, openSearch, renewSearch } from '../lib/store.js';

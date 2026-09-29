@@ -14,7 +14,7 @@ import {
     showMembers,
     shownPositions,
 } from '../lib/map.js';
-import { memberColour, memberName, orderedForNavigation } from '../lib/members.js';
+import { memberColour, memberName, orderedForNavigation, STALE_COLOUR } from '../lib/members.js';
 import { isGrey } from '../lib/false-places.js';
 import { watchingBesides, watchingMembers } from '../lib/watchers.js';
 import { WORDS } from '../lib/words.js';

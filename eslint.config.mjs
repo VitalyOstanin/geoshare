@@ -28,6 +28,9 @@ export default [
             eqeqeq: ['error', 'always'],
             'prefer-const': 'error',
             'no-var': 'error',
+            // The page is split into modules that import from one another, and a
+            // name used without its import would only fail once the code runs.
+            'no-undef': 'error',
         },
     },
     {
@@ -39,6 +42,8 @@ export default [
                 document: 'readonly',
                 localStorage: 'readonly',
                 matchMedia: 'readonly',
+                navigator: 'readonly',
+                Node: 'readonly',
                 setInterval: 'readonly',
                 clearInterval: 'readonly',
                 setTimeout: 'readonly',
@@ -58,6 +63,7 @@ export default [
                 fetch: 'readonly',
                 process: 'readonly',
                 setTimeout: 'readonly',
+                URL: 'readonly',
             },
         },
     },

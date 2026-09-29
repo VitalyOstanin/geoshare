@@ -1,5 +1,6 @@
 // The page: sign in, then everyone on a map with a panel to jump between them.
 
+import { positionDocuments } from './lib/members.js';
 import { createMap, remeasure } from './lib/map.js';
 import { compareIds } from './lib/order.js';
 import {
@@ -11,7 +12,7 @@ import {
 } from './lib/labels.js';
 import { withFalsePlaces } from './lib/false-places.js';
 import { withPhones } from './lib/phones.js';
-import { withSearches } from './lib/searches.js';
+import { withSearches, standingSearches } from './lib/searches.js';
 import {
     keepWatching,
     publishProfile,
