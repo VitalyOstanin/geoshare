@@ -2,6 +2,7 @@ package io.github.vitalyostanin.geoshare.service
 
 import android.app.NotificationManager
 import android.content.Context
+import android.content.res.Resources
 import android.media.AudioAttributes
 import android.media.AudioManager
 import android.media.MediaPlayer
@@ -9,16 +10,18 @@ import android.media.RingtoneManager
 import android.net.Uri
 import android.provider.Settings
 import androidx.core.content.getSystemService
+import io.github.vitalyostanin.geoshare.R
 import io.github.vitalyostanin.geoshare.log.AppLog
 import java.io.IOException
 
 private const val TAG = "geoshare.siren"
 
 /**
- * Sounds the phone the way an alarm clock would: the alarm stream at full
+ * Sounds the device the way an alarm clock would: the alarm stream at full
  * volume, "Do Not Disturb" lifted just enough to let alarms through, and the
- * device's own alarm sound looping until [stop] is called. How long it
- * sounds is the service's call, not this class's; it only starts and stops.
+ * app's own SOS siren looping until [stop] is called, falling back to the
+ * device's alarm sound if the siren cannot be loaded. How long it sounds is
+ * the service's call, not this class's; it only starts and stops.
  */
 class SirenPlayer(private val context: Context) {
     private var mediaPlayer: MediaPlayer? = null
@@ -36,22 +39,15 @@ class SirenPlayer(private val context: Context) {
         try {
             raiseAlarmVolume()
             raiseInterruptionFilter()
+            // Our own siren is preferred; a device's stock alarm sound is
+            // used only when it cannot be loaded, so this still sounds like
+            // an alarm rather than staying silent.
             mediaPlayer =
-                MediaPlayer().apply {
-                    setAudioAttributes(
-                        AudioAttributes
-                            .Builder()
-                            .setUsage(AudioAttributes.USAGE_ALARM)
-                            .setContentType(AudioAttributes.CONTENT_TYPE_SONIFICATION)
-                            .build(),
-                    )
+                ownSirenPlayer() ?: MediaPlayer().preparedWith {
                     setDataSource(context, alarmSoundUri())
-                    isLooping = true
-                    prepare()
-                    start()
                 }
         } catch (refusal: IOException) {
-            AppLog.w(TAG, "could not load the siren sound", refusal)
+            AppLog.w(TAG, "could not load the alarm sound", refusal)
             stop()
         } catch (refusal: IllegalStateException) {
             AppLog.w(TAG, "the siren player was in the wrong state", refusal)
@@ -60,6 +56,50 @@ class SirenPlayer(private val context: Context) {
             AppLog.w(TAG, "not allowed to play the siren sound", refusal)
             stop()
         }
+    }
+
+    // Loads the app's own SOS siren. Returns null, with the failed player
+    // released, if the resource cannot be read or played, so the caller
+    // falls back to the device's alarm sound instead of staying silent.
+    private fun ownSirenPlayer(): MediaPlayer? {
+        val player = MediaPlayer()
+
+        fun refused(refusal: Exception): MediaPlayer? {
+            AppLog.w(TAG, "could not play the siren sound, falling back to the alarm", refusal)
+            player.release()
+
+            return null
+        }
+
+        return try {
+            player.preparedWith {
+                context.resources.openRawResourceFd(R.raw.siren_sos).use {
+                    setDataSource(it.fileDescriptor, it.startOffset, it.length)
+                }
+            }
+        } catch (refusal: IOException) {
+            refused(refusal)
+        } catch (refusal: Resources.NotFoundException) {
+            refused(refusal)
+        } catch (refusal: IllegalStateException) {
+            refused(refusal)
+        }
+    }
+
+    // Common setup for both the siren and its alarm-sound fallback: alarm
+    // audio attributes, looping, and starting playback once prepared.
+    private fun MediaPlayer.preparedWith(setSource: MediaPlayer.() -> Unit): MediaPlayer = apply {
+        setAudioAttributes(
+            AudioAttributes
+                .Builder()
+                .setUsage(AudioAttributes.USAGE_ALARM)
+                .setContentType(AudioAttributes.CONTENT_TYPE_SONIFICATION)
+                .build(),
+        )
+        setSource()
+        isLooping = true
+        prepare()
+        start()
     }
 
     /** Stops the alarm sound and undoes both the volume and "Do Not Disturb" changes. */
