@@ -1114,7 +1114,7 @@ function sirenButtonFor(phone, memberId, now, about) {
         stop.innerHTML = MUTE_ICON;
         stop.append(WORDS.sirenStop);
         stop.addEventListener('click', () => {
-            tryGroupWrite(() => stopSiren(phone.phoneId, memberId));
+            tryGroupWrite(() => stopSiren(phone.phoneId, state.member.memberId));
         });
 
         return stop;
