@@ -1,5 +1,8 @@
 package io.github.vitalyostanin.geoshare.map
 
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.flowOf
+import kotlinx.coroutines.runBlocking
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
@@ -102,5 +105,29 @@ class SirensTest {
         val siren = called(61, heardAt = now.minusSeconds(30), stoppedBy = "boris", stoppedAt = now)
 
         assertEquals(SirenState.Stopped("boris"), sirenState(siren, now))
+    }
+
+    @Test
+    fun `a countdown moves only while some call is waiting or sounding`() {
+        val over = called(60, heardAt = now.minusSeconds(40))
+        val stopped = called(5, stoppedBy = "anna", stoppedAt = now)
+
+        assertFalse(anyLive(emptyList(), now))
+        assertFalse(anyLive(listOf(over, stopped), now))
+        assertTrue(anyLive(listOf(over, called(5)), now))
+        assertTrue(anyLive(listOf(stopped, called(10, heardAt = now.minusSeconds(3))), now))
+    }
+
+    @Test
+    fun `every phone offered is followed, and a phone never called is left out`() {
+        val rung = called(5)
+        val sirens =
+            runBlocking {
+                sirensOf(setOf("grandma.tablet", "anna.phone")) { phoneId ->
+                    flowOf(rung.takeIf { phoneId == "grandma.tablet" })
+                }.first()
+            }
+
+        assertEquals(mapOf("grandma.tablet" to rung), sirens)
     }
 }

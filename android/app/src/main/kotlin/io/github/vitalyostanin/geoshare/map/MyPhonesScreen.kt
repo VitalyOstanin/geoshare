@@ -42,7 +42,6 @@ import androidx.compose.ui.unit.dp
 import io.github.vitalyostanin.geoshare.R
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.launch
 import java.time.Instant
 import java.time.ZoneId
@@ -84,11 +83,14 @@ fun MyPhonesScreen(
 ) {
     val scope = rememberCoroutineScope()
 
-    // The phone this screen last rang, followed until the panel is closed so
-    // that its row can say whether it answered.
-    var sirenPhoneId by remember { mutableStateOf<String?>(null) }
-    val siren by remember(sirenPhoneId) { sirenPhoneId?.let(sirenOf) ?: flowOf(null) }
-        .collectAsState(initial = null)
+    // The siren of every phone this screen offers to ring, followed while it
+    // is open: a call rung from anywhere else shows on its row as well.
+    val ringable =
+        remember(phones, ownPhoneId) {
+            phones.map { it.phoneId }.filter { it != ownPhoneId }.toSet()
+        }
+    val sirens by remember(ringable) { sirensOf(ringable, sirenOf) }
+        .collectAsState(initial = emptyMap())
     var sirenAsk by remember { mutableStateOf<PhoneLine?>(null) }
     var sirenTrouble by remember { mutableStateOf(false) }
     var sirenBusy by remember { mutableStateOf(false) }
@@ -104,10 +106,12 @@ fun MyPhonesScreen(
     var removeTrouble by remember { mutableStateOf(false) }
     var removeBusy by remember { mutableStateOf(false) }
     // The countdown reads seconds, and the screen's own clock ticks far slower.
-    val sirenNow by produceState(now, siren) {
-        while (siren != null) {
-            value = Instant.now()
+    val sirenNow by produceState(now, sirens) {
+        value = Instant.now()
+
+        while (anyLive(sirens.values, value)) {
             delay(MY_PHONES_TICK_MS)
+            value = Instant.now()
         }
     }
 
@@ -121,7 +125,6 @@ fun MyPhonesScreen(
             sirenBusy = false
 
             if (allowed) {
-                sirenPhoneId = phone.phoneId
                 sirenAsk = null
                 sirenTrouble = false
             } else {
@@ -211,9 +214,7 @@ fun MyPhonesScreen(
             }
 
             for (phone in phones) {
-                // Only the phone this screen itself called has a siren to
-                // show: every other row is silent until it is rung from here.
-                val phoneSiren = siren?.takeIf { phone.phoneId == sirenPhoneId }
+                val phoneSiren = sirens[phone.phoneId]
                 val phoneSirenState = phoneSiren?.let { sirenState(it, sirenNow) }
                 val sounding =
                     phoneSirenState is SirenState.Waiting || phoneSirenState is SirenState.Sounding

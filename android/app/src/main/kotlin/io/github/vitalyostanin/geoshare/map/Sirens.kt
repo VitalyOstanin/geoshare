@@ -1,5 +1,9 @@
 package io.github.vitalyostanin.geoshare.map
 
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.flowOf
+import kotlinx.coroutines.flow.map
 import java.time.Duration
 import java.time.Instant
 
@@ -110,4 +114,27 @@ fun sirenState(siren: Siren, now: Instant): SirenState = when {
     now.isBefore(siren.calledAt.plus(SIREN_FRESH)) -> SirenState.Waiting
 
     else -> SirenState.NoAnswer
+}
+
+/**
+ * The sirens of [phoneIds], each followed through [sirenOf], by phone: a
+ * screen that offers to ring a phone shows whatever call stands on it, rung
+ * from here or from anywhere else. A phone never called is left out.
+ */
+fun sirensOf(
+    phoneIds: Set<String>,
+    sirenOf: (phoneId: String) -> Flow<Siren?>,
+): Flow<Map<String, Siren>> = if (phoneIds.isEmpty()) {
+    flowOf(emptyMap())
+} else {
+    combine(phoneIds.map { phoneId -> sirenOf(phoneId).map { phoneId to it } }) { pairs ->
+        pairs.mapNotNull { (phoneId, siren) -> siren?.let { phoneId to it } }.toMap()
+    }
+}
+
+/** Whether any of [sirens] is being called or sounding at [now], so that its countdown moves. */
+fun anyLive(sirens: Collection<Siren>, now: Instant): Boolean = sirens.any {
+    val state = sirenState(it, now)
+
+    state is SirenState.Waiting || state is SirenState.Sounding
 }
