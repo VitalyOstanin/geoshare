@@ -300,11 +300,14 @@ const state = {
     // the name it goes by, whether this renews a standing one, and the
     // length picked.
     searchAsk: null,
-    // The phone this page last rang, and what its document says, followed
-    // until another is rung so that its row can say whether it answered.
-    sirenPhoneId: null,
-    siren: null,
-    stopSirenWatch: null,
+    // What the siren of every phone shown with a siren button says, followed
+    // while the panel showing it is open: a call rung from another screen, or
+    // before this page was loaded, is sounding all the same, and whoever may
+    // ring it has to see so. The phones drawn with a button this time round,
+    // the siren of each and the subscription that brings it.
+    sirensShown: new Set(),
+    sirens: new Map(),
+    sirenWatches: new Map(),
     sirenTick: null,
     // The call being asked about in the window: whose, their phones, the one
     // picked.
@@ -908,6 +911,8 @@ function drawGroup() {
         return;
     }
 
+    state.sirensShown = new Set();
+
     const standing = standingIn(state.roster, state.member.memberId);
     const ungrouped = standing === UNGROUPED;
     const running = standing === ADMINISTRATOR;
@@ -942,6 +947,7 @@ function drawGroup() {
 
     drawAdmin(running);
     drawPhones();
+    followSirens();
 }
 
 /**
@@ -991,6 +997,7 @@ function drawPhones() {
             about.append(name, said);
             actions.className = 'admin-actions';
             actions.append(sirenButtonFor(phone, memberId, now, about));
+            state.sirensShown.add(phone.phoneId);
 
             const search = standing.get(phone.phoneId) ?? null;
 
@@ -1092,7 +1099,7 @@ function searchButton(phone, memberId, search) {
  * way in both, one phone at a time.
  */
 function sirenButtonFor(phone, memberId, now, about) {
-    const siren = state.siren?.phoneId === phone.phoneId ? state.siren : null;
+    const siren = state.sirens.get(phone.phoneId) ?? null;
     const sirenNow = siren === null ? null : sirenState(siren, now);
 
     if (siren !== null) {
@@ -1140,8 +1147,12 @@ elements.groupPhones.addEventListener('click', () => {
         elements.phones.showModal();
     }
 
-    drawPhones();
+    drawGroup();
 });
+
+// A closed panel lets go of the sirens it was following.
+elements.phones.addEventListener('close', () => drawGroup());
+elements.admin.addEventListener('close', () => drawGroup());
 elements.phonesClose.addEventListener('click', () => elements.phones.close());
 
 /**
@@ -1475,6 +1486,11 @@ function adminPhoneRow(phone, line, now) {
     actions.className = 'admin-actions';
     actions.append(sirenButtonFor(phone, line.memberId, now, about));
 
+    // Drawn whether the panel is open or not; only an open one is watched.
+    if (elements.admin.open) {
+        state.sirensShown.add(phone.phoneId);
+    }
+
     if (!line.isYou) {
         const search = standingSearches(state.searches, now).get(phone.phoneId) ?? null;
 
@@ -1547,27 +1563,45 @@ function sirenText(siren, now, phones) {
     }
 }
 
-/** Follows the phone just rung, and redraws its row every second while the call lasts. */
-function followSiren(phoneId) {
-    state.stopSirenWatch?.();
-    state.sirenPhoneId = phoneId;
-    state.siren = null;
-    state.stopSirenWatch = watchSiren(phoneId, (siren) => {
-        state.siren = siren;
-        drawGroup();
+/**
+ * Follows the siren of every phone drawn with a siren button and lets go of
+ * the rest, and redraws every second while any of them is being called or
+ * sounding, for the countdown.
+ */
+function followSirens() {
+    for (const [phoneId, stop] of state.sirenWatches) {
+        if (!state.sirensShown.has(phoneId)) {
+            stop();
+            state.sirenWatches.delete(phoneId);
+            state.sirens.delete(phoneId);
+        }
+    }
+
+    for (const phoneId of state.sirensShown) {
+        if (!state.sirenWatches.has(phoneId)) {
+            state.sirenWatches.set(
+                phoneId,
+                watchSiren(phoneId, (siren) => {
+                    state.sirens.set(phoneId, siren);
+                    drawGroup();
+                }),
+            );
+        }
+    }
+
+    const now = Date.now();
+    const live = [...state.sirens.values()].some((siren) => {
+        const kind = siren === null ? null : sirenState(siren, now).kind;
+
+        return kind === 'waiting' || kind === 'sounding';
     });
 
-    clearInterval(state.sirenTick);
-    state.sirenTick = setInterval(() => {
-        const kind = state.siren ? sirenState(state.siren, Date.now()).kind : 'waiting';
-
-        drawGroup();
-
-        if (kind !== 'waiting' && kind !== 'sounding') {
-            clearInterval(state.sirenTick);
-            state.sirenTick = null;
-        }
-    }, 1000);
+    if (live && state.sirenTick === null) {
+        state.sirenTick = setInterval(drawGroup, 1000);
+    } else if (!live && state.sirenTick !== null) {
+        clearInterval(state.sirenTick);
+        state.sirenTick = null;
+    }
 }
 
 function askSiren(line) {
@@ -1638,7 +1672,6 @@ elements.sirenGo.addEventListener('click', async () => {
 
     try {
         await callSiren(ask.selected, state.member.memberId);
-        followSiren(ask.selected);
 
         if (state.sirenAsk === ask) {
             elements.siren.close();
