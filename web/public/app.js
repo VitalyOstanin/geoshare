@@ -1041,10 +1041,11 @@ function drawPhones() {
  * Gathers the round buttons of a row's [actions] into one line at its top:
  * a column of them made every row three circles tall, while the worded
  * buttons, too wide to share a line, stay one under another beneath it.
+ * A siren being sounded keeps its place in the line with its stop button.
  */
 function iconsInRow(actions) {
     const icons = [...actions.children].filter((button) =>
-        button.matches('.siren-ring, .search-mark, .phone-remove'),
+        button.matches('.siren-ring, .siren-stop, .search-mark, .phone-remove'),
     );
 
     if (icons.length === 0) {
