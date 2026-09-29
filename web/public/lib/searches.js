@@ -1,9 +1,12 @@
-// The group looking for a member, out of the searches lying in the database.
+// The group looking for a phone, out of the searches lying in the database.
 //
-// While a search stands, the rules open the member's place to everybody in the
-// group; these are the pieces of the page that say so. The end is counted from
-// the last renewal by the server's clock, which is what the rules count from
-// too, so the page and the rules agree on when the place closes.
+// While a search stands, the rules open that one phone's place to everybody
+// in the group; these are the pieces of the page that say so. A search is
+// addressed the same way a position is, `{uid}.{deviceId}`, so a member with
+// two phones lost has two searches, and the family may look for several
+// phones of several members at once. The end is counted from the last
+// renewal by the server's clock, which is what the rules count from too, so
+// the page and the rules agree on when the place closes.
 
 /** The lengths an administrator chooses from, in hours: six hours, a day, three days. */
 export const SEARCH_HOURS = [6, 24, 72];
@@ -15,18 +18,20 @@ const HOUR_MS = 60 * 60 * 1000;
 
 /**
  * One search as the page holds it, out of what the document says, or null
- * for a document that is not one.
+ * for a document that is not one: an id without a dot is an older, per-member
+ * search, no longer written, and is ignored rather than misread as a phone's.
  *
  * The times are read the way the store hands them over, in milliseconds; a
  * renewal written a moment ago carries the server's estimate until the server
- * answers, which is close enough to draw an end by.
+ * answers, which is close enough to draw an end by. The member id is read out
+ * of `phoneId` the way a position's and a siren's are.
  */
-export function searchOf(memberId, data) {
+export function searchOf(phoneId, data) {
     const renewedAt = data?.renewedAt;
     const hours = data?.hours;
 
     if (
-        typeof memberId !== 'string' ||
+        !phoneId.includes('.') ||
         typeof data?.openedBy !== 'string' ||
         !Number.isFinite(renewedAt) ||
         !Number.isInteger(hours) ||
@@ -36,7 +41,11 @@ export function searchOf(memberId, data) {
     }
 
     return {
-        memberId,
+        phoneId,
+        memberId: phoneId.slice(0, phoneId.indexOf('.')),
+        // As the administrator saw the phone when they opened or renewed the
+        // search: what a viewer with nothing else to call it by is told.
+        phoneName: typeof data.phoneName === 'string' ? data.phoneName : null,
         openedBy: data.openedBy,
         renewedBy: typeof data.renewedBy === 'string' ? data.renewedBy : data.openedBy,
         startedAt: Number.isFinite(data.startedAt) ? data.startedAt : renewedAt,
@@ -45,7 +54,7 @@ export function searchOf(memberId, data) {
 }
 
 /**
- * The searches still standing, by member.
+ * The searches still standing, by phone.
  *
  * One that has run out is dropped here rather than when it is deleted:
  * nothing deletes it, and nothing arrives at the moment it runs out, so the
@@ -56,16 +65,30 @@ export function standingSearches(searches, now) {
 }
 
 /**
- * The positions with the search for their member laid on them, as `sought`,
- * so that the pin, the strip and the card mark the same people.
+ * The positions with the search for their own phone laid on them, as
+ * `sought`, so that the pin, the strip and the card mark exactly the phone
+ * looked for and none of its owner's others.
+ *
+ * A phone open only because of a search is often one this viewer has no
+ * grant for at all, so its name falls back to what the search remembers —
+ * the same way a position's own name already wins over it, and a label of
+ * this viewer's own wins over both.
  */
 export function withSearches(positions, searches, now) {
     const standing = standingSearches(searches, now);
 
     return positions.map((position) => {
-        const search = standing.get(position.memberId) ?? null;
+        const search = standing.get(position.positionId) ?? null;
 
-        return search === null && !position.sought ? position : { ...position, sought: search };
+        if (search === null) {
+            return position.sought ? { ...position, sought: null } : position;
+        }
+
+        return {
+            ...position,
+            sought: search,
+            deviceName: position.deviceName || search.phoneName,
+        };
     });
 }
 

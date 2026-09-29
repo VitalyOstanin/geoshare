@@ -232,12 +232,12 @@ class MainActivity : AppCompatActivity() {
                         is AuthState.SignedIn -> {
                             val profiles by rememberMemberProfiles()
                             val searches by rememberSearches()
-                            val grants by rememberMemberGrants(profiles, searches)
+                            val grants by rememberMemberGrants(profiles)
                             val ownDocument =
                                 remember(current.memberId) {
                                     positionId(current.memberId, device.id)
                                 }
-                            val onTheMap by rememberMemberPositions(grants, ownDocument)
+                            val onTheMap by rememberMemberPositions(grants, ownDocument, searches)
                             val labels by rememberOwnLabels(current.memberId)
                             val sharedWith by rememberOwnSharedWith(current.memberId)
                             val roster by rememberGroupRoster()
@@ -283,7 +283,8 @@ class MainActivity : AppCompatActivity() {
                                 // Called what this member called them, where
                                 // they did; the rest of the screen never
                                 // needs to know which name is whose.
-                                positions = labelledPositions(onTheMap.positions, labels, grants),
+                                positions =
+                                labelledPositions(onTheMap.positions, labels, grants, searches),
                                 // Those whose position this phone is refused:
                                 // an empty map with a reason is not the same
                                 // thing as an empty map without one.
@@ -462,12 +463,22 @@ class MainActivity : AppCompatActivity() {
                                     // the dialog has to stay open on a
                                     // refusal and say so, which nothing
                                     // fire-and-forget could tell it.
-                                    onSearch = { memberId, renew, hours ->
+                                    onSearch = { phoneId, phoneName, renew, hours ->
                                         try {
                                             if (renew) {
-                                                renewSearch(memberId, current.memberId, hours)
+                                                renewSearch(
+                                                    phoneId,
+                                                    phoneName,
+                                                    current.memberId,
+                                                    hours,
+                                                )
                                             } else {
-                                                openSearch(memberId, current.memberId, hours)
+                                                openSearch(
+                                                    phoneId,
+                                                    phoneName,
+                                                    current.memberId,
+                                                    hours,
+                                                )
                                             }
 
                                             true
@@ -516,9 +527,9 @@ class MainActivity : AppCompatActivity() {
                                             false
                                         }
                                     },
-                                    onEndSearch = { memberId ->
+                                    onEndSearch = { phoneId ->
                                         try {
-                                            endSearch(memberId)
+                                            endSearch(phoneId)
                                         } catch (cancellation: CancellationException) {
                                             throw cancellation
                                         } catch (refusal: Exception) {

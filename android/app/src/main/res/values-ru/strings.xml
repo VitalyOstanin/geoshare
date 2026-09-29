@@ -201,16 +201,16 @@
         <item quantity="other">%1$d устройства доступны вам</item>
     </plurals>
 
-    <!-- Группа ищет участника: администратор открывает поиск, и пока он идёт,
-         место участника видно всей группе. Те же слова, что использует
-         страница. -->
+    <!-- Группа ищет одно устройство участника: администратор открывает поиск,
+         и пока он идёт, место этого устройства видно всей группе. Те же
+         слова, что использует страница. -->
     <string name="search_mark">Ищем</string>
     <string name="search_start">Искать</string>
     <string name="search_found">Нашли</string>
     <string name="search_renew">Продлить</string>
-    <string name="search_open_title">Открыть всей группе, где %1$s?</string>
-    <string name="search_renew_title">Продлить поиск: %1$s?</string>
-    <string name="search_note">Все участники группы увидят этого человека на карте, даже те, кому он её не открывал. На его устройствах появится сообщение: кто открыл и до какого времени.</string>
+    <string name="search_open_title">Показать всей группе, где %1$s (%2$s)?</string>
+    <string name="search_renew_title">Продлить поиск: %1$s (%2$s)?</string>
+    <string name="search_note">Все участники группы увидят это устройство на карте, даже те, кому его владелец не открывал доступ. Само устройство покажет, кто открыл поиск и до какого времени.</string>
     <string name="search_hours_6">6 часов</string>
     <string name="search_hours_24">Сутки</string>
     <string name="search_hours_72">3 суток</string>
@@ -218,10 +218,10 @@
     <string name="search_go">Открыть</string>
     <string name="search_cancel">Отмена</string>
     <string name="sought_until">ищем до %1$s</string>
-    <string name="search_summary">%1$s: ищем до %2$s</string>
+    <string name="search_summary">%1$s (%2$s): ищем до %3$s</string>
     <string name="search_opened_by">Открыли поиск: %1$s.</string>
     <string name="search_opened_by_you">Открыли вы.</string>
-    <string name="sought_banner">Вашу позицию видит вся группа до %1$s</string>
+    <string name="sought_banner">Позицию устройства «%1$s» видит вся группа до %2$s</string>
     <string name="sought_banner_note">Открыли поиск: %1$s. Если с вами всё в порядке, закройте поиск.</string>
     <string name="sought_found">Меня нашли</string>
     <string name="siren_notification_title">Включили сирену: %1$s</string>
@@ -374,8 +374,8 @@
     <string name="help_title_screen">Кнопки на этом экране</string>
     <string name="help_title_map">Кнопки на карте</string>
     <string name="help_siren">Сирена на 22 секунды: устройство громко звучит, даже если на нём выключен звук, — чтобы его нашли</string>
-    <string name="help_search">Открыть поиск: вся группа увидит участника на карте, даже те, кому он её не открывал</string>
-    <string name="help_search_standing">Поиск идёт. Нажмите, когда участник найден</string>
+    <string name="help_search">Открыть поиск: вся группа увидит устройство на карте, даже те, кому его не открывали</string>
+    <string name="help_search_standing">Поиск идёт. Нажмите, когда устройство найдено</string>
     <string name="help_remove">Удалить устройство: оно исчезнет с карты и из списков у всех участников</string>
     <string name="help_follow_none">Карта стоит на месте</string>
     <string name="help_follow_one">Карта держит в центре выбранного участника</string>

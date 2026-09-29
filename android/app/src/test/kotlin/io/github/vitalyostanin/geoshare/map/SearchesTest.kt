@@ -14,8 +14,14 @@ import java.time.Instant
 class SearchesTest {
     private val now: Instant = Instant.parse("2026-09-27T19:40:00Z")
 
-    private fun written(renewedHoursAgo: Long, hours: Int?): Search? = searchOf(
-        memberId = "grandma",
+    private fun written(
+        phoneId: String = "grandma.oldphone",
+        renewedHoursAgo: Long,
+        hours: Int?,
+        phoneName: String? = null,
+    ): Search? = searchOf(
+        phoneId = phoneId,
+        phoneName = phoneName,
         openedBy = "anna",
         renewedBy = "boris",
         startedAt = now.minus(Duration.ofHours(30)),
@@ -25,26 +31,53 @@ class SearchesTest {
 
     @Test
     fun `a search ends its hours after the last renewal`() {
-        val search = written(2, 24)!!
+        val search = written(renewedHoursAgo = 2, hours = 24)!!
 
         assertEquals(now.plus(Duration.ofHours(22)), search.endsAt)
+        assertEquals("grandma.oldphone", search.phoneId)
+        assertEquals("grandma", search.memberId)
         assertEquals("anna", search.openedBy)
         assertEquals("boris", search.renewedBy)
         assertEquals(now.minus(Duration.ofHours(30)), search.startedAt)
     }
 
     @Test
+    fun `the phone's name travels along with the search, when there is one`() {
+        val named = written(renewedHoursAgo = 2, hours = 24, phoneName = "Old phone")!!
+        val unnamed = written(renewedHoursAgo = 2, hours = 24)!!
+
+        assertEquals("Old phone", named.phoneName)
+        assertNull(unnamed.phoneName)
+    }
+
+    @Test
     fun `a document that is not a search is none`() {
-        assertNull(searchOf("grandma", null, "boris", now, now, 6))
-        assertNull(written(1, null))
-        assertNull(written(1, 0))
+        assertNull(searchOf("grandma.oldphone", null, null, "boris", now, now, 6))
+        assertNull(written(renewedHoursAgo = 1, hours = null))
+        assertNull(written(renewedHoursAgo = 1, hours = 0))
+    }
+
+    @Test
+    fun `an id with no dot names no phone, and is dropped like any other bad document`() {
+        assertNull(
+            searchOf(
+                phoneId = "grandma",
+                phoneName = null,
+                openedBy = "anna",
+                renewedBy = "anna",
+                startedAt = now,
+                renewedAt = now,
+                hours = 6,
+            ),
+        )
     }
 
     @Test
     fun `a search written before its start came back starts at its renewal`() {
         val search =
             searchOf(
-                memberId = "grandma",
+                phoneId = "grandma.oldphone",
+                phoneName = null,
                 openedBy = "anna",
                 renewedBy = "anna",
                 startedAt = null,
@@ -57,25 +90,46 @@ class SearchesTest {
 
     @Test
     fun `only the searches still standing are kept`() {
-        val searches = mapOf("grandma" to written(2, 24)!!, "uncle" to written(7, 6)!!)
+        val searches =
+            mapOf(
+                "grandma.oldphone" to written(renewedHoursAgo = 2, hours = 24)!!,
+                "uncle.phone" to written("uncle.phone", renewedHoursAgo = 7, hours = 6)!!,
+            )
 
-        assertEquals(setOf("grandma"), standingSearches(searches, now).keys)
+        assertEquals(setOf("grandma.oldphone"), standingSearches(searches, now).keys)
     }
 
     @Test
-    fun `a search that has run out marks nobody`() {
-        val searches = mapOf("grandma" to written(7, 6)!!)
+    fun `two phones of one member may stand at once`() {
+        val searches =
+            mapOf(
+                "grandma.oldphone" to
+                    written("grandma.oldphone", renewedHoursAgo = 2, hours = 24)!!,
+                "grandma.newphone" to
+                    written("grandma.newphone", renewedHoursAgo = 1, hours = 6)!!,
+            )
 
-        assertEquals(emptySet<String>(), soughtMembers(searches, now))
+        assertEquals(
+            setOf("grandma.oldphone", "grandma.newphone"),
+            soughtPhones(searches, now),
+        )
+    }
+
+    @Test
+    fun `a search that has run out marks no phone`() {
+        val searches = mapOf("grandma.oldphone" to written(renewedHoursAgo = 7, hours = 6)!!)
+
+        assertEquals(emptySet<String>(), soughtPhones(searches, now))
     }
 
     @Test
     fun `the next moment to look again is the nearest end`() {
         val searches =
             mapOf(
-                "grandma" to written(2, 24)!!,
-                "uncle" to written(1, 6)!!,
-                "gone" to written(9, 6)!!,
+                "grandma.oldphone" to
+                    written("grandma.oldphone", renewedHoursAgo = 2, hours = 24)!!,
+                "uncle.phone" to written("uncle.phone", renewedHoursAgo = 1, hours = 6)!!,
+                "gone.phone" to written("gone.phone", renewedHoursAgo = 9, hours = 6)!!,
             )
 
         assertEquals(now.plus(Duration.ofHours(5)), nextSearchEnd(searches, now))

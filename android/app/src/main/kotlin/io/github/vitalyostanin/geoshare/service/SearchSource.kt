@@ -16,12 +16,15 @@ import java.time.Instant
 
 private const val TAG = "geoshare.searches"
 
+/** How much of a phone's name is kept in a search document. The rules say the same. */
+private const val PHONE_NAME_LIMIT = 100
+
 /**
  * The group's searches, and again whenever an administrator opens, renews or
- * ends one, or the member looked for says they were found.
+ * ends one, or the phone looked for says it was found.
  *
  * Everybody in the group reads the collection, the same as the roster and the
- * profiles: every map marks the member being looked for, and a search names
+ * profiles: every map marks the phone being looked for, and a search names
  * nobody's place. A refusal is read as no searches, which is what the phone
  * showed before any of this existed.
  */
@@ -41,7 +44,7 @@ fun groupSearches(
                     ?.documents
                     .orEmpty()
                     .mapNotNull(::searchFrom)
-                    .associateBy { it.memberId },
+                    .associateBy { it.phoneId },
             )
         }
 
@@ -59,7 +62,8 @@ fun groupSearches(
  * way otherwise reads as one.
  */
 private fun searchFrom(document: DocumentSnapshot): Search? = searchOf(
-    memberId = document.id,
+    phoneId = document.id,
+    phoneName = document.getString(SearchField.PHONE_NAME),
     openedBy = document.getString(SearchField.OPENED_BY),
     renewedBy = document.getString(SearchField.RENEWED_BY),
     startedAt = document.getTimestamp(SearchField.STARTED_AT, ESTIMATE)?.toInstant(),
@@ -72,20 +76,20 @@ private val ESTIMATE = DocumentSnapshot.ServerTimestampBehavior.ESTIMATE
 private fun Timestamp.toInstant(): Instant = Instant.ofEpochSecond(seconds, nanoseconds.toLong())
 
 /**
- * The search standing for one member, or null while nobody is looking for
- * them: the phone's own copy of what [groupSearches] holds, read from one
- * document rather than the whole collection.
+ * The search standing for one phone, or null while nobody is looking for it:
+ * the phone's own copy of what [groupSearches] holds, read from one document
+ * rather than the whole collection.
  *
  * This is what the service reads: it cares whether it itself is being looked
  * for, not who else in the group is, and one document costs it far less than
  * the collection every screen already follows.
  */
 fun ownSearch(
-    memberId: String,
+    phoneId: String,
     store: FirebaseFirestore = FirebaseFirestore.getInstance(),
 ): Flow<Search?> = callbackFlow {
     val subscription =
-        searchesOf(store).document(memberId).addSnapshotListener { snapshot, error ->
+        searchesOf(store).document(phoneId).addSnapshotListener { snapshot, error ->
             if (error != null) {
                 close(error)
 
@@ -98,19 +102,29 @@ fun ownSearch(
     awaitClose { subscription.remove() }
 }.comingBack("own search", forgetting = { null })
 
+/** What is kept of a phone's name at the moment a search is opened or renewed: nothing for none. */
+private fun phoneNameField(phoneName: String?): Map<String, Any> = phoneName
+    ?.trim()
+    ?.take(PHONE_NAME_LIMIT)
+    ?.ifEmpty { null }
+    ?.let { mapOf(SearchField.PHONE_NAME to it) }
+    .orEmpty()
+
 /**
- * Opens a search for a member: their place is open to the whole group for the
+ * Opens a search for a phone: its place is open to the whole group for the
  * hours chosen. Written whole, so that one opened again after an earlier one
  * ran out starts from now and names whoever opened it this time.
  */
 suspend fun openSearch(
-    memberId: String,
+    phoneId: String,
+    /** The phone's name as this administrator sees it, carried along for whoever has no other. */
+    phoneName: String?,
     adminId: String,
     hours: Int,
     store: FirebaseFirestore = FirebaseFirestore.getInstance(),
 ) {
     searchesOf(store)
-        .document(memberId)
+        .document(phoneId)
         .set(
             mapOf(
                 SearchField.OPENED_BY to adminId,
@@ -118,7 +132,7 @@ suspend fun openSearch(
                 SearchField.RENEWED_BY to adminId,
                 SearchField.RENEWED_AT to FieldValue.serverTimestamp(),
                 SearchField.HOURS to hours,
-            ),
+            ) + phoneNameField(phoneName),
         ).await()
 
     AppLog.i(TAG, "a search has been opened")
@@ -126,30 +140,32 @@ suspend fun openSearch(
 
 /** Moves the end of a standing search on to the hours chosen from now, keeping who opened it. */
 suspend fun renewSearch(
-    memberId: String,
+    phoneId: String,
+    /** The phone's name as this administrator sees it now, which may have changed since. */
+    phoneName: String?,
     adminId: String,
     hours: Int,
     store: FirebaseFirestore = FirebaseFirestore.getInstance(),
 ) {
     searchesOf(store)
-        .document(memberId)
+        .document(phoneId)
         .update(
             mapOf(
                 SearchField.RENEWED_BY to adminId,
                 SearchField.RENEWED_AT to FieldValue.serverTimestamp(),
                 SearchField.HOURS to hours,
-            ),
+            ) + phoneNameField(phoneName),
         ).await()
 
     AppLog.i(TAG, "a search has been renewed")
 }
 
-/** Ends a search: the member was found, and their place closes to all but whom they share with. */
+/** Ends a search: the phone was found, and its place closes to all but whom it shares with. */
 suspend fun endSearch(
-    memberId: String,
+    phoneId: String,
     store: FirebaseFirestore = FirebaseFirestore.getInstance(),
 ) {
-    searchesOf(store).document(memberId).delete().await()
+    searchesOf(store).document(phoneId).delete().await()
 
     AppLog.i(TAG, "a search has been ended")
 }

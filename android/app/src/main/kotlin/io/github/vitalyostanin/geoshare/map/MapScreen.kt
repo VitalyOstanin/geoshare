@@ -207,7 +207,7 @@ fun MapScreen(
     ownPhoneId: String?,
     ownDisplayName: String?,
     ownPictureUrl: String?,
-    /** The group's searches, by the member each is looking for. */
+    /** The group's searches, by the phone each is looking for. */
     searches: Map<String, Search>,
     /** Everything the settings screen shows, which the map only carries through. */
     settings: SettingsState,
@@ -220,10 +220,10 @@ fun MapScreen(
     modifier: Modifier = Modifier,
 ) {
     val now by currentTime()
-    // Who the group is looking for right now, worked out against the same
-    // clock the ages tick by: nothing arrives from the database at the moment
-    // a search runs out, so this is read afresh whenever [now] moves.
-    val sought = remember(searches, now) { soughtMembers(searches, now) }
+    // The phones the group is looking for right now, worked out against the
+    // same clock the ages tick by: nothing arrives from the database at the
+    // moment a search runs out, so this is read afresh whenever [now] moves.
+    val soughtPhones = remember(searches, now) { standingSearches(searches, now).keys }
     // Read here rather than only where the admin panel is opened, because the
     // card of a member being looked for offers "Found" on this same
     // condition, and a phone that stops running the group should lose the
@@ -398,7 +398,7 @@ fun MapScreen(
                 faces = faces,
                 ownMemberId = ownMemberId,
                 now = now,
-                soughtMembers = sought,
+                soughtPhones = soughtPhones,
                 // The tiles follow the screen they are looked at on: a white
                 // map under a dark card at night is a lamp in the face, which
                 // is the reason the page turns its own canvas over.
@@ -519,28 +519,42 @@ fun MapScreen(
                     .padding(12.dp),
             )
 
-            // Told to the member being looked for, over the map and below the
-            // row of round buttons rather than on top of it: the two are read
-            // in different moments, and a banner covering the buttons would
-            // be in the way of the one thing this screen is for.
-            if (ownMemberId in sought) {
-                searches[ownMemberId]?.let { search ->
-                    SoughtBanner(
-                        search = search,
-                        openedByName =
-                        memberName(
-                            profile = profiles[search.openedBy],
-                            memberId = search.openedBy,
-                            own = search.openedBy == ownMemberId,
-                            ownName = ownName,
-                        ),
-                        onFound = { actions.onEndSearch(ownMemberId) },
-                        modifier =
-                        Modifier
-                            .align(Alignment.TopCenter)
-                            .statusBarsPadding()
-                            .padding(top = 64.dp, start = 12.dp, end = 12.dp),
-                    )
+            // Told to the member over the map whenever one of their own
+            // phones is being looked for, and below the row of round buttons
+            // rather than on top of it: the two are read in different
+            // moments, and a banner covering the buttons would be in the way
+            // of the one thing this screen is for. A member carrying two
+            // phones may have both looked for at once, so this is a list
+            // rather than one banner.
+            val ownSearches =
+                remember(searches, now, ownMemberId) {
+                    standingSearches(searches, now).values.filter { it.memberId == ownMemberId }
+                }
+
+            if (ownSearches.isNotEmpty()) {
+                Column(
+                    verticalArrangement = Arrangement.spacedBy(8.dp),
+                    modifier =
+                    Modifier
+                        .align(Alignment.TopCenter)
+                        .statusBarsPadding()
+                        .padding(top = 64.dp, start = 12.dp, end = 12.dp),
+                ) {
+                    ownSearches.forEach { search ->
+                        SoughtBanner(
+                            search = search,
+                            phoneName =
+                            names[search.phoneId] ?: search.phoneName ?: shortName(search.phoneId),
+                            openedByName =
+                            memberName(
+                                profile = profiles[search.openedBy],
+                                memberId = search.openedBy,
+                                own = search.openedBy == ownMemberId,
+                                ownName = ownName,
+                            ),
+                            onFound = { actions.onEndSearch(search.phoneId) },
+                        )
+                    }
                 }
             }
 
@@ -584,7 +598,7 @@ fun MapScreen(
             }
 
             if (opened != null) {
-                val openedSearch = searches[opened.memberId]?.takeIf { opened.memberId in sought }
+                val openedSearch = searches[opened.positionId]?.takeIf { it.stands(now) }
 
                 MemberDetail(
                     member = opened,
@@ -603,7 +617,7 @@ fun MapScreen(
                         )
                     },
                     runsTheGroup = runsTheGroup,
-                    onFound = { actions.onEndSearch(opened.memberId) },
+                    onFound = { actions.onEndSearch(opened.positionId) },
                     detailsOpen = detailsOpen,
                     onToggleDetails = { detailsOpen = !detailsOpen },
                     onClose = { openedPositionId = null },
@@ -730,10 +744,10 @@ fun MapScreen(
             onCallSiren = actions.onCallSiren,
             onStopSiren = actions.onStopSiren,
             onForgetPhone = actions.onForgetPhone,
-            search = searches[ownMemberId]?.takeIf { it.stands(now) },
+            searches = searches,
             mayLookFor = runsTheGroup,
-            onSearch = { renew, hours -> actions.onSearch(ownMemberId, renew, hours) },
-            onEndSearch = { actions.onEndSearch(ownMemberId) },
+            onSearch = actions.onSearch,
+            onEndSearch = actions.onEndSearch,
             onClose = { myPhonesOpen = false },
         )
     }
@@ -1008,7 +1022,7 @@ private fun MemberButtons(
     /** The positions whose card is open, marked in the strip. */
     openCards: Set<String>,
     now: Instant,
-    /** The group's searches, so a member being looked for is marked in the strip too. */
+    /** The group's searches, so a phone being looked for is marked in the strip too. */
     searches: Map<String, Search>,
     showAll: Boolean,
     /** Whether ONE is waiting for a member to be chosen off this very strip. */
@@ -1072,7 +1086,7 @@ private fun MemberButtons(
                     shown = member.positionId in openCards,
                     ringAlpha = ringAlpha,
                     now = now,
-                    sought = searches[member.memberId]?.takeIf { it.stands(now) },
+                    sought = searches[member.positionId]?.takeIf { it.stands(now) },
                     onSelect = onSelect,
                     modifier = Modifier.weight(1f),
                 )
@@ -1096,7 +1110,7 @@ private fun MemberButtons(
                         name = names[member.positionId] ?: shortName(member.memberId),
                         face = faces[member.memberId],
                         now = now,
-                        sought = searches[member.memberId]?.takeIf { it.stands(now) },
+                        sought = searches[member.positionId]?.takeIf { it.stands(now) },
                         onSelect = onSelect,
                     )
                 }
@@ -1115,7 +1129,7 @@ private fun MemberButton(
     /** How bright the ring waiting for ONE's target is, or null while nobody is waiting. */
     ringAlpha: Float?,
     now: Instant,
-    /** The search standing for this member, or null while nobody is looking for them. */
+    /** The search standing for this phone, or null while nobody is looking for it. */
     sought: Search?,
     onSelect: (String) -> Unit,
     modifier: Modifier = Modifier,
@@ -1241,7 +1255,7 @@ private fun MemberRow(
     name: String,
     face: Bitmap?,
     now: Instant,
-    /** The search standing for this member, or null while nobody is looking for them. */
+    /** The search standing for this phone, or null while nobody is looking for it. */
     sought: Search?,
     onSelect: (String) -> Unit,
 ) {
@@ -1463,7 +1477,7 @@ private fun GroupDetail(
                         name = names[member.positionId] ?: shortName(member.memberId),
                         face = faces[member.memberId],
                         now = now,
-                        sought = searches[member.memberId]?.takeIf { it.stands(now) },
+                        sought = searches[member.positionId]?.takeIf { it.stands(now) },
                         onSelect = onSelect,
                     )
                 }
@@ -1486,7 +1500,7 @@ private fun MemberDetail(
     face: Bitmap?,
     now: Instant,
     away: Double?,
-    /** The search standing for this member, or null while nobody is looking for them. */
+    /** The search standing for this phone, or null while nobody is looking for it. */
     search: Search?,
     /** Who opened [search], said the way the card says who is looking at the map. */
     openedByName: String?,

@@ -1484,14 +1484,15 @@ describe('settings', () => {
 // is a quiet one — a `match` written one level further out, or carrying
 // `{document=**}`, hands every other collection in the project to whoever is
 // in the household, and every test above would still pass.
-// The group looking for a member: an administrator opens a search, and until
-// it is called off or runs out, everybody in the group sees where the member
-// is, whatever the member's own permissions say. Alice runs the group, Bob is
-// the member looked for, and Carol is in the group without a permission from
-// Bob.
+// The group looking for one phone of a member: an administrator opens a
+// search, and until it is called off or runs out, everybody in the group sees
+// where that phone is, whatever the member's own permissions say. Alice runs
+// the group, Bob's phone is looked for, and Carol is in the group without a
+// permission from Bob.
 describe('searches', () => {
     const CAROL = 'carol-uid';
-    const searchOf = (db, uid) => doc(db, `groups/${GROUP}/searches/${uid}`);
+    const BOBS_PHONE = `${BOB}.phone`;
+    const searchOf = (db, id) => doc(db, `groups/${GROUP}/searches/${id}`);
     const devicesOf = (db, uid) => doc(db, `groups/${GROUP}/devices/${uid}`);
     const hoursAgo = (hours) => new Date(Date.now() - hours * 60 * 60 * 1000);
 
@@ -1507,7 +1508,7 @@ describe('searches', () => {
     // A search as it stands in the database, opened some hours ago.
     const plantASearch = (hours, openedHoursAgo) =>
         testEnv.withSecurityRulesDisabled(async (context) => {
-            await setDoc(searchOf(context.firestore(), BOB), {
+            await setDoc(searchOf(context.firestore(), BOBS_PHONE), {
                 openedBy: ALICE,
                 startedAt: hoursAgo(openedHoursAgo),
                 renewedBy: ALICE,
@@ -1525,29 +1526,52 @@ describe('searches', () => {
         });
     });
 
+    // The search opens the one phone's position and nothing else of Bob's:
+    // not his other phones, whom he shares with, or what phones he has.
     const carolReadsBob = async (expect) => {
         const db = testEnv.authenticatedContext(CAROL).firestore();
 
         await expect(getDoc(positionOf(db, BOB)));
-        await expect(getDoc(grantOf(db, BOB)));
-        await expect(getDoc(devicesOf(db, BOB)));
+        await assertFails(getDoc(positionOf(db, BOB, 'tablet')));
+        await assertFails(getDoc(grantOf(db, BOB)));
+        await assertFails(getDoc(devicesOf(db, BOB)));
     };
 
     it('without a search a member without a permission reads nothing of the place', async () => {
         await carolReadsBob(assertFails);
     });
 
-    it('an administrator opens a search for a member', async () => {
+    it('an administrator opens a search for a phone', async () => {
         const db = testEnv.authenticatedContext(ALICE).firestore();
 
-        await assertSucceeds(setDoc(searchOf(db, BOB), openedBy(ALICE, 6)));
-        await assertSucceeds(setDoc(searchOf(db, BOB), openedBy(ALICE, 72)));
+        await assertSucceeds(setDoc(searchOf(db, BOBS_PHONE), openedBy(ALICE, 6)));
+        await assertSucceeds(setDoc(searchOf(db, BOBS_PHONE), openedBy(ALICE, 72)));
+    });
+
+    it('several phones are looked for at once, of one member or of several', async () => {
+        const db = testEnv.authenticatedContext(ALICE).firestore();
+
+        await assertSucceeds(setDoc(searchOf(db, BOBS_PHONE), openedBy(ALICE)));
+        await assertSucceeds(setDoc(searchOf(db, `${BOB}.tablet`), openedBy(ALICE)));
+        await assertSucceeds(setDoc(searchOf(db, `${CAROL}.phone`), openedBy(ALICE)));
+    });
+
+    it('a search carries the name of the phone, and a short one', async () => {
+        const db = testEnv.authenticatedContext(ALICE).firestore();
+
+        await assertSucceeds(
+            setDoc(searchOf(db, BOBS_PHONE), { ...openedBy(ALICE), phoneName: 'New phone' }),
+        );
+        await assertFails(
+            setDoc(searchOf(db, BOBS_PHONE), { ...openedBy(ALICE), phoneName: 'x'.repeat(101) }),
+        );
+        await assertFails(setDoc(searchOf(db, BOBS_PHONE), { ...openedBy(ALICE), phoneName: 7 }));
     });
 
     it('while the search stands everybody in the group reads the place', async () => {
         const db = testEnv.authenticatedContext(ALICE).firestore();
 
-        await setDoc(searchOf(db, BOB), openedBy(ALICE));
+        await setDoc(searchOf(db, BOBS_PHONE), openedBy(ALICE));
 
         await carolReadsBob(assertSucceeds);
     });
@@ -1558,9 +1582,9 @@ describe('searches', () => {
         const carol = testEnv.authenticatedContext(CAROL).firestore();
         const stranger = testEnv.authenticatedContext(STRANGER).firestore();
 
-        await assertSucceeds(getDoc(searchOf(carol, BOB)));
+        await assertSucceeds(getDoc(searchOf(carol, BOBS_PHONE)));
         await assertSucceeds(getDocs(collection(carol, `groups/${GROUP}/searches`)));
-        await assertFails(getDoc(searchOf(stranger, BOB)));
+        await assertFails(getDoc(searchOf(stranger, BOBS_PHONE)));
     });
 
     it('a search that has run out opens nothing', async () => {
@@ -1572,13 +1596,13 @@ describe('searches', () => {
     it('a member who does not run the group opens no search', async () => {
         const db = testEnv.authenticatedContext(CAROL).firestore();
 
-        await assertFails(setDoc(searchOf(db, BOB), openedBy(CAROL)));
+        await assertFails(setDoc(searchOf(db, BOBS_PHONE), openedBy(CAROL)));
     });
 
     it('nobody is searched for who is not in the group', async () => {
         const db = testEnv.authenticatedContext(ALICE).firestore();
 
-        await assertFails(setDoc(searchOf(db, STRANGER), openedBy(ALICE)));
+        await assertFails(setDoc(searchOf(db, `${STRANGER}.phone`), openedBy(ALICE)));
     });
 
     // A member taken off the roster is no longer the group's to look for,
@@ -1598,9 +1622,9 @@ describe('searches', () => {
     it('a search lasts three days at most and at least an hour', async () => {
         const db = testEnv.authenticatedContext(ALICE).firestore();
 
-        await assertFails(setDoc(searchOf(db, BOB), openedBy(ALICE, 73)));
-        await assertFails(setDoc(searchOf(db, BOB), openedBy(ALICE, 0)));
-        await assertFails(setDoc(searchOf(db, BOB), openedBy(ALICE, 1.5)));
+        await assertFails(setDoc(searchOf(db, BOBS_PHONE), openedBy(ALICE, 73)));
+        await assertFails(setDoc(searchOf(db, BOBS_PHONE), openedBy(ALICE, 0)));
+        await assertFails(setDoc(searchOf(db, BOBS_PHONE), openedBy(ALICE, 1.5)));
     });
 
     // The end is counted from the server's clock: a renewal dated by the
@@ -1609,19 +1633,21 @@ describe('searches', () => {
         const db = testEnv.authenticatedContext(ALICE).firestore();
 
         await assertFails(
-            setDoc(searchOf(db, BOB), { ...openedBy(ALICE), renewedAt: new Date('2100-01-01') }),
+            setDoc(searchOf(db, BOBS_PHONE), { ...openedBy(ALICE), renewedAt: new Date('2100-01-01') }),
         );
         await assertFails(
-            setDoc(searchOf(db, BOB), { ...openedBy(ALICE), startedAt: hoursAgo(1) }),
+            setDoc(searchOf(db, BOBS_PHONE), { ...openedBy(ALICE), startedAt: hoursAgo(1) }),
         );
     });
 
     it('a search names the administrator who writes it and nothing else', async () => {
         const db = testEnv.authenticatedContext(ALICE).firestore();
 
-        await assertFails(setDoc(searchOf(db, BOB), { ...openedBy(ALICE), openedBy: CAROL }));
-        await assertFails(setDoc(searchOf(db, BOB), { ...openedBy(ALICE), renewedBy: CAROL }));
-        await assertFails(setDoc(searchOf(db, BOB), { ...openedBy(ALICE), note: 'extra' }));
+        const search = searchOf(db, BOBS_PHONE);
+
+        await assertFails(setDoc(search, { ...openedBy(ALICE), openedBy: CAROL }));
+        await assertFails(setDoc(search, { ...openedBy(ALICE), renewedBy: CAROL }));
+        await assertFails(setDoc(search, { ...openedBy(ALICE), note: 'extra' }));
     });
 
     it('a renewal keeps who opened the search and when', async () => {
@@ -1630,21 +1656,21 @@ describe('searches', () => {
         const db = testEnv.authenticatedContext(ALICE).firestore();
 
         await assertSucceeds(
-            updateDoc(searchOf(db, BOB), {
+            updateDoc(searchOf(db, BOBS_PHONE), {
                 renewedBy: ALICE,
                 renewedAt: serverTimestamp(),
                 hours: 24,
             }),
         );
         await assertFails(
-            updateDoc(searchOf(db, BOB), {
+            updateDoc(searchOf(db, BOBS_PHONE), {
                 startedAt: hoursAgo(100),
                 renewedBy: ALICE,
                 renewedAt: serverTimestamp(),
             }),
         );
         await assertFails(
-            updateDoc(searchOf(db, BOB), {
+            updateDoc(searchOf(db, BOBS_PHONE), {
                 openedBy: BOB,
                 renewedBy: ALICE,
                 renewedAt: serverTimestamp(),
@@ -1658,7 +1684,7 @@ describe('searches', () => {
 
         const db = testEnv.authenticatedContext(ALICE).firestore();
 
-        await updateDoc(searchOf(db, BOB), {
+        await updateDoc(searchOf(db, BOBS_PHONE), {
             renewedBy: ALICE,
             renewedAt: serverTimestamp(),
             hours: 24,
@@ -1673,7 +1699,7 @@ describe('searches', () => {
         const db = testEnv.authenticatedContext(CAROL).firestore();
 
         await assertFails(
-            updateDoc(searchOf(db, BOB), {
+            updateDoc(searchOf(db, BOBS_PHONE), {
                 renewedBy: CAROL,
                 renewedAt: serverTimestamp(),
                 hours: 24,
@@ -1687,27 +1713,27 @@ describe('searches', () => {
 
         const db = testEnv.authenticatedContext(ALICE).firestore();
 
-        await assertSucceeds(deleteDoc(searchOf(db, BOB)));
+        await assertSucceeds(deleteDoc(searchOf(db, BOBS_PHONE)));
         await carolReadsBob(assertFails);
     });
 
-    it('the member looked for calls it off; another member does not', async () => {
+    it('the member whose phone it is calls it off; another member does not', async () => {
         await plantASearch(24, 1);
 
         const carol = testEnv.authenticatedContext(CAROL).firestore();
         const bob = testEnv.authenticatedContext(BOB).firestore();
 
-        await assertFails(deleteDoc(searchOf(carol, BOB)));
-        await assertSucceeds(deleteDoc(searchOf(bob, BOB)));
+        await assertFails(deleteDoc(searchOf(carol, BOBS_PHONE)));
+        await assertSucceeds(deleteDoc(searchOf(bob, BOBS_PHONE)));
     });
 
-    it('the member looked for does not renew it', async () => {
+    it('the member whose phone it is does not renew it', async () => {
         await plantASearch(6, 5);
 
         const db = testEnv.authenticatedContext(BOB).firestore();
 
         await assertFails(
-            updateDoc(searchOf(db, BOB), {
+            updateDoc(searchOf(db, BOBS_PHONE), {
                 renewedBy: BOB,
                 renewedAt: serverTimestamp(),
                 hours: 72,

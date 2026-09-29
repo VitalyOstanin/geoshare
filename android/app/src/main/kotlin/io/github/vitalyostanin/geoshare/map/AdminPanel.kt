@@ -84,15 +84,15 @@ fun AdminPanel(
     invitation: String?,
     /** Whether the last write to the group was refused. */
     trouble: Boolean,
-    /** The group's searches, by the member each is looking for. */
+    /** The group's searches, by the phone each is looking for. */
     searches: Map<String, Search>,
     onMakeInvitation: () -> Unit,
     onRemoveMember: (String) -> Unit,
     onSetRunning: (String, Boolean) -> Unit,
-    /** Opens a search for a member, or renews one already standing; answers whether it stuck. */
-    onSearch: suspend (memberId: String, renew: Boolean, hours: Int) -> Boolean,
-    /** Ends a search: the member has been found. */
-    onEndSearch: suspend (memberId: String) -> Unit,
+    /** Opens a search for one phone, or renews one already standing; answers whether it stuck. */
+    onSearch: suspend (phoneId: String, phoneName: String?, renew: Boolean, hours: Int) -> Boolean,
+    /** Ends a search: the phone has been found. */
+    onEndSearch: suspend (phoneId: String) -> Unit,
     /** This phone's own `{uid}.{deviceId}`: the one phone nobody here rings. */
     ownPhoneId: String?,
     /** A phone's siren as the database has it, followed for as long as asked. */
@@ -109,10 +109,10 @@ fun AdminPanel(
     var helpOpen by remember { mutableStateOf(false) }
     // The member about to be removed and the name the dialog calls them by.
     var removing by remember { mutableStateOf<Pair<String, String>?>(null) }
-    // Who is being asked about, in which of the two ways, and the length
-    // picked so far -- held apart from whether the write is refused, so a
-    // refusal on one member's search does not linger once a different one is
-    // opened.
+    // Which phone is being asked about, in which of the two ways, and the
+    // length picked so far -- held apart from whether the write is refused,
+    // so a refusal on one phone's search does not linger once a different one
+    // is opened.
     var searchAsk by remember { mutableStateOf<SearchAsk?>(null) }
     var searchHours by remember { mutableStateOf(DEFAULT_SEARCH_HOURS) }
     var searchTrouble by remember { mutableStateOf(false) }
@@ -154,8 +154,8 @@ fun AdminPanel(
         }
     }
 
-    fun askSearch(memberId: String, name: String, renew: Boolean) {
-        searchAsk = SearchAsk(memberId, name, renew)
+    fun askSearch(phone: PhoneLine, memberName: String, renew: Boolean) {
+        searchAsk = SearchAsk(phone, memberName, renew)
         searchHours = DEFAULT_SEARCH_HOURS
         searchTrouble = false
     }
@@ -165,7 +165,7 @@ fun AdminPanel(
 
         searchBusy = true
         scope.launch {
-            val allowed = onSearch(ask.memberId, ask.renew, searchHours)
+            val allowed = onSearch(ask.phone.phoneId, ask.phone.name, ask.renew, searchHours)
 
             searchBusy = false
 
@@ -211,7 +211,8 @@ fun AdminPanel(
                 AdminMemberRow(
                     line = line,
                     now = now,
-                    search = standing[line.memberId],
+                    searches = standing,
+                    ownPhoneId = ownPhoneId,
                     onMakeAdmin = { onSetRunning(line.memberId, true) },
                     onStopRunning = {
                         if (line.isYou) givingUp = true else onSetRunning(line.memberId, false)
@@ -221,38 +222,39 @@ fun AdminPanel(
                             line.memberId to
                             (line.displayName ?: line.memberId.take(NAME_SHOWN_INSTEAD))
                     },
-                    onSearch = {
+                    onSearch = { phone ->
                         askSearch(
-                            line.memberId,
+                            phone,
                             line.displayName ?: line.memberId.take(NAME_SHOWN_INSTEAD),
                             renew = false,
                         )
                     },
-                    onEndSearch = { scope.launch { onEndSearch(line.memberId) } },
-                    sirenPhones = line.phones.filter { it.phoneId != ownPhoneId },
+                    onEndSearch = { phoneId -> scope.launch { onEndSearch(phoneId) } },
                     siren = siren?.takeIf { it.memberId == line.memberId },
                     sirenNow = sirenNow,
-                    onSiren = { phones ->
+                    onSiren = { phone ->
                         sirenTrouble = false
                         sirenAsk =
                             SirenAsk(
                                 name = line.displayName ?: line.memberId.take(NAME_SHOWN_INSTEAD),
-                                phones = phones,
-                                // The phone last in touch is the likeliest to hear it.
-                                selected = phones.maxBy { it.onlineAt ?: Instant.MIN }.phoneId,
+                                phones = listOf(phone),
+                                selected = phone.phoneId,
                             )
                     },
                     onStopSiren = { phoneId -> scope.launch { onStopSiren(phoneId) } },
                 )
             }
 
-            // Every search standing now, under the rows rather than in them: a
-            // search is the group's own state, not a detail of one member's
-            // line.
+            // Every search standing now, under the rows rather than in them,
+            // with the one thing the phone's own row does not offer: renewing
+            // it without ending it first.
             for (search in standing.values) {
+                val phone = phoneLine(search, lines)
+
                 AdminSearchSummary(
                     search = search,
-                    name =
+                    phoneName = phone.name,
+                    memberName =
                     lines.firstOrNull { it.memberId == search.memberId }?.displayName
                         ?: search.memberId.take(NAME_SHOWN_INSTEAD),
                     openedByYou = search.openedBy == ownMemberId,
@@ -261,13 +263,13 @@ fun AdminPanel(
                         ?: search.openedBy.take(NAME_SHOWN_INSTEAD),
                     onRenew = {
                         askSearch(
-                            search.memberId,
+                            phone,
                             lines.firstOrNull { it.memberId == search.memberId }?.displayName
                                 ?: search.memberId.take(NAME_SHOWN_INSTEAD),
                             renew = true,
                         )
                     },
-                    onEndSearch = { scope.launch { onEndSearch(search.memberId) } },
+                    onEndSearch = { scope.launch { onEndSearch(search.phoneId) } },
                 )
             }
 
@@ -376,7 +378,8 @@ fun AdminPanel(
 
     searchAsk?.let { ask ->
         SearchDialog(
-            memberName = ask.name,
+            memberName = ask.memberName,
+            phoneName = ask.phone.name,
             renew = ask.renew,
             hours = searchHours,
             onHoursChange = { searchHours = it },
@@ -417,8 +420,8 @@ internal fun sirenText(siren: Siren, state: SirenState, phones: List<PhoneLine>)
     }
 }
 
-/** Who is being asked about, in which of the two ways a search is opened. */
-private data class SearchAsk(val memberId: String, val name: String, val renew: Boolean)
+/** Which phone is being asked about, whose member it is, and in which of the two ways. */
+private data class SearchAsk(val phone: PhoneLine, val memberName: String, val renew: Boolean)
 
 /** Whose phone is about to be rung, and which of their phones is picked. */
 private data class SirenAsk(val name: String, val phones: List<PhoneLine>, val selected: String)
@@ -427,129 +430,85 @@ private data class SirenAsk(val name: String, val phones: List<PhoneLine>, val s
 private const val SIREN_TICK_MS = 1_000L
 
 /**
- * One member, with what the household knows about them from here.
- *
- * The phones are counted rather than named: their identities mean nothing to
- * anybody reading, and what the person running the group is asking is whether
- * the member has a phone in this at all.
+ * The phone a standing search is about, out of what this screen already knows
+ * of the member's phones — or, failing that, out of the search document
+ * itself, for a phone whose own status has not reached this screen.
+ */
+private fun phoneLine(search: Search, lines: List<GroupLine>): PhoneLine = lines
+    .firstOrNull { it.memberId == search.memberId }
+    ?.phones
+    ?.firstOrNull { it.phoneId == search.phoneId }
+    ?: PhoneLine(
+        phoneId = search.phoneId,
+        name = search.phoneName ?: search.phoneId.substringAfter('.').take(NAME_SHOWN_INSTEAD),
+        onlineAt = null,
+        batteryPercent = null,
+        charging = false,
+    )
+
+/**
+ * One member, with what the household knows about them from here, each of
+ * their phones its own line and its own pair of round buttons.
  */
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
 private fun AdminMemberRow(
     line: GroupLine,
     now: Instant,
-    /** The search standing for this member, or null while nobody is looking for them. */
-    search: Search?,
+    /** The group's searches, by the phone each stands for. */
+    searches: Map<String, Search>,
+    /** This phone's own `{uid}.{deviceId}`: the one phone nobody here rings. */
+    ownPhoneId: String?,
     onMakeAdmin: () -> Unit,
     onStopRunning: () -> Unit,
     onRemove: () -> Unit,
-    onSearch: () -> Unit,
-    onEndSearch: () -> Unit,
-    /** The member's phones that may be rung from here: all but this one. */
-    sirenPhones: List<PhoneLine>,
+    onSearch: (PhoneLine) -> Unit,
+    onEndSearch: (phoneId: String) -> Unit,
     /** The call this screen last made, when it was to one of this member's phones. */
     siren: Siren?,
     sirenNow: Instant,
-    onSiren: (List<PhoneLine>) -> Unit,
+    onSiren: (PhoneLine) -> Unit,
     onStopSiren: (phoneId: String) -> Unit,
 ) {
     Column(modifier = Modifier.fillMaxWidth().padding(start = 16.dp, end = 8.dp, top = 8.dp)) {
-        Column {
-            Text(
-                text = line.displayName ?: line.memberId.take(NAME_SHOWN_INSTEAD),
-                style = MaterialTheme.typography.bodyLarge,
+        Text(
+            text = line.displayName ?: line.memberId.take(NAME_SHOWN_INSTEAD),
+            style = MaterialTheme.typography.bodyLarge,
+        )
+
+        Text(
+            text = aboutThem(line),
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+
+        // Each phone is its own row: whether it is in touch is the question
+        // the panel is opened with, and the two round buttons that reach into
+        // it — the siren and the search — belong to that one phone and no
+        // other.
+        for (phone in line.phones) {
+            AdminPhoneRow(
+                phone = phone,
+                now = now,
+                search = searches[phone.phoneId],
+                // A phone does not ring itself, the same rule as elsewhere in
+                // the application. Anybody but oneself may be looked for,
+                // administrators included: the one who is lost is not always
+                // the one who does not run the group.
+                mayRing = phone.phoneId != ownPhoneId,
+                mayLookFor = !line.isYou,
+                siren = siren?.takeIf { it.phoneId == phone.phoneId },
+                sirenNow = sirenNow,
+                onSearch = { onSearch(phone) },
+                onEndSearch = { onEndSearch(phone.phoneId) },
+                onSiren = { onSiren(phone) },
+                onStopSiren = { onStopSiren(phone.phoneId) },
             )
-
-            Text(
-                text = aboutThem(line),
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
-
-            // One line per phone: whether it is in touch is the question the
-            // panel is opened with, and a marker stuck in one place does not
-            // answer it.
-            for (phone in line.phones) {
-                Text(
-                    text = phoneText(phone, now),
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-            }
-
-            if (search != null) {
-                Text(
-                    text =
-                    stringResource(
-                        R.string.sought_until,
-                        SEARCH_ENDS_AT.format(search.endsAt.atZone(ZoneId.systemDefault())),
-                    ),
-                    style = MaterialTheme.typography.bodySmall,
-                    color = Color(SOUGHT_COLOUR),
-                )
-            }
-
-            val sirenState = siren?.let { sirenState(it, sirenNow) }
-
-            if (siren != null && sirenState != null) {
-                sirenText(siren, sirenState, line.phones)?.let {
-                    Text(
-                        text = it,
-                        style = MaterialTheme.typography.bodySmall,
-                        fontWeight = FontWeight.SemiBold,
-                        color = Color(SOUGHT_COLOUR),
-                    )
-                }
-            }
         }
 
-        // Under the name rather than beside it, so that "Remove from the
+        // Under the phones rather than beside them, so that "Remove from the
         // group" fits whole on a phone.
         FlowRow(verticalArrangement = Arrangement.Center) {
-            val sirenState = siren?.let { sirenState(it, sirenNow) }
-            val sounding = sirenState is SirenState.Waiting || sirenState is SirenState.Sounding
-
-            if (siren != null && sounding) {
-                Button(
-                    onClick = { onStopSiren(siren.phoneId) },
-                    colors =
-                    ButtonDefaults.buttonColors(
-                        containerColor = Color(SOUGHT_COLOUR),
-                        contentColor = Color.White,
-                    ),
-                ) {
-                    Icon(
-                        painter = painterResource(R.drawable.ic_siren_off),
-                        contentDescription = null,
-                        modifier = Modifier.padding(end = 4.dp),
-                    )
-                    Text(text = stringResource(R.string.siren_stop_short))
-                }
-            } else if (sirenPhones.isNotEmpty()) {
-                // Round and red, as on the page: the one button in the row
-                // that makes a phone somewhere loud.
-                OutlinedIconButton(
-                    onClick = { onSiren(sirenPhones) },
-                    border = BorderStroke(1.dp, Color(SOUGHT_COLOUR)),
-                ) {
-                    Icon(
-                        painter = painterResource(R.drawable.ic_siren),
-                        contentDescription = stringResource(R.string.siren_hint),
-                        tint = Color(SOUGHT_COLOUR),
-                    )
-                }
-            }
-
-            // Anybody but oneself may be looked for, administrators included:
-            // the one who is lost is not always the one who does not run the
-            // group.
-            if (!line.isYou) {
-                SearchButton(
-                    standing = search != null,
-                    onClick = if (search != null) onEndSearch else onSearch,
-                )
-            }
-
             if (line.mayBeMadeAdmin) {
                 TextButton(onClick = onMakeAdmin) {
                     Text(text = stringResource(R.string.group_make_admin))
@@ -571,6 +530,109 @@ private fun AdminMemberRow(
     }
 }
 
+/**
+ * One phone of a member: what it says about itself on the left, and the round
+ * buttons that reach into it on the right, in one line — ringing it, or
+ * opening a search that puts its place, and only its place, in front of the
+ * whole group.
+ */
+@Composable
+private fun AdminPhoneRow(
+    phone: PhoneLine,
+    now: Instant,
+    /** The search standing for this phone, or null while nobody is looking for it. */
+    search: Search?,
+    mayRing: Boolean,
+    mayLookFor: Boolean,
+    siren: Siren?,
+    sirenNow: Instant,
+    onSearch: () -> Unit,
+    onEndSearch: () -> Unit,
+    onSiren: () -> Unit,
+    onStopSiren: () -> Unit,
+) {
+    Row(
+        modifier = Modifier.fillMaxWidth().padding(top = 4.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Column(modifier = Modifier.weight(1f)) {
+            Text(
+                text = phoneText(phone, now),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+
+            if (search != null) {
+                Text(
+                    text =
+                    stringResource(
+                        R.string.sought_until,
+                        SEARCH_ENDS_AT.format(search.endsAt.atZone(ZoneId.systemDefault())),
+                    ),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = Color(SOUGHT_COLOUR),
+                )
+            }
+
+            val sirenState = siren?.let { sirenState(it, sirenNow) }
+
+            if (siren != null && sirenState != null) {
+                sirenText(siren, sirenState, listOf(phone))?.let {
+                    Text(
+                        text = it,
+                        style = MaterialTheme.typography.bodySmall,
+                        fontWeight = FontWeight.SemiBold,
+                        color = Color(SOUGHT_COLOUR),
+                    )
+                }
+            }
+        }
+
+        Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+            val sirenState = siren?.let { sirenState(it, sirenNow) }
+            val sounding = sirenState is SirenState.Waiting || sirenState is SirenState.Sounding
+
+            if (siren != null && sounding) {
+                Button(
+                    onClick = onStopSiren,
+                    colors =
+                    ButtonDefaults.buttonColors(
+                        containerColor = Color(SOUGHT_COLOUR),
+                        contentColor = Color.White,
+                    ),
+                ) {
+                    Icon(
+                        painter = painterResource(R.drawable.ic_siren_off),
+                        contentDescription = null,
+                        modifier = Modifier.padding(end = 4.dp),
+                    )
+                    Text(text = stringResource(R.string.siren_stop_short))
+                }
+            } else if (mayRing) {
+                // Round and red, as on the page: the one button in the row
+                // that makes this phone sound loud.
+                OutlinedIconButton(
+                    onClick = onSiren,
+                    border = BorderStroke(1.dp, Color(SOUGHT_COLOUR)),
+                ) {
+                    Icon(
+                        painter = painterResource(R.drawable.ic_siren),
+                        contentDescription = stringResource(R.string.siren_hint),
+                        tint = Color(SOUGHT_COLOUR),
+                    )
+                }
+            }
+
+            if (mayLookFor) {
+                SearchButton(
+                    standing = search != null,
+                    onClick = if (search != null) onEndSearch else onSearch,
+                )
+            }
+        }
+    }
+}
+
 /** When a search ends: the day as well as the time, the same reading a permission's end has. */
 private val SEARCH_ENDS_AT: DateTimeFormatter = DateTimeFormatter.ofPattern("d MMM HH:mm")
 
@@ -581,7 +643,8 @@ private val SEARCH_ENDS_AT: DateTimeFormatter = DateTimeFormatter.ofPattern("d M
 @Composable
 private fun AdminSearchSummary(
     search: Search,
-    name: String,
+    phoneName: String,
+    memberName: String,
     openedByYou: Boolean,
     openedByName: String,
     onRenew: () -> Unit,
@@ -597,7 +660,8 @@ private fun AdminSearchSummary(
             text =
             stringResource(
                 R.string.search_summary,
-                name,
+                phoneName,
+                memberName,
                 SEARCH_ENDS_AT.format(search.endsAt.atZone(ZoneId.systemDefault())),
             ),
             style = MaterialTheme.typography.bodyMedium,

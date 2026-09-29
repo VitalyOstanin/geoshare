@@ -27,15 +27,19 @@ import java.time.format.DateTimeFormatter
 private val SOUGHT_ENDS_AT: DateTimeFormatter = DateTimeFormatter.ofPattern("d MMM HH:mm")
 
 /**
- * Told to the member being looked for, over the map: their place is open to
- * the whole group until the search ends, and they may end it themselves.
+ * Told to the member whose phone is being looked for, over the map: its place
+ * is open to the whole group until the search ends, and they may end it
+ * themselves.
  *
- * Drawn only while their own search stands, and nowhere else: this is a fact
- * about being looked for, not a setting to be found again once it is over.
+ * Drawn once for every one of the viewer's own phones a search stands for,
+ * and nowhere else: a member carrying two phones may have both looked for at
+ * once, and each is a fact of its own about being found.
  */
 @Composable
 fun SoughtBanner(
     search: Search,
+    /** The phone this search stands for, named however the viewer knows it. */
+    phoneName: String,
     openedByName: String,
     onFound: suspend () -> Unit,
     modifier: Modifier = Modifier,
@@ -52,6 +56,7 @@ fun SoughtBanner(
                 text =
                 stringResource(
                     R.string.sought_banner,
+                    phoneName,
                     SOUGHT_ENDS_AT.format(search.endsAt.atZone(ZoneId.systemDefault())),
                 ),
                 style = MaterialTheme.typography.bodyMedium,

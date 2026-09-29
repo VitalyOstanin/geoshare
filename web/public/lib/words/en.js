@@ -293,8 +293,8 @@ export const EN = {
     helpTitleScreen: 'Buttons on this screen',
     helpTitleMap: 'Buttons on the map',
     helpSiren: 'Siren for 22 seconds: the device sounds loud, even with its sound off, so that it can be found',
-    helpSearch: 'Open a search: the whole group sees the member on the map, even those they never shared it with',
-    helpSearchStanding: 'A search is on. Press it once the member is found',
+    helpSearch: 'Open a search for the device: the whole group sees it on the map, even those it was never shared with',
+    helpSearchStanding: 'A search for the device is on. Press it once it is found',
     helpRemove: 'Remove the device: it disappears from the map and the lists of everybody',
     helpFollowNone: 'The map stays where it is',
     helpFollowOne: 'The map keeps the chosen member in the middle',
@@ -359,25 +359,29 @@ export const EN = {
     phoneOnline: (age) => `In touch ${age}`,
     phoneSilent: 'Not in touch yet',
 
-    // The group looking for a member: an administrator opens a search, and
-    // while it stands everybody in the group sees where the member is.
+    // The group looking for a phone: an administrator opens a search on it,
+    // and while it stands everybody in the group sees where that phone is.
     searchMark: 'Searching',
     searchStart: 'Search',
     searchFound: 'Found',
     searchRenew: 'Extend',
-    searchOpenTitle: (name) => `Show the whole group where ${name} is?`,
-    searchRenewTitle: (name) => `Extend the search for ${name}?`,
-    searchNote: 'Everybody in the group will see this member on the map, even those they do '
-        + 'not share with. Their devices will say who opened the search and until when.',
+    searchOpenTitle: (phoneName, memberName) =>
+        `Show the whole group where the device "${phoneName}" (${memberName}) is?`,
+    searchRenewTitle: (phoneName, memberName) =>
+        `Extend the search for the device "${phoneName}" (${memberName})?`,
+    searchNote: 'Everybody in the group will see this device on the map, even those it is not '
+        + 'shared with. It will say who opened the search and until when.',
     searchHours: (hours) => ({ 6: '6 hours', 24: 'A day', 72: '3 days' })[hours] ?? `${hours} h`,
     searchUntil: (until) => `Until ${until}. "Found" ends it sooner.`,
     searchGo: 'Open',
     searchCancel: 'Cancel',
     soughtUntil: (until) => `searching until ${until}`,
-    searchSummary: (name, until) => `Searching for ${name} until ${until}`,
+    searchSummary: (phoneName, memberName, until) =>
+        `${memberName}: device "${phoneName}", searching until ${until}`,
     searchOpenedBy: (name) => `Opened by ${name}.`,
     searchOpenedByYou: 'Opened by you.',
-    soughtBanner: (until) => `The whole group sees where you are until ${until}`,
-    soughtBannerNote: (name) => `Opened by ${name}. If you are all right, end the search.`,
+    soughtBanner: (phoneNames, until) =>
+        `Everybody in the group sees where you are (${phoneNames}) until ${until}`,
+    soughtBannerNote: (names) => `Opened by ${names}. If you are all right, end the search.`,
     soughtFound: "I'm found",
 };

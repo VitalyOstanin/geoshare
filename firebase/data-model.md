@@ -10,7 +10,7 @@ groups/{groupId}/invitations/{code}         a code that lets one more person in
 groups/{groupId}/joins/{uid}                the code somebody is holding, while they join
 groups/{groupId}/falsePlaces/{placeId}      where a false signal is known to put phones
 groups/{groupId}/settings/{key}             what the group has settled about judging answers
-groups/{groupId}/searches/{uid}             the group looking for a member, which opens their place to all of it
+groups/{groupId}/searches/{uid}.{deviceId}  the group looking for a phone, which opens its place to all of it
 groups/{groupId}/sirens/{uid}.{deviceId}    a phone told to sound loud for a while, so it can be found
 groups/{groupId}/members/{uid}              what a member says about themselves
 groups/{groupId}/grants/{uid}               who may watch a member (and, for older builds, their phones)
@@ -190,7 +190,7 @@ right kind; what the numbers mean together is weighed on the phone, and a
 document that does not stand as limits is ignored whole rather than applied in
 part.
 
-## searches/{uid}
+## searches/{uid}.{deviceId}
 
 | Field       | Type      | Meaning                                                        |
 |-------------|-----------|-----------------------------------------------------------------|
@@ -199,21 +199,28 @@ part.
 | `renewedBy` | string    | The administrator who last wrote it, the opener included         |
 | `renewedAt` | timestamp | When it was last written; set by the server itself               |
 | `hours`     | int       | How long it lasts from `renewedAt`; 1 to 72                      |
+| `phoneName` | string    | The phone's name as the administrator saw it; optional, ≤ 100    |
 
-The group is looking for this member. While the search stands — from
-`renewedAt` for `hours` by the server's clock — everybody in the group reads
-the member's position, grant and phones, whatever the grant's `sharedWith`
-says. The rules that open those documents read the search here, so calling it
-off closes them at once rather than when the phone next writes, for the same
-reason the permissions are read from the grant.
+The group is looking for this phone of the member. The id is the account and
+the phone joined by a dot, the same as the phone's position, so several phones
+may be looked for at once, of one member or of several. While the search
+stands — from `renewedAt` for `hours` by the server's clock — everybody in the
+group reads that phone's position, whatever the grant's `sharedWith` says; the
+member's other phones, their grant and their list of phones stay as they were.
+The rule that opens the position reads the search here, so calling it off
+closes it at once rather than when the phone next writes, for the same reason
+the permissions are read from the grant.
 
-Everybody in the group reads the collection: every map marks the member looked
+Since the list of phones stays closed, the search carries the phone's name for
+whoever has nothing else to call it by.
+
+Everybody in the group reads the collection: every map marks the phone looked
 for, and a search names nobody's place. Only an administrator opens one, renews
 it, or opens it again once it has run out; a renewal keeps `openedBy` and
-`startedAt`, so the family sees how long the member has been looked for. Any
+`startedAt`, so the family sees how long the phone has been looked for. Any
 administrator calls it off by deleting the document, and so does the member
-looked for: they are found the moment they say so. A member who leaves the
-roster is no longer searched for, whatever the document says.
+whose phone it is: they are found the moment they say so. A member who leaves
+the roster is no longer searched for, whatever the document says.
 
 Three days at most, because a search forgotten on an administrator's screen
 would otherwise leave the member's place open to the whole group for good. The

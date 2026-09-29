@@ -156,8 +156,8 @@ fun MemberMap(
     faces: Map<String, Bitmap>,
     ownMemberId: String,
     now: Instant,
-    /** The members the group is looking for right now, by their account id. */
-    soughtMembers: Set<String> = emptySet(),
+    /** The phones the group is looking for right now, by their `{uid}.{deviceId}`. */
+    soughtPhones: Set<String> = emptySet(),
     /** Whether the screen around the map is dark, which the tiles follow. */
     dark: Boolean,
     /** What is written above a pin that stands for several members at once. */
@@ -247,7 +247,7 @@ fun MemberMap(
 
     AndroidView(factory = { holder.view }, modifier = modifier) { _ ->
         holder.show(
-            positions, names, faces, ownMemberId, now, soughtMembers, dark, selected, followMode,
+            positions, names, faces, ownMemberId, now, soughtPhones, dark, selected, followMode,
             followTarget,
         )
         holder.lookAt(focus)
@@ -321,8 +321,8 @@ private class MapHolder(val view: MapView) {
     private var ownMemberId: String = ""
     private var now: Instant = Instant.EPOCH
 
-    /** The members the group is looking for right now, by their account id. */
-    private var soughtMembers: Set<String> = emptySet()
+    /** The phones the group is looking for right now, by their `{uid}.{deviceId}`. */
+    private var soughtPhones: Set<String> = emptySet()
 
     /** The word a sought member's pin carries, read once from the resources. */
     var soughtMark: String = ""
@@ -468,7 +468,7 @@ private class MapHolder(val view: MapView) {
         faces: Map<String, Bitmap>,
         ownMemberId: String,
         now: Instant,
-        soughtMembers: Set<String>,
+        soughtPhones: Set<String>,
         dark: Boolean,
         selected: String?,
         followMode: FollowMode,
@@ -479,7 +479,7 @@ private class MapHolder(val view: MapView) {
         this.faces = faces
         this.ownMemberId = ownMemberId
         this.now = now
-        this.soughtMembers = soughtMembers
+        this.soughtPhones = soughtPhones
         this.selected = selected
 
         // A press on the follow button is somebody asking the camera to move
@@ -774,10 +774,11 @@ private class MapHolder(val view: MapView) {
 
     private fun drawing(group: List<MemberPosition>): Bitmap {
         val single = group.singleOrNull()
-        // A marker holding somebody looked for is ringed whoever else stands
+        // A marker holding a phone looked for is ringed whoever else stands
         // under it: the ring is what the rest of the group is scanning the
-        // map for, not a fact about one member of a crowded pin.
-        val sought = group.any { it.memberId in soughtMembers }.let { if (it) soughtMark else null }
+        // map for, not a fact about one phone of a crowded pin.
+        val sought =
+            group.any { it.positionId in soughtPhones }.let { if (it) soughtMark else null }
 
         if (single != null) {
             return markerIcon(
@@ -823,12 +824,12 @@ private class MapHolder(val view: MapView) {
      */
     private fun iconName(group: List<MemberPosition>): String = group.joinToString(
         separator = MEMBERS_SEPARATOR,
-        // Whether anybody under this marker is being looked for changes the
+        // Whether any phone under this marker is being looked for changes the
         // whole drawing -- the ring and the word above it -- so it goes in
         // the prefix rather than beside one member's own id.
         prefix =
         (if (group.size == 1) "member:" else "group:") +
-            "${group.any { it.memberId in soughtMembers }}:",
+            "${group.any { it.positionId in soughtPhones }}:",
     ) { position ->
         val face = faces[position.memberId] != null
 

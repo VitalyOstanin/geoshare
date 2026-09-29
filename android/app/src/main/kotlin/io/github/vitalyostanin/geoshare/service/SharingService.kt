@@ -523,18 +523,18 @@ class SharingService : LifecycleService() {
         }
 
         if (intent?.action == ACTION_FOUND) {
-            AppLog.i(TAG, "the member says they have been found")
+            AppLog.i(TAG, "this phone says it has been found")
 
-            val memberId = FirebaseAuth.getInstance().currentUser?.uid
+            val phoneId = ownPhoneId
 
-            // Not a reason to stop sharing: only the search is over, and the
-            // service goes on exactly as it was. The notification comes down
-            // on its own, once [keepSearchNotification] hears the document is
-            // gone.
-            if (memberId != null) {
+            // Not a reason to stop sharing: only the search on this phone is
+            // over, and the service goes on exactly as it was. The
+            // notification comes down on its own, once [keepSearchNotification]
+            // hears the document is gone.
+            if (phoneId != null) {
                 lifecycleScope.launch {
                     try {
-                        endSearch(memberId)
+                        endSearch(phoneId)
                     } catch (cancellation: CancellationException) {
                         throw cancellation
                     } catch (refusal: Exception) {
@@ -884,9 +884,11 @@ class SharingService : LifecycleService() {
 
         collection =
             lifecycleScope.launch {
+                val ownDevice = positionId(memberId, device.id)
+
                 launch { keepTellingHowThePhoneIs() }
-                launch { keepSearchNotification(memberId) }
-                launch { answerSirens(memberId, positionId(memberId, device.id)) }
+                launch { keepSearchNotification(ownDevice) }
+                launch { answerSirens(memberId, ownDevice) }
 
                 modes(memberId, device).collectLatest { mode ->
                     AppLog.i(TAG, "collecting in mode $mode")
@@ -957,7 +959,7 @@ class SharingService : LifecycleService() {
         // go on counting until the claims themselves happened to change.
         val search =
             channelFlow {
-                ownSearch(memberId).collectLatest { found ->
+                ownSearch(positionId(memberId, device.id)).collectLatest { found ->
                     send(found)
 
                     if (found != null && found.stands(Instant.now())) {
@@ -969,7 +971,7 @@ class SharingService : LifecycleService() {
 
         // Who is looking is the screen's business; the service needs only the
         // moments the claims of those allowed to see this phone run out. While
-        // the group is looking for this phone's own member every claim counts,
+        // the group is looking for this very phone every claim counts,
         // whatever the grant says: the rules already answer every viewer, and
         // a phone still gating them by who it shares with would be fast for
         // fewer of the group than can actually see it.
@@ -993,9 +995,8 @@ class SharingService : LifecycleService() {
     }
 
     /**
-     * Shows the notification that says this phone's own member is being
-     * looked for, for as long as the search stands, and takes it down once it
-     * does not.
+     * Shows the notification that says this very phone is being looked for,
+     * for as long as the search stands, and takes it down once it does not.
      *
      * A search ending is nothing arriving from the database: nothing deletes
      * the document at that moment, and this is what would otherwise leave the
@@ -1003,8 +1004,8 @@ class SharingService : LifecycleService() {
      * Shown again once a minute while it stands, in case the process is killed
      * and restarted with the notification's own state lost with it.
      */
-    private suspend fun keepSearchNotification(memberId: String) {
-        ownSearch(memberId).collectLatest { search ->
+    private suspend fun keepSearchNotification(phoneId: String) {
+        ownSearch(phoneId).collectLatest { search ->
             if (search == null) {
                 cancelSearchNotification(this)
 

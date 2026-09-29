@@ -28,6 +28,7 @@ import {
     positionDocuments,
     shortName,
 } from './lib/members.js';
+import { compareIds } from './lib/order.js';
 import {
     NO_LABELS,
     keepLabels,
@@ -288,20 +289,16 @@ const state = {
     // What went right and is worth one line: the invitation reaching the
     // clipboard, which leaves nothing on screen to show for itself.
     groupSaid: null,
-    // The group's searches by member, as the database holds them, standing or
+    // The group's searches by phone, as the database holds them, standing or
     // run out: which of them still stand is worked out against the clock.
     searches: new Map(),
     stopSearches: null,
-    // The members searched for when the grants were last followed, joined
-    // into one string: a search that starts or ends changes what this viewer
-    // may read, and the refused grants are asked for again at once rather
-    // than a minute later.
-    searchedMembers: '',
     // The moment the next standing search runs out, when nothing arrives to
     // say so.
     searchEnds: null,
-    // The search being opened or renewed in the window: whose, which of the
-    // two, and the length picked.
+    // The search being opened or renewed in the window: which phone, whose,
+    // the name it goes by, whether this renews a standing one, and the
+    // length picked.
     searchAsk: null,
     // The phone this page last rang, and what its document says, followed
     // until another is rung so that its row can say whether it answered.
@@ -769,15 +766,20 @@ function followGrants(profiles) {
 }
 
 /**
- * Subscribes to the positions the grants point at, and again whenever they
- * point somewhere else.
+ * Subscribes to the positions the grants point at, together with those a
+ * standing search opens regardless of any grant, and again whenever either
+ * points somewhere else.
  *
  * The positions are read a document at a time, so the list of documents is
  * what a subscription is made of: a member who picks up a second phone adds it
- * to their grant, and this is what notices.
+ * to their grant, a search starting or ending adds or drops its own phone,
+ * and this is what notices both.
  */
 function followPositions(grants) {
-    const documents = positionDocuments(grants);
+    const documents = [...new Set([
+        ...positionDocuments(grants),
+        ...standingSearches(state.searches, Date.now()).keys(),
+    ])].sort(compareIds);
     const wanted = documents.join(',');
 
     // The grants change for reasons that have nothing to do with the devices —
@@ -857,7 +859,6 @@ function stop() {
     state.stopSearches?.();
     state.stopSearches = null;
     state.searches = new Map();
-    state.searchedMembers = '';
     clearTimeout(state.searchEnds);
     closeSearch();
     drawSought();
@@ -958,7 +959,7 @@ function drawPhones() {
     const phones = phoneLines(memberId, own, state.labels);
     const now = Date.now();
     const running = standingIn(state.roster, memberId) === ADMINISTRATOR;
-    const search = standingSearches(state.searches, now).get(memberId);
+    const standing = standingSearches(state.searches, now);
 
     elements.phonesTitle.textContent = WORDS.myPhonesTitle;
     elements.phonesHelp.title = WORDS.helpOpen;
@@ -989,52 +990,14 @@ function drawPhones() {
             said.textContent = phoneText(phone, now, false);
             about.append(name, said);
             actions.className = 'admin-actions';
+            actions.append(sirenButtonFor(phone, memberId, now, about));
 
-            const siren = state.siren?.phoneId === phone.phoneId ? state.siren : null;
-            const sirenNow = siren === null ? null : sirenState(siren, now);
+            const search = standing.get(phone.phoneId) ?? null;
 
-            if (siren !== null) {
-                const told = sirenText(siren, sirenNow, [phone]);
-
-                if (told !== null) {
-                    const status = document.createElement('span');
-
-                    status.className = 'admin-about siren-status';
-                    status.textContent = told;
-                    about.append(status);
-                }
-            }
-
-            if (sirenNow?.kind === 'waiting' || sirenNow?.kind === 'sounding') {
-                const stop = document.createElement('button');
-
-                stop.type = 'button';
-                stop.className = 'siren-stop';
-                stop.innerHTML = MUTE_ICON;
-                stop.append(WORDS.sirenStop);
-                stop.addEventListener('click', () => {
-                    tryGroupWrite(() => stopSiren(phone.phoneId, memberId));
-                });
-                actions.append(stop);
-            } else {
-                const ring = document.createElement('button');
-
-                ring.type = 'button';
-                ring.className = 'siren-ring';
-                ring.title = WORDS.sirenHint;
-                ring.setAttribute('aria-label', WORDS.sirenHint);
-                ring.innerHTML = SPEAKER_ICON;
-                ring.addEventListener('click', () => {
-                    askSiren({ displayName: phone.name, memberId, phones: [phone] });
-                });
-                actions.append(ring);
-            }
-
-            // The search is on the member, not the phone, so it is offered
-            // beside every phone alike; only whoever runs the group opens one,
-            // and here the member is oneself, the one with a phone lost.
+            // Only whoever runs the group opens a search, and here the phone
+            // is one's own, the one lost.
             if (running) {
-                actions.append(searchButton(memberId, search));
+                actions.append(searchButton(phone, memberId, search));
             }
 
             if (search) {
@@ -1096,12 +1059,12 @@ function iconsInRow(actions) {
 }
 
 /**
- * The round button that opens a search for [memberId], outlined in red like
- * the siren beside it, and ends it once they are found: filled and blinking
- * while the search stands, so a row being looked for is seen before it is
- * read. The words it used to carry are its hint and its label.
+ * The round button that opens a search for [phone], outlined in red like the
+ * siren beside it, and ends it once it is found: filled and blinking while
+ * the search stands, so a row being looked for is seen before it is read.
+ * The words it used to carry are its hint and its label.
  */
-function searchButton(memberId, search) {
+function searchButton(phone, memberId, search) {
     const button = document.createElement('button');
     const words = search ? WORDS.searchFound : WORDS.searchStart;
 
@@ -1112,13 +1075,63 @@ function searchButton(memberId, search) {
     button.innerHTML = ALARM_ICON;
     button.addEventListener('click', () => {
         if (search) {
-            tryGroupWrite(() => endSearch(memberId));
+            tryGroupWrite(() => endSearch(phone.phoneId));
         } else {
-            askSearch(memberId, false);
+            askSearch(phone.phoneId, memberId, phone.name, false);
         }
     });
 
     return button;
+}
+
+/**
+ * The status of a call to [phone], laid onto [about], and the round button
+ * that starts or stops it: shared between a row of the panel that runs the
+ * group and one of "Мои устройства", since a call is rung and read the same
+ * way in both, one phone at a time.
+ */
+function sirenButtonFor(phone, memberId, now, about) {
+    const siren = state.siren?.phoneId === phone.phoneId ? state.siren : null;
+    const sirenNow = siren === null ? null : sirenState(siren, now);
+
+    if (siren !== null) {
+        const told = sirenText(siren, sirenNow, [phone]);
+
+        if (told !== null) {
+            const status = document.createElement('span');
+
+            status.className = 'admin-about siren-status';
+            status.textContent = told;
+            about.append(status);
+        }
+    }
+
+    if (sirenNow?.kind === 'waiting' || sirenNow?.kind === 'sounding') {
+        const stop = document.createElement('button');
+
+        stop.type = 'button';
+        stop.className = 'siren-stop';
+        stop.innerHTML = MUTE_ICON;
+        stop.append(WORDS.sirenStop);
+        stop.addEventListener('click', () => {
+            tryGroupWrite(() => stopSiren(phone.phoneId, memberId));
+        });
+
+        return stop;
+    }
+
+    const ring = document.createElement('button');
+
+    ring.type = 'button';
+    ring.className = 'siren-ring';
+    ring.title = WORDS.sirenHint;
+    ring.setAttribute('aria-label', WORDS.sirenHint);
+    ring.innerHTML = SPEAKER_ICON;
+    ring.addEventListener('click', () => {
+        askSiren({ displayName: phone.name, memberId, phones: [phone] });
+    });
+
+    return ring;
 }
 
 elements.groupPhones.addEventListener('click', () => {
@@ -1364,9 +1377,11 @@ function drawAdmin(running) {
 function adminRow(line) {
     const row = document.createElement('div');
 
-    row.className = 'admin-member';
+    row.className = 'admin-group';
 
-    const about = document.createElement('div');
+    const head = document.createElement('div');
+
+    head.className = 'admin-group-head';
 
     const name = document.createElement('span');
 
@@ -1378,90 +1393,30 @@ function adminRow(line) {
     said.className = 'admin-about';
     said.textContent = aboutThem(line);
 
-    about.append(name, said);
+    head.append(name, said);
+    row.append(head);
 
-    // One line per phone: whether it is in touch is the question the panel is
-    // opened with, and a marker stuck in one place does not answer it.
+    // One row per phone, each with its own round buttons: the family may be
+    // looking for one of two phones lost, or ringing the other, and neither
+    // act is on the member as a whole.
     const now = Date.now();
 
     for (const phone of line.phones) {
-        const told = document.createElement('span');
-
-        told.className = 'admin-about';
-        told.textContent = phoneText(phone, now);
-        about.append(told);
-    }
-    row.append(about);
-
-    const actions = document.createElement('div');
-
-    actions.className = 'admin-actions';
-
-    // Every phone of the member may be rung, one's own included: this page
-    // is not a phone, and the phone looked for is most often one's other one.
-    const siren = state.siren?.memberId === line.memberId ? state.siren : null;
-    const sirenNow = siren === null ? null : sirenState(siren, Date.now());
-    const sounding = sirenNow?.kind === 'waiting' || sirenNow?.kind === 'sounding';
-
-    if (siren !== null) {
-        const told = sirenText(siren, sirenNow, line.phones);
-
-        if (told !== null) {
-            const status = document.createElement('span');
-
-            status.className = 'admin-about siren-status';
-            status.textContent = told;
-            about.append(status);
-        }
+        row.append(adminPhoneRow(phone, line, now));
     }
 
-    if (sounding) {
-        const stop = document.createElement('button');
+    const tail = document.createElement('div');
 
-        stop.type = 'button';
-        stop.className = 'siren-stop';
-        stop.innerHTML = MUTE_ICON;
-        stop.append(WORDS.sirenStop);
-        stop.addEventListener('click', () => {
-            tryGroupWrite(() => stopSiren(siren.phoneId, state.member.memberId));
-        });
-        actions.append(stop);
-    } else if (line.phones.length > 0) {
-        const ring = document.createElement('button');
-
-        ring.type = 'button';
-        ring.className = 'siren-ring';
-        ring.title = WORDS.sirenHint;
-        ring.setAttribute('aria-label', WORDS.sirenHint);
-        ring.innerHTML = SPEAKER_ICON;
-        ring.addEventListener('click', () => askSiren(line));
-        actions.append(ring);
-    }
-
-    // Anybody but oneself may be looked for, administrators included: the
-    // one who is lost is not always the one who does not run the group.
-    if (!line.isYou) {
-        const search = standingSearches(state.searches, now).get(line.memberId);
-
-        if (search) {
-            const until = document.createElement('span');
-
-            until.className = 'admin-about sought-until';
-            until.textContent = WORDS.soughtUntil(untilText(search.endsAt));
-            about.append(until);
-        }
-
-        actions.append(searchButton(line.memberId, search));
-    }
+    tail.className = 'admin-actions';
 
     if (line.mayBeMadeAdmin) {
-        actions.append(
+        tail.append(
             adminButton(WORDS.groupMakeAdmin, () => setRunning(line.memberId, true)),
         );
     }
 
     if (line.mayStopRunning) {
-        actions.append(
+        tail.append(
             adminButton(WORDS.groupStopRunning, () => setRunning(line.memberId, false), {
                 // Giving up one's own role cannot be undone from here: only
                 // another administrator can hand it back.
@@ -1473,7 +1428,7 @@ function adminRow(line) {
     }
 
     if (line.removable) {
-        actions.append(
+        tail.append(
             adminButton(WORDS.groupRemove, () => removeMember(state.roster, line.memberId), {
                 asked: {
                     title: WORDS.groupRemoveTitle(name.textContent),
@@ -1484,10 +1439,57 @@ function adminRow(line) {
         );
     }
 
-    if (actions.childElementCount > 0) {
-        iconsInRow(actions);
-        row.append(actions);
+    if (tail.childElementCount > 0) {
+        row.append(tail);
     }
+
+    return row;
+}
+
+/**
+ * One phone of a member, in the panel that runs the group: what it last
+ * said on the left, its own siren and, for anybody but its owner's own row,
+ * its own search on the right. Every phone of the member may be rung, one's
+ * own included — this page is not a phone, and the phone looked for is most
+ * often one's other one — but the search is offered only for somebody else's:
+ * one's own phones are searched from "Мои устройства".
+ */
+function adminPhoneRow(phone, line, now) {
+    const row = document.createElement('div');
+
+    row.className = 'admin-phone';
+
+    const about = document.createElement('div');
+
+    about.className = 'admin-phone-about';
+
+    const said = document.createElement('span');
+
+    said.className = 'admin-about';
+    said.textContent = phoneText(phone, now);
+    about.append(said);
+
+    const actions = document.createElement('div');
+
+    actions.className = 'admin-actions';
+    actions.append(sirenButtonFor(phone, line.memberId, now, about));
+
+    if (!line.isYou) {
+        const search = standingSearches(state.searches, now).get(phone.phoneId) ?? null;
+
+        if (search) {
+            const until = document.createElement('span');
+
+            until.className = 'admin-about sought-until';
+            until.textContent = WORDS.soughtUntil(untilText(search.endsAt));
+            about.append(until);
+        }
+
+        actions.append(searchButton(phone, line.memberId, search));
+    }
+
+    iconsInRow(actions);
+    row.append(about, actions);
 
     return row;
 }
@@ -1857,17 +1859,16 @@ async function tryGroupWrite(write) {
 }
 
 /**
- * What a change to the searches changes: who is marked on the map and in the
- * strip, what the panel offers, what this viewer is told about themselves —
- * and what this viewer may read, which is why the grants are followed again
- * when the set of members searched for is different.
+ * What a change to the searches changes: which phones this viewer may read,
+ * so the positions are followed again; who is marked on the map and in the
+ * strip; what the panel offers; and what this viewer is told about their own
+ * phones.
  *
  * Also run when the next standing search runs out, since nothing arrives from
  * the database at that moment.
  */
 function searchesChanged() {
     const now = Date.now();
-    const searched = [...standingSearches(state.searches, now).keys()].sort().join(',');
 
     clearTimeout(state.searchEnds);
 
@@ -1875,19 +1876,11 @@ function searchesChanged() {
 
     if (next !== null) {
         // A second past the end, so that the rules and this page agree the
-        // search is over by the time the grants are asked for again.
+        // search is over by the time the positions are asked for again.
         state.searchEnds = setTimeout(searchesChanged, next - now + 1000);
     }
 
-    if (searched !== state.searchedMembers) {
-        state.searchedMembers = searched;
-
-        if (state.accountProfiles) {
-            state.grantMembers = null;
-            followGrants(state.accountProfiles);
-        }
-    }
-
+    followPositions(state.grants);
     showPositions();
     drawSought();
     drawGroup();
@@ -1907,6 +1900,18 @@ function untilText(millis) {
 /** What the group calls a member, for the sentences about a search. */
 function searchName(memberId) {
     return memberName(state.profiles?.get(memberId), memberId, false);
+}
+
+/**
+ * The best name known for a search's phone: this viewer's own label and the
+ * phone's own report both already won over the search's, inside the position
+ * that being searched has just opened; failing that, what the search itself
+ * remembers, and failing that, nothing to call it but "device".
+ */
+function phoneNameForSearch(search) {
+    return state.positions.find((position) => position.positionId === search.phoneId)?.deviceName
+        ?? search.phoneName
+        ?? WORDS.unnamedDevice;
 }
 
 /** Who opened a search, said to the one reading it. */
@@ -1953,7 +1958,7 @@ function soughtLine(position) {
         found.type = 'button';
         found.className = 'alarm-fill';
         found.textContent = WORDS.searchFound;
-        found.addEventListener('click', () => tryGroupWrite(() => endSearch(search.memberId)));
+        found.addEventListener('click', () => tryGroupWrite(() => endSearch(search.phoneId)));
         line.append(found);
     }
 
@@ -1961,32 +1966,44 @@ function soughtLine(position) {
 }
 
 /**
- * Told to the member being looked for: their place is open to the whole group
- * until the end of the search, and they can end it themselves.
+ * Told to the member whose phone or phones are being looked for: which of
+ * them, until when, and a way to end every one of them at once — more than
+ * one may stand together, the family looking for two phones lost side by
+ * side, and "found" answers for both.
  */
 function drawSought() {
-    const search = state.member
-        ? standingSearches(state.searches, Date.now()).get(state.member.memberId)
-        : undefined;
+    const own = state.member
+        ? [...standingSearches(state.searches, Date.now()).values()]
+            .filter((search) => search.memberId === state.member.memberId)
+        : [];
 
-    elements.soughtBanner.hidden = !search;
+    elements.soughtBanner.hidden = own.length === 0;
 
-    if (!search) {
+    if (own.length === 0) {
         return;
     }
 
-    elements.soughtText.textContent = WORDS.soughtBanner(untilText(search.endsAt));
-    elements.soughtNote.textContent = WORDS.soughtBannerNote(searchName(search.openedBy));
+    const phoneNames = own.map((search) => phoneNameForSearch(search)).join(', ');
+    const until = Math.max(...own.map((search) => search.endsAt));
+    const openers = [...new Set(own.map((search) => search.openedBy))]
+        .map((memberId) => searchName(memberId))
+        .join(', ');
+
+    elements.soughtText.textContent = WORDS.soughtBanner(phoneNames, untilText(until));
+    elements.soughtNote.textContent = WORDS.soughtBannerNote(openers);
     elements.soughtFound.textContent = WORDS.soughtFound;
 }
 
 elements.soughtFound.addEventListener('click', async () => {
+    const own = [...standingSearches(state.searches, Date.now()).values()]
+        .filter((search) => search.memberId === state.member.memberId);
+
     elements.soughtFound.disabled = true;
 
     try {
-        await endSearch(state.member.memberId);
+        await Promise.all(own.map((search) => endSearch(search.phoneId)));
     } catch {
-        // The banner stays up, which says the search is still on; the next
+        // The banner stays up, which says a search is still on; the next
         // press tries again.
     } finally {
         elements.soughtFound.disabled = false;
@@ -2001,7 +2018,11 @@ function adminSearch(search) {
 
     const title = document.createElement('b');
 
-    title.textContent = WORDS.searchSummary(searchName(search.memberId), untilText(search.endsAt));
+    title.textContent = WORDS.searchSummary(
+        phoneNameForSearch(search),
+        searchName(search.memberId),
+        untilText(search.endsAt),
+    );
 
     const who = document.createElement('small');
 
@@ -2012,14 +2033,16 @@ function adminSearch(search) {
 
     renew.type = 'button';
     renew.textContent = WORDS.searchRenew;
-    renew.addEventListener('click', () => askSearch(search.memberId, true));
+    renew.addEventListener('click', () => {
+        askSearch(search.phoneId, search.memberId, phoneNameForSearch(search), true);
+    });
 
     const found = document.createElement('button');
 
     found.type = 'button';
     found.className = 'alarm-fill';
     found.textContent = WORDS.searchFound;
-    found.addEventListener('click', () => tryGroupWrite(() => endSearch(search.memberId)));
+    found.addEventListener('click', () => tryGroupWrite(() => endSearch(search.phoneId)));
 
     buttons.append(renew, found);
     block.append(title, who, buttons);
@@ -2028,11 +2051,11 @@ function adminSearch(search) {
 }
 
 /**
- * Opens the window that opens a search, or renews one: what happens, for how
- * long, and the end the length picked comes to.
+ * Opens the window that opens a search for one phone, or renews one: what
+ * happens, for how long, and the end the length picked comes to.
  */
-function askSearch(memberId, renew) {
-    state.searchAsk = { memberId, renew, hours: DEFAULT_SEARCH_HOURS };
+function askSearch(phoneId, memberId, phoneName, renew) {
+    state.searchAsk = { phoneId, memberId, phoneName, renew, hours: DEFAULT_SEARCH_HOURS };
     drawSearchAsk();
 
     if (!elements.search.open) {
@@ -2047,11 +2070,12 @@ function drawSearchAsk() {
         return;
     }
 
-    const name = searchName(ask.memberId);
+    const phoneLabel = ask.phoneName ?? WORDS.unnamedDevice;
+    const memberLabel = searchName(ask.memberId);
 
     elements.searchTitle.textContent = ask.renew
-        ? WORDS.searchRenewTitle(name)
-        : WORDS.searchOpenTitle(name);
+        ? WORDS.searchRenewTitle(phoneLabel, memberLabel)
+        : WORDS.searchOpenTitle(phoneLabel, memberLabel);
     elements.searchNote.textContent = WORDS.searchNote;
     elements.searchHours.replaceChildren(
         ...SEARCH_HOURS.map((hours) => {
@@ -2104,8 +2128,8 @@ elements.searchGo.addEventListener('click', async () => {
 
     try {
         await (ask.renew
-            ? renewSearch(ask.memberId, adminId, ask.hours)
-            : openSearch(ask.memberId, adminId, ask.hours));
+            ? renewSearch(ask.phoneId, adminId, ask.hours, ask.phoneName)
+            : openSearch(ask.phoneId, adminId, ask.hours, ask.phoneName));
 
         if (state.searchAsk === ask) {
             closeSearch();

@@ -29,7 +29,9 @@ private val SEARCH_ENDS_AT: DateTimeFormatter = DateTimeFormatter.ofPattern("d M
  */
 @Composable
 fun SearchDialog(
+    /** Whose phone [phoneName] names, so a search opened on another member's device says whose. */
     memberName: String,
+    phoneName: String,
     renew: Boolean,
     hours: Int,
     onHoursChange: (Int) -> Unit,
@@ -47,6 +49,7 @@ fun SearchDialog(
                 text =
                 stringResource(
                     if (renew) R.string.search_renew_title else R.string.search_open_title,
+                    phoneName,
                     memberName,
                 ),
             )

@@ -431,8 +431,9 @@ export function watchFalsePlaces(onPlaces) {
 }
 
 /**
- * The searches of this group, by member, and again whenever an administrator
- * opens, renews or ends one, or the member looked for says they were found.
+ * The searches of this group, by phone, and again whenever an administrator
+ * opens, renews or ends one, or the member whose phone it is says they were
+ * found.
  *
  * The server's times come as its estimate while a write is on its way, so the
  * administrator who opened a search sees its end at once rather than after the
@@ -465,35 +466,40 @@ export function watchSearches(onSearches) {
 }
 
 /**
- * Opens a search for a member: their place is open to the whole group for the
+ * Opens a search for one phone: its place is open to the whole group for the
  * hours chosen. Written whole, so that one opened again after an earlier one
- * ran out starts from now and names whoever opened it this time.
+ * ran out starts from now and names whoever opened it this time. [phoneName]
+ * is the phone's name as this administrator sees it, left out where there is
+ * none, since the rules refuse anything but a string for a field they hold.
  */
-export function openSearch(memberId, adminId, hours) {
-    return setDoc(doc(store, 'groups', currentGroup(), 'searches', memberId), {
+export function openSearch(phoneId, adminId, hours, phoneName) {
+    return setDoc(doc(store, 'groups', currentGroup(), 'searches', phoneId), {
         openedBy: adminId,
         startedAt: serverTimestamp(),
         renewedBy: adminId,
         renewedAt: serverTimestamp(),
         hours,
+        ...(phoneName ? { phoneName } : {}),
     });
 }
 
 /**
  * Moves the end of a standing search on to the hours chosen from now, keeping
- * who opened it and when.
+ * who opened it and when, and refreshing the phone's name to what this
+ * administrator sees now.
  */
-export function renewSearch(memberId, adminId, hours) {
-    return updateDoc(doc(store, 'groups', currentGroup(), 'searches', memberId), {
+export function renewSearch(phoneId, adminId, hours, phoneName) {
+    return updateDoc(doc(store, 'groups', currentGroup(), 'searches', phoneId), {
         renewedBy: adminId,
         renewedAt: serverTimestamp(),
         hours,
+        ...(phoneName ? { phoneName } : {}),
     });
 }
 
-/** Ends a search: the member was found, and their place closes to all but whom they share with. */
-export function endSearch(memberId) {
-    return deleteDoc(doc(store, 'groups', currentGroup(), 'searches', memberId));
+/** Ends a search: the phone was found, and its place closes to all but whom it is shared with. */
+export function endSearch(phoneId) {
+    return deleteDoc(doc(store, 'groups', currentGroup(), 'searches', phoneId));
 }
 
 /**

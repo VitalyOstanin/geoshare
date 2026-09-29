@@ -301,8 +301,8 @@ export const RU = {
     helpTitleScreen: 'Кнопки на этом экране',
     helpTitleMap: 'Кнопки на карте',
     helpSiren: 'Сирена на 22 секунды: устройство громко звучит, даже если на нём выключен звук, — чтобы его нашли',
-    helpSearch: 'Открыть поиск: вся группа увидит участника на карте, даже те, кому он её не открывал',
-    helpSearchStanding: 'Поиск идёт. Нажмите, когда участник найден',
+    helpSearch: 'Открыть поиск устройства: вся группа увидит его на карте, даже те, кому оно не открыто',
+    helpSearchStanding: 'Поиск устройства идёт. Нажмите, когда его нашли',
     helpRemove: 'Удалить устройство: оно исчезнет с карты и из списков у всех участников',
     helpFollowNone: 'Карта стоит на месте',
     helpFollowOne: 'Карта держит в центре выбранного участника',
@@ -360,26 +360,30 @@ export const RU = {
     phoneOnline: (age) => `На связи ${age}`,
     phoneSilent: 'Ещё не выходило на связь',
 
-    // Группа ищет участника: администратор открывает поиск, и пока он идёт,
-    // место участника видно всей группе.
+    // Группа ищет устройство: администратор открывает поиск на нём, и пока
+    // он идёт, место этого устройства видно всей группе.
     searchMark: 'Ищем',
     searchStart: 'Искать',
     searchFound: 'Нашли',
     searchRenew: 'Продлить',
-    searchOpenTitle: (name) => `Открыть всей группе, где ${name}?`,
-    searchRenewTitle: (name) => `Продлить поиск: ${name}?`,
-    searchNote: 'Все участники группы увидят этого человека на карте, даже те, кому он её не '
-        + 'открывал. На его устройствах появится сообщение: кто открыл и до какого времени.',
+    searchOpenTitle: (phoneName, memberName) =>
+        `Показать всей группе, где устройство «${phoneName}» (${memberName})?`,
+    searchRenewTitle: (phoneName, memberName) =>
+        `Продлить поиск устройства «${phoneName}» (${memberName})?`,
+    searchNote: 'Все участники группы увидят это устройство на карте, даже те, кому оно не '
+        + 'открыто. На нём появится сообщение: кто открыл поиск и до какого времени.',
     searchHours: (hours) => ({ 6: '6 часов', 24: 'Сутки', 72: '3 суток' })[hours] ?? `${hours} ч`,
     searchUntil: (until) => `До ${until}. Снять раньше можно кнопкой «Нашли».`,
     searchGo: 'Открыть',
     searchCancel: 'Отмена',
     soughtUntil: (until) => `ищем до ${until}`,
-    searchSummary: (name, until) => `${name}: ищем до ${until}`,
+    searchSummary: (phoneName, memberName, until) =>
+        `${memberName}: устройство «${phoneName}», ищем до ${until}`,
     searchOpenedBy: (name) => `Открыли поиск: ${name}.`,
     searchOpenedByYou: 'Открыли вы.',
-    soughtBanner: (until) => `Вашу позицию видит вся группа до ${until}`,
-    soughtBannerNote: (name) =>
-        `Открыли поиск: ${name}. Если с вами всё в порядке, закройте поиск.`,
+    soughtBanner: (phoneNames, until) =>
+        `Вашу позицию (${phoneNames}) видит вся группа до ${until}`,
+    soughtBannerNote: (names) =>
+        `Открыли поиск: ${names}. Если с вами всё в порядке, закройте поиск.`,
     soughtFound: 'Меня нашли',
 };

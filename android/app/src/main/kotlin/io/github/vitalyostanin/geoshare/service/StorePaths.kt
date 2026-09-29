@@ -104,11 +104,12 @@ fun falsePlacesOf(store: FirebaseFirestore): CollectionReference =
     groupDocument(store).collection("falsePlaces")
 
 /**
- * The group's searches: one document per member the group is looking for.
+ * The group's searches: one document per phone the group is looking for,
+ * addressed by `{uid}.{deviceId}` the same as a position or a siren.
  *
  * Everybody in the group reads the collection, because everybody's map marks
- * the member being looked for; only an administrator writes it, and the
- * member being looked for may delete their own, once they are found.
+ * the phone being looked for; only an administrator writes it, and the member
+ * whose phone it is may delete it themselves, once they are found.
  */
 fun searchesOf(store: FirebaseFirestore): CollectionReference =
     groupDocument(store).collection("searches")
@@ -288,13 +289,16 @@ object WatchField {
     const val SINCE = "since"
 }
 
-/** The fields of a search: the group looking for a member. */
+/** The fields of a search: the group looking for one phone of a member. */
 object SearchField {
     const val OPENED_BY = "openedBy"
     const val STARTED_AT = "startedAt"
     const val RENEWED_BY = "renewedBy"
     const val RENEWED_AT = "renewedAt"
     const val HOURS = "hours"
+
+    /** The phone's name as the administrator saw it when they opened or renewed the search. */
+    const val PHONE_NAME = "phoneName"
 }
 
 /** The fields of a siren: a call that rings one phone in the group. */

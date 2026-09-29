@@ -71,14 +71,14 @@ fun MyPhonesScreen(
     onStopSiren: suspend (phoneId: String) -> Unit,
     /** Takes a phone out of the group; answers whether the database allowed it. */
     onForgetPhone: suspend (phoneId: String) -> Boolean,
-    /** The search standing for this member, or null while nobody is looking for them. */
-    search: Search?,
-    /** Whether this member runs the group: only they may open a search, here on themselves. */
+    /** The group's searches, by the phone each one is looking for. */
+    searches: Map<String, Search> = emptyMap(),
+    /** Whether this member runs the group: only they may open a search, on their own phones. */
     mayLookFor: Boolean,
-    /** Opens a search on this member, or renews one; answers whether it stuck. */
-    onSearch: suspend (renew: Boolean, hours: Int) -> Boolean,
-    /** Ends the search: the member is found. */
-    onEndSearch: suspend () -> Unit,
+    /** Opens a search on one of these phones; answers whether it stuck. */
+    onSearch: suspend (phoneId: String, phoneName: String?, renew: Boolean, hours: Int) -> Boolean,
+    /** Ends the search on one phone: it is found. */
+    onEndSearch: suspend (phoneId: String) -> Unit,
     onClose: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -92,10 +92,9 @@ fun MyPhonesScreen(
     var sirenAsk by remember { mutableStateOf<PhoneLine?>(null) }
     var sirenTrouble by remember { mutableStateOf(false) }
     var sirenBusy by remember { mutableStateOf(false) }
-    // Whether the search dialog asks to open a search or to renew one, and the
-    // length picked so far -- held apart from whether the write is refused, the
-    // same way the siren state above is.
-    var searchAsk by remember { mutableStateOf<Boolean?>(null) }
+    // Which phone the search dialog is about, held apart from whether the
+    // write is refused, the same way the siren state above is.
+    var searchAsk by remember { mutableStateOf<PhoneLine?>(null) }
     var searchHours by remember { mutableStateOf(DEFAULT_SEARCH_HOURS) }
     var searchTrouble by remember { mutableStateOf(false) }
     var searchBusy by remember { mutableStateOf(false) }
@@ -149,18 +148,18 @@ fun MyPhonesScreen(
         }
     }
 
-    fun askSearch(renew: Boolean) {
-        searchAsk = renew
+    fun askSearch(phone: PhoneLine) {
+        searchAsk = phone
         searchHours = DEFAULT_SEARCH_HOURS
         searchTrouble = false
     }
 
     fun writeSearch() {
-        val renew = searchAsk ?: return
+        val phone = searchAsk ?: return
 
         searchBusy = true
         scope.launch {
-            val allowed = onSearch(renew, searchHours)
+            val allowed = onSearch(phone.phoneId, phone.name, false, searchHours)
 
             searchBusy = false
 
@@ -218,6 +217,7 @@ fun MyPhonesScreen(
                 val phoneSirenState = phoneSiren?.let { sirenState(it, sirenNow) }
                 val sounding =
                     phoneSirenState is SirenState.Waiting || phoneSirenState is SirenState.Sounding
+                val search = searches[phone.phoneId]?.takeIf { it.stands(now) }
 
                 Row(
                     modifier =
@@ -303,16 +303,17 @@ fun MyPhonesScreen(
                             }
                         }
 
-                        // Every phone offers it, this one included: the
-                        // search is opened on the member, not on a device.
+                        // Every phone offers it, this one included: an
+                        // administrator may open a search on any phone of
+                        // theirs, this one among them.
                         if (mayLookFor) {
                             SearchButton(
                                 standing = search != null,
                                 onClick = {
                                     if (search != null) {
-                                        scope.launch { onEndSearch() }
+                                        scope.launch { onEndSearch(phone.phoneId) }
                                     } else {
-                                        askSearch(false)
+                                        askSearch(phone)
                                     }
                                 },
                             )
@@ -419,10 +420,11 @@ fun MyPhonesScreen(
         )
     }
 
-    searchAsk?.let { renew ->
+    searchAsk?.let { phone ->
         SearchDialog(
             memberName = stringResource(R.string.map_member_you),
-            renew = renew,
+            phoneName = phone.name,
+            renew = false,
             hours = searchHours,
             onHoursChange = { searchHours = it },
             now = now,

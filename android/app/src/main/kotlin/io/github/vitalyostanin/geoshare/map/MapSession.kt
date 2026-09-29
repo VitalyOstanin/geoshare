@@ -36,16 +36,20 @@ import java.time.Instant
  *
  * Driven by the grants, because they are what names the documents to read: a
  * member who picks up a second phone adds it to their grant, and the
- * subscriptions are rebuilt around the new list.
+ * subscriptions are rebuilt around the new list. Also driven by the standing
+ * searches, whose phones open without a grant at all: see [soughtPhoneIds].
  */
 @Composable
 fun rememberMemberPositions(
     grants: Map<String, MemberGrant>,
     /** This phone's own position document, followed whatever the grants say. */
     own: String,
+    /** The group's searches, whose standing phones this phone may read regardless of a grant. */
+    searches: Map<String, Search> = emptyMap(),
 ): State<MembersInView> {
     val writing = groupNow()
-    val documents = remember(grants, own) { positionDocuments(grants, own) }
+    val sought = soughtPhoneIds(searches)
+    val documents = remember(grants, own, sought) { positionDocuments(grants, own, sought) }
     val positions = remember(writing, documents) { memberPositions(documents) }
     val written = positions.collectAsStateWithLifecycle(initialValue = MembersInView())
     val falsePlaces = remember(writing) { namedFalsePlaces() }
@@ -98,29 +102,27 @@ fun rememberSearches(): State<Map<String, Search>> {
 }
 
 /**
- * How often [rememberMemberGrants] checks the searches against the clock, to
- * notice one running out without anything else changing.
+ * How often [rememberMemberPositions] checks the searches against the clock,
+ * to notice one running out without anything else changing.
  *
- * Half a minute, the same age the map's own clock ticks at: a search ending
- * is worth being current about, and nothing this short costs a subscription
- * that only reads a moment already held in memory.
+ * Half a minute, the same age the map's own clock ticks at: a phone dropping
+ * out of a standing search is worth being current about, and nothing this
+ * short costs a subscription that only reads a moment already held in memory.
  */
 private const val SOUGHT_CHECK_MILLIS = 30_000L
 
 /**
- * Who the group is looking for right now, joined into one string that changes
- * exactly when the set does.
+ * The phones the group is looking for right now, freshly worked out against
+ * the clock rather than only when [searches] itself changes.
  *
- * A search starting or ending changes what this phone may read of the member
- * concerned — their grant, their phones, their position — and a subscription
- * already refused stays refused until it is taken out again: see
- * [memberGrants]. This is what [rememberMemberGrants] rebuilds itself on, so
- * that a change reaches the affected member's marker within the half minute
- * this ticks at, rather than the full minute a refusal is otherwise retried
- * after.
+ * A search starting or ending changes which positions this phone may read
+ * without a grant: see [positionDocuments]. This is what
+ * [rememberMemberPositions] rebuilds its subscriptions on, rather than on
+ * every renewal — a search kept open for hours would otherwise tear a
+ * listener down and stand it back up for nothing each time it is renewed.
  */
 @Composable
-private fun soughtKey(searches: Map<String, Search>): String {
+private fun soughtPhoneIds(searches: Map<String, Search>): List<String> {
     var now by remember { mutableStateOf(Instant.now()) }
 
     LaunchedEffect(Unit) {
@@ -130,7 +132,7 @@ private fun soughtKey(searches: Map<String, Search>): String {
         }
     }
 
-    return remember(searches, now) { soughtMembers(searches, now).sorted().joinToString(",") }
+    return remember(searches, now) { standingSearches(searches, now).keys.sorted() }
 }
 
 /**
@@ -139,21 +141,12 @@ private fun soughtKey(searches: Map<String, Search>): String {
  * Follows the profiles, which is the one list of the household every member
  * may read: the grants themselves cannot be listed, so who to ask about has to
  * come from somewhere else.
- *
- * Also follows [searches]: a member who was refused before a search opened
- * for them stays refused until the subscription is taken out again, so a
- * change to who is being looked for rebuilds this one whole, asking again for
- * everybody rather than waiting out the retry each refusal is already on.
  */
 @Composable
-fun rememberMemberGrants(
-    profiles: Map<String, MemberProfile>?,
-    searches: Map<String, Search> = emptyMap(),
-): State<Map<String, MemberGrant>> {
+fun rememberMemberGrants(profiles: Map<String, MemberProfile>?): State<Map<String, MemberGrant>> {
     val writing = groupNow()
     val memberIds = remember(profiles) { profiles.orEmpty().keys.sorted() }
-    val sought = soughtKey(searches)
-    val grants = remember(writing, memberIds, sought) { memberGrants(memberIds) }
+    val grants = remember(writing, memberIds) { memberGrants(memberIds) }
 
     return grants.collectAsStateWithLifecycle(initialValue = emptyMap())
 }

@@ -84,7 +84,7 @@ data class SettingsState(
     /** What this phone's owner named it for everybody, if they did. */
     val phoneName: String?,
     /**
-     * The group's searches, by the member each one is looking for.
+     * The group's searches, by the phone each one is looking for.
      *
      * Carried whole rather than narrowed to what still stands: the panel lists
      * a search until it is called off, and what still stands is worked out
@@ -124,7 +124,7 @@ data class SettingsActions(
     val onPhoneNameChange: (String?) -> Unit,
     val onSignOut: () -> Unit,
     /**
-     * Opens a search for a member, or renews one already standing; answers
+     * Opens a search for one phone, or renews one already standing; answers
      * whether the database allowed it.
      *
      * A suspend function returning the answer rather than a fire-and-forget
@@ -132,9 +132,9 @@ data class SettingsActions(
      * stay open on a refusal and say so, which a callback with nothing to
      * return could not tell it.
      */
-    val onSearch: suspend (memberId: String, renew: Boolean, hours: Int) -> Boolean,
-    /** Ends a search: the member has been found, or has said so themselves. */
-    val onEndSearch: suspend (memberId: String) -> Unit,
+    val onSearch: suspend (phoneId: String, name: String?, renew: Boolean, hours: Int) -> Boolean,
+    /** Ends a search: the phone has been found, or its owner has said so themselves. */
+    val onEndSearch: suspend (phoneId: String) -> Unit,
     /** A phone's siren as the database has it, for the screen that rang it. */
     val sirenOf: (phoneId: String) -> Flow<Siren?>,
     /** Rings a phone; answers whether the database allowed it, as [onSearch] does. */

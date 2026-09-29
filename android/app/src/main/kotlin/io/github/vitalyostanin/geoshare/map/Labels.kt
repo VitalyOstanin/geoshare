@@ -100,11 +100,21 @@ fun phoneNames(
     return numbered
 }
 
-/** The positions with each phone called what phoneNames calls it. */
+/**
+ * The positions with each phone called what phoneNames calls it.
+ *
+ * [searches] carries a further fallback, below the grant and above the raw
+ * model a position writes about itself: a phone under a standing search may
+ * be read by somebody its owner never shared with, who has neither a label of
+ * their own for it nor the grant that would say what its owner called it —
+ * the search is all such a reader has, and [Search.phoneName] is what it
+ * carries for exactly that reason.
+ */
 fun labelledPositions(
     positions: List<MemberPosition>,
     labels: Labels,
     grants: Map<String, MemberGrant>,
+    searches: Map<String, Search> = emptyMap(),
 ): List<MemberPosition> {
     val seen = mutableMapOf<String, MutableMap<String, String?>>()
 
@@ -112,7 +122,9 @@ fun labelledPositions(
         val deviceId = position.positionId.substringAfter('.')
         val models = seen.getOrPut(position.memberId) { mutableMapOf() }
 
-        models[deviceId] = position.deviceName
+        models[deviceId] =
+            searches[position.positionId]?.phoneName?.takeIf { it.isNotBlank() }
+                ?: position.deviceName
     }
 
     val names = seen.mapValues { (memberId, models) ->

@@ -225,16 +225,16 @@
         <item quantity="other">%1$d devices shared with you</item>
     </plurals>
 
-    <!-- The group looking for a member: an administrator opens a search, and
-         while it stands everybody in the group sees where the member is. The
-         same words the page uses for the same things. -->
+    <!-- The group looking for one phone of a member: an administrator opens a
+         search, and while it stands everybody in the group sees where that
+         phone is. The same words the page uses for the same things. -->
     <string name="search_mark">Searching</string>
     <string name="search_start">Search</string>
     <string name="search_found">Found</string>
     <string name="search_renew">Extend</string>
-    <string name="search_open_title">Show the whole group where %1$s is?</string>
-    <string name="search_renew_title">Extend the search for %1$s?</string>
-    <string name="search_note">Everybody in the group will see this member on the map, even those they do not share with. Their devices will say who opened the search and until when.</string>
+    <string name="search_open_title">Show the whole group where %1$s (%2$s) is?</string>
+    <string name="search_renew_title">Extend the search for %1$s (%2$s)?</string>
+    <string name="search_note">Everybody in the group will see this phone on the map, even those its owner does not share with. The phone itself will say who opened the search and until when.</string>
     <string name="search_hours_6">6 hours</string>
     <string name="search_hours_24">A day</string>
     <string name="search_hours_72">3 days</string>
@@ -242,10 +242,10 @@
     <string name="search_go">Open</string>
     <string name="search_cancel">Cancel</string>
     <string name="sought_until">searching until %1$s</string>
-    <string name="search_summary">Searching for %1$s until %2$s</string>
+    <string name="search_summary">Searching for %1$s (%2$s) until %3$s</string>
     <string name="search_opened_by">Opened by %1$s.</string>
     <string name="search_opened_by_you">Opened by you.</string>
-    <string name="sought_banner">The whole group sees where you are until %1$s</string>
+    <string name="sought_banner">The whole group sees where %1$s is, until %2$s</string>
     <string name="sought_banner_note">Opened by %1$s. If you are all right, end the search.</string>
     <string name="sought_found">I\'m found</string>
     <string name="siren_notification_title">Siren switched on by %1$s</string>
@@ -418,8 +418,8 @@
     <string name="help_title_screen">Buttons on this screen</string>
     <string name="help_title_map">Buttons on the map</string>
     <string name="help_siren">Siren for 22 seconds: the device sounds loud, even with its sound off, so that it can be found</string>
-    <string name="help_search">Open a search: the whole group sees the member on the map, even those they never shared it with</string>
-    <string name="help_search_standing">A search is on. Press it once the member is found</string>
+    <string name="help_search">Open a search: the whole group sees the phone on the map, even those they never shared it with</string>
+    <string name="help_search_standing">A search is on. Press it once the phone is found</string>
     <string name="help_remove">Remove the device: it disappears from the map and the lists of everybody</string>
     <string name="help_follow_none">The map stays where it is</string>
     <string name="help_follow_one">The map keeps the chosen member in the middle</string>
