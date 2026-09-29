@@ -777,3 +777,39 @@ Worth settling before it is built:
 - **A sound that disappears.** A chosen system sound can be removed or become
   unreadable later; the siren then falls back to the application's own sound,
   as it already falls back from its own sound to the alarm.
+
+## Watching a member of another family
+
+A member of one family is let watch, for a while, one member of another
+family — say, a child staying with friends. They should see their own family
+and that one member on the same map at once.
+
+Nothing in the design allows it now:
+
+- A permission to watch names the reader by their account, and an account
+  belongs to one Firebase project. A reader from another family's project has
+  no account in this one to be named by.
+- A position is read only by a member of the group it lies in, so even inside
+  one project a permission does not reach across groups.
+- The application writes into and reads one group of one project.
+
+The way to build it: a second connection. The application opens a second,
+named `FirebaseApp` for the other family's project, and the member signs in
+there separately, through the browser the same way as into their own. The map
+puts the members from both connections together. The other family has to take
+the reader in as a guest: a guest is on their roster only to be named in a
+permission, and sees nobody but those who shared with them — not the rest of
+the family.
+
+Worth settling before it is built:
+
+- **The guest role.** The rules have to tell a guest from a member: a guest
+  reads the positions shared with them and nothing else — not the roster, the
+  other positions, the settings or the watch claims.
+- **How the guest gets in.** An invitation marked as a guest's, handed over the
+  same way as a family's own, carrying the other project's settings.
+- **When it ends.** The permission runs out on its own; the guest's place on
+  the roster and the second connection should go with it rather than linger.
+- **The runtime settings.** The project's settings are read at start-up
+  (`FirebaseOptions`); keeping room for a second, named connection is cheaper
+  to plan now than to retrofit.
