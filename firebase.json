@@ -48,6 +48,15 @@
         ]
       },
       {
+        "source": "/geoshare.json",
+        "headers": [
+          {
+            "key": "Cache-Control",
+            "value": "no-cache"
+          }
+        ]
+      },
+      {
         "source": "/*.@(js|css)",
         "headers": [
           {

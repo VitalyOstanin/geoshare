@@ -12,7 +12,8 @@
 #
 #   1. `create` makes the project, registers the Android app and the page,
 #      adds the fingerprints of the keys the application is signed with,
-#      creates the database, and deploys the rules and the page.
+#      creates the database, and deploys the rules and the page, with the
+#      application's settings beside it as geoshare.json.
 #   2. In the console: Authentication, Sign-in method, Google, Enable, Save.
 #      The console makes the OAuth client on its own.
 #   3. `configs` fetches the two configuration files, now carrying that client,
@@ -186,6 +187,34 @@ print(chosen[0]["name"].rsplit("/", 1)[1] if chosen else "")
     exit 1
 }
 
+# What the application needs to talk to the project, served next to the page
+# as geoshare.json. One build serves every family, so the build carries no
+# project: the application reads these from the family's site when it is
+# pointed at it, and starts Firebase with them. None of it is a secret — the
+# same values sit in every copy of google-services.json and firebase-config.js;
+# what guards the data is the rules.
+app_settings() {
+    local project="$1" android="$2" site_id="$3"
+
+    firebase apps:sdkconfig ANDROID "${android}" --project "${project}" --json |
+        SITE_ID="${site_id}" python3 -c '
+import json, os, sys
+
+raw = sys.stdin.read()
+config = json.loads(json.loads(raw[raw.index("{"):])["result"]["fileContents"])
+client = config["client"][0]
+
+print(json.dumps({
+    "version": 1,
+    "projectId": config["project_info"]["project_id"],
+    "applicationId": client["client_info"]["mobilesdk_app_id"],
+    "apiKey": client["api_key"][0]["current_key"],
+    "gcmSenderId": config["project_info"]["project_number"],
+    "site": os.environ["SITE_ID"],
+}, indent=2))
+'
+}
+
 # Every step checks what is already there, so a run that stopped half way can
 # be started again with the same command.
 create() {
@@ -284,6 +313,9 @@ create() {
     FIREBASE_PROJECT="${project}" FIREBASE_SITE="${site_id}" \
         WEB_CONFIG_TARGET="${site}/web/public/firebase-config.js" \
         "${REPO_ROOT}/tools/web-config.sh"
+
+    echo "==> application settings"
+    app_settings "${project}" "${android}" "${site_id}" > "${site}/web/public/geoshare.json"
 
     echo "==> rules and page"
     (
