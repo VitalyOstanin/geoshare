@@ -46,7 +46,6 @@ export const someGrant = (readers, devices = ['phone']) => ({ sharedWith: reader
 
 // The fields both clients actually write, with the names they actually use.
 export const somePosition = {
-    deviceName: 'phone',
     latitude: 60.93,
     longitude: 4.34,
     takenAt: new Date(),

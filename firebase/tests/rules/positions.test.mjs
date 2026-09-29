@@ -256,11 +256,13 @@ describe('positions', () => {
         );
     });
 
-    it('a phone name longer than a card can hold is refused', async () => {
+    // The model lives in the phone's devices document; a copy in the position
+    // had no reader left, and is not to come back.
+    it('a position naming its phone is refused', async () => {
         const db = testEnv.authenticatedContext(ALICE).firestore();
 
         await assertFails(
-            setDoc(positionOf(db, ALICE), { ...positionFrom(ALICE), deviceName: 'n'.repeat(41) }),
+            setDoc(positionOf(db, ALICE), { ...positionFrom(ALICE), deviceName: 'phone' }),
         );
     });
 

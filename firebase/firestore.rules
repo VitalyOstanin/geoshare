@@ -661,7 +661,7 @@ service cloud.firestore {
         // outside it, and the rule is what keeps it from being written at all.
         function positionShape() {
           return request.resource.data.keys()
-                   .hasOnly(['memberId', 'deviceName', 'latitude', 'longitude',
+                   .hasOnly(['memberId', 'latitude', 'longitude',
                              'takenAt', 'writtenAt', 'mode', 'batteryPercent', 'charging',
                              'accuracyMetres', 'foundBy', 'settling',
                              'leftOutCount', 'leftOutReason', 'leftOutSince']) &&
@@ -678,9 +678,6 @@ service cloud.firestore {
                  // than it is.
                  (!('writtenAt' in request.resource.data) ||
                   request.resource.data.writtenAt == request.time) &&
-                 (!('deviceName' in request.resource.data) ||
-                  (request.resource.data.deviceName is string &&
-                   request.resource.data.deviceName.size() <= 40)) &&
                  (!('mode' in request.resource.data) ||
                   (request.resource.data.mode is string &&
                    request.resource.data.mode.size() <= 20)) &&
