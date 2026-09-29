@@ -190,7 +190,7 @@ private fun positionOf(document: DocumentSnapshot): MemberPosition? {
         // document from before positions were kept per phone has no such
         // field, and there the whole id is the account.
         memberId = document.getString(PositionField.MEMBER_ID) ?: document.id.substringBefore('.'),
-        deviceName = document.getString(PositionField.DEVICE_NAME),
+        deviceName = null,
         latitude = latitude,
         longitude = longitude,
         takenAt = Instant.ofEpochSecond(takenAt.seconds, takenAt.nanoseconds.toLong()),

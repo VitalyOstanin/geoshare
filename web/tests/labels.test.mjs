@@ -19,12 +19,11 @@ const HER = 'uid-her';
 const position = {
     positionId: `${HER}.phone`,
     memberId: HER,
-    deviceName: 'MAR-LX1',
 };
 
-const grantsNaming = (name) => combinedGrants(
+const grantsNaming = (name, model = null) => combinedGrants(
     new Map(),
-    new Map([[HER, phonesOf({ phone: name ? { name } : {} })]]),
+    new Map([[HER, phonesOf({ phone: { ...name && { name }, ...model && { model } } })]]),
 );
 
 /** A store that keeps what it is given, the way localStorage does. */
@@ -51,7 +50,13 @@ test("the owner's name for a phone comes next", () => {
     assert.equal(shown.deviceName, "mum's phone");
 });
 
-test('the model is left where nobody named the phone', () => {
+test("the phone's own model is shown where nobody named it", () => {
+    const [shown] = labelledPositions([position], NO_LABELS, grantsNaming(null, 'MAR-LX1'));
+
+    assert.equal(shown.deviceName, 'MAR-LX1');
+});
+
+test('a phone that has said nothing about itself is left unnamed', () => {
     const [shown] = labelledPositions([position], NO_LABELS, grantsNaming(null));
 
     assert.equal(shown, position);
@@ -135,7 +140,6 @@ test('the map numbers twins the way the panel does', () => {
     const twins = ['zulu', 'alpha'].map((deviceId) => ({
         positionId: `${HER}.${deviceId}`,
         memberId: HER,
-        deviceName: 'BVL-N49',
     }));
 
     const shown = labelledPositions(twins, NO_LABELS, grants);
@@ -149,8 +153,8 @@ test('phones of two members are numbered apart', () => {
         ['uid-him', phonesOf({ beta: { model: 'BVL-N49' } })],
     ]));
     const shown = labelledPositions([
-        { positionId: `${HER}.alpha`, memberId: HER, deviceName: 'BVL-N49' },
-        { positionId: 'uid-him.beta', memberId: 'uid-him', deviceName: 'BVL-N49' },
+        { positionId: `${HER}.alpha`, memberId: HER },
+        { positionId: 'uid-him.beta', memberId: 'uid-him' },
     ], NO_LABELS, grants);
 
     assert.deepEqual(shown.map((one) => one.deviceName), ['BVL-N49', 'BVL-N49']);

@@ -12,7 +12,7 @@ class LabelsTest {
         MemberPosition(
             positionId = "her.phone",
             memberId = "her",
-            deviceName = "MAR-LX1",
+            deviceName = null,
             latitude = 60.9,
             longitude = 4.3,
             takenAt = Instant.ofEpochSecond(1_000),
@@ -21,9 +21,9 @@ class LabelsTest {
             batteryPercent = null,
         )
 
-    private fun grantsNaming(name: String?) = combinedGrants(
+    private fun grantsNaming(name: String?, model: String? = null) = combinedGrants(
         named = emptyMap(),
-        phones = mapOf("her" to mapOf("phone" to PhoneStatus(name = name))),
+        phones = mapOf("her" to mapOf("phone" to PhoneStatus(name = name, model = model))),
     )
 
     @Test
@@ -45,7 +45,15 @@ class LabelsTest {
     }
 
     @Test
-    fun `the model is left where nobody named the phone`() {
+    fun `the phone's own model is shown where nobody named it`() {
+        val grants = grantsNaming(null, model = "MAR-LX1")
+        val shown = labelledPositions(listOf(position), Labels(), grants).single()
+
+        assertEquals("MAR-LX1", shown.deviceName)
+    }
+
+    @Test
+    fun `a phone that has said nothing about itself is left unnamed`() {
         val shown = labelledPositions(listOf(position), Labels(), grantsNaming(null)).single()
 
         assertSame(position, shown)
@@ -132,7 +140,7 @@ class LabelsTest {
                 ),
             )
         val twins = listOf("zulu", "alpha").map { deviceId ->
-            position.copy(positionId = "her.$deviceId", deviceName = "BVL-N49")
+            position.copy(positionId = "her.$deviceId")
         }
 
         val shown = labelledPositions(twins, Labels(), grants)
@@ -153,8 +161,8 @@ class LabelsTest {
             )
         val positions =
             listOf(
-                position.copy(positionId = "her.alpha", deviceName = "BVL-N49"),
-                position.copy(positionId = "him.beta", memberId = "him", deviceName = "BVL-N49"),
+                position.copy(positionId = "her.alpha"),
+                position.copy(positionId = "him.beta", memberId = "him"),
             )
 
         val shown = labelledPositions(positions, Labels(), grants)

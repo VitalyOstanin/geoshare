@@ -17,7 +17,10 @@ data class MemberPosition(
     /** The document this came out of, which is what tells two phones of one member apart. */
     val positionId: String,
     val memberId: String,
-    /** What the phone calls itself, shown when a member has more than one on the map. */
+    /**
+     * What the viewer calls the phone, shown when a member has more than one on
+     * the map; null as read, and filled by [labelledPositions].
+     */
     val deviceName: String?,
     val latitude: Double,
     val longitude: Double,

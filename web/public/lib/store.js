@@ -302,7 +302,6 @@ function positionOf(snapshot) {
         // whole id is the account.
         positionId: snapshot.id,
         memberId: typeof data.memberId === 'string' ? data.memberId : snapshot.id.split('.')[0],
-        deviceName: typeof data.deviceName === 'string' ? data.deviceName : null,
         latitude: data.latitude,
         longitude: data.longitude,
         takenAt: data.takenAt.toMillis(),

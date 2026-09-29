@@ -105,7 +105,7 @@ export function labelledProfiles(profiles, labels) {
  * that the map, the panel and the application all number them alike.
  *
  * `phones` is what the member's phones say about themselves, by device id;
- * `seen` is the model a position carries, for a phone known only from one.
+ * `seen` is a last name for a phone known only from its position, or null.
  */
 export function phoneNames(memberId, phones, labels, seen = new Map()) {
     const names = new Map();
@@ -139,20 +139,25 @@ export function phoneNames(memberId, phones, labels, seen = new Map()) {
     return names;
 }
 
-/** The positions with each phone called what phoneNames calls it. */
+/**
+ * The positions with each phone called what phoneNames calls it.
+ *
+ * A position carries no name of its own: the model lives in the phone's own
+ * document, and a phone that has not written one yet stays unnamed.
+ */
 export function labelledPositions(positions, labels, grants) {
     const seen = new Map();
 
     for (const position of positions) {
-        const models = seen.get(position.memberId) ?? new Map();
+        const phones = seen.get(position.memberId) ?? new Map();
 
-        models.set(deviceIdOf(position), position.deviceName ?? null);
-        seen.set(position.memberId, models);
+        phones.set(deviceIdOf(position), null);
+        seen.set(position.memberId, phones);
     }
 
-    const names = new Map([...seen].map(([memberId, models]) => [
+    const names = new Map([...seen].map(([memberId, unnamed]) => [
         memberId,
-        phoneNames(memberId, grants.get(memberId)?.phones ?? new Map(), labels, models),
+        phoneNames(memberId, grants.get(memberId)?.phones ?? new Map(), labels, unnamed),
     ]));
 
     return positions.map((position) => {

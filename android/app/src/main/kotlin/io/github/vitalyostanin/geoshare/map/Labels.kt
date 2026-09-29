@@ -62,7 +62,7 @@ fun labelledProfiles(
  * that the map, the panel and the application all number them alike.
  *
  * `phones` is what the member's phones say about themselves, by device id;
- * `seen` is the model a position carries, for a phone known only from one.
+ * `seen` is a last name for a phone known only from its position, or null.
  */
 fun phoneNames(
     memberId: String,
@@ -103,12 +103,14 @@ fun phoneNames(
 /**
  * The positions with each phone called what phoneNames calls it.
  *
- * [searches] carries a further fallback, below the grant and above the raw
- * model a position writes about itself: a phone under a standing search may
- * be read by somebody its owner never shared with, who has neither a label of
- * their own for it nor the grant that would say what its owner called it —
- * the search is all such a reader has, and [Search.phoneName] is what it
- * carries for exactly that reason.
+ * A position carries no name of its own: the model lives in the phone's own
+ * document, and a phone that has not written one yet stays unnamed.
+ *
+ * [searches] carries a further fallback, below the grant: a phone under a
+ * standing search may be read by somebody its owner never shared with, who has
+ * neither a label of their own for it nor the grant that would say what its
+ * owner called it — the search is all such a reader has, and
+ * [Search.phoneName] is what it carries for exactly that reason.
  */
 fun labelledPositions(
     positions: List<MemberPosition>,
@@ -122,9 +124,7 @@ fun labelledPositions(
         val deviceId = position.positionId.substringAfter('.')
         val models = seen.getOrPut(position.memberId) { mutableMapOf() }
 
-        models[deviceId] =
-            searches[position.positionId]?.phoneName?.takeIf { it.isNotBlank() }
-                ?: position.deviceName
+        models[deviceId] = searches[position.positionId]?.phoneName?.takeIf { it.isNotBlank() }
     }
 
     val names = seen.mapValues { (memberId, models) ->
