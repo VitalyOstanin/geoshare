@@ -146,6 +146,46 @@ print(json.load(open(path))["tokens"]["access_token"])
     exit 1
 }
 
+# The Hosting site the page is served from, made if the project has none.
+#
+# A project made from 15 October 2026 on gets no site of its own: Hosting
+# makes one only when something first asks for it, and a deploy to a site that
+# is not there fails with "Site Not Found". The site is named after the
+# project where that name is free; a subdomain of web.app another project has
+# taken already gets the suffix instead.
+hosting_site() {
+    local project="$1" web_app="$2"
+    local site
+
+    site="$(firebase hosting:sites:list --project "${project}" --json |
+        python3 -c '
+import json, sys
+
+raw = sys.stdin.read()
+sites = json.loads(raw[raw.index("{"):])["result"].get("sites", [])
+default = [s for s in sites if s.get("type") == "DEFAULT_SITE"]
+chosen = (default or sites)[:1]
+print(chosen[0]["name"].rsplit("/", 1)[1] if chosen else "")
+')"
+
+    if [[ -n "${site}" ]]; then
+        echo "    ${site} already there" >&2
+        echo "${site}"
+        return
+    fi
+
+    for site in "${project}" "${project}-geoshare"; do
+        if firebase hosting:sites:create "${site}" --app "${web_app}" \
+            --project "${project}" >&2; then
+            echo "${site}"
+            return
+        fi
+    done
+
+    echo "no free name for the Hosting site of ${project}" >&2
+    exit 1
+}
+
 # Every step checks what is already there, so a run that stopped half way can
 # be started again with the same command.
 create() {
@@ -175,6 +215,10 @@ create() {
 
     local android
     android="$(app_id "${project}" ANDROID)"
+
+    echo "==> Hosting site"
+    local site_id
+    site_id="$(hosting_site "${project}" "$(app_id "${project}" WEB)")"
 
     # Sign-in with Google checks the application against these; without them
     # the first sign-in on a phone fails with a developer error.
@@ -237,13 +281,14 @@ create() {
     rm -f "${site}/web/public/firebase-config.js"
     cp -r "${REPO_ROOT}/firebase" "${site}/firebase"
     cp "${REPO_ROOT}/firebase.json" "${site}/firebase.json"
-    FIREBASE_PROJECT="${project}" WEB_CONFIG_TARGET="${site}/web/public/firebase-config.js" \
+    FIREBASE_PROJECT="${project}" FIREBASE_SITE="${site_id}" \
+        WEB_CONFIG_TARGET="${site}/web/public/firebase-config.js" \
         "${REPO_ROOT}/tools/web-config.sh"
 
     echo "==> rules and page"
     (
         cd "${site}"
-        firebase target:apply hosting page "${project}" --project "${project}"
+        firebase target:apply hosting page "${site_id}" --project "${project}"
         firebase deploy --only firestore:rules,hosting --project "${project}"
     )
 
@@ -259,7 +304,7 @@ Done with the part that runs from here. Two steps are left in the consoles:
   2. https://console.cloud.google.com/auth/clients?project=${project}
 
      Open "Web client (auto created by Google Service)", add
-     https://${project}.web.app/__/auth/handler under Authorized redirect URIs,
+     https://${site_id}.web.app/__/auth/handler under Authorized redirect URIs,
      Save. The page signs in through its own domain rather than
      firebaseapp.com (see tools/web-config.sh), and the client made in step 1
      only lists the firebaseapp.com one; without this the page's sign-in ends

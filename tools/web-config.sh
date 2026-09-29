@@ -3,8 +3,10 @@
 #
 #   tools/web-config.sh
 #
-# FIREBASE_PROJECT names another project than the working copy's default, and
-# WEB_CONFIG_TARGET another file to write; tools/new-project.sh uses both.
+# FIREBASE_PROJECT names another project than the working copy's default,
+# FIREBASE_SITE the Hosting site the page is served from when it is not named
+# after the project, and WEB_CONFIG_TARGET another file to write;
+# tools/new-project.sh uses all three.
 #
 # The result names the project, and the project is not the repository's
 # business — the file is ignored by git, the same way the Android one is. Run
@@ -26,8 +28,8 @@ fi
 # The one web app of the project. Passed by platform rather than by id, so that
 # this keeps working if the app is registered again under a new one.
 npx --yes "firebase-tools@${FIREBASE_TOOLS_VERSION}" apps:sdkconfig WEB "${project_args[@]}" --json |
-    python3 -c '
-import json, sys
+    FIREBASE_SITE="${FIREBASE_SITE:-}" python3 -c '
+import json, os, sys
 
 raw = sys.stdin.read()
 data = json.loads(raw[raw.index("{"):])
@@ -36,9 +38,10 @@ config = json.loads(data["result"]["fileContents"])
 # Sign-in goes through the domain the page is served from rather than the
 # firebaseapp.com one the project names: a browser that keeps the storage of
 # each site apart (Firefox, Safari, Chrome from 115) loses a redirect sign-in
-# that passes through a frame on another domain. The page is the default
-# Hosting site of the project, and Hosting serves the sign-in handler there.
-config["authDomain"] = config["projectId"] + ".web.app"
+# that passes through a frame on another domain. Hosting serves the sign-in
+# handler on every site; the page is on the one named after the project unless
+# FIREBASE_SITE says otherwise.
+config["authDomain"] = (os.environ["FIREBASE_SITE"] or config["projectId"]) + ".web.app"
 
 print("// Written by tools/web-config.sh out of the Firebase project itself.")
 print("// Not in the repository: it names the project.")
