@@ -23,6 +23,29 @@ export function followLink(onChange) {
     judgeLink();
 }
 
+/**
+ * Stops judging the link while the page is paused: a database the page has
+ * stopped listening to is silent by choice, and the banner says that instead.
+ */
+export function pauseLink() {
+    state.stopLink?.();
+    state.stopLink = null;
+    clearTimeout(state.linkTimer);
+    state.link = null;
+    state.linkShown = false;
+    drawLink();
+    state.linkChanged?.();
+}
+
+/** Judges the link afresh, with the whole grace ahead of it, once somebody is back. */
+export function resumeLink() {
+    const onChange = state.linkChanged;
+
+    drawLink();
+    followLink(onChange);
+    onChange?.();
+}
+
 export function unfollowLink() {
     state.stopLink?.();
     state.stopLink = null;
@@ -74,9 +97,17 @@ function judgeLink() {
 
 function drawLink() {
     const lost = state.linkShown;
+    const paused = state.pausedAt !== null;
 
-    elements.linkBanner.hidden = !lost;
-    document.documentElement.classList.toggle('link-lost', lost);
+    elements.linkBanner.hidden = !lost && !paused;
+    document.documentElement.classList.toggle('link-lost', lost || paused);
+
+    if (paused) {
+        elements.linkText.textContent = WORDS.pausedSince(clockText(state.pausedAt));
+        elements.linkNote.textContent = WORDS.pausedNote;
+
+        return;
+    }
 
     if (!lost) {
         return;

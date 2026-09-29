@@ -16,6 +16,8 @@ export const EN = {
     looking: 'Looking for the group…',
     unreachable: 'No connection to the group. Trying again.',
     linkLost: (since) => `No connection to the database since ${since}`,
+    pausedSince: (since) => `Map paused since ${since}`,
+    pausedNote: 'Nobody has looked at it for 5 minutes. Markers are grey. Touch the map or move the mouse to refresh.',
     linkKnownAt: (time) => `Showing what was known at ${time}. Markers are grey.`,
     linkKnownNever: 'The database has not answered yet. Markers are grey.',
     knownAt: (time) => `as of ${time}`,

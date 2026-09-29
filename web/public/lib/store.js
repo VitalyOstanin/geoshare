@@ -16,7 +16,9 @@ import {
     collection,
     deleteDoc,
     deleteField,
+    disableNetwork,
     doc,
+    enableNetwork,
     getFirestore,
     onSnapshot,
     serverTimestamp,
@@ -131,10 +133,11 @@ const WATCH_AHEAD_MS = 7 * 60 * 1000;
  *
  * A tab left open on a laptop its owner walked away from holds every phone of
  * the group in the fifteen-second mode, which is the most expensive thing the
- * group does. Fifteen minutes is long enough to watch somebody drive home and
- * short enough that a forgotten tab stops costing within the hour.
+ * group does. Five minutes, the same as the page takes to stop listening
+ * altogether (see `page/pause.js`): whoever watches somebody drive home
+ * moves the mouse now and then, and a forgotten tab stops costing at once.
  */
-const IDLE_AFTER_MS = 15 * 60 * 1000;
+export const IDLE_AFTER_MS = 5 * 60 * 1000;
 
 /**
  * How long to wait before asking again for a document that was refused.
@@ -958,7 +961,19 @@ export function watchWatchers(memberId, onWatchers) {
 }
 
 /** What counts as somebody still being at the screen. */
-const ATTENTION = ['pointerdown', 'pointermove', 'keydown', 'wheel', 'touchstart'];
+export const ATTENTION = ['pointerdown', 'pointermove', 'keydown', 'wheel', 'touchstart'];
+
+/**
+ * Stops hearing from the database, and starts again: every listener stays in
+ * place and is simply not fed, so a tab nobody looks at costs no reads.
+ */
+export function pauseDatabase() {
+    return disableNetwork(store).catch(() => {});
+}
+
+export function resumeDatabase() {
+    return enableNetwork(store).catch(() => {});
+}
 
 /**
  * Says that somebody is looking, for as long as somebody is.

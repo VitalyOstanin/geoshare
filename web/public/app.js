@@ -33,6 +33,7 @@ import { askName, closeNaming } from './page/dialogs.js';
 import { closeSearch, drawSearchAsk, drawSought, searchesChanged, soughtLine } from './page/search-ui.js';
 import { drawSirenAsk } from './page/siren-ui.js';
 import { followLink, unfollowLink } from './page/link-ui.js';
+import { followAttention, unfollowAttention } from './page/pause.js';
 import { notePageLooking, personName, render, showAccount, showStripEdge } from './page/strip.js';
 
 watchSignIn((member) => {
@@ -139,6 +140,7 @@ export function start() {
         drawSirenAsk();
         drawSearchAsk();
     });
+    followAttention();
 
     state.stopRoster ??= watchRoster((roster) => {
         state.roster = roster;
@@ -279,6 +281,7 @@ export function stop() {
 
     state.stopRoster?.();
     state.stopRoster = null;
+    unfollowAttention();
     unfollowLink();
     state.roster = null;
 

@@ -173,6 +173,10 @@ export const state = {
     linkTimer: null,
     linkChanged: null,
     stopLink: null,
+    // When the page stopped listening for want of anybody looking (see
+    // `page/pause.js`), or null while it listens.
+    pausedAt: null,
+    stopAttention: null,
     // The name of whoever the follow button last had a target for. The map
     // only remembers a position id, which stops meaning anything the moment
     // that member goes quiet; the name is kept here so the button still has
