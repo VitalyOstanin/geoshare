@@ -95,16 +95,28 @@ for (const button of elements.followMenuButtons) {
     });
 }
 
+/**
+ * Escape closes one thing at a time, the last opened first: a window closes
+ * itself — the browser does that for a modal dialog, topmost first — then a
+ * menu, then the card on the map (see `lib/map.js`). Whatever this closes is
+ * marked handled, so that the card under a menu stays for the next press.
+ */
 document.addEventListener('keydown', (event) => {
-    if (event.key !== 'Escape') {
+    if (event.key !== 'Escape' || event.defaultPrevented || document.querySelector('dialog[open]')) {
         return;
     }
 
-    if (!elements.followMenu.hidden) {
+    if (!elements.accountMenu.hidden) {
+        showMenu(false);
+        elements.accountButton.focus();
+        event.preventDefault();
+    } else if (!elements.followMenu.hidden) {
         showFollowMenu(false);
         elements.followButton.focus();
+        event.preventDefault();
     } else if (state.view !== null && awaitingFollowTarget(state.view)) {
         stopAwaitingFollowTarget(state.view);
+        event.preventDefault();
     }
 });
 

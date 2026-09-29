@@ -340,8 +340,14 @@ export function createMap(element, onCardChange = () => {}, cardElement) {
     // and reaching for the small cross is the long way round. Listened for on
     // the document rather than on the map element, because the card takes the
     // focus when it opens and the map no longer has it.
+    // A window or a menu opened over the card is closed first, one press
+    // each (see `page/menus.js`), and the card waits for the next one.
     document.addEventListener('keydown', (event) => {
-        if (event.key !== 'Escape') {
+        if (
+            event.key !== 'Escape' ||
+            event.defaultPrevented ||
+            document.querySelector('dialog[open]')
+        ) {
             return;
         }
 
