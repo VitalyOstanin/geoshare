@@ -606,7 +606,7 @@ class SharingService : LifecycleService() {
      * answers are all being thrown away is still in touch and still on its
      * cable, and a reader deciding whether it has gone quiet or run flat needs
      * to hear that. A failure costs nothing but the news, which the next mode,
-     * cable or hour says again.
+     * cable or [STATUS_EVERY] says again.
      */
     private fun tellHowThePhoneIs() {
         val status = status ?: return
@@ -626,7 +626,7 @@ class SharingService : LifecycleService() {
     }
 
     /**
-     * Says how the phone is once an hour, whatever else it is or is not
+     * Says how the phone is every [STATUS_EVERY], whatever else it is or is not
      * writing: the moment it was last in touch is what tells a working phone
      * whose position is held back from one that has gone quiet.
      */
