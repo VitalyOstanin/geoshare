@@ -426,7 +426,9 @@ fun MapScreen(
                     standingSearches(searches, now).values.filter { it.memberId == ownMemberId }
                 }
 
-            if (ownSearches.isNotEmpty()) {
+            val link = LocalLink.current
+
+            if (ownSearches.isNotEmpty() || link.lost) {
                 Column(
                     verticalArrangement = Arrangement.spacedBy(8.dp),
                     modifier =
@@ -435,6 +437,10 @@ fun MapScreen(
                         .statusBarsPadding()
                         .padding(top = 64.dp, start = 12.dp, end = 12.dp),
                 ) {
+                    if (link.lost) {
+                        LinkBanner(link)
+                    }
+
                     ownSearches.forEach { search ->
                         SoughtBanner(
                             search = search,

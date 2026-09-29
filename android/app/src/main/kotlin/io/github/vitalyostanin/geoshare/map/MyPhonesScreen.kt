@@ -66,7 +66,7 @@ fun MyPhonesScreen(
     ownPhoneId: String?,
     now: Instant,
     sirenOf: (phoneId: String) -> Flow<Siren?>,
-    onCallSiren: suspend (phoneId: String) -> Boolean,
+    onCallSiren: suspend (phoneId: String) -> WriteOutcome,
     onStopSiren: suspend (phoneId: String) -> Unit,
     /** Takes a phone out of the group; answers whether the database allowed it. */
     onForgetPhone: suspend (phoneId: String) -> Boolean,
@@ -74,8 +74,13 @@ fun MyPhonesScreen(
     searches: Map<String, Search> = emptyMap(),
     /** Whether this member runs the group: only they may open a search, on their own phones. */
     mayLookFor: Boolean,
-    /** Opens a search on one of these phones; answers whether it stuck. */
-    onSearch: suspend (phoneId: String, phoneName: String?, renew: Boolean, hours: Int) -> Boolean,
+    /** Opens a search on one of these phones; answers how the write came out. */
+    onSearch: suspend (
+        phoneId: String,
+        phoneName: String?,
+        renew: Boolean,
+        hours: Int,
+    ) -> WriteOutcome,
     /** Ends the search on one phone: it is found. */
     onEndSearch: suspend (phoneId: String) -> Unit,
     onClose: () -> Unit,
@@ -92,13 +97,13 @@ fun MyPhonesScreen(
     val sirens by remember(ringable) { sirensOf(ringable, sirenOf) }
         .collectAsState(initial = emptyMap())
     var sirenAsk by remember { mutableStateOf<PhoneLine?>(null) }
-    var sirenTrouble by remember { mutableStateOf(false) }
+    var sirenTrouble by remember { mutableStateOf<WriteOutcome?>(null) }
     var sirenBusy by remember { mutableStateOf(false) }
     // Which phone the search dialog is about, held apart from whether the
     // write is refused, the same way the siren state above is.
     var searchAsk by remember { mutableStateOf<PhoneLine?>(null) }
     var searchHours by remember { mutableStateOf(DEFAULT_SEARCH_HOURS) }
-    var searchTrouble by remember { mutableStateOf(false) }
+    var searchTrouble by remember { mutableStateOf<WriteOutcome?>(null) }
     var searchBusy by remember { mutableStateOf(false) }
     var helpOpen by remember { mutableStateOf(false) }
     // The phone the member asked to remove, held while the dialog is up.
@@ -120,15 +125,15 @@ fun MyPhonesScreen(
 
         sirenBusy = true
         scope.launch {
-            val allowed = onCallSiren(phone.phoneId)
+            val outcome = onCallSiren(phone.phoneId)
 
             sirenBusy = false
 
-            if (allowed) {
+            if (outcome == WriteOutcome.DONE) {
                 sirenAsk = null
-                sirenTrouble = false
+                sirenTrouble = null
             } else {
-                sirenTrouble = true
+                sirenTrouble = outcome
             }
         }
     }
@@ -154,7 +159,7 @@ fun MyPhonesScreen(
     fun askSearch(phone: PhoneLine) {
         searchAsk = phone
         searchHours = DEFAULT_SEARCH_HOURS
-        searchTrouble = false
+        searchTrouble = null
     }
 
     fun writeSearch() {
@@ -162,15 +167,15 @@ fun MyPhonesScreen(
 
         searchBusy = true
         scope.launch {
-            val allowed = onSearch(phone.phoneId, phone.name, false, searchHours)
+            val outcome = onSearch(phone.phoneId, phone.name, false, searchHours)
 
             searchBusy = false
 
-            if (allowed) {
+            if (outcome == WriteOutcome.DONE) {
                 searchAsk = null
-                searchTrouble = false
+                searchTrouble = null
             } else {
-                searchTrouble = true
+                searchTrouble = outcome
             }
         }
     }
@@ -274,6 +279,7 @@ fun MyPhonesScreen(
                             if (sounding) {
                                 Button(
                                     onClick = { scope.launch { onStopSiren(phone.phoneId) } },
+                                    enabled = !LocalLink.current.lost,
                                     colors =
                                     ButtonDefaults.buttonColors(
                                         containerColor = Color(SOUGHT_COLOUR),
@@ -291,7 +297,7 @@ fun MyPhonesScreen(
                                 OutlinedIconButton(
                                     border = BorderStroke(1.dp, Color(SOUGHT_COLOUR)),
                                     onClick = {
-                                        sirenTrouble = false
+                                        sirenTrouble = null
                                         sirenAsk = phone
                                     },
                                 ) {
@@ -310,6 +316,7 @@ fun MyPhonesScreen(
                         if (mayLookFor) {
                             SearchButton(
                                 standing = search != null,
+                                enabled = !LocalLink.current.lost,
                                 onClick = {
                                     if (search != null) {
                                         scope.launch { onEndSearch(phone.phoneId) }

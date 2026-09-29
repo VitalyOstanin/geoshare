@@ -245,10 +245,14 @@ fun MemberMap(
         }
     }
 
+    // What the markers show is what the phone last heard while the database
+    // is silent: grey, the way a phone long out of touch is drawn.
+    val linkLost = LocalLink.current.lost
+
     AndroidView(factory = { holder.view }, modifier = modifier) { _ ->
         holder.show(
             positions, names, faces, ownMemberId, now, soughtPhones, dark, selected, followMode,
-            followTarget,
+            followTarget, linkLost,
         )
         holder.lookAt(focus)
     }
@@ -323,6 +327,7 @@ private class MapHolder(val view: MapView) {
 
     /** The phones the group is looking for right now, by their `{uid}.{deviceId}`. */
     private var soughtPhones: Set<String> = emptySet()
+    private var linkLost = false
 
     /** The word a sought member's pin carries, read once from the resources. */
     var soughtMark: String = ""
@@ -473,8 +478,10 @@ private class MapHolder(val view: MapView) {
         selected: String?,
         followMode: FollowMode,
         followTarget: String?,
+        linkLost: Boolean,
     ) {
         members = positions
+        this.linkLost = linkLost
         this.names = names
         this.faces = faces
         this.ownMemberId = ownMemberId
@@ -785,7 +792,7 @@ private class MapHolder(val view: MapView) {
                 context = view.context,
                 name = label(single),
                 colour = memberColour(single.memberId),
-                stale = isGrey(single, now),
+                stale = greyed(single),
                 face = faces[single.memberId],
                 soughtMark = sought,
             )
@@ -803,7 +810,7 @@ private class MapHolder(val view: MapView) {
                     picture = faces[position.memberId],
                     initial = memberInitial(label(position)),
                     colour = memberColour(position.memberId),
-                    stale = isGrey(position, now),
+                    stale = greyed(position),
                 )
             },
             // A plus and a number, which is the same in every language the
@@ -833,8 +840,14 @@ private class MapHolder(val view: MapView) {
     ) { position ->
         val face = faces[position.memberId] != null
 
-        "${position.positionId}:${label(position)}:${isGrey(position, now)}:$face"
+        "${position.positionId}:${label(position)}:${greyed(position)}:$face"
     }
+
+    /**
+     * Grey for a phone long out of touch or in a false place, and for all of
+     * them while the database is silent.
+     */
+    private fun greyed(position: MemberPosition): Boolean = linkLost || isGrey(position, now)
 
     private fun label(position: MemberPosition): String =
         names[position.positionId] ?: shortName(position.memberId)

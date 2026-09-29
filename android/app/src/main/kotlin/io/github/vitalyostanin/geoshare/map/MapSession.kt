@@ -17,6 +17,7 @@ import io.github.vitalyostanin.geoshare.collection.Watcher
 import io.github.vitalyostanin.geoshare.membership.Roster
 import io.github.vitalyostanin.geoshare.service.CurrentGroup
 import io.github.vitalyostanin.geoshare.service.MapOnScreen
+import io.github.vitalyostanin.geoshare.service.databaseLink
 import io.github.vitalyostanin.geoshare.service.groupRoster
 import io.github.vitalyostanin.geoshare.service.groupSearches
 import io.github.vitalyostanin.geoshare.service.namedFalsePlaces
@@ -199,6 +200,18 @@ fun rememberGroupRoster(): State<Roster?> {
     val roster = remember(writing) { groupRoster() }
 
     return roster.collectAsStateWithLifecycle(initialValue = null)
+}
+
+/**
+ * Whether the database answers, collected while a screen is up; answering
+ * until the group document's snapshots say otherwise (see [DatabaseLink]).
+ */
+@Composable
+fun rememberDatabaseLink(): State<LinkState> {
+    val writing = groupNow()
+    val link = remember(writing) { databaseLink() }
+
+    return link.collectAsStateWithLifecycle(initialValue = LinkState())
 }
 
 /**

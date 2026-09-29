@@ -28,8 +28,8 @@ fun SirenDialog(
     selected: String,
     onSelect: (String) -> Unit,
     now: Instant,
-    /** Whether the last attempt to sound this siren was refused. */
-    trouble: Boolean,
+    /** How the last attempt to sound this siren came out; null before any. */
+    trouble: WriteOutcome?,
     busy: Boolean,
     onGo: () -> Unit,
     onCancel: () -> Unit,
@@ -57,17 +57,11 @@ fun SirenDialog(
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
 
-                if (trouble) {
-                    Text(
-                        text = stringResource(R.string.group_refused),
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.error,
-                    )
-                }
+                WriteTrouble(trouble)
             }
         },
         confirmButton = {
-            TextButton(onClick = onGo, enabled = !busy) {
+            TextButton(onClick = onGo, enabled = writable(busy, trouble)) {
                 Text(
                     text = stringResource(R.string.siren_go),
                     color = MaterialTheme.colorScheme.error,

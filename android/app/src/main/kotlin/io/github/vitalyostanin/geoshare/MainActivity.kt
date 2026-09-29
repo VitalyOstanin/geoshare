@@ -18,6 +18,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.darkColorScheme
 import androidx.compose.material3.lightColorScheme
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -35,13 +36,17 @@ import io.github.vitalyostanin.geoshare.auth.SignInController
 import io.github.vitalyostanin.geoshare.auth.SignInScreen
 import io.github.vitalyostanin.geoshare.log.AppLog
 import io.github.vitalyostanin.geoshare.map.KeepWatching
+import io.github.vitalyostanin.geoshare.map.LocalLink
 import io.github.vitalyostanin.geoshare.map.MapScreen
 import io.github.vitalyostanin.geoshare.map.PublishProfile
 import io.github.vitalyostanin.geoshare.map.SettingsActions
 import io.github.vitalyostanin.geoshare.map.SettingsState
+import io.github.vitalyostanin.geoshare.map.UnansweredException
+import io.github.vitalyostanin.geoshare.map.WriteOutcome
 import io.github.vitalyostanin.geoshare.map.labelledPositions
 import io.github.vitalyostanin.geoshare.map.labelledProfiles
 import io.github.vitalyostanin.geoshare.map.publishSharing
+import io.github.vitalyostanin.geoshare.map.rememberDatabaseLink
 import io.github.vitalyostanin.geoshare.map.rememberGroupRoster
 import io.github.vitalyostanin.geoshare.map.rememberMemberGrants
 import io.github.vitalyostanin.geoshare.map.rememberMemberPositions
@@ -51,6 +56,7 @@ import io.github.vitalyostanin.geoshare.map.rememberOwnSharedWith
 import io.github.vitalyostanin.geoshare.map.rememberSearches
 import io.github.vitalyostanin.geoshare.map.rememberWatchers
 import io.github.vitalyostanin.geoshare.map.withShare
+import io.github.vitalyostanin.geoshare.map.withinAnswerWait
 import io.github.vitalyostanin.geoshare.map.writeLabel
 import io.github.vitalyostanin.geoshare.map.writePhoneName
 import io.github.vitalyostanin.geoshare.permission.PermissionStep
@@ -241,6 +247,7 @@ class MainActivity : AppCompatActivity() {
                             val labels by rememberOwnLabels(current.memberId)
                             val sharedWith by rememberOwnSharedWith(current.memberId)
                             val roster by rememberGroupRoster()
+                            val link by rememberDatabaseLink()
                             // Kept on the screen rather than in the database:
                             // the code is written where nobody may read it
                             // back, this phone included, so the only copy to
@@ -279,271 +286,273 @@ class MainActivity : AppCompatActivity() {
                                 deviceId = device.id,
                             )
 
-                            MapScreen(
-                                // Called what this member called them, where
-                                // they did; the rest of the screen never
-                                // needs to know which name is whose.
-                                positions =
-                                labelledPositions(onTheMap.positions, labels, grants, searches),
-                                // Those whose position this phone is refused:
-                                // an empty map with a reason is not the same
-                                // thing as an empty map without one.
-                                outOfReach = onTheMap.outOfReach,
-                                profiles = labelledProfiles(profiles.orEmpty(), labels),
-                                watchers = watching,
-                                ownMemberId = current.memberId,
-                                ownPhoneId = positionId(current.memberId, device.id),
-                                ownDisplayName = current.displayName,
-                                ownPictureUrl = current.pictureUrl,
-                                searches = searches,
-                                settings =
-                                SettingsState(
-                                    sharing = sharingOn,
-                                    permissionNotice = permissionNotice,
-                                    theme = theme,
-                                    language = language,
-                                    sharedWith = sharedWith,
-                                    batteryUnrestricted = batteryFree,
-                                    sirenThroughSilence = sirenLoud,
-                                    startupScreen = startupAvailable,
-                                    startupSet = startupSet,
-                                    jumpsFiltered = jumpsFiltered,
-                                    sourcesLeftOut = sourcesLeftOut,
-                                    aidingDoubted = aidingDoubted,
-                                    roster = roster,
-                                    grants = grants,
-                                    invitation = invitation,
-                                    groupTrouble = groupTrouble,
-                                    phoneName =
-                                    grants[current.memberId]?.phones?.get(device.id)?.name,
+                            // Whether the database answers, told to every screen below the map
+                            // rather than passed down through each of them.
+                            CompositionLocalProvider(LocalLink provides link) {
+                                MapScreen(
+                                    // Called what this member called them, where
+                                    // they did; the rest of the screen never
+                                    // needs to know which name is whose.
+                                    positions =
+                                    labelledPositions(onTheMap.positions, labels, grants, searches),
+                                    // Those whose position this phone is refused:
+                                    // an empty map with a reason is not the same
+                                    // thing as an empty map without one.
+                                    outOfReach = onTheMap.outOfReach,
+                                    profiles = labelledProfiles(profiles.orEmpty(), labels),
+                                    watchers = watching,
+                                    ownMemberId = current.memberId,
+                                    ownPhoneId = positionId(current.memberId, device.id),
+                                    ownDisplayName = current.displayName,
+                                    ownPictureUrl = current.pictureUrl,
                                     searches = searches,
-                                ),
-                                actions =
-                                SettingsActions(
-                                    onSharingChange = { wanted ->
-                                        sharingOn = wanted
-                                        applySharing(wanted)
-                                    },
-                                    // Read by the service out of the same
-                                    // store, which is where it looks on every
-                                    // fix that arrives.
-                                    onJumpsFilteredChange = { wanted ->
-                                        jumpsFiltered = wanted
-                                        jumps.enabled = wanted
-                                    },
-                                    // Left in the same store for the service
-                                    // to pick up and spend: the request has
-                                    // to outlive this screen, since the phone
-                                    // may not have a fix to answer it with
-                                    // until minutes from now.
-                                    // The service reads the same store on
-                                    // every answer it gets, so the choice
-                                    // takes effect at the next fix rather
-                                    // than at the next restart.
-                                    onSourceUseChange = { source, counted ->
-                                        sources.use(source, counted)
-                                        sourcesLeftOut = sources.leftOut
-                                    },
-                                    onForgetPlace = { jumps.askToForget() },
-                                    // Done here and not in the service:
-                                    // the command is answered by the
-                                    // receiver on the spot, and what it
-                                    // answered is what the row shows.
-                                    onForgetAiding = {
-                                        forgetAidingData(this@MainActivity)
-                                    },
-                                    onThemeChange = { wanted ->
-                                        theme = wanted
-                                        appearance.choice = wanted
-                                    },
-                                    // Handed to the platform and not kept
-                                    // here: it stores the answer, tells the
-                                    // system settings about it and builds the
-                                    // screens again in the new language.
-                                    onLanguageChange = { wanted -> speak(wanted) },
-                                    // Written into the grant, and left to be
-                                    // read back: the phones of a member share
-                                    // the same permissions, so the answer has
-                                    // to come from where all of them look.
-                                    onShare = { readerId, span ->
-                                        lifecycleScope.launch {
-                                            publishSharing(
-                                                memberId = current.memberId,
-                                                sharedWith =
-                                                withShare(
-                                                    sharedWith = sharedWith,
-                                                    readerId = readerId,
-                                                    span = span,
-                                                    now = Instant.now(),
-                                                ),
-                                            )
-                                        }
-                                    },
-                                    // Read back through the phones of this
-                                    // member, like every other phone reads it.
-                                    onPhoneNameChange = { name ->
-                                        lifecycleScope.launch {
-                                            writePhoneName(current.memberId, device.id, name)
-                                        }
-                                    },
-                                    onOpenSettings = ::openApplicationSettings,
-                                    onAllowBattery = ::askBatteryExemption,
-                                    // Read back in onStart, as the battery row is.
-                                    onAllowSirenThroughSilence = ::askSirenThroughSilence,
-                                    onOpenStartup = ::openStartupScreen,
-                                    onStartupSetChange = { set ->
-                                        startupSet = set
-                                        backgroundWork.startupSet = set
-                                    },
-                                    // Refused when a group already exists,
-                                    // which is the answer to the question the
-                                    // screen cannot ask: a phone outside a
-                                    // group cannot read the roster, so it
-                                    // cannot tell an empty household from one
-                                    // it is not in.
-                                    onFoundGroup = {
-                                        lifecycleScope.launch {
-                                            groupTrouble =
-                                                !withGroup("found a group") {
-                                                    foundGroup(
-                                                        this@MainActivity,
-                                                        current.memberId,
-                                                    )
-                                                }
-                                        }
-                                    },
-                                    onMakeInvitation = {
-                                        lifecycleScope.launch {
-                                            groupTrouble =
-                                                !withGroup("made an invitation") {
-                                                    invitation =
-                                                        makeInvitation(current.memberId)
-                                                }
-                                        }
-                                    },
-                                    onJoinGroup = { invited ->
-                                        lifecycleScope.launch {
-                                            groupTrouble =
-                                                !withGroup("joined a group") {
-                                                    joinGroup(
-                                                        this@MainActivity,
-                                                        current.memberId,
-                                                        invited,
-                                                    )
-                                                }
-                                        }
-                                    },
-                                    onRemoveMember = { memberId ->
-                                        lifecycleScope.launch {
-                                            groupTrouble =
-                                                !withGroup("removed a member") {
-                                                    roster?.let {
-                                                        removeFromGroup(it, memberId)
-                                                    }
-                                                }
-                                        }
-                                    },
-                                    onSetRunning = { memberId, runs ->
-                                        lifecycleScope.launch {
-                                            groupTrouble =
-                                                !withGroup("changed who runs the group") {
-                                                    setRunning(memberId, runs)
-                                                }
-                                        }
-                                    },
-                                    onSignOut = {
-                                        lifecycleScope.launch {
-                                            forgetThisPhone(current.memberId)
-                                            signIn.signOut()
-                                        }
-                                    },
-                                    // A suspend function called from the
-                                    // dialog's own coroutine rather than
-                                    // wrapped in lifecycleScope.launch here:
-                                    // the dialog has to stay open on a
-                                    // refusal and say so, which nothing
-                                    // fire-and-forget could tell it.
-                                    onSearch = { phoneId, phoneName, renew, hours ->
-                                        try {
-                                            if (renew) {
-                                                renewSearch(
-                                                    phoneId,
-                                                    phoneName,
-                                                    current.memberId,
-                                                    hours,
-                                                )
-                                            } else {
-                                                openSearch(
-                                                    phoneId,
-                                                    phoneName,
-                                                    current.memberId,
-                                                    hours,
+                                    settings =
+                                    SettingsState(
+                                        sharing = sharingOn,
+                                        permissionNotice = permissionNotice,
+                                        theme = theme,
+                                        language = language,
+                                        sharedWith = sharedWith,
+                                        batteryUnrestricted = batteryFree,
+                                        sirenThroughSilence = sirenLoud,
+                                        startupScreen = startupAvailable,
+                                        startupSet = startupSet,
+                                        jumpsFiltered = jumpsFiltered,
+                                        sourcesLeftOut = sourcesLeftOut,
+                                        aidingDoubted = aidingDoubted,
+                                        roster = roster,
+                                        grants = grants,
+                                        invitation = invitation,
+                                        groupTrouble = groupTrouble,
+                                        phoneName =
+                                        grants[current.memberId]?.phones?.get(device.id)?.name,
+                                        searches = searches,
+                                    ),
+                                    actions =
+                                    SettingsActions(
+                                        onSharingChange = { wanted ->
+                                            sharingOn = wanted
+                                            applySharing(wanted)
+                                        },
+                                        // Read by the service out of the same
+                                        // store, which is where it looks on every
+                                        // fix that arrives.
+                                        onJumpsFilteredChange = { wanted ->
+                                            jumpsFiltered = wanted
+                                            jumps.enabled = wanted
+                                        },
+                                        // Left in the same store for the service
+                                        // to pick up and spend: the request has
+                                        // to outlive this screen, since the phone
+                                        // may not have a fix to answer it with
+                                        // until minutes from now.
+                                        // The service reads the same store on
+                                        // every answer it gets, so the choice
+                                        // takes effect at the next fix rather
+                                        // than at the next restart.
+                                        onSourceUseChange = { source, counted ->
+                                            sources.use(source, counted)
+                                            sourcesLeftOut = sources.leftOut
+                                        },
+                                        onForgetPlace = { jumps.askToForget() },
+                                        // Done here and not in the service:
+                                        // the command is answered by the
+                                        // receiver on the spot, and what it
+                                        // answered is what the row shows.
+                                        onForgetAiding = {
+                                            forgetAidingData(this@MainActivity)
+                                        },
+                                        onThemeChange = { wanted ->
+                                            theme = wanted
+                                            appearance.choice = wanted
+                                        },
+                                        // Handed to the platform and not kept
+                                        // here: it stores the answer, tells the
+                                        // system settings about it and builds the
+                                        // screens again in the new language.
+                                        onLanguageChange = { wanted -> speak(wanted) },
+                                        // Written into the grant, and left to be
+                                        // read back: the phones of a member share
+                                        // the same permissions, so the answer has
+                                        // to come from where all of them look.
+                                        onShare = { readerId, span ->
+                                            lifecycleScope.launch {
+                                                publishSharing(
+                                                    memberId = current.memberId,
+                                                    sharedWith =
+                                                    withShare(
+                                                        sharedWith = sharedWith,
+                                                        readerId = readerId,
+                                                        span = span,
+                                                        now = Instant.now(),
+                                                    ),
                                                 )
                                             }
-
-                                            true
-                                        } catch (cancellation: CancellationException) {
-                                            throw cancellation
-                                        } catch (refusal: Exception) {
-                                            AppLog.w(TAG, "a search could not be written", refusal)
-
-                                            false
+                                        },
+                                        // Read back through the phones of this
+                                        // member, like every other phone reads it.
+                                        onPhoneNameChange = { name ->
+                                            lifecycleScope.launch {
+                                                writePhoneName(current.memberId, device.id, name)
+                                            }
+                                        },
+                                        onOpenSettings = ::openApplicationSettings,
+                                        onAllowBattery = ::askBatteryExemption,
+                                        // Read back in onStart, as the battery row is.
+                                        onAllowSirenThroughSilence = ::askSirenThroughSilence,
+                                        onOpenStartup = ::openStartupScreen,
+                                        onStartupSetChange = { set ->
+                                            startupSet = set
+                                            backgroundWork.startupSet = set
+                                        },
+                                        // Refused when a group already exists,
+                                        // which is the answer to the question the
+                                        // screen cannot ask: a phone outside a
+                                        // group cannot read the roster, so it
+                                        // cannot tell an empty household from one
+                                        // it is not in.
+                                        onFoundGroup = {
+                                            lifecycleScope.launch {
+                                                groupTrouble =
+                                                    !withGroup("found a group") {
+                                                        foundGroup(
+                                                            this@MainActivity,
+                                                            current.memberId,
+                                                        )
+                                                    }
+                                            }
+                                        },
+                                        onMakeInvitation = {
+                                            lifecycleScope.launch {
+                                                groupTrouble =
+                                                    !withGroup("made an invitation") {
+                                                        invitation =
+                                                            makeInvitation(current.memberId)
+                                                    }
+                                            }
+                                        },
+                                        onJoinGroup = { invited ->
+                                            lifecycleScope.launch {
+                                                groupTrouble =
+                                                    !withGroup("joined a group") {
+                                                        joinGroup(
+                                                            this@MainActivity,
+                                                            current.memberId,
+                                                            invited,
+                                                        )
+                                                    }
+                                            }
+                                        },
+                                        onRemoveMember = { memberId ->
+                                            lifecycleScope.launch {
+                                                groupTrouble =
+                                                    !withGroup("removed a member") {
+                                                        roster?.let {
+                                                            removeFromGroup(it, memberId)
+                                                        }
+                                                    }
+                                            }
+                                        },
+                                        onSetRunning = { memberId, runs ->
+                                            lifecycleScope.launch {
+                                                groupTrouble =
+                                                    !withGroup("changed who runs the group") {
+                                                        setRunning(memberId, runs)
+                                                    }
+                                            }
+                                        },
+                                        onSignOut = {
+                                            lifecycleScope.launch {
+                                                forgetThisPhone(current.memberId)
+                                                signIn.signOut()
+                                            }
+                                        },
+                                        // A suspend function called from the
+                                        // dialog's own coroutine rather than
+                                        // wrapped in lifecycleScope.launch here:
+                                        // the dialog has to stay open on a
+                                        // refusal and say so, which nothing
+                                        // fire-and-forget could tell it.
+                                        onSearch = { phoneId, phoneName, renew, hours ->
+                                            writeOutcome("a search could not be written") {
+                                                if (renew) {
+                                                    renewSearch(
+                                                        phoneId,
+                                                        phoneName,
+                                                        current.memberId,
+                                                        hours,
+                                                    )
+                                                } else {
+                                                    openSearch(
+                                                        phoneId,
+                                                        phoneName,
+                                                        current.memberId,
+                                                        hours,
+                                                    )
+                                                }
+                                            }
+                                        },
+                                        sirenOf = ::phoneSiren,
+                                        onCallSiren = { phoneId ->
+                                            writeOutcome("a siren could not be called") {
+                                                callSiren(phoneId, current.memberId)
+                                            }
+                                        },
+                                        onStopSiren = { phoneId ->
+                                            try {
+                                                withinAnswerWait {
+                                                    stopSiren(phoneId, current.memberId)
+                                                }
+                                            } catch (cancellation: CancellationException) {
+                                                throw cancellation
+                                            } catch (refusal: Exception) {
+                                                AppLog.w(
+                                                    TAG,
+                                                    "a siren could not be stopped",
+                                                    refusal,
+                                                )
+                                            }
+                                        },
+                                        onForgetPhone = { phoneId ->
+                                            try {
+                                                forgetPhone(
+                                                    current.memberId,
+                                                    phoneId.substringAfter('.'),
+                                                )
+                                                true
+                                            } catch (cancellation: CancellationException) {
+                                                throw cancellation
+                                            } catch (refusal: Exception) {
+                                                AppLog.w(
+                                                    TAG,
+                                                    "a phone could not be removed",
+                                                    refusal,
+                                                )
+                                                false
+                                            }
+                                        },
+                                        onEndSearch = { phoneId ->
+                                            try {
+                                                withinAnswerWait { endSearch(phoneId) }
+                                            } catch (cancellation: CancellationException) {
+                                                throw cancellation
+                                            } catch (refusal: Exception) {
+                                                AppLog.w(
+                                                    TAG,
+                                                    "a search could not be ended",
+                                                    refusal,
+                                                )
+                                            }
+                                        },
+                                    ),
+                                    labels = labels,
+                                    onLabel = { kind, key, name ->
+                                        lifecycleScope.launch {
+                                            writeLabel(current.memberId, kind, key, name)
                                         }
                                     },
-                                    sirenOf = ::phoneSiren,
-                                    onCallSiren = { phoneId ->
-                                        try {
-                                            callSiren(phoneId, current.memberId)
-
-                                            true
-                                        } catch (cancellation: CancellationException) {
-                                            throw cancellation
-                                        } catch (refusal: Exception) {
-                                            AppLog.w(TAG, "a siren could not be called", refusal)
-
-                                            false
-                                        }
-                                    },
-                                    onStopSiren = { phoneId ->
-                                        try {
-                                            stopSiren(phoneId, current.memberId)
-                                        } catch (cancellation: CancellationException) {
-                                            throw cancellation
-                                        } catch (refusal: Exception) {
-                                            AppLog.w(TAG, "a siren could not be stopped", refusal)
-                                        }
-                                    },
-                                    onForgetPhone = { phoneId ->
-                                        try {
-                                            forgetPhone(
-                                                current.memberId,
-                                                phoneId.substringAfter('.'),
-                                            )
-                                            true
-                                        } catch (cancellation: CancellationException) {
-                                            throw cancellation
-                                        } catch (refusal: Exception) {
-                                            AppLog.w(TAG, "a phone could not be removed", refusal)
-                                            false
-                                        }
-                                    },
-                                    onEndSearch = { phoneId ->
-                                        try {
-                                            endSearch(phoneId)
-                                        } catch (cancellation: CancellationException) {
-                                            throw cancellation
-                                        } catch (refusal: Exception) {
-                                            AppLog.w(TAG, "a search could not be ended", refusal)
-                                        }
-                                    },
-                                ),
-                                labels = labels,
-                                onLabel = { kind, key, name ->
-                                    lifecycleScope.launch {
-                                        writeLabel(current.memberId, kind, key, name)
-                                    }
-                                },
-                            )
+                                )
+                            }
                         }
 
                         else ->
@@ -830,6 +839,25 @@ class MainActivity : AppCompatActivity() {
             AppLog.w(TAG, "signing out with this phone still listed")
         }
     }
+
+    /**
+     * How a write asked for from a window came out: answered within
+     * [io.github.vitalyostanin.geoshare.map.ANSWER_WAIT], refused, or left
+     * unanswered — in which case Firestore still holds it and sends it later.
+     */
+    private suspend fun writeOutcome(failure: String, write: suspend () -> Unit): WriteOutcome =
+        try {
+            withinAnswerWait { write() }
+            WriteOutcome.DONE
+        } catch (cancellation: CancellationException) {
+            throw cancellation
+        } catch (late: UnansweredException) {
+            AppLog.w(TAG, "$failure: the database did not answer", late)
+            WriteOutcome.UNANSWERED
+        } catch (refusal: Exception) {
+            AppLog.w(TAG, failure, refusal)
+            WriteOutcome.REFUSED
+        }
 
     private companion object {
         const val TAG = "geoshare.main"

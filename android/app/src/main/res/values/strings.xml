@@ -7,6 +7,12 @@
     <string name="sign_in_action">Sign in with Google</string>
     <string name="sign_in_running">Signing in…</string>
     <string name="sign_in_failed_no_account">No Google account on this device. Add one in the system settings, then sign in again.</string>
+    <string name="link_lost">No connection to the database since %1$s</string>
+    <string name="link_known_at">Showing what was known at %1$s. Markers are grey.</string>
+    <string name="link_known_never">The database has not answered yet. Markers are grey.</string>
+    <string name="known_at">as of %1$s</string>
+    <string name="link_lost_action">No connection to the database: this would not reach the device. Try again once the connection is back.</string>
+    <string name="write_unanswered">The database did not answer in 15 seconds. The write goes out once the connection is back; it cannot be called off.</string>
     <string name="sign_in_failed_offline">No connection. Sign-in needs the network for a moment.</string>
     <string name="sign_in_failed_misconfigured">This build cannot sign in on this device: its Google services do not accept it.</string>
     <string name="sign_in_failed_unknown">Sign-in did not go through. Try again.</string>

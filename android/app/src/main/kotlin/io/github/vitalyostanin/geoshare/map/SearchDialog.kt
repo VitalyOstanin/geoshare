@@ -36,8 +36,8 @@ fun SearchDialog(
     hours: Int,
     onHoursChange: (Int) -> Unit,
     now: Instant,
-    /** Whether the last attempt to write this search was refused. */
-    trouble: Boolean,
+    /** How the last attempt to write this search came out; null before any. */
+    trouble: WriteOutcome?,
     busy: Boolean,
     onGo: () -> Unit,
     onCancel: () -> Unit,
@@ -83,17 +83,11 @@ fun SearchDialog(
                     style = MaterialTheme.typography.bodySmall,
                 )
 
-                if (trouble) {
-                    Text(
-                        text = stringResource(R.string.group_refused),
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.error,
-                    )
-                }
+                WriteTrouble(trouble)
             }
         },
         confirmButton = {
-            TextButton(onClick = onGo, enabled = !busy) {
+            TextButton(onClick = onGo, enabled = writable(busy, trouble)) {
                 Text(
                     text =
                     stringResource(if (renew) R.string.search_renew else R.string.search_go),

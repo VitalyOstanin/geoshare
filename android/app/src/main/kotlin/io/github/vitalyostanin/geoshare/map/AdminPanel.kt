@@ -88,16 +88,24 @@ fun AdminPanel(
     onMakeInvitation: () -> Unit,
     onRemoveMember: (String) -> Unit,
     onSetRunning: (String, Boolean) -> Unit,
-    /** Opens a search for one phone, or renews one already standing; answers whether it stuck. */
-    onSearch: suspend (phoneId: String, phoneName: String?, renew: Boolean, hours: Int) -> Boolean,
+    /**
+     * Opens a search for one phone, or renews one already standing; answers
+     * how the write came out.
+     */
+    onSearch: suspend (
+        phoneId: String,
+        phoneName: String?,
+        renew: Boolean,
+        hours: Int,
+    ) -> WriteOutcome,
     /** Ends a search: the phone has been found. */
     onEndSearch: suspend (phoneId: String) -> Unit,
     /** This phone's own `{uid}.{deviceId}`: the one phone nobody here rings. */
     ownPhoneId: String?,
     /** A phone's siren as the database has it, followed for as long as asked. */
     sirenOf: (phoneId: String) -> Flow<Siren?>,
-    /** Rings a phone; answers whether the call stuck. */
-    onCallSiren: suspend (phoneId: String) -> Boolean,
+    /** Rings a phone; answers how the write came out: done, refused or unanswered. */
+    onCallSiren: suspend (phoneId: String) -> WriteOutcome,
     onStopSiren: suspend (phoneId: String) -> Unit,
     onClose: () -> Unit,
     modifier: Modifier = Modifier,
@@ -114,7 +122,7 @@ fun AdminPanel(
     // is opened.
     var searchAsk by remember { mutableStateOf<SearchAsk?>(null) }
     var searchHours by remember { mutableStateOf(DEFAULT_SEARCH_HOURS) }
-    var searchTrouble by remember { mutableStateOf(false) }
+    var searchTrouble by remember { mutableStateOf<WriteOutcome?>(null) }
     var searchBusy by remember { mutableStateOf(false) }
     val scope = rememberCoroutineScope()
 
@@ -127,7 +135,7 @@ fun AdminPanel(
     val sirens by remember(ringable) { sirensOf(ringable, sirenOf) }
         .collectAsState(initial = emptyMap())
     var sirenAsk by remember { mutableStateOf<SirenAsk?>(null) }
-    var sirenTrouble by remember { mutableStateOf(false) }
+    var sirenTrouble by remember { mutableStateOf<WriteOutcome?>(null) }
     var sirenBusy by remember { mutableStateOf(false) }
     // The countdown reads seconds, and the panel's own clock ticks far slower.
     val sirenNow by produceState(now, sirens) {
@@ -144,15 +152,15 @@ fun AdminPanel(
 
         sirenBusy = true
         scope.launch {
-            val allowed = onCallSiren(ask.selected)
+            val outcome = onCallSiren(ask.selected)
 
             sirenBusy = false
 
-            if (allowed) {
+            if (outcome == WriteOutcome.DONE) {
                 sirenAsk = null
-                sirenTrouble = false
+                sirenTrouble = null
             } else {
-                sirenTrouble = true
+                sirenTrouble = outcome
             }
         }
     }
@@ -160,7 +168,7 @@ fun AdminPanel(
     fun askSearch(phone: PhoneLine, memberName: String, renew: Boolean) {
         searchAsk = SearchAsk(phone, memberName, renew)
         searchHours = DEFAULT_SEARCH_HOURS
-        searchTrouble = false
+        searchTrouble = null
     }
 
     fun writeSearch() {
@@ -168,15 +176,15 @@ fun AdminPanel(
 
         searchBusy = true
         scope.launch {
-            val allowed = onSearch(ask.phone.phoneId, ask.phone.name, ask.renew, searchHours)
+            val outcome = onSearch(ask.phone.phoneId, ask.phone.name, ask.renew, searchHours)
 
             searchBusy = false
 
-            if (allowed) {
+            if (outcome == WriteOutcome.DONE) {
                 searchAsk = null
-                searchTrouble = false
+                searchTrouble = null
             } else {
-                searchTrouble = true
+                searchTrouble = outcome
             }
         }
     }
@@ -236,7 +244,7 @@ fun AdminPanel(
                     sirens = sirens,
                     sirenNow = sirenNow,
                     onSiren = { phone ->
-                        sirenTrouble = false
+                        sirenTrouble = null
                         sirenAsk =
                             SirenAsk(
                                 name = line.displayName ?: line.memberId.take(NAME_SHOWN_INSTEAD),
@@ -598,6 +606,7 @@ private fun AdminPhoneRow(
             if (siren != null && sounding) {
                 Button(
                     onClick = onStopSiren,
+                    enabled = !LocalLink.current.lost,
                     colors =
                     ButtonDefaults.buttonColors(
                         containerColor = Color(SOUGHT_COLOUR),
@@ -629,6 +638,7 @@ private fun AdminPhoneRow(
             if (mayLookFor) {
                 SearchButton(
                     standing = search != null,
+                    enabled = !LocalLink.current.lost,
                     onClick = if (search != null) onEndSearch else onSearch,
                 )
             }
@@ -687,6 +697,7 @@ private fun AdminSearchSummary(
 
             Button(
                 onClick = onEndSearch,
+                enabled = !LocalLink.current.lost,
                 colors = ButtonDefaults.buttonColors(containerColor = Color(SOUGHT_COLOUR)),
             ) {
                 Text(text = stringResource(R.string.search_found))
@@ -722,6 +733,8 @@ internal fun phoneText(phone: PhoneLine, now: Instant, named: Boolean = true): S
     if (phone.charging) {
         said.add(stringResource(R.string.admin_phone_charging))
     }
+
+    knownNote()?.let(said::add)
 
     return said.joinToString(", ")
 }

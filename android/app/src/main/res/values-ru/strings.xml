@@ -7,6 +7,12 @@
     <string name="sign_in_action">Войти через Google</string>
     <string name="sign_in_running">Входим…</string>
     <string name="sign_in_failed_no_account">На устройстве нет аккаунта Google. Добавьте его в настройках устройства и войдите ещё раз.</string>
+    <string name="link_lost">Нет связи с базой с %1$s</string>
+    <string name="link_known_at">Показано то, что было известно на %1$s. Метки серые.</string>
+    <string name="link_known_never">База ещё не ответила ни разу. Метки серые.</string>
+    <string name="known_at">по данным на %1$s</string>
+    <string name="link_lost_action">Нет связи с базой: до устройства это не дойдёт. Повторите, когда связь вернётся.</string>
+    <string name="write_unanswered">База не ответила за 15 секунд. Запись уйдёт, когда связь вернётся; отменить её нельзя.</string>
     <string name="sign_in_failed_offline">Нет связи. Для входа сеть нужна хотя бы на минуту.</string>
     <string name="sign_in_failed_misconfigured">Эта сборка не может войти на этом устройстве: сервисы Google её не принимают.</string>
     <string name="sign_in_failed_unknown">Войти не удалось. Попробуйте ещё раз.</string>

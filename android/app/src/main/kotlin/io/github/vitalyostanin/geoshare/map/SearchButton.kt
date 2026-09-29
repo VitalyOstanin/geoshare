@@ -37,7 +37,13 @@ private const val BLINK_DIMMEST = 0.25f
  * screen reader; the help on the screen says the same to everybody else.
  */
 @Composable
-fun SearchButton(standing: Boolean, onClick: () -> Unit, modifier: Modifier = Modifier) {
+fun SearchButton(
+    standing: Boolean,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+    /** Off while the database is silent, for a standing search: ending it writes at once. */
+    enabled: Boolean = true,
+) {
     val icon = painterResource(R.drawable.ic_search_alarm)
 
     if (standing) {
@@ -55,6 +61,7 @@ fun SearchButton(standing: Boolean, onClick: () -> Unit, modifier: Modifier = Mo
 
         FilledIconButton(
             onClick = onClick,
+            enabled = enabled,
             colors =
             IconButtonDefaults.filledIconButtonColors(
                 containerColor = Color(SOUGHT_COLOUR),

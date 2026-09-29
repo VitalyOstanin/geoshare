@@ -125,20 +125,25 @@ data class SettingsActions(
     val onSignOut: () -> Unit,
     /**
      * Opens a search for one phone, or renews one already standing; answers
-     * whether the database allowed it.
+     * whether the database allowed it, refused it or left it unanswered.
      *
      * A suspend function returning the answer rather than a fire-and-forget
      * callback, unlike the actions above: the dialog that calls this has to
      * stay open on a refusal and say so, which a callback with nothing to
      * return could not tell it.
      */
-    val onSearch: suspend (phoneId: String, name: String?, renew: Boolean, hours: Int) -> Boolean,
+    val onSearch: suspend (
+        phoneId: String,
+        name: String?,
+        renew: Boolean,
+        hours: Int,
+    ) -> WriteOutcome,
     /** Ends a search: the phone has been found, or its owner has said so themselves. */
     val onEndSearch: suspend (phoneId: String) -> Unit,
     /** A phone's siren as the database has it, for the screen that rang it. */
     val sirenOf: (phoneId: String) -> Flow<Siren?>,
-    /** Rings a phone; answers whether the database allowed it, as [onSearch] does. */
-    val onCallSiren: suspend (phoneId: String) -> Boolean,
+    /** Rings a phone; answers how the write came out, as [onSearch] does. */
+    val onCallSiren: suspend (phoneId: String) -> WriteOutcome,
     /** Stops a phone's siren before its twenty seconds are up. */
     val onStopSiren: suspend (phoneId: String) -> Unit,
     /** Takes one of the member's own phones out of the group; answers whether it went. */
