@@ -284,7 +284,7 @@ export const EN = {
         'They will no longer see the group, nor the group them. ' +
         'Only a new invitation brings them back.',
     groupRemoveGo: 'Remove',
-    sirenHint: 'Siren for 20 seconds',
+    sirenHint: 'Siren for 22 seconds',
     myPhonesTitle: 'My devices',
     myPhonesNone: 'No device has shared its position from this account yet',
     phoneRemove: 'Remove device',
@@ -292,7 +292,7 @@ export const EN = {
     helpClose: 'Got it',
     helpTitleScreen: 'Buttons on this screen',
     helpTitleMap: 'Buttons on the map',
-    helpSiren: 'Siren for 20 seconds: the device sounds loud, even with its sound off, so that it can be found',
+    helpSiren: 'Siren for 22 seconds: the device sounds loud, even with its sound off, so that it can be found',
     helpSearch: 'Open a search: the whole group sees the member on the map, even those they never shared it with',
     helpSearchStanding: 'A search is on. Press it once the member is found',
     helpRemove: 'Remove the device: it disappears from the map and the lists of everybody',
@@ -312,7 +312,7 @@ export const EN = {
     sirenTitle: (name) => `Switch on the siren: ${name}?`,
     sirenPhoneChip: (name, age) => `${name} · ${age}`,
     sirenNote:
-        'The device will sound loudly for 20 seconds, even with its sound off. ' +
+        'The device will sound loudly for 22 seconds, even with its sound off. ' +
         'The siren can be stopped on the device itself or here.',
     sirenGo: 'Switch on',
     sirenStop: 'Stop',

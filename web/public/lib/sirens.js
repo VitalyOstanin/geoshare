@@ -8,7 +8,7 @@
 // SIREN_FRESH_MS.
 
 /** How long a phone sounds once it starts, in seconds. */
-export const SIREN_SECONDS = 20;
+export const SIREN_SECONDS = 22;
 
 /** How long a call waits for its phone, and how long the caller's screen waits for an answer. */
 export const SIREN_FRESH_MS = 60_000;

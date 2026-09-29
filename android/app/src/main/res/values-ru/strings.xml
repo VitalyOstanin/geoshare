@@ -233,9 +233,9 @@
     <string name="siren_channel">Сирена</string>
     <string name="siren_title">Включить сирену: %1$s?</string>
     <string name="siren_phone_chip">%1$s · %2$s</string>
-    <string name="siren_note">Устройство будет громко звучать 20 секунд, даже если на нём выключен звук. Выключить сирену можно на самом устройстве или здесь.</string>
+    <string name="siren_note">Устройство будет громко звучать 22 секунды, даже если на нём выключен звук. Выключить сирену можно на самом устройстве или здесь.</string>
     <string name="siren_go">Включить</string>
-    <string name="siren_hint">Сирена на 20 секунд</string>
+    <string name="siren_hint">Сирена на 22 секунды</string>
     <string name="siren_stop_short">Выключить</string>
     <string name="siren_status_waiting">сирена на %1$s · ждём ответа устройства</string>
     <string name="siren_status_sounding">сирена на %1$s · %2$d с · устройство приняло</string>
@@ -373,7 +373,7 @@
     <string name="help_close">Понятно</string>
     <string name="help_title_screen">Кнопки на этом экране</string>
     <string name="help_title_map">Кнопки на карте</string>
-    <string name="help_siren">Сирена на 20 секунд: устройство громко звучит, даже если на нём выключен звук, — чтобы его нашли</string>
+    <string name="help_siren">Сирена на 22 секунды: устройство громко звучит, даже если на нём выключен звук, — чтобы его нашли</string>
     <string name="help_search">Открыть поиск: вся группа увидит участника на карте, даже те, кому он её не открывал</string>
     <string name="help_search_standing">Поиск идёт. Нажмите, когда участник найден</string>
     <string name="help_remove">Удалить устройство: оно исчезнет с карты и из списков у всех участников</string>

@@ -13,7 +13,7 @@ import java.time.Instant
 // SIREN_FRESH.
 
 /** How long a phone sounds once it starts, in seconds. */
-const val SIREN_SECONDS: Long = 20
+const val SIREN_SECONDS: Long = 22
 
 /** How long a call waits for its phone, and how long the caller's screen waits for an answer. */
 val SIREN_FRESH: Duration = Duration.ofSeconds(60)

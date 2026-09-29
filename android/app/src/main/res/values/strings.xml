@@ -257,9 +257,9 @@
     <string name="siren_channel">Siren</string>
     <string name="siren_title">Switch on the siren: %1$s?</string>
     <string name="siren_phone_chip">%1$s · %2$s</string>
-    <string name="siren_note">The device will sound loudly for 20 seconds, even with its sound off. The siren can be stopped on the device itself or here.</string>
+    <string name="siren_note">The device will sound loudly for 22 seconds, even with its sound off. The siren can be stopped on the device itself or here.</string>
     <string name="siren_go">Switch on</string>
-    <string name="siren_hint">Siren for 20 seconds</string>
+    <string name="siren_hint">Siren for 22 seconds</string>
     <string name="siren_stop_short">Stop</string>
     <string name="siren_status_waiting">siren on %1$s · waiting for the device</string>
     <string name="siren_status_sounding">siren on %1$s · %2$d s · the device answered</string>
@@ -417,7 +417,7 @@
     <string name="help_close">Got it</string>
     <string name="help_title_screen">Buttons on this screen</string>
     <string name="help_title_map">Buttons on the map</string>
-    <string name="help_siren">Siren for 20 seconds: the device sounds loud, even with its sound off, so that it can be found</string>
+    <string name="help_siren">Siren for 22 seconds: the device sounds loud, even with its sound off, so that it can be found</string>
     <string name="help_search">Open a search: the whole group sees the member on the map, even those they never shared it with</string>
     <string name="help_search_standing">A search is on. Press it once the member is found</string>
     <string name="help_remove">Remove the device: it disappears from the map and the lists of everybody</string>
