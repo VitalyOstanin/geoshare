@@ -60,8 +60,8 @@
     <string name="map_detail_false_place_and_after">This position and %1$d more after it are in</string>
     <string name="map_detail_false_place_where">a known spoofed area</string>
     <string name="map_detail_settling_sentence">The receiver had not settled since the device was switched on.</string>
-    <string name="map_detail_more">More details</string>
-    <string name="map_detail_fewer">Fewer details</string>
+    <string name="map_detail_expand">Pull the card up for the details</string>
+    <string name="map_detail_collapse">Pull the card down to the summary</string>
     <string name="map_detail_at">At</string>
     <string name="map_detail_online">Online</string>
     <string name="map_detail_mode">Mode</string>
@@ -339,7 +339,7 @@
     <string name="map_watching">Map open: %1$s</string>
 
     <string name="map_more">More</string>
-    <string name="map_more_hide">Hide</string>
+    <string name="map_more_title">Other members</string>
 
     <string name="map_follow_none">Not following</string>
     <!-- The member's name inside a phrase rather than on its own: a button

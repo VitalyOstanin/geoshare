@@ -17,14 +17,15 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -80,11 +81,12 @@ internal fun MemberButtons(
     now: Instant,
     /** The group's searches, so a phone being looked for is marked in the strip too. */
     searches: Map<String, Search>,
+    /** Whether the sheet listing the members the strip has no room for is open. */
     showAll: Boolean,
     /** Whether ONE is waiting for a member to be chosen off this very strip. */
     awaitingTarget: Boolean,
     onSelect: (String) -> Unit,
-    onToggleAll: () -> Unit,
+    onShowAll: (Boolean) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val onStrip = membersOnTheStrip(members.size)
@@ -151,25 +153,66 @@ internal fun MemberButtons(
             if (rest.isNotEmpty()) {
                 MoreButton(
                     count = rest.size,
-                    open = showAll,
-                    onToggle = onToggleAll,
+                    onOpen = { onShowAll(true) },
                     modifier = Modifier.weight(1f),
                 )
             }
         }
+    }
 
-        if (showAll && rest.isNotEmpty()) {
-            LazyColumn(modifier = Modifier.fillMaxWidth().heightIn(max = LIST_MAX_HEIGHT)) {
-                items(rest, key = { it.positionId }) { member ->
-                    MemberRow(
-                        member = member,
-                        name = names[member.positionId] ?: shortName(member.memberId),
-                        face = faces[member.memberId],
-                        now = now,
-                        sought = searches[member.positionId]?.takeIf { it.stands(now) },
-                        onSelect = onSelect,
-                    )
-                }
+    if (showAll && rest.isNotEmpty()) {
+        MoreSheet(
+            members = rest,
+            names = names,
+            faces = faces,
+            now = now,
+            searches = searches,
+            onSelect = { positionId ->
+                onShowAll(false)
+                onSelect(positionId)
+            },
+            onClose = { onShowAll(false) },
+        )
+    }
+}
+
+/**
+ * The members the strip has no room for, in a sheet over the map.
+ *
+ * A sheet rather than a list unfolded under the strip: the list pushed the
+ * strip up the screen and took the map's height with it, and closing it wanted
+ * a button of its own. The sheet is swiped away or dismissed by a tap beside
+ * it, the way the help is, and choosing a member closes it too, since the card
+ * that opens is what the member was chosen for.
+ */
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun MoreSheet(
+    members: List<MemberPosition>,
+    names: Map<String, String>,
+    faces: Map<String, Bitmap>,
+    now: Instant,
+    searches: Map<String, Search>,
+    onSelect: (String) -> Unit,
+    onClose: () -> Unit,
+) {
+    ModalBottomSheet(onDismissRequest = onClose) {
+        Text(
+            text = stringResource(R.string.map_more_title),
+            style = MaterialTheme.typography.titleMedium,
+            modifier = Modifier.padding(horizontal = 16.dp),
+        )
+
+        LazyColumn(modifier = Modifier.fillMaxWidth().padding(top = 8.dp, bottom = 16.dp)) {
+            items(members, key = { it.positionId }) { member ->
+                MemberRow(
+                    member = member,
+                    name = names[member.positionId] ?: shortName(member.memberId),
+                    face = faces[member.memberId],
+                    now = now,
+                    sought = searches[member.positionId]?.takeIf { it.stands(now) },
+                    onSelect = onSelect,
+                )
             }
         }
     }
@@ -278,20 +321,15 @@ private fun MemberButton(
 }
 
 @Composable
-private fun MoreButton(
-    count: Int,
-    open: Boolean,
-    onToggle: () -> Unit,
-    modifier: Modifier = Modifier,
-) {
+private fun MoreButton(count: Int, onOpen: () -> Unit, modifier: Modifier = Modifier) {
     Surface(
-        modifier = modifier.clickable { onToggle() },
+        modifier = modifier.clickable { onOpen() },
         shape = MaterialTheme.shapes.medium,
         tonalElevation = 2.dp,
     ) {
         Column(modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp)) {
             Text(
-                text = stringResource(if (open) R.string.map_more_hide else R.string.map_more),
+                text = stringResource(R.string.map_more),
                 style = MaterialTheme.typography.bodyMedium,
                 maxLines = 1,
             )

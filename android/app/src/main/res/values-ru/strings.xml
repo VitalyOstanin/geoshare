@@ -53,8 +53,8 @@
     <string name="map_detail_false_place_and_after">Эта позиция и ещё %1$d после неё — в</string>
     <string name="map_detail_false_place_where">известной области подмены</string>
     <string name="map_detail_settling_sentence">Приёмник не устоялся после включения устройства.</string>
-    <string name="map_detail_more">Подробнее</string>
-    <string name="map_detail_fewer">Свернуть</string>
+    <string name="map_detail_expand">Вытянуть карточку до подробностей</string>
+    <string name="map_detail_collapse">Свернуть карточку до сводки</string>
     <string name="map_detail_at">Время позиции</string>
     <string name="map_detail_online">В сети</string>
     <string name="map_detail_mode">Режим</string>
@@ -304,7 +304,7 @@
     <string name="map_watching">Карту смотрят: %1$s</string>
 
     <string name="map_more">Ещё</string>
-    <string name="map_more_hide">Скрыть</string>
+    <string name="map_more_title">Остальные участники</string>
 
     <string name="map_follow_none">Не следовать</string>
     <string name="map_follow_one">Следовать за: %1$s</string>

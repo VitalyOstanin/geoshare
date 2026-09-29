@@ -520,18 +520,19 @@ fun MapScreen(
                     runsTheGroup = runsTheGroup,
                     onFound = { actions.onEndSearch(opened.positionId) },
                     detailsOpen = detailsOpen,
-                    onToggleDetails = { detailsOpen = !detailsOpen },
+                    onDetailsOpen = { detailsOpen = it },
                     onClose = { openedPositionId = null },
                     onNamePhone = { naming = LabelKind.PHONE to opened.positionId },
                     // Oneself is named on the account, not here.
                     onNamePerson =
                     { naming = LabelKind.MEMBER to opened.memberId }
                         .takeIf { opened.memberId != ownMemberId },
+                    // Against the strip rather than floating over the map: the
+                    // card is a sheet pulled up out of it.
                     modifier =
                     Modifier
                         .align(Alignment.BottomCenter)
-                        .heightIn(max = cardHeight)
-                        .padding(12.dp),
+                        .heightIn(max = cardHeight),
                 )
             } else if (group.size > 1) {
                 GroupDetail(
@@ -595,7 +596,7 @@ fun MapScreen(
                 showAll = showAll,
                 awaitingTarget = awaitingTarget,
                 onSelect = ::lookAt,
-                onToggleAll = { showAll = !showAll },
+                onShowAll = { showAll = it },
                 modifier = Modifier.navigationBarsPadding(),
             )
 

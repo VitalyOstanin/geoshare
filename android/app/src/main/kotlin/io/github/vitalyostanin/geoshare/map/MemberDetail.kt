@@ -1,8 +1,14 @@
 package io.github.vitalyostanin.geoshare.map
 
 import android.graphics.Bitmap
+import androidx.compose.animation.animateContentSize
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.Orientation
+import androidx.compose.foundation.gestures.draggable
+import androidx.compose.foundation.gestures.rememberDraggableState
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
@@ -17,6 +23,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
@@ -27,6 +34,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -35,9 +43,15 @@ import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.input.nestedscroll.NestedScrollConnection
+import androidx.compose.ui.input.nestedscroll.NestedScrollSource
+import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.LinkAnnotation
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.TextLinkStyles
@@ -45,6 +59,7 @@ import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.text.withLink
+import androidx.compose.ui.unit.Velocity
 import androidx.compose.ui.unit.dp
 import io.github.vitalyostanin.geoshare.R
 import io.github.vitalyostanin.geoshare.collection.JumpReason
@@ -135,148 +150,314 @@ internal fun MemberDetail(
     /** Whether this viewer runs the group, and so may say the member has been found. */
     runsTheGroup: Boolean,
     onFound: suspend () -> Unit,
+    /** Whether the card is pulled up far enough to show the rows under the summary. */
     detailsOpen: Boolean,
-    onToggleDetails: () -> Unit,
+    onDetailsOpen: (Boolean) -> Unit,
     onClose: () -> Unit,
     onNamePhone: () -> Unit,
     onNamePerson: (() -> Unit)?,
     modifier: Modifier = Modifier,
 ) {
+    val pull =
+        rememberSheetPull(
+            detailsOpen = detailsOpen,
+            onDetailsOpen = onDetailsOpen,
+            onClose = onClose,
+        )
+
     Surface(
-        modifier = modifier.fillMaxWidth(),
-        shape = MaterialTheme.shapes.large,
+        modifier = modifier.fillMaxWidth().nestedScroll(pull.connection),
+        shape = SHEET_SHAPE,
         tonalElevation = 4.dp,
+        shadowElevation = 4.dp,
     ) {
-        Column(
-            modifier =
-            Modifier
-                // Bounded by whoever placed it, so that a card is never taller
-                // than the map it stands on; what does not fit is scrolled to
-                // rather than cut off.
-                .verticalScroll(rememberScrollState())
-                .padding(start = 16.dp, top = 8.dp, end = 8.dp, bottom = 12.dp),
-        ) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                MemberFace(
-                    memberId = member.memberId,
-                    name = name,
-                    picture = face,
-                    stale = isGrey(member, now),
-                )
+        Column {
+            SheetHandle(
+                detailsOpen = detailsOpen,
+                onDrag = pull::drag,
+                onDragStopped = pull::settle,
+                onClick = { onDetailsOpen(!detailsOpen) },
+            )
 
-                // The two names are what is pressed to rename them, underlined
-                // the way the other words of the card that can be pressed are:
-                // a row of its own for renaming took two lines of a card that
-                // is short of them. Oneself is named on the account, not here.
-                Column(modifier = Modifier.weight(1f).padding(start = 8.dp)) {
-                    NameText(
-                        text = name,
-                        style = MaterialTheme.typography.titleMedium,
-                        onClick = onNamePerson,
-                    )
-                    NameText(
-                        text =
-                        member.deviceName?.takeIf { it.isNotBlank() }
-                            ?: stringResource(R.string.unnamed_device),
-                        style = MaterialTheme.typography.bodyMedium,
-                        onClick = onNamePhone,
-                    )
-                }
-
-                // Beside the close rather than under the details: opened, the
-                // details reach the bottom of the card, and a button below
-                // them was cut off by its edge. Words rather than icons: the
-                // icon packs are a dependency of their own.
-                TextButton(onClick = onToggleDetails, contentPadding = HEADER_BUTTON_PADDING) {
-                    Text(
-                        text =
-                        stringResource(
-                            if (detailsOpen) {
-                                R.string.map_detail_fewer
-                            } else {
-                                R.string.map_detail_more
-                            },
-                        ),
-                    )
-                }
-                TextButton(onClick = onClose, contentPadding = HEADER_BUTTON_PADDING) {
-                    Text(text = stringResource(R.string.map_detail_close))
-                }
-            }
-
-            DetailSummary(member = member, away = away, now = now)
-
-            if (search != null && openedByName != null) {
-                DetailSought(
-                    search = search,
-                    openedByName = openedByName,
-                    showFound = runsTheGroup,
-                    onFound = onFound,
-                )
-            }
-
-            DetailWarnings(member = member, now = now)
-
-            // Everything else behind one button: the summary above is what a
-            // card is opened for, and these rows are what pushed it past the
-            // height of a screen.
-            if (detailsOpen) {
-                DetailRow(R.string.map_detail_at, momentText(member.positionAt))
-                DetailRow(R.string.map_detail_online, momentText(member.knownAt))
-                DetailRow(R.string.map_detail_mode) {
-                    var helpOpen by remember { mutableStateOf(false) }
-
-                    // A name alone answers nothing: "Standby" says what the
-                    // phone was doing only to somebody who already knows the
-                    // five, and a card is the one place a member meets a mode.
-                    Text(
-                        text = stringResource(modeLabel(member.mode)),
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.primary,
-                        textDecoration = TextDecoration.Underline,
-                        modifier = Modifier.clickable { helpOpen = true },
-                    )
-
-                    if (helpOpen) {
-                        ModeHelp(onClose = { helpOpen = false })
-                    }
-                }
-                DetailRow(
-                    R.string.map_detail_found_by,
-                    stringResource(foundByLabel(member.foundBy)),
-                )
-                DetailRow(R.string.map_detail_width) {
-                    val metres = member.accuracyMetres
-
-                    Text(
-                        text =
-                        metres
-                            ?.let { widthText(positionWidth(it)) }
-                            ?: stringResource(R.string.map_detail_unknown),
-                        style = MaterialTheme.typography.bodyMedium,
-                        color =
-                        if (metres != null) {
-                            widthColour(widthIsWide(metres))
-                        } else {
-                            MaterialTheme.colorScheme.onSurface
-                        },
-                    )
-                }
-                DetailRow(
-                    R.string.map_detail_position,
-                    stringResource(
-                        R.string.map_detail_coordinates,
-                        member.latitude,
-                        member.longitude,
-                    ),
-                )
-            }
+            DetailBody(
+                member = member,
+                name = name,
+                face = face,
+                now = now,
+                away = away,
+                search = search,
+                openedByName = openedByName,
+                runsTheGroup = runsTheGroup,
+                onFound = onFound,
+                detailsOpen = detailsOpen,
+                onClose = onClose,
+                onNamePhone = onNamePhone,
+                onNamePerson = onNamePerson,
+            )
         }
     }
 }
 
-/** Narrower than a text button's own, so that two of them fit beside the names. */
+/** Everything of the card under its handle, scrolled when it outgrows the map. */
+@Composable
+private fun DetailBody(
+    member: MemberPosition,
+    name: String,
+    face: Bitmap?,
+    now: Instant,
+    away: Double?,
+    search: Search?,
+    openedByName: String?,
+    runsTheGroup: Boolean,
+    onFound: suspend () -> Unit,
+    detailsOpen: Boolean,
+    onClose: () -> Unit,
+    onNamePhone: () -> Unit,
+    onNamePerson: (() -> Unit)?,
+) {
+    Column(
+        modifier =
+        Modifier
+            .animateContentSize()
+            // Bounded by whoever placed it, so that a card is never taller
+            // than the map it stands on; what does not fit is scrolled to
+            // rather than cut off. A drag the scroll has no use for goes on to
+            // the sheet, which is how a card that fits is pulled at all.
+            .verticalScroll(rememberScrollState())
+            .padding(start = 16.dp, end = 8.dp, bottom = 12.dp),
+    ) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            MemberFace(
+                memberId = member.memberId,
+                name = name,
+                picture = face,
+                stale = isGrey(member, now),
+            )
+
+            // The two names are what is pressed to rename them, underlined
+            // the way the other words of the card that can be pressed are:
+            // a row of its own for renaming took two lines of a card that
+            // is short of them. Oneself is named on the account, not here.
+            Column(modifier = Modifier.weight(1f).padding(start = 8.dp)) {
+                NameText(
+                    text = name,
+                    style = MaterialTheme.typography.titleMedium,
+                    onClick = onNamePerson,
+                )
+                NameText(
+                    text =
+                    member.deviceName?.takeIf { it.isNotBlank() }
+                        ?: stringResource(R.string.unnamed_device),
+                    style = MaterialTheme.typography.bodyMedium,
+                    onClick = onNamePhone,
+                )
+            }
+
+            TextButton(onClick = onClose, contentPadding = HEADER_BUTTON_PADDING) {
+                Text(text = stringResource(R.string.map_detail_close))
+            }
+        }
+
+        DetailSummary(member = member, away = away, now = now)
+
+        if (search != null && openedByName != null) {
+            DetailSought(
+                search = search,
+                openedByName = openedByName,
+                showFound = runsTheGroup,
+                onFound = onFound,
+            )
+        }
+
+        DetailWarnings(member = member, now = now)
+
+        // Everything else behind the pull of the handle: the summary above
+        // is what a card is opened for, and these rows are what pushed it
+        // past the height of a screen.
+        if (detailsOpen) {
+            DetailRow(R.string.map_detail_at, momentText(member.positionAt))
+            DetailRow(R.string.map_detail_online, momentText(member.knownAt))
+            DetailRow(R.string.map_detail_mode) {
+                var helpOpen by remember { mutableStateOf(false) }
+
+                // A name alone answers nothing: "Standby" says what the
+                // phone was doing only to somebody who already knows the
+                // five, and a card is the one place a member meets a mode.
+                Text(
+                    text = stringResource(modeLabel(member.mode)),
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.primary,
+                    textDecoration = TextDecoration.Underline,
+                    modifier = Modifier.clickable { helpOpen = true },
+                )
+
+                if (helpOpen) {
+                    ModeHelp(onClose = { helpOpen = false })
+                }
+            }
+            DetailRow(
+                R.string.map_detail_found_by,
+                stringResource(foundByLabel(member.foundBy)),
+            )
+            DetailRow(R.string.map_detail_width) {
+                val metres = member.accuracyMetres
+
+                Text(
+                    text =
+                    metres
+                        ?.let { widthText(positionWidth(it)) }
+                        ?: stringResource(R.string.map_detail_unknown),
+                    style = MaterialTheme.typography.bodyMedium,
+                    color =
+                    if (metres != null) {
+                        widthColour(widthIsWide(metres))
+                    } else {
+                        MaterialTheme.colorScheme.onSurface
+                    },
+                )
+            }
+            DetailRow(
+                R.string.map_detail_position,
+                stringResource(
+                    R.string.map_detail_coordinates,
+                    member.latitude,
+                    member.longitude,
+                ),
+            )
+        }
+    }
+}
+
+/** Narrower than a text button's own, so that the close keeps the names their width. */
 private val HEADER_BUTTON_PADDING = PaddingValues(horizontal = 8.dp, vertical = 4.dp)
+
+/** Rounded at the top only: the card rises from the strip the way a sheet does. */
+private val SHEET_SHAPE = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp)
+
+/** How far the card is pulled before letting go counts as pulling it open or shut. */
+private val PULL_THRESHOLD = 48.dp
+
+/**
+ * The strip across the top of the card that says it is pulled rather than
+ * pressed, pulled itself or tapped for the same result.
+ *
+ * The tap is there for TalkBack, which has no drag to offer, and for whoever
+ * reads the strip as a button.
+ */
+@Composable
+private fun SheetHandle(
+    detailsOpen: Boolean,
+    onDrag: (Float) -> Unit,
+    onDragStopped: () -> Unit,
+    onClick: () -> Unit,
+) {
+    val label =
+        stringResource(
+            if (detailsOpen) R.string.map_detail_collapse else R.string.map_detail_expand,
+        )
+
+    Box(
+        contentAlignment = Alignment.Center,
+        modifier =
+        Modifier
+            .fillMaxWidth()
+            .height(HANDLE_AREA)
+            .draggable(
+                state = rememberDraggableState(onDrag),
+                orientation = Orientation.Vertical,
+                onDragStopped = { onDragStopped() },
+            )
+            .clickable(onClickLabel = label, onClick = onClick)
+            .semantics { contentDescription = label },
+    ) {
+        Box(
+            modifier =
+            Modifier
+                .size(width = 32.dp, height = 4.dp)
+                .background(
+                    MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.4f),
+                    RoundedCornerShape(2.dp),
+                ),
+        )
+    }
+}
+
+/** Tall enough to be caught by a thumb, the height the handle of a sheet has. */
+private val HANDLE_AREA = 24.dp
+
+/**
+ * How far the card has been pulled since the finger went down, and what
+ * letting go of it means.
+ *
+ * Up opens the rows under the summary; down shuts them, and down from a card
+ * already shut closes it. The pull arrives both from the handle and from the
+ * body of the card, whatever part of a drag the body's own scroll leaves over.
+ */
+private class SheetPull(
+    private val threshold: Float,
+    private val detailsOpen: () -> Boolean,
+    private val onDetailsOpen: (Boolean) -> Unit,
+    private val onClose: () -> Unit,
+) {
+    private var pulled = 0f
+
+    fun drag(delta: Float) {
+        pulled += delta
+    }
+
+    fun settle() {
+        val open = detailsOpen()
+
+        when {
+            pulled < -threshold && !open -> onDetailsOpen(true)
+            pulled > threshold && open -> onDetailsOpen(false)
+            pulled > threshold -> onClose()
+        }
+        pulled = 0f
+    }
+
+    val connection =
+        object : NestedScrollConnection {
+            override fun onPostScroll(
+                consumed: Offset,
+                available: Offset,
+                source: NestedScrollSource,
+            ): Offset {
+                if (source != NestedScrollSource.UserInput) return Offset.Zero
+
+                drag(available.y)
+
+                return Offset(0f, available.y)
+            }
+
+            override suspend fun onPostFling(consumed: Velocity, available: Velocity): Velocity {
+                settle()
+
+                return Velocity.Zero
+            }
+        }
+}
+
+@Composable
+private fun rememberSheetPull(
+    detailsOpen: Boolean,
+    onDetailsOpen: (Boolean) -> Unit,
+    onClose: () -> Unit,
+): SheetPull {
+    val threshold = with(LocalDensity.current) { PULL_THRESHOLD.toPx() }
+    val open by rememberUpdatedState(detailsOpen)
+    val setOpen by rememberUpdatedState(onDetailsOpen)
+    val close by rememberUpdatedState(onClose)
+
+    return remember(threshold) {
+        SheetPull(
+            threshold = threshold,
+            detailsOpen = { open },
+            onDetailsOpen = { setOpen(it) },
+            onClose = { close() },
+        )
+    }
+}
 
 /**
  * The line under the name: how far, how old the position, how long since the
