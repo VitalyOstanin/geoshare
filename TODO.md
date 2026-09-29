@@ -756,3 +756,24 @@ What to check, on each of the phones rather than on one:
   on if they are not, belongs in the instructions rather than in the code —
   but it has to be found out by restarting, because nothing in the build can
   report it.
+
+## A choice of siren sound on the device
+
+The siren plays the application's own SOS sound, the same on every device.
+The member whose device it is should be able to pick another one, the way a
+ringtone is picked: the application's own sounds, and the device's alarm and
+ringtone sounds through the system picker (`RingtoneManager.ACTION_RINGTONE_PICKER`
+with `TYPE_ALARM`), with a preview before the choice is kept.
+
+Worth settling before it is built:
+
+- **Whose choice it is.** The siren is started by somebody else to find this
+  device, so the sound is a setting of the device that sounds, kept on it,
+  not something the member who presses the button chooses.
+- **What still has to hold.** Whatever is picked plays on the alarm stream at
+  full volume and through "Do Not Disturb", like the stock sound now; a quiet
+  or very short sound defeats the purpose, so the picker may need to warn
+  about it or keep the SOS as the default it returns to.
+- **A sound that disappears.** A chosen system sound can be removed or become
+  unreadable later; the siren then falls back to the application's own sound,
+  as it already falls back from its own sound to the alarm.
