@@ -12,7 +12,6 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
-import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -190,7 +189,6 @@ internal fun MemberDetail(
                 runsTheGroup = runsTheGroup,
                 onFound = onFound,
                 detailsOpen = detailsOpen,
-                onClose = onClose,
                 onNamePhone = onNamePhone,
                 onNamePerson = onNamePerson,
             )
@@ -211,7 +209,6 @@ private fun DetailBody(
     runsTheGroup: Boolean,
     onFound: suspend () -> Unit,
     detailsOpen: Boolean,
-    onClose: () -> Unit,
     onNamePhone: () -> Unit,
     onNamePerson: (() -> Unit)?,
 ) {
@@ -251,10 +248,6 @@ private fun DetailBody(
                     style = MaterialTheme.typography.bodyMedium,
                     onClick = onNamePhone,
                 )
-            }
-
-            TextButton(onClick = onClose, contentPadding = HEADER_BUTTON_PADDING) {
-                Text(text = stringResource(R.string.map_detail_close))
             }
         }
 
@@ -328,9 +321,6 @@ private fun DetailBody(
     }
 }
 
-/** Narrower than a text button's own, so that the close keeps the names their width. */
-private val HEADER_BUTTON_PADDING = PaddingValues(horizontal = 8.dp, vertical = 4.dp)
-
 /** Rounded at the top only: the card rises from the strip the way a sheet does. */
 private val SHEET_SHAPE = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp)
 
@@ -390,10 +380,12 @@ private val HANDLE_AREA = 24.dp
  * letting go of it means.
  *
  * Up opens the rows under the summary; down shuts them, and down from a card
- * already shut closes it. The pull arrives both from the handle and from the
- * body of the card, whatever part of a drag the body's own scroll leaves over.
+ * already shut closes it: the card has no button to close it with, the pull
+ * down is that button, as are the back gesture and a tap on the map beside
+ * it. The pull arrives both from the handle and from the body of the card,
+ * whatever part of a drag the body's own scroll leaves over.
  */
-private class SheetPull(
+internal class SheetPull(
     private val threshold: Float,
     private val detailsOpen: () -> Boolean,
     private val onDetailsOpen: (Boolean) -> Unit,
