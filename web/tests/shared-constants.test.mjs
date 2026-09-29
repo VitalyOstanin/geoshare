@@ -206,5 +206,5 @@ test('a permission without an end ends on the same day everywhere', () => {
     const forever = quotedDate(kotlin('map/ShareSpan.kt', 'FOREVER'));
 
     assert.equal(quotedDate(javascript('firebase/emulator/seed.mjs', 'FOREVER')), forever);
-    assert.equal(quotedDate(javascript('firebase/tests/rules.test.mjs', 'FOREVER')), forever);
+    assert.equal(quotedDate(javascript('firebase/tests/rules/helpers.mjs', 'FOREVER')), forever);
 });
