@@ -1,0 +1,195 @@
+/* The face the marker carries, repeated on the card: a card opened from the
+   panel should be recognisably the person whose pin is on the map. */
+.detail-head {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    margin-bottom: 0.5rem;
+}
+
+/* The names give way to the button beside them rather than push it out; the
+   cross over the corner is kept clear by the button. */
+.detail-head > div {
+    min-width: 0;
+}
+
+.detail-face {
+    width: 2.5rem;
+    height: 2.5rem;
+    flex: none;
+    border-radius: 50%;
+    background-color: var(--surface);
+    background-size: cover;
+    background-position: center;
+    /* Ringed in the colour of the pin, as the face in the strip is: one member
+       is one drawing wherever they are named. */
+    box-shadow: 0 0 0 2px var(--ring, #ffffff);
+    display: grid;
+    place-items: center;
+    font-weight: 700;
+}
+
+/* Grey like the pin of a member who has gone quiet. */
+.detail-face.stale {
+    filter: grayscale(1);
+}
+
+.detail-device {
+    display: block;
+    font-size: 0.8rem;
+    opacity: 0.7;
+}
+
+.detail h2 {
+    margin: 0;
+    font-size: 1rem;
+    overflow-wrap: anywhere;
+}
+
+.detail table {
+    border-collapse: collapse;
+}
+
+/* The line under the name: distance, the two ages and the charge, each kept
+   whole, with a dot drawn in the gap before it. The line is clipped at its own
+   edge and the dot sits left of its fact, so the dot of the first fact on any
+   line falls outside and a line never starts with a separator. Drawn rather
+   than written, so that a screen reader reads the facts and not the dots. */
+.detail-summary {
+    display: flex;
+    flex-wrap: wrap;
+    column-gap: 0.9rem;
+    row-gap: 0.1rem;
+    margin-bottom: 0.4rem;
+    overflow: clip;
+    font-size: 0.85rem;
+    font-variant-numeric: tabular-nums;
+}
+
+.detail-summary > span {
+    position: relative;
+    white-space: nowrap;
+}
+
+.detail-summary > span::before {
+    content: '';
+    position: absolute;
+    top: 50%;
+    right: 100%;
+    width: 3px;
+    height: 3px;
+    margin-right: calc(0.45rem - 1.5px);
+    border-radius: 50%;
+    /* The text colour of the card rather than of the fact: the charge is
+       green while charging, and its dot is no part of that. */
+    background: var(--on-surface);
+    opacity: 0.45;
+    transform: translateY(-50%);
+}
+
+/* What is wrong with the position, in the colour a wide answer wears: none of
+   it is a fault of the phone, and all of it says the marker is not to be
+   trusted. */
+.detail-warn {
+    margin: 0 0 0.4rem;
+    color: var(--wide);
+    font-size: 0.85rem;
+}
+
+.detail-warn .mode-help-open {
+    color: inherit;
+}
+
+/* Beside the name, clear of the cross over the corner of the card. */
+.detail-more {
+    flex: none;
+    align-self: flex-start;
+    margin-left: auto;
+    margin-right: var(--cross-clear);
+    padding: 0.2rem 0;
+    border: 0;
+    background: none;
+    color: var(--link);
+    font: inherit;
+    font-size: 0.9rem;
+    cursor: pointer;
+}
+
+.detail-more:focus-visible {
+    outline: 2px solid var(--link);
+    outline-offset: 2px;
+}
+
+.detail th {
+    text-align: left;
+    font-weight: 500;
+    opacity: 0.7;
+    padding-right: 0.6rem;
+    white-space: nowrap;
+}
+
+.detail td {
+    /* Folded only when there is no room: the values are short, and a pair of
+       coordinates reads worse broken across two lines than kept on one. */
+    overflow-wrap: anywhere;
+}
+
+/* The mode on a card is a word that opens the help, so it is written as a
+   link rather than as a button: a card of plain values with one push-button in
+   the middle reads as a control that changes something. */
+.mode-help-open {
+    border: 0;
+    padding: 0;
+    background: none;
+    font: inherit;
+    color: var(--link);
+    text-decoration: underline;
+    text-underline-offset: 0.15em;
+    cursor: pointer;
+}
+
+.mode-help {
+    position: relative;
+    max-width: min(36rem, 92vw);
+    border: 1px solid var(--edge);
+    border-radius: 0.6rem;
+    padding: 1rem;
+    background: var(--surface);
+    color: var(--on-surface);
+}
+
+.mode-help::backdrop {
+    background: rgba(0, 0, 0, 0.45);
+}
+
+/* The cross sits in the corner the title would otherwise run into. */
+.mode-help h2 {
+    margin: 0 0 0.4rem;
+    padding-right: var(--cross-clear);
+    font-size: 1.05rem;
+}
+
+.mode-help p {
+    margin: 0 0 0.8rem;
+}
+
+.mode-help table {
+    border-collapse: collapse;
+}
+
+.mode-help th,
+.mode-help td {
+    text-align: left;
+    vertical-align: top;
+    padding: 0.25rem 0.6rem 0.25rem 0;
+}
+
+.mode-help th {
+    font-weight: 500;
+    opacity: 0.7;
+}
+
+.mode-help-name {
+    white-space: nowrap;
+    opacity: 1;
+}

@@ -3,6 +3,7 @@ import { readFile } from 'node:fs/promises';
 import { test } from 'node:test';
 
 import { markerOrder } from '../public/lib/stacking.js';
+import { readStyles } from './stylesheets.mjs';
 
 test('the marker further down the screen is drawn over the one above it', () => {
     assert.ok(markerOrder(400) > markerOrder(120));
@@ -31,7 +32,7 @@ test('a projection gone wrong cannot outrank the page for good', () => {
 // without it, a marker's number would be compared against the rest of the
 // page directly, card included.
 test('a marker can never outrank the card, because #map isolates its own stack', async () => {
-    const styles = await readFile(new URL('../public/styles.css', import.meta.url), 'utf8');
+    const styles = await readStyles();
     const html = await readFile(new URL('../public/index.html', import.meta.url), 'utf8');
 
     assert.match(

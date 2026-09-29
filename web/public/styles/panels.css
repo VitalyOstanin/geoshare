@@ -1,0 +1,212 @@
+/* The panel that runs the group: the same window the help over the map is
+   drawn as, since both are read once in a while and neither belongs to a
+   corner of the screen. A roster of five and a roster of fifteen are both
+   ordinary, so it scrolls rather than growing past the window. */
+.admin {
+    position: relative;
+    max-width: min(30rem, 92vw);
+    max-height: 80vh;
+    overflow-y: auto;
+    border: 1px solid var(--edge);
+    border-radius: 0.6rem;
+    padding: 1rem;
+    background: var(--surface);
+    color: var(--on-surface);
+}
+
+.admin::backdrop {
+    background: rgba(0, 0, 0, 0.45);
+}
+
+/* The cross sits in the corner the title would otherwise run into. */
+.admin h2 {
+    margin: 0 0 0.6rem;
+    padding-right: var(--cross-clear);
+    font-size: 1.05rem;
+}
+
+/* One member of "Мои устройства": one phone's own line, what is known
+   about it on the left, and the one act that can be taken against it at the
+   far end of the row. */
+.admin-member {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.35rem 0;
+    border-top: 1px solid var(--edge);
+}
+
+.admin-member > div {
+    display: flex;
+    flex: 1;
+    min-width: 0;
+    flex-direction: column;
+}
+
+.admin-name {
+    overflow-wrap: anywhere;
+}
+
+/* Who they are to this group and what this browser may see of them, in one
+   line under the name rather than in marks beside it. */
+.admin-about {
+    font-size: 0.75rem;
+    opacity: 0.7;
+}
+
+/* One member of the panel that runs the group: a head line with their name
+   above one row per phone, each with its own round buttons, and the
+   member-level worded actions last. A member with two phones lost needs two
+   rows of buttons, one beside each, rather than one pair shared between
+   them. */
+.admin-group {
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+    padding: 0.35rem 0;
+    border-top: 1px solid var(--edge);
+}
+
+.admin-group-head {
+    display: flex;
+    flex-direction: column;
+}
+
+/* One phone's own line inside the group: its text on the left, its own
+   siren and search on the right — the same shape a phone's row has in "Мои
+   устройства", nested here under its member's name instead of standing on
+   its own. */
+.admin-phone {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.5rem;
+}
+
+.admin-phone-about {
+    display: flex;
+    flex: 1;
+    min-width: 0;
+    flex-direction: column;
+}
+
+/* The worded actions one under another rather than side by side: the names
+   take the width. The round ones share a line at the top instead. */
+.admin-member > .admin-actions,
+.admin-group > .admin-actions {
+    flex: none;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 0.25rem;
+}
+
+.admin-icons {
+    display: flex;
+    gap: 0.35rem;
+}
+
+.admin-member button,
+.admin-group button {
+    border: 0;
+    padding: 0.2rem 0.4rem;
+    background: transparent;
+    color: var(--link);
+    font: inherit;
+    font-size: 0.8rem;
+    cursor: pointer;
+}
+
+#admin-buttons {
+    display: flex;
+    gap: 0.3rem;
+    margin-top: 0.6rem;
+}
+
+#admin-buttons button {
+    border: 1px solid var(--edge);
+    border-radius: 0.4rem;
+    padding: 0.3rem 0.6rem;
+    background: transparent;
+    color: var(--link);
+    font: inherit;
+    font-size: 0.8rem;
+    cursor: pointer;
+}
+
+/* The invitation is read off this screen and pasted into another, so every
+   character has the same width: half of it is an account id, where one letter
+   read for another is a different account. */
+#admin-code {
+    display: block;
+    margin: 0.6rem 0 0.2rem;
+    font-family: ui-monospace, "SFMono-Regular", "Menlo", monospace;
+    overflow-wrap: anywhere;
+}
+
+#admin-code-lasts,
+#admin-said,
+#admin-error {
+    margin: 0.3rem 0 0;
+    font-size: 0.75rem;
+    opacity: 0.8;
+}
+
+/* The names at the head of a card, pressed to rename them: underlined like
+   the other words of the card that can be pressed, and otherwise the text
+   they stand in. */
+.detail-rename {
+    border: 0;
+    padding: 0;
+    background: none;
+    color: inherit;
+    font: inherit;
+    text-align: inherit;
+    text-decoration: underline;
+    text-underline-offset: 0.15em;
+    cursor: pointer;
+}
+
+.naming #naming-note {
+    margin: 0 0 0.5rem;
+    font-size: 0.8rem;
+    opacity: 0.8;
+}
+
+.naming #naming-note.naming-failed {
+    color: var(--error);
+    opacity: 1;
+}
+
+.naming #naming-typed {
+    box-sizing: border-box;
+    width: 100%;
+    padding: 0.35rem 0.5rem;
+    border: 1px solid var(--edge);
+    border-radius: 0.4rem;
+    background: transparent;
+    color: inherit;
+    font: inherit;
+}
+
+#naming-buttons {
+    display: flex;
+    justify-content: flex-end;
+    gap: 0.3rem;
+    margin-top: 0.6rem;
+}
+
+#naming-buttons button {
+    border: 1px solid var(--edge);
+    border-radius: 0.4rem;
+    padding: 0.3rem 0.6rem;
+    background: transparent;
+    color: var(--link);
+    font: inherit;
+    font-size: 0.8rem;
+    cursor: pointer;
+}
+
+#naming-buttons button[hidden] {
+    display: none;
+}

@@ -47,9 +47,10 @@ Nothing here talks to Firebase: the rules the clients run into are covered by
 | File | What it holds |
 |--------------------------|------------------------------------------------|
 | `public/index.html`      | The two screens: signing in, and the map        |
-| `public/app.js`          | What happens when: sign-in, subscription, panel |
+| `public/app.js`          | What happens when: sign-in, subscriptions        |
+| `public/page/*.js`       | The parts of the page: menus, panels, windows, strip |
 | `public/lib/store.js`    | Firebase: the account, the positions, the marker |
 | `public/lib/map.js`      | MapLibre: the background, the markers and their bubbles |
 | `public/lib/age.js`      | How old a position is, and when it goes grey     |
 | `public/lib/members.js`  | The order of the members and their colours       |
-| `public/styles.css`      | One column: the map takes what the panel leaves  |
+| `public/styles/*.css`    | One column: the map takes what the panel leaves, one file per part |

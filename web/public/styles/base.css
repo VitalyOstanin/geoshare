@@ -1,0 +1,191 @@
+/* One column: the map takes what is left after the panel. */
+
+:root {
+    color-scheme: light dark;
+    font-family: system-ui, sans-serif;
+
+    /* The surfaces the page paints itself: the label over a marker, the card,
+       the round account button. The page's own background and text come from
+       the browser through color-scheme above, but anything drawn over the map
+       has to state its colours, and a white card over a dark map at night is a
+       lamp in the face. */
+    --surface: rgba(255, 255, 255, 0.95);
+    --on-surface: #202020;
+    --link: #1e88e5;
+    /* What is written on the filled button: the light theme's link colour is
+       dark enough to carry white, the dark theme's is not. */
+    --on-link: #ffffff;
+    --edge: rgba(128, 128, 128, 0.4);
+    /* What a refusal is written in. Dark red on white; a dark red on a dark
+       card is a word the eye slides off, hence a night value of its own. */
+    --error: #c62828;
+    /* A charge that is growing: the one reassuring thing on a card, and the
+       only colour on the page that carries a meaning of its own. */
+    --charging: #2e7d32;
+    /* An answer wider than a hundred metres: ochre rather than red, because a
+       wide answer is not a fault — it is a claim about a block instead of
+       about a doorway, and the colour is there to be noticed rather than
+       acted on. */
+    --wide: #a85a17;
+
+    /* The same surfaces at night, named once and switched to in the two
+       places below. A media query and an attribute cannot be asked for in one
+       selector, so the switch is stated twice; the colours are not. */
+    --night-surface: rgba(40, 40, 46, 0.95);
+    --night-on-surface: #ececed;
+    --night-link: #90caf9;
+    --night-on-link: #0b1f2e;
+    --night-edge: rgba(160, 160, 170, 0.35);
+    --night-error: #ef9a9a;
+    --night-charging: #81c784;
+    --night-wide: #d99149;
+
+    /* A tile is a picture drawn light on somebody else's server, so a dark map
+       is either a different set of tiles or this: the picture turned over and
+       its hues put back where they were. The markers and the cards are
+       elements of the page rather than part of the canvas, so none of them is
+       touched.
+
+       The alternative was a ready-made dark style. The renderings that need no
+       key either stamp the map with a demand for one or, in the case of the
+       free vector styles tried here, never finish loading in the browser. */
+    --night-canvas: invert(1) hue-rotate(180deg) brightness(0.92) contrast(0.95);
+
+    /* How far the text in a window over the map stays clear of the cross that
+       closes it. The button is inset 0.4rem and is 1.75rem wide, and the
+       window pads its own contents by 0.9rem, so the circle reaches 1.25rem
+       past that padding and into the text; the two lines drawn in the circle
+       stop another 0.45rem short of it.
+
+       A gap has to be seen to be one. At 1.5rem the text stopped four pixels
+       from the circle, and a name ending flush against the cross read as one
+       run of marks rather than as a title and a button. This leaves sixteen
+       pixels to the circle and twenty-three to the cross itself, which is the
+       distance at which the eye stops joining them. */
+    --cross-clear: 2.25rem;
+}
+
+/* Dark because the system is, which is what a viewer who has said nothing
+   gets. Said out loud to mean light, the attribute stops this. */
+@media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+        --surface: var(--night-surface);
+        --on-surface: var(--night-on-surface);
+        --link: var(--night-link);
+        --on-link: var(--night-on-link);
+        --edge: var(--night-edge);
+        --error: var(--night-error);
+        --charging: var(--night-charging);
+        --wide: var(--night-wide);
+        --canvas-filter: var(--night-canvas);
+    }
+}
+
+/* Dark because the viewer said so, whatever the system is set to. */
+:root[data-theme="dark"] {
+    color-scheme: dark;
+    --surface: var(--night-surface);
+    --on-surface: var(--night-on-surface);
+    --link: var(--night-link);
+    --on-link: var(--night-on-link);
+    --edge: var(--night-edge);
+    --error: var(--night-error);
+    --charging: var(--night-charging);
+    --wide: var(--night-wide);
+    --canvas-filter: var(--night-canvas);
+}
+
+/* Light because the viewer said so: the one line the browser needs to stop
+   answering the system on its own, for the page background and the form
+   controls it paints itself. */
+:root[data-theme="light"] {
+    color-scheme: light;
+}
+
+/* A display of its own outranks what `hidden` asks for, and the panel has
+   one. Without this the sign-out button shows on the sign-in screen. */
+[hidden] {
+    display: none !important;
+}
+
+body {
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+    /* Two heights, the second of which wins where it is understood: on a phone
+       100vh is the window with the address bar gone, so the column stands
+       taller than what is on screen and the panel — the way between members —
+       ends up below the bottom edge with no way to scroll to it. */
+    height: 100vh;
+    height: 100dvh;
+    /* The account control is placed against the page, and a static body would
+       send it to the viewport's corner rather than the map's. */
+    position: relative;
+}
+
+#sign-in {
+    margin: auto;
+    max-width: 28rem;
+    padding: 1.5rem;
+    text-align: center;
+}
+
+/* A remembered account coming back: the button would read as having been
+   signed out, so it waits out of sight until the first answer. */
+#sign-in-waiting {
+    display: none;
+    align-items: center;
+    justify-content: center;
+    gap: 0.6rem;
+}
+
+:root[data-sign-in="waiting"] #sign-in-waiting {
+    display: flex;
+}
+
+:root[data-sign-in="waiting"] #sign-in-explanation,
+:root[data-sign-in="waiting"] #sign-in-button {
+    display: none;
+}
+
+.spinner {
+    width: 1.2rem;
+    height: 1.2rem;
+    flex: none;
+    border: 2px solid var(--edge);
+    border-top-color: var(--link);
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+#map {
+    flex: 1;
+    min-height: 0;
+    /* The markers inside are piled by where they are on screen, which takes
+       numbers far above the handful the page uses for its own controls. The
+       pile is kept to itself here, so that a marker low on the map cannot
+       climb over the account button or the strip of members. */
+    isolation: isolate;
+}
+
+#panel {
+    display: flex;
+    /* The note stands above the strip rather than beside it. */
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0.5rem;
+    padding: 0.5rem;
+    /* Clear of the bar a phone draws its gestures on. */
+    padding-bottom: calc(0.5rem + env(safe-area-inset-bottom, 0px));
+    border-top: 1px solid var(--edge);
+    /* The card is positioned from the panel rather than from the page: it
+       belongs to the strip below it, and has to move with the panel rather
+       than sit at a fixed height were the panel ever to grow or shrink. */
+    position: relative;
+}

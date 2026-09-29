@@ -1,8 +1,9 @@
 import assert from 'node:assert/strict';
-import { readFile } from 'node:fs/promises';
 import { test } from 'node:test';
 
-const stylesheet = () => readFile(new URL('../public/styles.css', import.meta.url), 'utf8');
+import { readStyles } from './stylesheets.mjs';
+
+const stylesheet = () => readStyles();
 
 /** How much space past the button the eye needs to read the gap as one. */
 const VISIBLE_GAP = 0.75;

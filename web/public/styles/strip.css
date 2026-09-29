@@ -1,0 +1,141 @@
+/* Stands over the bottom of the map rather than beside it, the way the phone
+   screen draws the same card. Anchored to the panel's own top edge instead of
+   to a marker: a card pinned to whichever pin it is about would cover the
+   very place on the map a viewer opened it to look at, and would have to
+   jump to a new spot on the map every time the marker under it moved. */
+#card {
+    position: absolute;
+    left: 0.5rem;
+    right: 0.5rem;
+    bottom: 100%;
+    margin-bottom: 0.5rem;
+    /* As wide as its own rows need and no wider: the card is a heading and a
+       handful of label-and-value lines, and stretched across a laptop window
+       it would be a band of empty surface with a narrow table in one corner.
+       On a phone the first limit is the window, which is what the second term
+       keeps it inside of. */
+    max-width: min(22rem, calc(100% - 1rem));
+    z-index: 3;
+    background: var(--surface);
+    color: var(--on-surface);
+    border: 1px solid var(--edge);
+    border-radius: 0.75rem;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.35);
+    padding: 0.75rem 0.9rem;
+}
+
+/* Kept apart from #card itself: #card is also the close button's positioned
+   ancestor, and a box that scrolls its own content carries every descendant
+   of that box along with the scroll — the button would drift out of the
+   corner it is meant to stay pinned to. Scrolling this inner box instead
+   leaves the button exactly where it was tapped from. */
+.card-body {
+    max-height: 40vh;
+    overflow-y: auto;
+}
+
+/* What the strip cannot say by being full: nobody yet, nothing reachable, or
+   an answer still on its way. */
+#panel-note,
+#panel-watching {
+    margin: 0;
+    padding: 0 0.2rem;
+    font-size: 0.85rem;
+    opacity: 0.7;
+}
+
+#members {
+    display: flex;
+    gap: 0.5rem;
+    overflow-x: auto;
+    flex: 1;
+}
+
+/* A strip wider than the window hides whoever is past the right edge, and on a
+   touch screen there is no scrollbar to say so. The fade is the same promise a
+   scrollbar used to make: there is more this way. */
+#members.scrollable {
+    mask-image: linear-gradient(to right, #000 calc(100% - 2rem), transparent);
+}
+
+.member {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    padding: 0.4rem 0.6rem;
+    border: 1px solid var(--edge);
+    border-radius: 0.6rem;
+    background: transparent;
+    color: inherit;
+    font: inherit;
+    cursor: pointer;
+    white-space: nowrap;
+}
+
+/* The face on a card in the panel and on a row of a group: the same picture
+   the pin carries, ringed in the colour of that pin so that a card and a
+   marker read as one member. */
+/* The card of the member whose bubble is open on the map. */
+.member.shown {
+    border-color: var(--link);
+    box-shadow: 0 0 0 1px var(--link);
+}
+
+.member-face {
+    width: 1.6rem;
+    height: 1.6rem;
+    flex: none;
+    border-radius: 50%;
+    background-color: var(--surface);
+    background-size: cover;
+    background-position: center;
+    box-shadow: 0 0 0 2px var(--ring, #ffffff);
+    display: grid;
+    place-items: center;
+    font-size: 0.8rem;
+    font-weight: 700;
+}
+
+/* Grey like the pin of a member who has gone quiet. */
+.member-face.stale {
+    filter: grayscale(1);
+}
+
+.age,
+.battery {
+    opacity: 0.7;
+    font-size: 0.85em;
+}
+
+/* An answer wide enough to be worth noticing, said in the colour of the number
+   itself. It stands on the card alone: the strip says how old a position is and
+   how much charge is left, and how wide the answer was is read once the marker
+   is opened. */
+.detail-width.wide {
+    color: var(--wide);
+}
+
+/* A charge that is growing, said in the colour of the number itself. Full
+   strength rather than dimmed like the text around it: a dimmed green reads as
+   grey and says nothing. */
+.charging {
+    color: var(--charging);
+    opacity: 1;
+    font-weight: 600;
+}
+
+/* An old position still shows where a member was, and should not read as
+   where they are. */
+.age.stale {
+    opacity: 0.45;
+}
+
+.error {
+    color: var(--error);
+}
+
+button {
+    padding: 0.4rem 0.8rem;
+    border-radius: 0.6rem;
+    cursor: pointer;
+}

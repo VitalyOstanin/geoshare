@@ -1,0 +1,85 @@
+/* The question mark of a window, beside its cross: the same circle, in the
+   colour of a link, since it opens something rather than acting. */
+.help-mark {
+    position: absolute;
+    top: 0.4rem;
+    right: 2.4rem;
+    width: 1.75rem;
+    height: 1.75rem;
+    border: 1px solid var(--edge);
+    border-radius: 50%;
+    padding: 0;
+    background: none;
+    color: var(--link);
+    font: inherit;
+    font-weight: 700;
+    line-height: 1;
+    cursor: pointer;
+}
+
+.admin:has(.help-mark) > h2 {
+    padding-right: calc(var(--cross-clear) + 2rem);
+}
+
+/* One line per button: the button as its screen draws it, then what it does. */
+#help-list {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    gap: 0.6rem 0.8rem;
+    align-items: center;
+}
+
+.help-look {
+    display: grid;
+    place-items: center;
+    width: 2rem;
+    height: 2rem;
+    border: 1px solid var(--edge);
+    border-radius: 50%;
+    color: var(--on-surface);
+}
+
+.help-look.alarm {
+    border-color: var(--alarm);
+    color: var(--alarm);
+}
+
+.help-look.filled {
+    border-color: var(--alarm);
+    background: var(--alarm);
+    color: var(--on-alarm);
+}
+
+.help-look svg {
+    width: 1.1rem;
+    height: 1.1rem;
+}
+
+.help-look .stroke {
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 2;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+}
+
+.help-look .fill {
+    fill: currentColor;
+}
+
+#help-buttons {
+    display: flex;
+    justify-content: flex-end;
+    margin-top: 0.6rem;
+}
+
+#help-buttons button {
+    border: 1px solid var(--edge);
+    border-radius: 0.4rem;
+    padding: 0.3rem 0.8rem;
+    background: transparent;
+    color: var(--link);
+    font: inherit;
+    font-weight: 600;
+    cursor: pointer;
+}
