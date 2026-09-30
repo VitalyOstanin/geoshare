@@ -51,6 +51,7 @@ export default [
                 window: 'readonly',
                 console: 'readonly',
                 URL: 'readonly',
+                URLSearchParams: 'readonly',
             },
         },
     },

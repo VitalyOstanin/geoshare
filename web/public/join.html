@@ -1,0 +1,47 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1" />
+        <title>Geoshare</title>
+        <link rel="icon" href="favicon.svg" type="image/svg+xml" />
+        <link rel="icon" href="favicon-32.png" sizes="32x32" type="image/png" />
+        <link rel="apple-touch-icon" href="apple-touch-icon.png" />
+        <link rel="stylesheet" href="styles/base.css" />
+        <link rel="stylesheet" href="styles/join.css" />
+
+        <!-- The theme has to be on the element before the page is first
+             painted, the same reason index.html loads it this way: a white
+             flash on the way into a dark screen is the one thing the setting
+             exists to avoid. -->
+        <script src="boot-theme.js"></script>
+    </head>
+    <body>
+        <!-- No sign-in section here, and nothing from Firebase: before
+             anybody signs in there is nothing this page could read that the
+             link itself does not already carry. -->
+        <section id="join">
+            <img id="join-logo" src="favicon.svg" alt="" />
+            <!-- The words here are the first paint; lib/words/join-en.js and
+                 join-ru.js hold them too, and a viewer reading the other
+                 language gets those as soon as the module runs. -->
+            <h1 id="join-title">Connect to geoshare</h1>
+            <p id="join-text"></p>
+            <!-- Shown only for a link whose invitation was made for one
+                 address: which Google account to sign in with. -->
+            <p id="join-invited-for" hidden></p>
+
+            <div id="join-buttons">
+                <a id="join-open" href="#">Open in the app</a>
+                <a id="join-download" href="https://github.com/VitalyOstanin/geoshare/releases"
+                   target="_blank" rel="noopener">Download the app</a>
+            </div>
+
+            <!-- Told once, after the link has gone to the clipboard for a
+                 browser with no application to open it in. -->
+            <p id="join-said" hidden></p>
+        </section>
+
+        <script type="module" src="join-app.js"></script>
+    </body>
+</html>

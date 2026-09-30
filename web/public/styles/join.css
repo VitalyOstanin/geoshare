@@ -1,0 +1,54 @@
+/* The join page: one screen, centred the same way #sign-in in base.css is —
+   there is no map beside it to leave room for. */
+
+#join {
+    margin: auto;
+    max-width: 28rem;
+    padding: 1.5rem;
+    text-align: center;
+}
+
+#join-logo {
+    width: 3rem;
+    height: 3rem;
+}
+
+#join-text,
+#join-invited-for {
+    opacity: 0.85;
+}
+
+#join-buttons {
+    display: flex;
+    flex-direction: column;
+    gap: 0.6rem;
+    margin-top: 1.2rem;
+}
+
+#join-buttons a {
+    display: block;
+    padding: 0.6rem 1rem;
+    border-radius: 0.4rem;
+    font: inherit;
+    text-decoration: none;
+    cursor: pointer;
+}
+
+/* The one action a tap is expected to reach for. */
+#join-open {
+    border: 1px solid var(--link);
+    background: var(--link);
+    color: var(--on-link);
+}
+
+#join-download {
+    border: 1px solid var(--edge);
+    background: transparent;
+    color: var(--link);
+}
+
+#join-said {
+    margin-top: 0.6rem;
+    font-size: 0.85rem;
+    opacity: 0.8;
+}
