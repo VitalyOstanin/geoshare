@@ -6,7 +6,7 @@ import {
     chooseFollow,
     followMode,
     stopAwaitingFollowTarget,
-} from '../lib/map.js';
+} from '../lib/map-follow.js';
 import { applyTheme, readTheme, writeTheme } from '../lib/theme.js';
 import { readLanguage, writeLanguage } from '../lib/language.js';
 import { SPEAKING, WORDS } from '../lib/words.js';

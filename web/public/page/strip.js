@@ -3,17 +3,9 @@
 import { ageText, positionAge } from '../lib/age.js';
 import { showFace } from '../lib/faces.js';
 import { FOLLOW_ALL, FOLLOW_NONE, FOLLOW_ONE } from '../lib/following.js';
-import {
-    awaitingFollowTarget,
-    batteryText,
-    centreOnce,
-    followMode,
-    followPaused,
-    followTarget,
-    lookAt,
-    showMembers,
-    shownPositions,
-} from '../lib/map.js';
+import { centreOnce, lookAt, showMembers, shownPositions } from '../lib/map.js';
+import { batteryText } from '../lib/map-card.js';
+import { awaitingFollowTarget, followMode, followPaused, followTarget } from '../lib/map-follow.js';
 import { memberColour, memberName, orderedForNavigation, STALE_COLOUR } from '../lib/members.js';
 import { isGrey } from '../lib/false-places.js';
 import { watchingBesides, watchingMembers } from '../lib/watchers.js';

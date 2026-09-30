@@ -17,58 +17,23 @@
 // address and starts.
 import { Map as MapLibre, Marker, NavigationControl } from './vendor/maplibre-gl.mjs';
 
-import { STALE_COLOUR, memberColour, shortName } from './members.js';
+import { STALE_COLOUR, memberColour } from './members.js';
 import { showFace } from './faces.js';
 
-import { ageText, isStuck, positionAge, timeText } from './age.js';
 import { isGrey } from './false-places.js';
 import { clusterMembers, facesShown } from './clusters.js';
-import {
-    FOLLOW_ALL,
-    FOLLOW_NONE,
-    FOLLOW_ONE,
-    PAUSE_AFTER_A_GESTURE_MS,
-    boundsAreClose,
-    boundsOf,
-    isPaused,
-    targetPosition,
-} from './following.js';
-import { openModeHelp } from './mode-help.js';
-import { openReasonHelp } from './reason-help.js';
-import {
-    listShown,
-    markerTapped,
-    openMember,
-    selectedPositionId,
-    shownPositionIds,
-} from './selection.js';
+import { FOLLOW_NONE } from './following.js';
+import { markerTapped, openMember, selectedPositionId, shownPositionIds } from './selection.js';
 import { markerOrder } from './stacking.js';
-import { modeText } from './modes.js';
-import { accuracyRing, widthIsWide, widthText } from './width.js';
-import { foundText, leftOutText } from './found.js';
-import { distanceFromViewer, distanceText } from './distance.js';
-import { SPEAKING, WORDS } from './words.js';
-
-/**
- * How far the fitted view is padded from the window's edge, in screen pixels,
- * at the least.
- *
- * Enough that a marker at the corner of the rectangle is not touching the
- * account button or the zoom controls that sit over the same corners.
- */
-const FOLLOW_ALL_PADDING = 60;
-
-/** The gap left between a fitted marker's outermost edge and the window's. */
-const FOLLOW_ALL_MARKER_GAP = 16;
-
-/**
- * How close "following everybody" is ever allowed to come.
- *
- * A group of one has a rectangle with no size at all, and fitting the map to
- * it without a limit would zoom in on that single roof the way [CLOSEST_ZOOM]
- * stops the circle of doubt from doing.
- */
-const FOLLOW_ALL_MAX_ZOOM = 17;
+import { accuracyRing } from './width.js';
+import { WORDS } from './words.js';
+import {
+    applyFollowMode,
+    bringTheRingIntoSight,
+    pauseFollowing,
+    setFollowTarget,
+} from './map-follow.js';
+import { closeCards, groupLabel, nameOf, showCard } from './map-card.js';
 
 /** The ring around the marker being looked at: the fill, the line, the source. */
 const WIDTH_SOURCE = 'width';
@@ -88,7 +53,7 @@ const WIDTH_FILL_OPACITY = 0.12;
 const WIDTH_LINE_WIDTH = 1.5;
 
 /** Close enough to tell which street somebody is on, without hunting for them. */
-const START_ZOOM = 15;
+export const START_ZOOM = 15;
 
 /**
  * How much of the window the circle of doubt is aimed to fill.
@@ -116,18 +81,6 @@ const CLOSEST_ZOOM = 18;
  * the size it was aimed at.
  */
 const EQUATOR_METRES_PER_PIXEL = 78271.51696;
-
-/**
- * How many pixels across a ring may come out before a card opened on the map
- * brings it closer.
- *
- * A map fitted round everybody can span a region, and there a courtyard of
- * doubt is smaller than a pixel: the card asks where exactly the member is and
- * the map has no way to say. Twenty is about the head of the pin, the size at
- * which a ring stops being hidden behind the marker it belongs to.
- */
-const RING_TOO_SMALL_PIXELS = 20;
-
 
 /**
  * How close two pins have to come before they are drawn as one.
@@ -360,19 +313,6 @@ export function createMap(element, onCardChange = () => {}, cardElement) {
     return view;
 }
 
-/** Closes whatever card is open, and says whether there was one. */
-function closeCards(view) {
-    if (view.selection === null) {
-        return false;
-    }
-
-    view.selection = null;
-    view.card.hidden = true;
-    view.card.replaceChildren();
-
-    return true;
-}
-
 /**
  * Which marker a member is standing under right now, or null if none of them
  * covers that member.
@@ -426,113 +366,6 @@ export function showMembers(view, positions, names, faces, ownMemberId, now) {
 
     draw(view, view.last);
     applyFollowMode(view);
-}
-
-/**
- * Moves the map to match the follow mode, once a fresh set of positions has
- * been drawn.
- *
- * Nothing here runs on a timer of its own: a drawing is the only moment new
- * positions are in hand to follow, so this is called from nowhere else.
- */
-function applyFollowMode(view) {
-    if (followPaused(view)) {
-        return;
-    }
-
-    const positions = view.last?.positions ?? [];
-
-    if (view.mode === FOLLOW_ONE) {
-        const position = targetPosition(positions, view.targetPositionId);
-
-        // Gone quiet rather than never chosen: the map holds still on the
-        // last place it knew rather than snapping back to the world.
-        if (position) {
-            view.map.easeTo({ center: [position.longitude, position.latitude] });
-        }
-
-        return;
-    }
-
-    if (view.mode !== FOLLOW_ALL) {
-        return;
-    }
-
-    const bounds = boundsOf(positions);
-
-    if (!bounds) {
-        return;
-    }
-
-    if (view.followedBounds && boundsAreClose(bounds, view.followedBounds)) {
-        return;
-    }
-
-    view.followedBounds = bounds;
-    view.map.fitBounds(
-        [[bounds.west, bounds.south], [bounds.east, bounds.north]],
-        { padding: followAllPadding(view), maxZoom: FOLLOW_ALL_MAX_ZOOM },
-    );
-}
-
-/**
- * The padding that keeps every marker whole inside the fitted view.
- *
- * The rectangle is fitted by the points of the pins, and a pin hangs above its
- * point with the name over it, and reaches half its width to either side. A
- * padding the same on all four sides left the member at the top with the
- * head of their pin past the edge of the window. Measured off the markers
- * themselves rather than written down: a pin for several members is wider
- * than one for a single member, and a long name wider still.
- */
-function followAllPadding(view) {
-    let tallest = 0;
-    let widest = 0;
-
-    for (const entry of view.markers.values()) {
-        const element = entry.marker.getElement();
-
-        tallest = Math.max(tallest, element.offsetHeight);
-        widest = Math.max(widest, element.offsetWidth);
-    }
-
-    const side = Math.max(FOLLOW_ALL_PADDING, widest / 2 + FOLLOW_ALL_MARKER_GAP);
-
-    return {
-        top: Math.max(FOLLOW_ALL_PADDING, tallest + FOLLOW_ALL_MARKER_GAP),
-        bottom: FOLLOW_ALL_PADDING,
-        left: side,
-        right: side,
-    };
-}
-
-/**
- * Remembers who a card just opened for, for the "one" follow mode to centre on.
- *
- * A viewer who asked to follow a member before there was one is answered
- * here: every way a card opens comes through this function, so the card that
- * opens next is the choice they were asked to make.
- */
-function setFollowTarget(view, positionId) {
-    view.targetPositionId = positionId;
-
-    if (view.awaitingTarget) {
-        view.awaitingTarget = false;
-        startFollowing(view, FOLLOW_ONE);
-    }
-}
-
-/** Switches to `mode` as a press asks for, which is right away. */
-function startFollowing(view, mode) {
-    view.mode = mode;
-
-    // Choosing a mode is a viewer asking for the map to move now. The pause
-    // exists to keep a followed member from yanking the view out from under
-    // a hand, which is the opposite of what a choice means; and the
-    // rectangle last fitted describes a view the viewer may since have left.
-    view.pausedAt = null;
-    view.followedBounds = null;
-    clearTimeout(view.pauseEnds);
 }
 
 function draw(view, { positions, names, faces, now }) {
@@ -624,68 +457,6 @@ function draw(view, { positions, names, faces, now }) {
 }
 
 /**
- * Holds the follow mode off for a while, the way a hand on the map does.
- *
- * Also what a card opened on the map does when it has to bring a ring into
- * sight: the viewer asked about one member, and a mode that fitted the view
- * round everybody again a moment later would take the answer away.
- */
-function pauseFollowing(view) {
-    view.pausedAt = Date.now();
-    // The hand has taken the map somewhere the fitted rectangle no longer
-    // describes. Forgetting the rectangle is what lets "everybody" fit the view
-    // again once the pause wears off: otherwise a household that has not moved
-    // hands back the same rectangle, it is found close to the one already
-    // fitted, and the map stays where the hand left it with the mode still on.
-    view.followedBounds = null;
-    // Nothing else is bound to move the map when the pause wears off: the next
-    // batch of positions may be half an hour away for a member standing still,
-    // and a map left where the hand put it with the mode on reads as broken. So
-    // the end of the pause is an event of its own, and the button is drawn
-    // again both ways.
-    clearTimeout(view.pauseEnds);
-    view.pauseEnds = setTimeout(() => {
-        applyFollowMode(view);
-        view.onCardChange();
-    }, PAUSE_AFTER_A_GESTURE_MS);
-    view.onCardChange();
-}
-
-/**
- * Takes the map close enough to see the ring of the card just opened on it,
- * where the ring would otherwise be lost under its pin.
- *
- * The strip always flies to the member, but a marker is tapped on the map the
- * viewer already has, and a map already close stays where it is. One fitted
- * round a family spread over a region is not a choice of zoom to respect: it
- * is a mode, and it pauses the way a hand pauses it.
- *
- * Measured on the screen rather than worked out from the zoom, because what
- * matters is the pixels the ring comes out at on this map.
- */
-function bringTheRingIntoSight(view) {
-    const position = selectedPosition(view);
-
-    if (!position?.accuracyMetres) {
-        return;
-    }
-
-    const [north] = accuracyRing(position.latitude, position.longitude, position.accuracyMetres, 4);
-    const centre = view.map.project([position.longitude, position.latitude]);
-    const edge = view.map.project(north);
-
-    if (2 * (centre.y - edge.y) >= RING_TOO_SMALL_PIXELS) {
-        return;
-    }
-
-    pauseFollowing(view);
-    view.map.flyTo({
-        center: [position.longitude, position.latitude],
-        zoom: Math.max(view.map.getZoom(), START_ZOOM, closeEnoughForTheRing(view, position)),
-    });
-}
-
-/**
  * The circle around the member being looked at, or nothing at all.
  *
  * One at a time rather than all of them: four circles of a kilometre and a
@@ -696,7 +467,7 @@ function bringTheRingIntoSight(view) {
  * under the circle moves on its own, and a ring left where the member used to
  * be would be a claim about the wrong place.
  */
-function drawWidth(view) {
+export function drawWidth(view) {
     if (!view.ringReady) {
         return;
     }
@@ -742,7 +513,7 @@ function drawWidth(view) {
  * viewer means is the question that list is asking, and a circle drawn for any
  * one of them would answer it for them.
  */
-function selectedPosition(view) {
+export function selectedPosition(view) {
     const entry = view.selection ? view.markers.get(view.selection.key) : null;
 
     if (!entry) {
@@ -947,110 +718,6 @@ function showPin(entry, names, faces, now) {
 }
 
 /**
- * What is left in the phone, written green while it is filling: a low
- * percentage on a charger and the same one off it mean opposite things, and
- * the colour says which without taking any room on the card.
- */
-export function batteryText(position, into = document.createElement('span')) {
-    into.replaceChildren();
-    into.classList.toggle('charging', position.charging && position.batteryPercent !== null);
-    into.textContent =
-        position.batteryPercent === null ? WORDS.unknown : `${position.batteryPercent}%`;
-
-    return into;
-}
-
-/** What a marker for several members writes above itself. */
-function groupLabel(count) {
-    return count === 1 ? WORDS.oneMember : WORDS.members(count);
-}
-
-/**
- * Draws the one card the whole page ever shows at once: one member's detail,
- * or the list of who is standing under a marker that covers several of them.
- *
- * Which of the group was meant is a question only the viewer can answer, so
- * the list comes first and the detail is one click further in. That choice
- * lives in view.selection rather than in the card itself, so that a tick that
- * redraws the card does not throw the viewer back to the list.
- *
- * Nothing here decides whether a card should be open at all — that is what
- * closeCards is for — only what the open one looks like.
- */
-function showCard(view, names, faces, now) {
-    const entry = view.markers.get(view.selection.key);
-
-    // The marker this card names is not on the map right now. draw() closes
-    // a card left stranded like this once a drawing has actually happened;
-    // reached from a click instead, a stale selection would otherwise be
-    // rendered as a card about nobody.
-    if (!entry) {
-        closeCards(view);
-
-        return;
-    }
-
-    const group = entry.members;
-    const chosen = group.find((member) => member.positionId === view.selection.positionId);
-
-    let content;
-
-    if (group.length === 1) {
-        content = detail(view, group[0], nameOf(group[0], names), faces, now);
-    } else if (!chosen) {
-        content = groupList(view, entry, names, faces, now);
-    } else {
-        content = detail(view, chosen, nameOf(chosen, names), faces, now);
-
-        const back = document.createElement('button');
-
-        back.type = 'button';
-        back.className = 'group-back';
-        // The arrow says which way the button goes before the words are read; an
-        // arrow written as a character rather than drawn, because a set of icons
-        // is a dependency of its own and this is the only one the page needs.
-        back.textContent = WORDS.backToList;
-        back.addEventListener('click', () => {
-            view.selection = listShown(view.selection);
-            showCard(view, names, faces, now);
-            view.onCardChange();
-            drawWidth(view);
-        });
-
-        content.prepend(back);
-    }
-
-    // Named in the language the rest of the card is read in: a cross drawn
-    // out of two lines has no text inside it for a reader who is listening to
-    // the page rather than looking at it.
-    const close = document.createElement('button');
-
-    close.type = 'button';
-    close.className = 'card-close';
-    close.setAttribute('aria-label', WORDS.close);
-    close.addEventListener('click', () => {
-        if (closeCards(view)) {
-            view.onCardChange();
-            drawWidth(view);
-        }
-    });
-
-    // Scrolling lives on this wrapper rather than on #card itself: #card is
-    // also the close button's positioned ancestor, and an ancestor that
-    // scrolls its own box carries every descendant along with it, the close
-    // button included — the corner it is meant to stay pinned to would drift
-    // out of view with the rest of the card. A plain content box underneath
-    // it, scrolling on its own, leaves the button where it was tapped from.
-    const body = document.createElement('div');
-
-    body.className = 'card-body';
-    body.append(content);
-
-    view.card.replaceChildren(close, body);
-    view.card.hidden = false;
-}
-
-/**
  * Whose cards are open, as position ids.
  *
  * A card about one member names that member; a list of who stands under one
@@ -1068,65 +735,6 @@ export function shownPositions(view) {
     }
 
     return shownPositionIds(view.selection, entry.members.map((member) => member.positionId));
-}
-
-/** The members under one marker, as rows that open their cards. */
-function groupList(view, entry, names, faces, now) {
-    const list = document.createElement('div');
-
-    list.className = 'group';
-
-    const heading = document.createElement('h2');
-
-    heading.textContent = groupLabel(entry.members.length);
-    list.append(heading);
-
-    for (const member of entry.members) {
-        const row = document.createElement('button');
-
-        row.type = 'button';
-        row.className = 'group-row';
-
-        const stale = isGrey(member, now);
-        const colour = stale ? STALE_COLOUR : memberColour(member.memberId);
-        const label = nameOf(member, names);
-
-        // The same circle the panel and the pin carry, so that one member is
-        // one drawing wherever they are named.
-        const face = document.createElement('span');
-
-        face.className = stale ? 'member-face stale' : 'member-face';
-        face.style.setProperty('--ring', colour);
-        showFace(face, faces.get(member.memberId), label, colour);
-
-        const name = document.createElement('span');
-
-        name.className = 'group-name';
-        name.textContent = label;
-
-        const age = document.createElement('span');
-
-        age.className = stale ? 'group-age stale' : 'group-age';
-        age.textContent = ageText(positionAge(member.positionAt, now));
-
-        row.append(face, name, age);
-        row.addEventListener('click', () => {
-            view.selection = openMember(view.selection.key, member.positionId);
-            setFollowTarget(view, member.positionId);
-            showCard(view, names, faces, now);
-            view.onCardChange();
-            drawWidth(view);
-            bringTheRingIntoSight(view);
-        });
-
-        list.append(row);
-    }
-
-    return list;
-}
-
-function nameOf(member, names) {
-    return names.get(member.positionId) ?? shortName(member.memberId);
 }
 
 /**
@@ -1160,334 +768,6 @@ function centreLongitude(group) {
 /** The same angle, written as the turn of at most half a circle either way. */
 function wrapDegrees(degrees) {
     return ((((degrees + 180) % 360) + 360) % 360) - 180;
-}
-
-/**
- * What the bubble says once the viewer asks.
- *
- * Everything the position document carries beyond the two coordinates: when it
- * was taken, how the phone was collecting at the time and how much battery it
- * had left, which together answer "why is this old" without a second question.
- *
- * Built as elements rather than as text, so that a member id — written by
- * whoever holds the account — has no way of being read as markup.
- */
-function detail(view, position, name, faces, now) {
-    const card = document.createElement('div');
-    card.className = 'detail';
-
-    // The same face the marker carries, so that a card opened from the panel
-    // is recognisably the person whose pin is on the map.
-    const heading = document.createElement('div');
-
-    heading.className = 'detail-head';
-
-    // Old means grey here as well as on the pin and in the strip: a card in
-    // full colour beside a faded pin reads as a member who is there right now.
-    const stale = isGrey(position, now);
-    const colour = stale ? STALE_COLOUR : memberColour(position.memberId);
-
-    const face = document.createElement('span');
-
-    face.className = stale ? 'detail-face stale' : 'detail-face';
-    face.style.setProperty('--ring', colour);
-    showFace(face, faces.get(position.memberId), name, colour);
-
-    const titles = document.createElement('div');
-    const title = document.createElement('h2');
-    const device = document.createElement('span');
-    const own = position.memberId === view.ownMemberId;
-
-    // The person and the phone on lines of their own, whatever the markers
-    // say, because each of the two is what is pressed to rename it: a row of
-    // its own for renaming took a line of a card that is short of them.
-    // Oneself is named on the account, not here.
-    const person = view.personName?.(position) ?? name;
-
-    title.append(nameWord(view, person, own ? null : ['members', position.memberId]));
-    device.className = 'detail-device';
-    device.append(nameWord(view, position.deviceName || WORDS.unnamedDevice, ['devices', position.positionId]));
-    titles.append(title, device);
-
-    heading.append(face, titles);
-
-    card.append(heading, summary(view, position, now));
-
-    const sought = view.soughtLine?.(position);
-
-    if (sought) {
-        card.append(sought);
-    }
-
-    const warnings = warningsOf(position, now);
-
-    if (warnings) {
-        card.append(warnings);
-    }
-
-    // Everything else behind one button, and the choice kept: a viewer who
-    // opens the details wants them on the next card too, and one who closed
-    // them opened the card for the summary.
-    const details = detailTable(position);
-    const more = document.createElement('button');
-
-    view.detailsOpen ??= readDetailsOpen();
-    details.id = 'card-details';
-    more.type = 'button';
-    more.className = 'detail-more';
-    more.setAttribute('aria-controls', details.id);
-
-    const showDetails = (open) => {
-        details.hidden = !open;
-        more.setAttribute('aria-expanded', String(open));
-        more.textContent = open ? WORDS.fewerDetails : WORDS.moreDetails;
-    };
-
-    showDetails(view.detailsOpen);
-    more.addEventListener('click', () => {
-        view.detailsOpen = !view.detailsOpen;
-        writeDetailsOpen(view.detailsOpen);
-        showDetails(view.detailsOpen);
-    });
-
-    // Beside the name rather than under the details: opened, the details
-    // reach the bottom of the card, and a button below them had to be
-    // scrolled to.
-    heading.append(more);
-    card.append(details);
-
-    return card;
-}
-
-/**
- * The line under the name: how far, how old the position, how long since the
- * phone was online, and the charge.
- *
- * The two ages side by side because under a spoof they are hours apart, and a
- * card naming only one of them is read as naming the other.
- */
-function summary(view, position, now) {
-    const line = document.createElement('div');
-
-    line.className = 'detail-summary';
-
-    const away = distanceFromViewer(position, view.last?.positions ?? [], view.ownMemberId, now);
-    const parts = [
-        ...(away === null ? [] : [WORDS.fromYou(distanceText(away))]),
-        WORDS.positionAgo(ageText(positionAge(position.positionAt, now))),
-        WORDS.onlineAgo(ageText(positionAge(position.knownAt, now))),
-    ];
-
-    for (const text of parts) {
-        const part = document.createElement('span');
-
-        part.textContent = text;
-        line.append(part);
-    }
-
-    line.append(batteryText(position));
-
-    return line;
-}
-
-/**
- * What is wrong with the position, as one paragraph, or null when nothing is.
- *
- * Each sentence only while it is true: a marker left behind by a phone that is
- * still online, answers being rejected, a receiver that has not settled. Put
- * together rather than as rows, because they are read as one account of why
- * the marker should not be trusted.
- */
-function warningsOf(position, now) {
-    // Each sentence is a list of pieces: the one about rejected answers holds
-    // the reason as a word to press.
-    const sentences = [];
-
-    // The answers refused for lying in the same place are that place again,
-    // so they are counted into its sentence rather than given one of their own.
-    const refusedHere = position.inFalsePlace
-        && position.leftOutCount > 0
-        && position.leftOutReason === 'FalsePlace';
-
-    if (refusedHere) {
-        const place = reasonButton('FalsePlace');
-
-        place.textContent = WORDS.falsePlaceWhere;
-        sentences.push([WORDS.falsePlaceAndAfter(position.leftOutCount), ' ', place, '.']);
-    } else if (position.inFalsePlace) {
-        const place = reasonButton('FalsePlace');
-
-        place.textContent = lowerFirst(place.textContent);
-        sentences.push([WORDS.falsePlaceLead, ' ', place, '.']);
-    }
-
-    if (isStuck(position.positionAt, position.knownAt, now)) {
-        sentences.push([WORDS.stuckSentence(ageText(positionAge(position.knownAt, now)))]);
-    }
-
-    if (position.leftOutCount > 0 && !refusedHere) {
-        const reason = reasonButton(position.leftOutReason);
-
-        reason.textContent = lowerFirst(reason.textContent);
-        const lead = WORDS.leftOutLead(WORDS.leftOutAnswers(position.leftOutCount));
-
-        sentences.push([lead, ' ', reason, '.']);
-    }
-
-    if (position.settling) {
-        sentences.push([WORDS.settlingSentence]);
-    }
-
-    if (sentences.length === 0) {
-        return null;
-    }
-
-    const paragraph = document.createElement('p');
-
-    paragraph.className = 'detail-warn';
-    sentences.forEach((pieces, index) => paragraph.append(...(index > 0 ? [' '] : []), ...pieces));
-
-    return paragraph;
-}
-
-/** The first letter made small, for a reason read in the middle of a sentence. */
-function lowerFirst(text) {
-    return text.charAt(0).toLocaleLowerCase(SPEAKING) + text.slice(1);
-}
-
-/** The rows behind the button: the two moments, and how the answer was arrived at. */
-function detailTable(position) {
-    const table = document.createElement('table');
-
-    const rows = [
-        [WORDS.at, timeText(position.positionAt)],
-        [WORDS.online, timeText(position.knownAt)],
-        [WORDS.mode, modeButton(position.mode)],
-        [WORDS.foundBy, foundText(position.foundBy)],
-        [WORDS.width, widthValue(position.accuracyMetres)],
-        [WORDS.position, `${position.latitude.toFixed(5)}, ${position.longitude.toFixed(5)}`],
-    ];
-
-    for (const [title, value] of rows) {
-        const row = document.createElement('tr');
-        const head = document.createElement('th');
-        const cell = document.createElement('td');
-
-        head.textContent = title;
-
-        if (value instanceof Node) {
-            cell.append(value);
-        } else {
-            cell.textContent = value;
-        }
-
-        row.append(head, cell);
-        table.append(row);
-    }
-
-    return table;
-}
-
-/** Where the choice of details is kept, in this browser only. */
-const DETAILS_KEY = 'geoshare.cardDetails';
-
-function readDetailsOpen() {
-    try {
-        return localStorage.getItem(DETAILS_KEY) === 'open';
-    } catch {
-        return false;
-    }
-}
-
-function writeDetailsOpen(open) {
-    try {
-        localStorage.setItem(DETAILS_KEY, open ? 'open' : 'closed');
-    } catch {
-        // A browser that keeps nothing forgets the choice with the tab.
-    }
-}
-
-/**
- * A name at the head of the card: a word to press where the page has asked to
- * be told and the name is one the viewer may give, plain text otherwise.
- */
-function nameWord(view, text, naming) {
-    if (!view.onName || !naming) {
-        return document.createTextNode(text);
-    }
-
-    const button = document.createElement('button');
-
-    button.type = 'button';
-    button.className = 'detail-rename';
-    button.textContent = text;
-    button.addEventListener('click', () => view.onName(...naming));
-
-    return button;
-}
-
-/**
- * The width as the card writes it, ochre once the answer names a block rather
- * than a building.
- *
- * The colour rather than a word beside the number, and only here now that the
- * strip has stopped carrying the figure: the card is where a width is read at
- * all, and the whole point of the colour is that the eye stops on it. The same
- * hundred metres the application colours at, because the two clients share a
- * database and nothing else, and one width read two ways is read as two.
- */
-function widthValue(metres) {
-    if (metres === null) {
-        return WORDS.unknown;
-    }
-
-    if (!widthIsWide(metres)) {
-        return widthText(metres);
-    }
-
-    const wide = document.createElement('span');
-
-    wide.className = 'detail-width wide';
-    wide.textContent = widthText(metres);
-
-    return wide;
-}
-
-/**
- * The mode as a thing to press, because a name alone answers nothing.
- *
- * "Standby" says what the phone was doing only to somebody who already knows
- * the five; the help behind it is where they are read against each other, and
- * a card is the one place a member meets a mode at all.
- */
-function modeButton(mode) {
-    const button = document.createElement('button');
-
-    button.className = 'mode-help-open';
-    button.type = 'button';
-    button.textContent = modeText(mode);
-    button.addEventListener('click', () => openModeHelp());
-
-    return button;
-}
-
-/**
- * The reason as a thing to press, for the same reason the mode is one.
- *
- * "Two positions at one time" names what the phone saw without saying what it
- * means, and a card is the one place a member meets a reason at all. The word
- * shown is the one the card would have shown anyway, the switched-off source
- * named among it.
- */
-function reasonButton(reason) {
-    const button = document.createElement('button');
-
-    button.className = 'mode-help-open left-out';
-    button.type = 'button';
-    button.textContent = leftOutText(reason);
-    button.addEventListener('click', () => openReasonHelp());
-
-    return button;
 }
 
 /**
@@ -1563,7 +843,7 @@ export function lookAt(view, position) {
  * answer does not drop the viewer onto a single roof. Only ever used to come
  * closer: whoever zoomed out did it on purpose.
  */
-function closeEnoughForTheRing(view, position) {
+export function closeEnoughForTheRing(view, position) {
     const metres = position.accuracyMetres;
 
     if (!metres) {
@@ -1581,65 +861,4 @@ function closeEnoughForTheRing(view, position) {
 /** The map measures its element when it is created, and the sign-in screen hides it. */
 export function remeasure(view) {
     view.map.resize();
-}
-
-/**
- * Switches the map to the mode picked in the follow menu and moves it to
- * match straight away. Returns false, and changes nothing but the wait, when
- * "one" is picked with nobody left to centre on: the viewer is then asked to
- * pick a member, and setFollowTarget finishes the switch.
- *
- * Whether the member behind "one" is still worth landing on comes from the
- * current positions rather than from the target id alone: an id kept from
- * before is still remembered once the member goes quiet, and following a
- * member who is not on the map would be a mode that does nothing.
- */
-export function chooseFollow(view, mode) {
-    if (mode === FOLLOW_ONE && !hasFollowTarget(view)) {
-        view.awaitingTarget = true;
-        view.onCardChange();
-
-        return false;
-    }
-
-    view.awaitingTarget = false;
-    startFollowing(view, mode);
-
-    view.onCardChange();
-    applyFollowMode(view);
-
-    return true;
-}
-
-/** Whether "one" has a member on the map to centre on. */
-export function hasFollowTarget(view) {
-    return targetPosition(view.last?.positions ?? [], view.targetPositionId) !== null;
-}
-
-/** Whether the page is waiting for the viewer to pick a member to follow. */
-export function awaitingFollowTarget(view) {
-    return view.awaitingTarget;
-}
-
-/** Stops waiting for a member to follow; the mode stays what it was. */
-export function stopAwaitingFollowTarget(view) {
-    if (view.awaitingTarget) {
-        view.awaitingTarget = false;
-        view.onCardChange();
-    }
-}
-
-/** The mode the follow button is on right now. */
-export function followMode(view) {
-    return view.mode;
-}
-
-/** The position id the "one" mode centres on, or null if nobody has been picked yet. */
-export function followTarget(view) {
-    return view.targetPositionId;
-}
-
-/** Whether a manual pan or zoom is still holding the map still. */
-export function followPaused(view) {
-    return isPaused(view.pausedAt, Date.now());
 }
