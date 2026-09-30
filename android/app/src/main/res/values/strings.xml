@@ -469,6 +469,7 @@
     <string name="connect_field_for_account">For account</string>
     <string name="connect_field_project">Project</string>
     <string name="connect_confirm_hint">Next: sign in with Google in the browser.</string>
+    <string name="connect_confirm_hint_joining">Next: the app restarts and joins the group with the current account.</string>
     <string name="connect_cancel">Cancel</string>
     <string name="connect_action">Connect</string>
     <!-- Screen В: the download failed, for either FailureKind. -->

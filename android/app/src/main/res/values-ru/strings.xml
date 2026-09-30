@@ -413,6 +413,7 @@
     <string name="connect_field_for_account">Для аккаунта</string>
     <string name="connect_field_project">Проект</string>
     <string name="connect_confirm_hint">Дальше вход через Google в браузере.</string>
+    <string name="connect_confirm_hint_joining">Дальше приложение перезапустится и вступит в группу под текущим аккаунтом.</string>
     <string name="connect_cancel">Отмена</string>
     <string name="connect_action">Подключиться</string>
     <!-- Экран В: загрузка не удалась, для любого из FailureKind. -->

@@ -24,6 +24,14 @@ private val SETTINGS = ProjectSettings(
     gcmSenderId = "123456789012",
     site = SITE,
 )
+private val OTHER_SETTINGS = ProjectSettings(
+    version = 1,
+    projectId = "geoshare-other",
+    applicationId = "1:210987654321:android:fedcba9876543210",
+    apiKey = "AIzaOtherExampleKeyNotReal",
+    gcmSenderId = "210987654321",
+    site = "geoshare-other-abc123",
+)
 
 class ConnectFlowTest {
     /**
@@ -34,9 +42,9 @@ class ConnectFlowTest {
      * back here, letting a test read [ConnectState.Fetching] in between.
      */
     private fun flow(
-        connectedProjectId: () -> String? = { null },
+        connected: () -> ProjectSettings? = { null },
         fetch: suspend (ConnectLink) -> SettingsFetch,
-    ) = ConnectFlow(CoroutineScope(Dispatchers.Unconfined), fetch, connectedProjectId)
+    ) = ConnectFlow(CoroutineScope(Dispatchers.Unconfined), fetch, connected)
 
     @Test
     fun `an owner link goes through Fetching before settling on Confirm with no invitation`() {
@@ -98,23 +106,23 @@ class ConnectFlowTest {
     @Test
     fun `a link naming a different project than the one connected shows SwitchProject`() {
         val flow = flow(
-            connectedProjectId = { "geoshare-other" },
+            connected = { OTHER_SETTINGS },
             fetch = { SettingsFetch.Fetched(SETTINGS) },
         )
 
         flow.linkArrived("https://$SITE.web.app/join")
 
         assertEquals(
-            ConnectState.SwitchProject("geoshare-other", OWNER_LINK, SETTINGS),
+            ConnectState.SwitchProject(OTHER_SETTINGS.projectId, OWNER_LINK, SETTINGS),
             flow.state.value,
         )
     }
 
     @Test
-    fun `the owner's own link to the already-connected project is a no-op`() {
+    fun `the owner's own link to the already-connected site is a no-op without fetching`() {
         val flow = flow(
-            connectedProjectId = { SETTINGS.projectId },
-            fetch = { SettingsFetch.Fetched(SETTINGS) },
+            connected = { SETTINGS },
+            fetch = { error("fetch should not run for a site already connected") },
         )
 
         flow.linkArrived("https://$SITE.web.app/join")
@@ -123,10 +131,10 @@ class ConnectFlowTest {
     }
 
     @Test
-    fun `an invitation link to the already-connected project still shows Confirm`() {
+    fun `an invitation link to the already-connected site settles on Confirm without fetching`() {
         val flow = flow(
-            connectedProjectId = { SETTINGS.projectId },
-            fetch = { SettingsFetch.Fetched(SETTINGS) },
+            connected = { SETTINGS },
+            fetch = { error("fetch should not run for a site already connected") },
         )
 
         flow.linkArrived("https://$SITE.web.app/join#g=group-1&c=ABCDEFGH")

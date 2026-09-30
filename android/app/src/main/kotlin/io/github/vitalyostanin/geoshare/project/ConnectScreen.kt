@@ -83,6 +83,10 @@ fun ConnectScreen(
                 Confirm(
                     settings = state.settings,
                     invitation = state.link.invitation,
+                    // An invitation pasted on a phone already in this
+                    // project: nobody is signed out, so there is no
+                    // browser to send them to.
+                    alreadyConnected = FamilyProject.projectId == state.settings.projectId,
                     onCancel = onCancel,
                     onConnect = onConnect,
                 )
@@ -175,6 +179,7 @@ private fun NotConnected(showError: Boolean, onPasteLink: (String) -> Unit) {
 private fun Confirm(
     settings: ProjectSettings,
     invitation: Invitation?,
+    alreadyConnected: Boolean,
     onCancel: () -> Unit,
     onConnect: () -> Unit,
 ) {
@@ -189,7 +194,14 @@ private fun Confirm(
     ConnectField(R.string.connect_field_project, settings.projectId)
 
     Text(
-        text = stringResource(R.string.connect_confirm_hint),
+        text =
+        stringResource(
+            if (alreadyConnected) {
+                R.string.connect_confirm_hint_joining
+            } else {
+                R.string.connect_confirm_hint
+            },
+        ),
         style = MaterialTheme.typography.bodyMedium,
         color = MaterialTheme.colorScheme.onSurfaceVariant,
         textAlign = TextAlign.Center,

@@ -208,7 +208,7 @@ class MainActivity : AppCompatActivity() {
         connectFlow = ConnectFlow(
             scope = lifecycleScope,
             fetch = ::fetchSettings,
-            connectedProjectId = { FamilyProject.projectId },
+            connected = { FamilyProject.settings },
         )
         // A recreated activity (a rotation) still carries the link it was
         // opened with, which has already been acted on.

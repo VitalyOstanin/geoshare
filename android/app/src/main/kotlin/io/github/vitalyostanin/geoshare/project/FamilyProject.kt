@@ -44,6 +44,15 @@ object FamilyProject {
         get() = current?.site
 
     /**
+     * The settings this phone already has, or null before any [start] or
+     * [save]. Read by `ConnectFlow` to tell a link back to the phone's own
+     * site apart from one naming a different one, without a download either
+     * way needs to settle that.
+     */
+    val settings: ProjectSettings?
+        get() = current
+
+    /**
      * Reads back the settings saved on a previous run, and starts Firebase
      * with them when there are any.
      *

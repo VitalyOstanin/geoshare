@@ -78,11 +78,15 @@ async function call(url, body) {
  * one has nothing to tell the group and writes no profile at all. Set on every
  * run, because an account the emulator already held was made before this and
  * would otherwise stay nameless.
+ *
+ * The address is marked verified, as a Google account's always is: an
+ * invitation lets in only an account whose verified address it names, and an
+ * address made up with a password here would otherwise never be one.
  */
 async function account(email, displayName) {
     const localId = await accountOf(email);
 
-    await call(authUrl('accounts:update'), { localId, displayName });
+    await call(authUrl('accounts:update'), { localId, displayName, emailVerified: true });
 
     return localId;
 }

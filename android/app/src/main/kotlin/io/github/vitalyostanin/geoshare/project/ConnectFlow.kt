@@ -71,14 +71,14 @@ enum class FailureKind {
  * call; none of them draws anything, which is what keeps this testable on
  * the JVM.
  *
- * [fetch] and [connectedProjectId] are taken as parameters rather than
- * reached for directly ([fetchSettings], [FamilyProject]), so a test can
- * run the whole flow without a network or a saved project.
+ * [fetch] and [connected] are taken as parameters rather than reached for
+ * directly ([fetchSettings], [FamilyProject]), so a test can run the whole
+ * flow without a network or a saved project.
  */
 class ConnectFlow(
     private val scope: CoroutineScope,
     private val fetch: suspend (ConnectLink) -> SettingsFetch,
-    private val connectedProjectId: () -> String?,
+    private val connected: () -> ProjectSettings?,
 ) {
     private val mutableState = MutableStateFlow<ConnectState>(ConnectState.NotConnected)
     val state: StateFlow<ConnectState> = mutableState.asStateFlow()
@@ -149,7 +149,23 @@ class ConnectFlow(
         mutableState.value = ConnectState.Done(settings, invitation)
     }
 
+    /**
+     * Starts a fetch for [link], unless the phone's own [connected] project
+     * already answers to [link]'s site — a settings file pasted back at the
+     * phone that already has it (an invitation re-pasted on the owner's own
+     * device, or the owner's link pasted a second time) needs no download,
+     * and skipping it is what keeps that paste working offline or against
+     * an emulator with no site to reach.
+     */
     private fun beginFetch(link: ConnectLink) {
+        val settings = connected()
+
+        if (settings != null && settings.site == link.site) {
+            mutableState.value = settle(link, settings)
+
+            return
+        }
+
         mutableState.value = ConnectState.Fetching(link)
 
         scope.launch {
@@ -162,8 +178,9 @@ class ConnectFlow(
     }
 
     /**
-     * What fetched [settings] turn into once the project they name is
-     * known: [ConnectState.Confirm] for a phone with nothing to leave,
+     * What [settings] — fetched, or already the phone's own — turn into
+     * once the project they name is known: [ConnectState.Confirm] for a
+     * phone with nothing to leave,
      * [ConnectState.SwitchProject] for one already talking to a different
      * project, and for a link back to the one it already talks to, either
      * [ConnectState.Confirm] when it still carries an invitation or a
@@ -171,7 +188,7 @@ class ConnectFlow(
      * link — accepting that again would change nothing.
      */
     private fun settle(link: ConnectLink, settings: ProjectSettings): ConnectState {
-        val current = connectedProjectId()
+        val current = connected()?.projectId
 
         return when {
             current == null -> ConnectState.Confirm(link, settings)
