@@ -28,7 +28,8 @@ import {
 } from './lib/store.js';
 import { AGE_TICK_MS, SIGNED_IN_KEY, elements, state } from './page/state.js';
 import { FULL_SCREEN, showFollowMenu, showFullScreen, showMenu } from './page/menus.js';
-import { closeAdmin, drawGroup } from './page/group-panel.js';
+import { drawGroup } from './page/group-panel.js';
+import { closeAdmin } from './page/admin-panel.js';
 import { askName, closeNaming } from './page/dialogs.js';
 import { closeSearch, drawSearchAsk, drawSought, searchesChanged, soughtLine } from './page/search-ui.js';
 import { drawSirenAsk } from './page/siren-ui.js';
