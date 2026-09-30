@@ -33,6 +33,7 @@ private val DEMO_SETTINGS = ProjectSettings(
     applicationId = "1:0:android:0",
     apiKey = "demo-geoshare",
     gcmSenderId = "0",
+    site = "demo-geoshare",
 )
 
 /**

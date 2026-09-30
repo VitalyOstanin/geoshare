@@ -17,7 +17,7 @@ class ProjectSettingsTest {
     """.trimIndent()
 
     @Test
-    fun `a well-formed document is read into the five fields`() {
+    fun `a well-formed document is read into the six fields`() {
         assertEquals(
             ProjectSettings(
                 version = 1,
@@ -25,6 +25,7 @@ class ProjectSettingsTest {
                 applicationId = "1:123456789012:android:0123456789abcdef",
                 apiKey = "AIzaExampleKeyNotReal",
                 gcmSenderId = "123456789012",
+                site = "geoshare-example-abc123",
             ),
             ProjectSettings.parse(document),
         )
@@ -49,6 +50,33 @@ class ProjectSettingsTest {
         val blankApiKey = document.replace("\"AIzaExampleKeyNotReal\"", "\"\"")
 
         assertNull(ProjectSettings.parse(blankApiKey))
+    }
+
+    @Test
+    fun `a document missing the site is refused like any other missing field`() {
+        assertNull(
+            ProjectSettings.parse(
+                """
+                {
+                    "version": 1,
+                    "projectId": "geoshare-example",
+                    "applicationId": "1:123456789012:android:0123456789abcdef",
+                    "apiKey": "AIzaExampleKeyNotReal",
+                    "gcmSenderId": "123456789012"
+                }
+                """.trimIndent(),
+            ),
+        )
+    }
+
+    @Test
+    fun `a site outside the lowercase-digits-hyphens rule is refused`() {
+        val upperCaseSite = document.replace(
+            "\"geoshare-example-abc123\"",
+            "\"Geoshare-Example\"",
+        )
+
+        assertNull(ProjectSettings.parse(upperCaseSite))
     }
 
     @Test
