@@ -4,7 +4,7 @@ import { ageText, positionAge } from '../lib/age.js';
 import { shortName } from '../lib/members.js';
 import { sirenState } from '../lib/sirens.js';
 import { WORDS } from '../lib/words.js';
-import { callSiren, watchSiren } from '../lib/store.js';
+import { callSiren, watchSiren } from '../lib/store-search.js';
 import { elements, state } from './state.js';
 import { linkIsLost, troubleOf } from './link-ui.js';
 import { drawGroup } from './group-panel.js';

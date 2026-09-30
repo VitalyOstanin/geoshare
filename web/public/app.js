@@ -13,19 +13,10 @@ import {
 import { withFalsePlaces } from './lib/false-places.js';
 import { withPhones } from './lib/phones.js';
 import { withSearches, standingSearches } from './lib/searches.js';
-import {
-    keepWatching,
-    publishProfile,
-    watchFalsePlaces,
-    watchPositions,
-    watchGrants,
-    watchLabels,
-    watchProfiles,
-    watchRoster,
-    watchSearches,
-    watchSignIn,
-    watchWatchers,
-} from './lib/store.js';
+import { keepWatching, watchSignIn, watchWatchers } from './lib/store.js';
+import { watchPositions } from './lib/store-positions.js';
+import { publishProfile, watchGrants, watchProfiles, watchRoster } from './lib/store-group.js';
+import { watchFalsePlaces, watchLabels, watchSearches } from './lib/store-search.js';
 import { AGE_TICK_MS, SIGNED_IN_KEY, elements, state } from './page/state.js';
 import { FULL_SCREEN, showFollowMenu, showFullScreen, showMenu } from './page/menus.js';
 import { drawGroup } from './page/group-panel.js';

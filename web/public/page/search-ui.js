@@ -10,7 +10,7 @@ import {
 } from '../lib/searches.js';
 import { SPEAKING, WORDS } from '../lib/words.js';
 import { ADMINISTRATOR, standingIn } from '../lib/membership.js';
-import { endSearch, openSearch, renewSearch } from '../lib/store.js';
+import { endSearch, openSearch, renewSearch } from '../lib/store-search.js';
 import { elements, state } from './state.js';
 import { linkIsLost, troubleOf } from './link-ui.js';
 import { followPositions, showPositions } from '../app.js';

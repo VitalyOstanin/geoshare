@@ -14,7 +14,7 @@ import { looksLikeAnEmail } from '../lib/membership.js';
 import { shortName } from '../lib/members.js';
 import { standingSearches } from '../lib/searches.js';
 import { SPEAKING, WORDS } from '../lib/words.js';
-import { makeInvitation, removeMember, renameGroup, setRunning } from '../lib/store.js';
+import { makeInvitation, removeMember, renameGroup, setRunning } from '../lib/store-group.js';
 import { elements, state } from './state.js';
 import { aboutThem, askConfirm, phoneText } from './dialogs.js';
 import { adminSearch, untilText } from './search-ui.js';

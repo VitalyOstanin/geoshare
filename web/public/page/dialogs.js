@@ -5,7 +5,7 @@ import { outsideTheBox } from '../lib/mode-help.js';
 import { labelText } from '../lib/labels.js';
 import { WORDS } from '../lib/words.js';
 import { ADMINISTRATOR, standingIn } from '../lib/membership.js';
-import { writeLabel } from '../lib/store.js';
+import { writeLabel } from '../lib/store-search.js';
 import { elements, state } from './state.js';
 import { knownNote } from './link-ui.js';
 import { closeOnClickOutside, tryGroupWrite } from './group-panel.js';
