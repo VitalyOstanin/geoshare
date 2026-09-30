@@ -9,7 +9,7 @@ Somebody has to create a group's Firebase project, register the apps, create
 the database, deploy the rules and the page, and publish `geoshare.json`
 (ADR-0001). Two ways were weighed:
 
-- A setup page in the browser calling Google's APIs with the organiser's
+- A setup page in the browser calling Google's APIs with the project owner's
   consent. The calls themselves work from a browser, but the Firebase terms
   can be accepted only in the console, and an OAuth app asking for
   `cloud-platform` stays unverified — capped at 100 users over its lifetime
@@ -25,12 +25,12 @@ programmer or an AI agent to run, with Google Cloud Shell as a fallback for
 somebody without a prepared machine. One step stays in the console: enabling
 sign-in with Google, which is the only thing that makes the OAuth client.
 
-The script ends with the organiser's connection link
-(`https://<site>.web.app/join`) and its QR code. The organiser needs no
-invitation code: the link carries the project, and the organiser either
-founds the group or returns to the one they founded. Members get invitation
-links from the application, since an invitation belongs to a group and the
-group exists only after the organiser's first sign-in.
+The script ends with the project owner's connection link
+(`https://<site>.web.app/join`) and its QR code. The project owner needs
+no invitation code: the link carries the project, and the project owner
+either creates their group or returns to it. Members get invitation links
+from the application, since an invitation belongs to a group and the group
+exists only after the project owner's first sign-in.
 
 ## Consequences
 

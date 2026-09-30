@@ -433,5 +433,5 @@
 
     <!-- Shown in place of the map before this phone has been connected to a
          project, until the screen that takes a connection link exists. -->
-    <string name="not_connected_placeholder">Not connected yet. Open the connection link the organiser sent you.</string>
+    <string name="not_connected_placeholder">Not connected yet. Open a connection link.</string>
 </resources>

@@ -54,6 +54,7 @@ right and this file is out of date.
 | 7 | stale         | disconnected                          | A marker goes stale when its position is older than half an hour; nothing here knows whether a phone is connected |
 | 8 | false place   | spoof zone, jamming area              | A place where receivers are known to be told a lie, as the group recorded it |
 | 9 | join claim    | join request                          | It is a document the joiner writes for the rules to read; nothing asks anybody for anything |
+| 10 | project owner | organiser, founder                  | The person who set up the group's Firebase project and holds it. "Founder" is a group's first administrator, a role in the database; the project owner is a role outside it, over the whole project |
 
 A word from the platform's own API is not a synonym and is left alone:
 `currentUser` from Firebase, `Location` and its permissions from Android, a
@@ -98,6 +99,8 @@ project's own description of who it is for.
 | 6 | unrun group | A group with an empty `admins` array: nobody may change its roster, and the screens say so rather than offering controls every write would refuse | `Roster.kt`, `firestore.rules` |
 | 7 | member id | An account id, as the sign-in provider issues it. The name of a profile, of a grant and of a join claim, the first half of a position id, and a field of its own inside a position and a watch claim | `android/.../auth/AuthState.kt` |
 | 8 | current group | Which group this phone writes into, remembered on the phone itself and given out as a writing with a turn counter, so that founding or joining rebuilds every subscription | `android/.../service/CurrentGroup.kt` |
+| 9 | project owner | The Google account that created the group's Firebase project and holds it. Reads everything from the console past the rules and deploys them; hands out the connection link. On the phone they are a member like any other, usually the group's first administrator | `tools/new-project.sh`; `docs/ADR/0005-a-project-per-group.md` |
+| 10 | connection link | `https://<site>.web.app/join`: what points a phone at a group's project. With an invitation after the `#` it also carries the invitation text, so one link both connects and lets the person join | `tools/new-project.sh`; `docs/ADR/0001-one-build-settings-at-runtime.md` |
 
 ## Getting into a group
 
