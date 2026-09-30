@@ -42,6 +42,7 @@ opposite of the roster: they write it and nobody else does.
 | `members` | list   | Who is in the group; every other rule reads membership here           |
 | `admins`  | list   | Who may change the roster besides the founder; a subset of `members` |
 | `owner`   | string | The founder, where the group is not named after them; console only   |
+| `name`    | string | What people call the group; optional, 1–60 characters (ADR-0016)     |
 
 A group is created by the person who will run it, alone on both lists, and is
 named after their account: the rules allow a group to be made under the
@@ -84,9 +85,13 @@ after. The founder runs the group without being listed in `admins`, as long as
 they are on the roster, and nobody else takes them off it or out of the running
 of it; an administrator who is not the founder takes another administrator off
 the roster in two writes, the role first. `admins` may be empty only while the
-founder is on the roster. A write from a client changes `members` and `admins`
-and nothing else, so `owner` and any other field of the document are written
-from the console.
+founder is on the roster. A write from a client changes `members` and `admins`,
+or `name` alone, and nothing else, so `owner` and any other field of the
+document are written from the console.
+
+`name` is given, if at all, when the group is founded, and an administrator
+changes it later in a write of its own. It decides nothing: until there is one
+the screens call the group after its founder (ADR-0019).
 
 A household that started before invitations existed has no `admins` field and
 no `owner`. Its roster is therefore still edited from the console, which is
@@ -100,6 +105,7 @@ nothing, and nothing is what may change the roster. Naming its owner in
 |-------------|-----------|---------------------------------------------|
 | `createdBy` | string    | The administrator who made it                |
 | `expiresAt` | timestamp | When it stops letting anybody in             |
+| `email`     | string    | The Google address it lets in (ADR-0015)     |
 
 The code is the name of the document rather than a field, so an invitation
 cannot be found except by knowing it. Nobody reads this collection -- not even
@@ -111,9 +117,11 @@ editing would let an expiry be pushed out for a code already handed round.
 
 What the rules cannot do is spend a code: a write that adds the caller and a
 write that marks the invitation used are two writes, and nothing makes the
-second follow the first. So a code lets in everybody who has it while it lasts,
-and what holds that down is how long it lasts and the administrator who can
-remove whoever should not be there.
+second follow the first. A code therefore admits more than once while it lasts,
+but only the account whose verified address is `email`, compared without regard
+to case. An invitation made before addresses existed has no `email` and admits
+whoever holds it until it runs out, within a day; a new one cannot be made
+without an address.
 
 ## joins/{uid}
 

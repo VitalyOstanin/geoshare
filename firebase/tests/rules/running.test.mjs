@@ -152,13 +152,20 @@ describe('running a group whose owner is named in it', () => {
         await assertSucceeds(updateDoc(household(db), { members: [ALICE, BOB] }));
     });
 
-    it('nobody writes the owner or the name from a client', async () => {
+    it('nobody writes the owner from a client', async () => {
         const owner = testEnv.authenticatedContext(ALICE).firestore();
         const administrator = testEnv.authenticatedContext(BOB).firestore();
 
         await assertFails(updateDoc(household(owner), { owner: BOB }));
         await assertFails(updateDoc(household(administrator), { owner: BOB }));
-        await assertFails(updateDoc(household(administrator), { name: 'elsewhere' }));
+    });
+
+    // ADR-0016: the name is a caption the administrators keep, the console's
+    // one included; the owner above is what decides anything.
+    it('an administrator renames the household', async () => {
+        const db = testEnv.authenticatedContext(BOB).firestore();
+
+        await assertSucceeds(updateDoc(household(db), { name: 'elsewhere' }));
     });
 
     it('an administrator cannot take the owner off the roster', async () => {

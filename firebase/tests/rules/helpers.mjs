@@ -83,10 +83,27 @@ export const plantAnAdministrator = () =>
         await setDoc(groupDoc(context.firestore()), { members: [ALICE, BOB], admins: [ALICE] });
     });
 
+// Made before invitations named an account: admits whoever holds the code.
 export const plantAnInvitation = (code = CODE, expiresAt = inTenMinutes()) =>
     testEnv.withSecurityRulesDisabled(async (context) => {
         await setDoc(invitationOf(context.firestore(), code), { createdBy: ALICE, expiresAt });
     });
+
+// The address the stranger signs in with, and an invitation made out to it.
+export const STRANGER_EMAIL = 'stranger@example.com';
+
+export const plantAnAddressedInvitation = (email = STRANGER_EMAIL, code = CODE) =>
+    testEnv.withSecurityRulesDisabled(async (context) => {
+        await setDoc(invitationOf(context.firestore(), code), {
+            createdBy: ALICE,
+            expiresAt: inTenMinutes(),
+            email,
+        });
+    });
+
+// The stranger signed in with a Google account whose address is `email`.
+export const signedInAs = (email, verified = true) =>
+    testEnv.authenticatedContext(STRANGER, { email, email_verified: verified }).firestore();
 
 
 /**

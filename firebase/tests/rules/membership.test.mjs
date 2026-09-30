@@ -5,7 +5,7 @@ import { describe, it } from 'node:test';
 import { assertFails, assertSucceeds } from '@firebase/rules-unit-testing';
 import { deleteDoc, getDoc, arrayUnion, setDoc, updateDoc } from 'firebase/firestore';
 
-import { setUpRules, ALICE, BOB, STRANGER, testEnv, CODE, OTHER_CODE, groupDoc, invitationOf, claimOf, inTenMinutes, plantAnAdministrator, plantAnInvitation } from './helpers.mjs';
+import { setUpRules, ALICE, BOB, STRANGER, STRANGER_EMAIL, testEnv, CODE, OTHER_CODE, groupDoc, invitationOf, claimOf, inTenMinutes, plantAnAdministrator, plantAnInvitation, plantAnAddressedInvitation, signedInAs } from './helpers.mjs';
 
 setUpRules();
 
@@ -79,8 +79,35 @@ describe('invitations', () => {
         const db = testEnv.authenticatedContext(ALICE).firestore();
 
         await assertSucceeds(
+            setDoc(invitationOf(db, CODE), {
+                createdBy: ALICE,
+                expiresAt: inTenMinutes(),
+                email: STRANGER_EMAIL,
+            }),
+        );
+    });
+
+    // ADR-0019: an invitation without an address would admit whoever it was
+    // forwarded to, which is what the address is there to stop.
+    it('an invitation without an address is refused', async () => {
+        await plantAnAdministrator();
+
+        const db = testEnv.authenticatedContext(ALICE).firestore();
+
+        await assertFails(
             setDoc(invitationOf(db, CODE), { createdBy: ALICE, expiresAt: inTenMinutes() }),
         );
+    });
+
+    it('an invitation to something that is not an address is refused', async () => {
+        await plantAnAdministrator();
+
+        const db = testEnv.authenticatedContext(ALICE).firestore();
+        const invitation = (email) => ({ createdBy: ALICE, expiresAt: inTenMinutes(), email });
+
+        await assertFails(setDoc(invitationOf(db, CODE), invitation('stranger')));
+        await assertFails(setDoc(invitationOf(db, CODE), invitation('a b@example.com')));
+        await assertFails(setDoc(invitationOf(db, CODE), invitation('stranger@example')));
     });
 
     it('a member who does not run the group makes none', async () => {
@@ -234,6 +261,116 @@ describe('joining a group', () => {
         await assertSucceeds(setDoc(claimOf(db, STRANGER), { code: CODE }));
         await assertFails(
             setDoc(groupDoc(db), { members: [ALICE, BOB, STRANGER], admins: [ALICE, STRANGER] }),
+        );
+    });
+});
+
+// ADR-0015: the code admits the account it was made out to, and only once
+// Google has confirmed that the address is that account's.
+describe('joining on an invitation made out to an address', () => {
+    const join = (db) => updateDoc(groupDoc(db), { members: arrayUnion(STRANGER) });
+
+    it('the account the invitation names joins', async () => {
+        await plantAnAdministrator();
+        await plantAnAddressedInvitation();
+
+        const db = signedInAs(STRANGER_EMAIL);
+
+        await assertSucceeds(setDoc(claimOf(db, STRANGER), { code: CODE }));
+        await assertSucceeds(join(db));
+    });
+
+    // Google hands addresses back in whatever case they were typed in.
+    it('the address is compared without regard to case', async () => {
+        await plantAnAdministrator();
+        await plantAnAddressedInvitation('Stranger@Example.com');
+
+        const db = signedInAs(STRANGER_EMAIL);
+
+        await assertSucceeds(setDoc(claimOf(db, STRANGER), { code: CODE }));
+        await assertSucceeds(join(db));
+    });
+
+    // The link was forwarded: the code is right, the person is not.
+    it('another account holding the same code is refused', async () => {
+        await plantAnAdministrator();
+        await plantAnAddressedInvitation();
+
+        const db = signedInAs('somebody-else@example.com');
+
+        await assertSucceeds(setDoc(claimOf(db, STRANGER), { code: CODE }));
+        await assertFails(join(db));
+    });
+
+    it('an address Google has not confirmed is refused', async () => {
+        await plantAnAdministrator();
+        await plantAnAddressedInvitation();
+
+        const db = signedInAs(STRANGER_EMAIL, false);
+
+        await assertSucceeds(setDoc(claimOf(db, STRANGER), { code: CODE }));
+        await assertFails(join(db));
+    });
+
+    it('an account without an address at all is refused', async () => {
+        await plantAnAdministrator();
+        await plantAnAddressedInvitation();
+
+        const db = testEnv.authenticatedContext(STRANGER).firestore();
+
+        await assertSucceeds(setDoc(claimOf(db, STRANGER), { code: CODE }));
+        await assertFails(join(db));
+    });
+});
+
+// ADR-0016: a caption people choose, beside the account-id name the document has.
+describe('the name of a group', () => {
+    it('a group is founded with a name', async () => {
+        const db = testEnv.authenticatedContext(STRANGER).firestore();
+
+        await assertSucceeds(
+            setDoc(groupDoc(db, STRANGER), {
+                members: [STRANGER],
+                admins: [STRANGER],
+                name: 'Hikers',
+            }),
+        );
+    });
+
+    it('a name that is blank or longer than a link carries is refused', async () => {
+        const db = testEnv.authenticatedContext(STRANGER).firestore();
+        const founded = (name) => ({ members: [STRANGER], admins: [STRANGER], name });
+
+        await assertFails(setDoc(groupDoc(db, STRANGER), founded('   ')));
+        await assertFails(setDoc(groupDoc(db, STRANGER), founded('x'.repeat(61))));
+        await assertFails(setDoc(groupDoc(db, STRANGER), founded(42)));
+    });
+
+    it('the administrator renames the group', async () => {
+        await plantAnAdministrator();
+
+        const db = testEnv.authenticatedContext(ALICE).firestore();
+
+        await assertSucceeds(updateDoc(groupDoc(db), { name: 'Hikers' }));
+        await assertSucceeds(updateDoc(groupDoc(db), { name: 'Hikers of the north' }));
+    });
+
+    it('a member who does not run the group cannot rename it', async () => {
+        await plantAnAdministrator();
+
+        const db = testEnv.authenticatedContext(BOB).firestore();
+
+        await assertFails(updateDoc(groupDoc(db), { name: 'Hikers' }));
+    });
+
+    // A rename is a rename: the roster checks live in their own write.
+    it('renaming cannot carry a change to the roster with it', async () => {
+        await plantAnAdministrator();
+
+        const db = testEnv.authenticatedContext(ALICE).firestore();
+
+        await assertFails(
+            updateDoc(groupDoc(db), { name: 'Hikers', members: [ALICE, BOB, STRANGER] }),
         );
     });
 });

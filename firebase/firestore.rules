@@ -104,9 +104,29 @@ service cloud.firestore {
       function founding() {
         return request.auth != null &&
                groupId == request.auth.uid &&
-               request.resource.data.keys().hasOnly(['members', 'admins']) &&
+               request.resource.data.keys().hasOnly(['members', 'admins', 'name']) &&
                request.resource.data.members == [request.auth.uid] &&
-               request.resource.data.admins == [request.auth.uid];
+               request.resource.data.admins == [request.auth.uid] &&
+               (!('name' in request.resource.data) || nameFits());
+      }
+
+      // What people call the group (ADR-0016). Only a caption: the document
+      // keeps its account-id name, and nothing is decided by this one. Held to
+      // the length a link carries it at (ADR-0017), and never left blank,
+      // since a group without a name is shown by its founder's instead.
+      function nameFits() {
+        return request.resource.data.name is string &&
+               request.resource.data.name.trim().size() >= 1 &&
+               request.resource.data.name.size() <= 60;
+      }
+
+      // An administrator giving the group a name, or another one. A write of
+      // its own rather than a part of administering: the roster checks there
+      // have nothing to say about a caption.
+      function renaming() {
+        return isGroupAdmin() &&
+               request.resource.data.diff(resource.data).affectedKeys().hasOnly(['name']) &&
+               nameFits();
       }
 
       // What the person invited does: add themselves, and nothing else.
@@ -144,7 +164,22 @@ service cloud.firestore {
         return claimedCode() != '' &&
                exists(/databases/$(database)/documents/groups/$(groupId)/invitations/$(claimedCode())) &&
                get(/databases/$(database)/documents/groups/$(groupId)/invitations/$(claimedCode()))
-                 .data.expiresAt > request.time;
+                 .data.expiresAt > request.time &&
+               invitedAccount(
+                 get(/databases/$(database)/documents/groups/$(groupId)/invitations/$(claimedCode()))
+                   .data.get('email', ''));
+      }
+
+      // Whether the account joining is the one the invitation was made for
+      // (ADR-0015): the address Google vouches for, compared without regard
+      // to case. An invitation made before invitations had an address names
+      // nobody and admits whoever holds it, as it did when it was handed out;
+      // none is made that way any more, and those out there run out within a
+      // day.
+      function invitedAccount(email) {
+        return email == '' ||
+               (request.auth.token.get('email_verified', false) == true &&
+                request.auth.token.get('email', '').lower() == email.lower());
       }
 
       // The person the group is named after, who made it. Nothing is hidden
@@ -205,7 +240,7 @@ service cloud.firestore {
 
       allow read: if isMember();
       allow create: if founding();
-      allow update: if joining() || administering();
+      allow update: if joining() || administering() || renaming();
       // A group is left by being taken off the roster. Deleting the document
       // would leave its members, profiles, grants and positions behind with
       // nothing to say who may read them.
@@ -219,9 +254,12 @@ service cloud.firestore {
         // The code is the name of the document rather than a field, so an
         // invitation cannot be found except by knowing it.
         function invitationShape() {
-          return request.resource.data.keys().hasOnly(['createdBy', 'expiresAt']) &&
+          return request.resource.data.keys().hasOnly(['createdBy', 'expiresAt', 'email']) &&
                  request.resource.data.createdBy == request.auth.uid &&
-                 request.resource.data.expiresAt is timestamp;
+                 request.resource.data.expiresAt is timestamp &&
+                 request.resource.data.email is string &&
+                 request.resource.data.email.matches('[^@\\s]+@[^@\\s]+[.][^@\\s]+') &&
+                 request.resource.data.email.size() <= 254;
         }
 
         allow read: if false;
