@@ -286,6 +286,25 @@ print(json.dumps({
 '
 }
 
+# The link the project owner opens on their own phone to connect the
+# application, plus a QR code of it when qrencode is on PATH — scanning one
+# beats typing a *.web.app address on a phone's keyboard. ANSIUTF8 sets its
+# black and white with its own escape codes rather than the terminal's, so
+# the code reads the same on a light or a dark terminal; plain UTF8 borrows
+# the terminal's own colours and comes out inverted on a dark one.
+print_connect_link() {
+    local site="$1"
+
+    echo
+    echo "Connect link: https://${site}.web.app/join"
+
+    if command -v qrencode > /dev/null; then
+        qrencode -t ANSIUTF8 "https://${site}.web.app/join"
+    else
+        echo "(install qrencode to also print this as a QR code)"
+    fi
+}
+
 # The manual steps left after `create`, and the JSON --json ends with once it
 # is done. Built from the same two console steps the human-readable message
 # below spells out, so the two never drift apart.
@@ -454,6 +473,10 @@ Then run:
   tools/new-project.sh configs ${project}
 EOF
 
+    echo
+    echo "Once those two steps are done, phones can connect through:"
+    print_connect_link "${site_id}"
+
     if (( json_mode )); then
         create_result_json "${project}" "${site_id}" >&3
     fi
@@ -508,6 +531,8 @@ a signing key, and the page serves from https://${site_id}.web.app/. Written
 to ${out#"${REPO_ROOT}"/}/firebase-config.js, for a working copy pointed at
 this project rather than the one it already talks to.
 EOF
+
+    print_connect_link "${site_id}"
 
     if (( json_mode )); then
         PROJECT="${project}" SITE="${site_id}" python3 -c '
