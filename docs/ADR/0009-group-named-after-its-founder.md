@@ -1,6 +1,6 @@
 # ADR-0009: A group is named after its founder, and an invitation carries the name
 
-- Status: Accepted
+- Status: Accepted; who may use an invitation superseded by ADR-0015
 - Date: 2026-09-25 (recorded 2026-09-30)
 
 ## Context
