@@ -196,7 +196,19 @@
     <string name="group_join">Join</string>
     <string name="group_make_invitation">Invite a new member to the group</string>
     <string name="group_make_another_invitation">Make another invitation</string>
-    <string name="group_code_lasts">The invitation lets somebody in for a day, and lets in everybody it reaches in that time. Send it whole: it names the group as well as the code.</string>
+    <!-- The dialog that asks for the one address an invitation is made for
+         (ADR-0015); %1$s takes the group's own caption (group_name_unnamed
+         for one that has none). -->
+    <string name="group_invite_title">Invite to the group \"%1$s\"</string>
+    <string name="group_invite_address">Member\'s Google address</string>
+    <string name="group_invite_note">Only whoever signs into the app with this address will be able to join. The invitation lasts a day.</string>
+    <string name="group_invite_create">Create</string>
+    <!-- The screen shown once an invitation is made; %1$s takes the address
+         shortened the way the page and WrongAccountDialog also show it
+         (ConnectLink.shortenedAddress). -->
+    <string name="group_invite_screen_title">Invitation for %1$s</string>
+    <string name="group_invite_expires">Valid until %1$s. Send the link to the member: it connects the app to the group\'s project and lets them into the group.</string>
+    <string name="group_invite_send">Send</string>
     <string name="group_copy">Copy</string>
     <string name="group_copied">Invitation copied</string>
     <string name="group_runs_it">admin</string>

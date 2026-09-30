@@ -156,6 +156,9 @@ object GroupField {
 object InvitationField {
     const val CREATED_BY = "createdBy"
     const val EXPIRES_AT = "expiresAt"
+
+    /** The address the rules let in on this invitation (`invitationShape`, ADR-0018). */
+    const val EMAIL = "email"
 }
 
 /** The one field of a claim to be holding a code. */

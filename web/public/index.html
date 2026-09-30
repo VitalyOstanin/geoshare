@@ -256,14 +256,21 @@
                  one member's line. -->
             <div id="admin-searches"></div>
 
+            <!-- The invitation just made (ADR-0019): who it is for, the link
+                 itself — selected whole with one click, since half of it is a
+                 code — and how long it lasts. -->
             <div id="admin-invitation" hidden>
-                <code id="admin-code"></code>
-                <p id="admin-code-lasts"></p>
+                <p id="admin-invitation-title"></p>
+                <code id="admin-invitation-link"></code>
+                <p id="admin-invitation-note"></p>
+                <div id="admin-invitation-buttons">
+                    <button id="admin-share" type="button" hidden></button>
+                    <button id="admin-copy" type="button"></button>
+                </div>
             </div>
 
             <div id="admin-buttons">
                 <button id="admin-make-invitation" type="button"></button>
-                <button id="admin-copy" type="button" hidden></button>
             </div>
 
             <p id="admin-said" hidden></p>
@@ -357,6 +364,20 @@
             <div id="rename-buttons">
                 <button id="rename-save" type="button"></button>
                 <button id="rename-cancel" type="button"></button>
+            </div>
+        </dialog>
+
+        <!-- Who an invitation is made out to (ADR-0015, ADR-0019): a Google
+             address, asked before anything is written, since the rules hold
+             every invitation to one and refuse a write naming none. Opened on
+             top of the panel that runs the group, the way renaming it does. -->
+        <dialog id="invite" class="admin naming">
+            <h2 id="invite-title"></h2>
+            <input id="invite-email" type="email" autocomplete="off">
+            <p id="invite-note"></p>
+            <div id="invite-buttons">
+                <button id="invite-create" type="button"></button>
+                <button id="invite-cancel" type="button"></button>
             </div>
         </dialog>
 

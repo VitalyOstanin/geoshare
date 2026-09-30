@@ -247,6 +247,7 @@ fun SettingsScreen(
                 trouble = settings.groupTrouble,
                 onFoundGroup = actions.onFoundGroup,
                 onJoinGroup = actions.onJoinGroup,
+                onPasteLink = actions.onPasteLink,
                 onOpenAdmin = onOpenAdmin,
                 onOpenMyPhones = onOpenMyPhones,
             )

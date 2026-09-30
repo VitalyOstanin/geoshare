@@ -130,7 +130,6 @@ class MembershipTest {
 
     @Test
     fun `an invitation says which group it lets somebody into`() {
-        assertEquals("$alice.ABCD2345", invitationText(alice, "ABCD2345"))
         assertEquals(Invitation(alice, "ABCD2345"), invitationFrom("$alice.ABCD2345"))
     }
 
@@ -161,6 +160,23 @@ class MembershipTest {
         assertEquals(null, invitationFrom("$alice.ABCD234"))
         assertEquals(null, invitationFrom("../other.ABCD2345"))
         assertEquals(null, invitationFrom("groups/other.ABCD2345"))
+    }
+
+    @Test
+    fun `an address the rules would accept is accepted before the write is tried`() {
+        assertTrue(looksLikeAnAddress("ivan.petrov@example.com"))
+        assertTrue(looksLikeAnAddress("  ivan.petrov@example.com  "))
+        assertFalse(looksLikeAnAddress(""))
+        assertFalse(looksLikeAnAddress("ivan.petrov"))
+        assertFalse(looksLikeAnAddress("ivan.petrov@example"))
+        assertFalse(looksLikeAnAddress("ivan petrov@example.com"))
+        assertFalse(looksLikeAnAddress("@example.com"))
+
+        val long = "a".repeat(249) + "@a.co"
+
+        assertEquals(254, long.length)
+        assertTrue(looksLikeAnAddress(long))
+        assertFalse(looksLikeAnAddress("a$long"))
     }
 
     @Test

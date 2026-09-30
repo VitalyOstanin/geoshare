@@ -2,6 +2,7 @@ package io.github.vitalyostanin.geoshare.map
 
 import android.content.ClipData
 import android.content.ClipboardManager
+import android.content.Intent
 import android.widget.Toast
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.Arrangement
@@ -16,6 +17,8 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
@@ -45,10 +48,15 @@ import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import io.github.vitalyostanin.geoshare.R
+import io.github.vitalyostanin.geoshare.membership.ADDRESS_LIMIT
 import io.github.vitalyostanin.geoshare.membership.Roster
+import io.github.vitalyostanin.geoshare.membership.looksLikeAnAddress
 import io.github.vitalyostanin.geoshare.membership.runsTheGroup
+import io.github.vitalyostanin.geoshare.project.ConnectLink
+import io.github.vitalyostanin.geoshare.service.MadeInvitation
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.launch
@@ -81,13 +89,16 @@ fun AdminPanel(
     labels: Labels,
     /** The clock the ages on the panel are read against. */
     now: Instant,
-    /** The code just made, held until the screen is left. */
-    invitation: String?,
+    /** The invitation just made, held until the screen is left. */
+    invitation: MadeInvitation?,
+    /** This phone's Hosting site, which the invitation link is built against. */
+    site: String?,
     /** Whether the last write to the group was refused. */
     trouble: Boolean,
     /** The group's searches, by the phone each is looking for. */
     searches: Map<String, Search>,
-    onMakeInvitation: () -> Unit,
+    /** Makes an invitation good for the address typed into the dialog that asks for one. */
+    onMakeInvitation: (String) -> Unit,
     onRemoveMember: (String) -> Unit,
     onSetRunning: (String, Boolean) -> Unit,
     /** Gives the group a name, or changes the one it has; answers how the write came out. */
@@ -116,6 +127,10 @@ fun AdminPanel(
 ) {
     val lines = groupOverview(roster, profiles, grants, ownMemberId, labels)
     val standing = remember(searches, now) { standingSearches(searches, now) }
+    // Read once and used both at the top of the panel and in the invitation
+    // dialog's own title: what the invitation names is the same group this
+    // screen is already showing, under the same caption.
+    val caption = groupCaption(roster, profiles, stringResource(R.string.group_name_unnamed))
     var givingUp by remember { mutableStateOf(false) }
     var helpOpen by remember { mutableStateOf(false) }
     // The dialog for the group's own name: open or not, what is typed in it
@@ -124,6 +139,12 @@ fun AdminPanel(
     var renameText by remember { mutableStateOf("") }
     var renameTrouble by remember { mutableStateOf<WriteOutcome?>(null) }
     var renameBusy by remember { mutableStateOf(false) }
+    // The dialog that asks for the address to invite: open or not, and what
+    // has been typed into it so far. Reopened by "make another invitation" as
+    // well as by the button that offers the first one, so it is held apart
+    // from [invitation] rather than inferred from it.
+    var inviting by remember { mutableStateOf(false) }
+    var inviteEmail by remember { mutableStateOf("") }
     // The member about to be removed and the name the dialog calls them by.
     var removing by remember { mutableStateOf<Pair<String, String>?>(null) }
     // Which phone is being asked about, in which of the two ways, and the
@@ -232,8 +253,7 @@ fun AdminPanel(
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 Text(
-                    text =
-                    groupCaption(roster, profiles, stringResource(R.string.group_name_unnamed)),
+                    text = caption,
                     style = MaterialTheme.typography.titleLarge,
                     modifier = Modifier.weight(1f),
                 )
@@ -327,7 +347,22 @@ fun AdminPanel(
 
             HorizontalDivider()
 
-            AdminInvitation(invitation = invitation, onMakeInvitation = onMakeInvitation)
+            AdminInvitation(
+                invitation = invitation,
+                link =
+                invitation?.let {
+                    invitationLinkText(
+                        made = it,
+                        site = site,
+                        inviter = profiles[ownMemberId]?.displayName,
+                        groupName = roster.name,
+                    )
+                },
+                onOpenInvite = {
+                    inviteEmail = ""
+                    inviting = true
+                },
+            )
 
             if (trouble) {
                 Text(
@@ -391,6 +426,51 @@ fun AdminPanel(
             },
             dismissButton = {
                 TextButton(onClick = { renaming = false }) {
+                    Text(text = stringResource(R.string.search_cancel))
+                }
+            },
+        )
+    }
+
+    // Who may spend the code is asked for up front (ADR-0015) rather than
+    // left to the address the link happens to be sent to: the rules check the
+    // account it names, and a code with none would let in whoever holds it.
+    if (inviting) {
+        AlertDialog(
+            onDismissRequest = { inviting = false },
+            title = { Text(text = stringResource(R.string.group_invite_title, caption)) },
+            text = {
+                Column {
+                    OutlinedTextField(
+                        value = inviteEmail,
+                        onValueChange = { inviteEmail = it.take(ADDRESS_LIMIT) },
+                        label = { Text(text = stringResource(R.string.group_invite_address)) },
+                        singleLine = true,
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
+                    )
+
+                    Text(
+                        text = stringResource(R.string.group_invite_note),
+                        style = MaterialTheme.typography.bodySmall,
+                        modifier = Modifier.padding(top = 8.dp),
+                    )
+                }
+            },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        inviting = false
+                        onMakeInvitation(inviteEmail.trim())
+                    },
+                    // A keyboard leaves a space after a suggested word; the
+                    // address is what is between the spaces.
+                    enabled = looksLikeAnAddress(inviteEmail.trim()),
+                ) {
+                    Text(text = stringResource(R.string.group_invite_create))
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { inviting = false }) {
                     Text(text = stringResource(R.string.search_cancel))
                 }
             },
@@ -856,60 +936,126 @@ private fun aboutThem(line: GroupLine): String {
     return said.joinToString(separator = ", ")
 }
 
+/** When an invitation expires: the day, spelled out, and the time (ADR-0019). */
+private val INVITATION_EXPIRES_AT: DateTimeFormatter = DateTimeFormatter.ofPattern("d MMMM, HH:mm")
+
+/**
+ * The invitation link [AdminInvitation] shows and hands over, built from what
+ * making one returned and what the screen already knows: this phone's own
+ * site, the name it publishes for this member, and the group's own name.
+ *
+ * A function of its own so what goes into the link can be checked without a
+ * screen to draw it on. Null before the site is known — [AdminPanel] is not
+ * reached before it is, since a phone gets there only through a group, and a
+ * group only once a project's settings, site included, have been read.
+ */
+internal fun invitationLinkText(
+    made: MadeInvitation,
+    site: String?,
+    inviter: String?,
+    groupName: String?,
+): String? {
+    val host = site ?: return null
+
+    return ConnectLink.invitationLink(
+        site = host,
+        groupId = made.groupId,
+        code = made.code,
+        inviter = inviter,
+        groupName = groupName,
+        email = made.email,
+    )
+}
+
 /**
  * The invitation, made here rather than in the settings: handing somebody a
  * way into the group is running it, and the screen for running it is this one.
+ *
+ * What is shown once one is made is the link itself (ADR-0019) rather than
+ * the group and the code apart: a link opens the app straight at the group it
+ * names, where the two typed by hand would only get somebody as far as the
+ * screen that asks for them.
  */
 @Composable
-private fun AdminInvitation(invitation: String?, onMakeInvitation: () -> Unit) {
+private fun AdminInvitation(invitation: MadeInvitation?, link: String?, onOpenInvite: () -> Unit) {
     val context = LocalContext.current
 
-    if (invitation != null) {
+    if (invitation != null && link != null) {
         Text(
-            text = invitation,
-            style = MaterialTheme.typography.bodyLarge,
-            // A face of one width throughout: half of it is an account id,
-            // where a letter read for another is a different account.
-            fontFamily = FontFamily.Monospace,
+            text =
+            stringResource(
+                R.string.group_invite_screen_title,
+                ConnectLink.shortenedAddress(invitation.email),
+            ),
+            style = MaterialTheme.typography.titleMedium,
             modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
         )
 
-        Text(
-            text = stringResource(R.string.group_code_lasts),
-            style = MaterialTheme.typography.bodySmall,
-            modifier = Modifier.padding(horizontal = 16.dp),
-        )
-    }
-
-    Row(
-        modifier = Modifier.fillMaxWidth().padding(horizontal = 8.dp),
-        horizontalArrangement = Arrangement.Start,
-    ) {
-        TextButton(onClick = onMakeInvitation) {
+        SelectionContainer {
             Text(
-                text =
-                stringResource(
-                    if (invitation == null) {
-                        R.string.group_make_invitation
-                    } else {
-                        R.string.group_make_another_invitation
-                    },
-                ),
+                text = link,
+                style = MaterialTheme.typography.bodyLarge,
+                // A face of one width throughout: a letter misread for
+                // another turns the link into a different one.
+                fontFamily = FontFamily.Monospace,
+                modifier = Modifier.padding(horizontal = 16.dp),
             )
         }
 
-        if (invitation != null) {
+        Text(
+            text =
+            stringResource(
+                R.string.group_invite_expires,
+                INVITATION_EXPIRES_AT.format(invitation.expiresAt.atZone(ZoneId.systemDefault())),
+            ),
+            style = MaterialTheme.typography.bodySmall,
+            modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
+        )
+
+        Row(
+            modifier = Modifier.fillMaxWidth().padding(horizontal = 8.dp),
+            horizontalArrangement = Arrangement.Start,
+        ) {
+            TextButton(
+                onClick = {
+                    val send = Intent(Intent.ACTION_SEND).apply {
+                        type = "text/plain"
+                        putExtra(Intent.EXTRA_TEXT, link)
+                    }
+
+                    context.startActivity(Intent.createChooser(send, null))
+                },
+            ) {
+                Text(text = stringResource(R.string.group_invite_send))
+            }
+
             TextButton(
                 onClick = {
                     context
                         .getSystemService(ClipboardManager::class.java)
-                        .setPrimaryClip(ClipData.newPlainText(CLIPBOARD_SAYS, invitation))
+                        .setPrimaryClip(ClipData.newPlainText(CLIPBOARD_SAYS, link))
                     Toast
                         .makeText(context, R.string.group_copied, Toast.LENGTH_SHORT)
                         .show()
                 },
             ) {
                 Text(text = stringResource(R.string.group_copy))
+            }
+        }
+
+        TextButton(
+            onClick = onOpenInvite,
+            modifier = Modifier.padding(horizontal = 8.dp),
+        ) {
+            Text(text = stringResource(R.string.group_make_another_invitation))
+        }
+    } else {
+        Row(
+            modifier = Modifier.fillMaxWidth().padding(horizontal = 8.dp),
+            horizontalArrangement = Arrangement.Start,
+        ) {
+            TextButton(onClick = onOpenInvite) {
+                Text(text = stringResource(R.string.group_make_invitation))
             }
         }
     }

@@ -142,22 +142,47 @@
     cursor: pointer;
 }
 
-/* The invitation is read off this screen and pasted into another, so every
-   character has the same width: half of it is an account id, where one letter
-   read for another is a different account. */
-#admin-code {
-    display: block;
+/* Who the invitation just made is for, standing above the link itself. */
+#admin-invitation-title {
     margin: 0.6rem 0 0.2rem;
-    font-family: ui-monospace, "SFMono-Regular", "Menlo", monospace;
-    overflow-wrap: anywhere;
+    font-weight: 600;
 }
 
-#admin-code-lasts,
+/* The link is read off this screen and pasted into another, so every
+   character has the same width: half of it is a code, where one letter read
+   for another opens a different door. Selected whole with one click, since
+   nobody stops partway through to keep only a piece of it. */
+#admin-invitation-link {
+    display: block;
+    margin: 0 0 0.2rem;
+    font-family: ui-monospace, "SFMono-Regular", "Menlo", monospace;
+    overflow-wrap: anywhere;
+    user-select: all;
+}
+
+#admin-invitation-note,
 #admin-said,
 #admin-error {
     margin: 0.3rem 0 0;
     font-size: 0.75rem;
     opacity: 0.8;
+}
+
+#admin-invitation-buttons {
+    display: flex;
+    gap: 0.3rem;
+    margin-top: 0.5rem;
+}
+
+#admin-invitation-buttons button {
+    border: 1px solid var(--edge);
+    border-radius: 0.4rem;
+    padding: 0.3rem 0.6rem;
+    background: transparent;
+    color: var(--link);
+    font: inherit;
+    font-size: 0.8rem;
+    cursor: pointer;
 }
 
 /* The names at the head of a card, pressed to rename them: underlined like
@@ -223,8 +248,34 @@
     margin-top: 0.6rem;
 }
 
+.naming #invite-email {
+    box-sizing: border-box;
+    width: 100%;
+    margin-top: 0.6rem;
+    padding: 0.35rem 0.5rem;
+    border: 1px solid var(--edge);
+    border-radius: 0.4rem;
+    background: transparent;
+    color: inherit;
+    font: inherit;
+}
+
+#invite-note {
+    margin: 0.5rem 0 0;
+    font-size: 0.8rem;
+    opacity: 0.8;
+}
+
+#invite-buttons {
+    display: flex;
+    justify-content: flex-end;
+    gap: 0.3rem;
+    margin-top: 0.6rem;
+}
+
 #naming-buttons button,
-#rename-buttons button {
+#rename-buttons button,
+#invite-buttons button {
     border: 1px solid var(--edge);
     border-radius: 0.4rem;
     padding: 0.3rem 0.6rem;

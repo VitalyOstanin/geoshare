@@ -85,6 +85,7 @@ import io.github.vitalyostanin.geoshare.service.BackgroundWorkSetting
 import io.github.vitalyostanin.geoshare.service.DeviceIdentity
 import io.github.vitalyostanin.geoshare.service.JumpFilterSetting
 import io.github.vitalyostanin.geoshare.service.LanguageChoice
+import io.github.vitalyostanin.geoshare.service.MadeInvitation
 import io.github.vitalyostanin.geoshare.service.SharingService
 import io.github.vitalyostanin.geoshare.service.SharingSetting
 import io.github.vitalyostanin.geoshare.service.SourcesSetting
@@ -347,7 +348,8 @@ class MainActivity : AppCompatActivity() {
                             // the code is written where nobody may read it
                             // back, this phone included, so the only copy to
                             // show is the one just made.
-                            var invitation by remember { mutableStateOf<String?>(null) }
+                            var invitation by
+                                remember { mutableStateOf<MadeInvitation?>(null) }
                             // Whether the last write to the group was refused.
                             // Held beside the invitation and for the same
                             // reason: nothing in the database says it, and the
@@ -464,6 +466,7 @@ class MainActivity : AppCompatActivity() {
                                         roster = roster,
                                         grants = grants,
                                         invitation = invitation,
+                                        site = FamilyProject.site,
                                         groupTrouble = groupTrouble,
                                         phoneName =
                                         grants[current.memberId]?.phones?.get(device.id)?.name,
@@ -564,12 +567,15 @@ class MainActivity : AppCompatActivity() {
                                                     }
                                             }
                                         },
-                                        onMakeInvitation = {
+                                        onMakeInvitation = { email ->
                                             lifecycleScope.launch {
                                                 groupTrouble =
                                                     !withGroup("made an invitation") {
                                                         invitation =
-                                                            makeInvitation(current.memberId)
+                                                            makeInvitation(
+                                                                current.memberId,
+                                                                email,
+                                                            )
                                                     }
                                             }
                                         },
@@ -585,6 +591,12 @@ class MainActivity : AppCompatActivity() {
                                                     }
                                             }
                                         },
+                                        // A link typed or pasted here is the same
+                                        // thing a messenger hands over as an
+                                        // intent, so it takes the same path:
+                                        // ConnectFlow reads it, and the dialog
+                                        // above the map shows what it asks for.
+                                        onPasteLink = connectFlow::pasteLink,
                                         onRemoveMember = { memberId ->
                                             lifecycleScope.launch {
                                                 groupTrouble =

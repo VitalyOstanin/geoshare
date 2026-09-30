@@ -7,9 +7,9 @@ import {
     UNGROUPED,
     UNRUN,
     invitationFrom,
-    invitationText,
     looksLikeACode,
     looksLikeAGroupName,
+    looksLikeAnEmail,
     mayBeMadeAdmin,
     mayBeRemoved,
     mayStopRunning,
@@ -96,8 +96,10 @@ test('an administrator is taken off only by the founder', () => {
     assert.equal(mayBeRemoved(roster, CAROL, ALICE), true);
 });
 
-test('an invitation says which group it lets somebody into', () => {
-    assert.equal(invitationText(ALICE, 'ABCD2345'), `${ALICE}.ABCD2345`);
+// The producer of this text was dropped when invitations grew an address
+// (ADR-0019); what is read here is the shape texts handed out before that
+// still arrive in, until they run out.
+test('an invitation pasted as text reads back into its two halves', () => {
     assert.deepEqual(invitationFrom(`${ALICE}.ABCD2345`), { group: ALICE, code: 'ABCD2345' });
 });
 
@@ -136,6 +138,15 @@ test('a group is named the way an account is', () => {
     assert.equal(looksLikeAGroupName('family'), true);
     assert.equal(looksLikeAGroupName(''), false);
     assert.equal(looksLikeAGroupName('a'.repeat(129)), false);
+});
+
+test('an invitation is refused an address the rules would refuse', () => {
+    assert.equal(looksLikeAnEmail('ivan.petrov@example.com'), true);
+    assert.equal(looksLikeAnEmail(''), false);
+    assert.equal(looksLikeAnEmail('ivan.petrov'), false);
+    assert.equal(looksLikeAnEmail('ivan petrov@example.com'), false);
+    assert.equal(looksLikeAnEmail('ivan.petrov@examplecom'), false);
+    assert.equal(looksLikeAnEmail(`${'a'.repeat(250)}@a.co`), false);
 });
 
 test('a typed code is tidied into the one that was sent', () => {

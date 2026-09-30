@@ -9,7 +9,6 @@ import io.github.vitalyostanin.geoshare.log.AppLog
 import io.github.vitalyostanin.geoshare.membership.INVITATION_LASTS
 import io.github.vitalyostanin.geoshare.membership.Invitation
 import io.github.vitalyostanin.geoshare.membership.Roster
-import io.github.vitalyostanin.geoshare.membership.invitationText
 import io.github.vitalyostanin.geoshare.membership.newInvitationCode
 import io.github.vitalyostanin.geoshare.membership.rosterFounded
 import io.github.vitalyostanin.geoshare.membership.rosterWithout
@@ -128,23 +127,39 @@ suspend fun renameGroup(name: String, store: FirebaseFirestore = FirebaseFiresto
 }
 
 /**
- * Makes an invitation and returns the whole of what is handed over.
+ * What making an invitation ([makeInvitation]) hands back to whoever asked for
+ * it: everything a link to it is built from, rather than the link itself,
+ * which is the caller's to build once it also knows what the screen is
+ * showing this member as (`ConnectLink.invitationLink` wants a caption
+ * neither the invitation document nor this call holds).
+ */
+data class MadeInvitation(
+    val groupId: String,
+    val code: String,
+    val expiresAt: Instant,
+    val email: String,
+)
+
+/**
+ * Makes an invitation, addressed to one account, and returns what a link to it
+ * is built from.
  *
  * The code is the name of the document, so nothing has to be read back to know
  * it, and nothing in the document says what it is: a reader who could list the
  * collection would hold every code, which is why nobody may read it at all.
  *
- * What is shown is the code with the name of this group in front of it. The
- * person invited has to reach a document before anybody has told them which
- * one, and the name of a group is not a secret: what lets somebody in is the
- * code beside it, and only while it lasts.
+ * [email] is who may spend the code (`invitedAccount` in the rules, ADR-0015):
+ * saved as it was typed, save for the spaces around it, since the rules
+ * compare it to the signed-in account's own address without regard to case.
  */
 suspend fun makeInvitation(
     uid: String,
+    email: String,
     store: FirebaseFirestore = FirebaseFirestore.getInstance(),
-): String {
+): MadeInvitation {
     val code = newInvitationCode()
     val expiresAt = Instant.now().plus(INVITATION_LASTS)
+    val address = email.trim()
 
     invitationsOf(store)
         .document(code)
@@ -152,12 +167,13 @@ suspend fun makeInvitation(
             mapOf(
                 InvitationField.CREATED_BY to uid,
                 InvitationField.EXPIRES_AT to Timestamp(Date.from(expiresAt)),
+                InvitationField.EMAIL to address,
             ),
         ).await()
 
     AppLog.i(TAG, "an invitation has been made, good until $expiresAt")
 
-    return invitationText(CurrentGroup.name, code)
+    return MadeInvitation(CurrentGroup.name, code, expiresAt, address)
 }
 
 /**

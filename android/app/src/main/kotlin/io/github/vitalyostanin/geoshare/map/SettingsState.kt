@@ -7,6 +7,7 @@ import io.github.vitalyostanin.geoshare.membership.Roster
 import io.github.vitalyostanin.geoshare.permission.PermissionStep
 import io.github.vitalyostanin.geoshare.service.AidingErasure
 import io.github.vitalyostanin.geoshare.service.LanguageChoice
+import io.github.vitalyostanin.geoshare.service.MadeInvitation
 import io.github.vitalyostanin.geoshare.service.ThemeChoice
 import kotlinx.coroutines.flow.Flow
 import java.time.Instant
@@ -67,11 +68,14 @@ data class SettingsState(
      * does not is simply missing from this map.
      */
     val grants: Map<String, MemberGrant>,
+    /** The invitation just made, held until the screen is left. */
+    val invitation: MadeInvitation?,
     /**
-     * The invitation just made, held until the screen is left: the code with
-     * the name of the group in front of it, which is what gets handed over.
+     * This phone's Hosting site, read out of `FamilyProject` once rather than
+     * in the panel that needs it: what an invitation link is built against
+     * (`ConnectLink.invitationLink`).
      */
-    val invitation: String?,
+    val site: String?,
     /**
      * Whether the last write to the group was refused.
      *
@@ -117,8 +121,11 @@ data class SettingsActions(
     val onStartupSetChange: (Boolean) -> Unit,
     /** Makes a group, named as typed; blank founds one with no name of its own. */
     val onFoundGroup: (String?) -> Unit,
-    val onMakeInvitation: () -> Unit,
+    /** Makes an invitation good for one address, typed into the dialog that asks for it. */
+    val onMakeInvitation: (String) -> Unit,
     val onJoinGroup: (Invitation) -> Unit,
+    /** Hands text pasted into the invitation field to the same path a messenger's link takes. */
+    val onPasteLink: (String) -> Unit,
     val onRemoveMember: (String) -> Unit,
     /** Hands a member the running of the group, or takes it back. */
     val onSetRunning: (String, Boolean) -> Unit,

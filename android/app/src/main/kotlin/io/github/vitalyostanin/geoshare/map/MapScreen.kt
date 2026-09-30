@@ -671,6 +671,7 @@ fun MapScreen(
             labels = labels,
             now = now,
             invitation = settings.invitation,
+            site = settings.site,
             trouble = settings.groupTrouble,
             searches = searches,
             onMakeInvitation = actions.onMakeInvitation,

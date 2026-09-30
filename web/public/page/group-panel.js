@@ -2,17 +2,26 @@
 
 import { phoneLines, groupOverview } from '../lib/group-lines.js';
 import { groupCaption } from '../lib/group-name.js';
+import {
+    invitationLink,
+    invitationTyped,
+    invitationUntilText,
+    isForeignSite,
+    isWrongAccount,
+    shortenedAddress,
+    siteFromHost,
+} from '../lib/join.js';
 import { outsideTheBox } from '../lib/mode-help.js';
 import { lookAt } from '../lib/map.js';
 import { memberName, shortName } from '../lib/members.js';
 import { standingSearches } from '../lib/searches.js';
 import { sirenState, sirenTold } from '../lib/sirens.js';
-import { WORDS } from '../lib/words.js';
+import { SPEAKING, WORDS } from '../lib/words.js';
 import {
     ADMINISTRATOR,
     UNGROUPED,
     UNRUN,
-    invitationFrom,
+    looksLikeAnEmail,
     runsTheGroup,
     standingIn,
 } from '../lib/membership.js';
@@ -404,6 +413,30 @@ function freshestPositionOf(memberId) {
 }
 
 /**
+ * The invitation just made, built into the link it is sent as, or null
+ * before one exists.
+ *
+ * Built here rather than kept in `state` alongside the fields it is made
+ * from: the group's name and this viewer's own published name can both
+ * change while the invitation stands on screen, and a link built once at
+ * creation would go stale under it.
+ */
+function currentInvitationLink() {
+    if (state.invitation === null) {
+        return null;
+    }
+
+    return invitationLink({
+        site: siteFromHost(window.location.host),
+        groupId: state.invitation.groupId,
+        code: state.invitation.code,
+        by: state.accountProfiles?.get(state.member.memberId)?.displayName ?? null,
+        name: state.roster?.name ?? null,
+        email: state.invitation.email,
+    });
+}
+
+/**
  * The panel that runs the group, drawn whenever what it shows has changed.
  *
  * The right to be here is weighed on every drawing rather than at the opening:
@@ -448,11 +481,24 @@ function drawAdmin(running) {
     elements.adminMakeInvitation.textContent =
         state.invitation === null ? WORDS.groupMakeInvitation : WORDS.groupMakeAnotherInvitation;
 
-    elements.adminInvitation.hidden = state.invitation === null;
-    elements.adminCopy.hidden = state.invitation === null;
+    const link = currentInvitationLink();
+
+    elements.adminInvitation.hidden = link === null;
+
+    if (link !== null) {
+        elements.adminInvitationTitle.textContent =
+            WORDS.groupInvitationTitle(shortenedAddress(state.invitation.email));
+        elements.adminInvitationLink.textContent = link;
+        elements.adminInvitationNote.textContent = WORDS.groupInvitationNote(
+            invitationUntilText(state.invitation.expiresAt.getTime(), SPEAKING),
+        );
+    }
+
+    // Shown only where the browser itself offers a share sheet: the link is
+    // always there to copy, whether or not this one does.
+    elements.adminShare.hidden = typeof navigator.share !== 'function';
+    elements.adminShare.textContent = WORDS.groupShare;
     elements.adminCopy.textContent = WORDS.groupCopy;
-    elements.adminCode.textContent = state.invitation ?? '';
-    elements.adminCodeLasts.textContent = WORDS.groupCodeLasts;
 
     elements.adminSaid.hidden = state.groupSaid === null;
     elements.adminSaid.textContent = state.groupSaid ?? '';
@@ -657,6 +703,38 @@ function drawRename() {
 }
 
 /**
+ * Opens the window that asks who an invitation is made out to, on top of the
+ * panel that runs the group, with an empty address rather than one left over
+ * from the last invitation: an address is not typed twice by mistake the way
+ * a group's own name might be left standing.
+ */
+function openInvite() {
+    elements.inviteEmail.value = '';
+    drawInvite();
+
+    if (!elements.invite.open) {
+        elements.invite.showModal();
+    }
+}
+
+/**
+ * What the invitation window says, and whether making one is worth trying:
+ * the rules refuse an address that does not look like one at all
+ * (`looksLikeAnEmail`), and the button says so before the write is asked for
+ * rather than after it is refused.
+ */
+function drawInvite() {
+    elements.inviteTitle.textContent = WORDS.groupInviteTitle(
+        groupCaption(state.roster, state.profiles, state.member.memberId),
+    );
+    elements.inviteEmail.placeholder = WORDS.groupInviteEmailLabel;
+    elements.inviteNote.textContent = WORDS.groupInviteNote;
+    elements.inviteCreate.textContent = WORDS.groupInviteCreate;
+    elements.inviteCancel.textContent = WORDS.nameCancel;
+    elements.inviteCreate.disabled = !looksLikeAnEmail(elements.inviteEmail.value.trim());
+}
+
+/**
  * A write to the group, and what to say when the database refuses it.
  *
  * Every one of these is weighed by a rule that can say no for several reasons
@@ -723,6 +801,18 @@ elements.renameSave.addEventListener('click', () => {
 });
 closeOnClickOutside(elements.rename, () => elements.rename.close());
 
+elements.inviteEmail.addEventListener('input', drawInvite);
+elements.inviteCancel.addEventListener('click', () => elements.invite.close());
+elements.inviteCreate.addEventListener('click', () => {
+    const email = elements.inviteEmail.value.trim();
+
+    elements.invite.close();
+    tryGroupWrite(async () => {
+        state.invitation = await makeInvitation(state.member.memberId, email);
+    });
+});
+closeOnClickOutside(elements.invite, () => elements.invite.close());
+
 // The escape key closes a dialog on its own, so only the dark behind the
 // window is left to answer for: a click there closes it the way a tap beside a
 // sheet does on a phone. Such a click arrives at the dialog itself, as does a
@@ -743,19 +833,33 @@ elements.admin.addEventListener('click', (event) => {
     }
 });
 
-elements.adminMakeInvitation.addEventListener('click', () =>
-    tryGroupWrite(async () => {
-        state.invitation = await makeInvitation(state.member.memberId);
-    }),
-);
+elements.adminMakeInvitation.addEventListener('click', openInvite);
 
-elements.adminCopy.addEventListener('click', async () => {
-    if (state.invitation === null) {
+elements.adminShare.addEventListener('click', async () => {
+    const link = currentInvitationLink();
+
+    if (link === null) {
         return;
     }
 
     try {
-        await navigator.clipboard.writeText(state.invitation);
+        await navigator.share({ url: link });
+    } catch {
+        // Closing the share sheet without choosing anybody throws
+        // AbortError, which is not a failure the panel has anything to say
+        // about — the link stays on screen, to copy instead.
+    }
+});
+
+elements.adminCopy.addEventListener('click', async () => {
+    const link = currentInvitationLink();
+
+    if (link === null) {
+        return;
+    }
+
+    try {
+        await navigator.clipboard.writeText(link);
         state.groupSaid = WORDS.groupCopied;
     } catch {
         // A browser that refuses the clipboard leaves the invitation on
@@ -767,7 +871,7 @@ elements.adminCopy.addEventListener('click', async () => {
 });
 
 elements.groupJoinButton.addEventListener('click', () => {
-    const invitation = invitationFrom(elements.groupTyped.value);
+    const invitation = invitationTyped(elements.groupTyped.value);
 
     if (invitation === null) {
         state.groupTrouble = WORDS.groupRefused;
@@ -776,10 +880,29 @@ elements.groupJoinButton.addEventListener('click', () => {
         return;
     }
 
+    if (isForeignSite(invitation, window.location.host)) {
+        state.groupTrouble = WORDS.groupJoinForeignSite;
+        drawGroup();
+
+        return;
+    }
+
+    if (isWrongAccount(invitation, state.member.email)) {
+        state.groupTrouble = WORDS.groupJoinWrongAccount(
+            invitation.to,
+            shortenedAddress(state.member.email),
+        );
+        drawGroup();
+
+        return;
+    }
+
     elements.groupTyped.value = '';
 
     tryGroupWrite(async () => {
-        await joinGroup(state.member.memberId, invitation);
+        const group = invitation.groupId;
+
+        await joinGroup(state.member.memberId, { group, code: invitation.code });
         regroup();
     });
 });

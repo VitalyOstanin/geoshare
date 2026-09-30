@@ -35,6 +35,15 @@ object FamilyProject {
         get() = current?.projectId
 
     /**
+     * The Hosting site this phone's project answers to, or null before any
+     * [start] or [save]. What an invitation link is built against
+     * (`ConnectLink.invitationLink`): the join page a code sends somebody to
+     * lives there, not at a host baked into the build.
+     */
+    val site: String?
+        get() = current?.site
+
+    /**
      * Reads back the settings saved on a previous run, and starts Firebase
      * with them when there are any.
      *

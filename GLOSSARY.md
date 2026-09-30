@@ -100,18 +100,20 @@ project's own description of who it is for.
 | 7 | member id | An account id, as the sign-in provider issues it. The name of a profile, of a grant and of a join claim, the first half of a position id, and a field of its own inside a position and a watch claim | `android/.../auth/AuthState.kt` |
 | 8 | current group | Which group this phone writes into, remembered on the phone itself and given out as a writing with a turn counter, so that founding or joining rebuilds every subscription | `android/.../service/CurrentGroup.kt` |
 | 9 | project owner | The Google account that created the group's Firebase project and holds it. Reads everything from the console past the rules and deploys them; hands out the connection link. On the phone they are a member like any other, usually the group's first administrator | `tools/new-project.sh`; `docs/ADR/0005-a-project-per-group.md` |
-| 10 | connection link | `https://<site>.web.app/join`: what points a phone at a group's project. With an invitation after the `#` it also carries the invitation text, so one link both connects and lets the person join | `tools/new-project.sh`; `docs/ADR/0001-one-build-settings-at-runtime.md` |
+| 10 | connection link | `https://<site>.web.app/join`: what points a phone at a group's project. With an invitation after the `#` it also carries the group id, the code and the captions — `g`, `c`, `by`, `n`, `to` — so one link both connects and lets the person join | `tools/new-project.sh`; `docs/ADR/0001-one-build-settings-at-runtime.md`; `docs/ADR/0019-making-an-invitation-and-naming-a-group.md` |
+| 11 | group name | The `name` field of the group document: a caption administrators give the group and change, at most 60 characters. It decides nothing; a group without one is shown as the founder's group, "Group · Anna" | `firestore.rules`, `nameFits()` and `renaming()`; `android/.../map/GroupCaption.kt`, `web/public/lib/group-name.js` |
 
 ## Getting into a group
 
 | № | Term | Means | Defined in |
 |---|------|-------|------------|
-| 1 | invitation | A document whose name is the code, holding who made it and when it runs out. It lets in everybody who uses it before then rather than one person once. Nobody may read it — the rules read it on a writer's behalf | `firestore.rules`, `match /invitations/{code}` |
+| 1 | invitation | A document whose name is the code, holding who made it, when it runs out and the Google address it is for. It lets in only an account signed in with that verified address, as many times as it is used before it runs out. Nobody may read it — the rules read it on a writer's behalf | `firestore.rules`, `match /invitations/{code}`, `invitedAccount()` |
 | 2 | code | Eight characters. The rules accept A–Z and 2–9; what is handed out is drawn from those minus the letters read for digits, so a code can be read aloud | `android/.../membership/Codes.kt` |
-| 3 | invitation text | What a person is actually sent: the group's name and the code joined by a dot, because a write has to know its path before it is made | `Codes.kt`, `invitationText()` and `invitationFrom()` |
+| 3 | invitation text | The group id and the code joined by a dot, because a write has to know its path before it is made. What was sent before invitations named an address; still read when pasted, no longer handed out — the connection link is sent instead | `android/.../membership/Codes.kt`, `web/public/lib/membership.js`, `invitationFrom()` |
 | 4 | join claim | A document the person joining writes under their own account id, holding the code they are using. It is how a code reaches the rules, which cannot be told anything except through the database | `firestore.rules`, `match /joins/{uid}` |
 | 5 | joining | The write that adds one's own account to the roster and changes nothing else, allowed only while a join claim names an invitation that has not run out | `firestore.rules`, `joining()` |
 | 6 | founding | The write that creates a group: named after the founder, with the founder alone on the roster and alone among the administrators | `firestore.rules`, `founding()` |
+| 7 | shortened address | The invited address as a link and the screens show it: the first four characters of the name, or only the first when the name is four or shorter, then `…` and the domain whole. The full address is known to the rules alone | `android/.../project/ConnectLink.kt`, `web/public/lib/join.js`, `shortenedAddress()` |
 
 ## What a member publishes
 
@@ -257,7 +259,8 @@ readers work out who is looking by leaving out claims older than three minutes,
 rather than by anything arriving at the moment one runs out.
 
 **Invitation** — `groups/{groupId}/invitations/{code}`. Fields: `createdBy`,
-`expiresAt`. The code is the document's name rather than a field, so an
+`expiresAt`, `email` (the Google address it is for; invitations made before
+the field existed have none and let in any account). The code is the document's name rather than a field, so an
 invitation cannot be found except by knowing it. Created and deleted by an
 administrator, never updated — changing one in place would push out the expiry
 of a code already handed round — and read by nobody at all except the rules.

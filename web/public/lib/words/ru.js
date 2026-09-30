@@ -283,12 +283,23 @@ export const RU = {
         + 'приглашение, которое вам прислали.',
     groupFound: 'Создать группу',
     groupNameLabel: 'Название группы',
-    groupInvitation: 'Приглашение',
+    groupInvitation: 'Ссылка-приглашение',
     groupJoin: 'Вступить',
+    groupJoinForeignSite: 'Это приглашение в группу другого проекта. Откройте саму ссылку: '
+        + 'вступить по ней можно только на её странице.',
+    groupJoinWrongAccount: (to, signedInAs) => `Приглашение для ${to}, а вы вошли как `
+        + `${signedInAs}. Войдите аккаунтом, для которого приглашение.`,
     groupMakeInvitation: 'Пригласить нового участника в группу',
     groupMakeAnotherInvitation: 'Создать другое приглашение',
-    groupCodeLasts: 'Приглашение действует сутки и впускает всех, до кого дойдёт за это '
-        + 'время. Передавайте его целиком: в нём названа и группа, и код.',
+    groupInviteTitle: (name) => `Пригласить в группу «${name}»`,
+    groupInviteEmailLabel: 'Адрес Google участника',
+    groupInviteNote: 'Вступить сможет только тот, кто войдёт в приложение с этим адресом. '
+        + 'Приглашение действует сутки.',
+    groupInviteCreate: 'Создать',
+    groupInvitationTitle: (address) => `Приглашение для ${address}`,
+    groupInvitationNote: (until) => `Действует до ${until}. Отправьте ссылку участнику: она `
+        + 'подключает приложение к проекту группы и впускает в группу.',
+    groupShare: 'Отправить',
     groupCopy: 'Скопировать',
     groupCopied: 'Приглашение скопировано',
     groupRunsIt: 'админ',

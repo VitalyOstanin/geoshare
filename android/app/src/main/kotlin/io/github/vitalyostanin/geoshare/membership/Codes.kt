@@ -69,18 +69,9 @@ fun looksLikeACode(tidied: String): Boolean =
 data class Invitation(val group: String, val code: String)
 
 /**
- * The single string an invitation is handed over as.
- *
- * The name of the group travels with the code because the rule weighing
- * somebody's addition to a roster weighs a write to a path, and a path has to
- * be known before the write is made: a code alone would say which door to
- * knock at only if there were one door. The two are joined by a dot, which is
- * neither in a code nor in the account ids a group is named after.
- */
-fun invitationText(group: String, code: String): String = "$group.$code"
-
-/**
- * An invitation as somebody pasted or typed it, read back into its two halves.
+ * An invitation as somebody pasted or typed it, read back into its two halves:
+ * the group and the code joined by a dot. Nothing hands this form out any
+ * more — an invitation is sent as a link — but one sent before still reads.
  *
  * The dot taken from the end rather than the start: the code has none, and a
  * group named before this rule existed might. What the halves are made of is
@@ -132,3 +123,29 @@ fun looksLikeAGroupName(name: String): Boolean = name.isNotEmpty() &&
  * of any length from being typed into a path, not describing the ids.
  */
 private const val GROUP_NAME_LIMIT = 128
+
+/**
+ * How long the address on an invitation may be, the rules' own limit
+ * (`invitationShape`).
+ */
+const val ADDRESS_LIMIT = 254
+
+/**
+ * The shape `invitationShape` holds an invitation's address to, read back here
+ * so the screen that asks for one can say so before the write is tried rather
+ * than after it is refused.
+ */
+private val ADDRESS_PATTERN = Regex("""[^@\s]+@[^@\s]+\.[^@\s]+""")
+
+/**
+ * Whether a typed address is one the rules would accept for an invitation.
+ *
+ * Trimmed first, the way the address itself is trimmed before it is written
+ * (`makeInvitation`), so a screen weighing the two agrees with what is about
+ * to be saved rather than with the spaces a keyboard leaves around it.
+ */
+fun looksLikeAnAddress(typed: String): Boolean {
+    val trimmed = typed.trim()
+
+    return trimmed.length <= ADDRESS_LIMIT && ADDRESS_PATTERN.matches(trimmed)
+}

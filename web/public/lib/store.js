@@ -36,7 +36,6 @@ import { searchOf } from './searches.js';
 import { sirenOf } from './sirens.js';
 import {
     INVITATION_LASTS_MS,
-    invitationText,
     newInvitationCode,
     rosterWithout,
 } from './membership.js';
@@ -162,6 +161,7 @@ export function watchSignIn(onChange) {
                 memberId: user.uid,
                 name: user.displayName,
                 picture: user.photoURL,
+                email: user.email,
             },
         ),
     );
@@ -693,23 +693,29 @@ export async function foundGroup(memberId, name = '') {
 }
 
 /**
- * Makes an invitation and returns the whole of what is handed over: the code
- * with the name of this group in front of it.
+ * Makes an invitation and returns the whole of what is handed over: the
+ * group and code the link is built from, when it stops working, and the
+ * address it was made out to (ADR-0015, ADR-0019) — everything the admin
+ * panel needs to build the link and say when it runs out, without reading
+ * anything back.
  *
  * Nothing is read back. The code is the name of the document, and nobody may
  * read that collection at all — a reader could collect the codes of a group
  * and let themselves in.
  */
-export async function makeInvitation(memberId) {
+export async function makeInvitation(memberId, email) {
     const group = currentGroup();
     const code = newInvitationCode();
+    const trimmedEmail = email.trim();
+    const expiresAt = new Date(Date.now() + INVITATION_LASTS_MS);
 
     await setDoc(doc(store, 'groups', group, 'invitations', code), {
         createdBy: memberId,
-        expiresAt: new Date(Date.now() + INVITATION_LASTS_MS),
+        expiresAt,
+        email: trimmedEmail,
     });
 
-    return invitationText(group, code);
+    return { groupId: group, code, expiresAt, email: trimmedEmail };
 }
 
 /**

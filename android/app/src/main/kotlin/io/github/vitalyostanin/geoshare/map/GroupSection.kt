@@ -25,6 +25,7 @@ import io.github.vitalyostanin.geoshare.membership.Standing
 import io.github.vitalyostanin.geoshare.membership.invitationFrom
 import io.github.vitalyostanin.geoshare.membership.runsTheGroup
 import io.github.vitalyostanin.geoshare.membership.standingIn
+import io.github.vitalyostanin.geoshare.project.ConnectLink
 
 /**
  * Who is in the group, and what the person looking may do about it.
@@ -50,6 +51,8 @@ fun GroupSection(
     trouble: Boolean,
     onFoundGroup: (String?) -> Unit,
     onJoinGroup: (Invitation) -> Unit,
+    /** Hands pasted text carrying an invitation link to the same path a messenger's link takes. */
+    onPasteLink: (String) -> Unit,
     onOpenAdmin: () -> Unit,
     /** The way to this member's own phones, to ring one of them. */
     onOpenMyPhones: () -> Unit,
@@ -66,7 +69,11 @@ fun GroupSection(
 
         when (standing) {
             Standing.Ungrouped, Standing.Outsider ->
-                WayIn(onFoundGroup = onFoundGroup, onJoinGroup = onJoinGroup)
+                WayIn(
+                    onFoundGroup = onFoundGroup,
+                    onJoinGroup = onJoinGroup,
+                    onPasteLink = onPasteLink,
+                )
 
             else ->
                 TheGroup(
@@ -92,6 +99,39 @@ fun GroupSection(
 }
 
 /**
+ * What [WayIn]'s field names once its text is typed or pasted, decided once so
+ * the button's enabled state and its click agree on it.
+ *
+ * A link is checked first: [ConnectLink.parse] answers for the owner's own
+ * link too, whose [ConnectLink.invitation] is null, and that one names
+ * nothing to join here — pasting it into this field is mistaking it for an
+ * invitation, not making one.
+ */
+internal sealed interface WayInPaste {
+    /** A link carrying an invitation, to be handed to `ConnectFlow.pasteLink` whole. */
+    data class Link(val text: String) : WayInPaste
+
+    /** A "group.code" invitation, the shape read by [invitationFrom]. */
+    data class Code(val invitation: Invitation) : WayInPaste
+
+    /** Neither, including nothing typed at all. */
+    data object Neither : WayInPaste
+}
+
+/** [WayInPaste] for [typed], the field's whole text at the moment it is read. */
+internal fun wayInPaste(typed: String): WayInPaste {
+    val link = ConnectLink.parse(typed)
+
+    if (link?.invitation != null) {
+        return WayInPaste.Link(typed)
+    }
+
+    val invitation = invitationFrom(typed)
+
+    return if (invitation != null) WayInPaste.Code(invitation) else WayInPaste.Neither
+}
+
+/**
  * The two ways into a group, offered together.
  *
  * Together because the phone cannot tell which of them applies: a group that
@@ -100,10 +140,14 @@ fun GroupSection(
  * which is the answer to the question the screen could not ask.
  */
 @Composable
-private fun WayIn(onFoundGroup: (String?) -> Unit, onJoinGroup: (Invitation) -> Unit) {
+private fun WayIn(
+    onFoundGroup: (String?) -> Unit,
+    onJoinGroup: (Invitation) -> Unit,
+    onPasteLink: (String) -> Unit,
+) {
     var typed by remember { mutableStateOf("") }
     var groupName by remember { mutableStateOf("") }
-    val invitation = invitationFrom(typed)
+    val pasted = wayInPaste(typed)
 
     Text(
         text = stringResource(R.string.group_none),
@@ -130,10 +174,12 @@ private fun WayIn(onFoundGroup: (String?) -> Unit, onJoinGroup: (Invitation) -> 
         }
     }
 
-    // Nothing is capitalised for the person typing: half of what they enter is
-    // an account id, where an upper case letter and a lower case one belong to
-    // two different accounts. The code's own half is put into upper case where
-    // it is read, which is after the two have been told apart.
+    // Nothing is capitalised for the person typing: half of a "group.code"
+    // pair is an account id, where an upper case letter and a lower case one
+    // belong to two different accounts, and a pasted link is case-sensitive
+    // throughout. The code's own half of the older shape is put into upper
+    // case where it is read, which is after [wayInPaste] has told the two
+    // apart.
     OutlinedTextField(
         value = typed,
         onValueChange = { typed = it },
@@ -148,10 +194,14 @@ private fun WayIn(onFoundGroup: (String?) -> Unit, onJoinGroup: (Invitation) -> 
     ) {
         TextButton(
             onClick = {
-                invitation?.let(onJoinGroup)
+                when (pasted) {
+                    is WayInPaste.Link -> onPasteLink(pasted.text)
+                    is WayInPaste.Code -> onJoinGroup(pasted.invitation)
+                    WayInPaste.Neither -> Unit
+                }
                 typed = ""
             },
-            enabled = invitation != null,
+            enabled = pasted != WayInPaste.Neither,
         ) {
             Text(text = stringResource(R.string.group_join))
         }

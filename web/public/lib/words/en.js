@@ -267,20 +267,32 @@ export const EN = {
     fullScreenLeave: 'Leave full screen',
 
     // The group: who is in it, and what the person looking may do about it.
-    // An invitation is a single string naming the group as well as the code,
-    // because somebody joining has to reach a document nobody has named to
-    // them yet.
+    // An invitation is a link (ADR-0017, ADR-0019) naming the group as well
+    // as the code, or an older "group.code" string kept working for a link
+    // made before invitations were links at all — either way, because
+    // somebody joining has to reach a document nobody has named to them yet.
     group: 'Group',
     groupNone: 'You are not in a group yet. Make one and hand out an invitation, '
         + 'or paste in the invitation somebody sent you.',
     groupFound: 'Make a group',
     groupNameLabel: 'Group name',
-    groupInvitation: 'Invitation',
+    groupInvitation: 'Invitation link',
     groupJoin: 'Join',
+    groupJoinForeignSite: 'This invitation is into another project\'s group. Open the link '
+        + 'itself: it can only be used on its own page.',
+    groupJoinWrongAccount: (to, signedInAs) => `This invitation is for ${to}, but you are `
+        + `signed in as ${signedInAs}. Sign in with the account the invitation is for.`,
     groupMakeInvitation: 'Invite a new member to the group',
     groupMakeAnotherInvitation: 'Make another invitation',
-    groupCodeLasts: 'The invitation lets somebody in for a day, and lets in everybody it '
-        + 'reaches in that time. Send it whole: it names the group as well as the code.',
+    groupInviteTitle: (name) => `Invite to “${name}”`,
+    groupInviteEmailLabel: "Member's Google address",
+    groupInviteNote: 'Only whoever signs into the application with this address will be able '
+        + 'to join. The invitation lasts a day.',
+    groupInviteCreate: 'Create',
+    groupInvitationTitle: (address) => `Invitation for ${address}`,
+    groupInvitationNote: (until) => `Good until ${until}. Send the link to the member: it `
+        + 'connects the application to the group\'s project and lets them into the group.',
+    groupShare: 'Send',
     groupCopy: 'Copy',
     groupCopied: 'Invitation copied',
     groupRunsIt: 'admin',

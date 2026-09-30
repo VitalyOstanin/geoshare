@@ -6,7 +6,11 @@ import {
     RELEASES_URL,
     buildIntentUrl,
     invitationLink,
+    invitationTyped,
+    invitationUntilText,
     isAndroid,
+    isForeignSite,
+    isWrongAccount,
     joinCaption,
     parseInvitation,
     shortenedAddress,
@@ -167,4 +171,93 @@ test('captions that are missing are left out of the link', () => {
 test('a short name keeps only its first character', () => {
     assert.equal(shortenedAddress('ivan@example.com'), 'i…@example.com');
     assert.equal(shortenedAddress('ivan.petrov@example.com'), 'ivan…@example.com');
+});
+
+test('when an invitation stops working is said as a day and a time', () => {
+    const millis = Date.parse('2026-10-01T15:40:00');
+
+    assert.equal(invitationUntilText(millis, 'ru'), '1 октября, 15:40');
+    assert.equal(invitationUntilText(millis, 'en'), 'October 1, 15:40');
+});
+
+// invitationTyped reads back whatever was pasted into the join field: a
+// link, the older bare form, or neither.
+test('a pasted link reads back as an invitation with its site', () => {
+    const pasted = 'https://imaginary-group.web.app/join#g=g&c=ABCDEFGH&by=Alice&to=al…@x.com';
+
+    assert.deepEqual(invitationTyped(pasted), {
+        site: 'imaginary-group',
+        groupId: 'g',
+        code: 'ABCDEFGH',
+        by: 'Alice',
+        name: '',
+        to: 'al…@x.com',
+    });
+});
+
+test('a pasted link is found among a messenger\'s own text around it', () => {
+    const pasted = 'Заходи в группу:\n'
+        + 'https://imaginary-group.web.app/join#g=g&c=ABCDEFGH.\n'
+        + '(переслано из чата "Семья")';
+
+    assert.deepEqual(invitationTyped(pasted), {
+        site: 'imaginary-group',
+        groupId: 'g',
+        code: 'ABCDEFGH',
+        by: '',
+        name: '',
+        to: '',
+    });
+});
+
+test('a pasted link with neither a group nor a code carries no invitation', () => {
+    assert.equal(invitationTyped('https://imaginary-group.web.app/join?utm_source=chat'), null);
+});
+
+test('a pasted "group.code" reads back as an invitation with no site', () => {
+    assert.deepEqual(invitationTyped('imaginary-group.ABCD2345'), {
+        site: null,
+        groupId: 'imaginary-group',
+        code: 'ABCD2345',
+        by: '',
+        name: '',
+        to: '',
+    });
+});
+
+test('text that is neither a link nor "group.code" carries no invitation', () => {
+    assert.equal(invitationTyped('thanks!'), null);
+});
+
+test('a link naming another site is foreign, unless the host is not one itself', () => {
+    const invitation = invitationTyped('https://other-group.web.app/join#g=g&c=ABCDEFGH');
+
+    assert.equal(isForeignSite(invitation, 'imaginary-group.web.app'), true);
+    assert.equal(isForeignSite(invitation, 'other-group.web.app'), false);
+    assert.equal(isForeignSite(invitation, '127.0.0.1:8080'), false);
+});
+
+test('the older "group.code" form names no site, so it is never foreign', () => {
+    const invitation = invitationTyped('imaginary-group.ABCD2345');
+
+    assert.equal(isForeignSite(invitation, 'other-group.web.app'), false);
+});
+
+test('an invitation for another address is a mismatch, case aside', () => {
+    const invitation = invitationTyped(
+        'https://imaginary-group.web.app/join#g=g&c=ABCDEFGH&to=ivan…@example.com',
+    );
+
+    assert.equal(isWrongAccount(invitation, 'alice.wonderland@example.com'), true);
+    assert.equal(isWrongAccount(invitation, 'IVAN.PETROV@EXAMPLE.COM'), false);
+});
+
+test('nothing to compare either way is no mismatch', () => {
+    const bare = invitationTyped('imaginary-group.ABCD2345');
+    const named = invitationTyped(
+        'https://imaginary-group.web.app/join#g=g&c=ABCDEFGH&to=ivan…@example.com',
+    );
+
+    assert.equal(isWrongAccount(bare, 'ivan.petrov@example.com'), false);
+    assert.equal(isWrongAccount(named, undefined), false);
 });

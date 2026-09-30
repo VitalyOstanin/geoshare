@@ -6,6 +6,8 @@
 // place that touches the browser and this module can be run under node:test
 // without one.
 
+import { invitationFrom } from './membership.js';
+
 /** The package the application is published under, for the intent link. */
 export const APP_PACKAGE = 'io.github.vitalyostanin.geoshare';
 
@@ -69,6 +71,83 @@ export function parseInvitation(hash) {
     };
 }
 
+/**
+ * Where a link found in pasted text ends, and what it carries after `/join`:
+ * a query, a fragment, or both, either of which may hold the invitation.
+ *
+ * The query is read too, not only the fragment invitationLink writes: the
+ * application's own deep link moves the fields there (see buildIntentUrl),
+ * and a person forwarding that link — from a browser's address bar rather
+ * than the page's own button — pastes the query form.
+ */
+const PASTED_LINK = /https:\/\/([a-z0-9-]+)\.web\.app\/join(?:\?([^\s#]*))?(?:#([^\s]*))?/iu;
+
+/** Punctuation a messenger tacks onto a link it autolinks, trimmed off the end. */
+const TRAILING_PUNCTUATION = /[).,;:!?\]}'"<>]+$/u;
+
+/**
+ * An invitation read out of whatever was pasted into the "join" field
+ * (ADR-0017, ADR-0019): a link found anywhere in the text, the older
+ * "group.code" form kept for a link made before invitations were links at
+ * all, or null when neither is there.
+ *
+ * A link rarely arrives alone — a forwarded message carries a messenger's own
+ * signature around it — so PASTED_LINK looks for the address inside the text
+ * rather than asking the whole field to be one. The invited address is not
+ * capped a second time: the sender wrote nothing that parseInvitation did not
+ * already trim and cut short.
+ */
+export function invitationTyped(text) {
+    const found = PASTED_LINK.exec(text);
+
+    if (found !== null) {
+        const [, site, query, fragment] = found;
+        const raw = (fragment ?? query ?? '').replace(TRAILING_PUNCTUATION, '');
+        const invitation = parseInvitation(raw);
+
+        return invitation === null ? null : { site, ...invitation };
+    }
+
+    const typed = invitationFrom(text);
+
+    return typed === null
+        ? null
+        : { site: null, groupId: typed.group, code: typed.code, by: '', name: '', to: '' };
+}
+
+/**
+ * Whether an invitation's link names a site other than the one the page is
+ * running on, and is worth refusing for it.
+ *
+ * A host that does not end in ".web.app" — the emulator, a developer's own
+ * domain — names no site the way siteFromHost reads one, so nothing here is
+ * compared against it: this exists to keep one project's invitation out of
+ * another project's page, not to turn away every host that is not a Firebase
+ * Hosting address.
+ */
+export function isForeignSite(invitation, host) {
+    return invitation.site !== null &&
+        host.endsWith('.web.app') &&
+        siteFromHost(host) !== invitation.site;
+}
+
+/**
+ * Whether an invitation is plainly not for the account signed in: its `to`
+ * differs from the signed-in address, shortened the same way (ADR-0018) and
+ * compared without regard to case, the way ConnectLink and
+ * PendingInvitation.meantForAnotherAccount compare it in the application.
+ * Nothing to compare either way — a link with no `to`, or nobody signed in
+ * yet — reads as no mismatch; the rules alone answer for such a write once it
+ * is tried.
+ */
+export function isWrongAccount(invitation, signedInEmail) {
+    if (!invitation.to || !signedInEmail) {
+        return false;
+    }
+
+    return shortenedAddress(signedInEmail).toLowerCase() !== invitation.to.toLowerCase();
+}
+
 /** How much of an address's name shortenedAddress keeps. */
 const SHORTENED_NAME_LENGTH = 4;
 
@@ -90,6 +169,22 @@ export function shortenedAddress(email) {
     const kept = name.length > SHORTENED_NAME_LENGTH ? SHORTENED_NAME_LENGTH : 1;
 
     return `${name.slice(0, kept)}…${email.slice(at)}`;
+}
+
+/**
+ * When an invitation stops working, the way a person reads it: the day and
+ * the month spelled out rather than run together as digits, since this is
+ * read once off a freshly made link rather than watched running down like a
+ * search's clock (see `untilText` in `page/search-ui.js`). `locale` is taken
+ * as an argument for the reason every function here is — so a test can ask
+ * for either language without a browser to ask.
+ */
+export function invitationUntilText(millis, locale) {
+    const when = new Date(millis);
+    const day = when.toLocaleDateString(locale, { day: 'numeric', month: 'long' });
+    const time = when.toLocaleTimeString(locale, { hour: '2-digit', minute: '2-digit', hourCycle: 'h23' });
+
+    return `${day}, ${time}`;
 }
 
 /**

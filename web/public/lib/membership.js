@@ -190,20 +190,15 @@ const GROUP_NAME_LIMIT = 128;
 const GROUP_NAME_CHARACTERS = /^[A-Za-z0-9_-]+$/;
 
 /**
- * The single string an invitation is handed over as.
- *
- * The name of the group travels with the code because the rule weighing
- * somebody's addition to a roster weighs a write to a path, and a path has to
- * be known before the write is made: a code alone would say which door to
- * knock at only if there were one door.
- */
-export function invitationText(group, code) {
-    return `${group}.${code}`;
-}
-
-/**
  * An invitation as somebody pasted it, read back into its two halves, or
  * nothing at all when it is not one.
+ *
+ * Nothing here makes this text any more — an invitation is a link since
+ * ADR-0019, tied to one address — but a text handed out before that still
+ * lets somebody in until it runs out, and this is what reads it back: the
+ * name of the group travelled with the code because the rule weighing
+ * somebody's addition to a roster weighs a write to a path, and a path had
+ * to be known before the write was made.
  *
  * The dot is taken from the end rather than the start: the code has none, and
  * a group named before the rule that names a founder might. Only the code is
@@ -255,4 +250,22 @@ export function looksLikeAGroupName(name) {
     return name.length > 0 &&
         name.length <= GROUP_NAME_LIMIT &&
         GROUP_NAME_CHARACTERS.test(name);
+}
+
+/** How long an invited address may be, and its shape, as the rules hold `email`. */
+const EMAIL_LIMIT = 254;
+const EMAIL_CHARACTERS = /^[^@\s]+@[^@\s]+[.][^@\s]+$/u;
+
+/**
+ * Whether an address is one an invitation could be made out to.
+ *
+ * The same shape `invitationShape` in firestore.rules weighs a write against:
+ * something before an "@", the "@" itself, and a domain with a dot in it, none
+ * of it holding a space. Nothing here says the address actually receives mail
+ * — only that a create naming it would not be refused for its shape. Asked
+ * before the write is tried, so the button can say "not yet" rather than send
+ * one the rules would turn down.
+ */
+export function looksLikeAnEmail(email) {
+    return email.length > 0 && email.length <= EMAIL_LIMIT && EMAIL_CHARACTERS.test(email);
 }
