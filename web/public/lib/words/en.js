@@ -244,7 +244,7 @@ export const EN = {
     // The words index.html is written with. Kept here as well as there so that
     // a page read in the other language has them: the markup is the first
     // paint, and these replace it as soon as the modules run.
-    signInExplanation: 'Sign in with the Google account the family shares positions under.',
+    signInExplanation: 'Sign in with the Google account you share your position with the group under.',
     signInAction: 'Sign in with Google',
     signInWaiting: 'Signing in…',
     signOut: 'Sign out',

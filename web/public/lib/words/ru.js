@@ -256,7 +256,7 @@ export const RU = {
     signInFailed: 'Войти не удалось. Попробуйте ещё раз.',
 
     // The words index.html is written with.
-    signInExplanation: 'Войдите в тот аккаунт Google, под которым семья делится своими геопозициями.',
+    signInExplanation: 'Войдите в тот аккаунт Google, под которым вы делитесь геопозицией с группой.',
     signInAction: 'Войти через Google',
     signInWaiting: 'Входим в аккаунт…',
     signOut: 'Выйти',
