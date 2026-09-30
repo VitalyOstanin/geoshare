@@ -51,14 +51,21 @@ data class ConnectLink(val site: String, val invitation: Invitation?) {
             val match = LINK_PATTERN.find(text) ?: return null
             val (site, rest) = match.destructured
             val hashIndex = rest.indexOf('#')
-            val path = if (hashIndex >= 0) rest.substring(0, hashIndex) else rest
+            val beforeHash = if (hashIndex >= 0) rest.substring(0, hashIndex) else rest
             val fragment = if (hashIndex >= 0) rest.substring(hashIndex + 1) else ""
+            val queryIndex = beforeHash.indexOf('?')
+            val path = if (queryIndex >= 0) beforeHash.substring(0, queryIndex) else beforeHash
+            val query = if (queryIndex >= 0) beforeHash.substring(queryIndex + 1) else ""
 
             if (path != "join" && path != "join/") {
                 return null
             }
 
-            val fields = fieldsOf(fragment)
+            // The join page hands the link over as intent://, whose own
+            // #Intent takes the fragment's place, so it moves the
+            // invitation into the query; a link shared as it is keeps it
+            // after the #.
+            val fields = fieldsOf(fragment) + fieldsOf(query)
 
             if ("g" !in fields && "c" !in fields) {
                 return ConnectLink(site, invitation = null)

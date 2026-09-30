@@ -93,6 +93,14 @@ class ConnectLinkTest {
     }
 
     @Test
+    fun `an invitation handed over in the query is read like one after the hash`() {
+        assertEquals(
+            ConnectLink.parse("https://$SITE.web.app/join#g=group-1&c=ABCDEFGH&by=Anna"),
+            ConnectLink.parse("https://$SITE.web.app/join?g=group-1&c=ABCDEFGH&by=Anna"),
+        )
+    }
+
+    @Test
     fun `a plain http link is refused`() {
         assertNull(ConnectLink.parse("http://$SITE.web.app/join"))
     }
