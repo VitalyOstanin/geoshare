@@ -431,7 +431,34 @@
     <string name="help_follow_all">Everybody in view</string>
     <string name="help_sources">Position sources: which positions the device counts — satellites, Wi-Fi, towers</string>
 
-    <!-- Shown in place of the map before this phone has been connected to a
-         project, until the screen that takes a connection link exists. -->
-    <string name="not_connected_placeholder">Not connected yet. Open a connection link.</string>
+    <!-- ConnectScreen (project/ConnectScreen.kt), drawn from ConnectFlow's
+         states. Screen А, before a link has been offered: the phone's own
+         placeholder, shown in place of the map before it has a project. -->
+    <string name="connect_not_connected_title">Not connected yet.</string>
+    <string name="connect_not_connected_hint">Open a connection link.</string>
+    <string name="connect_paste_link">Paste link</string>
+    <!-- Screen А again, once a paste held nothing this project recognised. -->
+    <string name="connect_no_link_in_clipboard">There is no connection link in the clipboard.</string>
+    <!-- Screen Б: what the site answered, before it is accepted. -->
+    <string name="connect_confirm_title">Connect?</string>
+    <!-- The group name's own quotes, matching phone_remove_title's convention
+         rather than the site's guillemets: this is the Roman-alphabet build. -->
+    <string name="connect_quoted_value">“%1$s”</string>
+    <string name="connect_field_group">Group</string>
+    <string name="connect_field_invited_by">Invited by</string>
+    <string name="connect_field_for_account">For account</string>
+    <string name="connect_field_project">Project</string>
+    <string name="connect_confirm_hint">Next: sign in with Google in the browser.</string>
+    <string name="connect_cancel">Cancel</string>
+    <string name="connect_action">Connect</string>
+    <!-- Screen В: the download failed, for either FailureKind. -->
+    <string name="connect_failed_title">Could not get the settings from %1$s.web.app.</string>
+    <string name="connect_failed_hint">No connection, or there is no geoshare project at this link.</string>
+    <string name="connect_retry">Retry</string>
+    <!-- Screen Г: the link names a project other than the one this phone already talks to. -->
+    <string name="connect_switch_title">Switch project?</string>
+    <string name="connect_switch_hint">The app is connected to the project %1$s. After switching, your position stops going there and that group will no longer see you.</string>
+    <string name="connect_field_new_project">New project</string>
+    <string name="connect_keep">Keep</string>
+    <string name="connect_switch">Switch</string>
 </resources>

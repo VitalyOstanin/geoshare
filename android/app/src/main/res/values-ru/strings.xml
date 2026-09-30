@@ -387,5 +387,32 @@
     <string name="help_follow_all">Все участники в кадре</string>
     <string name="help_sources">Источники позиции: какие позиции устройство учитывает — спутники, Wi-Fi, вышки</string>
 
-    <string name="not_connected_placeholder">Приложение ещё не подключено. Откройте ссылку подключения.</string>
+    <!-- Экран подключения (project/ConnectScreen.kt), рисуется по состояниям
+         ConnectFlow. Экран А, пока ссылка ещё не предложена: тот же плейсхолдер,
+         что раньше показывался вместо карты до подключения проекта. -->
+    <string name="connect_not_connected_title">Приложение ещё не подключено.</string>
+    <string name="connect_not_connected_hint">Откройте ссылку подключения.</string>
+    <string name="connect_paste_link">Вставить ссылку</string>
+    <!-- Экран А снова, когда вставка не содержала ссылку этого проекта. -->
+    <string name="connect_no_link_in_clipboard">В буфере обмена нет ссылки подключения.</string>
+    <!-- Экран Б: что ответил сайт, до подтверждения. -->
+    <string name="connect_confirm_title">Подключиться?</string>
+    <string name="connect_quoted_value">«%1$s»</string>
+    <string name="connect_field_group">Группа</string>
+    <string name="connect_field_invited_by">Приглашение от</string>
+    <string name="connect_field_for_account">Для аккаунта</string>
+    <string name="connect_field_project">Проект</string>
+    <string name="connect_confirm_hint">Дальше вход через Google в браузере.</string>
+    <string name="connect_cancel">Отмена</string>
+    <string name="connect_action">Подключиться</string>
+    <!-- Экран В: загрузка не удалась, для любого из FailureKind. -->
+    <string name="connect_failed_title">Не удалось получить настройки с сайта %1$s.web.app.</string>
+    <string name="connect_failed_hint">Нет связи, или по этой ссылке нет проекта geoshare.</string>
+    <string name="connect_retry">Повторить</string>
+    <!-- Экран Г: ссылка называет не тот проект, к которому телефон уже подключён. -->
+    <string name="connect_switch_title">Сменить проект?</string>
+    <string name="connect_switch_hint">Сейчас приложение подключено к проекту %1$s. После смены передача позиции туда прекратится, группа там вас больше не увидит.</string>
+    <string name="connect_field_new_project">Новый проект</string>
+    <string name="connect_keep">Оставить</string>
+    <string name="connect_switch">Сменить</string>
 </resources>
