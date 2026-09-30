@@ -26,3 +26,4 @@ date is the decision's.
 | 0016 | [A group has a name people choose](0016-group-has-a-name.md)                                                         | Accepted                            | 2026-09-30 |
 | 0017 | [The invitation link carries who invited and the group's name](0017-names-in-the-invitation-link.md)                 | Accepted                            | 2026-09-30 |
 | 0018 | [What the join page and the connection screen show](0018-what-the-connection-screens-show.md)                   | Accepted                            | 2026-09-30 |
+| 0019 | [Making an invitation and naming a group](0019-making-an-invitation-and-naming-a-group.md)                          | Accepted                            | 2026-09-30 |
