@@ -25,3 +25,4 @@ date is the decision's.
 | 0015 | [An invitation is issued to one Google account](0015-invitation-for-one-google-account.md)                           | Accepted                            | 2026-09-30 |
 | 0016 | [A group has a name people choose](0016-group-has-a-name.md)                                                         | Accepted                            | 2026-09-30 |
 | 0017 | [The invitation link carries who invited and the group's name](0017-names-in-the-invitation-link.md)                 | Accepted                            | 2026-09-30 |
+| 0018 | [What the join page and the connection screen show](0018-what-the-connection-screens-show.md)                   | Accepted                            | 2026-09-30 |
