@@ -74,7 +74,9 @@ import io.github.vitalyostanin.geoshare.project.ConnectFlow
 import io.github.vitalyostanin.geoshare.project.ConnectScreen
 import io.github.vitalyostanin.geoshare.project.ConnectState
 import io.github.vitalyostanin.geoshare.project.FamilyProject
+import io.github.vitalyostanin.geoshare.project.PendingInvitationStore
 import io.github.vitalyostanin.geoshare.project.fetchSettings
+import io.github.vitalyostanin.geoshare.project.pendingInvitationFor
 import io.github.vitalyostanin.geoshare.service.AidingDoubtSetting
 import io.github.vitalyostanin.geoshare.service.BackgroundWorkSetting
 import io.github.vitalyostanin.geoshare.service.DeviceIdentity
@@ -85,6 +87,7 @@ import io.github.vitalyostanin.geoshare.service.SharingSetting
 import io.github.vitalyostanin.geoshare.service.SourcesSetting
 import io.github.vitalyostanin.geoshare.service.ThemeSetting
 import io.github.vitalyostanin.geoshare.service.callSiren
+import io.github.vitalyostanin.geoshare.service.consumePendingInvitation
 import io.github.vitalyostanin.geoshare.service.darkWanted
 import io.github.vitalyostanin.geoshare.service.dndAccessGranted
 import io.github.vitalyostanin.geoshare.service.endSearch
@@ -106,6 +109,7 @@ import io.github.vitalyostanin.geoshare.service.setRunning
 import io.github.vitalyostanin.geoshare.service.startConditions
 import io.github.vitalyostanin.geoshare.service.stopSiren
 import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withTimeoutOrNull
 import java.time.Instant
@@ -123,7 +127,8 @@ class MainActivity : AppCompatActivity() {
      * What a connection link is doing, whether or not this phone already
      * has a project — a link can arrive either way. Created before the
      * placeholder below is decided, since it is what would move this phone
-     * past it; the screens that paint its states are a later change.
+     * past it. [ConnectState.Done] is acted on by [acceptConnection], which
+     * is set watching for it as soon as this is created.
      */
     private lateinit var connectFlow: ConnectFlow
 
@@ -204,6 +209,18 @@ class MainActivity : AppCompatActivity() {
         // opened with, which has already been acted on.
         if (savedInstanceState == null) {
             connectFlow.linkArrived(intent.dataString)
+        }
+
+        // Reacts to Done wherever it is reached — the placeholder screen for
+        // a phone with no project yet, or the dialog offered over the map
+        // for one switching to another — since accepting a link always ends
+        // the same way.
+        lifecycleScope.launch {
+            connectFlow.state.collect { state ->
+                if (state is ConnectState.Done) {
+                    acceptConnection(state)
+                }
+            }
         }
 
         // Nothing below may touch Firebase without a family's project behind
@@ -337,6 +354,23 @@ class MainActivity : AppCompatActivity() {
                             // first takes the old documents back.
                             LaunchedEffect(current.memberId) {
                                 leavePreviousId(current.memberId, device)
+                            }
+
+                            // Only the restart ConnectState.Done led to ever
+                            // leaves one of these behind; an ordinary sign-in
+                            // finds nothing and this does nothing.
+                            LaunchedEffect(current.memberId) {
+                                val pending = PendingInvitationStore.read(this@MainActivity)
+                                    ?: return@LaunchedEffect
+
+                                groupTrouble =
+                                    !withGroup("joined a group from a pending invitation") {
+                                        consumePendingInvitation(
+                                            this@MainActivity,
+                                            current.memberId,
+                                            pending,
+                                        )
+                                    }
                             }
 
                             // A service left without a session stops after a
@@ -643,6 +677,52 @@ class MainActivity : AppCompatActivity() {
                 }
             }
         }
+    }
+
+    /**
+     * What [ConnectState.Done] leads to: the new settings are kept, a group
+     * invitation carried alongside them is kept for the sign-in that follows
+     * the restart to spend, and — for a phone that already talked to another
+     * project — its service is stopped and its session signed out of first,
+     * since both belong to a database this phone is about to stop asking
+     * about. Ends by restarting into the settings just kept, which is the
+     * only way to move a running process to another Firebase project
+     * (ADR-0001).
+     */
+    private fun acceptConnection(done: ConnectState.Done) {
+        val hadProject = FamilyProject.connected
+        val sameProject = FamilyProject.projectId == done.settings.projectId
+
+        // Not SharingService.stop: its stop action is an intent the service
+        // handles later, and the process ends before it would. stopService
+        // is settled by the system at once, so a sticky service is not
+        // brought back after the exit; the switch is turned off directly so
+        // sharing into the new group starts only when the member asks for it.
+        if (hadProject && !sameProject) {
+            SharingSetting(this).turnOffNow()
+            stopService(Intent(this, SharingService::class.java))
+        }
+
+        FamilyProject.save(this, done.settings)
+        PendingInvitationStore.save(this, pendingInvitationFor(done))
+
+        // An invitation into another group of the same project keeps the
+        // session: the account is the same, and the sign-in after the restart
+        // finds it already there and spends the invitation straight away.
+        if (hadProject && !sameProject) {
+            signIn.signOut()
+        }
+
+        startActivity(
+            Intent(this, MainActivity::class.java)
+                .setFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK),
+        )
+
+        // Runtime.exit over Process.killProcess: the settings and the
+        // invitation above were just written to disk, and this lets the JVM
+        // run its own shutdown path rather than being cut off by a signal —
+        // closer to how the process ends on its own than a kill is.
+        Runtime.getRuntime().exit(0)
     }
 
     /**

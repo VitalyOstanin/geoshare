@@ -57,10 +57,30 @@ object FamilyProject {
 
     /**
      * Keeps a family's settings for the next start, and starts Firebase with
-     * them now.
+     * them now — unless this process already started it for a different
+     * project, in which case only the settings are kept: the default
+     * Firebase app cannot be re-created in place (ADR-0001), so what starts
+     * it is the restart that follows this call rather than this call itself.
+     * [FirebaseApp.getApps] is empty exactly when nothing in this process
+     * has called `initializeApp` yet, which is how the two cases are told
+     * apart.
+     *
+     * Written with `commit` rather than `apply`: the caller of this today
+     * ends the process right after it returns
+     * (`MainActivity.acceptConnection`, reacting to `ConnectState.Done`), and
+     * `apply`'s write runs on a background thread this process may not live
+     * long enough to finish.
      */
     fun save(context: Context, settings: ProjectSettings) {
-        settingOf(context).edit().putString(KEY_SETTINGS, settings.toJson()).apply()
+        settingOf(context).edit().putString(KEY_SETTINGS, settings.toJson()).commit()
+
+        if (FirebaseApp.getApps(context).isNotEmpty()) {
+            current = settings
+            AppLog.i(TAG, "kept the project ${settings.projectId} for the next start")
+
+            return
+        }
+
         apply(context, settings)
     }
 
@@ -70,6 +90,7 @@ object FamilyProject {
         AppLog.i(TAG, "talking to the project ${settings.projectId}")
     }
 
-    private fun settingOf(context: Context) =
+    /** The file [PendingInvitationStore] keeps its own key in, next to [KEY_SETTINGS]. */
+    internal fun settingOf(context: Context) =
         context.getSharedPreferences(FILE, Context.MODE_PRIVATE)
 }

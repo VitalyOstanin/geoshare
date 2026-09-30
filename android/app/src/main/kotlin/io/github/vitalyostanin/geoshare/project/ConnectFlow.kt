@@ -48,10 +48,13 @@ sealed interface ConnectState {
     ) : ConnectState
 
     /**
-     * [settings] and [invitation] were accepted. Saving them, restarting the
-     * process and carrying the invitation across that restart are a later
-     * change; this state is only the seam it will hang off — nothing is
-     * written to the phone by reaching it.
+     * [settings] and [invitation] were accepted, and there is nothing
+     * further for [ConnectFlow] to do about them: keeping the settings,
+     * carrying [invitation] across the restart moving to them takes, and
+     * spending it once signed in again are all done by whoever collects
+     * [state] rather than by this class, since every one of them touches
+     * Firebase or the phone's own storage, neither of which [ConnectFlow] is
+     * given a way to reach.
      */
     data class Done(val settings: ProjectSettings, val invitation: Invitation?) : ConnectState
 }

@@ -13,6 +13,9 @@ import io.github.vitalyostanin.geoshare.membership.invitationText
 import io.github.vitalyostanin.geoshare.membership.newInvitationCode
 import io.github.vitalyostanin.geoshare.membership.rosterFounded
 import io.github.vitalyostanin.geoshare.membership.rosterWithout
+import io.github.vitalyostanin.geoshare.project.PendingInvitation
+import io.github.vitalyostanin.geoshare.project.PendingInvitationStore
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.callbackFlow
@@ -200,6 +203,38 @@ suspend fun setRunning(
     groupDocument(store).update(GroupField.ADMINS, change).await()
 
     AppLog.i(TAG, if (runs) "a member has been handed the group" else "a member has given it back")
+}
+
+/**
+ * Spends the pending invitation a restart carried over (`ConnectState.Done`,
+ * [PendingInvitationStore]), through the same write [joinGroup] performs for
+ * a code typed into the group section — there is no invitation-specific path
+ * of its own.
+ *
+ * Cleared once the answer is final either way: a refusal from the rules
+ * ([refusedOutright]) means the code has run out or was never good, and
+ * trying it again on the next sign-in would only refuse it again. A network
+ * failure says nothing about the code itself, so [pending] is left for the
+ * next sign-in to find and try again.
+ */
+suspend fun consumePendingInvitation(
+    context: Context,
+    uid: String,
+    pending: PendingInvitation,
+    store: FirebaseFirestore = FirebaseFirestore.getInstance(),
+) {
+    try {
+        joinGroup(context, uid, Invitation(pending.groupId, pending.code), store)
+        PendingInvitationStore.clear(context)
+    } catch (cancellation: CancellationException) {
+        throw cancellation
+    } catch (refusal: Exception) {
+        if (refusedOutright(refusal)) {
+            PendingInvitationStore.clear(context)
+        }
+
+        throw refusal
+    }
 }
 
 private fun Roster.asDocument(): Map<String, Any> =

@@ -38,9 +38,10 @@ import io.github.vitalyostanin.geoshare.R
  * The screens ADR-0018 describes for [ConnectState]: A phone offering a link
  * to paste, what the site answered before it is accepted, a failed
  * download, and the choice a second project's link forces on a phone that
- * already has one. What [ConnectState.Done] leads to — saving the settings
- * and restarting — is a later change, so it is drawn as nothing here rather
- * than as a screen of its own.
+ * already has one. What [ConnectState.Done] leads to — saving the settings,
+ * carrying an invitation across the restart and restarting — is done by
+ * `MainActivity` rather than here, and drawn as nothing since the process
+ * ends before another frame of this would be shown.
  *
  * The caller decides where this goes: the whole of the window for a phone
  * without a project yet (MainActivity's own placeholder), or an overlay
@@ -92,9 +93,10 @@ fun ConnectScreen(
             is ConnectState.SwitchProject ->
                 SwitchProject(state = state, onCancel = onCancel, onConnect = onConnect)
 
-            // Saving and restarting are a later change; nothing is drawn for
-            // this state yet, and the caller moves on to the map or the
-            // placeholder on its own.
+            // MainActivity reacts to Done on its own, outside this
+            // composable, by saving the settings and restarting; nothing is
+            // drawn here since the process ends before another frame would
+            // be.
             is ConnectState.Done -> Unit
         }
     }

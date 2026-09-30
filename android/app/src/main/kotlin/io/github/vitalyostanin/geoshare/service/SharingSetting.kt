@@ -17,4 +17,14 @@ class SharingSetting(context: Context) {
     var enabled: Boolean
         get() = store.getBoolean(KEY_ENABLED, false)
         set(value) = store.edit().putBoolean(KEY_ENABLED, value).apply()
+
+    /**
+     * Turns sharing off and waits for the write to reach disk, for a caller
+     * that ends the process right after: [enabled]'s own write runs on a
+     * background thread the process may not outlive, and the switch would
+     * come back on after the restart.
+     */
+    fun turnOffNow() {
+        store.edit().putBoolean(KEY_ENABLED, false).commit()
+    }
 }
