@@ -5,6 +5,9 @@
 #                               [--sha-from <existing-project-id>] [--json]
 #   tools/new-project.sh configs <project-id> [--json]
 #
+# Step by step for whoever runs it: docs/new-project.md; the console step for
+# the project owner: docs/console-steps.md.
+#
 # Two steps with one step in the Firebase console between them, because the
 # console is the only place left that turns on sign-in with Google: the
 # provider needs an OAuth client, and Google shut down the API that created
