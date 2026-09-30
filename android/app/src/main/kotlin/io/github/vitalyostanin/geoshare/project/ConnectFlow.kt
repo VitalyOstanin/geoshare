@@ -109,7 +109,13 @@ class ConnectFlow(
      * whoever sent it made a mistake worth reporting on screen.
      */
     fun linkArrived(dataString: String?) {
-        val link = dataString?.let(ConnectLink::parse)
+        // The launcher's intent and the restart after Done carry no data at
+        // all; only an intent that brought an address is worth a warning.
+        if (dataString == null) {
+            return
+        }
+
+        val link = ConnectLink.parse(dataString)
 
         if (link == null) {
             AppLog.w(TAG, "an intent matched the connect filter but did not parse")
