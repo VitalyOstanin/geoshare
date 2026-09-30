@@ -32,7 +32,6 @@ import io.github.vitalyostanin.geoshare.collection.Moving
 import io.github.vitalyostanin.geoshare.collection.PutDown
 import io.github.vitalyostanin.geoshare.collection.SECOND_OPINION_ASKED_EVERY
 import io.github.vitalyostanin.geoshare.collection.STIRS_KEPT
-import io.github.vitalyostanin.geoshare.collection.SkyDrift
 import io.github.vitalyostanin.geoshare.collection.Stir
 import io.github.vitalyostanin.geoshare.collection.Trail
 import io.github.vitalyostanin.geoshare.collection.agreementStands
@@ -42,17 +41,14 @@ import io.github.vitalyostanin.geoshare.collection.answeredBy
 import io.github.vitalyostanin.geoshare.collection.carryingSince
 import io.github.vitalyostanin.geoshare.collection.choiceFor
 import io.github.vitalyostanin.geoshare.collection.chooseMode
-import io.github.vitalyostanin.geoshare.collection.circleDrawn
 import io.github.vitalyostanin.geoshare.collection.clockDisagrees
 import io.github.vitalyostanin.geoshare.collection.comingHome
 import io.github.vitalyostanin.geoshare.collection.distanceMetres
 import io.github.vitalyostanin.geoshare.collection.driftedWhilePutDown
-import io.github.vitalyostanin.geoshare.collection.falsePlaceFor
 import io.github.vitalyostanin.geoshare.collection.fenceMoves
 import io.github.vitalyostanin.geoshare.collection.foundBy
 import io.github.vitalyostanin.geoshare.collection.impliedSpeedMps
 import io.github.vitalyostanin.geoshare.collection.knows
-import io.github.vitalyostanin.geoshare.collection.makeupOf
 import io.github.vitalyostanin.geoshare.collection.networkAnswerStands
 import io.github.vitalyostanin.geoshare.collection.noteOf
 import io.github.vitalyostanin.geoshare.collection.otherRadiosAreDue
@@ -60,10 +56,8 @@ import io.github.vitalyostanin.geoshare.collection.pinnedWhileWalking
 import io.github.vitalyostanin.geoshare.collection.putDownAt
 import io.github.vitalyostanin.geoshare.collection.remembering
 import io.github.vitalyostanin.geoshare.collection.rescueAfter
-import io.github.vitalyostanin.geoshare.collection.routeRepeated
 import io.github.vitalyostanin.geoshare.collection.said
 import io.github.vitalyostanin.geoshare.collection.saysMoreThan
-import io.github.vitalyostanin.geoshare.collection.secondOpinion
 import io.github.vitalyostanin.geoshare.collection.shouldWrite
 import io.github.vitalyostanin.geoshare.collection.stillSettling
 import io.github.vitalyostanin.geoshare.collection.walkingNow
@@ -1708,10 +1702,20 @@ class SharingService : LifecycleService() {
         val verdict =
             when {
                 jump == null -> ""
-                home -> "; a jump ${caughtBy(jump, fix)}, taken: the phone has been here before"
-                agreed -> "; a jump ${caughtBy(jump, fix)}, taken because the fix before it agrees"
-                jumps.enabled -> "; a jump ${caughtBy(jump, fix)}, left out"
-                else -> "; a jump ${caughtBy(jump, fix)}, kept because the filter is off"
+
+                home ->
+                    "; a jump ${caughtBy(jump, fix, leftOutEvidence())}, taken: the phone has " +
+                        "been here before"
+
+                agreed ->
+                    "; a jump ${caughtBy(jump, fix, leftOutEvidence())}, taken because the fix " +
+                        "before it agrees"
+
+                jumps.enabled -> "; a jump ${caughtBy(jump, fix, leftOutEvidence())}, left out"
+
+                else ->
+                    "; a jump ${caughtBy(jump, fix, leftOutEvidence())}, kept because the " +
+                        "filter is off"
             }
 
         // The clock is asked about the satellites only. An answer from the
@@ -1789,175 +1793,19 @@ class SharingService : LifecycleService() {
         AppLog.i(TAG, "forgetting the last place, as asked")
     }
 
-    /** Says which of the rules caught the fix, in the words of the log. */
-    private fun caughtBy(jump: JumpReason, fix: Fix): String = when (jump) {
-        JumpReason.Width -> "by the width of the answer"
-
-        JumpReason.Speed -> "by the speed it implies"
-
-        JumpReason.Contradiction -> "by two places at one time"
-
-        JumpReason.FalsePlace -> "by landing on ${theFalsePlace(fix)}"
-
-        JumpReason.Unmoved -> "by the phone never having been carried there"
-
-        JumpReason.Drifted -> "by the answer walking away from a phone nobody touched"
-
-        JumpReason.Hurried ->
-            "by the speed it claims for a phone nobody touched: ${theSpeedClaimed(fix)}"
-
-        JumpReason.Contradicted ->
-            "by the other radios placing the phone ${apartFromTheRadios(fix)}"
-
-        JumpReason.Circling -> "by the shape of the road: ${theCircleDrawn()}"
-
-        JumpReason.Repeating -> "by the road being gone round again: ${theRouteRepeated()}"
-
-        JumpReason.OneBand -> "by what it rests on: ${theBandItRestsOn()}"
-
-        JumpReason.OneTransmitter -> "by the sky it was built out of: ${theSkyItCameFrom()}"
-
-        JumpReason.Settling -> "by the receiver still coming up: ${theReceiverSettling(fix)}"
-
-        JumpReason.TimeApart -> "by the satellites' own time: ${theClockThatStepped()}"
-    }
-
     /**
-     * What speed the provider claimed, for the line that says a fix was left
-     * out because a phone nobody touched was said to be travelling.
+     * What the filter was looking at when a jump it caught needs describing,
+     * gathered from the fields above at the moment [caughtBy] is asked for.
      */
-    private fun theSpeedClaimed(fix: Fix): String {
-        val speed = fix.reported?.speedMps ?: return "no speed given"
-
-        return String.format(Locale.ROOT, "%.1f m/s", speed)
-    }
-
-    /**
-     * Which signal's time left the phone's clock and by how much, for the line
-     * that says a fix was left out.
-     *
-     * Both differences are written, against the receiver's clock and against
-     * the count since the boot, because they say different things: the first
-     * can be moved by the same signal that moved the time, and the second
-     * cannot be reached at all. See SatelliteClock.kt.
-     */
-    private fun theClockThatStepped(): String {
-        val stepped = radio.clockThatStepped() ?: return "no signal named"
-
-        return String.format(
-            Locale.ROOT,
-            "%s %d, %d ns from the receiver's clock and %d ns from the phone's own",
-            stepped.signal.constellation.word,
-            stepped.signal.id,
-            stepped.apart.receiverNanos,
-            stepped.apart.sinceBootNanos,
-        )
-    }
-
-    /**
-     * How long the phone had been awake and how much of the sky its answer
-     * rests on, for the line that says an answer of the first minutes was left
-     * out.
-     *
-     * Both numbers, because either alone reads as the wrong complaint: the
-     * seconds on their own say a phone was restarted, which is not a fault,
-     * and the count on its own says a receiver hears nothing, which is what a
-     * phone indoors does all day.
-     */
-    private fun theReceiverSettling(fix: Fix): String = String.format(
-        Locale.ROOT,
-        "%d s since the boot, %d satellites in the fix",
-        fix.sinceBoot?.seconds ?: 0L,
-        restsOn.values.sumOf { it.usedInFix },
+    private fun leftOutEvidence(): LeftOutEvidence = LeftOutEvidence(
+        radio = radio,
+        restsOn = restsOn,
+        lately = lately,
+        circleLimits = circleLimits,
+        falsePlaces = falsePlaces,
+        networkSaid = networkSaid,
+        awakeFor = awakeFor(),
     )
-
-    /**
-     * Which systems the fix was built out of, for the line that says a fix was
-     * left out.
-     */
-    private fun theBandItRestsOn(): String {
-        val makeup = makeupOf(restsOn)
-
-        return String.format(
-            Locale.ROOT,
-            "%d satellites of the GPS band and none of the %d GLONASS heard",
-            makeup.bandInFix,
-            makeup.glonassHeard,
-        )
-    }
-
-    /**
-     * Why the sky reads as one transmitter's, for the line that says a fix was
-     * left out.
-     */
-    private fun theSkyItCameFrom(): String {
-        val says = radio.skySays()
-        val alongside =
-            listOfNotNull(
-                "the far band silent".takeIf { says.otherBandSilent },
-                "the satellites moving as one block".takeIf { says.drift == SkyDrift.Together },
-            )
-
-        return String.format(
-            Locale.ROOT,
-            "the loudness %s and %s",
-            says.shape.toString().lowercase(),
-            alongside.joinToString(" and "),
-        )
-    }
-
-    /**
-     * The route the last answers are going round again, for the line that
-     * says a fix was left out.
-     */
-    private fun theRouteRepeated(): String {
-        val round = routeRepeated(lately) ?: return "a route traced again"
-
-        return String.format(
-            Locale.ROOT,
-            "a route %.0f m across every %d s, within %.0f m of the round before",
-            round.reachMetres,
-            round.period.seconds,
-            round.apartMetres,
-        )
-    }
-
-    /**
-     * The circle the last answers are drawing, for the line that says a fix
-     * was left out.
-     */
-    private fun theCircleDrawn(): String {
-        val circle = circleDrawn(lately, circleLimits) ?: return "a circle at a steady speed"
-
-        return String.format(
-            Locale.ROOT,
-            "a circle of %.0f m at a steady %.0f m/s, %.0f degrees of it so far",
-            circle.radiusMetres,
-            circle.speedMps,
-            circle.turnedDegrees,
-        )
-    }
-
-    /** What the group calls the place this fix landed on. */
-    private fun theFalsePlace(fix: Fix): String =
-        falsePlaceFor(fix, falsePlaces)?.named ?: "a place a false signal uses"
-
-    /**
-     * How far the towers and the Wi-Fi put the phone from where the satellites
-     * just put it, for the line that says a fix was left out.
-     */
-    private fun apartFromTheRadios(fix: Fix): String {
-        val said =
-            secondOpinion(fix, networkSaid, Instant.now(), awakeFor())
-                ?: return "somewhere else"
-
-        return String.format(
-            Locale.ROOT,
-            "%.0f m away, against the %.0f m they were allowed",
-            said.apartMetres,
-            said.allowedMetres,
-        )
-    }
 
     /**
      * A write that failed is not a reason to stop collecting: the network comes
