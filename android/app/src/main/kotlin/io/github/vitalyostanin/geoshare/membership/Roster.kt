@@ -14,11 +14,15 @@ package io.github.vitalyostanin.geoshare.membership
  * the group is named after — the rules read it the same way. It runs the group
  * without being listed among [admins], and nobody else takes it off the
  * roster.
+ *
+ * [name] is what people call the group (ADR-0016): given when it is founded,
+ * changed later by an administrator, and absent until either happens.
  */
 data class Roster(
     val members: List<String> = emptyList(),
     val admins: List<String> = emptyList(),
     val founder: String? = null,
+    val name: String? = null,
 )
 
 /** Where the person signed in stands with respect to the group. */
@@ -86,6 +90,7 @@ fun rosterWithout(roster: Roster, uid: String): Roster = Roster(
     members = roster.members.filterNot { it == uid },
     admins = roster.admins.filterNot { it == uid },
     founder = roster.founder,
+    name = roster.name,
 )
 
 /**

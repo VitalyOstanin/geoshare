@@ -185,13 +185,7 @@ private fun Confirm(
 
     // The owner's own link to a phone with nothing connected yet carries no
     // invitation, so only the project row is left; see ConnectFlow.settle.
-    invitation?.groupName?.let {
-        val quoted = stringResource(R.string.connect_quoted_value, it)
-
-        ConnectField(R.string.connect_field_group, quoted)
-    }
-    invitation?.inviter?.let { ConnectField(R.string.connect_field_invited_by, it) }
-    invitation?.invitedAddress?.let { ConnectField(R.string.connect_field_for_account, it) }
+    InvitationFields(invitation)
     ConnectField(R.string.connect_field_project, settings.projectId)
 
     Text(
@@ -207,6 +201,18 @@ private fun Confirm(
         onCancel = onCancel,
         onAction = onConnect,
     )
+}
+
+/** The rows a link's invitation adds, each only when the link carries it. */
+@Composable
+private fun InvitationFields(invitation: Invitation?) {
+    invitation?.groupName?.let {
+        val quoted = stringResource(R.string.connect_quoted_value, it)
+
+        ConnectField(R.string.connect_field_group, quoted)
+    }
+    invitation?.inviter?.let { ConnectField(R.string.connect_field_invited_by, it) }
+    invitation?.invitedAddress?.let { ConnectField(R.string.connect_field_for_account, it) }
 }
 
 /** Screen В: [site]'s `geoshare.json` could not be fetched, for either [FailureKind]. */
@@ -253,6 +259,9 @@ private fun SwitchProject(
         textAlign = TextAlign.Center,
     )
 
+    // The same captions the confirmation shows (ADR-0019): switching goes
+    // straight to Done, so this is the only screen that could show them.
+    InvitationFields(state.link.invitation)
     ConnectField(R.string.connect_field_new_project, state.settings.projectId)
 
     ConnectButtons(

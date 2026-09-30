@@ -164,6 +164,11 @@
                     <p id="group-note" hidden></p>
                     <div id="group-members"></div>
 
+                    <!-- What the group is called, chosen once here or left
+                         out — a group without one is shown under its
+                         founder's own name instead (ADR-0016). -->
+                    <input id="group-found-name" type="text" maxlength="60" autocomplete="off" hidden>
+
                     <div id="group-buttons">
                         <button id="group-found" type="button" hidden></button>
                         <!-- Handing out invitations and taking members off are
@@ -238,7 +243,12 @@
         <dialog id="admin" class="admin">
             <button id="admin-help" class="help-mark" type="button">?</button>
             <button id="admin-close" class="close-cross" type="button">×</button>
+            <!-- The group's own name, or the founder's until it has one (see
+                 lib/group-name.js). Renaming stands under it rather than
+                 beside it: the title already clears the round buttons in the
+                 corner, and a second one next to it would run into them. -->
             <h2 id="admin-title"></h2>
+            <button id="admin-rename" class="detail-rename" type="button" hidden></button>
             <div id="admin-members"></div>
             <!-- Every search standing now, with who opened it, when it ends
                  and the two things to do about it. Below the rows rather
@@ -334,6 +344,19 @@
                 <button id="naming-save" type="button"></button>
                 <button id="naming-reset" type="button"></button>
                 <button id="naming-cancel" type="button"></button>
+            </div>
+        </dialog>
+
+        <!-- The group's own name, given at founding or changed here by an
+             administrator (ADR-0016). Opened on top of the panel that runs
+             the group, the way naming a device or a person opens on top of
+             its own card. -->
+        <dialog id="rename" class="admin naming">
+            <h2 id="rename-title"></h2>
+            <input id="rename-typed" type="text" maxlength="60" autocomplete="off">
+            <div id="rename-buttons">
+                <button id="rename-save" type="button"></button>
+                <button id="rename-cancel" type="button"></button>
             </div>
         </dialog>
 

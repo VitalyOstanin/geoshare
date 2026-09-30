@@ -1,6 +1,7 @@
 // The group in the menu, "Мои устройства" and the panel that runs the group.
 
 import { phoneLines, groupOverview } from '../lib/group-lines.js';
+import { groupCaption } from '../lib/group-name.js';
 import { outsideTheBox } from '../lib/mode-help.js';
 import { lookAt } from '../lib/map.js';
 import { memberName, shortName } from '../lib/members.js';
@@ -22,6 +23,7 @@ import {
     removeMember,
     endSearch,
     forgetPhone,
+    renameGroup,
     setRunning,
     stopSiren,
 } from '../lib/store.js';
@@ -72,6 +74,9 @@ export function drawGroup() {
     elements.groupMembers.replaceChildren(
         ...(state.roster?.members ?? []).map((memberId) => memberRow(memberId)),
     );
+
+    elements.groupFoundName.hidden = !ungrouped;
+    elements.groupFoundName.placeholder = WORDS.groupNameLabel;
 
     elements.groupFound.hidden = !ungrouped;
     elements.groupFound.textContent = WORDS.groupFound;
@@ -414,10 +419,17 @@ function drawAdmin(running) {
         return;
     }
 
-    elements.adminTitle.textContent = WORDS.adminTitle;
+    elements.adminTitle.textContent =
+        groupCaption(state.roster, state.profiles, state.member.memberId);
     elements.adminClose.setAttribute('aria-label', WORDS.close);
     elements.adminHelp.title = WORDS.helpOpen;
     elements.adminHelp.setAttribute('aria-label', WORDS.helpOpen);
+
+    // Only whoever runs the group may change its name; a member who does not
+    // sees the name alone, the way the roster below shows them no button
+    // either.
+    elements.adminRename.hidden = !running;
+    elements.adminRename.textContent = WORDS.groupRename;
 
     elements.adminMembers.replaceChildren(
         ...groupOverview(
@@ -617,6 +629,34 @@ export function closeAdmin() {
 }
 
 /**
+ * Opens the window that renames the group, on top of the panel that runs it,
+ * with its own name already typed in.
+ */
+function openRename() {
+    elements.renameTyped.value = state.roster?.name ?? '';
+    drawRename();
+
+    if (!elements.rename.open) {
+        elements.rename.showModal();
+    }
+}
+
+/**
+ * What the renaming window says, and whether saving is worth trying: the
+ * rules refuse a name that is empty once trimmed or longer than 60
+ * characters (`nameFits()`), and the button says so before the write is
+ * asked for rather than after it is refused.
+ */
+function drawRename() {
+    const trimmed = elements.renameTyped.value.trim();
+
+    elements.renameTitle.textContent = WORDS.groupNameLabel;
+    elements.renameSave.textContent = WORDS.nameSave;
+    elements.renameCancel.textContent = WORDS.nameCancel;
+    elements.renameSave.disabled = trimmed === '' || trimmed.length > 60;
+}
+
+/**
  * A write to the group, and what to say when the database refuses it.
  *
  * Every one of these is weighed by a rule that can say no for several reasons
@@ -657,7 +697,7 @@ function regroup() {
 
 elements.groupFound.addEventListener('click', () =>
     tryGroupWrite(async () => {
-        await foundGroup(state.member.memberId);
+        await foundGroup(state.member.memberId, elements.groupFoundName.value);
         regroup();
     }),
 );
@@ -671,6 +711,17 @@ elements.groupAdmin.addEventListener('click', () => {
 });
 
 elements.adminClose.addEventListener('click', closeAdmin);
+
+elements.adminRename.addEventListener('click', openRename);
+elements.renameTyped.addEventListener('input', drawRename);
+elements.renameCancel.addEventListener('click', () => elements.rename.close());
+elements.renameSave.addEventListener('click', () => {
+    const name = elements.renameTyped.value.trim();
+
+    elements.rename.close();
+    tryGroupWrite(() => renameGroup(name));
+});
+closeOnClickOutside(elements.rename, () => elements.rename.close());
 
 // The escape key closes a dialog on its own, so only the dark behind the
 // window is left to answer for: a click there closes it the way a tap beside a

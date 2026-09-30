@@ -5,9 +5,11 @@ import {
     APP_PACKAGE,
     RELEASES_URL,
     buildIntentUrl,
+    invitationLink,
     isAndroid,
     joinCaption,
     parseInvitation,
+    shortenedAddress,
     siteFromHost,
 } from '../public/lib/join.js';
 import { JOIN_EN } from '../public/lib/words/join-en.js';
@@ -125,4 +127,44 @@ test('only Chrome on Android is offered the intent link', () => {
     assert.equal(isAndroid('Mozilla/5.0 (Linux; Android 14) Chrome/128 Mobile'), true);
     assert.equal(isAndroid('Mozilla/5.0 (Macintosh) Chrome/128'), false);
     assert.equal(isAndroid(undefined), false);
+});
+
+test('an invitation link reads back as the invitation it was made from', () => {
+    const link = invitationLink({
+        site: 'imaginary-group',
+        groupId: 'Kx9aQ2',
+        code: '7FK3M9QA',
+        by: 'Анна Петрова',
+        name: 'Походы & горы',
+        email: 'ivan.petrov@example.com',
+    });
+
+    assert.deepEqual(parseInvitation(new URL(link).hash), {
+        groupId: 'Kx9aQ2',
+        code: '7FK3M9QA',
+        by: 'Анна Петрова',
+        name: 'Походы & горы',
+        to: 'ivan…@example.com',
+    });
+});
+
+// The same string the application's ConnectLinkTest expects, so the two
+// clients hand out one link for one invitation.
+test('captions that are missing are left out of the link', () => {
+    assert.equal(
+        invitationLink({
+            site: 'geoshare-example-abc123',
+            groupId: 'g',
+            code: '7FK3M9QA',
+            by: null,
+            name: ' ',
+            email: 'ivan.petrov@example.com',
+        }),
+        'https://geoshare-example-abc123.web.app/join#g=g&c=7FK3M9QA&to=ivan%E2%80%A6%40example.com',
+    );
+});
+
+test('a short name keeps only its first character', () => {
+    assert.equal(shortenedAddress('ivan@example.com'), 'i…@example.com');
+    assert.equal(shortenedAddress('ivan.petrov@example.com'), 'ivan…@example.com');
 });

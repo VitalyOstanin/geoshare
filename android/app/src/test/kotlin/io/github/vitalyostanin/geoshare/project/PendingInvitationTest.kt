@@ -42,12 +42,42 @@ class PendingInvitationTest {
     }
 
     @Test
-    fun `Done carrying an invitation leaves its group and code, without the captions`() {
+    fun `Done carrying an invitation leaves its group, code and invited address`() {
         val done = ConnectState.Done(SETTINGS, INVITATION)
 
         assertEquals(
-            PendingInvitation(groupId = "group-1", code = "ABCDEFGH"),
+            PendingInvitation(
+                groupId = "group-1",
+                code = "ABCDEFGH",
+                invitedAddress = "ivan…@example.com",
+            ),
             pendingInvitationFor(done),
+        )
+    }
+
+    @Test
+    fun `the invited address survives the json`() {
+        val invitation = PendingInvitation("group-1", "ABCDEFGH", "ivan…@example.com")
+
+        assertEquals(invitation, PendingInvitation.parse(invitation.toJson()))
+    }
+
+    @Test
+    fun `an account whose shortened address differs is another account`() {
+        val invitation = PendingInvitation("group-1", "ABCDEFGH", "ivan…@example.com")
+
+        assertEquals(true, invitation.meantForAnotherAccount("petr.sidorov@example.com"))
+        assertEquals(false, invitation.meantForAnotherAccount("ivan.petrov@example.com"))
+        assertEquals(false, invitation.meantForAnotherAccount("Ivan.Petrov@Example.com"))
+    }
+
+    // Without either side there is nothing to compare, and the rules decide.
+    @Test
+    fun `nothing to compare is no verdict`() {
+        assertEquals(false, PendingInvitation("g", "ABCDEFGH").meantForAnotherAccount("a@b.c"))
+        assertEquals(
+            false,
+            PendingInvitation("g", "ABCDEFGH", "ivan…@example.com").meantForAnotherAccount(null),
         )
     }
 

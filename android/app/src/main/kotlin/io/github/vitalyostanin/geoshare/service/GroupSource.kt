@@ -63,6 +63,7 @@ private fun rosterOf(snapshot: DocumentSnapshot): Roster = Roster(
     // Whoever the document names as its owner, or else the account the group
     // is named after: the rules read the founder the same way.
     founder = snapshot.get(GroupField.OWNER) as? String ?: snapshot.id,
+    name = snapshot.get(GroupField.NAME) as? String,
 )
 
 /**
@@ -78,9 +79,10 @@ private fun Any?.asIds(): List<String> = (this as? List<*>).orEmpty().filterIsIn
  * Makes the group, with the founder alone in it.
  *
  * The rules refuse a group made around anybody else, so there is nothing to
- * choose here: what the founder hands out afterwards is a code. Nor is there a
- * name to choose — a group is named after the account that made it, which is
- * what keeps one account from making them without end.
+ * choose about who is on it: what the founder hands out afterwards is a code.
+ * The id it gets is the account that made it, which is what keeps one account
+ * from making them without end; [name] is a caption on top of that, given if
+ * the founder typed one (ADR-0016).
  *
  * The phone is moved into the new group only once the write has been allowed.
  * Moving it first would leave a phone whose founding was refused writing into
@@ -90,14 +92,39 @@ private fun Any?.asIds(): List<String> = (this as? List<*>).orEmpty().filterIsIn
 suspend fun foundGroup(
     context: Context,
     uid: String,
+    name: String? = null,
     store: FirebaseFirestore = FirebaseFirestore.getInstance(),
 ) {
     val roster = rosterFounded(uid)
+    // The rules refuse the field at all once it is blank (nameFits), so it is
+    // left out rather than written empty: a group without a name and one
+    // named the empty string would otherwise read the same everywhere but
+    // here.
+    val fields =
+        if (name.isNullOrBlank()) {
+            roster.asDocument()
+        } else {
+            roster.asDocument() + (GroupField.NAME to name)
+        }
 
-    groupDocumentOf(store, uid).set(roster.asDocument()).await()
+    groupDocumentOf(store, uid).set(fields).await()
     CurrentGroup.moveTo(context, uid)
 
     AppLog.i(TAG, "the group has been founded")
+}
+
+/**
+ * Gives the group a name, or changes the one it has.
+ *
+ * A write of its own rather than a part of [foundGroup]: the rules weigh it
+ * separately (`renaming` in the rules) from the roster it goes with, so this
+ * one touches only the field it changes and leaves members and admins as
+ * they are.
+ */
+suspend fun renameGroup(name: String, store: FirebaseFirestore = FirebaseFirestore.getInstance()) {
+    groupDocument(store).update(GroupField.NAME, name).await()
+
+    AppLog.i(TAG, "the group has been renamed")
 }
 
 /**

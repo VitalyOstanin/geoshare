@@ -282,6 +282,7 @@ export const RU = {
     groupNone: 'Вы пока не в группе. Создайте её и раздайте приглашение или вставьте '
         + 'приглашение, которое вам прислали.',
     groupFound: 'Создать группу',
+    groupNameLabel: 'Название группы',
     groupInvitation: 'Приглашение',
     groupJoin: 'Вступить',
     groupMakeInvitation: 'Пригласить нового участника в группу',
@@ -337,6 +338,9 @@ export const RU = {
     sirenNoAnswer: (phone) => `${phone}: нет ответа на сирену`,
     sirenStopped: (phone) => `сирена на ${phone} выключена`,
     groupUnrun: 'Группу никто не ведёт, её состав задаётся в консоли Firebase.',
+    // Показывается, пока у группы нет собственного имени (ADR-0016).
+    groupUnnamed: (name) => `Группа · ${name}`,
+    groupRename: 'Переименовать',
 
     // The panel the member running the group opens.
     adminTitle: 'Управление группой',

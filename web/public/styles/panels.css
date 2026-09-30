@@ -25,6 +25,14 @@
     font-size: 1.05rem;
 }
 
+/* Renaming the group sits right under its name, pulled up into the title's
+   own margin rather than left to float further down the panel. */
+#admin-rename {
+    display: block;
+    margin: -0.5rem 0 0.6rem;
+    font-size: 0.85rem;
+}
+
 /* One member of "Мои устройства": one phone's own line, what is known
    about it on the left, and the one act that can be taken against it at the
    far end of the row. */
@@ -196,7 +204,27 @@
     margin-top: 0.6rem;
 }
 
-#naming-buttons button {
+.naming #rename-typed {
+    box-sizing: border-box;
+    width: 100%;
+    margin-top: 0.6rem;
+    padding: 0.35rem 0.5rem;
+    border: 1px solid var(--edge);
+    border-radius: 0.4rem;
+    background: transparent;
+    color: inherit;
+    font: inherit;
+}
+
+#rename-buttons {
+    display: flex;
+    justify-content: flex-end;
+    gap: 0.3rem;
+    margin-top: 0.6rem;
+}
+
+#naming-buttons button,
+#rename-buttons button {
     border: 1px solid var(--edge);
     border-radius: 0.4rem;
     padding: 0.3rem 0.6rem;

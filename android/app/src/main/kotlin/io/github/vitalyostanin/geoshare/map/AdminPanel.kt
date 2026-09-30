@@ -24,6 +24,7 @@ import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedIconButton
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -47,6 +48,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import io.github.vitalyostanin.geoshare.R
 import io.github.vitalyostanin.geoshare.membership.Roster
+import io.github.vitalyostanin.geoshare.membership.runsTheGroup
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.launch
@@ -88,6 +90,8 @@ fun AdminPanel(
     onMakeInvitation: () -> Unit,
     onRemoveMember: (String) -> Unit,
     onSetRunning: (String, Boolean) -> Unit,
+    /** Gives the group a name, or changes the one it has; answers how the write came out. */
+    onRenameGroup: suspend (String) -> WriteOutcome,
     /**
      * Opens a search for one phone, or renews one already standing; answers
      * how the write came out.
@@ -114,6 +118,12 @@ fun AdminPanel(
     val standing = remember(searches, now) { standingSearches(searches, now) }
     var givingUp by remember { mutableStateOf(false) }
     var helpOpen by remember { mutableStateOf(false) }
+    // The dialog for the group's own name: open or not, what is typed in it
+    // so far, and how the last write to it came out.
+    var renaming by remember { mutableStateOf(false) }
+    var renameText by remember { mutableStateOf("") }
+    var renameTrouble by remember { mutableStateOf<WriteOutcome?>(null) }
+    var renameBusy by remember { mutableStateOf(false) }
     // The member about to be removed and the name the dialog calls them by.
     var removing by remember { mutableStateOf<Pair<String, String>?>(null) }
     // Which phone is being asked about, in which of the two ways, and the
@@ -165,6 +175,24 @@ fun AdminPanel(
         }
     }
 
+    fun writeRename() {
+        val name = groupNameText(renameText) ?: return
+
+        renameBusy = true
+        scope.launch {
+            val outcome = onRenameGroup(name)
+
+            renameBusy = false
+
+            if (outcome == WriteOutcome.DONE) {
+                renaming = false
+                renameTrouble = null
+            } else {
+                renameTrouble = outcome
+            }
+        }
+    }
+
     fun askSearch(phone: PhoneLine, memberName: String, renew: Boolean) {
         searchAsk = SearchAsk(phone, memberName, renew)
         searchHours = DEFAULT_SEARCH_HOURS
@@ -204,10 +232,23 @@ fun AdminPanel(
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 Text(
-                    text = stringResource(R.string.admin_title),
+                    text =
+                    groupCaption(roster, profiles, stringResource(R.string.group_name_unnamed)),
                     style = MaterialTheme.typography.titleLarge,
                     modifier = Modifier.weight(1f),
                 )
+
+                if (runsTheGroup(roster, ownMemberId)) {
+                    TextButton(
+                        onClick = {
+                            renameText = roster.name.orEmpty()
+                            renameTrouble = null
+                            renaming = true
+                        },
+                    ) {
+                        Text(text = stringResource(R.string.group_name_rename))
+                    }
+                }
 
                 HelpButton(onClick = { helpOpen = true })
 
@@ -317,6 +358,42 @@ fun AdminPanel(
                 ),
             ),
             onClose = { helpOpen = false },
+        )
+    }
+
+    // Changing the group's own name (ADR-0016) is a write of its own, so a
+    // roster write refused elsewhere on the panel says nothing about whether
+    // this one would be too.
+    if (renaming) {
+        val nameToSave = groupNameText(renameText)
+
+        AlertDialog(
+            onDismissRequest = { renaming = false },
+            title = { Text(text = stringResource(R.string.group_name_label)) },
+            text = {
+                Column {
+                    OutlinedTextField(
+                        value = renameText,
+                        onValueChange = { renameText = it.take(GROUP_NAME_LIMIT) },
+                        singleLine = true,
+                    )
+
+                    WriteTrouble(renameTrouble)
+                }
+            },
+            confirmButton = {
+                TextButton(
+                    onClick = ::writeRename,
+                    enabled = nameToSave != null && writable(renameBusy, renameTrouble),
+                ) {
+                    Text(text = stringResource(R.string.group_name_save))
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { renaming = false }) {
+                    Text(text = stringResource(R.string.search_cancel))
+                }
+            },
         )
     }
 

@@ -216,9 +216,17 @@
          administrator cannot be taken from - and which of them it was is not
          something a refusal says. -->
     <string name="group_refused">The database refused that. The invitation may have run out, or the group may already exist.</string>
-    <!-- Both the line that opens the panel and the panel's own title: the two
-         say the same thing, and a member who taps a line expects to arrive at
-         a screen carrying its name. -->
+    <!-- The group's own name (ADR-0016): asked for when it is founded, shown
+         and changed from the panel afterwards. -->
+    <string name="group_name_label">Group name</string>
+    <string name="group_name_rename">Rename</string>
+    <string name="group_name_save">Save</string>
+    <!-- What a group with no name of its own is called instead (ADR-0019);
+         %1$s takes the founder's name. -->
+    <string name="group_name_unnamed">%1$s\'s group</string>
+    <!-- The line that opens the panel, in the group section: the panel itself
+         opens on the group's own name at the top now (group_name_unnamed for
+         one that has none), not this string. -->
     <string name="admin_title">Running the group</string>
     <string name="admin_you">you</string>
     <!-- Said of a member whose devices this one may not read. Their devices are
@@ -461,4 +469,8 @@
     <string name="connect_field_new_project">New project</string>
     <string name="connect_keep">Keep</string>
     <string name="connect_switch">Switch</string>
+    <string name="connect_wrong_account_title">This invitation is for %1$s.</string>
+    <string name="connect_wrong_account_text">You are signed in as %1$s. Sign out and sign in with the right account — the invitation is kept until the next sign-in.</string>
+    <string name="connect_wrong_account_switch">Switch account</string>
+    <string name="connect_wrong_account_later">Not now</string>
 </resources>

@@ -196,6 +196,10 @@
     <string name="group_keep_running">Оставить</string>
     <string name="group_unrun">Группу никто не ведёт, её состав задаётся в консоли Firebase.</string>
     <string name="group_refused">База отказала. Возможно, приглашение истекло или группа уже создана.</string>
+    <string name="group_name_label">Название группы</string>
+    <string name="group_name_rename">Переименовать</string>
+    <string name="group_name_save">Сохранить</string>
+    <string name="group_name_unnamed">Группа · %1$s</string>
     <string name="admin_title">Управление группой</string>
     <string name="admin_you">это вы</string>
     <string name="admin_not_shared">не делится с вами</string>
@@ -415,4 +419,8 @@
     <string name="connect_field_new_project">Новый проект</string>
     <string name="connect_keep">Оставить</string>
     <string name="connect_switch">Сменить</string>
+    <string name="connect_wrong_account_title">Это приглашение выдано для %1$s.</string>
+    <string name="connect_wrong_account_text">Вы вошли как %1$s. Выйдите и войдите нужным аккаунтом — приглашение сохранится до следующего входа.</string>
+    <string name="connect_wrong_account_switch">Сменить аккаунт</string>
+    <string name="connect_wrong_account_later">Не сейчас</string>
 </resources>

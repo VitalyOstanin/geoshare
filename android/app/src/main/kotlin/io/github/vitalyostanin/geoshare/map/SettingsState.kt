@@ -115,12 +115,15 @@ data class SettingsActions(
     val onAllowSirenThroughSilence: () -> Unit,
     val onOpenStartup: () -> Unit,
     val onStartupSetChange: (Boolean) -> Unit,
-    val onFoundGroup: () -> Unit,
+    /** Makes a group, named as typed; blank founds one with no name of its own. */
+    val onFoundGroup: (String?) -> Unit,
     val onMakeInvitation: () -> Unit,
     val onJoinGroup: (Invitation) -> Unit,
     val onRemoveMember: (String) -> Unit,
     /** Hands a member the running of the group, or takes it back. */
     val onSetRunning: (String, Boolean) -> Unit,
+    /** Gives the group a name, or changes the one it has; answers how the write came out. */
+    val onRenameGroup: suspend (String) -> WriteOutcome,
     val onPhoneNameChange: (String?) -> Unit,
     val onSignOut: () -> Unit,
     /**

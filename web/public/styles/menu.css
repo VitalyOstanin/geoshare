@@ -286,6 +286,21 @@
     font: inherit;
 }
 
+/* The name a group is given while it is still being made: full width, above
+   the button that makes it, rather than beside it — there is nothing else on
+   its line to share the width with. */
+#group-found-name {
+    box-sizing: border-box;
+    width: 100%;
+    margin-top: 0.3rem;
+    padding: 0.25rem 0.35rem;
+    border: 1px solid var(--edge);
+    border-radius: 0.4rem;
+    background: canvas;
+    color: inherit;
+    font: inherit;
+}
+
 #group-note,
 #group-said,
 #group-error {

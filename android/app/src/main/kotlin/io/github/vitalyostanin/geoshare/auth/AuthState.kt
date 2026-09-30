@@ -21,5 +21,7 @@ sealed interface AuthState {
         val displayName: String?,
         /** The account picture, as the provider hosts it; absent for an account without one. */
         val pictureUrl: String?,
+        /** The Google address, as the provider reports it; what an invitation is made out to. */
+        val email: String? = null,
     ) : AuthState
 }

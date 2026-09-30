@@ -41,6 +41,7 @@ class SignInController(private val auth: FirebaseAuth = FirebaseAuth.getInstance
                         memberId = user.uid,
                         displayName = user.displayName,
                         pictureUrl = user.photoUrl?.toString(),
+                        email = user.email,
                     )
                 }
         }

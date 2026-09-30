@@ -132,4 +132,59 @@ class ConnectLinkTest {
 
         assertEquals(60, ConnectLink.parse(text)?.invitation?.inviter?.length)
     }
+
+    @Test
+    fun `an invitation link reads back as the invitation it was made from`() {
+        val link = ConnectLink.invitationLink(
+            site = SITE,
+            groupId = "Kx9aQ2",
+            code = "7FK3M9QA",
+            inviter = "Анна Петрова",
+            groupName = "Походы & горы",
+            email = "ivan.petrov@example.com",
+        )
+
+        assertEquals(
+            ConnectLink(
+                site = SITE,
+                invitation = Invitation(
+                    groupId = "Kx9aQ2",
+                    code = "7FK3M9QA",
+                    inviter = "Анна Петрова",
+                    groupName = "Походы & горы",
+                    invitedAddress = "ivan…@example.com",
+                ),
+            ),
+            ConnectLink.parse(link),
+        )
+    }
+
+    // The full address is for the rules alone (ADR-0018).
+    @Test
+    fun `an invitation link carries the address only shortened`() {
+        val link = ConnectLink.invitationLink(
+            SITE,
+            "g",
+            "7FK3M9QA",
+            null,
+            null,
+            "ivan.petrov@example.com",
+        )
+
+        assertEquals(false, link.contains("petrov"))
+    }
+
+    @Test
+    fun `captions that are missing are left out of the link`() {
+        assertEquals(
+            "https://$SITE.web.app/join#g=g&c=7FK3M9QA&to=ivan%E2%80%A6%40example.com",
+            ConnectLink.invitationLink(SITE, "g", "7FK3M9QA", null, " ", "ivan.petrov@example.com"),
+        )
+    }
+
+    @Test
+    fun `a short name keeps only its first character`() {
+        assertEquals("i…@example.com", ConnectLink.shortenedAddress("ivan@example.com"))
+        assertEquals("ivan…@example.com", ConnectLink.shortenedAddress("ivan.petrov@example.com"))
+    }
 }

@@ -274,6 +274,7 @@ export const EN = {
     groupNone: 'You are not in a group yet. Make one and hand out an invitation, '
         + 'or paste in the invitation somebody sent you.',
     groupFound: 'Make a group',
+    groupNameLabel: 'Group name',
     groupInvitation: 'Invitation',
     groupJoin: 'Join',
     groupMakeInvitation: 'Invite a new member to the group',
@@ -329,6 +330,9 @@ export const EN = {
     sirenNoAnswer: (phone) => `${phone} did not answer the siren`,
     sirenStopped: (phone) => `siren on ${phone} stopped`,
     groupUnrun: 'Nobody runs this group, so its members are set from the Firebase console.',
+    // Shown until a group is given a name of its own (ADR-0016).
+    groupUnnamed: (name) => `${name}'s group`,
+    groupRename: 'Rename',
 
     // The panel the member running the group opens: the household seen whole,
     // and the two acts that are running it — handing out an invitation and

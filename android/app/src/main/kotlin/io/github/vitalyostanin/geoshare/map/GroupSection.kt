@@ -48,7 +48,7 @@ fun GroupSection(
     profiles: Map<String, MemberProfile>,
     /** Whether the last write to the group was refused. */
     trouble: Boolean,
-    onFoundGroup: () -> Unit,
+    onFoundGroup: (String?) -> Unit,
     onJoinGroup: (Invitation) -> Unit,
     onOpenAdmin: () -> Unit,
     /** The way to this member's own phones, to ring one of them. */
@@ -100,8 +100,9 @@ fun GroupSection(
  * which is the answer to the question the screen could not ask.
  */
 @Composable
-private fun WayIn(onFoundGroup: () -> Unit, onJoinGroup: (Invitation) -> Unit) {
+private fun WayIn(onFoundGroup: (String?) -> Unit, onJoinGroup: (Invitation) -> Unit) {
     var typed by remember { mutableStateOf("") }
+    var groupName by remember { mutableStateOf("") }
     val invitation = invitationFrom(typed)
 
     Text(
@@ -110,11 +111,21 @@ private fun WayIn(onFoundGroup: () -> Unit, onJoinGroup: (Invitation) -> Unit) {
         modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
     )
 
+    // Optional: a group founded with the field left empty gets no name of its
+    // own and is shown by its founder's instead (ADR-0016).
+    OutlinedTextField(
+        value = groupName,
+        onValueChange = { groupName = it.take(GROUP_NAME_LIMIT) },
+        label = { Text(text = stringResource(R.string.group_name_label)) },
+        singleLine = true,
+        modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 4.dp),
+    )
+
     Row(
         modifier = Modifier.fillMaxWidth().padding(horizontal = 8.dp),
         horizontalArrangement = Arrangement.Start,
     ) {
-        TextButton(onClick = onFoundGroup) {
+        TextButton(onClick = { onFoundGroup(groupNameText(groupName)) }) {
             Text(text = stringResource(R.string.group_found))
         }
     }

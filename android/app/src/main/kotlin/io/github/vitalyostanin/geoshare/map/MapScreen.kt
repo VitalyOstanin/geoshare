@@ -676,6 +676,7 @@ fun MapScreen(
             onMakeInvitation = actions.onMakeInvitation,
             onRemoveMember = actions.onRemoveMember,
             onSetRunning = actions.onSetRunning,
+            onRenameGroup = actions.onRenameGroup,
             onSearch = actions.onSearch,
             onEndSearch = actions.onEndSearch,
             ownPhoneId = ownPhoneId,

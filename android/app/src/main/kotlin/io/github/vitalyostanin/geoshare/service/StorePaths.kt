@@ -147,6 +147,9 @@ object GroupField {
 
     /** Who owns the group, where it is not named after them. */
     const val OWNER = "owner"
+
+    /** What people call the group (ADR-0016); absent until it is given one. */
+    const val NAME = "name"
 }
 
 /** The fields of an invitation. */

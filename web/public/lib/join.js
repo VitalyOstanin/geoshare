@@ -69,6 +69,50 @@ export function parseInvitation(hash) {
     };
 }
 
+/** How much of an address's name shortenedAddress keeps. */
+const SHORTENED_NAME_LENGTH = 4;
+
+/**
+ * An address as the page and the screens show it (ADR-0018): enough of the
+ * name to tell one's own accounts apart, and the domain whole.
+ * `ivan.petrov@example.com` becomes `ivan…@example.com`; a name of four
+ * characters or fewer keeps only its first, so the rest is never shown in
+ * full. The same as the application's ConnectLink.shortenedAddress.
+ */
+export function shortenedAddress(email) {
+    const at = email.lastIndexOf('@');
+
+    if (at <= 0) {
+        return `${email.slice(0, 1)}…`;
+    }
+
+    const name = email.slice(0, at);
+    const kept = name.length > SHORTENED_NAME_LENGTH ? SHORTENED_NAME_LENGTH : 1;
+
+    return `${name.slice(0, kept)}…${email.slice(at)}`;
+}
+
+/**
+ * The link an administrator sends (ADR-0017, ADR-0019): the site's `/join`
+ * with the group, the code and the captions after the `#`, which never
+ * reaches the server. The address goes in only shortened; the full one is
+ * known to the rules alone (ADR-0018). A missing caption is left out rather
+ * than written empty. Written the way the application writes it, so a link
+ * reads the same whichever of the two made it.
+ */
+export function invitationLink({ site, groupId, code, by, name, email }) {
+    const fields = [
+        ['g', groupId],
+        ['c', code],
+        ['by', by === null || by === undefined ? '' : capCaption(by)],
+        ['n', name === null || name === undefined ? '' : capCaption(name)],
+        ['to', shortenedAddress(email)],
+    ].filter(([, value]) => value !== '');
+
+    return `https://${site}.web.app/join#` +
+        fields.map(([key, value]) => `${key}=${encodeURIComponent(value)}`).join('&');
+}
+
 /**
  * What the page says about the link: a title, and a second line naming the
  * invited address where the link carries one.

@@ -658,6 +658,9 @@ function rosterOf(snapshot) {
         // Whoever the document names as its owner, or else the account the
         // group is named after: the rules read the founder the same way.
         founder: typeof data.owner === 'string' ? data.owner : snapshot.id,
+        // What the group is called, or null where nobody has named it yet
+        // (see `lib/group-name.js`, ADR-0016).
+        name: typeof data.name === 'string' ? data.name : null,
     };
 }
 
@@ -668,16 +671,22 @@ function idsOf(field) {
 /**
  * Makes a group with the founder alone in it, and stays in it.
  *
- * There is no name to choose: a group is named after the account that made it,
- * which is what keeps one account from making them without end. The browser is
- * moved into the new group only once the write has been allowed — a viewer
- * whose founding was refused would otherwise be left looking at a group that
- * does not exist.
+ * The document is named after the account that made it regardless of `name`:
+ * that is what keeps one account from making groups without end. `name` is
+ * only the group's own name, optional and chosen once here or given later by
+ * an administrator (ADR-0016) — left out of the write entirely rather than
+ * sent empty, since the rules refuse a name that is nothing but spaces. The
+ * browser is moved into the new group only once the write has been allowed —
+ * a viewer whose founding was refused would otherwise be left looking at a
+ * group that does not exist.
  */
-export async function foundGroup(memberId) {
+export async function foundGroup(memberId, name = '') {
+    const trimmed = name.trim();
+
     await setDoc(doc(store, 'groups', memberId), {
         members: [memberId],
         admins: [memberId],
+        ...(trimmed === '' ? {} : { name: trimmed }),
     });
 
     rememberGroup(memberId);
@@ -751,6 +760,18 @@ export function setRunning(memberId, runs) {
     return updateDoc(doc(store, 'groups', currentGroup()), {
         admins: runs ? arrayUnion(memberId) : arrayRemove(memberId),
     });
+}
+
+/**
+ * Gives the group a name, or another one.
+ *
+ * The name alone, as the rules require of this write (`renaming()`): the
+ * roster is an administrator's to change too, but by a different write, and
+ * one that touches both at once would be refused for reaching past what
+ * either rule allows on its own.
+ */
+export function renameGroup(name) {
+    return updateDoc(doc(store, 'groups', currentGroup()), { name: name.trim() });
 }
 
 export function watchProfiles(onProfiles, onError) {

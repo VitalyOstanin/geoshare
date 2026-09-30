@@ -10,20 +10,41 @@ private const val TAG = "geoshare.project"
 
 private const val FIELD_GROUP_ID = "groupId"
 private const val FIELD_CODE = "code"
+private const val FIELD_TO = "to"
 
 /**
  * An [Invitation]'s group and code, kept across the restart
  * [ConnectState.Done] leads to (ADR-0001), so the sign-in that follows it can
- * spend it the way a group invitation is spent everywhere else. The captions
- * ([Invitation.inviter], [Invitation.groupName], [Invitation.invitedAddress])
- * were shown once already, on the confirmation screen that has already been
- * accepted by the time this is written, and are not needed again.
+ * spend it the way a group invitation is spent everywhere else.
+ * [invitedAddress] is the shortened address the link names, kept so that an
+ * account which is plainly not the one invited is told so before anything is
+ * written (ADR-0019); the other captions were shown once already and are not
+ * needed again.
  */
-data class PendingInvitation(val groupId: String, val code: String) {
+data class PendingInvitation(
+    val groupId: String,
+    val code: String,
+    val invitedAddress: String? = null,
+) {
     fun toJson(): String = JSONObject()
         .put(FIELD_GROUP_ID, groupId)
         .put(FIELD_CODE, code)
+        .apply { invitedAddress?.let { put(FIELD_TO, it) } }
         .toString()
+
+    /**
+     * Whether [signedInEmail] is plainly not the account this was made out
+     * to: its shortened form differs from the one the link carried. Only a
+     * caption is compared — an account that passes here is still weighed by
+     * the rules against the full address. Nothing to compare either way
+     * means no verdict, and the rules answer alone.
+     */
+    fun meantForAnotherAccount(signedInEmail: String?): Boolean {
+        val invited = invitedAddress ?: return false
+        val email = signedInEmail ?: return false
+
+        return !ConnectLink.shortenedAddress(email).equals(invited, ignoreCase = true)
+    }
 
     companion object {
         fun parse(json: String): PendingInvitation? {
@@ -35,11 +56,12 @@ data class PendingInvitation(val groupId: String, val code: String) {
 
             val groupId = document.optString(FIELD_GROUP_ID)
             val code = document.optString(FIELD_CODE)
+            val invitedAddress = document.optString(FIELD_TO).ifBlank { null }
 
             return if (groupId.isBlank() || code.isBlank()) {
                 null
             } else {
-                PendingInvitation(groupId, code)
+                PendingInvitation(groupId, code, invitedAddress)
             }
         }
     }
@@ -48,12 +70,12 @@ data class PendingInvitation(val groupId: String, val code: String) {
 /**
  * The [PendingInvitation] [ConnectState.Done] leaves for the restart to
  * spend, or none for an owner's own link — [Invitation.groupId] and
- * [Invitation.code] are the only two fields a join needs, and the captions
- * have nothing left to say once the confirmation screen that showed them is
- * gone.
+ * [Invitation.code] are what a join needs, and [Invitation.invitedAddress]
+ * what tells a wrong account apart before joining; the other captions have
+ * nothing left to say once the confirmation screen that showed them is gone.
  */
 fun pendingInvitationFor(done: ConnectState.Done): PendingInvitation? =
-    done.invitation?.let { PendingInvitation(it.groupId, it.code) }
+    done.invitation?.let { PendingInvitation(it.groupId, it.code, it.invitedAddress) }
 
 /**
  * Where a [PendingInvitation] waits between [ConnectState.Done] writing it

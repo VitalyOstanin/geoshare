@@ -1,9 +1,13 @@
 package io.github.vitalyostanin.geoshare.project
 
 import java.net.URLDecoder
+import java.net.URLEncoder
 
 /** How long a caption taken off an invitation link is kept. */
 private const val CAPTION_MAX_LENGTH = 60
+
+/** How much of an address's name [ConnectLink.shortenedAddress] keeps. */
+private const val SHORTENED_NAME_LENGTH = 4
 
 /**
  * The site and the `/join` path of a connection link. Firebase Hosting
@@ -75,6 +79,60 @@ data class ConnectLink(val site: String, val invitation: Invitation?) {
 
             return ConnectLink(site, invitation)
         }
+
+        /**
+         * The link an administrator sends (ADR-0017, ADR-0019): the site's
+         * `/join` with the group, the code and the captions after the `#`,
+         * which never reaches the server. [email] goes in only as
+         * [shortenedAddress]; the full one is known to the rules alone
+         * (ADR-0018). A missing caption is left out rather than written
+         * empty, and a long one is cut to what [parse] would keep.
+         */
+        fun invitationLink(
+            site: String,
+            groupId: String,
+            code: String,
+            inviter: String?,
+            groupName: String?,
+            email: String,
+        ): String {
+            val fields = listOf(
+                "g" to groupId,
+                "c" to code,
+                "by" to inviter?.trim()?.take(CAPTION_MAX_LENGTH),
+                "n" to groupName?.trim()?.take(CAPTION_MAX_LENGTH),
+                "to" to shortenedAddress(email),
+            ).filter { (_, value) -> !value.isNullOrEmpty() }
+
+            return "https://$site.web.app/join#" +
+                fields.joinToString("&") { (key, value) -> "$key=${encode(value!!)}" }
+        }
+
+        /**
+         * An address as the page and the screens show it (ADR-0018): enough
+         * of the name to tell one's own accounts apart, and the domain whole.
+         * `ivan.petrov@example.com` becomes `ivan…@example.com`; a name of four
+         * characters or fewer keeps only its first, so the rest is never
+         * shown in full.
+         */
+        fun shortenedAddress(email: String): String {
+            val at = email.lastIndexOf('@')
+
+            if (at <= 0) {
+                return email.take(1) + "…"
+            }
+
+            val name = email.substring(0, at)
+            val kept = if (name.length > SHORTENED_NAME_LENGTH) SHORTENED_NAME_LENGTH else 1
+
+            return name.take(kept) + "…" + email.substring(at)
+        }
+
+        // URLEncoder writes a space as '+', which a fragment read back
+        // through URLDecoder would also accept; %20 is what the page's
+        // encodeURIComponent writes, so both sides make the same link.
+        private fun encode(value: String): String =
+            URLEncoder.encode(value, "UTF-8").replace("+", "%20")
 
         private fun fieldsOf(fragment: String): Map<String, String> =
             fragment.split("&").mapNotNull { pair ->

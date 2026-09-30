@@ -71,10 +71,13 @@ import io.github.vitalyostanin.geoshare.permission.nextPermissionStep
 import io.github.vitalyostanin.geoshare.permission.permissionOf
 import io.github.vitalyostanin.geoshare.permission.startupScreen
 import io.github.vitalyostanin.geoshare.project.ConnectFlow
+import io.github.vitalyostanin.geoshare.project.ConnectLink
 import io.github.vitalyostanin.geoshare.project.ConnectScreen
 import io.github.vitalyostanin.geoshare.project.ConnectState
 import io.github.vitalyostanin.geoshare.project.FamilyProject
+import io.github.vitalyostanin.geoshare.project.PendingInvitation
 import io.github.vitalyostanin.geoshare.project.PendingInvitationStore
+import io.github.vitalyostanin.geoshare.project.WrongAccountDialog
 import io.github.vitalyostanin.geoshare.project.fetchSettings
 import io.github.vitalyostanin.geoshare.project.pendingInvitationFor
 import io.github.vitalyostanin.geoshare.service.AidingDoubtSetting
@@ -104,6 +107,7 @@ import io.github.vitalyostanin.geoshare.service.phoneSiren
 import io.github.vitalyostanin.geoshare.service.positionId
 import io.github.vitalyostanin.geoshare.service.refusalToStart
 import io.github.vitalyostanin.geoshare.service.removeFromGroup
+import io.github.vitalyostanin.geoshare.service.renameGroup
 import io.github.vitalyostanin.geoshare.service.renewSearch
 import io.github.vitalyostanin.geoshare.service.setRunning
 import io.github.vitalyostanin.geoshare.service.startConditions
@@ -359,9 +363,22 @@ class MainActivity : AppCompatActivity() {
                             // Only the restart ConnectState.Done led to ever
                             // leaves one of these behind; an ordinary sign-in
                             // finds nothing and this does nothing.
+                            var wrongAccount by remember {
+                                mutableStateOf<PendingInvitation?>(null)
+                            }
+
                             LaunchedEffect(current.memberId) {
                                 val pending = PendingInvitationStore.read(this@MainActivity)
                                     ?: return@LaunchedEffect
+
+                                // Plainly another account: said before any
+                                // write, and the invitation is kept for the
+                                // right one (ADR-0019).
+                                if (pending.meantForAnotherAccount(current.email)) {
+                                    wrongAccount = pending
+
+                                    return@LaunchedEffect
+                                }
 
                                 groupTrouble =
                                     !withGroup("joined a group from a pending invitation") {
@@ -371,6 +388,22 @@ class MainActivity : AppCompatActivity() {
                                             pending,
                                         )
                                     }
+                            }
+
+                            wrongAccount?.let { pending ->
+                                WrongAccountDialog(
+                                    invitedAddress = pending.invitedAddress.orEmpty(),
+                                    signedInAddress =
+                                    ConnectLink.shortenedAddress(current.email.orEmpty()),
+                                    onLater = {
+                                        PendingInvitationStore.clear(this@MainActivity)
+                                        wrongAccount = null
+                                    },
+                                    onSwitchAccount = {
+                                        wrongAccount = null
+                                        signIn.signOut()
+                                    },
+                                )
                             }
 
                             // A service left without a session stops after a
@@ -519,13 +552,14 @@ class MainActivity : AppCompatActivity() {
                                         // group cannot read the roster, so it
                                         // cannot tell an empty household from one
                                         // it is not in.
-                                        onFoundGroup = {
+                                        onFoundGroup = { name ->
                                             lifecycleScope.launch {
                                                 groupTrouble =
                                                     !withGroup("found a group") {
                                                         foundGroup(
                                                             this@MainActivity,
                                                             current.memberId,
+                                                            name,
                                                         )
                                                     }
                                             }
@@ -567,6 +601,15 @@ class MainActivity : AppCompatActivity() {
                                                     !withGroup("changed who runs the group") {
                                                         setRunning(memberId, runs)
                                                     }
+                                            }
+                                        },
+                                        // Called from the dialog's own
+                                        // coroutine, as onSearch and
+                                        // onCallSiren are: it has to stay
+                                        // open on a refusal and say so.
+                                        onRenameGroup = { name ->
+                                            writeOutcome("the group could not be renamed") {
+                                                renameGroup(name)
                                             }
                                         },
                                         onSignOut = {
