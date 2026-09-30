@@ -431,4 +431,8 @@
     <string name="help_follow_one">The map keeps the chosen member in the middle</string>
     <string name="help_follow_all">Everybody in view</string>
     <string name="help_sources">Position sources: which positions the device counts — satellites, Wi-Fi, towers</string>
+
+    <!-- Shown in place of the map before this phone has been connected to a
+         family's project, until the screen that takes a connection link exists. -->
+    <string name="not_connected_placeholder">Not connected to a family project yet. Open the connection link from the organiser.</string>
 </resources>

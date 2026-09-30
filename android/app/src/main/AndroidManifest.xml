@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
-<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
 
     <uses-permission android:name="android.permission.INTERNET" />
     <!-- The map library asks whether there is a connection before it goes
@@ -60,6 +61,15 @@
         android:supportsRtl="true"
         android:localeConfig="@xml/locale_config"
         android:theme="@style/Theme.Geoshare">
+
+        <!-- Started by the Firebase libraries themselves at process start,
+             before anything of ours has run, and off a google-services.json
+             this build no longer carries: one build serves every family, so
+             it is FamilyProject.start rather than this that decides which
+             project's credentials Firebase begins with. -->
+        <provider
+            android:name="com.google.firebase.provider.FirebaseInitProvider"
+            tools:node="remove" />
 
         <!-- Where the language a member picks inside the application is kept on
              a phone that has nowhere of its own to keep it: per-application

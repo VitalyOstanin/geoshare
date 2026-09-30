@@ -73,6 +73,7 @@ import io.github.vitalyostanin.geoshare.collection.word
 import io.github.vitalyostanin.geoshare.log.AppLog
 import io.github.vitalyostanin.geoshare.log.SkyLog
 import io.github.vitalyostanin.geoshare.map.stands
+import io.github.vitalyostanin.geoshare.project.FamilyProject
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.coroutineScope
@@ -172,6 +173,16 @@ private data class Written(
  * platform stops handing out locations to anything else for long.
  */
 class SharingService : LifecycleService() {
+    /**
+     * Whether [onCreate] actually wired anything up.
+     *
+     * Read before every later touch of Firebase, rather than [FamilyProject]
+     * itself: what matters here is not whether a project has since been
+     * connected, but whether this instance is the one that registered the
+     * listener [onDestroy] is about to remove.
+     */
+    private var usable = false
+
     private var collection: Job? = null
 
     /**
@@ -478,6 +489,20 @@ class SharingService : LifecycleService() {
 
     override fun onCreate() {
         super.onCreate()
+
+        // The platform can restart a foreground service on its own after a
+        // process death, past every gate `startConditions` puts in front of
+        // `start`. Without this a phone that has never been connected to a
+        // family's project would reach FirebaseAuth.getInstance() with no
+        // default app behind it and throw rather than answer.
+        if (!FamilyProject.connected) {
+            AppLog.w(TAG, "not connected to a family's project yet; nothing to collect for")
+            stopSelf()
+
+            return
+        }
+
+        usable = true
         FirebaseAuth.getInstance().addAuthStateListener(session)
         radio.start()
 
@@ -499,6 +524,12 @@ class SharingService : LifecycleService() {
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         super.onStartCommand(intent, flags, startId)
+
+        // [onCreate] already stopped this instance; nothing below may run
+        // without the setup it skipped.
+        if (!usable) {
+            return START_NOT_STICKY
+        }
 
         if (intent?.action == ACTION_STOP) {
             AppLog.i(TAG, "stopping on request")
@@ -571,9 +602,12 @@ class SharingService : LifecycleService() {
     }
 
     override fun onDestroy() {
-        FirebaseAuth.getInstance().removeAuthStateListener(session)
-        radio.stop()
-        stopCollecting()
+        if (usable) {
+            FirebaseAuth.getInstance().removeAuthStateListener(session)
+            radio.stop()
+            stopCollecting()
+        }
+
         AppLog.i(TAG, "stopped")
         super.onDestroy()
     }

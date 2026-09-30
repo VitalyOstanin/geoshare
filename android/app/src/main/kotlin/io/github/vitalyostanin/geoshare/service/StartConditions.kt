@@ -2,6 +2,8 @@ package io.github.vitalyostanin.geoshare.service
 
 /** Everything the decision to run the service depends on, gathered by the caller. */
 data class StartConditions(
+    /** Whether this phone has a family's project to sign in and write into at all. */
+    val connected: Boolean,
     val signedIn: Boolean,
     /** Whether the member asked for their position to be shared at all. */
     val enabled: Boolean,
@@ -16,6 +18,9 @@ data class StartConditions(
 
 /** Why the service is not being started. */
 enum class StartRefusal {
+    /** No family's project has been connected yet; there is nothing to sign in to. */
+    NotConnected,
+
     NotSignedIn,
 
     /** The member turned sharing off. */
@@ -33,6 +38,8 @@ enum class StartRefusal {
 
 /** The refusal that applies, or null when the service may run. */
 fun refusalToStart(conditions: StartConditions): StartRefusal? = when {
+    !conditions.connected -> StartRefusal.NotConnected
+
     !conditions.signedIn -> StartRefusal.NotSignedIn
 
     !conditions.enabled -> StartRefusal.TurnedOff

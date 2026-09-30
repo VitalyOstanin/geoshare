@@ -7,27 +7,15 @@
 // Written against the emulators' own REST interfaces rather than against a
 // library: no credentials exist here, an owner token is whatever the emulator
 // is told, and the alternative is an npm install for four requests.
-import { readFileSync } from 'node:fs';
-
 const AUTH = process.env.AUTH_EMULATOR_HOST ?? '127.0.0.1:9099';
 const FIRESTORE = process.env.FIRESTORE_EMULATOR_HOST ?? '127.0.0.1:8080';
-const PROJECT = process.env.GEOSHARE_PROJECT ?? projectOfTheApplication();
+// Pointing the Firebase library at an emulator changes the host it calls, not
+// the project it calls about, so the debug build carries this same id as its
+// stand-in settings (see StandInServices.kt) rather than one read out of a
+// file: seeding any other name fills a database nothing reads, and the
+// screens come up empty with the rules refusing every read.
+const PROJECT = process.env.GEOSHARE_PROJECT ?? 'demo-geoshare';
 const GROUP = process.env.GEOSHARE_GROUP ?? 'family';
-
-/**
- * The project the phone's database lives under.
- *
- * Pointing the Firebase library at an emulator changes the host it calls, not
- * the project it calls about: the phone keeps asking about the project named
- * in google-services.json, and the emulator keeps a separate database per
- * project. Seeding any other name fills a database nothing reads, and the
- * screens come up empty with the rules refusing every read.
- */
-function projectOfTheApplication() {
-    const services = new URL('../../android/app/google-services.json', import.meta.url);
-
-    return JSON.parse(readFileSync(services, 'utf8')).project_info.project_id;
-}
 
 // The same password for all of them: the sign-in screen of a build pointed at
 // the emulator offers the accounts as buttons, and nobody types this.

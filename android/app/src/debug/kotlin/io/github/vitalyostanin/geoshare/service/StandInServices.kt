@@ -1,9 +1,12 @@
 package io.github.vitalyostanin.geoshare.service
 
+import android.content.Context
 import android.os.Build
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
 import io.github.vitalyostanin.geoshare.log.AppLog
+import io.github.vitalyostanin.geoshare.project.FamilyProject
+import io.github.vitalyostanin.geoshare.project.ProjectSettings
 
 private const val TAG = "geoshare.standin"
 
@@ -14,6 +17,23 @@ private const val AUTH_PORT = 9099
 
 /** What qemu calls the boards it emulates; no phone answers either name. */
 private val EMULATED_BOARDS = setOf("goldfish", "ranchu")
+
+/**
+ * What this build points a fresh emulator at, since there is no site to
+ * download settings from here.
+ *
+ * A project id beginning with "demo-" is what `tools/run-services.sh` starts
+ * the emulators under, and the Local Emulator Suite asks nothing real of a
+ * project named that way — which is what lets the rest of these stand in for
+ * credentials without being any.
+ */
+private val DEMO_SETTINGS = ProjectSettings(
+    version = 1,
+    projectId = "demo-geoshare",
+    applicationId = "1:0:android:0",
+    apiKey = "demo-geoshare",
+    gcmSenderId = "0",
+)
 
 /**
  * The stand-in database and sign-in an emulator talks to instead of the real
@@ -40,10 +60,19 @@ object StandInServices {
      * Points Firebase at the emulators when this is one. Called before
      * anything touches the database: the library refuses to be redirected
      * once it has been used.
+     *
+     * An emulator that has never been connected to a family's project has
+     * nothing [FamilyProject] could have started Firebase with by this point,
+     * so it is given the demo settings first — otherwise there would be no
+     * default app for [FirebaseFirestore.getInstance] below to find.
      */
-    fun apply() {
+    fun apply(context: Context) {
         if (Build.HARDWARE !in EMULATED_BOARDS) {
             return
+        }
+
+        if (!FamilyProject.connected) {
+            FamilyProject.save(context, DEMO_SETTINGS)
         }
 
         AppLog.i(TAG, "talking to the stand-in services at $HOST")

@@ -114,4 +114,7 @@ dependencies {
     implementation(libs.coil.network.okhttp)
 
     testImplementation(libs.junit)
+    // Overrides the Android stub org.json.* on the unit test classpath, which
+    // answers every call with a default rather than parsing anything.
+    testImplementation(libs.org.json)
 }

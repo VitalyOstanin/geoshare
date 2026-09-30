@@ -1,5 +1,7 @@
 package io.github.vitalyostanin.geoshare.service
 
+import android.content.Context
+
 /**
  * The stand-in services, as a release build knows them: not at all.
  *
@@ -9,7 +11,7 @@ package io.github.vitalyostanin.geoshare.service
  * which offer the stand-in accounts have something to ask and get nothing.
  */
 object StandInServices {
-    fun apply() = Unit
+    fun apply(context: Context) = Unit
 
     /** Never, in a build that has no stand-ins to be pointed at. */
     val inUse: Boolean = false

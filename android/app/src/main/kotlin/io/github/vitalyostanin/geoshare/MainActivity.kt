@@ -14,8 +14,10 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.app.AppCompatDelegate
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
 import androidx.compose.material3.darkColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.CompositionLocalProvider
@@ -26,6 +28,8 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.toArgb
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.unit.dp
 import androidx.core.os.LocaleListCompat
 import androidx.core.view.WindowCompat
 import androidx.credentials.CredentialManager
@@ -69,6 +73,7 @@ import io.github.vitalyostanin.geoshare.permission.movementPermissionWanted
 import io.github.vitalyostanin.geoshare.permission.nextPermissionStep
 import io.github.vitalyostanin.geoshare.permission.permissionOf
 import io.github.vitalyostanin.geoshare.permission.startupScreen
+import io.github.vitalyostanin.geoshare.project.FamilyProject
 import io.github.vitalyostanin.geoshare.service.AidingDoubtSetting
 import io.github.vitalyostanin.geoshare.service.BackgroundWorkSetting
 import io.github.vitalyostanin.geoshare.service.DeviceIdentity
@@ -176,6 +181,26 @@ class MainActivity : AppCompatActivity() {
         // says. Saying it here is what makes the padding below a decision
         // instead of a repair.
         enableEdgeToEdge()
+
+        // Nothing below may touch Firebase without a family's project behind
+        // it: SignInController alone would reach for FirebaseAuth.getInstance
+        // as a default argument, and it would throw rather than answer.
+        // A placeholder until the screen that takes a connection link exists:
+        // until then there is nothing else this activity can build.
+        if (!FamilyProject.connected) {
+            setContent {
+                MaterialTheme {
+                    Surface(modifier = Modifier.fillMaxSize()) {
+                        Text(
+                            text = stringResource(R.string.not_connected_placeholder),
+                            modifier = Modifier.padding(24.dp),
+                        )
+                    }
+                }
+            }
+
+            return
+        }
 
         // Asked once: the answer is the set of applications installed by the
         // maker of the phone, which does not change while the screen is open,
@@ -793,6 +818,12 @@ class MainActivity : AppCompatActivity() {
     // application reads it yet, and the service will keep its own watch.
     override fun onStart() {
         super.onStart()
+
+        // onCreate left signIn unset when there was no project to sign in to.
+        if (!FamilyProject.connected) {
+            return
+        }
+
         signIn.start()
         // Coming back from the settings screen is the usual way a permission
         // changes, and nothing tells the application about it.
@@ -802,7 +833,10 @@ class MainActivity : AppCompatActivity() {
     }
 
     override fun onStop() {
-        signIn.stop()
+        if (FamilyProject.connected) {
+            signIn.stop()
+        }
+
         super.onStop()
     }
 

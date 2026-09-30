@@ -6,12 +6,14 @@ import org.junit.Test
 
 class StartConditionsTest {
     private fun conditions(
+        connected: Boolean = true,
         signedIn: Boolean = true,
         enabled: Boolean = true,
         locationGranted: Boolean = true,
         backgroundLocationGranted: Boolean = true,
         fromBackground: Boolean = false,
     ) = StartConditions(
+        connected = connected,
         signedIn = signedIn,
         enabled = enabled,
         locationGranted = locationGranted,
@@ -22,6 +24,11 @@ class StartConditionsTest {
     @Test
     fun `everything in place means the service may run`() {
         assertNull(refusalToStart(conditions()))
+    }
+
+    @Test
+    fun `without a family's project there is nowhere to sign in to`() {
+        assertEquals(StartRefusal.NotConnected, refusalToStart(conditions(connected = false)))
     }
 
     @Test
@@ -57,6 +64,14 @@ class StartConditionsTest {
     fun `a start from a screen does not need the background permission`() {
         assertNull(
             refusalToStart(conditions(backgroundLocationGranted = false, fromBackground = false)),
+        )
+    }
+
+    @Test
+    fun `a missing project is reported before a missing session`() {
+        assertEquals(
+            StartRefusal.NotConnected,
+            refusalToStart(conditions(connected = false, signedIn = false)),
         )
     }
 

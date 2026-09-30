@@ -33,6 +33,11 @@ maplibre = "13.6.1"
 # entry point and the network layer it fetches through.
 coil = "3.6.2"
 junit = "4.13.2"
+# The real implementation of the classes org.json.* names, in place of the
+# Android stub jar the unit test classpath otherwise resolves them to: that
+# one is built with `unitTests.isReturnDefaultValues`, under which every
+# method simply answers 0, "" or null rather than parsing anything.
+orgJson = "20260814"
 googleServices = "4.5.0"
 ktlintPlugin = "14.2.0"
 # The ktlint the plugin runs, rather than whichever one it defaults to: the
@@ -71,6 +76,7 @@ kotlinx-coroutines-android = { module = "org.jetbrains.kotlinx:kotlinx-coroutine
 # Awaits a Play Services Task from a coroutine; Firebase returns those.
 kotlinx-coroutines-play-services = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-play-services", version.ref = "coroutines" }
 junit = { module = "junit:junit", version.ref = "junit" }
+org-json = { module = "org.json:json", version.ref = "orgJson" }
 
 [plugins]
 # Kotlin support is built into AGP from 9.0 onwards, so there is no

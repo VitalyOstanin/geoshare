@@ -12,9 +12,10 @@
 # it.
 #
 # The database inside them is keyed by the project the phone asks about, which
-# is the one named in google-services.json rather than the one the emulators
-# were started under: redirecting the library changes the host it calls, not
-# the project. That is the name the seed writes under.
+# is demo-geoshare on both sides: redirecting the library to the emulators
+# changes the host it calls, not the project, so the debug build's stand-in
+# settings and this project id have to name the same thing, and the seed
+# writes under it too.
 #
 #   tools/run-services.sh            # start, wait, then fill with stand-in data
 #   tools/run-services.sh --stop     # stop them
