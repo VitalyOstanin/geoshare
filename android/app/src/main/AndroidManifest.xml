@@ -86,13 +86,40 @@
                 android:value="true" />
         </service>
 
+        <!-- singleTask rather than the default: a connection link opened
+             while this activity is already running, in the foreground or
+             not, has to reach the one instance through onNewIntent instead
+             of stacking a second one behind it — two would leave two
+             ConnectFlow objects disagreeing about what is in hand. -->
         <activity
             android:name=".MainActivity"
             android:exported="true"
+            android:launchMode="singleTask"
             android:label="@string/app_name">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+            <!-- The join page's own tab hands the link to this activity
+                 (ADR-0001, ADR-0018). Not autoVerify: Android only verifies
+                 an App Link for a site whose well-known file names this
+                 application's package, and a *.web.app or *.firebaseapp.com
+                 site belongs to Google, not to a group or this repository,
+                 to put one on — the phone falls back to the disambiguation
+                 sheet instead. The scheme, hosts and paths below are
+                 separate <data> tags on purpose: every scheme × host × path
+                 combination across them is accepted, so this covers both
+                 hosts and the trailing slash without repeating the pair
+                 four times. -->
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data android:scheme="https" />
+                <data android:host="*.web.app" />
+                <data android:host="*.firebaseapp.com" />
+                <data android:path="/join" />
+                <data android:path="/join/" />
             </intent-filter>
         </activity>
 

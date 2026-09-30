@@ -27,6 +27,14 @@ object FamilyProject {
         get() = current != null
 
     /**
+     * The project this phone talks to, or null before any [start] or
+     * [save]. Read by `ConnectFlow` to tell a link back to it apart from
+     * one naming a different project.
+     */
+    val projectId: String?
+        get() = current?.projectId
+
+    /**
      * Reads back the settings saved on a previous run, and starts Firebase
      * with them when there are any.
      *

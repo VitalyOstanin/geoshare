@@ -72,7 +72,9 @@ import io.github.vitalyostanin.geoshare.permission.movementPermissionWanted
 import io.github.vitalyostanin.geoshare.permission.nextPermissionStep
 import io.github.vitalyostanin.geoshare.permission.permissionOf
 import io.github.vitalyostanin.geoshare.permission.startupScreen
+import io.github.vitalyostanin.geoshare.project.ConnectFlow
 import io.github.vitalyostanin.geoshare.project.FamilyProject
+import io.github.vitalyostanin.geoshare.project.fetchSettings
 import io.github.vitalyostanin.geoshare.service.AidingDoubtSetting
 import io.github.vitalyostanin.geoshare.service.BackgroundWorkSetting
 import io.github.vitalyostanin.geoshare.service.DeviceIdentity
@@ -116,6 +118,14 @@ import java.time.Instant
 class MainActivity : AppCompatActivity() {
     private lateinit var signIn: SignInController
     private lateinit var sharing: SharingSetting
+
+    /**
+     * What a connection link is doing, whether or not this phone already
+     * has a project — a link can arrive either way. Created before the
+     * placeholder below is decided, since it is what would move this phone
+     * past it; the screens that paint its states are a later change.
+     */
+    private lateinit var connectFlow: ConnectFlow
 
     /** What the member asked the application to be painted in. */
     private lateinit var appearance: ThemeSetting
@@ -180,6 +190,21 @@ class MainActivity : AppCompatActivity() {
         // says. Saying it here is what makes the padding below a decision
         // instead of a repair.
         enableEdgeToEdge()
+
+        // Independent of the project check below: a link is worth acting on
+        // whether or not this phone already has one, and singleTask means
+        // this is the only place onCreate ever sees one — a later arrival
+        // comes through onNewIntent instead.
+        connectFlow = ConnectFlow(
+            scope = lifecycleScope,
+            fetch = ::fetchSettings,
+            connectedProjectId = { FamilyProject.projectId },
+        )
+        // A recreated activity (a rotation) still carries the link it was
+        // opened with, which has already been acted on.
+        if (savedInstanceState == null) {
+            connectFlow.linkArrived(intent.dataString)
+        }
 
         // Nothing below may touch Firebase without a family's project behind
         // it: SignInController alone would reach for FirebaseAuth.getInstance
@@ -805,6 +830,15 @@ class MainActivity : AppCompatActivity() {
                 Uri.fromParts("package", packageName, null),
             ),
         )
+    }
+
+    // singleTask (AndroidManifest.xml) routes a second connection link here
+    // instead of into a second instance of this activity, whether the first
+    // one is in the foreground or was merely still on the back stack.
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        setIntent(intent)
+        connectFlow.linkArrived(intent.dataString)
     }
 
     // The session is watched only while the screen is up: nothing else in the
