@@ -63,8 +63,14 @@ and signs in with Google. Members are invited later from the application.
 3. Check that the project is ready:
 
    ```sh
-   tools/new-project.sh configs <project-id> [--json]
+   tools/new-project.sh configs <project-id> [--wait] [--json]
    ```
+
+   `configs` checks sign-in with Google itself, through the same Google API
+   `create` uses to turn on Firestore. Without `--wait` it checks once and, if
+   the provider is still off, prints the console step and stops; with
+   `--wait` it polls every 15 seconds for up to 20 minutes instead, so it can
+   run right after step 2 while the project owner is still in the console.
 
 4. Hand the connection link and the QR code to the project owner.
 
@@ -85,12 +91,17 @@ standard output gets one JSON object at the end:
 ```
 
 - `manualSteps` is what is left for the project owner in the console; show it
-  to them as it is, links included.
-- `done` becomes `true` only in the output of `configs`. The script cannot read
-  back whether sign-in with Google was turned on: ask the project owner, or let
-  the first sign-in on the phone tell.
+  to them as it is, links included. `create` always lists both console steps,
+  since it cannot check either. `configs` checks sign-in with Google itself
+  and lists that step only while it is still off.
+- `done` becomes `true` only in the output of `configs`, and only once
+  sign-in with Google is confirmed on. The redirect URI step is never read
+  back by either command, so a `done` of `true` does not mean it was set —
+  ask the project owner, or try signing in on the page: without it the page
+  answers `redirect_uri_mismatch`. The phones do not depend on this step.
 - A non-zero exit code means the run stopped; the reason is the last lines of
-  standard error.
+  standard error. With `--wait`, a project still off after 20 minutes of
+  polling is one such stop.
 
 ## Signing key fingerprints
 

@@ -3,7 +3,7 @@
 #
 #   tools/new-project.sh create <project-id> [--location <region>] [--name <display name>]
 #                               [--sha-from <existing-project-id>] [--json]
-#   tools/new-project.sh configs <project-id> [--json]
+#   tools/new-project.sh configs <project-id> [--wait] [--json]
 #
 # Step by step for whoever runs it: docs/new-project.md; the console step for
 # the project owner: docs/console-steps.md.
@@ -20,8 +20,10 @@
 #   2. In the console: Authentication, Sign-in method, Google, Enable, Save.
 #      The console makes the OAuth client on its own.
 #   3. `configs` checks that a project is ready: the Android app is
-#      registered and knows a signing key. It also writes firebase-config.js
-#      next to it, for a working copy pointed at this project.
+#      registered and knows a signing key, and sign-in with Google is on.
+#      --wait has it poll for the last one instead of reporting it as a
+#      manual step. It also writes firebase-config.js next to it, for a
+#      working copy pointed at this project.
 #
 # --json is for a program or an agent running this rather than somebody at a
 # terminal. Both commands keep their running commentary, but on standard
@@ -37,11 +39,14 @@
 #     "done": false
 #   }
 #
-# manualSteps lists what is still left for a human in the console (step 2
-# above, and the redirect URI the page's own sign-in needs); done is false
-# while any step is outstanding. `configs` always reports none: nothing here
-# reads back whether sign-in with Google was actually turned on, the one step
-# neither command can check for itself.
+# manualSteps lists what is still left for a human in the console. `create`
+# cannot check either console step, so it always lists both: turning on
+# sign-in with Google, and the redirect URI its OAuth client needs. `configs`
+# can check the first one itself and lists it only while it is still off; the
+# redirect URI step stays off its list either way, since nothing here reads it
+# back — a done of true from `configs` means sign-in with Google is confirmed
+# on, not that the redirect URI was ever set. done is false while any step
+# manualSteps lists is outstanding.
 #
 # The configuration files of this working copy are left alone: they name the
 # project it already talks to, and a script that quietly pointed a working
@@ -173,22 +178,31 @@ for entry in client.get("oauth_client", []):
 '
 }
 
-# Turns on a Google API in the project. A project made by projects:create
-# starts with the Firestore API off, and creating the database fails with 403
-# until it is on; the firebase command line has no command for it, so this
-# asks Service Usage directly with the token the command line keeps, which
-# every command it runs keeps fresh.
-enable_api() {
-    local project="$1" api="$2"
-    local token
-
+# The Firebase command line's own access token, kept fresh at
+# ~/.config/configstore/firebase-tools.json by every command it runs; the
+# projects:list call is only there to make it run one before the token is
+# read. Shared by enable_api() and google_sign_in_enabled() below, the two
+# places this script asks a Google API directly rather than through the
+# firebase command line, which has no command for either.
+firebase_access_token() {
     firebase projects:list > /dev/null
-    token="$(python3 -c '
+    python3 -c '
 import json, os
 
 path = os.path.expanduser("~/.config/configstore/firebase-tools.json")
 print(json.load(open(path))["tokens"]["access_token"])
-')"
+'
+}
+
+# Turns on a Google API in the project. A project made by projects:create
+# starts with the Firestore API off, and creating the database fails with 403
+# until it is on; the firebase command line has no command for it, so this
+# asks Service Usage directly instead.
+enable_api() {
+    local project="$1" api="$2"
+    local token
+
+    token="$(firebase_access_token)"
 
     curl -sf -X POST -H "Authorization: Bearer ${token}" -H "Content-Type: application/json" \
         "https://serviceusage.googleapis.com/v1/projects/${project}/services/${api}:enable" \
@@ -210,6 +224,43 @@ print(json.load(open(path))["tokens"]["access_token"])
 
     echo "${api} is still not on" >&2
     exit 1
+}
+
+# Whether the Google provider is already on in the project, read from the
+# Identity Toolkit admin API the same way enable_api() above reads Service
+# Usage: the firebase command line has no command for this either, and a
+# phone would otherwise only find out by trying to sign in. A project where
+# the provider was never touched in the console answers with an error rather
+# than a plain "enabled": false, so only a 404 — no configuration yet — is
+# kept quiet; anything else is worth a line on standard error, since it might
+# be a token or permission problem rather than the provider being off.
+google_sign_in_enabled() {
+    local project="$1"
+    local token url response status body enabled
+
+    token="$(firebase_access_token)"
+    url="https://identitytoolkit.googleapis.com/admin/v2/projects/${project}"
+    url="${url}/defaultSupportedIdpConfigs/google.com"
+    response="$(curl -s -w $'\n%{http_code}' -H "Authorization: Bearer ${token}" "${url}")"
+    status="${response##*$'\n'}"
+    body="${response%$'\n'*}"
+
+    if [[ "${status}" != "200" ]]; then
+        if [[ "${status}" != "404" ]]; then
+            echo "checking sign-in with Google in ${project}: HTTP ${status}" >&2
+        fi
+        return 1
+    fi
+
+    enabled="$(python3 -c '
+import json, sys
+
+# JSON leaves out a false boolean, so a provider that was switched off
+# again comes back without the field.
+print(json.loads(sys.stdin.read()).get("enabled", False))
+' <<< "${body}")"
+
+    [[ "${enabled}" == "True" ]]
 }
 
 # The Hosting site already made for the project, empty if it has none yet.
@@ -486,7 +537,7 @@ EOF
 }
 
 configs() {
-    local project="$1"
+    local project="$1" wait_google="$2"
     local out="${REPO_ROOT}/build/new-project/${project}"
 
     echo "==> Android app"
@@ -522,35 +573,90 @@ configs() {
     (cd "${REPO_ROOT}" && FIREBASE_PROJECT="${project}" FIREBASE_SITE="${site_id}" \
         WEB_CONFIG_TARGET="${out}/firebase-config.js" "${REPO_ROOT}/tools/web-config.sh")
 
-    # Whether sign-in with Google is on is left unchecked: nothing in the
-    # firebase command line reports it read-only, unlike enable_api()'s poll of
-    # Service Usage above, and a phone finds out the same way a sign-in
-    # attempt would. A later check landing here would set manualSteps and done
-    # below from that instead of the fixed values they have now.
-    cat <<EOF
+    echo "==> sign-in with Google"
+
+    local google_on=0
+
+    if google_sign_in_enabled "${project}"; then
+        google_on=1
+        echo "    already on"
+    elif (( wait_google )); then
+        echo "    not on yet, waiting up to 20 minutes"
+
+        local attempt
+
+        for attempt in $(seq 1 80); do
+            sleep 15
+
+            if google_sign_in_enabled "${project}"; then
+                google_on=1
+                break
+            fi
+
+            echo "    still waiting (${attempt})"
+        done
+
+        if (( ! google_on )); then
+            echo "sign-in with Google is still off in ${project} after 20 minutes" >&2
+            exit 1
+        fi
+
+        echo "    on now"
+    else
+        echo "    not on yet"
+    fi
+
+    if (( google_on )); then
+        cat <<EOF
 
 ${project} is ready to sign phones in: the Android app is registered and knows
-a signing key, and the page serves from https://${site_id}.web.app/. Written
-to ${out#"${REPO_ROOT}"/}/firebase-config.js, for a working copy pointed at
-this project rather than the one it already talks to.
+a signing key, sign-in with Google is on, and the page serves from
+https://${site_id}.web.app/. Written to ${out#"${REPO_ROOT}"/}/firebase-config.js,
+for a working copy pointed at this project rather than the one it already
+talks to.
 EOF
 
-    print_connect_link "${site_id}"
+        print_connect_link "${site_id}"
+    else
+        cat <<EOF
 
+${project} still needs one step before it can sign phones in:
+
+  https://console.firebase.google.com/project/${project}/authentication/providers
+
+  Authentication, Sign-in method, Google, Enable, pick a support address,
+  Save. Then run this command again, or with --wait to have it wait here
+  instead.
+EOF
+    fi
+
+    # done here means the one thing this function can check for itself, sign-in
+    # with Google, is confirmed on — not that every console step ever happened.
+    # The redirect URI step from create's second console link is never read
+    # back, by this function or anything else, so it stays out of manualSteps
+    # and out of done either way.
     if (( json_mode )); then
-        PROJECT="${project}" SITE="${site_id}" python3 -c '
+        PROJECT="${project}" SITE="${site_id}" GOOGLE_ON="${google_on}" python3 -c '
 import json, os
 
 project = os.environ["PROJECT"]
 site = os.environ["SITE"]
+google_on = os.environ["GOOGLE_ON"] == "1"
+
+manual_steps = [] if google_on else [{
+    "what": "Authentication, Sign-in method, Google, Enable, pick a "
+            "support address, Save",
+    "url": f"https://console.firebase.google.com/project/{project}"
+           "/authentication/providers",
+}]
 
 print(json.dumps({
     "projectId": project,
     "site": site,
     "connectLink": f"https://{site}.web.app/join",
     "settingsUrl": f"https://{site}.web.app/geoshare.json",
-    "manualSteps": [],
-    "done": True,
+    "manualSteps": manual_steps,
+    "done": google_on,
 }, indent=2))
 ' >&3
     fi
@@ -566,6 +672,7 @@ location="${DEFAULT_LOCATION}"
 name="geoshare"
 sha_from=""
 json_mode=0
+wait_google=0
 
 while [[ $# -gt 0 ]]; do
     case "$1" in
@@ -573,6 +680,7 @@ while [[ $# -gt 0 ]]; do
         --name) name="$2"; shift 2 ;;
         --sha-from) sha_from="$2"; shift 2 ;;
         --json) json_mode=1; shift ;;
+        --wait) wait_google=1; shift ;;
         *) usage ;;
     esac
 done
@@ -590,6 +698,6 @@ fi
 
 case "${command}" in
     create) require_login; create "${project}" "${location}" "${name}" "${sha_from}" ;;
-    configs) require_login; configs "${project}" ;;
+    configs) require_login; configs "${project}" "${wait_google}" ;;
     *) usage ;;
 esac
