@@ -34,9 +34,14 @@ fun SirenDialog(
     onGo: () -> Unit,
     onCancel: () -> Unit,
 ) {
+    // Both names, whichever list the dialog was opened from: the member's
+    // alone leaves the device unsaid when there is only one to pick, and the
+    // device's alone does not say whose it is.
+    val phoneName = phones.find { it.phoneId == selected }?.name.orEmpty()
+
     AlertDialog(
         onDismissRequest = onCancel,
-        title = { Text(text = stringResource(R.string.siren_title, memberName)) },
+        title = { Text(text = stringResource(R.string.siren_title, memberName, phoneName)) },
         text = {
             Column {
                 if (phones.size > 1) {

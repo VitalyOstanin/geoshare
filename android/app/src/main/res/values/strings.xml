@@ -260,7 +260,7 @@
     <string name="siren_off">Stop the siren</string>
     <string name="siren_off_short">Stop</string>
     <string name="siren_channel">Siren</string>
-    <string name="siren_title">Switch on the siren: %1$s?</string>
+    <string name="siren_title">Switch on the siren: %1$s · %2$s?</string>
     <string name="siren_phone_chip">%1$s · %2$s</string>
     <string name="siren_note">The device will sound loudly for 22 seconds, even with its sound off. The siren can be stopped on the device itself or here.</string>
     <string name="siren_go">Switch on</string>

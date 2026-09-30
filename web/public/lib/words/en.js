@@ -317,7 +317,7 @@ export const EN = {
         'The name you gave it goes too. ' +
         'If the device is in touch under your account again, it comes back.',
     phoneRemoveGo: 'Remove',
-    sirenTitle: (name) => `Switch on the siren: ${name}?`,
+    sirenTitle: (member, phone) => `Switch on the siren: ${member} · ${phone}?`,
     sirenPhoneChip: (name, age) => `${name} · ${age}`,
     sirenNote:
         'The device will sound loudly for 22 seconds, even with its sound off. ' +

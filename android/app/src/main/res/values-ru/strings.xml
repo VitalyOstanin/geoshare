@@ -236,7 +236,7 @@
     <string name="siren_off">Выключить сирену</string>
     <string name="siren_off_short">Выключить</string>
     <string name="siren_channel">Сирена</string>
-    <string name="siren_title">Включить сирену: %1$s?</string>
+    <string name="siren_title">Включить сирену: %1$s · %2$s?</string>
     <string name="siren_phone_chip">%1$s · %2$s</string>
     <string name="siren_note">Устройство будет громко звучать 22 секунды, даже если на нём выключен звук. Выключить сирену можно на самом устройстве или здесь.</string>
     <string name="siren_go">Включить</string>

@@ -283,7 +283,15 @@ function sirenButtonFor(phone, memberId, now, about) {
     ring.setAttribute('aria-label', WORDS.sirenHint);
     ring.innerHTML = SPEAKER_ICON;
     ring.addEventListener('click', () => {
-        askSiren({ displayName: phone.name, memberId, phones: [phone] });
+        askSiren({
+            displayName: memberName(
+                state.profiles?.get(memberId),
+                memberId,
+                memberId === state.member.memberId,
+            ),
+            memberId,
+            phones: [phone],
+        });
     });
 
     return ring;

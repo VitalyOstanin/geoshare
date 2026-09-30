@@ -416,7 +416,7 @@ fun MyPhonesScreen(
 
     sirenAsk?.let { phone ->
         SirenDialog(
-            memberName = phone.name,
+            memberName = stringResource(R.string.map_member_you),
             phones = listOf(phone),
             selected = phone.phoneId,
             onSelect = {},

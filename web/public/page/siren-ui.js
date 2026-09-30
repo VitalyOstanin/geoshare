@@ -107,7 +107,11 @@ export function drawSirenAsk() {
 
     const now = Date.now();
 
-    elements.sirenTitle.textContent = WORDS.sirenTitle(ask.name);
+    // Both names: the member's alone leaves the device unsaid when there is
+    // only one to pick, and the device's alone does not say whose it is.
+    const phone = ask.phones.find((one) => one.phoneId === ask.selected);
+
+    elements.sirenTitle.textContent = WORDS.sirenTitle(ask.name, phone?.name ?? '');
     elements.sirenPhones.hidden = ask.phones.length < 2;
     elements.sirenPhones.replaceChildren(
         ...ask.phones.map((phone) => {
