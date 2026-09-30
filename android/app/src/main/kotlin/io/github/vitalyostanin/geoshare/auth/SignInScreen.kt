@@ -113,7 +113,6 @@ private fun SignedOut(
 
 private fun failureMessage(failure: SignInFailure): Int = when (failure) {
     SignInFailure.Cancelled -> R.string.sign_in_failed_unknown
-    SignInFailure.NoAccount -> R.string.sign_in_failed_no_account
     SignInFailure.Offline -> R.string.sign_in_failed_offline
     SignInFailure.Misconfigured -> R.string.sign_in_failed_misconfigured
     SignInFailure.Unknown -> R.string.sign_in_failed_unknown

@@ -3,10 +3,9 @@
      web/public/lib/words/ru.js, and the names of the five collection modes are
      the words a card is read with on both. -->
 <resources>
-    <string name="sign_in_explanation">Войдите в тот аккаунт Google, под которым семья делится своими геопозициями.</string>
+    <string name="sign_in_explanation">Войдите в тот аккаунт Google, под которым вы делитесь геопозицией с группой.</string>
     <string name="sign_in_action">Войти через Google</string>
     <string name="sign_in_running">Входим…</string>
-    <string name="sign_in_failed_no_account">На устройстве нет аккаунта Google. Добавьте его в настройках устройства и войдите ещё раз.</string>
     <string name="link_lost">Нет связи с базой с %1$s</string>
     <string name="link_known_at">Показано то, что было известно на %1$s. Метки серые.</string>
     <string name="link_known_never">База ещё не ответила ни разу. Метки серые.</string>
@@ -14,16 +13,16 @@
     <string name="link_lost_action">Нет связи с базой: до устройства это не дойдёт. Повторите, когда связь вернётся.</string>
     <string name="write_unanswered">База не ответила за 15 секунд. Запись уйдёт, когда связь вернётся; отменить её нельзя.</string>
     <string name="sign_in_failed_offline">Нет связи. Для входа сеть нужна хотя бы на минуту.</string>
-    <string name="sign_in_failed_misconfigured">Эта сборка не может войти на этом устройстве: сервисы Google её не принимают.</string>
+    <string name="sign_in_failed_misconfigured">Проект этой группы ещё не настроен на вход через Google.</string>
     <string name="sign_in_failed_unknown">Войти не удалось. Попробуйте ещё раз.</string>
 
     <string name="sign_out_action">Выйти</string>
 
     <string name="sharing_action">Делиться своим местом</string>
     <string name="sharing_channel_name">Передача места</string>
-    <string name="sharing_channel_description">Показывается, пока ваше место передаётся семье.</string>
+    <string name="sharing_channel_description">Показывается, пока ваше место передаётся группе.</string>
     <string name="sharing_notification_title">Передаём ваше место</string>
-    <string name="sharing_notification_text">Семья видит, где вы.</string>
+    <string name="sharing_notification_text">Группа видит, где вы.</string>
     <string name="sharing_notification_stop">Остановить</string>
 
     <string name="jumps_title">Отбрасывать невозможные места</string>
@@ -388,5 +387,5 @@
     <string name="help_follow_all">Все участники в кадре</string>
     <string name="help_sources">Источники позиции: какие позиции устройство учитывает — спутники, Wi-Fi, вышки</string>
 
-    <string name="not_connected_placeholder">Приложение ещё не подключено к проекту семьи. Откройте ссылку подключения от организатора.</string>
+    <string name="not_connected_placeholder">Приложение ещё не подключено. Откройте ссылку подключения, которую прислал организатор.</string>
 </resources>

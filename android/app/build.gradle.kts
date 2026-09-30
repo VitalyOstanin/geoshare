@@ -3,7 +3,6 @@ import java.util.Properties
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.compose)
-    alias(libs.plugins.google.services)
 }
 
 // The versions the build image installs, read from the one file that states
@@ -95,18 +94,14 @@ dependencies {
     implementation(libs.compose.ui)
     implementation(libs.compose.material3)
 
-    // The Firebase libraries compile without google-services.json; the plugin
-    // that consumes that file is added together with the file itself, once the
-    // Firebase project exists.
+    // Which project a build talks to is decided at run time, off the settings
+    // FamilyProject reads from the phone: nothing here reaches for
+    // google-services.json, so one build serves every family.
     implementation(platform(libs.firebase.bom))
     implementation(libs.firebase.firestore)
     implementation(libs.firebase.auth)
 
     implementation(libs.play.services.location)
-
-    implementation(libs.androidx.credentials)
-    implementation(libs.androidx.credentials.play.services.auth)
-    implementation(libs.googleid)
 
     implementation(libs.maplibre.android)
 

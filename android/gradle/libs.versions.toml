@@ -21,10 +21,6 @@ fragment = "1.9.0"
 coroutines = "1.11.0"
 firebaseBom = "34.19.0"
 playServicesLocation = "21.4.0"
-# Sign-in: the chooser the system shows, its Play Services backend and the
-# Google option that turns the chosen account into an identity token.
-credentials = "1.6.0"
-googleid = "1.2.0"
 # The map background. Takes the same style document the page does and draws
 # OpenStreetMap tiles from it, so the application needs no map key and no
 # payment method behind one.
@@ -38,7 +34,6 @@ junit = "4.13.2"
 # one is built with `unitTests.isReturnDefaultValues`, under which every
 # method simply answers 0, "" or null rather than parsing anything.
 orgJson = "20260814"
-googleServices = "4.5.0"
 ktlintPlugin = "14.2.0"
 # The ktlint the plugin runs, rather than whichever one it defaults to: the
 # rules change between releases and the check has to fail the same way
@@ -63,10 +58,6 @@ firebase-auth = { module = "com.google.firebase:firebase-auth" }
 
 play-services-location = { module = "com.google.android.gms:play-services-location", version.ref = "playServicesLocation" }
 
-androidx-credentials = { module = "androidx.credentials:credentials", version.ref = "credentials" }
-androidx-credentials-play-services-auth = { module = "androidx.credentials:credentials-play-services-auth", version.ref = "credentials" }
-googleid = { module = "com.google.android.libraries.identity.googleid:googleid", version.ref = "googleid" }
-
 maplibre-android = { module = "org.maplibre.gl:android-sdk", version.ref = "maplibre" }
 
 coil-compose = { module = "io.coil-kt.coil3:coil-compose", version.ref = "coil" }
@@ -84,8 +75,4 @@ org-json = { module = "org.json:json", version.ref = "orgJson" }
 # plugin pins.
 android-application = { id = "com.android.application", version.ref = "agp" }
 kotlin-compose = { id = "org.jetbrains.kotlin.plugin.compose", version.ref = "kotlin" }
-# Reads google-services.json and turns it into the resources the Firebase
-# libraries look up at runtime. Needs that file, which is why it only
-# appears alongside it.
-google-services = { id = "com.google.gms.google-services", version.ref = "googleServices" }
 ktlint = { id = "org.jlleitschuh.gradle.ktlint", version.ref = "ktlintPlugin" }

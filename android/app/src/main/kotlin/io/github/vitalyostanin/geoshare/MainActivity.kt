@@ -32,7 +32,6 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.core.os.LocaleListCompat
 import androidx.core.view.WindowCompat
-import androidx.credentials.CredentialManager
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.lifecycleScope
 import io.github.vitalyostanin.geoshare.auth.AuthState
@@ -208,13 +207,7 @@ class MainActivity : AppCompatActivity() {
         // manager on every position that arrived.
         startupAvailable = startupScreen(this) != null
 
-        signIn =
-            SignInController(
-                // Written into the resources by the google-services plugin,
-                // out of the same file that names the project.
-                serverClientId = getString(R.string.default_web_client_id),
-                credentials = CredentialManager.create(this),
-            )
+        signIn = SignInController()
 
         sharing = SharingSetting(this)
         device = DeviceIdentity(this)

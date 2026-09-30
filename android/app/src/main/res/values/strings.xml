@@ -3,10 +3,9 @@
     <!-- The name of the application, which is the same in every language. -->
     <string name="app_name" translatable="false">Geoshare</string>
 
-    <string name="sign_in_explanation">Sign in with the Google account the family shares positions under.</string>
+    <string name="sign_in_explanation">Sign in with the Google account you share your position with the group under.</string>
     <string name="sign_in_action">Sign in with Google</string>
     <string name="sign_in_running">Signing in…</string>
-    <string name="sign_in_failed_no_account">No Google account on this device. Add one in the system settings, then sign in again.</string>
     <string name="link_lost">No connection to the database since %1$s</string>
     <string name="link_known_at">Showing what was known at %1$s. Markers are grey.</string>
     <string name="link_known_never">The database has not answered yet. Markers are grey.</string>
@@ -14,16 +13,16 @@
     <string name="link_lost_action">No connection to the database: this would not reach the device. Try again once the connection is back.</string>
     <string name="write_unanswered">The database did not answer in 15 seconds. The write goes out once the connection is back; it cannot be called off.</string>
     <string name="sign_in_failed_offline">No connection. Sign-in needs the network for a moment.</string>
-    <string name="sign_in_failed_misconfigured">This build cannot sign in on this device: its Google services do not accept it.</string>
+    <string name="sign_in_failed_misconfigured">This group\'s project is not set up for signing in with Google yet.</string>
     <string name="sign_in_failed_unknown">Sign-in did not go through. Try again.</string>
 
     <string name="sign_out_action">Sign out</string>
 
     <string name="sharing_action">Share my position</string>
     <string name="sharing_channel_name">Position sharing</string>
-    <string name="sharing_channel_description">Shown while your position is being shared with the family.</string>
+    <string name="sharing_channel_description">Shown while your position is being shared with the group.</string>
     <string name="sharing_notification_title">Sharing your position</string>
-    <string name="sharing_notification_text">The family can see where you are.</string>
+    <string name="sharing_notification_text">The group can see where you are.</string>
     <string name="sharing_notification_stop">Stop</string>
 
     <!-- The filter that leaves out positions the device cannot have reached.
@@ -433,6 +432,6 @@
     <string name="help_sources">Position sources: which positions the device counts — satellites, Wi-Fi, towers</string>
 
     <!-- Shown in place of the map before this phone has been connected to a
-         family's project, until the screen that takes a connection link exists. -->
-    <string name="not_connected_placeholder">Not connected to a family project yet. Open the connection link from the organiser.</string>
+         project, until the screen that takes a connection link exists. -->
+    <string name="not_connected_placeholder">Not connected yet. Open the connection link the organiser sent you.</string>
 </resources>

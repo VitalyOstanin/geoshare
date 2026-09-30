@@ -1,12 +1,8 @@
 package io.github.vitalyostanin.geoshare.auth
 
-import androidx.credentials.exceptions.GetCredentialCancellationException
-import androidx.credentials.exceptions.GetCredentialInterruptedException
-import androidx.credentials.exceptions.GetCredentialProviderConfigurationException
-import androidx.credentials.exceptions.GetCredentialUnknownException
-import androidx.credentials.exceptions.GetCredentialUnsupportedException
-import androidx.credentials.exceptions.NoCredentialException
 import com.google.firebase.FirebaseNetworkException
+import com.google.firebase.auth.FirebaseAuthException
+import com.google.firebase.auth.FirebaseAuthWebException
 import org.junit.Assert.assertEquals
 import org.junit.Test
 import java.io.IOException
@@ -14,23 +10,20 @@ import java.net.UnknownHostException
 
 class SignInFailureTest {
     @Test
-    fun `a dismissed chooser is a cancellation`() {
+    fun `closing the browser page is a cancellation`() {
         assertEquals(
             SignInFailure.Cancelled,
-            classifySignInFailure(GetCredentialCancellationException()),
+            classifySignInFailure(
+                FirebaseAuthWebException("ERROR_WEB_CONTEXT_CANCELED", "canceled"),
+            ),
         )
     }
 
     @Test
-    fun `an empty chooser means there is no account`() {
-        assertEquals(SignInFailure.NoAccount, classifySignInFailure(NoCredentialException()))
-    }
-
-    @Test
-    fun `an interrupted flow is read as a dead network`() {
+    fun `declining the requested permissions is also a cancellation`() {
         assertEquals(
-            SignInFailure.Offline,
-            classifySignInFailure(GetCredentialInterruptedException()),
+            SignInFailure.Cancelled,
+            classifySignInFailure(FirebaseAuthException("ERROR_USER_CANCELLED", "cancelled")),
         )
     }
 
@@ -49,14 +42,16 @@ class SignInFailureTest {
     }
 
     @Test
-    fun `a provider that refuses this application is a misconfiguration`() {
+    fun `a project without google sign-in enabled is a misconfiguration`() {
         assertEquals(
             SignInFailure.Misconfigured,
-            classifySignInFailure(GetCredentialProviderConfigurationException()),
+            classifySignInFailure(FirebaseAuthException("ERROR_OPERATION_NOT_ALLOWED", "disabled")),
         )
         assertEquals(
             SignInFailure.Misconfigured,
-            classifySignInFailure(GetCredentialUnsupportedException()),
+            classifySignInFailure(
+                FirebaseAuthException("ERROR_UNAUTHORIZED_DOMAIN", "not allowlisted"),
+            ),
         )
     }
 
@@ -64,7 +59,7 @@ class SignInFailureTest {
     fun `anything else stays unknown`() {
         assertEquals(
             SignInFailure.Unknown,
-            classifySignInFailure(GetCredentialUnknownException()),
+            classifySignInFailure(FirebaseAuthWebException("ERROR_WEB_INTERNAL_ERROR", "internal")),
         )
         assertEquals(SignInFailure.Unknown, classifySignInFailure(IllegalStateException("token")))
     }
