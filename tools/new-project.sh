@@ -2,8 +2,8 @@
 # Sets up a Firebase project of one's own for geoshare, from this machine.
 #
 #   tools/new-project.sh create <project-id> [--location <region>] [--name <display name>]
-#                               [--sha-from <existing-project-id>]
-#   tools/new-project.sh configs <project-id>
+#                               [--sha-from <existing-project-id>] [--json]
+#   tools/new-project.sh configs <project-id> [--json]
 #
 # Two steps with one step in the Firebase console between them, because the
 # console is the only place left that turns on sign-in with Google: the
@@ -16,16 +16,41 @@
 #      application's settings beside it as geoshare.json.
 #   2. In the console: Authentication, Sign-in method, Google, Enable, Save.
 #      The console makes the OAuth client on its own.
-#   3. `configs` fetches the two configuration files, now carrying that client,
-#      and writes them next to each other under build/new-project/<id>/.
+#   3. `configs` checks that a project is ready: the Android app is
+#      registered and knows a signing key. It also writes firebase-config.js
+#      next to it, for a working copy pointed at this project.
+#
+# --json is for a program or an agent running this rather than somebody at a
+# terminal. Both commands keep their running commentary, but on standard
+# error instead — the firebase command line's own commentary moves there too,
+# under the same --non-interactive that already turns its prompts into
+# failures — and add one line of JSON on standard output once they are done:
+#
+#   {
+#     "projectId": "...", "site": "...",
+#     "connectLink": "https://<site>.web.app/join",
+#     "settingsUrl": "https://<site>.web.app/geoshare.json",
+#     "manualSteps": [{"what": "...", "url": "..."}, ...],
+#     "done": false
+#   }
+#
+# manualSteps lists what is still left for a human in the console (step 2
+# above, and the redirect URI the page's own sign-in needs); done is false
+# while any step is outstanding. `configs` always reports none: nothing here
+# reads back whether sign-in with Google was actually turned on, the one step
+# neither command can check for itself.
 #
 # The configuration files of this working copy are left alone: they name the
 # project it already talks to, and a script that quietly pointed a working
-# copy at another project would be a surprise at the next build. Copy the two
-# files into place when that is what is wanted; the last lines say where.
+# copy at another project would be a surprise at the next build. `configs`
+# writes its copy of the page's configuration under build/new-project/<id>/
+# instead; copy it into place when that is what is wanted.
 #
-# Needs a signed-in firebase command line (`firebase login`), which is the one
-# sign-in in a browser the whole setup asks for.
+# Needs a signed-in firebase command line (`firebase login`, or
+# `firebase login --no-localhost` from a shell without a browser of its own,
+# such as Google Cloud Shell) — the one sign-in in a browser the whole setup
+# asks for. Without it the script fails right away instead of waiting on a
+# prompt --non-interactive told the firebase command line not to show.
 set -euo pipefail
 
 source "$(dirname "${BASH_SOURCE[0]}")/lib.sh"
@@ -40,12 +65,28 @@ readonly PACKAGE_NAME="io.github.vitalyostanin.geoshare"
 readonly DEFAULT_LOCATION="europe-north1"
 
 firebase() {
-    npx --yes "firebase-tools@${FIREBASE_TOOLS_VERSION}" "$@"
+    # --non-interactive is global to the firebase command line and every
+    # subcommand honours it, so it goes on every call through here rather
+    # than being repeated at each call site: a prompt this script cannot
+    # answer becomes a failure instead of a hang.
+    npx --yes "firebase-tools@${FIREBASE_TOOLS_VERSION}" --non-interactive "$@"
 }
 
 usage() {
     sed -n '4,6p' "${BASH_SOURCE[0]}" | sed 's/^# //' >&2
     exit 2
+}
+
+# Fails fast, with a message naming the fix, rather than letting the first
+# call below run into "have you run firebase login?" from somewhere deep in a
+# helper function. login:list reads the local token file only, so this costs
+# nothing on the network.
+require_login() {
+    if ! firebase login:list --json | grep -q '"result"'; then
+        echo "not logged in to the firebase command line; run \`firebase login\`" \
+            "(or \`firebase login --no-localhost\` in Cloud Shell) first" >&2
+        exit 1
+    fi
 }
 
 # The id of the one app of a platform, out of the listing's JSON. The listing
@@ -108,6 +149,27 @@ print(len(json.loads(raw[raw.index("{"):])["result"]))
 '
 }
 
+# The fingerprints the Android app already knows, straight out of its own
+# configuration: sign-in checks the calling application against these, so an
+# app with none of them yet cannot sign anybody in. `configs` reads this to
+# confirm they are there; `create` writes them below instead of reading them.
+android_fingerprints() {
+    local project="$1" android="$2"
+
+    firebase apps:sdkconfig ANDROID "${android}" --project "${project}" --json |
+        python3 -c '
+import json, sys
+
+raw = sys.stdin.read()
+config = json.loads(json.loads(raw[raw.index("{"):])["result"]["fileContents"])
+client = config["client"][0]
+
+for entry in client.get("oauth_client", []):
+    if entry.get("client_type") == 1:
+        print(entry["android_info"]["certificate_hash"])
+'
+}
+
 # Turns on a Google API in the project. A project made by projects:create
 # starts with the Firestore API off, and creating the database fails with 403
 # until it is on; the firebase command line has no command for it, so this
@@ -147,6 +209,24 @@ print(json.load(open(path))["tokens"]["access_token"])
     exit 1
 }
 
+# The Hosting site already made for the project, empty if it has none yet.
+# Split out of hosting_site() so that `configs` can ask the same question
+# without the power to create one.
+existing_site() {
+    local project="$1"
+
+    firebase hosting:sites:list --project "${project}" --json |
+        python3 -c '
+import json, sys
+
+raw = sys.stdin.read()
+sites = json.loads(raw[raw.index("{"):])["result"].get("sites", [])
+default = [s for s in sites if s.get("type") == "DEFAULT_SITE"]
+chosen = (default or sites)[:1]
+print(chosen[0]["name"].rsplit("/", 1)[1] if chosen else "")
+'
+}
+
 # The Hosting site the page is served from, made if the project has none.
 #
 # A project made from 15 October 2026 on gets no site of its own: Hosting
@@ -158,16 +238,7 @@ hosting_site() {
     local project="$1" web_app="$2"
     local site
 
-    site="$(firebase hosting:sites:list --project "${project}" --json |
-        python3 -c '
-import json, sys
-
-raw = sys.stdin.read()
-sites = json.loads(raw[raw.index("{"):])["result"].get("sites", [])
-default = [s for s in sites if s.get("type") == "DEFAULT_SITE"]
-chosen = (default or sites)[:1]
-print(chosen[0]["name"].rsplit("/", 1)[1] if chosen else "")
-')"
+    site="$(existing_site "${project}")"
 
     if [[ -n "${site}" ]]; then
         echo "    ${site} already there" >&2
@@ -188,10 +259,10 @@ print(chosen[0]["name"].rsplit("/", 1)[1] if chosen else "")
 }
 
 # What the application needs to talk to the project, served next to the page
-# as geoshare.json. One build serves every family, so the build carries no
-# project: the application reads these from the family's site when it is
+# as geoshare.json. One build serves every group, so the build carries no
+# project: the application reads these from the group's site when it is
 # pointed at it, and starts Firebase with them. None of it is a secret — the
-# same values sit in every copy of google-services.json and firebase-config.js;
+# page's firebase-config.js on the same site carries the same kind of values;
 # what guards the data is the rules.
 app_settings() {
     local project="$1" android="$2" site_id="$3"
@@ -211,6 +282,42 @@ print(json.dumps({
     "apiKey": client["api_key"][0]["current_key"],
     "gcmSenderId": config["project_info"]["project_number"],
     "site": os.environ["SITE_ID"],
+}, indent=2))
+'
+}
+
+# The manual steps left after `create`, and the JSON --json ends with once it
+# is done. Built from the same two console steps the human-readable message
+# below spells out, so the two never drift apart.
+create_result_json() {
+    local project="$1" site="$2"
+
+    PROJECT="${project}" SITE="${site}" python3 -c '
+import json, os
+
+project = os.environ["PROJECT"]
+site = os.environ["SITE"]
+
+print(json.dumps({
+    "projectId": project,
+    "site": site,
+    "connectLink": f"https://{site}.web.app/join",
+    "settingsUrl": f"https://{site}.web.app/geoshare.json",
+    "manualSteps": [
+        {
+            "what": "Authentication, Sign-in method, Google, Enable, pick a "
+                    "support address, Save",
+            "url": f"https://console.firebase.google.com/project/{project}"
+                   "/authentication/providers",
+        },
+        {
+            "what": "Open \"Web client (auto created by Google Service)\", "
+                    f"add https://{site}.web.app/__/auth/handler under "
+                    "Authorized redirect URIs, Save",
+            "url": f"https://console.cloud.google.com/auth/clients?project={project}",
+        },
+    ],
+    "done": False,
 }, indent=2))
 '
 }
@@ -346,37 +453,79 @@ Then run:
 
   tools/new-project.sh configs ${project}
 EOF
+
+    if (( json_mode )); then
+        create_result_json "${project}" "${site_id}" >&3
+    fi
 }
 
 configs() {
     local project="$1"
     local out="${REPO_ROOT}/build/new-project/${project}"
 
-    mkdir -p "${out}"
-
-    echo "==> Android configuration"
-    firebase apps:sdkconfig ANDROID "$(app_id "${project}" ANDROID)" --project "${project}" \
-        --out "${out}/google-services.json"
-
-    # Without the OAuth client the application builds and then cannot sign
-    # in, which is a failure far from its cause; said here instead.
-    if ! grep -q '"client_type": 3' "${out}/google-services.json"; then
-        echo "google-services.json has no web client yet: is Google sign-in enabled?" >&2
+    echo "==> Android app"
+    if [[ "$(app_count "${project}" ANDROID)" -eq 0 ]]; then
+        echo "no Android app registered in ${project} yet; run \`create\` first" >&2
         exit 1
     fi
 
+    local android
+    android="$(app_id "${project}" ANDROID)"
+    local hashes
+    hashes="$(android_fingerprints "${project}" "${android}")"
+
+    if [[ -z "${hashes}" ]]; then
+        echo "the Android app in ${project} has no signing key fingerprint yet;" \
+            "run \`create\` again, or add one in the console" >&2
+        exit 1
+    fi
+    echo "    registered, $(wc -l <<< "${hashes}") signing key(s) known"
+
+    echo "==> Hosting site"
+    local site_id
+    site_id="$(existing_site "${project}")"
+
+    if [[ -z "${site_id}" ]]; then
+        echo "no Hosting site in ${project} yet; run \`create\` first" >&2
+        exit 1
+    fi
+    echo "    ${site_id}"
+
     echo "==> page configuration"
-    (cd "${REPO_ROOT}" && FIREBASE_PROJECT="${project}" \
+    mkdir -p "${out}"
+    (cd "${REPO_ROOT}" && FIREBASE_PROJECT="${project}" FIREBASE_SITE="${site_id}" \
         WEB_CONFIG_TARGET="${out}/firebase-config.js" "${REPO_ROOT}/tools/web-config.sh")
 
+    # Whether sign-in with Google is on is left unchecked: nothing in the
+    # firebase command line reports it read-only, unlike enable_api()'s poll of
+    # Service Usage above, and a phone finds out the same way a sign-in
+    # attempt would. A later check landing here would set manualSteps and done
+    # below from that instead of the fixed values they have now.
     cat <<EOF
 
-Written to ${out#"${REPO_ROOT}"/}/. To point this working copy at the new project:
-
-  cp ${out#"${REPO_ROOT}"/}/google-services.json android/app/
-  cp ${out#"${REPO_ROOT}"/}/firebase-config.js web/public/
-  firebase use ${project}
+${project} is ready to sign phones in: the Android app is registered and knows
+a signing key, and the page serves from https://${site_id}.web.app/. Written
+to ${out#"${REPO_ROOT}"/}/firebase-config.js, for a working copy pointed at
+this project rather than the one it already talks to.
 EOF
+
+    if (( json_mode )); then
+        PROJECT="${project}" SITE="${site_id}" python3 -c '
+import json, os
+
+project = os.environ["PROJECT"]
+site = os.environ["SITE"]
+
+print(json.dumps({
+    "projectId": project,
+    "site": site,
+    "connectLink": f"https://{site}.web.app/join",
+    "settingsUrl": f"https://{site}.web.app/geoshare.json",
+    "manualSteps": [],
+    "done": True,
+}, indent=2))
+' >&3
+    fi
 }
 
 [[ $# -ge 2 ]] || usage
@@ -388,18 +537,31 @@ shift 2
 location="${DEFAULT_LOCATION}"
 name="geoshare"
 sha_from=""
+json_mode=0
 
 while [[ $# -gt 0 ]]; do
     case "$1" in
         --location) location="$2"; shift 2 ;;
         --name) name="$2"; shift 2 ;;
         --sha-from) sha_from="$2"; shift 2 ;;
+        --json) json_mode=1; shift ;;
         *) usage ;;
     esac
 done
 
+# fd 3 keeps the real standard output for the one line --json promises;
+# everything else this script or the firebase command line would otherwise
+# print moves to standard error by way of fd 1, which now points there.
+# Command substitution and pipes are unaffected: `$(...)` and `a | b` each open
+# a fresh pipe for the writer's standard output regardless of what it was
+# redirected to beforehand, which is how the helper functions above keep
+# working whether or not this redirect is in effect.
+if (( json_mode )); then
+    exec 3>&1 1>&2
+fi
+
 case "${command}" in
-    create) create "${project}" "${location}" "${name}" "${sha_from}" ;;
-    configs) configs "${project}" ;;
+    create) require_login; create "${project}" "${location}" "${name}" "${sha_from}" ;;
+    configs) require_login; configs "${project}" ;;
     *) usage ;;
 esac
