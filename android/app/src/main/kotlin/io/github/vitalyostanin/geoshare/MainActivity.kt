@@ -18,7 +18,6 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.darkColorScheme
 import androidx.compose.material3.lightColorScheme
-import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -36,30 +35,9 @@ import io.github.vitalyostanin.geoshare.auth.AuthState
 import io.github.vitalyostanin.geoshare.auth.SignInController
 import io.github.vitalyostanin.geoshare.auth.SignInScreen
 import io.github.vitalyostanin.geoshare.log.AppLog
-import io.github.vitalyostanin.geoshare.map.KeepWatching
-import io.github.vitalyostanin.geoshare.map.LocalLink
-import io.github.vitalyostanin.geoshare.map.MapScreen
-import io.github.vitalyostanin.geoshare.map.PublishProfile
-import io.github.vitalyostanin.geoshare.map.SettingsActions
-import io.github.vitalyostanin.geoshare.map.SettingsState
 import io.github.vitalyostanin.geoshare.map.UnansweredException
 import io.github.vitalyostanin.geoshare.map.WriteOutcome
-import io.github.vitalyostanin.geoshare.map.labelledPositions
-import io.github.vitalyostanin.geoshare.map.labelledProfiles
-import io.github.vitalyostanin.geoshare.map.publishSharing
-import io.github.vitalyostanin.geoshare.map.rememberDatabaseLink
-import io.github.vitalyostanin.geoshare.map.rememberGroupRoster
-import io.github.vitalyostanin.geoshare.map.rememberMemberGrants
-import io.github.vitalyostanin.geoshare.map.rememberMemberPositions
-import io.github.vitalyostanin.geoshare.map.rememberMemberProfiles
-import io.github.vitalyostanin.geoshare.map.rememberOwnLabels
-import io.github.vitalyostanin.geoshare.map.rememberOwnSharedWith
-import io.github.vitalyostanin.geoshare.map.rememberSearches
-import io.github.vitalyostanin.geoshare.map.rememberWatchers
-import io.github.vitalyostanin.geoshare.map.withShare
 import io.github.vitalyostanin.geoshare.map.withinAnswerWait
-import io.github.vitalyostanin.geoshare.map.writeLabel
-import io.github.vitalyostanin.geoshare.map.writePhoneName
 import io.github.vitalyostanin.geoshare.permission.PermissionStep
 import io.github.vitalyostanin.geoshare.permission.batteryExemptionRequest
 import io.github.vitalyostanin.geoshare.permission.batteryExemptionWanted
@@ -71,13 +49,10 @@ import io.github.vitalyostanin.geoshare.permission.nextPermissionStep
 import io.github.vitalyostanin.geoshare.permission.permissionOf
 import io.github.vitalyostanin.geoshare.permission.startupScreen
 import io.github.vitalyostanin.geoshare.project.ConnectFlow
-import io.github.vitalyostanin.geoshare.project.ConnectLink
 import io.github.vitalyostanin.geoshare.project.ConnectScreen
 import io.github.vitalyostanin.geoshare.project.ConnectState
 import io.github.vitalyostanin.geoshare.project.FamilyProject
-import io.github.vitalyostanin.geoshare.project.PendingInvitation
 import io.github.vitalyostanin.geoshare.project.PendingInvitationStore
-import io.github.vitalyostanin.geoshare.project.WrongAccountDialog
 import io.github.vitalyostanin.geoshare.project.fetchSettings
 import io.github.vitalyostanin.geoshare.project.pendingInvitationFor
 import io.github.vitalyostanin.geoshare.service.AidingDoubtSetting
@@ -85,39 +60,21 @@ import io.github.vitalyostanin.geoshare.service.BackgroundWorkSetting
 import io.github.vitalyostanin.geoshare.service.DeviceIdentity
 import io.github.vitalyostanin.geoshare.service.JumpFilterSetting
 import io.github.vitalyostanin.geoshare.service.LanguageChoice
-import io.github.vitalyostanin.geoshare.service.MadeInvitation
 import io.github.vitalyostanin.geoshare.service.SharingService
 import io.github.vitalyostanin.geoshare.service.SharingSetting
 import io.github.vitalyostanin.geoshare.service.SourcesSetting
 import io.github.vitalyostanin.geoshare.service.ThemeSetting
-import io.github.vitalyostanin.geoshare.service.callSiren
-import io.github.vitalyostanin.geoshare.service.consumePendingInvitation
 import io.github.vitalyostanin.geoshare.service.darkWanted
 import io.github.vitalyostanin.geoshare.service.dndAccessGranted
-import io.github.vitalyostanin.geoshare.service.endSearch
-import io.github.vitalyostanin.geoshare.service.forgetAidingData
 import io.github.vitalyostanin.geoshare.service.forgetPhone
-import io.github.vitalyostanin.geoshare.service.foundGroup
-import io.github.vitalyostanin.geoshare.service.joinGroup
 import io.github.vitalyostanin.geoshare.service.languageChosen
 import io.github.vitalyostanin.geoshare.service.languageTag
-import io.github.vitalyostanin.geoshare.service.leavePreviousId
-import io.github.vitalyostanin.geoshare.service.makeInvitation
-import io.github.vitalyostanin.geoshare.service.openSearch
-import io.github.vitalyostanin.geoshare.service.phoneSiren
-import io.github.vitalyostanin.geoshare.service.positionId
 import io.github.vitalyostanin.geoshare.service.refusalToStart
-import io.github.vitalyostanin.geoshare.service.removeFromGroup
-import io.github.vitalyostanin.geoshare.service.renameGroup
-import io.github.vitalyostanin.geoshare.service.renewSearch
-import io.github.vitalyostanin.geoshare.service.setRunning
 import io.github.vitalyostanin.geoshare.service.startConditions
-import io.github.vitalyostanin.geoshare.service.stopSiren
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withTimeoutOrNull
-import java.time.Instant
 
 /**
  * An AppCompat activity for one reason: the language a member picks inside the
@@ -125,7 +82,7 @@ import java.time.Instant
  * Android 13 that only reaches the screens from an activity of this kind.
  */
 class MainActivity : AppCompatActivity() {
-    private lateinit var signIn: SignInController
+    internal lateinit var signIn: SignInController
     private lateinit var sharing: SharingSetting
 
     /**
@@ -135,31 +92,31 @@ class MainActivity : AppCompatActivity() {
      * past it. [ConnectState.Done] is acted on by [acceptConnection], which
      * is set watching for it as soon as this is created.
      */
-    private lateinit var connectFlow: ConnectFlow
+    internal lateinit var connectFlow: ConnectFlow
 
     /** What the member asked the application to be painted in. */
-    private lateinit var appearance: ThemeSetting
+    internal lateinit var appearance: ThemeSetting
 
     /** Which phone this is, so that a member carrying two is two markers rather than one. */
-    private lateinit var device: DeviceIdentity
+    internal lateinit var device: DeviceIdentity
 
     /** Whether the member asked for the positions the phone cannot have reached to be left out. */
-    private lateinit var jumps: JumpFilterSetting
-    private lateinit var sources: SourcesSetting
+    internal lateinit var jumps: JumpFilterSetting
+    internal lateinit var sources: SourcesSetting
     private lateinit var aidingDoubt: AidingDoubtSetting
 
     /** What the member has answered about letting the application keep running. */
-    private lateinit var backgroundWork: BackgroundWorkSetting
+    internal lateinit var backgroundWork: BackgroundWorkSetting
 
     /** How the phone stands on restricting us, read again every time the screen comes up. */
-    private var batteryFree by mutableStateOf(false)
-    private var sirenLoud by mutableStateOf(false)
+    internal var batteryFree by mutableStateOf(false)
+    internal var sirenLoud by mutableStateOf(false)
 
     /** Whether this phone has a startup list of its own, asked once at the start. */
-    private var startupAvailable = false
+    internal var startupAvailable = false
 
     /** The step the member has to finish on the settings screen, if any. */
-    private var permissionNotice by mutableStateOf<PermissionStep?>(null)
+    internal var permissionNotice by mutableStateOf<PermissionStep?>(null)
 
     /**
      * The steps the system has already been asked about. A second request for
@@ -331,392 +288,23 @@ class MainActivity : AppCompatActivity() {
                     when (val current = state) {
                         // Signed in, the map is the application; the sign-in
                         // screen has nothing left to say.
-                        is AuthState.SignedIn -> {
-                            val profiles by rememberMemberProfiles()
-                            val searches by rememberSearches()
-                            val grants by rememberMemberGrants(profiles)
-                            val ownDocument =
-                                remember(current.memberId) {
-                                    positionId(current.memberId, device.id)
-                                }
-                            val onTheMap by rememberMemberPositions(grants, ownDocument, searches)
-                            val labels by rememberOwnLabels(current.memberId)
-                            val sharedWith by rememberOwnSharedWith(current.memberId)
-                            val roster by rememberGroupRoster()
-                            val link by rememberDatabaseLink()
-                            // Kept on the screen rather than in the database:
-                            // the code is written where nobody may read it
-                            // back, this phone included, so the only copy to
-                            // show is the one just made.
-                            var invitation by
-                                remember { mutableStateOf<MadeInvitation?>(null) }
-                            // Whether the last write to the group was refused.
-                            // Held beside the invitation and for the same
-                            // reason: nothing in the database says it, and the
-                            // person who pressed the button is owed an answer.
-                            var groupTrouble by remember { mutableStateOf(false) }
-
-                            // The service does the same; whichever starts
-                            // first takes the old documents back.
-                            LaunchedEffect(current.memberId) {
-                                leavePreviousId(current.memberId, device)
-                            }
-
-                            // Only the restart ConnectState.Done led to ever
-                            // leaves one of these behind; an ordinary sign-in
-                            // finds nothing and this does nothing.
-                            var wrongAccount by remember {
-                                mutableStateOf<PendingInvitation?>(null)
-                            }
-
-                            LaunchedEffect(current.memberId) {
-                                val pending = PendingInvitationStore.read(this@MainActivity)
-                                    ?: return@LaunchedEffect
-
-                                // Plainly another account: said before any
-                                // write, and the invitation is kept for the
-                                // right one (ADR-0019).
-                                if (pending.meantForAnotherAccount(current.email)) {
-                                    wrongAccount = pending
-
-                                    return@LaunchedEffect
-                                }
-
-                                groupTrouble =
-                                    !withGroup("joined a group from a pending invitation") {
-                                        consumePendingInvitation(
-                                            this@MainActivity,
-                                            current.memberId,
-                                            pending,
-                                        )
-                                    }
-                            }
-
-                            wrongAccount?.let { pending ->
-                                WrongAccountDialog(
-                                    invitedAddress = pending.invitedAddress.orEmpty(),
-                                    signedInAddress =
-                                    ConnectLink.shortenedAddress(current.email.orEmpty()),
-                                    onLater = {
-                                        PendingInvitationStore.clear(this@MainActivity)
-                                        wrongAccount = null
-                                    },
-                                    onSwitchAccount = {
-                                        wrongAccount = null
-                                        signIn.signOut()
-                                    },
-                                )
-                            }
-
-                            // A service left without a session stops after a
-                            // minute, and the account signed in after that —
-                            // the phone handed to somebody else — would share
-                            // nothing until the screen was next opened.
-                            LaunchedEffect(current.memberId) {
-                                continueSharingSetup()
-                            }
-
-                            KeepWatching(current.memberId, device.id)
-
-                            // The other half of the same collection: this
-                            // phone says it is looking, and reads who else is.
-                            val watching by rememberWatchers(current.memberId, device.id)
-
-                            PublishProfile(
-                                memberId = current.memberId,
-                                displayName = current.displayName,
-                                pictureUrl = current.pictureUrl,
-                                deviceId = device.id,
+                        is AuthState.SignedIn ->
+                            SignedInScreen(
+                                activity = this,
+                                current = current,
+                                theme = theme,
+                                onTheme = { wanted -> theme = wanted },
+                                language = language,
+                                sharingOn = sharingOn,
+                                onSharingOn = { wanted -> sharingOn = wanted },
+                                startupSet = startupSet,
+                                onStartupSet = { set -> startupSet = set },
+                                jumpsFiltered = jumpsFiltered,
+                                onJumpsFiltered = { wanted -> jumpsFiltered = wanted },
+                                sourcesLeftOut = sourcesLeftOut,
+                                onSourcesLeftOut = { left -> sourcesLeftOut = left },
+                                aidingDoubted = aidingDoubted,
                             )
-
-                            // Whether the database answers, told to every screen below the map
-                            // rather than passed down through each of them.
-                            CompositionLocalProvider(LocalLink provides link) {
-                                MapScreen(
-                                    // Called what this member called them, where
-                                    // they did; the rest of the screen never
-                                    // needs to know which name is whose.
-                                    positions =
-                                    labelledPositions(onTheMap.positions, labels, grants, searches),
-                                    // Those whose position this phone is refused:
-                                    // an empty map with a reason is not the same
-                                    // thing as an empty map without one.
-                                    outOfReach = onTheMap.outOfReach,
-                                    profiles = labelledProfiles(profiles.orEmpty(), labels),
-                                    watchers = watching,
-                                    ownMemberId = current.memberId,
-                                    ownPhoneId = positionId(current.memberId, device.id),
-                                    ownDisplayName = current.displayName,
-                                    ownPictureUrl = current.pictureUrl,
-                                    searches = searches,
-                                    settings =
-                                    SettingsState(
-                                        sharing = sharingOn,
-                                        permissionNotice = permissionNotice,
-                                        theme = theme,
-                                        language = language,
-                                        sharedWith = sharedWith,
-                                        batteryUnrestricted = batteryFree,
-                                        sirenThroughSilence = sirenLoud,
-                                        startupScreen = startupAvailable,
-                                        startupSet = startupSet,
-                                        jumpsFiltered = jumpsFiltered,
-                                        sourcesLeftOut = sourcesLeftOut,
-                                        aidingDoubted = aidingDoubted,
-                                        roster = roster,
-                                        grants = grants,
-                                        invitation = invitation,
-                                        site = FamilyProject.site,
-                                        groupTrouble = groupTrouble,
-                                        phoneName =
-                                        grants[current.memberId]?.phones?.get(device.id)?.name,
-                                        searches = searches,
-                                    ),
-                                    actions =
-                                    SettingsActions(
-                                        onSharingChange = { wanted ->
-                                            sharingOn = wanted
-                                            applySharing(wanted)
-                                        },
-                                        // Read by the service out of the same
-                                        // store, which is where it looks on every
-                                        // fix that arrives.
-                                        onJumpsFilteredChange = { wanted ->
-                                            jumpsFiltered = wanted
-                                            jumps.enabled = wanted
-                                        },
-                                        // Left in the same store for the service
-                                        // to pick up and spend: the request has
-                                        // to outlive this screen, since the phone
-                                        // may not have a fix to answer it with
-                                        // until minutes from now.
-                                        // The service reads the same store on
-                                        // every answer it gets, so the choice
-                                        // takes effect at the next fix rather
-                                        // than at the next restart.
-                                        onSourceUseChange = { source, counted ->
-                                            sources.use(source, counted)
-                                            sourcesLeftOut = sources.leftOut
-                                        },
-                                        onForgetPlace = { jumps.askToForget() },
-                                        // Done here and not in the service:
-                                        // the command is answered by the
-                                        // receiver on the spot, and what it
-                                        // answered is what the row shows.
-                                        onForgetAiding = {
-                                            forgetAidingData(this@MainActivity)
-                                        },
-                                        onThemeChange = { wanted ->
-                                            theme = wanted
-                                            appearance.choice = wanted
-                                        },
-                                        // Handed to the platform and not kept
-                                        // here: it stores the answer, tells the
-                                        // system settings about it and builds the
-                                        // screens again in the new language.
-                                        onLanguageChange = { wanted -> speak(wanted) },
-                                        // Written into the grant, and left to be
-                                        // read back: the phones of a member share
-                                        // the same permissions, so the answer has
-                                        // to come from where all of them look.
-                                        onShare = { readerId, span ->
-                                            lifecycleScope.launch {
-                                                publishSharing(
-                                                    memberId = current.memberId,
-                                                    sharedWith =
-                                                    withShare(
-                                                        sharedWith = sharedWith,
-                                                        readerId = readerId,
-                                                        span = span,
-                                                        now = Instant.now(),
-                                                    ),
-                                                )
-                                            }
-                                        },
-                                        // Read back through the phones of this
-                                        // member, like every other phone reads it.
-                                        onPhoneNameChange = { name ->
-                                            lifecycleScope.launch {
-                                                writePhoneName(current.memberId, device.id, name)
-                                            }
-                                        },
-                                        onOpenSettings = ::openApplicationSettings,
-                                        onAllowBattery = ::askBatteryExemption,
-                                        // Read back in onStart, as the battery row is.
-                                        onAllowSirenThroughSilence = ::askSirenThroughSilence,
-                                        onOpenStartup = ::openStartupScreen,
-                                        onStartupSetChange = { set ->
-                                            startupSet = set
-                                            backgroundWork.startupSet = set
-                                        },
-                                        // Refused when a group already exists,
-                                        // which is the answer to the question the
-                                        // screen cannot ask: a phone outside a
-                                        // group cannot read the roster, so it
-                                        // cannot tell an empty household from one
-                                        // it is not in.
-                                        onFoundGroup = { name ->
-                                            lifecycleScope.launch {
-                                                groupTrouble =
-                                                    !withGroup("found a group") {
-                                                        foundGroup(
-                                                            this@MainActivity,
-                                                            current.memberId,
-                                                            name,
-                                                        )
-                                                    }
-                                            }
-                                        },
-                                        onMakeInvitation = { email ->
-                                            lifecycleScope.launch {
-                                                groupTrouble =
-                                                    !withGroup("made an invitation") {
-                                                        invitation =
-                                                            makeInvitation(
-                                                                current.memberId,
-                                                                email,
-                                                            )
-                                                    }
-                                            }
-                                        },
-                                        onJoinGroup = { invited ->
-                                            lifecycleScope.launch {
-                                                groupTrouble =
-                                                    !withGroup("joined a group") {
-                                                        joinGroup(
-                                                            this@MainActivity,
-                                                            current.memberId,
-                                                            invited,
-                                                        )
-                                                    }
-                                            }
-                                        },
-                                        // A link typed or pasted here is the same
-                                        // thing a messenger hands over as an
-                                        // intent, so it takes the same path:
-                                        // ConnectFlow reads it, and the dialog
-                                        // above the map shows what it asks for.
-                                        onPasteLink = connectFlow::pasteLink,
-                                        onRemoveMember = { memberId ->
-                                            lifecycleScope.launch {
-                                                groupTrouble =
-                                                    !withGroup("removed a member") {
-                                                        roster?.let {
-                                                            removeFromGroup(it, memberId)
-                                                        }
-                                                    }
-                                            }
-                                        },
-                                        onSetRunning = { memberId, runs ->
-                                            lifecycleScope.launch {
-                                                groupTrouble =
-                                                    !withGroup("changed who runs the group") {
-                                                        setRunning(memberId, runs)
-                                                    }
-                                            }
-                                        },
-                                        // Called from the dialog's own
-                                        // coroutine, as onSearch and
-                                        // onCallSiren are: it has to stay
-                                        // open on a refusal and say so.
-                                        onRenameGroup = { name ->
-                                            writeOutcome("the group could not be renamed") {
-                                                renameGroup(name)
-                                            }
-                                        },
-                                        onSignOut = {
-                                            lifecycleScope.launch {
-                                                forgetThisPhone(current.memberId)
-                                                signIn.signOut()
-                                            }
-                                        },
-                                        // A suspend function called from the
-                                        // dialog's own coroutine rather than
-                                        // wrapped in lifecycleScope.launch here:
-                                        // the dialog has to stay open on a
-                                        // refusal and say so, which nothing
-                                        // fire-and-forget could tell it.
-                                        onSearch = { phoneId, phoneName, renew, hours ->
-                                            writeOutcome("a search could not be written") {
-                                                if (renew) {
-                                                    renewSearch(
-                                                        phoneId,
-                                                        phoneName,
-                                                        current.memberId,
-                                                        hours,
-                                                    )
-                                                } else {
-                                                    openSearch(
-                                                        phoneId,
-                                                        phoneName,
-                                                        current.memberId,
-                                                        hours,
-                                                    )
-                                                }
-                                            }
-                                        },
-                                        sirenOf = ::phoneSiren,
-                                        onCallSiren = { phoneId ->
-                                            writeOutcome("a siren could not be called") {
-                                                callSiren(phoneId, current.memberId)
-                                            }
-                                        },
-                                        onStopSiren = { phoneId ->
-                                            try {
-                                                withinAnswerWait {
-                                                    stopSiren(phoneId, current.memberId)
-                                                }
-                                            } catch (cancellation: CancellationException) {
-                                                throw cancellation
-                                            } catch (refusal: Exception) {
-                                                AppLog.w(
-                                                    TAG,
-                                                    "a siren could not be stopped",
-                                                    refusal,
-                                                )
-                                            }
-                                        },
-                                        onForgetPhone = { phoneId ->
-                                            try {
-                                                forgetPhone(
-                                                    current.memberId,
-                                                    phoneId.substringAfter('.'),
-                                                )
-                                                true
-                                            } catch (cancellation: CancellationException) {
-                                                throw cancellation
-                                            } catch (refusal: Exception) {
-                                                AppLog.w(
-                                                    TAG,
-                                                    "a phone could not be removed",
-                                                    refusal,
-                                                )
-                                                false
-                                            }
-                                        },
-                                        onEndSearch = { phoneId ->
-                                            try {
-                                                withinAnswerWait { endSearch(phoneId) }
-                                            } catch (cancellation: CancellationException) {
-                                                throw cancellation
-                                            } catch (refusal: Exception) {
-                                                AppLog.w(
-                                                    TAG,
-                                                    "a search could not be ended",
-                                                    refusal,
-                                                )
-                                            }
-                                        },
-                                    ),
-                                    labels = labels,
-                                    onLabel = { kind, key, name ->
-                                        lifecycleScope.launch {
-                                            writeLabel(current.memberId, kind, key, name)
-                                        }
-                                    },
-                                )
-                            }
-                        }
 
                         else ->
                             SignInScreen(
@@ -784,7 +372,7 @@ class MainActivity : AppCompatActivity() {
      * The switch states what the member wants; whether the service can act on
      * it is a separate question, and one the platform answers.
      */
-    private fun applySharing(wanted: Boolean) {
+    internal fun applySharing(wanted: Boolean) {
         sharing.enabled = wanted
 
         if (!wanted) {
@@ -803,7 +391,7 @@ class MainActivity : AppCompatActivity() {
      * Called again after every answer, so the three requests arrive one after
      * another rather than all at once.
      */
-    private fun continueSharingSetup() {
+    internal fun continueSharingSetup() {
         if (!sharing.enabled) {
             return
         }
@@ -869,7 +457,7 @@ class MainActivity : AppCompatActivity() {
      * An empty list is what "follow the phone" is made of, and handing it over
      * is what takes a member back to the language of their system.
      */
-    private fun speak(choice: LanguageChoice) {
+    internal fun speak(choice: LanguageChoice) {
         val tag = languageTag(choice)
         val locales =
             if (tag == null) {
@@ -935,11 +523,11 @@ class MainActivity : AppCompatActivity() {
         askBatteryExemption()
     }
 
-    private fun askSirenThroughSilence() {
+    internal fun askSirenThroughSilence() {
         startActivity(Intent(Settings.ACTION_NOTIFICATION_POLICY_ACCESS_SETTINGS))
     }
 
-    private fun askBatteryExemption() {
+    internal fun askBatteryExemption() {
         askBattery.launch(batteryExemptionRequest(this))
     }
 
@@ -961,7 +549,7 @@ class MainActivity : AppCompatActivity() {
     // pressed by somebody who is waiting to see something happen, and a
     // refusal that only reaches the log looks exactly like a write that did
     // nothing.
-    private suspend fun withGroup(done: String, write: suspend () -> Unit): Boolean {
+    internal suspend fun withGroup(done: String, write: suspend () -> Unit): Boolean {
         try {
             write()
 
@@ -977,7 +565,7 @@ class MainActivity : AppCompatActivity() {
         return true
     }
 
-    private fun openStartupScreen() {
+    internal fun openStartupScreen() {
         val screen = startupScreen(this)
 
         if (screen == null) {
@@ -989,7 +577,7 @@ class MainActivity : AppCompatActivity() {
         startActivity(screen)
     }
 
-    private fun openApplicationSettings() {
+    internal fun openApplicationSettings() {
         startActivity(
             Intent(
                 Settings.ACTION_APPLICATION_DETAILS_SETTINGS,
@@ -1048,7 +636,7 @@ class MainActivity : AppCompatActivity() {
      * a network signs out all the same; its line is then removed from another
      * of the member's phones or from the page.
      */
-    private suspend fun forgetThisPhone(memberId: String) {
+    internal suspend fun forgetThisPhone(memberId: String) {
         sharing.enabled = false
         stopService(Intent(this, SharingService::class.java))
 
@@ -1072,7 +660,7 @@ class MainActivity : AppCompatActivity() {
      * [io.github.vitalyostanin.geoshare.map.ANSWER_WAIT], refused, or left
      * unanswered — in which case Firestore still holds it and sends it later.
      */
-    private suspend fun writeOutcome(failure: String, write: suspend () -> Unit): WriteOutcome =
+    internal suspend fun writeOutcome(failure: String, write: suspend () -> Unit): WriteOutcome =
         try {
             withinAnswerWait { write() }
             WriteOutcome.DONE
@@ -1086,7 +674,7 @@ class MainActivity : AppCompatActivity() {
             WriteOutcome.REFUSED
         }
 
-    private companion object {
+    internal companion object {
         const val TAG = "geoshare.main"
 
         /** How long signing out waits for this phone to be taken out of the group. */
