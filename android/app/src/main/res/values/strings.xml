@@ -31,7 +31,7 @@
     <string name="jumps_title">Leave out impossible positions</string>
     <string name="jumps_explained">Where the satellites are jammed, the device is told it is somewhere it cannot be, and the marker jumps across the map. This leaves out any position that would have taken more than 200 km/h to reach.</string>
     <string name="sources_title">Sources this device counts</string>
-    <string name="sources_explained">Which kinds of answer count towards the point this device reports. An answer from a source switched off is still collected and logged, but it moves no marker and reaches no one. Where the satellites are jammed, leaving only the towers and the Wi-Fi is the sensible setting: a wider answer, but not a false one. With every switch off the device writes nothing at all.</string>
+    <string name="sources_explained">Which kinds of answer count towards the point this device reports. The satellites and the towers with the Wi-Fi, once switched off, are not asked at all, which also saves the battery. An answer of the other kinds is still collected and logged, but it moves no marker and reaches no one. Where the satellites are jammed, leaving only the towers and the Wi-Fi is the sensible setting: a wider answer, but not a false one. With every switch off the device writes nothing at all.</string>
     <string name="sources_button">Sources: %1$d of %2$d</string>
     <string name="jumps_forget">Forget the last place</string>
     <string name="jumps_forgotten">Forgotten</string>

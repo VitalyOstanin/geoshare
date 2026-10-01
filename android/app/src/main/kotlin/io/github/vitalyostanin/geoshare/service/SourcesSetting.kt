@@ -1,9 +1,14 @@
 package io.github.vitalyostanin.geoshare.service
 
 import android.content.Context
+import android.content.SharedPreferences
 import io.github.vitalyostanin.geoshare.collection.FoundBy
 import io.github.vitalyostanin.geoshare.collection.SourceChoice
 import io.github.vitalyostanin.geoshare.collection.usesWhatWasFoundBy
+import kotlinx.coroutines.channels.awaitClose
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.callbackFlow
+import kotlinx.coroutines.flow.distinctUntilChanged
 
 private const val FILE = "collection"
 private const val KEY_LEFT_OUT = "sourcesLeftOut"
@@ -32,6 +37,26 @@ class SourcesSetting(context: Context) {
 
     /** Whether a position from this source is one to take into account. */
     fun uses(whence: FoundBy): Boolean = usesWhatWasFoundBy(whence, leftOut)
+
+    /**
+     * The switches as they stand, and again whenever one is flipped.
+     *
+     * The service asks only the sources left on, so a flipped switch has to
+     * reach the request rather than wait for the next answer to be read.
+     */
+    fun changes(): Flow<Set<String>> = callbackFlow {
+        val listener =
+            SharedPreferences.OnSharedPreferenceChangeListener { _, key ->
+                if (key == KEY_LEFT_OUT) {
+                    trySend(leftOut)
+                }
+            }
+
+        store.registerOnSharedPreferenceChangeListener(listener)
+        send(leftOut)
+
+        awaitClose { store.unregisterOnSharedPreferenceChangeListener(listener) }
+    }.distinctUntilChanged()
 
     /** Switches one source on or off, leaving the rest as they were. */
     fun use(choice: SourceChoice, used: Boolean) {

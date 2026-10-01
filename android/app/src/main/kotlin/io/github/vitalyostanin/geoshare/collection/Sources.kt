@@ -14,9 +14,10 @@ package io.github.vitalyostanin.geoshare.collection
 // A source switched off here is a source this phone does not take into account
 // when it works out its point: an answer arriving that way is left out the way
 // a jump is, so it moves no marker, becomes no last position and reaches no
-// other phone. It is still asked for, weighed by every rule and written to the
-// log, because the rules need the run of answers and the log is the evidence —
-// what stops is its counting towards where the phone is.
+// other phone. The satellites and the other radios, switched off, are not
+// asked at all — see [whomToAsk]; the remaining kinds cannot be asked for by
+// name, so they still arrive, are weighed by every rule and written to the
+// log, and what stops is their counting towards where the phone is.
 
 /**
  * A source as the member sees it: one switch, and the ways the platform has of

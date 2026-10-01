@@ -13,7 +13,9 @@ import androidx.core.content.getSystemService
 import androidx.lifecycle.LifecycleService
 import androidx.lifecycle.lifecycleScope
 import com.google.firebase.auth.FirebaseAuth
+import io.github.vitalyostanin.geoshare.collection.Accuracy
 import io.github.vitalyostanin.geoshare.collection.Answered
+import io.github.vitalyostanin.geoshare.collection.Asked
 import io.github.vitalyostanin.geoshare.collection.CARRIED_STEPS
 import io.github.vitalyostanin.geoshare.collection.CLOCK_TOLERANCE
 import io.github.vitalyostanin.geoshare.collection.CircleLimits
@@ -53,6 +55,7 @@ import io.github.vitalyostanin.geoshare.collection.otherRadiosAreDue
 import io.github.vitalyostanin.geoshare.collection.pinnedWhileWalking
 import io.github.vitalyostanin.geoshare.collection.putDownAt
 import io.github.vitalyostanin.geoshare.collection.remembering
+import io.github.vitalyostanin.geoshare.collection.rescueAccuracy
 import io.github.vitalyostanin.geoshare.collection.rescueAfter
 import io.github.vitalyostanin.geoshare.collection.said
 import io.github.vitalyostanin.geoshare.collection.saysMoreThan
@@ -63,6 +66,7 @@ import io.github.vitalyostanin.geoshare.collection.shouldWrite
 import io.github.vitalyostanin.geoshare.collection.stillSettling
 import io.github.vitalyostanin.geoshare.collection.walkingNow
 import io.github.vitalyostanin.geoshare.collection.watchedUntil
+import io.github.vitalyostanin.geoshare.collection.whomToAsk
 import io.github.vitalyostanin.geoshare.collection.whyAJump
 import io.github.vitalyostanin.geoshare.collection.word
 import io.github.vitalyostanin.geoshare.log.AppLog
@@ -70,6 +74,7 @@ import io.github.vitalyostanin.geoshare.map.stands
 import io.github.vitalyostanin.geoshare.project.FamilyProject
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.awaitCancellation
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
@@ -389,6 +394,16 @@ class SharingService : LifecycleService() {
 
     /** Which sources of a position this phone takes into account, as asked on the screen. */
     private val sources by lazy { SourcesSetting(this) }
+
+    private val playServices by lazy {
+        playServicesPresent(this).also { present ->
+            if (!present) {
+                AppLog.w(TAG, "no Play Services on this phone; the platform is asked instead")
+            }
+        }
+    }
+
+    private val providers by lazy { presentProviders(this) }
 
     /**
      * What the radio itself says, apart from any position that comes out of it.
@@ -883,7 +898,11 @@ class SharingService : LifecycleService() {
                 launch { keepSearchNotification(this@SharingService, ownDevice) }
                 launch { sirens.answer(memberId, ownDevice) }
 
-                modes(memberId, device).collectLatest { mode ->
+                // A flipped source switch restarts the round like a new mode
+                // does: the request itself has to change, not only the reading.
+                modes(memberId, device).combine(sources.changes()) { mode, _ ->
+                    mode
+                }.collectLatest { mode ->
                     AppLog.i(TAG, "collecting in mode $mode")
                     lastMode = mode
                     // A mode beginning is news about the phone as well as a
@@ -908,6 +927,15 @@ class SharingService : LifecycleService() {
                     // where the phone is rather than where it was ten minutes
                     // ago — which is what the filter would have answered for a
                     // phone standing still.
+                    val asked = asking(mode.accuracy)
+
+                    if (asked == null) {
+                        // Every source the member left on is one this phone
+                        // does not have: an answer could only be left out.
+                        AppLog.w(TAG, "nothing to ask in mode $mode with the sources left on")
+                        awaitCancellation()
+                    }
+
                     firstPosition(mode)?.let { fix ->
                         freshenTheSecondOpinion(mode)
                         writeIfWorth(writer, fix, mode, always = true)
@@ -920,7 +948,7 @@ class SharingService : LifecycleService() {
                         launch { skyNotes.noteTheSkyWhileSilent(mode) }
                         launch { keepASecondOpinion(mode) }
 
-                        positionUpdates(this@SharingService, spec).collect { fix ->
+                        positionUpdates(this@SharingService, spec, asked).collect { fix ->
                             heardAt = Instant.now()
                             freshenTheSecondOpinion(mode)
                             writeIfWorth(writer, fix, mode)
@@ -1202,8 +1230,9 @@ class SharingService : LifecycleService() {
 
     private suspend fun firstPosition(mode: CollectionMode): Fix? {
         val priority = requestSpec(mode)?.priority ?: return null
+        val asked = asking(mode.accuracy) ?: return null
 
-        return positionNow(priority)
+        return positionNow(priority, asked)
     }
 
     /**
@@ -1253,6 +1282,7 @@ class SharingService : LifecycleService() {
     private suspend fun rescueWhileSilent(writer: PositionWriter, mode: CollectionMode) {
         val silence = rescueAfter(mode) ?: return
         val priority = rescuePriority(mode) ?: return
+        val asked = asking(rescueAccuracy(mode)) ?: return
 
         while (true) {
             val quiet = Duration.between(heardAt, Instant.now())
@@ -1270,7 +1300,7 @@ class SharingService : LifecycleService() {
             // instead of turning into a loop.
             heardAt = Instant.now()
 
-            val fix = positionNow(priority)
+            val fix = positionNow(priority, asked)
 
             if (fix != null) {
                 writeIfWorth(writer, fix, mode, always = true)
@@ -1530,12 +1560,16 @@ class SharingService : LifecycleService() {
             )
     }
 
+    /** Who to ask with this accuracy, given the phone and the switches. */
+    private fun asking(accuracy: Accuracy): Asked? =
+        whomToAsk(accuracy, playServices, sources.leftOut, providers)
+
     /**
      * One position, asked for now; a provider that will not answer is not a
      * reason to stop collecting, and the next round asks again.
      */
-    private suspend fun positionNow(priority: Int): Fix? = try {
-        currentPosition(this, priority)
+    private suspend fun positionNow(priority: Int, asked: Asked): Fix? = try {
+        currentPosition(this, priority, asked)
     } catch (cancellation: CancellationException) {
         throw cancellation
     } catch (error: Exception) {
