@@ -9,6 +9,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import io.github.vitalyostanin.geoshare.R
@@ -87,11 +88,15 @@ fun SearchDialog(
             }
         },
         confirmButton = {
-            TextButton(onClick = onGo, enabled = writable(busy, trouble)) {
+            val goes = writable(busy, trouble)
+
+            // Red only while it can be pressed: a colour of its own would
+            // keep a button that does nothing looking like one that does.
+            TextButton(onClick = onGo, enabled = goes) {
                 Text(
                     text =
                     stringResource(if (renew) R.string.search_renew else R.string.search_go),
-                    color = MaterialTheme.colorScheme.error,
+                    color = if (goes) MaterialTheme.colorScheme.error else Color.Unspecified,
                 )
             }
         },

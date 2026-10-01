@@ -272,6 +272,16 @@ button.alarm-fill {
     cursor: default;
 }
 
+#search-buttons button.alarm:disabled,
+#confirm-buttons button.alarm:disabled,
+#siren-buttons button.alarm:disabled {
+    border-color: var(--edge);
+    background: var(--off-fill);
+    color: var(--on-off);
+    opacity: 1;
+    cursor: default;
+}
+
 /* Told to the member being looked for, across the top of the map and clear of
    the two round buttons in its corners. */
 .sought-banner {

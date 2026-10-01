@@ -27,6 +27,10 @@
        about a doorway, and the colour is there to be noticed rather than
        acted on. */
     --wide: #a85a17;
+    /* A button that cannot be pressed just now: grey, whatever colour it has
+       when it can, so that one doing nothing never looks like one that acts. */
+    --off-fill: #e3e3e6;
+    --on-off: #8a8a92;
 
     /* The same surfaces at night, named once and switched to in the two
        places below. A media query and an attribute cannot be asked for in one
@@ -39,6 +43,8 @@
     --night-error: #ef9a9a;
     --night-charging: #81c784;
     --night-wide: #d99149;
+    --night-off-fill: #3a3a42;
+    --night-on-off: #8d8d96;
 
     /* A tile is a picture drawn light on somebody else's server, so a dark map
        is either a different set of tiles or this: the picture turned over and
@@ -77,6 +83,8 @@
         --error: var(--night-error);
         --charging: var(--night-charging);
         --wide: var(--night-wide);
+        --off-fill: var(--night-off-fill);
+        --on-off: var(--night-on-off);
         --canvas-filter: var(--night-canvas);
     }
 }
@@ -92,6 +100,8 @@
     --error: var(--night-error);
     --charging: var(--night-charging);
     --wide: var(--night-wide);
+    --off-fill: var(--night-off-fill);
+    --on-off: var(--night-on-off);
     --canvas-filter: var(--night-canvas);
 }
 

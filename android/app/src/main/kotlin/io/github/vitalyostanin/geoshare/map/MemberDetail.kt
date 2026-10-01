@@ -349,6 +349,8 @@ private fun DetailSummary(member: MemberPosition, away: Double?, now: Instant) {
                 MaterialTheme.colorScheme.onSurface
             },
         )
+
+        knownNote()?.let { Fact(it) }
     }
 }
 

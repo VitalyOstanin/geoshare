@@ -221,6 +221,9 @@ export function createMap(element, onCardChange = () => {}, cardElement) {
         onName: null,
         ownMemberId: null,
         personName: null,
+        // What the card's ages are as of while the database is silent, empty
+        // while it answers. Set by the page, which judges the link.
+        knownNote: null,
     };
 
     // The ring's source and layers come with the style; what has to wait is the

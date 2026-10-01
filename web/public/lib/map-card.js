@@ -308,6 +308,17 @@ function summary(view, position, now) {
 
     line.append(batteryText(position));
 
+    // While the database is silent the ages above are of what the page last
+    // heard, not of now; the page says as of when.
+    const known = view.knownNote?.();
+
+    if (known) {
+        const part = document.createElement('span');
+
+        part.textContent = known;
+        line.append(part);
+    }
+
     return line;
 }
 

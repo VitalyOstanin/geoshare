@@ -24,7 +24,7 @@ import { closeAdmin } from './page/admin-panel.js';
 import { askName, closeNaming } from './page/dialogs.js';
 import { closeSearch, drawSearchAsk, drawSought, searchesChanged, soughtLine } from './page/search-ui.js';
 import { drawSirenAsk } from './page/siren-ui.js';
-import { followLink, unfollowLink } from './page/link-ui.js';
+import { followLink, knownNote, unfollowLink } from './page/link-ui.js';
 import { followAttention, unfollowAttention } from './page/pause.js';
 import { notePageLooking, personName, render, showAccount, showStripEdge } from './page/strip.js';
 
@@ -77,6 +77,7 @@ export function start() {
         state.view.onName = askName;
         state.view.personName = personName;
         state.view.soughtLine = soughtLine;
+        state.view.knownNote = knownNote;
     }
 
     // The map measures its element when it is created, and until the sign-in
