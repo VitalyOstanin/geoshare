@@ -71,6 +71,48 @@ val SECOND_OPINION_TOGETHER: Duration = NETWORK_ANSWER_STALE
 val SECOND_OPINION_ASKED_EVERY: Duration = Duration.ofMinutes(5)
 
 /**
+ * How long the other radios may go unasked in a mode.
+ *
+ * Never more often than the mode itself asks. A scan of the Wi-Fi every five
+ * minutes beside a position every twenty spends four times what the night
+ * mode was chosen to spend, and most of what this application costs a phone
+ * lying on a table is exactly those scans.
+ */
+fun secondOpinionEvery(mode: CollectionMode): Duration =
+    maxOf(SECOND_OPINION_ASKED_EVERY, mode.interval)
+
+/**
+ * Whether the second opinion is fetched as a position arrives rather than on
+ * a clock.
+ *
+ * In a mode that asks less often than an answer stays comparable, an answer
+ * fetched on a clock is nearly always too old by the time the position it is
+ * meant for arrives, and the rule would fall silent while still paying for
+ * the scans.
+ */
+fun secondOpinionWithEachFix(mode: CollectionMode): Boolean =
+    mode.interval > SECOND_OPINION_TOGETHER
+
+/**
+ * Whether a position arriving now should wait for the other radios to be
+ * asked: not when the answer at hand is still comparable, and not more often
+ * than [secondOpinionEvery].
+ */
+fun secondOpinionDue(
+    mode: CollectionMode,
+    held: Fix?,
+    askedAt: Instant?,
+    now: Instant,
+    nowSinceBoot: Duration? = null,
+): Boolean {
+    if (held != null && since(held, now, nowSinceBoot).abs() <= SECOND_OPINION_TOGETHER) {
+        return false
+    }
+
+    return askedAt == null || Duration.between(askedAt, now) >= secondOpinionEvery(mode)
+}
+
+/**
  * Whether something the phone did not measure contradicts the satellites about
  * where it is.
  *

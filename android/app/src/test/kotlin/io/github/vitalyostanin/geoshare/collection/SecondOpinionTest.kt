@@ -158,4 +158,41 @@ class SecondOpinionTest {
         assertFalse("an answer half an hour old", backedUpBy(spoofed, stale, at))
         assertFalse("the satellites under another name", backedUpBy(spoofed, itself, at))
     }
+
+    @Test
+    fun `the other radios are never asked more often than the mode asks`() {
+        assertEquals(Duration.ofMinutes(20), secondOpinionEvery(CollectionMode.Night))
+        assertEquals(Duration.ofMinutes(15), secondOpinionEvery(CollectionMode.Standby))
+        assertEquals(SECOND_OPINION_ASKED_EVERY, secondOpinionEvery(CollectionMode.Moving))
+        assertEquals(SECOND_OPINION_ASKED_EVERY, secondOpinionEvery(CollectionMode.Viewing))
+    }
+
+    // On a clock, an answer in the slow modes would be older than the window
+    // by the time the position arrives, and the rule would never speak.
+    @Test
+    fun `the slow modes ask with each position and the fast ones on a clock`() {
+        assertTrue(secondOpinionWithEachFix(CollectionMode.Night))
+        assertTrue(secondOpinionWithEachFix(CollectionMode.Standby))
+        assertFalse(secondOpinionWithEachFix(CollectionMode.Moving))
+        assertFalse(secondOpinionWithEachFix(CollectionMode.Viewing))
+    }
+
+    @Test
+    fun `a position waits for the other radios only when it has to`() {
+        val night = CollectionMode.Night
+        val fresh = fix(61.03268, 4.40300, 45.6, takenAt = at.minusSeconds(60))
+        val old = fix(61.03268, 4.40300, 45.6, takenAt = at.minus(Duration.ofMinutes(30)))
+
+        assertFalse("an answer still comparable", secondOpinionDue(night, fresh, null, at))
+        assertTrue("nothing at hand, never asked", secondOpinionDue(night, null, null, at))
+        assertTrue("an old answer, never asked", secondOpinionDue(night, old, null, at))
+        assertFalse(
+            "asked ten minutes ago in a twenty-minute mode",
+            secondOpinionDue(night, old, at.minus(Duration.ofMinutes(10)), at),
+        )
+        assertTrue(
+            "asked a whole round ago",
+            secondOpinionDue(night, old, at.minus(Duration.ofMinutes(20)), at),
+        )
+    }
 }

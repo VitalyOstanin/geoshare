@@ -29,7 +29,6 @@ import io.github.vitalyostanin.geoshare.collection.JumpReason
 import io.github.vitalyostanin.geoshare.collection.LEFT_OUT_BY_SOURCE
 import io.github.vitalyostanin.geoshare.collection.Moving
 import io.github.vitalyostanin.geoshare.collection.PutDown
-import io.github.vitalyostanin.geoshare.collection.SECOND_OPINION_ASKED_EVERY
 import io.github.vitalyostanin.geoshare.collection.STIRS_KEPT
 import io.github.vitalyostanin.geoshare.collection.Stir
 import io.github.vitalyostanin.geoshare.collection.Trail
@@ -57,6 +56,9 @@ import io.github.vitalyostanin.geoshare.collection.remembering
 import io.github.vitalyostanin.geoshare.collection.rescueAfter
 import io.github.vitalyostanin.geoshare.collection.said
 import io.github.vitalyostanin.geoshare.collection.saysMoreThan
+import io.github.vitalyostanin.geoshare.collection.secondOpinionDue
+import io.github.vitalyostanin.geoshare.collection.secondOpinionEvery
+import io.github.vitalyostanin.geoshare.collection.secondOpinionWithEachFix
 import io.github.vitalyostanin.geoshare.collection.shouldWrite
 import io.github.vitalyostanin.geoshare.collection.stillSettling
 import io.github.vitalyostanin.geoshare.collection.walkingNow
@@ -261,6 +263,9 @@ class SharingService : LifecycleService() {
      * another rule fires there would be nothing left to compare.
      */
     private var networkSaid: Fix? = null
+
+    /** When the second opinion was last asked for, by the clock or by a position. */
+    private var secondOpinionAskedAt: Instant? = null
 
     /**
      * The answers the satellites have given lately, newest last.
@@ -904,6 +909,7 @@ class SharingService : LifecycleService() {
                     // ago — which is what the filter would have answered for a
                     // phone standing still.
                     firstPosition(mode)?.let { fix ->
+                        freshenTheSecondOpinion(mode)
                         writeIfWorth(writer, fix, mode, always = true)
                     }
 
@@ -912,10 +918,11 @@ class SharingService : LifecycleService() {
                         launch { rescueWhileSilent(writer, mode) }
                         launch { skyNotes.watchTheSatellites(mode) }
                         launch { skyNotes.noteTheSkyWhileSilent(mode) }
-                        launch { keepASecondOpinion() }
+                        launch { keepASecondOpinion(mode) }
 
                         positionUpdates(this@SharingService, spec).collect { fix ->
                             heardAt = Instant.now()
+                            freshenTheSecondOpinion(mode)
                             writeIfWorth(writer, fix, mode)
                         }
                     }
@@ -1352,25 +1359,64 @@ class SharingService : LifecycleService() {
      * speed, not the width, not the sensors of a phone in a moving car — and
      * the first moment anything is visibly wrong is the moment the road ends,
      * hours later. So the second opinion is fetched on a clock rather than on
-     * suspicion, and the cost of that is one scan every
-     * [SECOND_OPINION_ASKED_EVERY].
+     * suspicion, and the cost of that is one scan every [secondOpinionEvery].
+     *
+     * The slow modes fetch it with each position instead, through
+     * [freshenTheSecondOpinion].
      *
      * What comes back is never written, only compared: an answer from the
      * towers is worth a district, and the rules that decide what goes in the
      * document are asked about it elsewhere.
      */
-    private suspend fun keepASecondOpinion() {
+    private suspend fun keepASecondOpinion(mode: CollectionMode) {
+        if (secondOpinionWithEachFix(mode)) {
+            return
+        }
+
         while (true) {
-            val asked =
-                withTimeoutOrNull(NETWORK_ANSWER_WAIT.toMillis()) {
-                    networkPosition(this@SharingService)
-                } ?: lastNetworkPosition(this)
+            askForASecondOpinion()
+            delay(secondOpinionEvery(mode).toMillis())
+        }
+    }
 
-            if (asked != null) {
-                networkSaid = asked
+    /**
+     * Makes sure a position about to be judged in a slow mode has an answer
+     * from the other radios beside it.
+     *
+     * What the platform already knows is taken first, for nothing; the towers
+     * and the Wi-Fi are asked only when that is too old to compare and the
+     * mode's own round has passed since they were last asked. Nobody is
+     * watching in these modes, so the half minute the asking may take delays
+     * nothing that anybody sees.
+     */
+    private suspend fun freshenTheSecondOpinion(mode: CollectionMode) {
+        if (!secondOpinionWithEachFix(mode)) {
+            return
+        }
+
+        lastNetworkPosition(this)?.let { known ->
+            val held = networkSaid
+
+            if (held == null || known.takenAt.isAfter(held.takenAt)) {
+                networkSaid = known
             }
+        }
 
-            delay(SECOND_OPINION_ASKED_EVERY.toMillis())
+        if (secondOpinionDue(mode, networkSaid, secondOpinionAskedAt, Instant.now(), awakeFor())) {
+            askForASecondOpinion()
+        }
+    }
+
+    private suspend fun askForASecondOpinion() {
+        secondOpinionAskedAt = Instant.now()
+
+        val asked =
+            withTimeoutOrNull(NETWORK_ANSWER_WAIT.toMillis()) {
+                networkPosition(this@SharingService)
+            } ?: lastNetworkPosition(this)
+
+        if (asked != null) {
+            networkSaid = asked
         }
     }
 
