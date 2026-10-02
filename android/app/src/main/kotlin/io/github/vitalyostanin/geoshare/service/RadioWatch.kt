@@ -23,6 +23,10 @@ import io.github.vitalyostanin.geoshare.collection.Interference
 import io.github.vitalyostanin.geoshare.collection.Measurement
 import io.github.vitalyostanin.geoshare.collection.NavMessage
 import io.github.vitalyostanin.geoshare.collection.NavSoFar
+import io.github.vitalyostanin.geoshare.collection.ORBIT_EPOCHS_IN_A_ROW
+import io.github.vitalyostanin.geoshare.collection.OrbitEpoch
+import io.github.vitalyostanin.geoshare.collection.Orbits
+import io.github.vitalyostanin.geoshare.collection.Place
 import io.github.vitalyostanin.geoshare.collection.SHARE_THE_GPS_BAND
 import io.github.vitalyostanin.geoshare.collection.SLANT_MIN_SATELLITES
 import io.github.vitalyostanin.geoshare.collection.Satellite
@@ -38,10 +42,12 @@ import io.github.vitalyostanin.geoshare.collection.counted
 import io.github.vitalyostanin.geoshare.collection.driftOf
 import io.github.vitalyostanin.geoshare.collection.driftShapeOf
 import io.github.vitalyostanin.geoshare.collection.gainPerBand
+import io.github.vitalyostanin.geoshare.collection.holdAgainstOrbits
 import io.github.vitalyostanin.geoshare.collection.inOrder
 import io.github.vitalyostanin.geoshare.collection.interferenceFrom
 import io.github.vitalyostanin.geoshare.collection.leftThePhonesClock
 import io.github.vitalyostanin.geoshare.collection.loudnessPerBand
+import io.github.vitalyostanin.geoshare.collection.offTheOrbits
 import io.github.vitalyostanin.geoshare.collection.parted
 import io.github.vitalyostanin.geoshare.collection.presenceOf
 import io.github.vitalyostanin.geoshare.collection.reported
@@ -59,6 +65,7 @@ import java.time.Instant
 import java.util.Locale
 
 private const val TAG = "geoshare.radio"
+private const val METRES_IN_A_KILOMETRE = 1_000.0
 
 /**
  * How many epochs are held at once.
@@ -116,7 +123,28 @@ private val SKY_STILL_CURRENT: Duration = Duration.ofSeconds(5)
  * is the case this exists for: a phone that has gone silent is a phone with
  * nothing to write down, and this is what can still be written.
  */
-class RadioWatch(private val context: Context) {
+class RadioWatch(
+    private val context: Context,
+    /**
+     * The place the orbits are read from, or null where there is none to
+     * trust: see [noteOrbits].
+     */
+    private val reference: () -> Place? = { null },
+) {
+    /**
+     * The published orbits of the last day or so, or null until the first
+     * file has been read. Set by whoever downloads them.
+     */
+    @Volatile
+    var orbits: Orbits? = null
+
+    // The last epochs the orbits could be held against, newest last. Replaced
+    // whole rather than changed in place: it is read from the service's
+    // thread while the subscription fills it.
+    @Volatile
+    private var heldAgainstOrbits: List<OrbitEpoch> = emptyList()
+    private var offOrbitSaid = false
+
     // Kept apart by the system the satellites belong to, because the answer
     // this exists for is a disagreement between them: averaged together, a
     // band gone loud and a band holding still come out as a sky that has not
@@ -281,7 +309,29 @@ class RadioWatch(private val context: Context) {
         otherBandSilent =
         silences.size >= EPOCHS_READ_TOGETHER && silences.all { it },
         satelliteTimeApart = satelliteTimeParted(partings.toList()),
+        offTheOrbits = offTheOrbits(heldAgainstOrbits, Instant.now()),
     )
+
+    /**
+     * What the last epoch held against the orbits found, in the words of the
+     * log, or null where none has been.
+     */
+    fun orbitsSaying(): String? {
+        val last = heldAgainstOrbits.lastOrNull() ?: return null
+        val off = last.off.joinToString(", ") {
+            String.format(
+                Locale.ROOT,
+                "%s %d at %.0f° and %+.0f km",
+                it.constellation.word,
+                it.id,
+                it.elevationDegrees,
+                it.offMetres / METRES_IN_A_KILOMETRE,
+            )
+        }
+
+        return "${last.off.size} of ${last.held.size} satellites off their orbits" +
+            if (off.isEmpty()) "" else ": $off"
+    }
 
     /**
      * How many satellites each system has in the sky and how many of them the
@@ -466,6 +516,38 @@ class RadioWatch(private val context: Context) {
     }
 
     /**
+     * Holds the epoch just measured against the published orbits.
+     *
+     * Only where there are orbits and a place to read them from that the
+     * satellites did not give: the towers and the Wi-Fi, or the last position
+     * the filter believed. An epoch that cannot be checked is left out of the
+     * window rather than counted as clean, so it neither ends a run nor makes
+     * one. The log hears of it when the answer changes, not every second.
+     */
+    private fun noteOrbits() {
+        val orbits = orbits ?: return
+        val clock = clock ?: return
+        val place = reference() ?: return
+        val epoch = holdAgainstOrbits(Instant.now(), clock, measured, orbits, place) ?: return
+
+        heldAgainstOrbits = (heldAgainstOrbits + epoch).takeLast(ORBIT_EPOCHS_IN_A_ROW)
+
+        val off = offTheOrbits(heldAgainstOrbits, epoch.at)
+
+        if (off != offOrbitSaid) {
+            offOrbitSaid = off
+            AppLog.w(
+                TAG,
+                if (off) {
+                    "the sky is off its orbits: ${orbitsSaying()}"
+                } else {
+                    "the sky is back on its orbits"
+                },
+            )
+        }
+    }
+
+    /**
      * The epoch itself, put beside the position that came out of it.
      *
      * Called once per fix rather than once per epoch: see [SkyLog] for why.
@@ -544,6 +626,7 @@ class RadioWatch(private val context: Context) {
                     measured = event.measurements.map { measurementOf(it, tracking) }
 
                     noteSatelliteClocks()
+                    noteOrbits()
 
                     val epoch = reported(gainsOf(event))
 

@@ -30,3 +30,4 @@ date is the decision's.
 | 0020 | [Who is asked for the position](0020-who-is-asked-for-the-position.md)                                           | Accepted                            | 2026-10-02 |
 | 0021 | [The sky file is laid out as Google's GNSS logger lays out its own](0021-sky-file-in-google-logger-layout.md)      | Accepted                            | 2026-10-02 |
 | 0022 | [Background downloads follow the member's network choice](0022-downloads-follow-the-network-choice.md)        | Accepted                            | 2026-10-02 |
+| 0023 | [The sky is held against the published orbits](0023-the-sky-is-held-against-published-orbits.md)              | Accepted                            | 2026-10-02 |

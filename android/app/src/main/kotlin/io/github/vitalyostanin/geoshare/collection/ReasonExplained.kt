@@ -107,6 +107,12 @@ fun reasonsExplained(): List<ReasonExplained> = listOf(
         R.string.reason_help_means_time_apart,
     ),
     ReasonExplained(
+        JumpReason.OffOrbit.name,
+        R.string.left_out_off_orbit,
+        R.string.reason_help_sign_off_orbit,
+        R.string.reason_help_means_off_orbit,
+    ),
+    ReasonExplained(
         JumpReason.Settling.name,
         R.string.left_out_settling,
         R.string.reason_help_sign_settling,

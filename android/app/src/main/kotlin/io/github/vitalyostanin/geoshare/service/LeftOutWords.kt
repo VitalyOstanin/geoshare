@@ -66,6 +66,8 @@ internal fun caughtBy(jump: JumpReason, fix: Fix, evidence: LeftOutEvidence): St
     JumpReason.Settling -> "by the receiver still coming up: ${theReceiverSettling(fix, evidence)}"
 
     JumpReason.TimeApart -> "by the satellites' own time: ${theClockThatStepped(evidence)}"
+
+    JumpReason.OffOrbit -> "by the published orbits: ${evidence.radio.orbitsSaying() ?: "no epoch"}"
 }
 
 /**

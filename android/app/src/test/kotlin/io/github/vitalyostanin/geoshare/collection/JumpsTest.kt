@@ -316,6 +316,17 @@ class JumpsTest {
     }
 
     @Test
+    fun `a fix built out of a sky off its orbits is left out`() {
+        val first = fixAt(61.03268, 4.40299, 0, accuracy = 60.0)
+        val second = fixAt(61.03270, 4.40305, 60, accuracy = 80.0)
+
+        assertEquals(
+            JumpReason.OffOrbit,
+            whyAJump(first, second, skySays = SkySays(offTheOrbits = true)),
+        )
+    }
+
+    @Test
     fun `a fix the satellites' time ran along with passes`() {
         val first = fixAt(61.03268, 4.40299, 0, accuracy = 60.0)
         val second = fixAt(61.03270, 4.40305, 60, accuracy = 80.0)

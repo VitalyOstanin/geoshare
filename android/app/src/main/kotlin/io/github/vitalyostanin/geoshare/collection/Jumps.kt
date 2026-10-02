@@ -154,6 +154,17 @@ enum class JumpReason {
      * anywhere for the distance rule to measure. See Carried.kt.
      */
     Hurried,
+
+    /**
+     * The satellites heard are not where their published orbits put them.
+     *
+     * Read against a file of orbits collected by stations all over the world,
+     * from the place the towers and the Wi-Fi give: a satellite heard from
+     * below the horizon, or one whose signal took longer or shorter to arrive
+     * than its distance allows. A transmitter can imitate the orbits the
+     * satellites broadcast, not the file. See OrbitCheck.kt.
+     */
+    OffOrbit,
 }
 
 /**
@@ -258,6 +269,10 @@ fun whyAJump(
 
     if (skySays.satelliteTimeApart) {
         return JumpReason.TimeApart
+    }
+
+    if (skySays.offTheOrbits) {
+        return JumpReason.OffOrbit
     }
 
     if (goingInCircles(lately, circleLimits)) {

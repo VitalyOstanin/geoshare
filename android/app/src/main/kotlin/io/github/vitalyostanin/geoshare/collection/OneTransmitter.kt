@@ -118,6 +118,14 @@ data class SkySays(
      * pairing it with the shape would only weaken it.
      */
     val satelliteTimeApart: Boolean = false,
+    /**
+     * Whether the last checked epochs found satellites away from their
+     * published orbits — see [offTheOrbits].
+     *
+     * Read on its own, like the time: it rests on a file no transmitter
+     * reaches and on a place the satellites did not give.
+     */
+    val offTheOrbits: Boolean = false,
 )
 
 /**

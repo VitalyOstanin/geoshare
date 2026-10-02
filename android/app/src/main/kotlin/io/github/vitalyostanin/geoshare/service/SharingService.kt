@@ -51,6 +51,7 @@ import io.github.vitalyostanin.geoshare.collection.impliedSpeedMps
 import io.github.vitalyostanin.geoshare.collection.knows
 import io.github.vitalyostanin.geoshare.collection.networkAnswerStands
 import io.github.vitalyostanin.geoshare.collection.noteOf
+import io.github.vitalyostanin.geoshare.collection.orbitReference
 import io.github.vitalyostanin.geoshare.collection.otherRadiosAreDue
 import io.github.vitalyostanin.geoshare.collection.pinnedWhileWalking
 import io.github.vitalyostanin.geoshare.collection.putDownAt
@@ -413,7 +414,9 @@ class SharingService : LifecycleService() {
      * before them, and a subscription taken out for the moment of a fix would
      * have nothing to compare against.
      */
-    private val radio by lazy { RadioWatch(this) }
+    private val radio by lazy {
+        RadioWatch(this) { orbitReference(networkSaid, lastFix, Instant.now()) }
+    }
     private var lastMode: CollectionMode = CollectionMode.Standby
 
     /**
@@ -498,6 +501,7 @@ class SharingService : LifecycleService() {
         lifecycleScope.launch { keepTheFalsePlaces() }
         lifecycleScope.launch { noticeBeingCarried() }
         lifecycleScope.launch { keepWhatCountsAsCircling() }
+        lifecycleScope.launch { keepTheOrbits(this@SharingService) { radio.orbits = it } }
 
         AppLog.i(
             TAG,
