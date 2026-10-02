@@ -1,6 +1,6 @@
 # ADR-0023: The sky is held against the published orbits
 
-- Status: Accepted
+- Status: Accepted; which systems are read superseded by ADR-0024
 - Date: 2026-10-02
 
 ## Context

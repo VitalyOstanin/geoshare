@@ -45,6 +45,20 @@ private const val MSEC_AMBIGUOUS = 1 shl 4
 private const val L1_HZ = 1_575.42e6
 private const val BAND_HALF_WIDTH_HZ = 1e6
 
+/**
+ * GLONASS L1: each satellite on its own channel, 1602 MHz plus 562.5 kHz a
+ * channel, channels -7 to +6.
+ */
+private const val GLONASS_L1_HZ = 1_602e6
+private const val GLONASS_CHANNEL_HZ = 562.5e3
+private val GLONASS_CHANNELS = -7..6
+
+/** A phone that does not know a GLONASS satellite's number gives its channel plus this. */
+private const val GLONASS_CHANNEL_ID_OFFSET = 100
+
+/** GLONASS keeps Moscow time: UTC and three hours. */
+private const val GLONASS_AHEAD_OF_UTC_NANOS = 3L * 3_600L * 1_000_000_000L
+
 /** No satellite of either system is nearer than this or farther than the next. */
 private const val NEAREST_METRES = 1.5e7
 private const val FARTHEST_METRES = 5e7
@@ -138,20 +152,23 @@ data class Ranged(
 /**
  * How far a signal says it travelled, or nothing where it cannot say.
  *
- * GPS and Galileo on the L1 band only, with the time of week decoded whole:
- * anything less is a distance modulo a millisecond or a hundred, which is not
- * a distance.
+ * GPS, Galileo and GLONASS on the L1 band only, with the time decoded whole —
+ * of the week for the first two, of the day for GLONASS: anything less is a
+ * distance modulo a millisecond or a hundred, which is not a distance.
  */
 fun rangedOf(clock: Clock, measurement: Measurement): Ranged? {
+    val glonass = measurement.constellation == Constellation.Glonass
+
     if (measurement.constellation != Constellation.Gps &&
-        measurement.constellation != Constellation.Galileo
+        measurement.constellation != Constellation.Galileo &&
+        !glonass
     ) {
         return null
     }
 
     val carrier = measurement.carrierHz
 
-    if (carrier != null && abs(carrier - L1_HZ) > BAND_HALF_WIDTH_HZ) {
+    if (carrier != null && !onL1(carrier, glonass)) {
         return null
     }
 
@@ -163,10 +180,19 @@ fun rangedOf(clock: Clock, measurement: Measurement): Ranged? {
     val received =
         (clock.timeNanos - fullBias) +
             (measurement.timeOffsetNanos - (clock.biasNanos ?: 0.0)).toLong()
-    var flight = Math.floorMod(received, WEEK_NANOS) - measurement.receivedSvTimeNanos
+    // GLONASS counts the time of day in Moscow; the others, the time of week
+    // on their own scale, which is the GPS one.
+    val (period, here) = if (glonass) {
+        DAY_NANOS to
+            received - GPS_AHEAD_OF_UTC_SECONDS * NANOS_IN_A_SECOND.toLong() +
+            GLONASS_AHEAD_OF_UTC_NANOS
+    } else {
+        WEEK_NANOS to received
+    }
+    var flight = Math.floorMod(here, period) - measurement.receivedSvTimeNanos
 
-    if (flight < -WEEK_NANOS / 2) {
-        flight += WEEK_NANOS
+    if (flight < -period / 2) {
+        flight += period
     }
 
     val metres = flight / NANOS_IN_A_SECOND * LIGHT_MPS
@@ -176,6 +202,34 @@ fun rangedOf(clock: Clock, measurement: Measurement): Ranged? {
     }
 
     return Ranged(measurement.constellation, measurement.id, received / NANOS_IN_A_SECOND, metres)
+}
+
+private fun onL1(carrier: Double, glonass: Boolean): Boolean = if (glonass) {
+    val channel = (carrier - GLONASS_L1_HZ) / GLONASS_CHANNEL_HZ
+
+    abs(channel - Math.round(channel)) * GLONASS_CHANNEL_HZ < BAND_HALF_WIDTH_HZ &&
+        Math.round(channel).toInt() in GLONASS_CHANNELS
+} else {
+    abs(carrier - L1_HZ) <= BAND_HALF_WIDTH_HZ
+}
+
+/**
+ * The orbits a signal may be from.
+ *
+ * GLONASS satellites are numbered 1 to 24; a phone that has not yet decoded
+ * the number gives the channel plus a hundred instead, which two satellites
+ * share — the caller takes the one above the horizon.
+ */
+private fun candidatesFor(signal: Ranged, orbits: Orbits): List<BroadcastOrbit> {
+    val ids = if (signal.constellation == Constellation.Glonass &&
+        signal.id - GLONASS_CHANNEL_ID_OFFSET in GLONASS_CHANNELS
+    ) {
+        orbits.glonassOnChannel(signal.id - GLONASS_CHANNEL_ID_OFFSET)
+    } else {
+        listOf(signal.id)
+    }
+
+    return ids.mapNotNull { orbits.nearest(signal.constellation, it, signal.receivedSeconds) }
 }
 
 /** What the orbits say about one satellite of an epoch. */
@@ -234,25 +288,9 @@ fun holdAgainstOrbits(
         .distinctBy { it.constellation to it.id }
 
     val raw = ranged.mapNotNull { signal ->
-        val orbit = orbits.nearest(signal.constellation, signal.id, signal.receivedSeconds)
-            ?: return@mapNotNull null
-        val flight = signal.metres / LIGHT_MPS
-        var sent = signal.receivedSeconds - flight
-        var there = satelliteAt(orbit, sent)
-
-        sent = signal.receivedSeconds - flight - there.clockSeconds
-        there = satelliteAt(orbit, sent)
-
-        val satellite = turnedWithEarth(there.position, flight)
-        val between = satellite - here
-        val distance = between.length()
-        val up = between.dot(here) / distance / here.length()
-
-        Triple(
-            signal,
-            Math.toDegrees(asin(up)),
-            signal.metres - distance + there.clockSeconds * LIGHT_MPS,
-        )
+        candidatesFor(signal, orbits)
+            .map { orbit -> seen(signal, orbit, here) }
+            .maxByOrNull { it.second }
     }
 
     if (raw.size < ORBIT_CHECK_MIN_SATELLITES) {
@@ -266,6 +304,31 @@ fun holdAgainstOrbits(
         held = raw.map { (signal, elevation, off) ->
             Held(signal.constellation, signal.id, elevation, off - middle)
         },
+    )
+}
+
+/** The satellite of [orbit] as seen from [here]: its elevation and how far the signal's distance is off. */
+private fun seen(
+    signal: Ranged,
+    orbit: BroadcastOrbit,
+    here: Ecef,
+): Triple<Ranged, Double, Double> {
+    val flight = signal.metres / LIGHT_MPS
+    var sent = signal.receivedSeconds - flight
+    var there = satelliteAt(orbit, sent)
+
+    sent = signal.receivedSeconds - flight - there.clockSeconds
+    there = satelliteAt(orbit, sent)
+
+    val satellite = turnedWithEarth(there.position, flight)
+    val between = satellite - here
+    val distance = between.length()
+    val up = between.dot(here) / distance / here.length()
+
+    return Triple(
+        signal,
+        Math.toDegrees(asin(up)),
+        signal.metres - distance + there.clockSeconds * LIGHT_MPS,
     )
 }
 

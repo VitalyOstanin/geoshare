@@ -64,6 +64,8 @@ class OrbitCheckTest {
         clockErrorMetres: Double = 12_345.0,
         constellation: Constellation = Constellation.Gps,
         state: Int = 1 or (1 shl 3),
+        reportedId: Int = id,
+        glonassScaleOffNanos: Long = 0,
     ): Measurement {
         val orbit = orbits.nearest(constellation, id, receivedNanos / 1e9)!!
         val here = ecefOf(from)
@@ -76,11 +78,17 @@ class OrbitCheckTest {
         }
 
         val metres = flight * LIGHT + clockErrorMetres - there.clockSeconds * LIGHT
-        val sent = Math.floorMod(receivedNanos, WEEK_NANOS) - (metres / LIGHT * 1e9).toLong()
+        val glonass = orbit as? GlonassOrbit
+        val sent = if (glonass != null) {
+            Math.floorMod(receivedNanos - 18_000_000_000L + 3 * 3_600_000_000_000L, DAY_NANOS) -
+                (metres / LIGHT * 1e9).toLong() - glonassScaleOffNanos
+        } else {
+            Math.floorMod(receivedNanos, WEEK_NANOS) - (metres / LIGHT * 1e9).toLong()
+        }
 
         return Measurement(
             constellation = constellation,
-            id = id,
+            id = reportedId,
             timeOffsetNanos = 0.0,
             state = state,
             receivedSvTimeNanos = sent,
@@ -92,7 +100,7 @@ class OrbitCheckTest {
             deltaRangeState = 0,
             deltaRangeMetres = 0.0,
             deltaRangeUncertaintyMetres = 0.0,
-            carrierHz = 1_575_420_000.0,
+            carrierHz = glonass?.let { 1_602e6 + it.channel * 562.5e3 } ?: 1_575_420_000.0,
             multipath = 0,
             gainDb = null,
             snrDb = null,
@@ -187,6 +195,77 @@ class OrbitCheckTest {
 
         assertEquals("Galileo up: $galileo", galileo.size, epoch?.held?.size)
         assertFalse(epoch!!.suspicious)
+    }
+
+    /** The healthy GLONASS satellites at least 10° up from [place], by number. */
+    private fun glonassUpFrom(place: Place): List<Int> = (1..27).filter { id ->
+        val orbit = orbits.nearest(Constellation.Glonass, id, receivedNanos / 1e9)
+            ?: return@filter false
+
+        elevation(satelliteAt(orbit, receivedNanos / 1e9).position, place) > 10.0
+    }
+
+    private fun glonassMeasured(id: Int, from: Place, reportedId: Int = id, scaleOff: Long = 0) =
+        measured(
+            id,
+            from,
+            constellation = Constellation.Glonass,
+            state = 1 or (1 shl 7),
+            reportedId = reportedId,
+            glonassScaleOffNanos = scaleOff,
+        )
+
+    @Test
+    fun `GLONASS on Moscow time is where its orbits put it`() {
+        val glonass = glonassUpFrom(greenwich)
+        val sky = upFrom(greenwich).take(2).map { measured(it, greenwich) } +
+            glonass.map { glonassMeasured(it, greenwich) }
+        val epoch = check(sky)!!
+
+        assertEquals(2 + glonass.size, epoch.held.size)
+        assertFalse(epoch.suspicious)
+        epoch.held.forEach { assertEquals(0.0, it.offMetres, 50.0) }
+    }
+
+    @Test
+    fun `GLONASS made up for another place is off its orbits`() {
+        val shared = glonassUpFrom(greenwich).intersect(glonassUpFrom(madrid).toSet())
+        val sky = upFrom(greenwich).map { measured(it, greenwich) } +
+            shared.map { glonassMeasured(it, madrid) }
+        val epoch = check(sky)!!
+
+        assertTrue(epoch.off.any { it.constellation == Constellation.Glonass })
+        assertTrue(epoch.off.none { it.constellation == Constellation.Gps })
+    }
+
+    @Test
+    fun `a GLONASS satellite named by its channel is the one above the horizon`() {
+        val id = glonassUpFrom(greenwich).first()
+        val channel = (
+            orbits.nearest(
+                Constellation.Glonass,
+                id,
+                receivedNanos / 1e9,
+            ) as GlonassOrbit
+            ).channel
+        val sky = upFrom(greenwich).take(3).map { measured(it, greenwich) } +
+            glonassMeasured(id, greenwich, reportedId = 100 + channel)
+        val epoch = check(sky)!!
+
+        val held = epoch.held.single { it.constellation == Constellation.Glonass }
+
+        assertEquals(100 + channel, held.id)
+        assertTrue(held.elevationDegrees > 10.0)
+        assertEquals(0.0, held.offMetres, 50.0)
+    }
+
+    @Test
+    fun `GLONASS on another scale than Moscow time is not a distance`() {
+        val sky = glonassUpFrom(greenwich).map {
+            glonassMeasured(it, greenwich, scaleOff = (3 * 3_600L - 18L) * 1_000_000_000L)
+        }
+
+        assertNull(check(sky))
     }
 
     @Test

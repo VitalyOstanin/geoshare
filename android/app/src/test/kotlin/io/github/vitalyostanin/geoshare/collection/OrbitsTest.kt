@@ -7,9 +7,9 @@ import org.junit.Test
 
 /**
  * The file is a cut of the broadcast orbits published for 15.09.2026: every
- * GPS and Galileo satellite's record for 02:00. The positions to match were
- * worked out from the same records by the script the check was first tried
- * with.
+ * GPS and Galileo satellite's record for 02:00 and every GLONASS one for 01:45
+ * and 02:15. The positions to match were worked out from the same records by
+ * the script the check was first tried with.
  */
 class OrbitsTest {
     private val orbits = orbitsOf(
@@ -21,8 +21,9 @@ class OrbitsTest {
     private val week = 2436L * SECONDS_IN_A_WEEK
 
     @Test
-    fun `every GPS and Galileo record is read`() {
-        assertEquals(49, orbits.size)
+    fun `every record is read but the GLONASS satellites marked unhealthy`() {
+        assertEquals(49 + 42, orbits.size)
+        assertNull(orbits.nearest(Constellation.Glonass, 20, week + 181_000.0))
     }
 
     @Test
@@ -54,7 +55,40 @@ class OrbitsTest {
     }
 
     @Test
-    fun `GLONASS and the header are passed over`() {
+    fun `a GLONASS satellite is followed from the record nearest the moment`() {
+        val orbit = orbits.nearest(Constellation.Glonass, 16, week + 181_000.0)!!
+        val at = satelliteAt(orbit, week + 181_000.0)
+
+        assertEquals(week + 180_918.0, orbit.orbitSeconds, 1e-9)
+        assertEquals(23_527_210.296, at.position.x, 1.0)
+        assertEquals(-9_332_350.850, at.position.y, 1.0)
+        assertEquals(3_003_540.545, at.position.z, 1.0)
+        assertEquals(5.525816e-05, at.clockSeconds, 1e-10)
+    }
+
+    @Test
+    fun `a GLONASS satellite followed again is where it was followed to before`() {
+        val orbit = orbits.nearest(Constellation.Glonass, 1, week + 181_000.0)!!
+        val first = satelliteAt(orbit, week + 181_000.0)
+
+        satelliteAt(orbit, week + 185_000.0)
+
+        val again = satelliteAt(orbit, week + 181_000.0)
+
+        assertEquals(-13_355_004.051, first.position.x, 1.0)
+        assertEquals(1_989_012.856, first.position.y, 1.0)
+        assertEquals(21_636_247.556, first.position.z, 1.0)
+        assertEquals(first.position.x, again.position.x, 0.01)
+        assertEquals(first.position.z, again.position.z, 0.01)
+    }
+
+    @Test
+    fun `the satellites sharing a GLONASS channel are both named`() {
+        assertEquals(listOf(1, 5), orbits.glonassOnChannel(1))
+    }
+
+    @Test
+    fun `an incomplete GLONASS record and the header are passed over`() {
         val read = orbitsOf(
             sequenceOf(
                 "     3.05           N: GNSS NAV DATA    M: MIXED            RINEX VERSION / TYPE",

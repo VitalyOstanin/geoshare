@@ -18,10 +18,11 @@ import kotlin.math.sqrt
 // can reach. Held against that file, a satellite the phone claims to hear has
 // to be above the horizon and at the distance its signal says.
 //
-// GPS and Galileo only. Both describe an orbit the same way, as an ellipse
-// with corrections, which is a page of arithmetic; GLONASS gives a position and
-// a velocity to be integrated forward, which is not worth it for a check that
-// two systems already carry.
+// GPS and Galileo describe an orbit the same way, as an ellipse with
+// corrections; GLONASS gives a position and a velocity to be followed forward,
+// see GlonassOrbit.kt. GLONASS is read too because the phones hear it where
+// they hear only two or three GPS satellites, and because a transmitter that
+// imitates one system leaves the other honest to compare against.
 
 /** Earth's gravitational constant as GPS defines it, in m³/s². */
 private const val MU = 3.986005e14
@@ -44,28 +45,44 @@ const val SECONDS_IN_A_WEEK: Long = 604_800L
  */
 const val ORBIT_USABLE_SECONDS: Long = 3L * 86_400L
 
+/**
+ * How far the GPS scale is ahead of UTC, in seconds.
+ *
+ * GLONASS records are dated in UTC. Eighteen since 2017; no leap second has
+ * been added since, and none is planned before they are abolished.
+ */
+const val GPS_AHEAD_OF_UTC_SECONDS: Long = 18L
+
 /** The GPS scale starts at midnight between the 5th and the 6th of January 1980. */
 private val GPS_START = LocalDateTime.of(1980, 1, 6, 0, 0)
 
 /** How many times the anomaly is refined; ten is far past what the orbits need. */
 private const val KEPLER_ROUNDS = 10
 
+/** An orbit of any system: whose it is and the moment it describes, on the GPS scale. */
+sealed interface BroadcastOrbit {
+    val constellation: Constellation
+    val id: Int
+    val orbitSeconds: Double
+}
+
 /**
- * One orbit as a satellite broadcast it, in the terms of the RINEX file.
+ * One GPS or Galileo orbit as a satellite broadcast it, in the terms of the
+ * RINEX file.
  *
  * The times are seconds on the GPS scale since its start rather than within a
  * week, so that orbits from both sides of a week's end compare directly.
  */
 data class Orbit(
-    val constellation: Constellation,
-    val id: Int,
+    override val constellation: Constellation,
+    override val id: Int,
     /** The moment the clock terms are counted from. */
     val clockSeconds: Double,
     val clockBias: Double,
     val clockDrift: Double,
     val clockDriftRate: Double,
     /** The moment the orbit terms are counted from. */
-    val orbitSeconds: Double,
+    override val orbitSeconds: Double,
     val crs: Double,
     val deltaN: Double,
     val m0: Double,
@@ -81,7 +98,7 @@ data class Orbit(
     val omega: Double,
     val omegaDot: Double,
     val iDot: Double,
-)
+) : BroadcastOrbit
 
 /** A point in Earth-centred, Earth-fixed coordinates, in metres. */
 data class Ecef(val x: Double, val y: Double, val z: Double) {
@@ -96,34 +113,52 @@ data class Ecef(val x: Double, val y: Double, val z: Double) {
 data class SatelliteAt(val position: Ecef, val clockSeconds: Double)
 
 /** The orbits of a day, by satellite, ready to be asked about a moment. */
-class Orbits(orbits: List<Orbit>) {
+class Orbits(orbits: List<BroadcastOrbit>) {
     private val bySatellite = orbits.groupBy { it.constellation to it.id }
 
     /** How many orbits there are, for the log. */
     val size: Int = orbits.size
 
     /** The orbit described nearest to [gpsSeconds], or null where none is near enough. */
-    fun nearest(constellation: Constellation, id: Int, gpsSeconds: Double): Orbit? =
+    fun nearest(constellation: Constellation, id: Int, gpsSeconds: Double): BroadcastOrbit? =
         bySatellite[constellation to id]
             ?.minByOrNull { abs(it.orbitSeconds - gpsSeconds) }
             ?.takeIf { abs(it.orbitSeconds - gpsSeconds) <= ORBIT_USABLE_SECONDS }
+
+    /**
+     * The GLONASS satellites on frequency [channel].
+     *
+     * Two at a time share a channel, on opposite sides of Earth, so that one
+     * of them is always below the horizon of the other's listeners.
+     */
+    fun glonassOnChannel(channel: Int): List<Int> =
+        glonassChannels.filterValues { it == channel }.keys.sorted()
+
+    private val glonassChannels: Map<Int, Int> = orbits
+        .filterIsInstance<GlonassOrbit>()
+        .associate { it.id to it.channel }
 }
 
 /**
- * The orbits of GPS and Galileo out of a RINEX 3 navigation file.
+ * The orbits of GPS, Galileo and GLONASS out of a RINEX 3 navigation file.
  *
  * Read line by line, so a file of eight megabytes is never held whole. The
  * other systems are passed over, and so is anything that does not parse: a
  * broken record costs one satellite an orbit, not the day its file.
  */
 fun orbitsOf(lines: Sequence<String>): Orbits {
-    val orbits = mutableListOf<Orbit>()
+    val orbits = mutableListOf<BroadcastOrbit>()
     var header = true
     var record = mutableListOf<String>()
 
     fun flush() {
-        if (record.size == RECORD_LINES) {
-            orbitOf(record)?.let(orbits::add)
+        when {
+            record.isEmpty() -> Unit
+
+            record[0][0] == 'R' && record.size == GLONASS_RECORD_LINES ->
+                glonassOrbitOf(record)?.let(orbits::add)
+
+            record[0][0] != 'R' && record.size == RECORD_LINES -> orbitOf(record)?.let(orbits::add)
         }
         record = mutableListOf()
     }
@@ -137,7 +172,7 @@ fun orbitsOf(lines: Sequence<String>): Orbits {
         if (line.isNotEmpty() && line[0] != ' ') {
             flush()
 
-            if (line[0] != 'G' && line[0] != 'E') {
+            if (line[0] != 'G' && line[0] != 'E' && line[0] != 'R') {
                 continue
             }
         } else if (record.isEmpty()) {
@@ -154,6 +189,11 @@ fun orbitsOf(lines: Sequence<String>): Orbits {
 
 /** A GPS or Galileo record is its first line and seven more. */
 private const val RECORD_LINES = 8
+
+/** A GLONASS record is its first line and three more, one per axis. */
+private const val GLONASS_RECORD_LINES = 4
+
+private const val METRES_IN_A_KILOMETRE = 1_000.0
 
 private const val FIELD = 19
 private const val FIRST_FIELD = 23
@@ -208,6 +248,45 @@ private fun orbitOf(record: List<String>): Orbit? {
     )
 }
 
+/**
+ * One GLONASS record: on each axis line the position, the velocity and the
+ * pull in kilometres, then the health, the channel and the age of the data.
+ * A satellite its operators mark unhealthy is left out.
+ */
+@Suppress("MagicNumber")
+private fun glonassOrbitOf(record: List<String>): GlonassOrbit? {
+    val first = record[0]
+    val id = first.substring(1, ID_END).trim().toIntOrNull() ?: return null
+    val at = gpsSecondsOf(first.substring(ID_END, EPOCH_END))
+        ?.plus(GPS_AHEAD_OF_UTC_SECONDS) ?: return null
+    val clockBias = field(first, FIRST_FIELD) ?: return null
+    val frequencyBias = field(first, FIRST_FIELD + FIELD) ?: return null
+    val axes = (1..3).map { line ->
+        (0 until 4).map { field(record[line], NEXT_FIELD + it * FIELD) ?: return null }
+    }
+
+    if (axes[0][3] != 0.0) {
+        return null
+    }
+
+    fun vector(column: Int) = Ecef(
+        axes[0][column] * METRES_IN_A_KILOMETRE,
+        axes[1][column] * METRES_IN_A_KILOMETRE,
+        axes[2][column] * METRES_IN_A_KILOMETRE,
+    )
+
+    return GlonassOrbit(
+        id = id,
+        channel = axes[1][3].toInt(),
+        orbitSeconds = at,
+        clockBias = clockBias,
+        frequencyBias = frequencyBias,
+        position = vector(0),
+        velocity = vector(1),
+        pull = vector(2),
+    )
+}
+
 private fun field(line: String, from: Int): Double? {
     if (line.length <= from) {
         return null
@@ -237,10 +316,14 @@ private fun gpsSecondsOf(epoch: String): Double? {
 /**
  * Where the satellite was at [gpsSeconds], in the frame of Earth at that
  * moment, and how far its clock was off.
- *
- * The broadcast model as the interface documents of both systems give it.
  */
-fun satelliteAt(orbit: Orbit, gpsSeconds: Double): SatelliteAt {
+fun satelliteAt(orbit: BroadcastOrbit, gpsSeconds: Double): SatelliteAt = when (orbit) {
+    is Orbit -> keplerAt(orbit, gpsSeconds)
+    is GlonassOrbit -> orbit.at(gpsSeconds)
+}
+
+/** The broadcast model as the interface documents of GPS and Galileo give it. */
+private fun keplerAt(orbit: Orbit, gpsSeconds: Double): SatelliteAt {
     val a = orbit.sqrtA * orbit.sqrtA
     val tk = gpsSeconds - orbit.orbitSeconds
     val n = sqrt(MU / (a * a * a)) + orbit.deltaN
