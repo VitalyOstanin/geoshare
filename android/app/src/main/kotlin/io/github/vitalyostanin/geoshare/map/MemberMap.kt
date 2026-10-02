@@ -91,6 +91,9 @@ internal const val NIGHT_CONTRAST = -0.15f
 internal const val ICON_PROPERTY = "icon"
 internal const val MEMBERS_PROPERTY = "members"
 
+/** 1 for the pin of the member whose card is open, 0 for the rest: drawn last, on top. */
+internal const val ON_TOP_PROPERTY = "onTop"
+
 /** What the ids of a group are joined with; a position id has no comma in it. */
 internal const val MEMBERS_SEPARATOR = ","
 
@@ -272,6 +275,10 @@ internal fun memberLayer(): SymbolLayer = SymbolLayer(MEMBER_LAYER, MEMBER_SOURC
         // point of the pin: the member is where the point is, and everything
         // else in the drawing stands above them.
         PropertyFactory.iconAnchor(Property.ICON_ANCHOR_BOTTOM),
+        // The member whose card is open has a pin of their own, and another
+        // member in the same spot would otherwise cover the pin the circle is
+        // drawn for.
+        PropertyFactory.symbolSortKey(Expression.get(ON_TOP_PROPERTY)),
     )
 
 /**

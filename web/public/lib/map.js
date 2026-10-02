@@ -24,7 +24,7 @@ import { isGrey } from './false-places.js';
 import { clusterMembers, facesShown } from './clusters.js';
 import { FOLLOW_NONE } from './following.js';
 import { markerTapped, openMember, selectedPositionId, shownPositionIds } from './selection.js';
-import { markerOrder } from './stacking.js';
+import { HIGHEST, markerOrder } from './stacking.js';
 import { accuracyRing } from './width.js';
 import { WORDS } from './words.js';
 import {
@@ -407,7 +407,15 @@ function draw(view, { positions, names, faces, now }) {
         // Restated on every draw rather than once: the pile is an order of
         // what is on screen, and panning the map changes which member is in
         // front of which without changing anything about the members.
-        entry.marker.getElement().style.zIndex = markerOrder(view.map.project(at).y);
+        //
+        // The member whose card is open stands over everybody: they are on a
+        // pin of their own (see clusterMembers), and another member in the
+        // same spot would otherwise cover the pin the circle is drawn for.
+        const looked = alone !== null && cluster.length === 1 && cluster[0] === alone;
+
+        entry.marker.getElement().style.zIndex = looked
+            ? HIGHEST
+            : markerOrder(view.map.project(at).y);
 
         showPin(entry, names, faces, now);
 

@@ -14,6 +14,7 @@ import { elements, state } from './state.js';
 import { FOLLOW_ANNOUNCE_MS } from './menus.js';
 import { untilText } from './search-ui.js';
 import { keepTipOver } from './strip-tip.js';
+import { placeCard } from './card-place.js';
 
 /**
  * The account picture, or the first letter of the name when there is none.
@@ -76,6 +77,7 @@ export function render() {
         ordered.map((position, index) => [position.positionId, entries[index]]),
     );
     scrollShownIntoView(ordered, entries, shown);
+    placeCard();
 
     showFollow(labels);
     showNote();

@@ -9,9 +9,11 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.navigationBarsPadding
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
+import androidx.compose.foundation.layout.width
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -19,6 +21,8 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableFloatStateOf
+import androidx.compose.runtime.mutableStateMapOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
@@ -28,9 +32,12 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.luminance
+import androidx.compose.ui.layout.onGloballyPositioned
+import androidx.compose.ui.layout.positionInRoot
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import io.github.vitalyostanin.geoshare.R
 import io.github.vitalyostanin.geoshare.collection.Watcher
@@ -42,6 +49,7 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.launch
 import java.time.Instant
+import kotlin.math.roundToInt
 
 /** How often the siren banner decides whether the phone is still sounding. */
 private const val SIREN_BANNER_TICK_MS = 1_000L
@@ -165,6 +173,10 @@ fun MapScreen(
     // The positions under one marker, held by id for the same reason a single
     // one is: the list keeps arriving, and the card has to follow it.
     var openedGroup by remember { mutableStateOf<List<String>>(emptyList()) }
+    // Where the buttons of the strip and the map came out across the screen:
+    // a card stands over the button of the member it is about.
+    val stripCentres = remember { mutableStateMapOf<String, Float>() }
+    var mapLeft by remember { mutableFloatStateOf(0f) }
     var settingsOpen by remember { mutableStateOf(false) }
     // Opened from within the settings and drawn over them, so that closing it
     // puts the member back where they were rather than on the map.
@@ -282,11 +294,47 @@ fun MapScreen(
     }
 
     Column(modifier = modifier.fillMaxSize()) {
-        BoxWithConstraints(modifier = Modifier.fillMaxWidth().weight(1f)) {
+        BoxWithConstraints(
+            modifier =
+            Modifier
+                .fillMaxWidth()
+                .weight(1f)
+                .onGloballyPositioned { mapLeft = it.positionInRoot().x },
+        ) {
             // Half the room above the strip: a card is a heading and five
             // rows, and in a sideways window it would otherwise stand taller
             // than the map it is a card about.
             val cardHeight = maxHeight / 2
+            val cardWidth = minOf(CARD_MAX_WIDTH, maxWidth - CARD_MARGIN * 2)
+            val room = constraints.maxWidth.toFloat()
+            // The member the card is about, or the first of a list in the
+            // order the strip shows them; one who is off the strip stands
+            // under the button for everybody else.
+            val about =
+                openedPositionId
+                    ?: members.firstOrNull { member ->
+                        group.any {
+                            it.positionId ==
+                                member.positionId
+                        }
+                    }
+                        ?.positionId
+            val centre = (about?.let { stripCentres[it] } ?: stripCentres[MORE_ON_STRIP])
+            val placed =
+                Modifier
+                    .align(Alignment.BottomStart)
+                    .width(cardWidth)
+                    .offset {
+                        val left =
+                            cardLeft(
+                                centre = centre?.minus(mapLeft) ?: (room / 2),
+                                cardWidth = cardWidth.toPx(),
+                                room = room,
+                                margin = CARD_MARGIN.toPx(),
+                            )
+
+                        IntOffset(left.roundToInt(), 0)
+                    }
             MemberMap(
                 positions = positions,
                 names = names,
@@ -528,11 +576,9 @@ fun MapScreen(
                     { naming = LabelKind.MEMBER to opened.memberId }
                         .takeIf { opened.memberId != ownMemberId },
                     // Against the strip rather than floating over the map: the
-                    // card is a sheet pulled up out of it.
-                    modifier =
-                    Modifier
-                        .align(Alignment.BottomCenter)
-                        .heightIn(max = cardHeight),
+                    // card is a sheet pulled up out of it, over the button of
+                    // the member it is about.
+                    modifier = placed.heightIn(max = cardHeight),
                 )
             } else if (group.size > 1) {
                 GroupDetail(
@@ -547,11 +593,7 @@ fun MapScreen(
                         noteFollowTarget(positionId)
                     },
                     onClose = { openedGroup = emptyList() },
-                    modifier =
-                    Modifier
-                        .align(Alignment.BottomCenter)
-                        .heightIn(max = cardHeight)
-                        .padding(12.dp),
+                    modifier = placed.heightIn(max = cardHeight).padding(12.dp),
                 )
             }
         }
@@ -598,6 +640,7 @@ fun MapScreen(
                 onSelect = ::lookAt,
                 onShowAll = { showAll = it },
                 modifier = Modifier.navigationBarsPadding(),
+                onCentre = { positionId, x -> stripCentres[positionId] = x },
             )
 
             // A member whose position is refused simply has no marker, which

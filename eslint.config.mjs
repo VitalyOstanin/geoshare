@@ -52,6 +52,7 @@ export default [
                 console: 'readonly',
                 URL: 'readonly',
                 URLSearchParams: 'readonly',
+                ResizeObserver: 'readonly',
             },
         },
     },

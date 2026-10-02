@@ -24,6 +24,22 @@
     padding: 0.75rem 0.9rem;
 }
 
+/* The arrow down to the entry of the strip the card is about, drawn as the
+   strip's window draws its own (see #strip-tip::after); page/card-place.js
+   sets where it stands. */
+#card.pointing::after {
+    content: "";
+    position: absolute;
+    top: 100%;
+    left: var(--arrow-x, 50%);
+    width: 0.7rem;
+    height: 0.7rem;
+    background: var(--surface);
+    border-right: 1px solid var(--edge);
+    border-bottom: 1px solid var(--edge);
+    transform: translate(-50%, -50%) rotate(45deg);
+}
+
 /* Kept apart from #card itself: #card is also the close button's positioned
    ancestor, and a box that scrolls its own content carries every descendant
    of that box along with the scroll — the button would drift out of the

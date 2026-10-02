@@ -39,6 +39,8 @@ import androidx.compose.ui.graphics.ColorMatrix
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.layout.boundsInRoot
+import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDescription
@@ -70,6 +72,9 @@ private val FACE_SIZE = 22.dp
 /** What takes the colour out of the picture of a member whose position is old. */
 private val GREYSCALE = ColorFilter.colorMatrix(ColorMatrix().apply { setToSaturation(0f) })
 
+/** The key [MemberButtons] reports the button for everybody off the strip under. */
+internal const val MORE_ON_STRIP = "\u0000more"
+
 @Composable
 internal fun MemberButtons(
     members: List<MemberPosition>,
@@ -88,6 +93,12 @@ internal fun MemberButtons(
     onSelect: (String) -> Unit,
     onShowAll: (Boolean) -> Unit,
     modifier: Modifier = Modifier,
+    /**
+     * Where the middle of each button came out across the screen, by position
+     * id, and [MORE_ON_STRIP] for the button standing for everybody else: the
+     * card is put over the button of the member it is about.
+     */
+    onCentre: (String, Float) -> Unit = { _, _ -> },
 ) {
     val onStrip = membersOnTheStrip(members.size)
     val shown = members.take(onStrip)
@@ -146,7 +157,12 @@ internal fun MemberButtons(
                     now = now,
                     sought = searches[member.positionId]?.takeIf { it.stands(now) },
                     onSelect = onSelect,
-                    modifier = Modifier.weight(1f),
+                    modifier =
+                    Modifier
+                        .weight(1f)
+                        .onGloballyPositioned {
+                            onCentre(member.positionId, it.boundsInRoot().center.x)
+                        },
                 )
             }
 
@@ -154,7 +170,12 @@ internal fun MemberButtons(
                 MoreButton(
                     count = rest.size,
                     onOpen = { onShowAll(true) },
-                    modifier = Modifier.weight(1f),
+                    modifier =
+                    Modifier
+                        .weight(1f)
+                        .onGloballyPositioned {
+                            onCentre(MORE_ON_STRIP, it.boundsInRoot().center.x)
+                        },
                 )
             }
         }

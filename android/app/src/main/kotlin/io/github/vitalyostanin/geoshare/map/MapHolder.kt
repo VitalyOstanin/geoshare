@@ -317,6 +317,10 @@ internal class MapHolder(val view: MapView) {
                     )
                     .apply {
                         addStringProperty(ICON_PROPERTY, icon(loaded, group))
+                        addNumberProperty(
+                            ON_TOP_PROPERTY,
+                            if (cluster.ids == listOf(selected)) 1 else 0,
+                        )
                         addStringProperty(
                             MEMBERS_PROPERTY,
                             group.joinToString(MEMBERS_SEPARATOR) { it.positionId },
