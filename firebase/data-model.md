@@ -259,6 +259,27 @@ fields alone. The caller's screen reads `heardAt` to tell a phone that answered
 from one that is switched off. Nothing deletes a siren; it is only called
 again.
 
+## resets/{uid}.{deviceId}
+
+| Field     | Type      | Meaning                                                              |
+|-----------|-----------|----------------------------------------------------------------------|
+| `askedBy` | string    | Who asked the phone to forget where it thinks it is                   |
+| `askedAt` | timestamp | When; set by the server itself                                        |
+| `doneAt`  | timestamp | When the phone forgot; set by the server, written by the phone's own account |
+
+One document per phone, its id made the same way as a position's. The jump
+filter holds on to the last place it believed, and a wrong one makes the phone
+refuse every honest answer after it; the phone's own button settles that, and
+this document is the same button pressed from somebody else's screen. The
+phone listens over the subscription its service already holds and forgets once
+for every request newer than the last one it carried out, provided the request
+is at most a day old, then writes `doneAt` so that the asking screen can tell a
+phone that did from one not heard from since.
+
+The same people as for a siren: an administrator asks any phone in the group,
+a member their own. Nobody else reads the document. A request is written whole
+and replaces what the last one left; nothing deletes it.
+
 ## members/{uid}
 
 | Field         | Type      | Meaning                                                  |

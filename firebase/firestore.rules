@@ -500,6 +500,48 @@ service cloud.firestore {
         allow update: if mayCall() && (calledNow() || heardNow() || stoppedNow());
       }
 
+      match /resets/{resetId} {
+        // A phone told to forget where it thinks it is: the jump filter holds
+        // on to the last place it believed, and a wrong one makes it refuse
+        // every honest answer after. The phone's own button settles that, but
+        // the phone is not always in reach of the one who sees the marker
+        // stuck. One document per phone, its id made as a siren's, read by
+        // the phone over the subscription its service already holds.
+        //
+        // The same people as for a siren: an administrator for any phone in
+        // the group, a member for their own.
+        function resetOwner() {
+          return resetId.split('\\.')[0];
+        }
+
+        function mayAsk() {
+          return isMember() && resetOwner() in groupMembers() &&
+                 (isGroupAdmin() || request.auth.uid == resetOwner());
+        }
+
+        // A request is written whole, and so replaces what the last one left:
+        // who asked and when, by the server's clock, so that the phone can
+        // tell a request it has already carried out from a new one.
+        function askedNow() {
+          let data = request.resource.data;
+          return data.keys().hasOnly(['askedBy', 'askedAt']) &&
+                 data.askedBy == request.auth.uid &&
+                 data.askedAt == request.time;
+        }
+
+        // The phone says it has forgotten: the asking screen tells a phone
+        // that did from one that has not been heard from since.
+        function doneNow() {
+          return request.auth.uid == resetOwner() &&
+                 request.resource.data.diff(resource.data).affectedKeys().hasOnly(['doneAt']) &&
+                 request.resource.data.doneAt == request.time;
+        }
+
+        allow get: if mayAsk();
+        allow create: if mayAsk() && askedNow();
+        allow update: if mayAsk() && (askedNow() || doneNow());
+      }
+
       match /members/{uid} {
         // What a member says about themselves: the name and the picture their
         // account carries, so that a marker can name a person rather than the
