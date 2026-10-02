@@ -53,6 +53,9 @@ internal fun AdminMemberRow(
     sirenNow: Instant,
     onSiren: (PhoneLine) -> Unit,
     onStopSiren: (phoneId: String) -> Unit,
+    /** The requests to forget a place standing on the group's phones, by phone. */
+    resets: Map<String, Reset>,
+    onReset: (PhoneLine) -> Unit,
 ) {
     Column(modifier = Modifier.fillMaxWidth().padding(start = 16.dp, end = 8.dp, top = 8.dp)) {
         Text(
@@ -87,6 +90,8 @@ internal fun AdminMemberRow(
                 onEndSearch = { onEndSearch(phone.phoneId) },
                 onSiren = { onSiren(phone) },
                 onStopSiren = { onStopSiren(phone.phoneId) },
+                reset = resets[phone.phoneId],
+                onReset = { onReset(phone) },
             )
         }
 
@@ -134,6 +139,9 @@ private fun AdminPhoneRow(
     onEndSearch: () -> Unit,
     onSiren: () -> Unit,
     onStopSiren: () -> Unit,
+    /** The last request that this phone forget its place, or null if none was made. */
+    reset: Reset?,
+    onReset: () -> Unit,
 ) {
     Row(
         modifier = Modifier.fillMaxWidth().padding(top = 4.dp),
@@ -170,9 +178,24 @@ private fun AdminPhoneRow(
                     )
                 }
             }
+
+            reset?.let { resetText(it, now) }?.let {
+                Text(
+                    text = it,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
         }
 
         Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+            // Before the siren and plain, as on the page: the quiet one of
+            // the buttons that reach into this phone. Offered where the siren
+            // is, since this phone's own place is reset from its settings.
+            if (mayRing) {
+                ResetButton(onClick = onReset)
+            }
+
             val sirenState = siren?.let { sirenState(it, sirenNow) }
             val sounding = sirenState is SirenState.Waiting || sirenState is SirenState.Sounding
 

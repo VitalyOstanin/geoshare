@@ -17,6 +17,7 @@ import {
 import { labelsFrom } from './labels.js';
 import { withinAnswerWait } from './link.js';
 import { placesOf } from './false-places.js';
+import { resetOf } from './resets.js';
 import { searchOf } from './searches.js';
 import { sirenOf } from './sirens.js';
 import { currentGroup, store } from './store.js';
@@ -155,6 +156,45 @@ export function callSiren(phoneId, callerId) {
         setDoc(doc(store, 'groups', currentGroup(), 'sirens', phoneId), {
             calledBy: callerId,
             calledAt: serverTimestamp(),
+        }),
+    );
+}
+
+/** Follows a phone's request to forget its place; null while nobody has asked. */
+export function watchReset(phoneId, onReset) {
+    return onSnapshot(
+        doc(store, 'groups', currentGroup(), 'resets', phoneId),
+        (document) => {
+            if (!document.exists()) {
+                onReset(null);
+
+                return;
+            }
+
+            const data = document.data({ serverTimestamps: 'estimate' });
+
+            onReset(
+                resetOf(phoneId, {
+                    ...data,
+                    askedAt: data.askedAt?.toMillis?.(),
+                    doneAt: data.doneAt?.toMillis?.(),
+                }),
+            );
+        },
+        () => onReset(null),
+    );
+}
+
+/**
+ * Asks a phone to forget its place. Written whole, as a call is: the rule
+ * allows only these two fields on a request, and a `doneAt` left over from
+ * the last one goes with it.
+ */
+export function askReset(phoneId, askerId) {
+    return withinAnswerWait(
+        setDoc(doc(store, 'groups', currentGroup(), 'resets', phoneId), {
+            askedBy: askerId,
+            askedAt: serverTimestamp(),
         }),
     );
 }

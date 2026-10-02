@@ -10,6 +10,7 @@ import { elements, state } from './state.js';
 import { knownNote } from './link-ui.js';
 import { closeOnClickOutside, tryGroupWrite } from './group-panel.js';
 import { ALARM_ICON, BIN_ICON, SPEAKER_ICON } from './siren-ui.js';
+import { RESET_ICON } from './reset-ui.js';
 
 /**
  * Opens the help of one screen: each of its buttons drawn the way the screen
@@ -49,6 +50,7 @@ function showHelp(title, entries) {
 /** The siren and the search, as a row of the panel or of My devices draws them. */
 function alarmHelp() {
     return [
+        { mark: RESET_ICON, look: 'plain', text: WORDS.helpReset },
         { mark: SPEAKER_ICON, look: 'alarm', text: WORDS.helpSiren },
         { mark: ALARM_ICON, look: 'alarm', text: WORDS.helpSearch },
         { mark: ALARM_ICON, look: 'filled', text: WORDS.helpSearchStanding },

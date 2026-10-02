@@ -645,6 +645,8 @@ fun MapScreen(
             sirenOf = actions.sirenOf,
             onCallSiren = actions.onCallSiren,
             onStopSiren = actions.onStopSiren,
+            resetOf = actions.resetOf,
+            onAskReset = actions.onAskReset,
             onForgetPhone = actions.onForgetPhone,
             searches = searches,
             mayLookFor = runsTheGroup,
@@ -684,6 +686,8 @@ fun MapScreen(
             sirenOf = actions.sirenOf,
             onCallSiren = actions.onCallSiren,
             onStopSiren = actions.onStopSiren,
+            resetOf = actions.resetOf,
+            onAskReset = actions.onAskReset,
             onClose = { adminOpen = false },
         )
     }

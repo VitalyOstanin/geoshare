@@ -68,6 +68,10 @@ fun MyPhonesScreen(
     sirenOf: (phoneId: String) -> Flow<Siren?>,
     onCallSiren: suspend (phoneId: String) -> WriteOutcome,
     onStopSiren: suspend (phoneId: String) -> Unit,
+    /** A phone's request to forget its place as the database has it. */
+    resetOf: (phoneId: String) -> Flow<Reset?>,
+    /** Asks one of these phones to forget its place; answers how the write came out. */
+    onAskReset: suspend (phoneId: String) -> WriteOutcome,
     /** Takes a phone out of the group; answers whether the database allowed it. */
     onForgetPhone: suspend (phoneId: String) -> Boolean,
     /** The group's searches, by the phone each one is looking for. */
@@ -134,6 +138,32 @@ fun MyPhonesScreen(
                 sirenTrouble = null
             } else {
                 sirenTrouble = outcome
+            }
+        }
+    }
+
+    // The requests to forget a place on the same phones: this one forgets
+    // its own from the settings, where the button has always been.
+    val resets by remember(ringable) { resetsOf(ringable, resetOf) }
+        .collectAsState(initial = emptyMap())
+    var resetAsk by remember { mutableStateOf<PhoneLine?>(null) }
+    var resetTrouble by remember { mutableStateOf<WriteOutcome?>(null) }
+    var resetBusy by remember { mutableStateOf(false) }
+
+    fun writeReset() {
+        val phone = resetAsk ?: return
+
+        resetBusy = true
+        scope.launch {
+            val outcome = onAskReset(phone.phoneId)
+
+            resetBusy = false
+
+            if (outcome == WriteOutcome.DONE) {
+                resetAsk = null
+                resetTrouble = null
+            } else {
+                resetTrouble = outcome
             }
         }
     }
@@ -268,11 +298,29 @@ fun MyPhonesScreen(
                                 )
                             }
                         }
+
+                        resets[phone.phoneId]?.let { resetText(it, now) }?.let {
+                            Text(
+                                text = it,
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            )
+                        }
                     }
 
                     // Both buttons are outlined in the same red, and a row
                     // this narrow does not always fit them side by side.
                     FlowRow(verticalArrangement = Arrangement.Center) {
+                        // Plain and before the siren, as on the admin panel.
+                        if (phone.phoneId != ownPhoneId) {
+                            ResetButton(
+                                onClick = {
+                                    resetTrouble = null
+                                    resetAsk = phone
+                                },
+                            )
+                        }
+
                         // A phone does not ring itself: the button belongs to
                         // every row but the one this screen is drawn on.
                         if (phone.phoneId != ownPhoneId) {
@@ -356,6 +404,11 @@ fun MyPhonesScreen(
             title = stringResource(R.string.help_title_screen),
             entries =
             listOfNotNull(
+                HelpEntry(
+                    R.drawable.ic_place_reset,
+                    HelpLook.Plain,
+                    stringResource(R.string.help_reset),
+                ),
                 HelpEntry(R.drawable.ic_siren, HelpLook.Alarm, stringResource(R.string.help_siren)),
                 if (mayLookFor) {
                     HelpEntry(
@@ -411,6 +464,16 @@ fun MyPhonesScreen(
                     Text(text = stringResource(R.string.search_cancel))
                 }
             },
+        )
+    }
+
+    resetAsk?.let { phone ->
+        ResetDialog(
+            phoneName = phone.name,
+            trouble = resetTrouble,
+            busy = resetBusy,
+            onGo = ::writeReset,
+            onCancel = { resetAsk = null },
         )
     }
 

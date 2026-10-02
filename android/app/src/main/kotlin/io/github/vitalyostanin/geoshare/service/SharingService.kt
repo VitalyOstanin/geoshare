@@ -897,6 +897,7 @@ class SharingService : LifecycleService() {
                 ownPhoneId = ownDevice
                 launch { keepSearchNotification(this@SharingService, ownDevice) }
                 launch { sirens.answer(memberId, ownDevice) }
+                launch { answerResets(this@SharingService, memberId, ownDevice, jumps) }
 
                 // A flipped source switch restarts the round like a new mode
                 // does: the request itself has to change, not only the reading.

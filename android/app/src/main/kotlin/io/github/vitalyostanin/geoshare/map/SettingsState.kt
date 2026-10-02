@@ -156,6 +156,10 @@ data class SettingsActions(
     val onCallSiren: suspend (phoneId: String) -> WriteOutcome,
     /** Stops a phone's siren before its twenty seconds are up. */
     val onStopSiren: suspend (phoneId: String) -> Unit,
+    /** A phone's request to forget its place as the database has it, for the screen that asked. */
+    val resetOf: (phoneId: String) -> Flow<Reset?>,
+    /** Asks a phone to forget its place; answers how the write came out, as [onCallSiren] does. */
+    val onAskReset: suspend (phoneId: String) -> WriteOutcome,
     /** Takes one of the member's own phones out of the group; answers whether it went. */
     val onForgetPhone: suspend (phoneId: String) -> Boolean,
 )

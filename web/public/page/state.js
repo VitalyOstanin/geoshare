@@ -251,6 +251,12 @@ export const state = {
     sirens: new Map(),
     sirenWatches: new Map(),
     sirenTick: null,
+    // The request to forget its place of every phone shown with a siren
+    // button, which has a reset button beside it, and the subscription that
+    // brings it: followed for the same reason, a request made from another
+    // screen shows on the row all the same.
+    resets: new Map(),
+    resetWatches: new Map(),
     // The call being asked about in the window: whose, their phones, the one
     // picked.
     sirenAsk: null,

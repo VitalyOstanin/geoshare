@@ -33,6 +33,7 @@ import {
 } from './siren-ui.js';
 import { askSearch, closeSearch, untilText } from './search-ui.js';
 import { drawAdmin, openAdmin } from './admin-panel.js';
+import { followResets, resetButtonFor } from './reset-ui.js';
 
 /**
  * The group, as the menu shows it.
@@ -91,6 +92,7 @@ export function drawGroup() {
     drawAdmin(running);
     drawPhones();
     followSirens();
+    followResets();
 }
 
 /**
@@ -139,6 +141,8 @@ function drawPhones() {
             said.textContent = phoneText(phone, now, false);
             about.append(name, said);
             actions.className = 'admin-actions';
+            // Plain and before the siren: the quiet one of the two.
+            actions.append(resetButtonFor(phone, now, about));
             actions.append(sirenButtonFor(phone, memberId, now, about));
             state.sirensShown.add(phone.phoneId);
 
@@ -195,7 +199,7 @@ function drawPhones() {
  */
 export function iconsInRow(actions) {
     const icons = [...actions.children].filter((button) =>
-        button.matches('.siren-ring, .siren-stop, .search-mark, .phone-remove'),
+        button.matches('.place-reset, .siren-ring, .siren-stop, .search-mark, .phone-remove'),
     );
 
     if (icons.length === 0) {

@@ -41,6 +41,7 @@ import io.github.vitalyostanin.geoshare.project.WrongAccountDialog
 import io.github.vitalyostanin.geoshare.service.LanguageChoice
 import io.github.vitalyostanin.geoshare.service.MadeInvitation
 import io.github.vitalyostanin.geoshare.service.ThemeChoice
+import io.github.vitalyostanin.geoshare.service.askReset
 import io.github.vitalyostanin.geoshare.service.callSiren
 import io.github.vitalyostanin.geoshare.service.consumePendingInvitation
 import io.github.vitalyostanin.geoshare.service.endSearch
@@ -51,6 +52,7 @@ import io.github.vitalyostanin.geoshare.service.joinGroup
 import io.github.vitalyostanin.geoshare.service.leavePreviousId
 import io.github.vitalyostanin.geoshare.service.makeInvitation
 import io.github.vitalyostanin.geoshare.service.openSearch
+import io.github.vitalyostanin.geoshare.service.phoneReset
 import io.github.vitalyostanin.geoshare.service.phoneSiren
 import io.github.vitalyostanin.geoshare.service.positionId
 import io.github.vitalyostanin.geoshare.service.removeFromGroup
@@ -418,6 +420,12 @@ internal fun SignedInScreen(
                 onCallSiren = { phoneId ->
                     activity.writeOutcome("a siren could not be called") {
                         callSiren(phoneId, current.memberId)
+                    }
+                },
+                resetOf = ::phoneReset,
+                onAskReset = { phoneId ->
+                    activity.writeOutcome("a place reset could not be asked") {
+                        askReset(phoneId, current.memberId)
                     }
                 },
                 onStopSiren = { phoneId ->

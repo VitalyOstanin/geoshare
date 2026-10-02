@@ -29,6 +29,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import io.github.vitalyostanin.geoshare.R
@@ -42,6 +43,7 @@ import io.github.vitalyostanin.geoshare.service.AidingErasure
 import io.github.vitalyostanin.geoshare.service.LanguageChoice
 import io.github.vitalyostanin.geoshare.service.ThemeChoice
 import io.github.vitalyostanin.geoshare.service.aidingErasureNote
+import io.github.vitalyostanin.geoshare.service.doneResetLine
 import java.time.Instant
 
 /**
@@ -52,11 +54,16 @@ import java.time.Instant
  * jump and the marker stops moving. A second fix agreeing with the one before
  * it undoes that on its own, but only while fixes keep arriving; this is for
  * the member who is looking at a marker that has stood still too long.
+ *
+ * Under it, who last pressed the same button from another screen, and when:
+ * the notification that said so may long be gone.
  */
 @Composable
 private fun ForgetPlaceRow(onForgetPlace: () -> Unit) {
     var forgotten by remember { mutableStateOf(false) }
     val label = if (forgotten) R.string.jumps_forgotten else R.string.jumps_forget
+    val context = LocalContext.current
+    val doneLine = remember { doneResetLine(context) }
 
     TextButton(
         onClick = {
@@ -67,6 +74,15 @@ private fun ForgetPlaceRow(onForgetPlace: () -> Unit) {
         modifier = Modifier.padding(start = 8.dp, bottom = 8.dp),
     ) {
         Text(text = stringResource(label))
+    }
+
+    doneLine?.let {
+        Text(
+            text = it,
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier.padding(start = 16.dp, end = 16.dp, bottom = 8.dp),
+        )
     }
 }
 

@@ -443,8 +443,8 @@
     <string name="help_title_screen">Buttons on this screen</string>
     <string name="help_title_map">Buttons on the map</string>
     <string name="help_siren">Siren for 22 seconds: the device sounds loud, even with its sound off, so that it can be found</string>
-    <string name="help_search">Open a search: the whole group sees the phone on the map, even those they never shared it with</string>
-    <string name="help_search_standing">A search is on. Press it once the phone is found</string>
+    <string name="help_search">Open a search for the device: the whole group sees it on the map, even those it was never shared with</string>
+    <string name="help_search_standing">A search for the device is on. Press it once it is found</string>
     <string name="help_remove">Remove the device: it disappears from the map and the lists of everybody</string>
     <string name="help_follow_none">The map stays where it is</string>
     <string name="help_follow_one">The map keeps the chosen member in the middle</string>
@@ -486,4 +486,17 @@
     <string name="connect_wrong_account_text">You are signed in as %1$s. Sign out and sign in with the right account — the invitation is kept until the next sign-in.</string>
     <string name="connect_wrong_account_switch">Switch account</string>
     <string name="connect_wrong_account_later">Not now</string>
+    <string name="reset_hint">Reset the place</string>
+    <string name="reset_confirm_title">Reset the place on %1$s?</string>
+    <string name="reset_confirm_note">The device forgets its last place and takes the next one, however far it is from the old one. It helps when a marker on the map is stuck and does not move.</string>
+    <string name="reset_go">Reset</string>
+    <string name="reset_waiting">place reset at %1$s · waiting for the device</string>
+    <string name="reset_done">place reset at %1$s · the device took it</string>
+    <string name="reset_no_answer">the device did not answer the place reset</string>
+    <string name="reset_channel_name">Place reset</string>
+    <string name="reset_channel_description">Said when somebody resets this device\'s place from another screen</string>
+    <string name="reset_notification_title">Place reset: %1$s</string>
+    <string name="reset_notification_text">The device forgot its last place and takes the next one. %1$s</string>
+    <string name="help_reset">Reset the place: the device forgets its last place and takes the next one, when its marker is stuck</string>
+    <string name="reset_done_line">Reset: %1$s, %2$s</string>
 </resources>

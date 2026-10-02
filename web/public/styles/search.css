@@ -128,6 +128,20 @@ button.alarm-fill {
     cursor: pointer;
 }
 
+/* Before them, plain: asking a phone to forget its place sounds nothing on it. */
+.admin-actions button.place-reset {
+    display: inline-grid;
+    place-items: center;
+    width: 2rem;
+    height: 2rem;
+    padding: 0.35rem;
+    border: 1px solid var(--edge);
+    border-radius: 50%;
+    background: transparent;
+    color: var(--on-surface);
+    cursor: pointer;
+}
+
 /* A search standing: the same button filled, blinking so the row is seen
    before it is read; steady for whoever has asked for less motion. */
 .admin-actions button.search-mark.standing {
@@ -163,6 +177,7 @@ button.alarm-fill {
     cursor: pointer;
 }
 
+.place-reset svg,
 .siren-ring svg,
 .search-mark svg,
 .phone-remove svg,
@@ -366,6 +381,7 @@ button.alarm-fill {
 }
 
 /* The calls that would not get through, greyed where they are offered. */
+.link-lost .place-reset,
 .link-lost .siren-ring,
 .link-lost .siren-stop,
 .link-lost .search-mark {

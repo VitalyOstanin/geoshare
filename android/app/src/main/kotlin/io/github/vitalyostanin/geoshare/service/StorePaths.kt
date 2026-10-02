@@ -127,6 +127,14 @@ fun sirensOf(store: FirebaseFirestore): CollectionReference =
     groupDocument(store).collection("sirens")
 
 /**
+ * The group's requests that a phone forget its place: one document per phone,
+ * addressed by `{uid}.{deviceId}` the same as a siren, and readable by the same
+ * people — so, like a siren, only ever listened to one document at a time.
+ */
+fun resetsOf(store: FirebaseFirestore): CollectionReference =
+    groupDocument(store).collection("resets")
+
+/**
  * What the group has settled about how its phones judge an answer.
  *
  * One document per subject rather than fields on the group document: the
@@ -307,6 +315,12 @@ object SearchField {
 }
 
 /** The fields of a siren: a call that rings one phone in the group. */
+object ResetField {
+    const val ASKED_BY = "askedBy"
+    const val ASKED_AT = "askedAt"
+    const val DONE_AT = "doneAt"
+}
+
 object SirenField {
     const val CALLED_BY = "calledBy"
     const val CALLED_AT = "calledAt"

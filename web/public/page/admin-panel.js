@@ -26,6 +26,7 @@ import {
     sirenButtonFor,
     tryGroupWrite,
 } from './group-panel.js';
+import { resetButtonFor } from './reset-ui.js';
 
 /**
  * The invitation just made, built into the link it is sent as, or null
@@ -229,6 +230,8 @@ function adminPhoneRow(phone, line, now) {
     const actions = document.createElement('div');
 
     actions.className = 'admin-actions';
+    // Plain and before the siren, for every phone the siren is offered for.
+    actions.append(resetButtonFor(phone, now, about));
     actions.append(sirenButtonFor(phone, line.memberId, now, about));
 
     // Drawn whether the panel is open or not; only an open one is watched.

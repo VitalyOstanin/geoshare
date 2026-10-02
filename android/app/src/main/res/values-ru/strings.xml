@@ -430,4 +430,17 @@
     <string name="connect_wrong_account_text">Вы вошли как %1$s. Выйдите и войдите нужным аккаунтом — приглашение сохранится до следующего входа.</string>
     <string name="connect_wrong_account_switch">Сменить аккаунт</string>
     <string name="connect_wrong_account_later">Не сейчас</string>
+    <string name="reset_hint">Сбросить место</string>
+    <string name="reset_confirm_title">Сбросить место на устройстве %1$s?</string>
+    <string name="reset_confirm_note">Устройство забудет последнее место и примет следующее, даже если оно далеко от прежнего. Помогает, когда метка на карте застряла и не двигается.</string>
+    <string name="reset_go">Сбросить</string>
+    <string name="reset_waiting">место сброшено в %1$s · ждём ответа устройства</string>
+    <string name="reset_done">место сброшено в %1$s · устройство приняло</string>
+    <string name="reset_no_answer">устройство не ответило на сброс места</string>
+    <string name="reset_channel_name">Сброс места</string>
+    <string name="reset_channel_description">Сообщает, что место этого устройства сбросили с другого экрана</string>
+    <string name="reset_notification_title">Место сброшено: %1$s</string>
+    <string name="reset_notification_text">Устройство забыло последнее место и примет следующее. %1$s</string>
+    <string name="help_reset">Сбросить место: устройство забудет последнее место и примет следующее, когда метка застряла</string>
+    <string name="reset_done_line">Сброшено: %1$s, %2$s</string>
 </resources>

@@ -100,6 +100,10 @@ fun AdminPanel(
     /** Rings a phone; answers how the write came out: done, refused or unanswered. */
     onCallSiren: suspend (phoneId: String) -> WriteOutcome,
     onStopSiren: suspend (phoneId: String) -> Unit,
+    /** A phone's request to forget its place as the database has it, followed for as long as asked. */
+    resetOf: (phoneId: String) -> Flow<Reset?>,
+    /** Asks a phone to forget its place; answers how the write came out. */
+    onAskReset: suspend (phoneId: String) -> WriteOutcome,
     onClose: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -170,6 +174,32 @@ fun AdminPanel(
                 sirenTrouble = null
             } else {
                 sirenTrouble = outcome
+            }
+        }
+    }
+
+    // The requests to forget a place on the same phones, followed the same
+    // way, so a reset asked from anywhere shows on its row too.
+    val resets by remember(ringable) { resetsOf(ringable, resetOf) }
+        .collectAsState(initial = emptyMap())
+    var resetAsk by remember { mutableStateOf<PhoneLine?>(null) }
+    var resetTrouble by remember { mutableStateOf<WriteOutcome?>(null) }
+    var resetBusy by remember { mutableStateOf(false) }
+
+    fun writeReset() {
+        val phone = resetAsk ?: return
+
+        resetBusy = true
+        scope.launch {
+            val outcome = onAskReset(phone.phoneId)
+
+            resetBusy = false
+
+            if (outcome == WriteOutcome.DONE) {
+                resetAsk = null
+                resetTrouble = null
+            } else {
+                resetTrouble = outcome
             }
         }
     }
@@ -292,6 +322,11 @@ fun AdminPanel(
                             )
                     },
                     onStopSiren = { phoneId -> scope.launch { onStopSiren(phoneId) } },
+                    resets = resets,
+                    onReset = { phone ->
+                        resetTrouble = null
+                        resetAsk = phone
+                    },
                 )
             }
 
@@ -358,6 +393,11 @@ fun AdminPanel(
             title = stringResource(R.string.help_title_screen),
             entries =
             listOf(
+                HelpEntry(
+                    R.drawable.ic_place_reset,
+                    HelpLook.Plain,
+                    stringResource(R.string.help_reset),
+                ),
                 HelpEntry(R.drawable.ic_siren, HelpLook.Alarm, stringResource(R.string.help_siren)),
                 HelpEntry(
                     R.drawable.ic_search_alarm,
@@ -519,6 +559,16 @@ fun AdminPanel(
             busy = sirenBusy,
             onGo = ::writeSiren,
             onCancel = { sirenAsk = null },
+        )
+    }
+
+    resetAsk?.let { phone ->
+        ResetDialog(
+            phoneName = phone.name,
+            trouble = resetTrouble,
+            busy = resetBusy,
+            onGo = ::writeReset,
+            onCancel = { resetAsk = null },
         )
     }
 
