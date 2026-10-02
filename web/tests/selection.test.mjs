@@ -47,6 +47,15 @@ test('going back to the list with nothing open stays closed', () => {
     assert.equal(listShown(null), null);
 });
 
+// The member picked from a list stands on a pin of their own while the card is
+// open, so the way back is the list they were picked from, not their own pin.
+test('a member picked from a list goes back to that list', () => {
+    const picked = openMember('b', 'b', 'a,b,c');
+
+    assert.deepEqual(picked, { key: 'b', positionId: 'b', list: 'a,b,c' });
+    assert.deepEqual(listShown(picked), { key: 'a,b,c', positionId: null });
+});
+
 test('the strip highlights nobody while nothing is selected', () => {
     assert.deepEqual(shownPositionIds(null, ['a', 'b']), new Set());
 });

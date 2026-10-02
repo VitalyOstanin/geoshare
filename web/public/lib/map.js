@@ -288,7 +288,7 @@ export function createMap(element, onCardChange = () => {}, cardElement) {
     map.on('click', () => {
         if (closeCards(view)) {
             view.onCardChange();
-            drawWidth(view);
+            redrawSelection(view);
         }
     });
 
@@ -309,7 +309,7 @@ export function createMap(element, onCardChange = () => {}, cardElement) {
 
         if (closeCards(view)) {
             view.onCardChange();
-            drawWidth(view);
+            redrawSelection(view);
         }
     });
 
@@ -381,7 +381,9 @@ function draw(view, { positions, names, faces, now }) {
     const byId = new Map(positions.map((position) => [position.positionId, position]));
     const seen = new Set();
 
-    for (const cluster of clusterMembers(placed, CLUSTER_RADIUS)) {
+    const alone = view.selection ? view.selection.positionId : null;
+
+    for (const cluster of clusterMembers(placed, CLUSTER_RADIUS, alone)) {
         const group = cluster.map((memberId) => byId.get(memberId)).filter(Boolean);
 
         if (group.length === 0) {
@@ -432,8 +434,10 @@ function draw(view, { positions, names, faces, now }) {
     // pins, so it moves to whichever marker now covers them, and only closes
     // when the member themselves has left the positions.
     //
-    // A card over a list has nobody to follow — the list is the pile — so it
-    // goes when the pile does.
+    // A card over a list follows the first member of the pile it was opened
+    // over: the member whose card was open a moment ago rejoins the nearest
+    // pile when that card is left (see clusterMembers), and a list closing
+    // under the hand that just opened it would read as a misfire.
     //
     // Whether it closed is the answer rather than a call to onCardChange from
     // inside a drawing: a drawing is usually something the panel asked for,
@@ -441,13 +445,20 @@ function draw(view, { positions, names, faces, now }) {
     let closed = false;
 
     if (view.selection && !seen.has(view.selection.key)) {
-        const moved = markerKeyFor(view, view.selection.positionId);
+        const moved = markerKeyFor(
+            view,
+            view.selection.positionId ?? view.selection.key.split(',')[0],
+        );
 
         if (moved === null) {
             closeCards(view);
             closed = true;
         } else {
-            view.selection = openMember(moved, view.selection.positionId);
+            view.selection = openMember(
+                moved,
+                view.selection.positionId,
+                view.selection.list ?? null,
+            );
             showCard(view, names, faces, now);
         }
     }
@@ -507,6 +518,25 @@ export function drawWidth(view) {
             properties: { colour: memberColour(position.memberId) },
         }],
     });
+}
+
+/**
+ * Draws the markers and the circle again after the card changed hands.
+ *
+ * The markers as well as the circle: the member whose card is open stands on
+ * a pin of their own (see clusterMembers), so opening or closing a card can
+ * take a marker apart or put one back together.
+ */
+export function redrawSelection(view) {
+    if (!view.last) {
+        drawWidth(view);
+
+        return;
+    }
+
+    if (draw(view, view.last)) {
+        view.onCardChange();
+    }
 }
 
 /**
@@ -638,7 +668,7 @@ function addMarker(view, key, group) {
         }
 
         view.onCardChange();
-        drawWidth(view);
+        redrawSelection(view);
         bringTheRingIntoSight(view);
     });
 
@@ -816,7 +846,9 @@ export function lookAt(view, position) {
 
     // A member asked for by name opens their own card even when the marker
     // stands for several: the question was about them, not about the place.
-    view.selection = openMember(key, position.positionId);
+    const crowd = view.markers.get(key).members.length > 1 ? key : null;
+
+    view.selection = openMember(key, position.positionId, crowd);
 
     if (view.last) {
         showCard(view, view.last.names, view.last.faces, view.last.now);
@@ -828,7 +860,7 @@ export function lookAt(view, position) {
     // from until the next redraw — half a minute, on the clock that moves the
     // ages along.
     view.onCardChange();
-    drawWidth(view);
+    redrawSelection(view);
 }
 
 /**

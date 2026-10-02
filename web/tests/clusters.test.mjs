@@ -52,3 +52,12 @@ test('a group too large to draw gives its last circle to the count', () => {
     assert.equal(facesShown(4), 2);
     assert.equal(facesShown(9), 2);
 });
+
+// The circle around the member whose card is open is drawn where they are; a
+// pin in the middle of the crowd would point somewhere else.
+test('the member looked at keeps a pin of their own', () => {
+    const placed = [at('a', 100, 100), at('b', 112, 108), at('c', 95, 90)];
+
+    assert.deepEqual(clusterMembers(placed, 40, 'b'), [['a', 'c'], ['b']]);
+    assert.deepEqual(clusterMembers(placed, 40, 'a'), [['a'], ['b', 'c']]);
+});

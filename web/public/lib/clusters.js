@@ -29,10 +29,15 @@ export const PIN_MAX_CIRCLES = 3;
  * same places have to produce the same groups every tick, or the map would
  * redraw itself for nothing.
  *
+ * `alone` is the member whose card is open, kept out of every group: the
+ * circle around them is drawn where they are, and a pin standing in the middle
+ * of a crowd would point somewhere else.
+ *
  * @param placed positions with the screen point their pin came out at
  * @param radius how close two pins have to come to be drawn as one
+ * @param alone the position kept on a pin of its own, if any
  */
-export function clusterMembers(placed, radius) {
+export function clusterMembers(placed, radius, alone = null) {
     const ordered = [...placed].sort((one, other) => compareIds(one.id, other.id));
     const taken = new Set();
     const clusters = [];
@@ -47,6 +52,10 @@ export function clusterMembers(placed, radius) {
         const group = [anchor.id];
 
         for (const other of ordered) {
+            if (anchor.id === alone || other.id === alone) {
+                continue;
+            }
+
             if (taken.has(other.id) || !within(anchor, other, radius)) {
                 continue;
             }

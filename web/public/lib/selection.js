@@ -46,24 +46,30 @@ export function markerTapped(selection, key, positionIds) {
  * Used when a member is picked from the strip or from a marker's list, where
  * the marker's key is already known and there is no ambiguity to resolve.
  *
+ * The member whose card is open is taken out of the marker they shared (see
+ * clusterMembers), so the list they were picked from is kept by its key: the
+ * way back to it is a marker that only comes back once the card is left.
+ *
  * @param key the marker the member is shown under
  * @param positionId the member whose card is wanted
+ * @param list the marker for several the member was picked from, if any
  */
-export function openMember(key, positionId) {
-    return { key, positionId };
+export function openMember(key, positionId, list = null) {
+    return list === null ? { key, positionId } : { key, positionId, list };
 }
 
 /**
  * Steps back from one member's card to the list of everyone under the same
  * marker.
  *
- * The marker itself does not change, only which of its members is singled
- * out, so the key carries over unchanged and only `positionId` is cleared.
+ * The marker is the one the member was picked from, kept in `list`: while
+ * their card was open they stood on a pin of their own, and the marker for
+ * all of them comes back with the next drawing.
  *
  * @param selection what is open now
  */
 export function listShown(selection) {
-    return selection === null ? null : { key: selection.key, positionId: null };
+    return selection === null ? null : { key: selection.list ?? selection.key, positionId: null };
 }
 
 /**

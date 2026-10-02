@@ -18,7 +18,7 @@ import { widthIsWide, widthText } from './width.js';
 import { foundText, leftOutText } from './found.js';
 import { distanceFromViewer, distanceText } from './distance.js';
 import { SPEAKING, WORDS } from './words.js';
-import { drawWidth } from './map.js';
+import { redrawSelection } from './map.js';
 import { bringTheRingIntoSight, setFollowTarget } from './map-follow.js';
 
 /** Closes whatever card is open, and says whether there was one. */
@@ -69,13 +69,18 @@ export function showCard(view, names, faces, now) {
 
     let content;
 
-    if (group.length === 1) {
-        content = detail(view, group[0], nameOf(group[0], names), faces, now);
-    } else if (!chosen) {
+    // A member picked from a list stands on a pin of their own while the card
+    // is open (see clusterMembers), so the way back is told by the list the
+    // card remembers rather than by how many share this marker.
+    const shown = chosen ?? (group.length === 1 ? group[0] : null);
+
+    if (!shown) {
         content = groupList(view, entry, names, faces, now);
     } else {
-        content = detail(view, chosen, nameOf(chosen, names), faces, now);
+        content = detail(view, shown, nameOf(shown, names), faces, now);
+    }
 
+    if (shown && (group.length > 1 || view.selection.list)) {
         const back = document.createElement('button');
 
         back.type = 'button';
@@ -84,11 +89,12 @@ export function showCard(view, names, faces, now) {
         // arrow written as a character rather than drawn, because a set of icons
         // is a dependency of its own and this is the only one the page needs.
         back.textContent = WORDS.backToList;
+        // Drawn again rather than only shown: the marker for the whole list
+        // comes back only once the member is no longer kept apart from it.
         back.addEventListener('click', () => {
             view.selection = listShown(view.selection);
-            showCard(view, names, faces, now);
+            redrawSelection(view);
             view.onCardChange();
-            drawWidth(view);
         });
 
         content.prepend(back);
@@ -105,7 +111,7 @@ export function showCard(view, names, faces, now) {
     close.addEventListener('click', () => {
         if (closeCards(view)) {
             view.onCardChange();
-            drawWidth(view);
+            redrawSelection(view);
         }
     });
 
@@ -165,11 +171,11 @@ function groupList(view, entry, names, faces, now) {
 
         row.append(face, name, age);
         row.addEventListener('click', () => {
-            view.selection = openMember(view.selection.key, member.positionId);
+            view.selection = openMember(view.selection.key, member.positionId, view.selection.key);
             setFollowTarget(view, member.positionId);
             showCard(view, names, faces, now);
             view.onCardChange();
-            drawWidth(view);
+            redrawSelection(view);
             bringTheRingIntoSight(view);
         });
 

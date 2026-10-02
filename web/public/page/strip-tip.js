@@ -36,14 +36,19 @@ elements.members.addEventListener('scroll', hideTip, { passive: true });
  *
  * A mouse only: a touch has no hover, and the window would be left standing
  * after the tap that opens the card anyway.
+ *
+ * Not over a member whose card is open: the card already says in full who and
+ * what they are, and the window would cover the map for nothing. The click
+ * that opens the card takes the window away for the same reason.
  */
 export function keepTipOver(entry) {
     entry.addEventListener('pointerenter', (event) => {
-        if (event.pointerType === 'mouse') {
+        if (event.pointerType === 'mouse' && !entry.classList.contains('shown')) {
             showTip(entry);
         }
     });
     entry.addEventListener('pointerleave', hideTip);
+    entry.addEventListener('click', hideTip);
 }
 
 function showTip(entry) {
