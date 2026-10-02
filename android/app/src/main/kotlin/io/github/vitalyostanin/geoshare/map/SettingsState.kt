@@ -2,6 +2,8 @@ package io.github.vitalyostanin.geoshare.map
 
 import io.github.vitalyostanin.geoshare.collection.Constellation
 import io.github.vitalyostanin.geoshare.collection.SourceChoice
+import io.github.vitalyostanin.geoshare.download.DownloadNetwork
+import io.github.vitalyostanin.geoshare.download.DownloadState
 import io.github.vitalyostanin.geoshare.membership.Invitation
 import io.github.vitalyostanin.geoshare.membership.Roster
 import io.github.vitalyostanin.geoshare.permission.PermissionStep
@@ -50,6 +52,8 @@ data class SettingsState(
      * aiding data it believes and cannot use.
      */
     val aidingDoubted: Set<Constellation>,
+    /** Over which networks the device downloads on its own, and whether a download waits in roaming. */
+    val downloads: DownloadState,
     /** Whether the phone leaves the application out of its battery saving. */
     val batteryUnrestricted: Boolean,
     /** Whether the siren may loosen "Do Not Disturb" set to total silence. */
@@ -103,6 +107,7 @@ data class SettingsActions(
     val onSharingChange: (Boolean) -> Unit,
     val onJumpsFilteredChange: (Boolean) -> Unit,
     val onSourceUseChange: (SourceChoice, Boolean) -> Unit,
+    val onDownloadNetworkChange: (DownloadNetwork, Boolean) -> Unit,
     val onForgetPlace: () -> Unit,
     /**
      * Tell the receiver to throw its aiding data away, and say how that

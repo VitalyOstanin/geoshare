@@ -443,4 +443,16 @@
     <string name="reset_notification_text">Устройство забыло последнее место и примет следующее. %1$s</string>
     <string name="help_reset">Сбросить место: устройство забудет последнее место и примет следующее, когда метка застряла</string>
     <string name="reset_done_line">Сброшено: %1$s, %2$s</string>
+    <string name="downloads_title">Загрузки</string>
+    <string name="downloads_explained">По каким сетям устройство само скачивает данные, например данные спутников для проверки на подмену. Обмен местами с группой идёт по любой сети.</string>
+    <string name="downloads_wifi">Wi-Fi</string>
+    <string name="downloads_mobile">Сотовая сеть</string>
+    <string name="downloads_mobile_note">В своей стране</string>
+    <string name="downloads_roaming">Роуминг</string>
+    <string name="downloads_roaming_off_note">Выключено: каждый раз спрашивать</string>
+    <string name="downloads_waiting">Сейчас роуминг. Загрузка ждёт ответа в уведомлении.</string>
+    <string name="downloads_channel_name">Загрузки</string>
+    <string name="downloads_channel_description">Спрашивает перед загрузкой в роуминге</string>
+    <string name="downloads_go">Скачать</string>
+    <string name="downloads_not_now">Не сейчас</string>
 </resources>

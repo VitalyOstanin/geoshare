@@ -7,9 +7,11 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.lifecycleScope
 import io.github.vitalyostanin.geoshare.auth.AuthState
 import io.github.vitalyostanin.geoshare.collection.Constellation
+import io.github.vitalyostanin.geoshare.download.DownloadSetting
 import io.github.vitalyostanin.geoshare.log.AppLog
 import io.github.vitalyostanin.geoshare.map.KeepWatching
 import io.github.vitalyostanin.geoshare.map.LocalLink
@@ -190,6 +192,12 @@ internal fun SignedInScreen(
         deviceId = activity.device.id,
     )
 
+    // Watched rather than read once: the answer to the roaming question is
+    // written by a receiver while this screen may be open.
+    val downloadSetting = remember { DownloadSetting(activity) }
+    val downloads by remember { downloadSetting.changes() }
+        .collectAsStateWithLifecycle(downloadSetting.state())
+
     // Whether the database answers, told to every screen below the map
     // rather than passed down through each of them.
     CompositionLocalProvider(LocalLink provides link) {
@@ -224,6 +232,7 @@ internal fun SignedInScreen(
                 jumpsFiltered = jumpsFiltered,
                 sourcesLeftOut = sourcesLeftOut,
                 aidingDoubted = aidingDoubted,
+                downloads = downloads,
                 roster = roster,
                 grants = grants,
                 invitation = invitation,
@@ -258,6 +267,9 @@ internal fun SignedInScreen(
                 onSourceUseChange = { source, counted ->
                     activity.sources.use(source, counted)
                     onSourcesLeftOut(activity.sources.leftOut)
+                },
+                onDownloadNetworkChange = { network, allowed ->
+                    downloadSetting.allow(network, allowed)
                 },
                 onForgetPlace = { activity.jumps.askToForget() },
                 // Done here and not in the service:

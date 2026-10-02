@@ -38,6 +38,8 @@ import io.github.vitalyostanin.geoshare.collection.SourceChoice
 import io.github.vitalyostanin.geoshare.collection.constellationLabel
 import io.github.vitalyostanin.geoshare.collection.inOrder
 import io.github.vitalyostanin.geoshare.collection.sourceChoiceLabel
+import io.github.vitalyostanin.geoshare.download.DownloadNetwork
+import io.github.vitalyostanin.geoshare.download.DownloadState
 import io.github.vitalyostanin.geoshare.permission.PermissionStep
 import io.github.vitalyostanin.geoshare.service.AidingErasure
 import io.github.vitalyostanin.geoshare.service.LanguageChoice
@@ -256,6 +258,13 @@ fun SettingsScreen(
 
             HorizontalDivider()
 
+            DownloadsSection(
+                downloads = settings.downloads,
+                onDownloadNetworkChange = actions.onDownloadNetworkChange,
+            )
+
+            HorizontalDivider()
+
             GroupSection(
                 roster = settings.roster,
                 ownMemberId = ownMemberId,
@@ -458,6 +467,80 @@ private fun SourcesSection(
             )
         }
     }
+}
+
+/**
+ * Over which networks the device downloads on its own.
+ *
+ * Roaming switched off does not mean "never": the member is asked each time,
+ * which the row under the switch says, and a download already waiting for
+ * that answer is shown below.
+ */
+@Composable
+private fun DownloadsSection(
+    downloads: DownloadState,
+    onDownloadNetworkChange: (DownloadNetwork, Boolean) -> Unit,
+) {
+    Text(
+        text = stringResource(R.string.downloads_title),
+        style = MaterialTheme.typography.titleMedium,
+        modifier = Modifier.padding(start = 16.dp, top = 8.dp, end = 16.dp),
+    )
+
+    Text(
+        text = stringResource(R.string.downloads_explained),
+        style = MaterialTheme.typography.bodySmall,
+        color = MaterialTheme.colorScheme.onSurfaceVariant,
+        modifier = Modifier.padding(start = 16.dp, end = 16.dp, bottom = 4.dp),
+    )
+
+    DownloadNetwork.entries.forEach { network ->
+        val allowed = network in downloads.allowed
+
+        Row(
+            modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 4.dp),
+            horizontalArrangement = Arrangement.spacedBy(12.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Column(modifier = Modifier.weight(1f)) {
+                Text(text = stringResource(downloadNetworkLabel(network)))
+
+                downloadNetworkNote(network, allowed)?.let { note ->
+                    Text(
+                        text = stringResource(note),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
+            }
+
+            Switch(
+                checked = allowed,
+                onCheckedChange = { wanted -> onDownloadNetworkChange(network, wanted) },
+            )
+        }
+    }
+
+    if (downloads.waitingInRoaming) {
+        Text(
+            text = stringResource(R.string.downloads_waiting),
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.error,
+            modifier = Modifier.padding(start = 16.dp, end = 16.dp, bottom = 8.dp),
+        )
+    }
+}
+
+private fun downloadNetworkLabel(network: DownloadNetwork): Int = when (network) {
+    DownloadNetwork.WiFi -> R.string.downloads_wifi
+    DownloadNetwork.Mobile -> R.string.downloads_mobile
+    DownloadNetwork.Roaming -> R.string.downloads_roaming
+}
+
+private fun downloadNetworkNote(network: DownloadNetwork, allowed: Boolean): Int? = when {
+    network == DownloadNetwork.Mobile -> R.string.downloads_mobile_note
+    network == DownloadNetwork.Roaming && !allowed -> R.string.downloads_roaming_off_note
+    else -> null
 }
 
 /**

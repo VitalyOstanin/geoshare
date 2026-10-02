@@ -29,3 +29,4 @@ date is the decision's.
 | 0019 | [Making an invitation and naming a group](0019-making-an-invitation-and-naming-a-group.md)                          | Accepted                            | 2026-09-30 |
 | 0020 | [Who is asked for the position](0020-who-is-asked-for-the-position.md)                                           | Accepted                            | 2026-10-02 |
 | 0021 | [The sky file is laid out as Google's GNSS logger lays out its own](0021-sky-file-in-google-logger-layout.md)      | Accepted                            | 2026-10-02 |
+| 0022 | [Background downloads follow the member's network choice](0022-downloads-follow-the-network-choice.md)        | Accepted                            | 2026-10-02 |

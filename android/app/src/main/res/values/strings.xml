@@ -499,4 +499,16 @@
     <string name="reset_notification_text">The device forgot its last place and takes the next one. %1$s</string>
     <string name="help_reset">Reset the place: the device forgets its last place and takes the next one, when its marker is stuck</string>
     <string name="reset_done_line">Reset: %1$s, %2$s</string>
+    <string name="downloads_title">Downloads</string>
+    <string name="downloads_explained">Which networks this device downloads data over on its own, such as the satellite data for the spoofing check. Places are shared with the group over any network.</string>
+    <string name="downloads_wifi">Wi-Fi</string>
+    <string name="downloads_mobile">Mobile network</string>
+    <string name="downloads_mobile_note">At home</string>
+    <string name="downloads_roaming">Roaming</string>
+    <string name="downloads_roaming_off_note">Off: ask every time</string>
+    <string name="downloads_waiting">Roaming now. A download is waiting for your answer in the notification.</string>
+    <string name="downloads_channel_name">Downloads</string>
+    <string name="downloads_channel_description">Asks before downloading while roaming</string>
+    <string name="downloads_go">Download</string>
+    <string name="downloads_not_now">Not now</string>
 </resources>
