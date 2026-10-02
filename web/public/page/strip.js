@@ -79,7 +79,6 @@ export function render() {
     showFollow(labels);
     showNote();
     showWatching();
-    showStripEdge();
 }
 
 /**
@@ -200,18 +199,6 @@ function followCaption(mode) {
     }
 
     return mode === FOLLOW_ALL ? WORDS.followAll : WORDS.followNone;
-}
-
-/**
- * Says, by fading the right edge, that the strip holds more than it shows.
- *
- * Measured rather than guessed: the strip is as wide as the window, and how
- * many members fit depends on the length of their names.
- */
-export function showStripEdge() {
-    const more = elements.members.scrollWidth > elements.members.clientWidth + 1;
-
-    elements.members.classList.toggle('scrollable', more);
 }
 
 /**
@@ -353,7 +340,9 @@ function faces() {
 function memberEntry(position, labels, pictures, shown, now) {
     const entry =
         state.stripEntries.get(position.positionId) ?? newMemberEntry(position.positionId);
-    const [face, name, age, battery, sought] = entry.children;
+    const [face, text] = entry.children;
+    const [name, details, sought] = text.children;
+    const [age, battery] = details.children;
 
     entry.className = shown.has(position.positionId) ? 'member shown' : 'member';
     entry.classList.toggle('sought', Boolean(position.sought));
@@ -419,7 +408,16 @@ function newMemberEntry(positionId) {
     const sought = document.createElement('span');
     sought.className = 'sought-until';
 
-    entry.append(face, name, age, battery, sought);
+    // The name over the age and the charge, so that two entries fit side by
+    // side on a phone: on one line the name alone took most of its width.
+    const details = document.createElement('span');
+    details.className = 'member-details';
+    details.append(age, battery);
+    const text = document.createElement('span');
+    text.className = 'member-text';
+    text.append(name, details, sought);
+
+    entry.append(face, text);
 
     return entry;
 }

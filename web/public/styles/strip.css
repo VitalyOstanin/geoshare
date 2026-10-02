@@ -44,32 +44,53 @@
     opacity: 0.7;
 }
 
+/* Columns of one width, as many as the window holds and never fewer than two:
+   a single row scrolled sideways hid the fourth device of a family on a
+   laptop, and every device past the first and a half on a phone. A third of
+   the window is as high as the strip grows; past that it scrolls inside
+   itself rather than taking the map. */
 #members {
-    display: flex;
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(min(15rem, calc((100% - 0.5rem) / 2)), 1fr));
     gap: 0.5rem;
-    overflow-x: auto;
-    flex: 1;
-}
-
-/* A strip wider than the window hides whoever is past the right edge, and on a
-   touch screen there is no scrollbar to say so. The fade is the same promise a
-   scrollbar used to make: there is more this way. */
-#members.scrollable {
-    mask-image: linear-gradient(to right, #000 calc(100% - 2rem), transparent);
+    max-height: 33vh;
+    overflow-y: auto;
 }
 
 .member {
     display: flex;
     align-items: center;
     gap: 0.4rem;
+    min-width: 0;
     padding: 0.4rem 0.6rem;
     border: 1px solid var(--edge);
     border-radius: 0.6rem;
     background: transparent;
     color: inherit;
     font: inherit;
+    text-align: left;
     cursor: pointer;
     white-space: nowrap;
+}
+
+/* The name on a line of its own, the age and the charge under it. A name
+   longer than its column ends in an ellipsis; the card the entry opens says
+   it in full. */
+.member-text {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+    line-height: 1.25;
+}
+
+.member-text .name {
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.member-details {
+    display: flex;
+    gap: 0.4rem;
 }
 
 /* The face on a card in the panel and on a row of a group: the same picture

@@ -26,7 +26,7 @@ import { closeSearch, drawSearchAsk, drawSought, searchesChanged, soughtLine } f
 import { drawSirenAsk } from './page/siren-ui.js';
 import { followLink, knownNote, unfollowLink } from './page/link-ui.js';
 import { followAttention, unfollowAttention } from './page/pause.js';
-import { notePageLooking, personName, render, showAccount, showStripEdge } from './page/strip.js';
+import { notePageLooking, personName, render, showAccount } from './page/strip.js';
 
 watchSignIn((member) => {
     state.member = member;
@@ -328,10 +328,6 @@ setInterval(() => {
         drawGroup();
     }
 }, AGE_TICK_MS);
-
-// The strip holds a different number of members at a different width, and the
-// fade at its edge has to follow.
-window.addEventListener('resize', showStripEdge);
 
 // A hidden tab is not redrawn, so the first thing to do on the way back is to
 // catch the ages up with the clock.
