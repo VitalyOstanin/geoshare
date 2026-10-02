@@ -124,7 +124,7 @@
     <string name="constellation_sbas">SBAS</string>
     <string name="constellation_irnss">NavIC</string>
     <string name="constellation_other">other</string>
-    <string name="aiding_wasted">Heard for nothing: %1$s. The receiver holds no orbit for any of those satellites, which is what erasing the aiding data puts right.</string>
+    <string name="aiding_wasted">Heard for nothing: %1$s. The device does not know where those satellites move, which is what resetting the satellite data puts right.</string>
     <string name="reason_help_title">Why a position is rejected</string>
     <string name="reason_help_intro">The device holds every position against several rules and rejects it as soon as the first one speaks. A rejection is not a fault: where the signal is spoofed there are more rejected answers than accepted ones, and that is the work being done properly.</string>
     <string name="reason_help_sign">What was seen</string>
@@ -161,14 +161,14 @@
     <string name="reason_help_sign_by_source">You switched this source of a position off in the settings.</string>
     <string name="reason_help_means_by_source">Nothing is wrong with the answer: it is collected and logged, but it moves no marker and reaches nobody. That is what the switch is for.</string>
 
-    <string name="aiding_title">Aiding data</string>
-    <string name="aiding_explained">The orbits and the last known place the receiver searches by. Aiding data gone wrong keeps a whole constellation out of every answer: its satellites are heard and none of them count.</string>
-    <string name="aiding_forget">Erase</string>
+    <string name="aiding_title">Reset the satellite data</string>
+    <string name="aiding_explained">The device remembers where the satellites move and where it was last, to find its place sooner. When that goes wrong, satellites are seen but left out of the position. A reset puts it right.</string>
+    <string name="aiding_forget">Reset</string>
     <string name="aiding_keep">Leave it</string>
-    <string name="aiding_erased">Erased</string>
+    <string name="aiding_erased">Reset done</string>
     <string name="aiding_refused">The receiver would not</string>
-    <string name="aiding_confirm_title">Erase the aiding data?</string>
-    <string name="aiding_confirm_text">The receiver starts again from nothing: the first position takes minutes instead of seconds, and the orbits are gathered back over the quarter of an hour that follows. Worth doing when a constellation is heard for days without ever entering the answer.</string>
+    <string name="aiding_confirm_title">Reset the satellite data?</string>
+    <string name="aiding_confirm_text">The first position takes a few minutes instead of seconds. Worth doing when satellites are seen for days but the position stays rough.</string>
 
     <string name="background_title">Background work</string>
     <string name="background_battery">Battery restriction</string>

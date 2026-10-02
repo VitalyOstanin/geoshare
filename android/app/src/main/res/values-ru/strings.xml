@@ -111,7 +111,7 @@
     <string name="constellation_sbas">SBAS</string>
     <string name="constellation_irnss">NavIC</string>
     <string name="constellation_other">другое</string>
-    <string name="aiding_wasted">Слышно, но без пользы: %1$s. Приёмник не держит ни одной орбиты этих спутников — это и лечит стирание данных помощи.</string>
+    <string name="aiding_wasted">Слышно, но без пользы: %1$s. Устройство не знает, где движутся эти спутники, — это исправляет сброс спутниковых данных.</string>
     <string name="reason_help_title">Почему точка отброшена</string>
     <string name="reason_help_intro">Устройство проверяет каждую позицию несколькими правилами и отказывает ей, как только сработало первое. Отказ не значит поломку: в районе с подменой сигнала отброшенных точек больше, чем принятых, и это правильная работа.</string>
     <string name="reason_help_sign">Признак</string>
@@ -148,14 +148,14 @@
     <string name="reason_help_sign_by_source">Вы выключили этот источник позиции в настройках приложения на устройстве.</string>
     <string name="reason_help_means_by_source">С точкой всё в порядке: она собрана и записана в журнал, но метку не двигает и никому не уходит. Так и было задумано.</string>
 
-    <string name="aiding_title">Данные помощи</string>
-    <string name="aiding_explained">Орбиты спутников и последнее известное место, от которых приёмник ведёт поиск. Испорченные данные помощи не пускают в решение целое созвездие: его спутники слышны, а в позицию не идут.</string>
-    <string name="aiding_forget">Стереть</string>
+    <string name="aiding_title">Сброс спутниковых данных</string>
+    <string name="aiding_explained">Устройство запоминает, где движутся спутники и где оно было в последний раз, чтобы быстрее находить место. Если эти сведения испортились, спутники видны, но в расчёт места не попадают. Сброс это исправляет.</string>
+    <string name="aiding_forget">Сбросить</string>
     <string name="aiding_keep">Оставить</string>
-    <string name="aiding_erased">Стёрто</string>
+    <string name="aiding_erased">Сброшено</string>
     <string name="aiding_refused">Приёмник отказал</string>
-    <string name="aiding_confirm_title">Стереть данные помощи?</string>
-    <string name="aiding_confirm_text">Приёмник начнёт с нуля: первая позиция придёт через минуты, а не через секунды, и орбиты наберутся заново за следующие четверть часа. Имеет смысл, когда созвездие слышно сутками, но в решение так и не входит.</string>
+    <string name="aiding_confirm_title">Сбросить спутниковые данные?</string>
+    <string name="aiding_confirm_text">Первое место придёт через несколько минут, а не секунд. Нужно, если спутники сутками видны, но место остаётся неточным.</string>
 
     <string name="background_title">Работа в фоне</string>
     <string name="background_battery">Ограничение батареи</string>
