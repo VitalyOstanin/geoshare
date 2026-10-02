@@ -78,6 +78,9 @@ private const val LABEL_TEXT_DP = 13f
 private const val LABEL_PADDING_DP = 5f
 private const val LABEL_GAP_DP = 4f
 private const val LABEL_CORNER_DP = 6f
+
+/** The frame around the name of the member whose card is open, as the page draws it. */
+private const val LABEL_FRAME_DP = 2f
 private val LABEL_BACKGROUND = Color.argb(0xEB, 0xFF, 0xFF, 0xFF)
 private val LABEL_TEXT_COLOUR = Color.rgb(0x20, 0x20, 0x20)
 
@@ -175,6 +178,8 @@ fun markerIcon(
     face: Bitmap?,
     /** The word to ring the pin with and write above the name, or null where nobody is sought. */
     soughtMark: String? = null,
+    /** The colour to frame the name in while this member's card is open, or null for none. */
+    frame: Int? = null,
 ): Bitmap {
     val body = if (stale) STALE_COLOUR else colour
 
@@ -192,6 +197,7 @@ fun markerIcon(
             ),
         ),
         soughtMark = soughtMark,
+        frame = frame,
     )
 }
 
@@ -256,6 +262,12 @@ private fun pinBitmap(
     circles: List<Circle>,
     /** The word to ring the head with and write above the name, or null to draw neither. */
     soughtMark: String? = null,
+    /**
+     * The colour to frame the name in, or null for none: the member whose card
+     * is open stands on top of any neighbour in the same spot, and their name
+     * lying over the neighbour's read as one line with it.
+     */
+    frame: Int? = null,
 ): Bitmap {
     val head = dpToPx(context, PIN_HEAD_DP)
     val step = dpToPx(context, FACE_STEP_DP)
@@ -267,6 +279,7 @@ private fun pinBitmap(
     val gap = dpToPx(context, LABEL_GAP_DP)
     val padding = dpToPx(context, LABEL_PADDING_DP)
     val ring = if (soughtMark != null) dpToPx(context, SOUGHT_RING_DP) else 0
+    val framed = if (frame != null) dpToPx(context, LABEL_FRAME_DP) else 0
 
     val headWidth = head + step * (circles.size - 1).coerceAtLeast(0)
 
@@ -303,8 +316,8 @@ private fun pinBitmap(
         if (soughtMark != null) soughtPaint.measureText(soughtMark).toInt() + padding * 2 else 0
     val soughtStack = if (soughtMark != null) soughtHeight + gap else 0
 
-    val width = maxOf(labelWidth, soughtWidth, headWidth + (edge + ring) * 2)
-    val headTop = soughtStack + labelHeight + gap + edge + ring
+    val width = maxOf(labelWidth + framed * 2, soughtWidth, headWidth + (edge + ring) * 2)
+    val headTop = soughtStack + framed + labelHeight + framed + gap + edge + ring
     val height = headTop + head + point
 
     // Handed the screen's metrics rather than left at the default: the library
@@ -338,8 +351,22 @@ private fun pinBitmap(
         canvas.drawText(soughtMark, middle, padding - soughtMetrics.ascent, soughtPaint)
     }
 
-    val labelTop = soughtStack.toFloat()
+    val labelTop = (soughtStack + framed).toFloat()
     val boxPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = LABEL_BACKGROUND }
+
+    if (frame != null) {
+        val framePaint = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = frame }
+
+        canvas.drawRoundRect(
+            middle - labelWidth / 2f - framed,
+            labelTop - framed,
+            middle + labelWidth / 2f + framed,
+            labelTop + labelHeight + framed,
+            corner + framed,
+            corner + framed,
+            framePaint,
+        )
+    }
 
     canvas.drawRoundRect(
         middle - labelWidth / 2f,

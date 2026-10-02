@@ -521,6 +521,8 @@ internal class MapHolder(val view: MapView) {
                 stale = greyed(single),
                 face = faces[single.memberId],
                 soughtMark = sought,
+                // The colour of their circle, as on the page.
+                frame = memberColour(single.memberId).takeIf { single.positionId == selected },
             )
         }
 
@@ -565,8 +567,10 @@ internal class MapHolder(val view: MapView) {
             "${group.any { it.positionId in soughtPhones }}:",
     ) { position ->
         val face = faces[position.memberId] != null
+        // The open card's pin wears a frame round the name, a drawing of its own.
+        val open = group.size == 1 && position.positionId == selected
 
-        "${position.positionId}:${label(position)}:${greyed(position)}:$face"
+        "${position.positionId}:${label(position)}:${greyed(position)}:$face:$open"
     }
 
     /**

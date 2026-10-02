@@ -27,6 +27,16 @@
     pointer-events: auto;
 }
 
+/* The label of the member whose card is open: framed in their colour, the
+   colour of their circle, and lifted by a deeper shadow. Their pin stands on
+   top of any neighbour in the same spot, and the label lying over the
+   neighbour's read as one line with it. */
+.member-label.open {
+    box-shadow:
+        0 0 0 2px var(--frame),
+        0 2px 8px rgba(0, 0, 0, 0.45);
+}
+
 /* The pin: a head with a point under it, and a face inside the head. The
    point is the position, which is why the face can be this large. A marker
    that stands for several members is the same pin with a wider head, and its

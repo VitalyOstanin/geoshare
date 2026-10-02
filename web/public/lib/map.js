@@ -419,6 +419,15 @@ function draw(view, { positions, names, faces, now }) {
 
         showPin(entry, names, faces, now);
 
+        // Framed in the member's colour, the colour of their circle: their pin
+        // stands apart and on top, and its label lying over a neighbour's
+        // read as one line with it.
+        entry.label.classList.toggle('open', looked);
+
+        if (looked) {
+            entry.label.style.setProperty('--frame', memberColour(group[0].memberId));
+        }
+
         // What the card holds is built for the card that is open, and for no
         // other: the card is a heading, a face and five rows, and building
         // one per marker on every tick is work nobody sees.
