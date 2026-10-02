@@ -13,9 +13,9 @@ import io.github.vitalyostanin.geoshare.collection.SLANT_MIN_SATELLITES
 import io.github.vitalyostanin.geoshare.collection.Satellite
 import io.github.vitalyostanin.geoshare.collection.SignalApart
 import io.github.vitalyostanin.geoshare.collection.Slant
+import io.github.vitalyostanin.geoshare.collection.androidType
 import io.github.vitalyostanin.geoshare.collection.driftOf
 import io.github.vitalyostanin.geoshare.collection.slantOf
-import io.github.vitalyostanin.geoshare.collection.word
 import java.io.File
 import java.time.Duration
 import java.time.Instant
@@ -37,9 +37,11 @@ const val SKY_FILE_LIMIT_BYTES: Long = 2L * 1024 * 1024
  * matters is what the sky looked like at the moment a position was worked out
  * from it, and that is what a block is.
  *
- * The rows are the ones Google's own logger writes, under the same names and
- * carrying the same fields, so that a question answered from one file can be
- * asked of the other.
+ * The rows Google's own logger writes are written as version 3.1 of it writes
+ * them — the same names, the same fields in the same order, the system as a
+ * number — so that the tools made for that logger read this file as it is.
+ * The rows of this application's own sit beside them under names of their
+ * own, which those tools pass over.
  */
 object SkyLog {
     @Volatile
@@ -51,8 +53,14 @@ object SkyLog {
     private var driftFrom: List<Satellite> = emptyList()
     private var driftFromAt: Long = 0L
 
-    /** Called once, from the application object. */
-    fun start(directory: File) {
+    /**
+     * Called once, from the application object.
+     *
+     * [device] is what the head of every file says the file came from: the
+     * application's version, Android's, the phone and its receiver, in the
+     * words Google's logger uses for them.
+     */
+    fun start(directory: File, device: String = "") {
         driftFrom = emptyList()
         driftFromAt = 0L
         files =
@@ -62,9 +70,8 @@ object SkyLog {
                 previousName = "sky-previous.csv",
                 limitBytes = SKY_FILE_LIMIT_BYTES,
                 threadName = "geoshare-sky",
+                head = headOf(device).toByteArray(),
             )
-
-        note(HEADER)
     }
 
     /**
@@ -88,13 +95,8 @@ object SkyLog {
 
         note(
             buildString {
-                fix(stamp, fix)
-                clock?.let { clock(stamp, it) }
-                gains.forEach { gain(stamp, it) }
-                slants(stamp, sky)
-                drifts(stamp, sky)
-                sky.forEach { satellite(stamp, it) }
-                measurements.forEach { measurement(stamp, it) }
+                fix(fix)
+                epoch(stamp, clock, gains, sky, measurements)
             },
         )
     }
@@ -127,12 +129,7 @@ object SkyLog {
         note(
             buildString {
                 unfixed(stamp, mode, silence)
-                clock?.let { clock(stamp, it) }
-                gains.forEach { gain(stamp, it) }
-                slants(stamp, sky)
-                drifts(stamp, sky)
-                sky.forEach { satellite(stamp, it) }
-                measurements.forEach { measurement(stamp, it) }
+                epoch(stamp, clock, gains, sky, measurements)
             },
         )
     }
@@ -144,7 +141,7 @@ object SkyLog {
      * rather than beside a block: the whole point of asking it is to have the
      * satellites' own answer next to the one that was written.
      */
-    fun note(at: Instant, fix: Fix) = note(buildString { fix(at.toEpochMilli(), fix) })
+    fun note(at: Instant, fix: Fix) = note(buildString { fix(fix) })
 
     /**
      * One navigation message, written as it arrives rather than beside a fix.
@@ -155,9 +152,11 @@ object SkyLog {
      * What keeps the file from filling up with them is the caller, which
      * writes a page only when it differs from the last one written for that
      * satellite — see [io.github.vitalyostanin.geoshare.collection.NavSoFar].
+     *
+     * The row carries no moment of its own, as it does not in Google's file:
+     * when it arrived is told by the blocks on either side of it.
      */
-    fun note(at: Instant, message: NavMessage) =
-        note(buildString { nav(at.toEpochMilli(), message) })
+    fun note(message: NavMessage) = note(buildString { nav(message) })
 
     /**
      * The signals whose own time parted from one of the phone's clocks.
@@ -181,11 +180,38 @@ object SkyLog {
         files?.append(rows.toByteArray())
     }
 
-    private fun StringBuilder.fix(stamp: Long, fix: Fix) {
+    /**
+     * The epoch's own rows, the same whether a position came out of it or not.
+     *
+     * The clock goes into every raw row, as Google's logger puts it, so that a
+     * row read on its own is enough to work out a distance from. A row of its
+     * own only where there is no raw row to carry it: an epoch the receiver
+     * measured nothing in still says whether its clock stepped.
+     */
+    @Suppress("LongParameterList")
+    private fun StringBuilder.epoch(
+        stamp: Long,
+        clock: Clock?,
+        gains: List<Gain>,
+        sky: List<Satellite>,
+        measurements: List<Measurement>,
+    ) {
+        if (measurements.isEmpty()) {
+            clock?.let { clock(stamp, it) }
+        }
+
+        gains.forEach { gain(stamp, clock, it) }
+        slants(stamp, sky)
+        drifts(stamp, sky)
+        sky.forEachIndexed { index, satellite -> status(stamp, sky.size, index, satellite) }
+        measurements.forEach { measurement(stamp, clock, it) }
+    }
+
+    private fun StringBuilder.fix(fix: Fix) {
         val said = fix.reported
 
-        append("Fix,").append(stamp).append(',')
-        append(fix.from.orEmpty()).append(',')
+        append("Fix,")
+        append(providerOf(fix.from)).append(',')
         append(String.format(Locale.ROOT, "%.7f", fix.latitude)).append(',')
         append(String.format(Locale.ROOT, "%.7f", fix.longitude)).append(',')
         append(number(said?.altitudeMetres)).append(',')
@@ -198,6 +224,11 @@ object SkyLog {
         append(fix.sinceBoot?.toNanos()?.toString().orEmpty()).append(',')
         append(number(said?.verticalAccuracyMetres)).append(',')
         append(if (said?.pretended == true) '1' else '0').append(',')
+        // How many signals the position rests on, how sure the receiver is
+        // of its vertical speed and what kind of solution it was: Google's
+        // logger has them from its own receiver, the platform does not hand
+        // them over.
+        append(",,,")
         append(said?.alongside.orEmpty().replace(',', ' ')).append('\n')
     }
 
@@ -209,6 +240,23 @@ object SkyLog {
 
     private fun StringBuilder.clock(stamp: Long, clock: Clock) {
         append("Clock,").append(stamp).append(',')
+        clockFields(clock)
+        append(clock.sinceBootNanos?.toString().orEmpty()).append(',')
+        append(number(clock.sinceBootUncertaintyNanos)).append('\n')
+    }
+
+    /**
+     * The receiver's clock as Google's logger puts it at the head of a raw row
+     * and of a gain row, nine fields with a comma after each; nine empty ones
+     * where the epoch came without a clock.
+     */
+    private fun StringBuilder.clockFields(clock: Clock?) {
+        if (clock == null) {
+            append(",".repeat(CLOCK_FIELDS))
+
+            return
+        }
+
         append(clock.timeNanos).append(',')
         append(clock.leapSecond?.toString().orEmpty()).append(',')
         append(number(clock.timeUncertaintyNanos)).append(',')
@@ -218,15 +266,14 @@ object SkyLog {
         append(number(clock.driftNanosPerSecond)).append(',')
         append(number(clock.driftUncertaintyNanosPerSecond)).append(',')
         append(clock.discontinuities).append(',')
-        append(clock.sinceBootNanos?.toString().orEmpty()).append(',')
-        append(number(clock.sinceBootUncertaintyNanos)).append('\n')
     }
 
-    private fun StringBuilder.gain(stamp: Long, gain: Gain) {
+    private fun StringBuilder.gain(stamp: Long, clock: Clock?, gain: Gain) {
         append("Agc,").append(stamp).append(',')
-        append(gain.constellation.word).append(',')
+        clockFields(clock)
+        append(number(gain.levelDb)).append(',')
         append(number(gain.carrierHz)).append(',')
-        append(number(gain.levelDb)).append('\n')
+        append(gain.constellation.androidType).append('\n')
     }
 
     /**
@@ -283,7 +330,7 @@ object SkyLog {
 
     private fun StringBuilder.drift(stamp: Long, constellation: Constellation, drift: Drift) {
         append("Drift,").append(stamp).append(',')
-        append(constellation.word).append(',')
+        append(constellation.androidType).append(',')
         append(drift.satellites).append(',')
         append(number(drift.shiftDb)).append(',')
         append(number(drift.apartDb)).append('\n')
@@ -291,7 +338,7 @@ object SkyLog {
 
     private fun StringBuilder.slant(stamp: Long, constellation: Constellation, slant: Slant) {
         append("Slant,").append(stamp).append(',')
-        append(constellation.word).append(',')
+        append(constellation.androidType).append(',')
         append(slant.satellites).append(',')
         append(number(slant.meanDb)).append(',')
         append(number(slant.spreadDb)).append(',')
@@ -299,23 +346,25 @@ object SkyLog {
         append(number(slant.highLessLowDb)).append('\n')
     }
 
-    private fun StringBuilder.satellite(stamp: Long, satellite: Satellite) {
-        append("Sat,").append(stamp).append(',')
-        append(satellite.constellation.word).append(',')
+    private fun StringBuilder.status(stamp: Long, count: Int, index: Int, satellite: Satellite) {
+        append("Status,").append(stamp).append(',')
+        append(count).append(',')
+        append(index).append(',')
+        append(satellite.constellation.androidType).append(',')
         append(satellite.id).append(',')
-        append(number(satellite.loudness)).append(',')
-        append(number(satellite.basebandLoudness)).append(',')
-        append(number(satellite.elevationDegrees)).append(',')
-        append(number(satellite.azimuthDegrees)).append(',')
         append(number(satellite.carrierHz)).append(',')
+        append(number(satellite.loudness)).append(',')
+        append(number(satellite.azimuthDegrees)).append(',')
+        append(number(satellite.elevationDegrees)).append(',')
         append(if (satellite.usedInFix) '1' else '0').append(',')
+        append(if (satellite.hasAlmanac) '1' else '0').append(',')
         append(if (satellite.hasEphemeris) '1' else '0').append(',')
-        append(if (satellite.hasAlmanac) '1' else '0').append('\n')
+        append(number(satellite.basebandLoudness)).append('\n')
     }
 
     private fun StringBuilder.apart(stamp: Long, said: SignalApart) {
         append("Apart,").append(stamp).append(',')
-        append(said.signal.constellation.word).append(',')
+        append(said.signal.constellation.androidType).append(',')
         append(said.signal.id).append(',')
         append(number(said.signal.carrierHz)).append(',')
         append(said.apart.receiverNanos).append(',')
@@ -323,42 +372,70 @@ object SkyLog {
         append(said.verdict.name).append('\n')
     }
 
-    private fun StringBuilder.measurement(stamp: Long, measured: Measurement) {
+    private fun StringBuilder.measurement(stamp: Long, clock: Clock?, measured: Measurement) {
         append("Raw,").append(stamp).append(',')
-        append(measured.constellation.word).append(',')
+        clockFields(clock)
         append(measured.id).append(',')
         append(number(measured.timeOffsetNanos)).append(',')
         append(measured.state).append(',')
         append(measured.receivedSvTimeNanos).append(',')
         append(measured.receivedSvTimeUncertaintyNanos).append(',')
         append(number(measured.loudness)).append(',')
-        append(number(measured.basebandLoudness)).append(',')
         append(number(measured.pseudorangeRateMps)).append(',')
         append(number(measured.pseudorangeRateUncertaintyMps)).append(',')
         append(measured.deltaRangeState).append(',')
         append(number(measured.deltaRangeMetres)).append(',')
         append(number(measured.deltaRangeUncertaintyMetres)).append(',')
         append(number(measured.carrierHz)).append(',')
+        // The carrier cycles, the phase and how sure of it the receiver is:
+        // withdrawn from the platform long ago, kept empty for the columns.
+        append(",,,")
         append(measured.multipath).append(',')
-        append(number(measured.gainDb)).append(',')
         append(number(measured.snrDb)).append(',')
-        append(measured.codeType.orEmpty()).append(',')
+        append(measured.constellation.androidType).append(',')
+        append(number(measured.gainDb)).append(',')
+        append(number(measured.basebandLoudness)).append(',')
         append(number(measured.fullInterSignalBiasNanos)).append(',')
         append(number(measured.fullInterSignalBiasUncertaintyNanos)).append(',')
         append(number(measured.satelliteInterSignalBiasNanos)).append(',')
         append(number(measured.satelliteInterSignalBiasUncertaintyNanos)).append(',')
-        append(measured.fullTracking?.let { if (it) "1" else "0" }.orEmpty()).append('\n')
+        append(measured.codeType.orEmpty()).append(',')
+        append(clock?.sinceBootNanos?.toString().orEmpty()).append(',')
+        append(measured.fullTracking?.let { if (it) "1" else "0" }.orEmpty())
+        // Where the satellite is, how fast it moves, its clock and the
+        // ionosphere's coefficients: what the receiver worked out for itself,
+        // which the platform hands over on few phones and is not asked for
+        // here.
+        append(",".repeat(SATELLITE_FIELDS)).append('\n')
     }
 
-    private fun StringBuilder.nav(stamp: Long, message: NavMessage) {
-        append("Nav,").append(stamp).append(',')
-        append(message.constellation.word).append(',')
+    /**
+     * The words as Google's logger writes them: a byte to a field, as a
+     * signed decimal number, so the row is as long as the message is.
+     */
+    private fun StringBuilder.nav(message: NavMessage) {
+        append("Nav,")
         append(message.id).append(',')
         append(message.type).append(',')
         append(message.status).append(',')
         append(message.messageId).append(',')
-        append(message.submessageId).append(',')
-        append(message.data).append('\n')
+        append(message.submessageId)
+
+        message.data.chunked(2).forEach { byte -> append(',').append(byte.toInt(HEX).toByte()) }
+
+        append('\n')
+    }
+
+    /**
+     * The provider in the word Google's logger uses for it, which is the word
+     * the tools made for that logger look up; any other kept as Android
+     * names it.
+     */
+    private fun providerOf(from: String?): String = when (from) {
+        "gps" -> "GPS"
+        "fused" -> "FLP"
+        "network" -> "NLP"
+        else -> from.orEmpty()
     }
 
     /** A number the way a spreadsheet wants it, or nothing where there is none. */
@@ -366,23 +443,42 @@ object SkyLog {
         value?.let { String.format(Locale.ROOT, "%.3f", it) }.orEmpty()
 
     /**
-     * What the columns are, written at the head of every file.
+     * What the columns are, at the head of every file.
      *
-     * Written on every start rather than on a fresh file: a rollover cuts the
-     * head off, and a reader who gets the second file alone would otherwise
-     * have to know the columns by heart.
+     * Laid out the way Google's logger lays out its own, raw row first: the
+     * tools made for that logger take the column names from the first head
+     * row naming "Raw" and read no further down the head than that.
      */
-    private val HEADER =
+    private fun headOf(device: String): String =
         """
-        # Fix,UnixTimeMillis,Provider,LatitudeDegrees,LongitudeDegrees,AltitudeMeters,SpeedMps,AccuracyMeters,BearingDegrees,TakenAtMillis,SpeedAccuracyMps,BearingAccuracyDegrees,ElapsedRealtimeNanos,VerticalAccuracyMeters,MockLocation,ExtraKeyValuePairs
+        #
+        # Header Description:
+        #
+        # Version: $device
+        #
+        # Raw,utcTimeMillis,TimeNanos,LeapSecond,TimeUncertaintyNanos,FullBiasNanos,BiasNanos,BiasUncertaintyNanos,DriftNanosPerSecond,DriftUncertaintyNanosPerSecond,HardwareClockDiscontinuityCount,Svid,TimeOffsetNanos,State,ReceivedSvTimeNanos,ReceivedSvTimeUncertaintyNanos,Cn0DbHz,PseudorangeRateMetersPerSecond,PseudorangeRateUncertaintyMetersPerSecond,AccumulatedDeltaRangeState,AccumulatedDeltaRangeMeters,AccumulatedDeltaRangeUncertaintyMeters,CarrierFrequencyHz,CarrierCycles,CarrierPhase,CarrierPhaseUncertainty,MultipathIndicator,SnrInDb,ConstellationType,AgcDb,BasebandCn0DbHz,FullInterSignalBiasNanos,FullInterSignalBiasUncertaintyNanos,SatelliteInterSignalBiasNanos,SatelliteInterSignalBiasUncertaintyNanos,CodeType,ChipsetElapsedRealtimeNanos,IsFullTracking,SvPositionEcefXMeters,SvPositionEcefYMeters,SvPositionEcefZMeters,SvVelocityEcefXMetersPerSecond,SvVelocityEcefYMetersPerSecond,SvVelocityEcefZMetersPerSecond,SvClockBiasMeters,SvClockDriftMetersPerSecond,KlobucharAlpha0,KlobucharAlpha1,KlobucharAlpha2,KlobucharAlpha3,KlobucharBeta0,KlobucharBeta1,KlobucharBeta2,KlobucharBeta3
+        #
+        # Fix,Provider,LatitudeDegrees,LongitudeDegrees,AltitudeMeters,SpeedMps,AccuracyMeters,BearingDegrees,UnixTimeMillis,SpeedAccuracyMps,BearingAccuracyDegrees,elapsedRealtimeNanos,VerticalAccuracyMeters,MockLocation,NumberOfUsedSignals,VerticalSpeedAccuracyMps,SolutionType,ExtraKeyValuePairs
+        #
+        # Nav,Svid,Type,Status,MessageId,Sub-messageId,Data(Bytes)
+        #
+        # Status,UnixTimeMillis,SignalCount,SignalIndex,ConstellationType,Svid,CarrierFrequencyHz,Cn0DbHz,AzimuthDegrees,ElevationDegrees,UsedInFix,HasAlmanacData,HasEphemerisData,BasebandCn0DbHz
+        #
+        # Agc,utcTimeMillis,TimeNanos,LeapSecond,TimeUncertaintyNanos,FullBiasNanos,BiasNanos,BiasUncertaintyNanos,DriftNanosPerSecond,DriftUncertaintyNanosPerSecond,HardwareClockDiscontinuityCount,AgcDb,CarrierFrequencyHz,ConstellationType
+        #
         # NoFix,UnixTimeMillis,Mode,SilenceMillis
         # Clock,UnixTimeMillis,TimeNanos,LeapSecond,TimeUncertaintyNanos,FullBiasNanos,BiasNanos,BiasUncertaintyNanos,DriftNanosPerSecond,DriftUncertaintyNanosPerSecond,HardwareClockDiscontinuityCount,ElapsedRealtimeNanos,ElapsedRealtimeUncertaintyNanos
-        # Agc,UnixTimeMillis,ConstellationType,CarrierFrequencyHz,AgcDb
         # Slant,UnixTimeMillis,ConstellationType,Satellites,MeanCn0DbHz,SpreadDbHz,SlopeDbPerSineOfElevation,HighLessLowDbHz
         # Drift,UnixTimeMillis,ConstellationType,Satellites,ShiftDbHz,ApartDbHz
-        # Sat,UnixTimeMillis,ConstellationType,Svid,Cn0DbHz,BasebandCn0DbHz,ElevationDegrees,AzimuthDegrees,CarrierFrequencyHz,UsedInFix,HasEphemerisData,HasAlmanacData
-        # Raw,UnixTimeMillis,ConstellationType,Svid,TimeOffsetNanos,State,ReceivedSvTimeNanos,ReceivedSvTimeUncertaintyNanos,Cn0DbHz,BasebandCn0DbHz,PseudorangeRateMetersPerSecond,PseudorangeRateUncertaintyMetersPerSecond,AccumulatedDeltaRangeState,AccumulatedDeltaRangeMeters,AccumulatedDeltaRangeUncertaintyMeters,CarrierFrequencyHz,MultipathIndicator,AgcDb,SnrInDb,CodeType,FullInterSignalBiasNanos,FullInterSignalBiasUncertaintyNanos,SatelliteInterSignalBiasNanos,SatelliteInterSignalBiasUncertaintyNanos,IsFullTracking
-        # Nav,UnixTimeMillis,ConstellationType,Svid,Type,Status,MessageId,SubmessageId,DataHex
         # Apart,UnixTimeMillis,ConstellationType,Svid,CarrierFrequencyHz,AgainstReceiverNanos,AgainstPhoneNanos,Verdict
+        #
         """.trimIndent() + "\n"
+
+    /** The fields of the receiver's clock a raw row and a gain row carry. */
+    private const val CLOCK_FIELDS = 9
+
+    /** The satellite's own position, speed, clock and ionosphere, left empty. */
+    private const val SATELLITE_FIELDS = 16
+
+    private const val HEX = 16
 }

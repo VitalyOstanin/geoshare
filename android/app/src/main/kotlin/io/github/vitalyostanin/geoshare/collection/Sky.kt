@@ -97,6 +97,25 @@ val Constellation.word: String
         Constellation.Other -> "other"
     }
 
+/**
+ * The number Android gives a system, which is what the sky file writes.
+ *
+ * The file is read by tools made for Google's own logger, and those look the
+ * system up by this number; a word in its place is a system they do not know.
+ */
+@Suppress("MagicNumber")
+val Constellation.androidType: Int
+    get() = when (this) {
+        Constellation.Gps -> 1
+        Constellation.Sbas -> 2
+        Constellation.Glonass -> 3
+        Constellation.Qzss -> 4
+        Constellation.Beidou -> 5
+        Constellation.Galileo -> 6
+        Constellation.Irnss -> 7
+        Constellation.Other -> 0
+    }
+
 /** The systems in the order the log names them, whichever of them are there. */
 fun inOrder(systems: Set<Constellation>): List<Constellation> = listOf(
     Constellation.Gps,

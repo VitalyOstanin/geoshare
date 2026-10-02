@@ -37,9 +37,9 @@ data class NavMessage(
     /**
      * The words themselves, hexadecimal, two characters to the byte.
      *
-     * Google's own logger writes them as decimal numbers separated by commas,
-     * which leaves a row's field count depending on the length of the message.
-     * The same bytes are here, in a form one field can hold.
+     * Held as one string so that two pages compare as one value; the sky
+     * file writes them as Google's own logger does, a decimal number to a
+     * byte.
      */
     val data: String,
 )

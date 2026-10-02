@@ -565,7 +565,7 @@ class RadioWatch(private val context: Context) {
                     val said = navMessageOf(message)
 
                     if (navigation.worthWriting(said)) {
-                        SkyLog.note(Instant.now(), said)
+                        SkyLog.note(said)
                     }
                 }
             }.also { manager.registerGnssNavigationMessageCallback(it, handler) }

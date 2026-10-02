@@ -5,6 +5,7 @@ import io.github.vitalyostanin.geoshare.collection.Constellation
 import io.github.vitalyostanin.geoshare.collection.Fix
 import io.github.vitalyostanin.geoshare.collection.Gain
 import io.github.vitalyostanin.geoshare.collection.Measurement
+import io.github.vitalyostanin.geoshare.collection.NavMessage
 import io.github.vitalyostanin.geoshare.collection.Reported
 import io.github.vitalyostanin.geoshare.collection.Satellite
 import org.junit.Assert.assertEquals
@@ -12,6 +13,7 @@ import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
 import org.junit.rules.TemporaryFolder
+import java.io.File
 import java.time.Duration
 import java.time.Instant
 
@@ -37,19 +39,8 @@ class SkyLogTest {
         )
 
         val written = SkyLog.read()
-        val headers =
-            written.lineSequence()
-                .filter { it.startsWith("# ") }
-                .associate { line ->
-                    val columns = line.removePrefix("# ").split(",")
-
-                    columns.first() to columns.size
-                }
-
-        val rows =
-            written.lineSequence()
-                .filter { it.isNotBlank() && !it.startsWith("# ") }
-                .toList()
+        val headers = headersOf(written).mapValues { (_, columns) -> columns.size }
+        val rows = rowsOf(written)
 
         assertTrue("nothing was written", rows.isNotEmpty())
 
@@ -75,13 +66,110 @@ class SkyLogTest {
             measurements = listOf(MEASUREMENT),
         )
 
-        val kinds =
-            SkyLog.read().lineSequence()
-                .filter { it.isNotBlank() && !it.startsWith("# ") }
-                .map { it.substringBefore(",") }
-                .toSet()
+        val kinds = rowsOf(SkyLog.read()).map { it.substringBefore(",") }.toSet()
 
-        assertEquals(setOf("Fix", "Clock", "Agc", "Slant", "Sat", "Raw"), kinds)
+        assertEquals(setOf("Fix", "Agc", "Slant", "Status", "Raw"), kinds)
+    }
+
+    // What the tools made for Google's logger need of a raw row: the clock in
+    // the same row, and the system as the number Android gives it.
+    @Test
+    fun `a raw row carries the clock and the system by number`() {
+        SkyLog.start(folder.newFolder("raw"))
+
+        note(AT, SKY)
+
+        val written = SkyLog.read()
+        val raw = fieldsOf(written, "Raw")
+
+        assertEquals("498097714000000", raw["TimeNanos"])
+        assertEquals("-1472951481696920528", raw["FullBiasNanos"])
+        assertEquals("441", raw["HardwareClockDiscontinuityCount"])
+        assertEquals("1", raw["ConstellationType"])
+        assertEquals("3", raw["Svid"])
+        assertEquals("615998576335667", raw["ChipsetElapsedRealtimeNanos"])
+        assertEquals("C", raw["CodeType"])
+        assertEquals("", raw["KlobucharBeta3"])
+        assertEquals("GPS", fieldsOf(written, "Fix")["Provider"])
+        assertTrue(rowsOf(written).none { it.startsWith("Clock,") })
+    }
+
+    @Test
+    fun `an epoch without measurements keeps its clock in a row of its own`() {
+        SkyLog.start(folder.newFolder("clock"))
+
+        SkyLog.note(
+            at = AT,
+            fix = FIX,
+            clock = CLOCK,
+            gains = listOf(GAIN),
+            sky = SKY,
+            measurements = emptyList(),
+        )
+
+        val written = SkyLog.read()
+
+        assertEquals("498097714000000", fieldsOf(written, "Clock")["TimeNanos"])
+        assertEquals("498097714000000", fieldsOf(written, "Agc")["TimeNanos"])
+    }
+
+    @Test
+    fun `the head is written once however often the application starts`() {
+        val directory = folder.newFolder("head")
+
+        SkyLog.start(directory, "geoshare 1.0 Platform: 10 Model: test")
+        note(AT, SKY)
+        // Each start writes on a thread of its own; the first has to be done
+        // before the second looks at the file, as it is on a phone.
+        SkyLog.read()
+        SkyLog.start(directory, "geoshare 1.0 Platform: 10 Model: test")
+        note(AT.plusSeconds(1), SKY)
+
+        val written = SkyLog.read()
+
+        assertEquals(1, written.lineSequence().count { it.startsWith("# Raw,") })
+        assertTrue(
+            written.lineSequence().any {
+                it ==
+                    "# Version: geoshare 1.0 Platform: 10 Model: test"
+            },
+        )
+        assertEquals(2, rowsOf(written).count { it.startsWith("Fix,") })
+    }
+
+    // The phones carry a file begun under the layout before this one; rows
+    // appended to it would sit under a head that names other columns.
+    @Test
+    fun `a file begun under the older layout is put aside`() {
+        val directory = folder.newFolder("older")
+
+        File(directory, "sky.csv").writeText("# Fix,UnixTimeMillis,Provider\nFix,1,gps\n")
+
+        SkyLog.start(directory)
+        note(AT, SKY)
+        SkyLog.read()
+
+        assertEquals("#", File(directory, "sky.csv").readLines().first())
+        assertEquals("Fix,1,gps", File(directory, "sky-previous.csv").readLines().last())
+    }
+
+    @Test
+    fun `a navigation message is a byte to a field, as Google's logger writes it`() {
+        SkyLog.start(folder.newFolder("nav"))
+
+        SkyLog.note(
+            NavMessage(
+                constellation = Constellation.Gps,
+                id = 7,
+                type = 0x0101,
+                status = 1,
+                messageId = 2,
+                submessageId = 3,
+                data = "01ff80",
+            ),
+        )
+
+        assertEquals(listOf("Nav,7,257,1,2,3,1,-1,-128"), rowsOf(SkyLog.read()))
     }
 
     // The one row of a block that is not a copy of what the receiver said: it
@@ -107,7 +195,7 @@ class SkyLogTest {
 
         val fields = rows.first().split(",")
 
-        assertEquals("GPS", fields[2])
+        assertEquals("1", fields[2])
         assertEquals("6", fields[3])
     }
 
@@ -133,7 +221,7 @@ class SkyLogTest {
                 .map { it.split(",")[2] }
                 .toList()
 
-        assertEquals(listOf("GPS"), systems)
+        assertEquals(listOf("1"), systems)
     }
 
     // The row that is about a pair of blocks rather than about one: it needs
@@ -152,7 +240,7 @@ class SkyLogTest {
 
         val fields = rows.first().split(",")
 
-        assertEquals("GPS", fields[2])
+        assertEquals("1", fields[2])
         assertEquals("9", fields[3])
         assertEquals("0.200", fields[4])
         assertEquals("0.000", fields[5])
@@ -188,6 +276,25 @@ class SkyLogTest {
     )
 
     private companion object {
+        fun headersOf(written: String): Map<String, List<String>> = written.lineSequence()
+            .filter { it.startsWith("# ") && it.contains(',') }
+            .associate { line ->
+                val columns = line.removePrefix("# ").split(",")
+
+                columns.first() to columns
+            }
+
+        fun rowsOf(written: String): List<String> =
+            written.lineSequence().filter { it.isNotBlank() && !it.startsWith("#") }.toList()
+
+        /** The first row of a kind, by the names its head gives the columns. */
+        fun fieldsOf(written: String, kind: String): Map<String, String> {
+            val names = headersOf(written).getValue(kind)
+            val row = rowsOf(written).first { it.startsWith("$kind,") }.split(",")
+
+            return names.zip(row).toMap()
+        }
+
         fun sat(id: Int, loudness: Double, elevationDegrees: Double) = Satellite(
             constellation = Constellation.Gps,
             id = id,

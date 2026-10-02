@@ -28,6 +28,11 @@ class RollingFiles(
     previousName: String,
     private val limitBytes: Long,
     threadName: String,
+    /**
+     * What every file starts with, the first one and each one after a
+     * rollover, so that either file read alone still says what it holds.
+     */
+    private val head: ByteArray = ByteArray(0),
 ) {
     private val current = File(directory, currentName)
     private val previous = File(directory, previousName)
@@ -40,6 +45,12 @@ class RollingFiles(
             Thread(work, threadName).apply { isDaemon = true }
         }
 
+    init {
+        if (head.isNotEmpty()) {
+            writer.execute { synchronized(lock) { rollAnOlderLayout() } }
+        }
+    }
+
     fun append(bytes: ByteArray) {
         writer.execute {
             synchronized(lock) {
@@ -47,6 +58,10 @@ class RollingFiles(
 
                 if (current.length() + bytes.size > limitBytes) {
                     roll()
+                }
+
+                if (current.length() == 0L) {
+                    current.appendBytes(head)
                 }
 
                 current.appendBytes(bytes)
@@ -82,6 +97,28 @@ class RollingFiles(
         } catch (@Suppress("SwallowedException") slow: TimeoutException) {
             // Likewise: a reader gets the bytes that reached the file, and a
             // writer stuck for two seconds is not worth holding them for.
+        }
+    }
+
+    /**
+     * Puts a file written under another head out of the way.
+     *
+     * A file the application kept appending to across a change of layout would
+     * have rows under a head that no longer describes them. Only the head's
+     * first line is compared: the rest names the version and the receiver,
+     * which may read differently from one start to the next without the
+     * columns having changed.
+     */
+    private fun rollAnOlderLayout() {
+        if (current.length() == 0L) {
+            return
+        }
+
+        val opens = head.decodeToString().substringBefore('\n')
+        val opened = current.bufferedReader().use { it.readLine() }
+
+        if (opened != opens) {
+            roll()
         }
     }
 
