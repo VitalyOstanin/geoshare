@@ -13,6 +13,7 @@ import { WORDS } from '../lib/words.js';
 import { elements, state } from './state.js';
 import { FOLLOW_ANNOUNCE_MS } from './menus.js';
 import { untilText } from './search-ui.js';
+import { keepTipOver } from './strip-tip.js';
 
 /**
  * The account picture, or the first letter of the name when there is none.
@@ -308,15 +309,11 @@ function nameOf(position, carried) {
 }
 
 /**
- * The whole of what an entry may cut short, for the pointer resting on it: the
- * account's own name even for one's own devices, which the entry calls "you",
- * and the device always, which the entry leaves out for a member with one.
+ * The account's own name, for the tip over an entry: one's own devices too,
+ * which the entry itself calls "you".
  */
-function fullName(position) {
-    const profile = state.profiles?.get(position.memberId);
-    const person = profile?.displayName ?? personName(position);
-
-    return position.deviceName ? `${person} · ${position.deviceName}` : person;
+function accountName(position) {
+    return state.profiles?.get(position.memberId)?.displayName ?? personName(position);
 }
 
 /** Who carries the phone, without the phone: the head of a card says it apart. */
@@ -377,7 +374,8 @@ function memberEntry(position, labels, pictures, shown, now) {
     showFace(face, pictures.get(position.memberId), label, colour);
 
     name.textContent = label;
-    entry.title = fullName(position);
+    entry.dataset.person = accountName(position);
+    entry.dataset.device = position.deviceName ?? '';
 
     age.className = stale ? 'age stale' : 'age';
     age.textContent = ageText(positionAge(position.positionAt, now));
@@ -403,6 +401,8 @@ function memberEntry(position, labels, pictures, shown, now) {
  */
 function newMemberEntry(positionId) {
     const entry = document.createElement('button');
+
+    keepTipOver(entry);
 
     entry.addEventListener('click', () => {
         const position = state.positions.find((one) => one.positionId === positionId);

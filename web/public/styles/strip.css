@@ -160,3 +160,64 @@ button {
     border-radius: 0.6rem;
     cursor: pointer;
 }
+
+/* Who and which device in full, over the entry a mouse rests on: the entry
+   cuts a long name short and calls one's own devices "you". In the colours of
+   the panel rather than a dark system tip, so it reads as part of the page,
+   with the entry's own face to tie it to the pin. */
+#strip-tip {
+    position: absolute;
+    z-index: 4;
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    max-width: calc(100% - 1rem);
+    padding: 0.6rem 0.9rem;
+    background: var(--surface);
+    color: var(--on-surface);
+    border: 1px solid var(--edge);
+    border-radius: 0.75rem;
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.28);
+    pointer-events: none;
+}
+
+#strip-tip[hidden] {
+    display: none;
+}
+
+/* The arrow, a square turned on its corner and drawn in the window's own
+   surface and edge, so it carries the border across. */
+#strip-tip::after {
+    content: "";
+    position: absolute;
+    top: 100%;
+    left: var(--arrow-x, 50%);
+    width: 0.7rem;
+    height: 0.7rem;
+    background: var(--surface);
+    border-right: 1px solid var(--edge);
+    border-bottom: 1px solid var(--edge);
+    transform: translate(-50%, -50%) rotate(45deg);
+}
+
+#strip-tip .member-face {
+    width: 2.2rem;
+    height: 2.2rem;
+    font-size: 1rem;
+}
+
+.strip-tip-text {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+    line-height: 1.3;
+}
+
+.strip-tip-person {
+    font-weight: 600;
+}
+
+.strip-tip-device {
+    font-size: 0.9em;
+    opacity: 0.75;
+}
