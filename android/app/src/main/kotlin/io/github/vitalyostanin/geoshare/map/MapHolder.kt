@@ -304,7 +304,7 @@ internal class MapHolder(val view: MapView) {
         val radius = (CLUSTER_RADIUS_DP * density).toDouble()
 
         val features =
-            clusterMembers(placed, radius).mapNotNull { cluster ->
+            clusterMembers(placed, radius, alone = selected).mapNotNull { cluster ->
                 val group = cluster.ids.mapNotNull { positions[it] }
 
                 if (group.isEmpty()) {

@@ -79,4 +79,25 @@ class MemberClustersTest {
     fun `nobody on the map is no markers at all`() {
         assertEquals(emptyList<MemberCluster>(), clusterMembers(emptyList(), radius = 40.0))
     }
+
+    // The circle around the member whose card is open is drawn where they
+    // are; a pin in the middle of the crowd would point somewhere else.
+    @Test
+    fun `the member looked at keeps a pin of their own`() {
+        val placed =
+            listOf(
+                PlacedMember("a", 100.0, 100.0),
+                PlacedMember("b", 112.0, 108.0),
+                PlacedMember("c", 95.0, 90.0),
+            )
+
+        assertEquals(
+            listOf(listOf("a", "c"), listOf("b")),
+            clusterMembers(placed, radius = 40.0, alone = "b").map { it.ids },
+        )
+        assertEquals(
+            listOf(listOf("a"), listOf("b", "c")),
+            clusterMembers(placed, radius = 40.0, alone = "a").map { it.ids },
+        )
+    }
 }

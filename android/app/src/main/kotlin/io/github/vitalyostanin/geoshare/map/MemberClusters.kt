@@ -34,8 +34,16 @@ data class MemberCluster(val ids: List<String>)
  * comes from the database and can arrive in any order; the same members in the
  * same places have to produce the same groups every tick, or the map would
  * redraw itself for nothing.
+ *
+ * [alone] is the member whose card is open, kept out of every group: the
+ * circle around them is drawn where they are, and a pin standing in the middle
+ * of a crowd would point somewhere else.
  */
-fun clusterMembers(placed: List<PlacedMember>, radius: Double): List<MemberCluster> {
+fun clusterMembers(
+    placed: List<PlacedMember>,
+    radius: Double,
+    alone: String? = null,
+): List<MemberCluster> {
     val ordered = placed.sortedBy { it.id }
     val taken = mutableSetOf<String>()
     val clusters = mutableListOf<MemberCluster>()
@@ -48,6 +56,10 @@ fun clusterMembers(placed: List<PlacedMember>, radius: Double): List<MemberClust
         val group = mutableListOf(anchor.id)
 
         for (other in ordered) {
+            if (anchor.id == alone || other.id == alone) {
+                continue
+            }
+
             if (other.id in taken || !within(anchor, other, radius)) {
                 continue
             }
