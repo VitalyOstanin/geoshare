@@ -24,9 +24,21 @@ readonly SDK_IMAGE="${SDK_IMAGE:-localhost/geoshare-sdk:${ANDROID_COMPILE_SDK}-j
 # above.
 readonly FIREBASE_IMAGE="${FIREBASE_IMAGE:-localhost/geoshare-firebase:${FIREBASE_TOOLS_VERSION}-jre${FIREBASE_JRE_VERSION}}"
 
+# Which system image the emulator runs: google_apis carries Play services,
+# default does not, and is what shows how the application behaves on a phone
+# sold without them.
+#
+#   EMULATOR_VARIANT=default tools/run-emulator.sh
+readonly EMULATOR_VARIANT="${EMULATOR_VARIANT:-google_apis}"
+
 # The SDK image plus a system image, which is what an emulator needs and a
-# build does not.
-readonly EMULATOR_IMAGE="${EMULATOR_IMAGE:-localhost/geoshare-emulator:${ANDROID_EMULATOR_API}}"
+# build does not. The image without Play services carries its variant in the
+# tag, so the two live side by side and switching does not rebuild either.
+if [[ "${EMULATOR_VARIANT}" == "google_apis" ]]; then
+    readonly EMULATOR_IMAGE="${EMULATOR_IMAGE:-localhost/geoshare-emulator:${ANDROID_EMULATOR_API}}"
+else
+    readonly EMULATOR_IMAGE="${EMULATOR_IMAGE:-localhost/geoshare-emulator:${ANDROID_EMULATOR_API}-${EMULATOR_VARIANT}}"
+fi
 
 # The containers the two halves of a try-out run in: the emulator itself, and
 # the stand-in database and sign-in it talks to.
@@ -119,6 +131,7 @@ ensure_emulator_image() {
     podman build --network host "${proxy_build_args[@]}" \
         --build-arg "SDK_IMAGE=${SDK_IMAGE}" \
         --build-arg "ANDROID_EMULATOR_API=${ANDROID_EMULATOR_API}" \
+        --build-arg "ANDROID_EMULATOR_VARIANT=${EMULATOR_VARIANT}" \
         -t "${EMULATOR_IMAGE}" -f "${REPO_ROOT}/tools/Containerfile.emulator" "${REPO_ROOT}/tools"
 }
 

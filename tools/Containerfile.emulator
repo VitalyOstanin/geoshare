@@ -9,7 +9,8 @@ ARG SDK_IMAGE
 FROM ${SDK_IMAGE}
 
 ARG ANDROID_EMULATOR_API
-ENV API_IMAGE=system-images;android-${ANDROID_EMULATOR_API};google_apis;x86_64
+ARG ANDROID_EMULATOR_VARIANT=google_apis
+ENV API_IMAGE=system-images;android-${ANDROID_EMULATOR_API};${ANDROID_EMULATOR_VARIANT};x86_64
 
 # The emulator binary links against X11 and friends even when told not to open
 # a window: -no-window suppresses the window, not the dependency.
@@ -19,9 +20,9 @@ RUN apt-get update \
         libnss3 libpulse0 libgl1 libglu1-mesa libdrm2 libgbm1 \
     && rm -rf /var/lib/apt/lists/*
 
-# google_apis rather than the plain image: the sign-in screen and the map both
-# reach for Play services, and without them the application stops at its first
-# screen.
+# google_apis unless told otherwise: it is what most phones carry. The plain
+# image, default, stands for the phones sold without Play services, where the
+# position comes from the platform's own providers.
 RUN sdkmanager --install "emulator" "${API_IMAGE}" \
     && rm -rf "${ANDROID_HOME}/.temp"
 

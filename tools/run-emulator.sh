@@ -11,6 +11,7 @@
 #
 #   tools/run-emulator.sh            # start and wait for boot
 #   tools/run-emulator.sh --stop     # stop it
+#   EMULATOR_VARIANT=default tools/run-emulator.sh   # without Play services
 set -euo pipefail
 
 source "$(dirname "${BASH_SOURCE[0]}")/lib.sh"
