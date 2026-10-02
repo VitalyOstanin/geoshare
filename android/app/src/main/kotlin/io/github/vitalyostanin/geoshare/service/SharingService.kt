@@ -1658,6 +1658,7 @@ class SharingService : LifecycleService() {
         radio.skySaying()?.let { AppLog.i(TAG, it) }
         radio.driftSaying()?.let { AppLog.i(TAG, it) }
         radio.navigationSaying()?.let { AppLog.i(TAG, it) }
+        radio.orbitsSaying()?.let { AppLog.i(TAG, it) }
 
         // The epoch behind the line just written, in its own file. Everything
         // above is one sentence about a minute of averages; this is the sky
