@@ -65,6 +65,7 @@ import io.github.vitalyostanin.geoshare.collection.secondOpinionEvery
 import io.github.vitalyostanin.geoshare.collection.secondOpinionWithEachFix
 import io.github.vitalyostanin.geoshare.collection.shouldWrite
 import io.github.vitalyostanin.geoshare.collection.stillSettling
+import io.github.vitalyostanin.geoshare.collection.walkNote
 import io.github.vitalyostanin.geoshare.collection.walkingNow
 import io.github.vitalyostanin.geoshare.collection.watchedUntil
 import io.github.vitalyostanin.geoshare.collection.whomToAsk
@@ -1153,20 +1154,29 @@ class SharingService : LifecycleService() {
      * the phone is closely enough for standing still to mean anything.
      */
     private fun noticeAnAnswerThatWillNotFollow(fix: Fix, whence: FoundBy) {
-        if (whence != FoundBy.Satellites) {
+        val walk = walkingNow(stirsHeard) ?: return
+
+        if (walk.steps == 0L) {
             return
         }
 
-        val walk = walkingNow(stirsHeard) ?: return
+        if (whence != FoundBy.Satellites) {
+            AppLog.keep(TAG, walkNote(walk, whence, null, fix))
+
+            return
+        }
 
         if (walkStarted != walk.since || walkedFrom == null) {
             walkStarted = walk.since
             walkedFrom = fix
+            AppLog.keep(TAG, walkNote(walk, whence, null, fix))
 
             return
         }
 
         val from = walkedFrom ?: return
+
+        AppLog.keep(TAG, walkNote(walk, whence, from, fix))
 
         if (!pinnedWhileWalking(walk, from, fix, sensorsTell)) {
             return

@@ -2,6 +2,7 @@ package io.github.vitalyostanin.geoshare.collection
 
 import java.time.Duration
 import java.time.Instant
+import java.util.Locale
 
 // Whether the phone was carried anywhere, asked of the one part of it a false
 // signal cannot reach.
@@ -389,4 +390,37 @@ fun pinnedWhileWalking(walk: Walk?, from: Fix?, next: Fix, told: Boolean = true)
     }
 
     return distanceMetres(from, next) < PINNED_MOVE_METRES
+}
+
+/**
+ * One line about an answer that arrived while the phone was being walked
+ * somewhere, for the log kept apart.
+ *
+ * Written for every such answer and not only for the ones [pinnedWhileWalking]
+ * accuses: a log that holds only the accusations reads the same whether the
+ * rule found nothing wrong or was never asked, and [PINNED_STEPS] cannot be
+ * measured off silence. So the line says what the rule had to go on — how far
+ * the walk had got, how the answer was arrived at, and how far it stands from
+ * where the walk began — and leaves out where that was.
+ *
+ * [from] is the answer the walk is measured from; without it this answer is
+ * the one the walk will be measured from, or, if it did not come off the sky,
+ * one that is not measured at all.
+ */
+fun walkNote(walk: Walk, whence: FoundBy, from: Fix?, next: Fix): String {
+    val width = next.accuracyMetres ?: 0.0
+    val head = "walking ${walk.steps} steps; an answer by $whence, ±%.0f m".format(
+        Locale.ROOT,
+        width,
+    )
+
+    return when {
+        whence != FoundBy.Satellites -> "$head, not measured against the walk"
+
+        from == null -> "$head, the walk is measured from it"
+
+        else ->
+            "$head, %.0f m from where the walk began, ±%.0f m"
+                .format(Locale.ROOT, distanceMetres(from, next), from.accuracyMetres ?: 0.0)
+    }
 }

@@ -337,4 +337,41 @@ class CarriedTest {
         from = "fused",
         reported = speedMps?.let { Reported(speedMps = it) },
     )
+
+    // Every answer through a walk is written down, not only the accused ones:
+    // a log of accusations alone reads the same when the rule was never asked.
+    @Test
+    fun `an answer through a walk says how far it stands from where the walk began`() {
+        val walked = walk(steps = 500)
+        val doorway = fix(61.03268, 4.40300, noon, width = 10.0)
+        val away = fix(61.03500, 4.40300, noon.plusSeconds(300), width = 12.0)
+
+        assertEquals(
+            "walking 500 steps; an answer by Satellites, ±12 m, 258 m from where the walk began, ±10 m",
+            walkNote(walked, FoundBy.Satellites, doorway, away),
+        )
+    }
+
+    @Test
+    fun `an answer not off the sky is noted and not measured`() {
+        val walked = walk(steps = 500)
+        val doorway = fix(61.03268, 4.40300, noon, width = 10.0)
+        val same = fix(61.03270, 4.40302, noon.plusSeconds(300), width = 12.0)
+
+        assertEquals(
+            "walking 500 steps; an answer by Assistance, ±12 m, not measured against the walk",
+            walkNote(walked, FoundBy.Assistance, doorway, same),
+        )
+    }
+
+    @Test
+    fun `the first answer off the sky is where the walk is measured from`() {
+        val walked = walk(steps = 30)
+        val doorway = fix(61.03268, 4.40300, noon, width = 10.0)
+
+        assertEquals(
+            "walking 30 steps; an answer by Satellites, ±10 m, the walk is measured from it",
+            walkNote(walked, FoundBy.Satellites, null, doorway),
+        )
+    }
 }
