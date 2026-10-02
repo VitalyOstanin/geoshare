@@ -307,6 +307,18 @@ function nameOf(position, carried) {
     return name;
 }
 
+/**
+ * The whole of what an entry may cut short, for the pointer resting on it: the
+ * account's own name even for one's own devices, which the entry calls "you",
+ * and the device always, which the entry leaves out for a member with one.
+ */
+function fullName(position) {
+    const profile = state.profiles?.get(position.memberId);
+    const person = profile?.displayName ?? personName(position);
+
+    return position.deviceName ? `${person} · ${position.deviceName}` : person;
+}
+
 /** Who carries the phone, without the phone: the head of a card says it apart. */
 export function personName(position) {
     return memberName(
@@ -365,6 +377,7 @@ function memberEntry(position, labels, pictures, shown, now) {
     showFace(face, pictures.get(position.memberId), label, colour);
 
     name.textContent = label;
+    entry.title = fullName(position);
 
     age.className = stale ? 'age stale' : 'age';
     age.textContent = ageText(positionAge(position.positionAt, now));
