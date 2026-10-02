@@ -66,6 +66,16 @@ fun movement(context: Context): Flow<Moving> = callbackFlow {
         return@callbackFlow
     }
 
+    if (!playServicesPresent(context)) {
+        // The recogniser lives in Play Services and nowhere else; the ordinary
+        // modes carry on without it, as they do without the permission.
+        AppLog.i(TAG, "no Play Services to notice movement; staying with the ordinary modes")
+        send(Moving(going = false, told = false))
+        awaitClose {}
+
+        return@callbackFlow
+    }
+
     var moving = false
 
     send(Moving(going = false, told = false))

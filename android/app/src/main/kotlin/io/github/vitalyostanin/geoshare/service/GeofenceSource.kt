@@ -54,6 +54,18 @@ private const val FENCE = "last-written-position"
  */
 @SuppressLint("MissingPermission")
 fun standingStill(context: Context, centres: Flow<Fix?>): Flow<Boolean> = callbackFlow {
+    if (!playServicesPresent(context)) {
+        // The platform's own proximity alert looks only every half hour, and
+        // a phone resting on it would be shown at home that long after
+        // leaving; without Play Services the phone stays in the ordinary
+        // modes, which ask more often.
+        AppLog.i(TAG, "no Play Services to watch a fence; the quiet mode stays out of reach")
+        send(false)
+        awaitClose {}
+
+        return@callbackFlow
+    }
+
     var dwelling = false
 
     send(false)
