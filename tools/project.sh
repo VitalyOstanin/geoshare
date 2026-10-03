@@ -566,6 +566,13 @@ create() {
     echo "==> project ${project}"
     if firebase projects:list --json | grep -q "\"projectId\": \"${project}\""; then
         echo "    already there"
+    elif api_get "https://cloudresourcemanager.googleapis.com/v1/projects/${project}" > /dev/null; then
+        # A run that made the Google Cloud project and then failed to add
+        # Firebase to it — for one, on an account that has not yet accepted
+        # the Firebase terms — leaves the project behind, and making it again
+        # is refused because its id is taken.
+        echo "    a Google Cloud project without Firebase; adding it"
+        firebase projects:addfirebase "${project}"
     else
         firebase projects:create "${project}" --display-name "${name}"
     fi
