@@ -205,7 +205,6 @@ private const val EPOCH_END = 23
 private const val PARAMETERS = 20
 private const val WEEK_FIELD = 21
 
-@Suppress("MagicNumber")
 private fun orbitOf(record: List<String>): Orbit? {
     val first = record[0]
     val constellation = if (first[0] == 'G') Constellation.Gps else Constellation.Galileo
@@ -253,7 +252,6 @@ private fun orbitOf(record: List<String>): Orbit? {
  * pull in kilometres, then the health, the channel and the age of the data.
  * A satellite its operators mark unhealthy is left out.
  */
-@Suppress("MagicNumber")
 private fun glonassOrbitOf(record: List<String>): GlonassOrbit? {
     val first = record[0]
     val id = first.substring(1, ID_END).trim().toIntOrNull() ?: return null
@@ -302,12 +300,10 @@ private fun field(line: String, from: Int): Double? {
 private fun gpsSecondsOf(epoch: String): Double? {
     val parts = epoch.trim().split(Regex("\\s+")).mapNotNull { it.toIntOrNull() }
 
-    @Suppress("MagicNumber")
     if (parts.size != 6) {
         return null
     }
 
-    @Suppress("MagicNumber")
     val at = LocalDateTime.of(parts[0], parts[1], parts[2], parts[3], parts[4], parts[5])
 
     return (at.toEpochSecond(ZoneOffset.UTC) - GPS_START.toEpochSecond(ZoneOffset.UTC)).toDouble()

@@ -103,7 +103,6 @@ val Constellation.word: String
  * The file is read by tools made for Google's own logger, and those look the
  * system up by this number; a word in its place is a system they do not know.
  */
-@Suppress("MagicNumber")
 val Constellation.androidType: Int
     get() = when (this) {
         Constellation.Gps -> 1

@@ -82,7 +82,6 @@ object SkyLog {
      * carries the same moment, so a block stays a block however the file is
      * later cut about.
      */
-    @Suppress("LongParameterList")
     fun note(
         at: Instant,
         fix: Fix,
@@ -114,7 +113,6 @@ object SkyLog {
      * phone was collecting in, because a minute without an answer means one
      * thing at four fixes a minute and another at one an hour.
      */
-    @Suppress("LongParameterList")
     fun note(
         at: Instant,
         mode: String,
@@ -188,7 +186,6 @@ object SkyLog {
      * own only where there is no raw row to carry it: an epoch the receiver
      * measured nothing in still says whether its clock stepped.
      */
-    @Suppress("LongParameterList")
     private fun StringBuilder.epoch(
         stamp: Long,
         clock: Clock?,

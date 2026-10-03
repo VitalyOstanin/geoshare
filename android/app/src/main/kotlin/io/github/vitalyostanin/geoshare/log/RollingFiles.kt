@@ -90,11 +90,11 @@ class RollingFiles(
     private fun settle() {
         try {
             writer.submit { }.get(SETTLE_SECONDS, TimeUnit.SECONDS)
-        } catch (@Suppress("SwallowedException") refused: RejectedExecutionException) {
+        } catch (refused: RejectedExecutionException) {
             // Nothing is being written any more, so there is nothing to wait
             // for; what is in the files is what there is. Saying so is not
             // this class's to do — it is the thing that writes what is said.
-        } catch (@Suppress("SwallowedException") slow: TimeoutException) {
+        } catch (slow: TimeoutException) {
             // Likewise: a reader gets the bytes that reached the file, and a
             // writer stuck for two seconds is not worth holding them for.
         }
