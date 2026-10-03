@@ -33,9 +33,10 @@ android {
 
     defaultConfig {
         applicationId = "io.github.vitalyostanin.geoshare"
-        // Both phones run Android 14; 29 leaves room for an older spare
-        // without reaching back before scoped storage.
-        minSdk = 29
+        // Android 8, for the oldest phone the invitation is tried on. Below
+        // Android 10 the background location and the movement permissions do
+        // not exist, and the code treats them as held there.
+        minSdk = 26
         targetSdk = 36
         versionCode = appVersionCode
         versionName = appVersionName

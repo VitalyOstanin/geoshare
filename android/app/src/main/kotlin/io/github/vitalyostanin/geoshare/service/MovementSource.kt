@@ -1,13 +1,11 @@
 package io.github.vitalyostanin.geoshare.service
 
-import android.Manifest
 import android.annotation.SuppressLint
 import android.app.PendingIntent
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
-import android.content.pm.PackageManager
 import androidx.core.content.ContextCompat
 import com.google.android.gms.location.ActivityRecognition
 import com.google.android.gms.location.ActivityTransition
@@ -18,6 +16,7 @@ import io.github.vitalyostanin.geoshare.collection.ActivityChange
 import io.github.vitalyostanin.geoshare.collection.Moving
 import io.github.vitalyostanin.geoshare.collection.movingAfter
 import io.github.vitalyostanin.geoshare.log.AppLog
+import io.github.vitalyostanin.geoshare.permission.movementGranted
 import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.callbackFlow
@@ -155,6 +154,4 @@ private fun transitionRequest(): ActivityTransitionRequest {
     return ActivityTransitionRequest(transitions)
 }
 
-private fun allowed(context: Context): Boolean =
-    ContextCompat.checkSelfPermission(context, Manifest.permission.ACTIVITY_RECOGNITION) ==
-        PackageManager.PERMISSION_GRANTED
+private fun allowed(context: Context): Boolean = movementGranted(context)

@@ -35,7 +35,11 @@ class GeoshareApplication : Application() {
      * logger uses at the head of its own.
      */
     private fun device(): String {
-        val receiver = getSystemService(LocationManager::class.java)?.gnssHardwareModelName
+        val receiver = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+            getSystemService(LocationManager::class.java)?.gnssHardwareModelName
+        } else {
+            null
+        }
 
         return "geoshare ${BuildConfig.VERSION_NAME} Platform: ${Build.VERSION.RELEASE} " +
             "Manufacturer: ${Build.MANUFACTURER} Model: ${Build.MODEL} " +

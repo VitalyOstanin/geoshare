@@ -21,11 +21,18 @@ fun devicePermissions(context: Context): PermissionState = PermissionState(
     notificationsGranted =
     Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU ||
         granted(context, Manifest.permission.POST_NOTIFICATIONS),
-    backgroundLocationGranted = granted(
-        context,
-        Manifest.permission.ACCESS_BACKGROUND_LOCATION,
-    ),
+    backgroundLocationGranted = backgroundLocationGranted(context),
 )
+
+/**
+ * Whether the position may be read while the application is off the screen.
+ *
+ * The permission only exists from Android 10 onwards; before that the ordinary
+ * location permission covers the background as well.
+ */
+fun backgroundLocationGranted(context: Context): Boolean =
+    Build.VERSION.SDK_INT < Build.VERSION_CODES.Q ||
+        granted(context, Manifest.permission.ACCESS_BACKGROUND_LOCATION)
 
 /**
  * Whether the phone may tell us that it is moving.
@@ -36,7 +43,10 @@ fun devicePermissions(context: Context): PermissionState = PermissionState(
  * somewhere.
  */
 fun movementGranted(context: Context): Boolean =
-    granted(context, Manifest.permission.ACTIVITY_RECOGNITION)
+    // Before Android 10 there is nothing to ask: the step sensors answer
+    // anyone, and the transitions need only the permission granted on install.
+    Build.VERSION.SDK_INT < Build.VERSION_CODES.Q ||
+        granted(context, Manifest.permission.ACTIVITY_RECOGNITION)
 
 private fun granted(context: Context, permission: String): Boolean =
     ContextCompat.checkSelfPermission(context, permission) == PackageManager.PERMISSION_GRANTED

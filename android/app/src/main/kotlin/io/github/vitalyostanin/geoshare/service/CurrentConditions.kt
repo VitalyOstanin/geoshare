@@ -5,6 +5,7 @@ import android.content.Context
 import android.content.pm.PackageManager
 import androidx.core.content.ContextCompat
 import com.google.firebase.auth.FirebaseAuth
+import io.github.vitalyostanin.geoshare.permission.backgroundLocationGranted
 import io.github.vitalyostanin.geoshare.project.FamilyProject
 
 /**
@@ -20,10 +21,7 @@ fun startConditions(context: Context, fromBackground: Boolean): StartConditions 
     signedIn = FamilyProject.connected && FirebaseAuth.getInstance().currentUser != null,
     enabled = SharingSetting(context).enabled,
     locationGranted = granted(context, Manifest.permission.ACCESS_FINE_LOCATION),
-    backgroundLocationGranted = granted(
-        context,
-        Manifest.permission.ACCESS_BACKGROUND_LOCATION,
-    ),
+    backgroundLocationGranted = backgroundLocationGranted(context),
     fromBackground = fromBackground,
 )
 

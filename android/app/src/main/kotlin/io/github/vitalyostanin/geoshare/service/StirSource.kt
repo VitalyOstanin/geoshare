@@ -1,9 +1,7 @@
 package io.github.vitalyostanin.geoshare.service
 
-import android.Manifest
 import android.annotation.SuppressLint
 import android.content.Context
-import android.content.pm.PackageManager
 import android.hardware.Sensor
 import android.hardware.SensorEvent
 import android.hardware.SensorEventListener
@@ -11,9 +9,9 @@ import android.hardware.SensorManager
 import android.hardware.TriggerEvent
 import android.hardware.TriggerEventListener
 import android.os.SystemClock
-import androidx.core.content.ContextCompat
 import io.github.vitalyostanin.geoshare.collection.Stir
 import io.github.vitalyostanin.geoshare.log.AppLog
+import io.github.vitalyostanin.geoshare.permission.movementGranted
 import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.callbackFlow
@@ -144,6 +142,4 @@ private fun happenedAt(sinceBootNanos: Long): Instant =
     Instant.now().minusNanos(SystemClock.elapsedRealtimeNanos() - sinceBootNanos)
 
 /** The step counter is the one of the two that needs asking for. */
-private fun mayCountSteps(context: Context): Boolean =
-    ContextCompat.checkSelfPermission(context, Manifest.permission.ACTIVITY_RECOGNITION) ==
-        PackageManager.PERMISSION_GRANTED
+private fun mayCountSteps(context: Context): Boolean = movementGranted(context)

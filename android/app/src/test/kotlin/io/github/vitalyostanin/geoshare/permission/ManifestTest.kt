@@ -78,6 +78,7 @@ class ManifestTest {
                 "android.permission.ACCESS_FINE_LOCATION",
                 "android.permission.ACCESS_BACKGROUND_LOCATION",
                 "android.permission.ACTIVITY_RECOGNITION",
+                "com.google.android.gms.permission.ACTIVITY_RECOGNITION",
                 "android.permission.ACCESS_LOCATION_EXTRA_COMMANDS",
                 "android.permission.FOREGROUND_SERVICE",
                 "android.permission.FOREGROUND_SERVICE_LOCATION",

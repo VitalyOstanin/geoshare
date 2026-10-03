@@ -197,7 +197,14 @@ internal fun measurementOf(
         measured.hasAutomaticGainControlLevelDb()
     },
     snrDb = measured.snrInDb.takeIf { measured.hasSnrInDb() },
-    codeType = measured.codeType.takeIf { measured.hasCodeType() },
+    codeType =
+    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q &&
+        measured.hasCodeType()
+    ) {
+        measured.codeType
+    } else {
+        null
+    },
     fullInterSignalBiasNanos = delays.full,
     fullInterSignalBiasUncertaintyNanos = delays.fullUncertainty,
     satelliteInterSignalBiasNanos = delays.satellite,
