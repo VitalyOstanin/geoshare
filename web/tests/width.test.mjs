@@ -56,6 +56,15 @@ test('a hundred metres is a hundred metres in both directions', () => {
     assert.ok(Math.abs(eastwardsMetres(ring[1][0] - 30, 60) - 100) < 0.5);
 });
 
+// A ring round a position on the date line runs on past it rather than
+// jumping to the other end of the map, which would draw it round the globe.
+test('a ring on the date line stays in one piece', () => {
+    const ring = accuracyRing(-16.8, 179.999, 1000);
+    const longitudes = ring.map(([east]) => east);
+
+    assert.ok(Math.max(...longitudes) - Math.min(...longitudes) < 1);
+});
+
 test('a ring at the pole stays on the globe', () => {
     const ring = accuracyRing(89.999, 30, 10000);
 

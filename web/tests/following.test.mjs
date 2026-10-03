@@ -49,6 +49,25 @@ test('several positions give the rectangle that just contains them all', () => {
     });
 });
 
+// Two members on either side of the date line, a few kilometres apart: the
+// rectangle is the few kilometres across the line, not the rest of the globe.
+test('positions on both sides of the date line are fitted across it', () => {
+    const positions = [at('a', -16.8, 179.95), at('b', -16.9, -179.98)];
+
+    const bounds = boundsOf(positions);
+
+    assert.equal(bounds.west, 179.95);
+    assert.ok(Math.abs(bounds.east - 180.02) < 1e-9);
+    assert.equal(bounds.south, -16.9);
+    assert.equal(bounds.north, -16.8);
+});
+
+test('positions on either side of Greenwich are not fitted across the date line', () => {
+    const positions = [at('a', 10, -60), at('b', 10, 60)];
+
+    assert.deepEqual(boundsOf(positions), { west: -60, south: 10, east: 60, north: 10 });
+});
+
 test('bounds within tolerance on every edge are close', () => {
     const one = { west: 4.1, south: 60.8, east: 4.5, north: 61.0 };
     const other = {

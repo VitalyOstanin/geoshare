@@ -88,7 +88,10 @@ export function widthIsWide(metres) {
  * ring rather than a division that runs away.
  *
  * Points are [longitude, latitude], and the first is repeated at the end: a
- * ring is closed, and the map expects to be told so.
+ * ring is closed, and the map expects to be told so. Longitudes run on past
+ * 180 rather than wrapping: a ring round a position on the date line would
+ * otherwise have points on both ends of the map, and be drawn as a band
+ * round the whole globe.
  */
 export function accuracyRing(latitude, longitude, metres, corners = RING_CORNERS) {
     const northwards = (metres / EARTH_RADIUS_METRES) * DEGREES_IN_A_RADIAN;
@@ -105,15 +108,10 @@ export function accuracyRing(latitude, longitude, metres, corners = RING_CORNERS
         // not a ring any drawing of a map can show, and stopping at the pole
         // is the honest end of it.
         const north = Math.min(Math.max(latitude + northwards * Math.cos(turn), -POLE), POLE);
-        const east = wrapDegrees(longitude + eastwards * Math.sin(turn));
+        const east = longitude + eastwards * Math.sin(turn);
 
         ring.push([east, north]);
     }
 
     return ring;
-}
-
-/** The same angle, written as the turn of at most half a circle either way. */
-function wrapDegrees(degrees) {
-    return (((degrees + 180) % 360 + 360) % 360) - 180;
 }

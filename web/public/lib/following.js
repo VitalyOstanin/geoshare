@@ -40,29 +40,28 @@ export function isPaused(pausedAt, now) {
 /**
  * The rectangle that just contains every position, or `null` for none.
  *
- * Longitudes are treated as the plain -180..180 range without wrapping across
- * the antimeridian: a family sharing a map is in one city, not split across
- * the date line, and handling that crossing honestly is a separate piece of
- * work that this module does not attempt.
+ * Positions on both sides of the date line are fitted across it rather than
+ * across the rest of the globe: of the two rectangles that contain them, the
+ * narrower one is taken, and where that one crosses the line its eastern edge
+ * runs on past 180, which is how the map is told about such a rectangle.
  */
 export function boundsOf(positions) {
     if (positions.length === 0) {
         return null;
     }
 
-    let west = positions[0].longitude;
-    let east = positions[0].longitude;
-    let south = positions[0].latitude;
-    let north = positions[0].latitude;
+    const longitudes = positions.map((position) => position.longitude);
+    const latitudes = positions.map((position) => position.latitude);
+    const across = longitudes.map((longitude) => (longitude < 0 ? longitude + 360 : longitude));
 
-    for (const position of positions) {
-        west = Math.min(west, position.longitude);
-        east = Math.max(east, position.longitude);
-        south = Math.min(south, position.latitude);
-        north = Math.max(north, position.latitude);
-    }
+    const plain = { west: Math.min(...longitudes), east: Math.max(...longitudes) };
+    const wrapped = { west: Math.min(...across), east: Math.max(...across) };
+    const { west, east } =
+        wrapped.east - wrapped.west < plain.east - plain.west
+            ? wrapped
+            : plain;
 
-    return { west, south, east, north };
+    return { west, south: Math.min(...latitudes), east, north: Math.max(...latitudes) };
 }
 
 /**
