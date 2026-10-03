@@ -233,24 +233,24 @@ for app in json.load(sys.stdin).get("apps", []):
     print(app["appId"])
 '
 }
-# The fingerprints the Android app already knows, straight out of its own
-# configuration: sign-in checks the calling application against these, so an
-# app with none of them yet cannot sign anybody in. `show` reads this to
-# confirm they are there; `create` writes them below instead of reading them.
+# The fingerprints the Android app already knows: sign-in checks the calling
+# application against these, so an app with none of them yet cannot sign
+# anybody in. `show` reads this to confirm they are there; `create` writes
+# them below instead of reading them.
+#
+# Read from the app's own list rather than from the Android OAuth client in
+# its configuration: that client exists for one pair of package and key across
+# all of Google, so in every project but the first the key is registered and
+# the client never appears.
 android_fingerprints() {
     local project="$1" android="$2"
 
-    api_get "https://firebase.googleapis.com/v1beta1/projects/${project}/androidApps/${android}/config" |
+    api_get "https://firebase.googleapis.com/v1beta1/projects/${project}/androidApps/${android}/sha" |
         python3 -c '
-import base64, json, sys
+import json, sys
 
-answer = json.load(sys.stdin)
-config = json.loads(base64.b64decode(answer["configFileContents"]))
-client = config["client"][0]
-
-for entry in client.get("oauth_client", []):
-    if entry.get("client_type") == 1:
-        print(entry["android_info"]["certificate_hash"])
+for entry in json.load(sys.stdin).get("certificates", []):
+    print(entry["shaHash"])
 '
 }
 
