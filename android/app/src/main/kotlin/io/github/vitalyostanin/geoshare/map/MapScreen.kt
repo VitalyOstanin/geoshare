@@ -375,6 +375,21 @@ fun MapScreen(
                 modifier = Modifier.fillMaxSize(),
             )
 
+            val shown = groups.choices.firstOrNull { it.projectId == groups.selected }
+
+            if (shown?.removed == true) {
+                RemovedScreen(
+                    caption = shown.caption,
+                    switcher = switcher,
+                    onDrop = {
+                        groups.onLeave(
+                            LeaveAsk(shown.projectId, shown.caption, Leave.NOT_ON_ROSTER),
+                        )
+                    },
+                    onJoin = groups.onJoin,
+                )
+            }
+
             // The controls on one side and the account on the other, the way
             // map applications lay them out: a row keeps a second control from
             // ever landing on top of the first whatever either measures.

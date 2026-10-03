@@ -2,6 +2,7 @@ package io.github.vitalyostanin.geoshare.map
 
 import androidx.compose.ui.unit.dp
 import io.github.vitalyostanin.geoshare.membership.Leave
+import io.github.vitalyostanin.geoshare.membership.Presence
 import io.github.vitalyostanin.geoshare.membership.Roster
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -45,6 +46,7 @@ class GroupSwitcherTest {
         searches: Map<String, Search> = emptyMap(),
         ownSiren: Siren? = null,
         uid: String? = "boris",
+        presence: Presence = Presence.UNKNOWN,
     ) = groupChoice(
         projectId = "geoshare-hike",
         roster = roster,
@@ -54,6 +56,7 @@ class GroupSwitcherTest {
         ownSiren = ownSiren,
         uid = uid,
         now = now,
+        presence = presence,
     )
 
     @Test
@@ -126,5 +129,24 @@ class GroupSwitcherTest {
     @Test
     fun `a group this device is not signed in to has no roster place to leave`() {
         assertEquals(Leave.NOT_ON_ROSTER, choice(uid = null).leave)
+    }
+
+    @Test
+    fun `a group still read is not one the device was taken off`() {
+        assertFalse(choice(presence = Presence.IN).removed)
+        assertFalse(choice().removed)
+    }
+
+    // Called by the last roster read there, so the member knows which group
+    // it was; but nobody in it is theirs to count, and there is no place on
+    // the roster left to give up.
+    @Test
+    fun `a group the device was taken off keeps its name and nothing else`() {
+        val choice = choice(presence = Presence.REMOVED)
+
+        assertTrue(choice.removed)
+        assertEquals("Hike", choice.caption)
+        assertNull(choice.members)
+        assertEquals(Leave.NOT_ON_ROSTER, choice.leave)
     }
 }

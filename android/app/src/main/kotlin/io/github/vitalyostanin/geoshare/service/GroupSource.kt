@@ -4,21 +4,32 @@ import android.content.Context
 import com.google.firebase.Timestamp
 import com.google.firebase.firestore.DocumentSnapshot
 import com.google.firebase.firestore.FieldValue
+import io.github.vitalyostanin.geoshare.collection.listenAgainAfter
 import io.github.vitalyostanin.geoshare.log.AppLog
 import io.github.vitalyostanin.geoshare.membership.INVITATION_LASTS
 import io.github.vitalyostanin.geoshare.membership.Invitation
+import io.github.vitalyostanin.geoshare.membership.Presence
 import io.github.vitalyostanin.geoshare.membership.Roster
+import io.github.vitalyostanin.geoshare.membership.RosterRead
 import io.github.vitalyostanin.geoshare.membership.newInvitationCode
+import io.github.vitalyostanin.geoshare.membership.presenceOf
 import io.github.vitalyostanin.geoshare.membership.rosterFounded
 import io.github.vitalyostanin.geoshare.membership.rosterWithout
 import io.github.vitalyostanin.geoshare.project.Connections
 import io.github.vitalyostanin.geoshare.project.GroupConnection
 import io.github.vitalyostanin.geoshare.project.PendingInvitation
 import io.github.vitalyostanin.geoshare.project.PendingInvitationStore
+import io.github.vitalyostanin.geoshare.project.SeenOnRoster
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.channels.awaitClose
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.callbackFlow
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.filterNot
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.retryWhen
+import kotlinx.coroutines.flow.transform
 import kotlinx.coroutines.tasks.await
 import java.time.Instant
 import java.util.Date
@@ -37,7 +48,30 @@ private const val TAG = "geoshare.group"
  * carries no roster, and that is a state of its own: it is what tells the
  * founder they may make one.
  */
-fun groupRoster(connection: GroupConnection): Flow<Roster?> = callbackFlow {
+fun groupRoster(connection: GroupConnection): Flow<Roster?> =
+    rosterReads(connection).transform { read ->
+        when (read) {
+            is RosterRead.Read -> emit(read.roster)
+
+            // A refusal reads the same way as a group that was never made, which
+            // is what it amounts to for this phone: whoever is looking is offered
+            // the two ways into a group rather than left with a roster they are
+            // no longer on.
+            RosterRead.Refused -> emit(null)
+
+            // A dropped connection leaves the last roster as true as it was.
+            RosterRead.Unreachable -> Unit
+        }
+    }
+
+/**
+ * Every answer the group document gives, refusals and silence included,
+ * asking again after each failure.
+ *
+ * The roster itself turns a refusal into no group; whether this device was
+ * taken off one needs the refusal told apart from a dropped connection.
+ */
+fun rosterReads(connection: GroupConnection): Flow<RosterRead> = callbackFlow<RosterRead> {
     val subscription =
         connection.groupDocument.addSnapshotListener { snapshot, error ->
             if (error != null) {
@@ -46,15 +80,46 @@ fun groupRoster(connection: GroupConnection): Flow<Roster?> = callbackFlow {
                 return@addSnapshotListener
             }
 
-            trySend(snapshot?.takeIf { it.exists() }?.let(::rosterOf))
+            trySend(RosterRead.Read(snapshot?.takeIf { it.exists() }?.let(::rosterOf)))
         }
 
     awaitClose { subscription.remove() }
-    // A refusal reads the same way as a group that was never made, which
-    // is what it amounts to for this phone: whoever is looking is offered
-    // the two ways into a group rather than left with a roster they are
-    // no longer on.
-}.comingBack("roster", forgetting = { null })
+}.retryWhen { cause, attempt ->
+    val waiting = listenAgainAfter(attempt)
+
+    val failed = "could not read the roster of ${connection.projectId}"
+
+    AppLog.w(TAG, "$failed; asking again in ${waiting.seconds} s", cause)
+    emit(if (refusedOutright(cause)) RosterRead.Refused else RosterRead.Unreachable)
+    delay(waiting.toMillis())
+
+    true
+}
+
+/**
+ * Whether this device, signed in as [uid], is still in [connection]'s group,
+ * whenever that changes.
+ *
+ * Silence keeps the last answer: only the document itself, or a refusal of
+ * it, says anything about the roster. Being seen on it is remembered, so that
+ * a refusal heard after the application was closed and opened again still
+ * reads as having been taken off.
+ */
+fun presenceIn(context: Context, connection: GroupConnection, uid: String): Flow<Presence> =
+    rosterReads(connection)
+        .filterNot { it is RosterRead.Unreachable }
+        .map { read ->
+            val projectId = connection.projectId
+            val presence = presenceOf(read, uid, SeenOnRoster.has(context, projectId, uid))
+
+            when (presence) {
+                Presence.IN -> SeenOnRoster.note(context, projectId, uid)
+                Presence.REMOVED -> AppLog.i(TAG, "taken off the group of $projectId")
+                Presence.UNKNOWN -> Unit
+            }
+
+            presence
+        }.distinctUntilChanged()
 
 private fun rosterOf(snapshot: DocumentSnapshot): Roster = Roster(
     members = snapshot.get(GroupField.MEMBERS).asIds(),

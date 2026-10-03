@@ -31,6 +31,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Path
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDescription
@@ -42,6 +43,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import io.github.vitalyostanin.geoshare.R
 import io.github.vitalyostanin.geoshare.membership.Leave
+import io.github.vitalyostanin.geoshare.membership.Presence
 import io.github.vitalyostanin.geoshare.membership.Roster
 import io.github.vitalyostanin.geoshare.membership.howToLeave
 import io.github.vitalyostanin.geoshare.project.GroupConnection
@@ -49,6 +51,7 @@ import io.github.vitalyostanin.geoshare.service.groupRoster
 import io.github.vitalyostanin.geoshare.service.groupSearches
 import io.github.vitalyostanin.geoshare.service.phoneSiren
 import io.github.vitalyostanin.geoshare.service.positionId
+import io.github.vitalyostanin.geoshare.service.presenceIn
 import io.github.vitalyostanin.geoshare.service.signedInTo
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.delay
@@ -59,6 +62,7 @@ import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.onStart
+import kotlinx.coroutines.flow.runningFold
 import java.time.Instant
 
 /** How tall the chip naming the group is. */
@@ -90,6 +94,7 @@ private const val CHOICES_TICK_MS = 10_000L
  * a call waiting for this device or sounding on it in that group, and
  * [search] a search standing there: what a member reading the list of the
  * groups they are not looking at needs to know is going on in them.
+ * [removed] says an administrator took this device off the group's roster.
  */
 data class GroupChoice(
     val projectId: String,
@@ -99,6 +104,7 @@ data class GroupChoice(
     val search: Boolean,
     /** What leaving the group would do for the account this device is signed in as there. */
     val leave: Leave,
+    val removed: Boolean = false,
 )
 
 /**
@@ -132,6 +138,9 @@ fun bannerOffset(switcher: Boolean): Dp =
  * Called what the screens call it ([groupCaption]), or by its project when
  * its document could not be read: two such groups in one list are still told
  * apart.
+ *
+ * A group the device was taken off is still called by the last [roster] read
+ * there, if any, but counts nobody and has nobody's place to leave.
  */
 fun groupChoice(
     projectId: String,
@@ -143,7 +152,9 @@ fun groupChoice(
     /** Who this device is signed in as in the group, or null when it is not. */
     uid: String?,
     now: Instant,
+    presence: Presence = Presence.UNKNOWN,
 ): GroupChoice {
+    val removed = presence == Presence.REMOVED
     val sounding =
         ownSiren?.let {
             when (sirenState(it, now)) {
@@ -155,10 +166,12 @@ fun groupChoice(
     return GroupChoice(
         projectId = projectId,
         caption = roster?.let { groupCaption(it, profiles, unnamedPattern) } ?: projectId,
-        members = roster?.members?.size,
+        members = roster?.members?.size?.takeUnless { removed },
         siren = sounding,
         search = standingSearches(searches, now).isNotEmpty(),
-        leave = uid?.let { howToLeave(roster, it) } ?: Leave.NOT_ON_ROSTER,
+        leave =
+        uid?.takeUnless { removed }?.let { howToLeave(roster, it) } ?: Leave.NOT_ON_ROSTER,
+        removed = removed,
     )
 }
 
@@ -176,39 +189,55 @@ fun rememberGroupChoices(
     deviceId: String,
 ): State<List<GroupChoice>> {
     val unnamed = stringResource(R.string.group_name_unnamed)
+    val context = LocalContext.current.applicationContext
     val choices =
         remember(connections, deviceId, unnamed) {
             val perGroup =
                 connections.map { connection ->
-                    // Who the device is there, and its siren there, which
-                    // is addressed by that same account.
-                    val session: Flow<Pair<String?, Siren?>> =
+                    // Who the device is there, its siren there, which is
+                    // addressed by that same account, and whether that
+                    // account is still on the roster.
+                    val session: Flow<Session> =
                         signedInTo(connection).flatMapLatest { uid ->
                             if (uid == null) {
-                                flowOf(null to null)
+                                flowOf(Session())
                             } else {
-                                phoneSiren(positionId(uid, deviceId), connection)
-                                    .onStart { emit(null) }
-                                    .map { uid to it }
+                                combine(
+                                    phoneSiren(positionId(uid, deviceId), connection)
+                                        .onStart { emit(null) },
+                                    presenceIn(context, connection, uid)
+                                        .onStart { emit(Presence.UNKNOWN) },
+                                ) { siren, presence -> Session(uid, siren, presence) }
                             }
                         }
+                    // The last roster read, kept past a refusal: a group the
+                    // device was taken off is still called what it was called.
+                    val named =
+                        groupRoster(connection)
+                            .onStart { emit(null) }
+                            .runningFold(Pair<Roster?, Roster?>(null, null)) { (_, last), now ->
+                                now to (now ?: last)
+                            }
 
                     combine(
-                        groupRoster(connection).onStart { emit(null) },
+                        named,
                         memberProfiles(connection).onStart { emit(emptyMap()) },
                         groupSearches(connection).onStart { emit(emptyMap()) },
-                        session.onStart { emit(null to null) },
+                        session.onStart { emit(Session()) },
                         ticking(),
-                    ) { roster, profiles, searches, (uid, siren), now ->
+                    ) { (roster, last), profiles, searches, session, now ->
+                        val removed = session.presence == Presence.REMOVED
+
                         groupChoice(
                             connection.projectId,
-                            roster,
+                            if (removed) last else roster,
                             profiles,
                             unnamed,
                             searches,
-                            siren,
-                            uid,
+                            session.siren,
+                            session.uid,
                             now,
+                            session.presence,
                         )
                     }
                 }
@@ -218,6 +247,13 @@ fun rememberGroupChoices(
 
     return choices.collectAsState(initial = emptyList())
 }
+
+/** Who the device is in one group, and what that account hears there. */
+private data class Session(
+    val uid: String? = null,
+    val siren: Siren? = null,
+    val presence: Presence = Presence.UNKNOWN,
+)
 
 private fun ticking(): Flow<Instant> = flow {
     while (true) {
@@ -339,6 +375,7 @@ private fun GroupRow(
 
     val details =
         buildList {
+            if (choice.removed) add(stringResource(R.string.group_switcher_removed))
             choice.members?.let {
                 add(pluralStringResource(R.plurals.map_group_count, it, it))
             }

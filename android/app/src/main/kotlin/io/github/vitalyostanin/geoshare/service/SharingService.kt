@@ -73,6 +73,7 @@ import io.github.vitalyostanin.geoshare.collection.whyAJump
 import io.github.vitalyostanin.geoshare.collection.word
 import io.github.vitalyostanin.geoshare.log.AppLog
 import io.github.vitalyostanin.geoshare.map.stands
+import io.github.vitalyostanin.geoshare.membership.Presence
 import io.github.vitalyostanin.geoshare.project.Connections
 import io.github.vitalyostanin.geoshare.project.GroupConnection
 import kotlinx.coroutines.CancellationException
@@ -586,9 +587,19 @@ class SharingService : LifecycleService() {
             } else {
                 combine(
                     connections.map { connection ->
-                        signedInTo(connection).map {
-                            connection to
-                                it
+                        // A group the device was taken off refuses every
+                        // write; it is left alone rather than written into
+                        // and refused once a minute.
+                        signedInTo(connection).flatMapLatest { uid ->
+                            if (uid == null) {
+                                flowOf(connection to null)
+                            } else {
+                                presenceIn(this@SharingService, connection, uid)
+                                    .onStart { emit(Presence.UNKNOWN) }
+                                    .map { presence ->
+                                        connection to uid.takeIf { presence != Presence.REMOVED }
+                                    }
+                            }
                         }
                     },
                 ) {
