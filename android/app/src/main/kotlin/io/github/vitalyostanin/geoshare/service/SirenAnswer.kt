@@ -10,6 +10,7 @@ import io.github.vitalyostanin.geoshare.map.SIREN_SECONDS
 import io.github.vitalyostanin.geoshare.map.Siren
 import io.github.vitalyostanin.geoshare.map.shouldSound
 import io.github.vitalyostanin.geoshare.permission.devicePermissions
+import io.github.vitalyostanin.geoshare.project.GroupConnection
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
@@ -47,10 +48,10 @@ class SirenAnswer(private val context: Context, private val scope: CoroutineScop
      * than a minute old is left alone — the phone switched back on later
      * rings for nobody.
      */
-    suspend fun answer(memberId: String, phoneId: String) {
+    suspend fun answer(memberId: String, phoneId: String, connection: GroupConnection) {
         val answered = AnsweredSiren(context)
 
-        phoneSiren(phoneId).collect { called ->
+        phoneSiren(phoneId, connection).collect { called ->
             if (called == null) {
                 return@collect
             }
@@ -69,12 +70,17 @@ class SirenAnswer(private val context: Context, private val scope: CoroutineScop
             sounding?.cancel()
             // Apart from the subscription: the phone's own "heard" write
             // comes back through it, and must not cut the sound short.
-            sounding = scope.launch { sound(memberId, phoneId, called) }
+            sounding = scope.launch { sound(memberId, phoneId, called, connection) }
         }
     }
 
     /** One call: twenty seconds of sound and the notification that stops it early. */
-    private suspend fun sound(memberId: String, phoneId: String, called: Siren) {
+    private suspend fun sound(
+        memberId: String,
+        phoneId: String,
+        called: Siren,
+        connection: GroupConnection,
+    ) {
         val until = Instant.now().plusSeconds(SIREN_SECONDS)
 
         AppLog.i(TAG, "the siren sounds")
@@ -88,7 +94,7 @@ class SirenAnswer(private val context: Context, private val scope: CoroutineScop
             // network still sounds.
             scope.launch {
                 try {
-                    heardSiren(phoneId)
+                    heardSiren(phoneId, connection)
                 } catch (cancellation: CancellationException) {
                     throw cancellation
                 } catch (refusal: Exception) {
@@ -101,7 +107,7 @@ class SirenAnswer(private val context: Context, private val scope: CoroutineScop
                     context.getString(R.string.siren_called_by_you)
                 } else {
                     withTimeoutOrNull(SIREN_NAME_WAIT.toMillis()) {
-                        memberDisplayName(called.calledBy)
+                        memberDisplayName(called.calledBy, connection)
                     } ?: called.calledBy.take(SHORTENED_ID_LENGTH)
                 }
 

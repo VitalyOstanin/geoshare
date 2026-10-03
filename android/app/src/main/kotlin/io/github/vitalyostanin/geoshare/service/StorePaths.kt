@@ -3,9 +3,10 @@ package io.github.vitalyostanin.geoshare.service
 import com.google.firebase.firestore.CollectionReference
 import com.google.firebase.firestore.DocumentReference
 import com.google.firebase.firestore.FirebaseFirestore
+import io.github.vitalyostanin.geoshare.project.GroupConnection
 
-/**
- * Where everything this group writes lives, and what its fields are called.
+/*
+ * Where everything a group writes lives, and what its fields are called.
  *
  * Written out once rather than in each of the seven files that reach into the
  * database. A path spelled by hand in a writer and again in a reader is a pair
@@ -14,29 +15,31 @@ import com.google.firebase.firestore.FirebaseFirestore
  *
  * The names match the page, which keeps its own copy in `web/public/lib`, and
  * the rules, which name the same fields again in `firebase/firestore.rules`.
+ *
+ * Every path is built off a [GroupConnection]: a device can be in several
+ * groups, each its own project, and a path that did not say which would be
+ * a path into whichever one happened to be the default.
  */
-fun groupDocument(store: FirebaseFirestore): DocumentReference =
-    groupDocumentOf(store, CurrentGroup.name)
 
 /**
- * The same document of a group this phone is not in yet.
+ * The document of a group by name, for a group this device is not in yet.
  *
  * Founding one and joining one are the two writes made before the phone has
  * moved: both have to reach a group by name, and the name is only worth
  * remembering once the write has been allowed. Everything else goes through
- * the group this phone is in.
+ * the [GroupConnection] of a group the device is in.
  */
 fun groupDocumentOf(store: FirebaseFirestore, group: String): DocumentReference =
     store.collection("groups").document(group)
 
-fun positionsOf(store: FirebaseFirestore): CollectionReference =
-    groupDocument(store).collection("positions")
+fun positionsOf(connection: GroupConnection): CollectionReference =
+    connection.groupDocument.collection("positions")
 
-fun membersOf(store: FirebaseFirestore): CollectionReference =
-    groupDocument(store).collection("members")
+fun membersOf(connection: GroupConnection): CollectionReference =
+    connection.groupDocument.collection("members")
 
-fun watchOf(store: FirebaseFirestore): CollectionReference =
-    groupDocument(store).collection("watch")
+fun watchOf(connection: GroupConnection): CollectionReference =
+    connection.groupDocument.collection("watch")
 
 /**
  * What a member gives out: the phones they carry and whom they let watch.
@@ -45,8 +48,8 @@ fun watchOf(store: FirebaseFirestore): CollectionReference =
  * group, and neither of these is the group's business: only the member and the
  * readers they named can see them.
  */
-fun grantsOf(store: FirebaseFirestore): CollectionReference =
-    groupDocument(store).collection("grants")
+fun grantsOf(connection: GroupConnection): CollectionReference =
+    connection.groupDocument.collection("grants")
 
 /**
  * The phones of each member and what each last said about itself: when it was
@@ -57,15 +60,15 @@ fun grantsOf(store: FirebaseFirestore): CollectionReference =
  * cable. Apart from the grants because an administrator reads it, and whom a
  * member shares with is not theirs to see.
  */
-fun phonesOf(store: FirebaseFirestore): CollectionReference =
-    groupDocument(store).collection("devices")
+fun phonesOf(connection: GroupConnection): CollectionReference =
+    connection.groupDocument.collection("devices")
 
 /**
  * What each member calls the phones and the people of the group, for
  * themselves: one document per member, read and written by that member alone.
  */
-fun labelsOf(store: FirebaseFirestore): CollectionReference =
-    groupDocument(store).collection("labels")
+fun labelsOf(connection: GroupConnection): CollectionReference =
+    connection.groupDocument.collection("labels")
 
 /**
  * The invitations of the group: one document per code, named by the code.
@@ -74,19 +77,11 @@ fun labelsOf(store: FirebaseFirestore): CollectionReference =
  * while they weigh somebody joining, and a rule reads without the caller's
  * permission; a client that could read it would hold every code of the group.
  */
-fun invitationsOf(store: FirebaseFirestore): CollectionReference =
-    invitationsIn(groupDocument(store))
+fun invitationsOf(connection: GroupConnection): CollectionReference =
+    invitationsIn(connection.groupDocument)
 
 /** The same collection under a group this phone is joining, where joining spends the code. */
 fun invitationsIn(group: DocumentReference): CollectionReference = group.collection("invitations")
-
-/**
- * Where the person joining puts the code they are holding.
- *
- * A rule cannot be told anything except through the database: the write it
- * weighs is the roster, and a code has nowhere to ride in it.
- */
-fun joinsOf(store: FirebaseFirestore): CollectionReference = joinsIn(groupDocument(store))
 
 /**
  * The same collection under a group this phone has not joined yet, which is
@@ -103,8 +98,8 @@ fun joinsIn(group: DocumentReference): CollectionReference = group.collection("j
  * them to everybody who downloads it. Everybody in the group reads the
  * collection, and only an administrator writes it.
  */
-fun falsePlacesOf(store: FirebaseFirestore): CollectionReference =
-    groupDocument(store).collection("falsePlaces")
+fun falsePlacesOf(connection: GroupConnection): CollectionReference =
+    connection.groupDocument.collection("falsePlaces")
 
 /**
  * The group's searches: one document per phone the group is looking for,
@@ -114,8 +109,8 @@ fun falsePlacesOf(store: FirebaseFirestore): CollectionReference =
  * the phone being looked for; only an administrator writes it, and the member
  * whose phone it is may delete it themselves, once they are found.
  */
-fun searchesOf(store: FirebaseFirestore): CollectionReference =
-    groupDocument(store).collection("searches")
+fun searchesOf(connection: GroupConnection): CollectionReference =
+    connection.groupDocument.collection("searches")
 
 /**
  * The group's sirens: one document per phone, addressed by `{uid}.{deviceId}`
@@ -126,16 +121,16 @@ fun searchesOf(store: FirebaseFirestore): CollectionReference =
  * whoever may call it, so the collection as a whole is never listened to —
  * only the one document a phone or a caller's screen cares about.
  */
-fun sirensOf(store: FirebaseFirestore): CollectionReference =
-    groupDocument(store).collection("sirens")
+fun sirensOf(connection: GroupConnection): CollectionReference =
+    connection.groupDocument.collection("sirens")
 
 /**
  * The group's requests that a phone forget its place: one document per phone,
  * addressed by `{uid}.{deviceId}` the same as a siren, and readable by the same
  * people — so, like a siren, only ever listened to one document at a time.
  */
-fun resetsOf(store: FirebaseFirestore): CollectionReference =
-    groupDocument(store).collection("resets")
+fun resetsOf(connection: GroupConnection): CollectionReference =
+    connection.groupDocument.collection("resets")
 
 /**
  * What the group has settled about how its phones judge an answer.
@@ -144,12 +139,12 @@ fun resetsOf(store: FirebaseFirestore): CollectionReference =
  * roster is written by a rule that allows two named shapes and nothing else,
  * and every setting added to it would be a third.
  */
-fun settingsOf(store: FirebaseFirestore): CollectionReference =
-    groupDocument(store).collection("settings")
+fun settingsOf(connection: GroupConnection): CollectionReference =
+    connection.groupDocument.collection("settings")
 
 /** What counts as going round in circles, as this group has settled it. */
-fun circlingSetting(store: FirebaseFirestore): DocumentReference =
-    settingsOf(store).document("circling")
+fun circlingSetting(connection: GroupConnection): DocumentReference =
+    settingsOf(connection).document("circling")
 
 /** The fields of the group document itself. */
 object GroupField {

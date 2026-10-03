@@ -80,13 +80,13 @@ fun pendingInvitationFor(done: ConnectState.Done): PendingInvitation? =
 /**
  * Where a [PendingInvitation] waits between [ConnectState.Done] writing it
  * and the sign-in after the restart reading it back —
- * [FamilyProject.settingOf]'s own file, since both the write and the read
+ * [Connections.files]' own file, since both the write and the read
  * belong to the same restart.
  */
 object PendingInvitationStore {
     /** Keeps [invitation] for the next start, or clears what was kept when there is none. */
     fun save(context: Context, invitation: PendingInvitation?) {
-        val editor = FamilyProject.settingOf(context).edit()
+        val editor = Connections.files(context).edit()
 
         if (invitation == null) {
             editor.remove(KEY_PENDING_INVITATION)
@@ -94,16 +94,15 @@ object PendingInvitationStore {
             editor.putString(KEY_PENDING_INVITATION, invitation.toJson())
         }
 
-        // Committed rather than applied for the same reason as
-        // FamilyProject.save, which this is written right beside: the
-        // process that calls this ends a moment later, before an
-        // asynchronous write would be guaranteed to reach disk.
+        // Committed rather than applied, as the list of groups it is written
+        // beside is: what follows may be the process being cut short, before
+        // an asynchronous write would be guaranteed to reach disk.
         editor.commit()
     }
 
     /** Reads back what [save] kept, without clearing it — [clear] does that once it is spent. */
     fun read(context: Context): PendingInvitation? {
-        val kept = FamilyProject.settingOf(context)
+        val kept = Connections.files(context)
             .getString(KEY_PENDING_INVITATION, null) ?: return null
         val invitation = PendingInvitation.parse(kept)
 
@@ -116,6 +115,6 @@ object PendingInvitationStore {
 
     /** Drops the pending invitation once it has been spent or refused outright. */
     fun clear(context: Context) {
-        FamilyProject.settingOf(context).edit().remove(KEY_PENDING_INVITATION).apply()
+        Connections.files(context).edit().remove(KEY_PENDING_INVITATION).apply()
     }
 }

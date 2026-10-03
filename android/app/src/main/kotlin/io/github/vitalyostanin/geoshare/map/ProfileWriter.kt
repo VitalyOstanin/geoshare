@@ -2,10 +2,10 @@ package io.github.vitalyostanin.geoshare.map
 
 import com.google.firebase.Timestamp
 import com.google.firebase.firestore.FieldValue
-import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.SetOptions
 import io.github.vitalyostanin.geoshare.log.AppLog
 import io.github.vitalyostanin.geoshare.project.ConnectLink
+import io.github.vitalyostanin.geoshare.project.GroupConnection
 import io.github.vitalyostanin.geoshare.service.GrantField
 import io.github.vitalyostanin.geoshare.service.ProfileField
 import io.github.vitalyostanin.geoshare.service.grantsOf
@@ -38,7 +38,7 @@ suspend fun publishProfile(
     memberId: String,
     displayName: String,
     pictureUrl: String?,
-    store: FirebaseFirestore = FirebaseFirestore.getInstance(),
+    connection: GroupConnection,
 ): Boolean {
     val profile =
         mapOf(
@@ -50,7 +50,7 @@ suspend fun publishProfile(
         )
 
     try {
-        membersOf(store)
+        membersOf(connection)
             .document(memberId)
             // Merged rather than replaced, so that a field added here later is
             // not wiped by a build that predates it.
@@ -85,10 +85,10 @@ suspend fun publishProfile(
 suspend fun publishDevice(
     memberId: String,
     deviceId: String,
-    store: FirebaseFirestore = FirebaseFirestore.getInstance(),
+    connection: GroupConnection,
 ): Boolean {
     try {
-        grantsOf(store)
+        grantsOf(connection)
             .document(memberId)
             // Merged rather than replaced: the permissions live in this
             // document too, and they are not this write's business.
@@ -120,12 +120,12 @@ suspend fun publishDevice(
 suspend fun publishSharing(
     memberId: String,
     sharedWith: Map<String, Instant>,
-    store: FirebaseFirestore = FirebaseFirestore.getInstance(),
+    connection: GroupConnection,
 ): Boolean {
     val written = sharedWith.mapValues { (_, until) -> Timestamp(Date.from(until)) }
 
     try {
-        grantsOf(store)
+        grantsOf(connection)
             .document(memberId)
             // The field named rather than merged: a plain merge joins the two
             // maps key by key, and a permission taken away would survive its

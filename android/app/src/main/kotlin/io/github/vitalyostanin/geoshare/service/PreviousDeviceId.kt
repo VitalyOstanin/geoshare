@@ -1,9 +1,9 @@
 package io.github.vitalyostanin.geoshare.service
 
 import com.google.firebase.firestore.FieldValue
-import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.SetOptions
 import io.github.vitalyostanin.geoshare.log.AppLog
+import io.github.vitalyostanin.geoshare.project.GroupConnection
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.tasks.await
 
@@ -25,12 +25,12 @@ private const val TAG = "geoshare.device"
 suspend fun leavePreviousId(
     memberId: String,
     device: DeviceIdentity,
-    store: FirebaseFirestore = FirebaseFirestore.getInstance(),
+    connection: GroupConnection,
 ) {
     val previous = device.previousId ?: return
 
     try {
-        forgetPhone(memberId, previous, store)
+        forgetPhone(memberId, previous, connection)
         device.forgetPrevious(previous)
         AppLog.i(TAG, "the documents of the previous id are taken back")
     } catch (cancellation: CancellationException) {
@@ -52,24 +52,20 @@ suspend fun leavePreviousId(
  * One batch, so the four go together or not at all. Only the member may write
  * any of them, so this is done by the member, never for them.
  */
-suspend fun forgetPhone(
-    memberId: String,
-    deviceId: String,
-    store: FirebaseFirestore = FirebaseFirestore.getInstance(),
-) {
+suspend fun forgetPhone(memberId: String, deviceId: String, connection: GroupConnection) {
     val document = positionId(memberId, deviceId)
 
-    store
+    connection.store
         .batch()
-        .delete(positionsOf(store).document(document))
-        .delete(watchOf(store).document(document))
+        .delete(positionsOf(connection).document(document))
+        .delete(watchOf(connection).document(document))
         .set(
-            grantsOf(store).document(memberId),
+            grantsOf(connection).document(memberId),
             mapOf(GrantField.DEVICES to FieldValue.arrayRemove(deviceId)),
             SetOptions.merge(),
         )
         .set(
-            phonesOf(store).document(memberId),
+            phonesOf(connection).document(memberId),
             mapOf(deviceId to FieldValue.delete()),
             SetOptions.merge(),
         )

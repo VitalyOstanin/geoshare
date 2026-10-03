@@ -1,9 +1,9 @@
 package io.github.vitalyostanin.geoshare.service
 
 import com.google.firebase.firestore.FieldValue
-import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.SetOptions
 import io.github.vitalyostanin.geoshare.collection.CollectionMode
+import io.github.vitalyostanin.geoshare.project.GroupConnection
 import kotlinx.coroutines.tasks.await
 
 /**
@@ -24,7 +24,7 @@ import kotlinx.coroutines.tasks.await
 class PhoneStatusWriter(
     private val memberId: String,
     private val device: DeviceIdentity,
-    private val store: FirebaseFirestore = FirebaseFirestore.getInstance(),
+    private val connection: GroupConnection,
 ) {
     suspend fun write(mode: CollectionMode, batteryPercent: Int, charging: Boolean) {
         val entry =
@@ -38,7 +38,7 @@ class PhoneStatusWriter(
                 PhoneField.CHARGING to charging,
             )
 
-        phonesOf(store)
+        phonesOf(connection)
             .document(memberId)
             .set(mapOf(device.id to entry), SetOptions.merge())
             .await()

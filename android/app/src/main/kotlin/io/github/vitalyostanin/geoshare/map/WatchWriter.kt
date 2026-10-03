@@ -1,10 +1,10 @@
 package io.github.vitalyostanin.geoshare.map
 
 import com.google.firebase.firestore.FieldValue
-import com.google.firebase.firestore.FirebaseFirestore
 import io.github.vitalyostanin.geoshare.collection.WATCH_REFRESH
 import io.github.vitalyostanin.geoshare.collection.WATCH_RETRY
 import io.github.vitalyostanin.geoshare.log.AppLog
+import io.github.vitalyostanin.geoshare.project.GroupConnection
 import io.github.vitalyostanin.geoshare.service.WatchField
 import io.github.vitalyostanin.geoshare.service.positionId
 import io.github.vitalyostanin.geoshare.service.watchOf
@@ -24,11 +24,11 @@ private const val TAG = "geoshare.watching"
 class WatchWriter(
     private val memberId: String,
     deviceId: String,
-    private val store: FirebaseFirestore = FirebaseFirestore.getInstance(),
+    private val connection: GroupConnection,
 ) {
     // Per phone rather than per member: leaving the map on one phone must not
     // withdraw the claim the same member's other phone had just made.
-    private val document = watchOf(store).document(positionId(memberId, deviceId))
+    private val document = watchOf(connection).document(positionId(memberId, deviceId))
 
     /**
      * Keeps the claim alive until the caller stops it.

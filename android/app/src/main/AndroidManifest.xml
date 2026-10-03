@@ -68,7 +68,7 @@
         <!-- Started by the Firebase libraries themselves at process start,
              before anything of ours has run, and off a google-services.json
              this build no longer carries: one build serves every family, so
-             it is FamilyProject.start rather than this that decides which
+             it is Connections.start rather than this that decides which
              project's credentials Firebase begins with. -->
         <provider
             android:name="com.google.firebase.provider.FirebaseInitProvider"

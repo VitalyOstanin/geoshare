@@ -48,7 +48,7 @@ internal typealias FetchTransport = (url: String) -> RawResponse
 
 /**
  * Downloads a group's `geoshare.json` from the site [link] names and reads it
- * into the settings [FamilyProject] starts Firebase with, over an
+ * into the settings [Connections] starts Firebase with, over an
  * [HttpURLConnection] GET run on [Dispatchers.IO].
  */
 suspend fun fetchSettings(link: ConnectLink): SettingsFetch = fetchSettings(link, ::httpGet)

@@ -2,10 +2,10 @@ package io.github.vitalyostanin.geoshare.service
 
 import com.google.firebase.firestore.DocumentSnapshot
 import com.google.firebase.firestore.FieldValue
-import com.google.firebase.firestore.FirebaseFirestore
 import io.github.vitalyostanin.geoshare.log.AppLog
 import io.github.vitalyostanin.geoshare.map.Reset
 import io.github.vitalyostanin.geoshare.map.resetOf
+import io.github.vitalyostanin.geoshare.project.GroupConnection
 import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.callbackFlow
@@ -27,12 +27,9 @@ private fun resetFrom(document: DocumentSnapshot): Reset? = resetOf(
  * The request standing for one phone, or null while nobody has asked: followed
  * by the phone itself, to forget, and by the asking screen, to see it done.
  */
-fun phoneReset(
-    phoneId: String,
-    store: FirebaseFirestore = FirebaseFirestore.getInstance(),
-): Flow<Reset?> = callbackFlow {
+fun phoneReset(phoneId: String, connection: GroupConnection): Flow<Reset?> = callbackFlow {
     val subscription =
-        resetsOf(store).document(phoneId).addSnapshotListener { snapshot, error ->
+        resetsOf(connection).document(phoneId).addSnapshotListener { snapshot, error ->
             if (error != null) {
                 close(error)
 
@@ -46,12 +43,8 @@ fun phoneReset(
 }.comingBack("reset", forgetting = { null })
 
 /** Asks one phone to forget its place; written whole, as a siren's call is. */
-suspend fun askReset(
-    phoneId: String,
-    askerId: String,
-    store: FirebaseFirestore = FirebaseFirestore.getInstance(),
-) {
-    resetsOf(store)
+suspend fun askReset(phoneId: String, askerId: String, connection: GroupConnection) {
+    resetsOf(connection)
         .document(phoneId)
         .set(
             mapOf(
@@ -64,11 +57,8 @@ suspend fun askReset(
 }
 
 /** Marks that the phone named by [phoneId] forgot its place. Written only by that phone. */
-suspend fun resetDone(
-    phoneId: String,
-    store: FirebaseFirestore = FirebaseFirestore.getInstance(),
-) {
-    resetsOf(store)
+suspend fun resetDone(phoneId: String, connection: GroupConnection) {
+    resetsOf(connection)
         .document(phoneId)
         .update(mapOf(ResetField.DONE_AT to FieldValue.serverTimestamp()))
         .await()

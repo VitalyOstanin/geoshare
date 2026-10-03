@@ -1,11 +1,11 @@
 package io.github.vitalyostanin.geoshare.service
 
 import com.google.firebase.firestore.DocumentSnapshot
-import com.google.firebase.firestore.FirebaseFirestore
 import io.github.vitalyostanin.geoshare.collection.FALSE_PLACES_KEPT
 import io.github.vitalyostanin.geoshare.collection.FalsePlace
 import io.github.vitalyostanin.geoshare.collection.falsePlaceStands
 import io.github.vitalyostanin.geoshare.log.AppLog
+import io.github.vitalyostanin.geoshare.project.GroupConnection
 import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.callbackFlow
@@ -26,11 +26,9 @@ private const val TAG = "geoshare.falseplaces"
  * somebody typed wrong in the console must not stop the rest of the list from
  * reaching the phones.
  */
-fun namedFalsePlaces(
-    store: FirebaseFirestore = FirebaseFirestore.getInstance(),
-): Flow<List<FalsePlace>> = callbackFlow {
+fun namedFalsePlaces(connection: GroupConnection): Flow<List<FalsePlace>> = callbackFlow {
     val subscription =
-        falsePlacesOf(store).addSnapshotListener { snapshot, error ->
+        falsePlacesOf(connection).addSnapshotListener { snapshot, error ->
             if (error != null) {
                 close(error)
 

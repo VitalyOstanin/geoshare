@@ -36,7 +36,7 @@ import io.github.vitalyostanin.geoshare.map.withinAnswerWait
 import io.github.vitalyostanin.geoshare.map.writeLabel
 import io.github.vitalyostanin.geoshare.map.writePhoneName
 import io.github.vitalyostanin.geoshare.project.ConnectLink
-import io.github.vitalyostanin.geoshare.project.FamilyProject
+import io.github.vitalyostanin.geoshare.project.GroupConnection
 import io.github.vitalyostanin.geoshare.project.PendingInvitation
 import io.github.vitalyostanin.geoshare.project.PendingInvitationStore
 import io.github.vitalyostanin.geoshare.project.WrongAccountDialog
@@ -81,6 +81,7 @@ import java.time.Instant
 @Composable
 internal fun SignedInScreen(
     activity: MainActivity,
+    connection: GroupConnection,
     current: AuthState.SignedIn,
     theme: ThemeChoice,
     onTheme: (ThemeChoice) -> Unit,
@@ -121,8 +122,8 @@ internal fun SignedInScreen(
 
     // The service does the same; whichever starts
     // first takes the old documents back.
-    LaunchedEffect(current.memberId) {
-        leavePreviousId(current.memberId, activity.device)
+    LaunchedEffect(connection, current.memberId) {
+        leavePreviousId(current.memberId, activity.device, connection = connection)
     }
 
     // Only the restart ConnectState.Done led to ever
@@ -132,7 +133,7 @@ internal fun SignedInScreen(
         mutableStateOf<PendingInvitation?>(null)
     }
 
-    LaunchedEffect(current.memberId) {
+    LaunchedEffect(connection, current.memberId) {
         val pending = PendingInvitationStore.read(activity)
             ?: return@LaunchedEffect
 
@@ -151,6 +152,7 @@ internal fun SignedInScreen(
                     activity,
                     current.memberId,
                     pending,
+                    connection = connection,
                 )
             }
     }
@@ -237,7 +239,7 @@ internal fun SignedInScreen(
                 roster = roster,
                 grants = grants,
                 invitation = invitation,
-                site = FamilyProject.site,
+                site = connection.settings.site,
                 groupTrouble = groupTrouble,
                 phoneName =
                 grants[current.memberId]?.phones?.get(activity.device.id)?.name,
@@ -304,6 +306,7 @@ internal fun SignedInScreen(
                                 span = span,
                                 now = Instant.now(),
                             ),
+                            connection = connection,
                         )
                     }
                 },
@@ -311,7 +314,12 @@ internal fun SignedInScreen(
                 // member, like every other phone reads it.
                 onPhoneNameChange = { name ->
                     activity.lifecycleScope.launch {
-                        writePhoneName(current.memberId, activity.device.id, name)
+                        writePhoneName(
+                            current.memberId,
+                            activity.device.id,
+                            name,
+                            connection = connection,
+                        )
                     }
                 },
                 onOpenSettings = activity::openApplicationSettings,
@@ -337,6 +345,7 @@ internal fun SignedInScreen(
                                     activity,
                                     current.memberId,
                                     name,
+                                    connection = connection,
                                 )
                             }
                     }
@@ -349,6 +358,7 @@ internal fun SignedInScreen(
                                     makeInvitation(
                                         current.memberId,
                                         email,
+                                        connection = connection,
                                     )
                             }
                     }
@@ -361,6 +371,7 @@ internal fun SignedInScreen(
                                     activity,
                                     current.memberId,
                                     invited,
+                                    connection = connection,
                                 )
                             }
                     }
@@ -376,7 +387,7 @@ internal fun SignedInScreen(
                         groupTrouble =
                             !activity.withGroup("removed a member") {
                                 roster?.let {
-                                    removeFromGroup(it, memberId)
+                                    removeFromGroup(it, memberId, connection = connection)
                                 }
                             }
                     }
@@ -385,7 +396,7 @@ internal fun SignedInScreen(
                     activity.lifecycleScope.launch {
                         groupTrouble =
                             !activity.withGroup("changed who runs the group") {
-                                setRunning(memberId, runs)
+                                setRunning(memberId, runs, connection = connection)
                             }
                     }
                 },
@@ -395,12 +406,12 @@ internal fun SignedInScreen(
                 // open on a refusal and say so.
                 onRenameGroup = { name ->
                     activity.writeOutcome("the group could not be renamed") {
-                        renameGroup(name)
+                        renameGroup(name, connection = connection)
                     }
                 },
                 onSignOut = {
                     activity.lifecycleScope.launch {
-                        activity.forgetThisPhone(current.memberId)
+                        activity.forgetThisPhone(current.memberId, connection)
                         activity.signIn.signOut()
                     }
                 },
@@ -418,6 +429,7 @@ internal fun SignedInScreen(
                                 phoneName,
                                 current.memberId,
                                 hours,
+                                connection = connection,
                             )
                         } else {
                             openSearch(
@@ -425,26 +437,27 @@ internal fun SignedInScreen(
                                 phoneName,
                                 current.memberId,
                                 hours,
+                                connection = connection,
                             )
                         }
                     }
                 },
-                sirenOf = ::phoneSiren,
+                sirenOf = { phoneId -> phoneSiren(phoneId, connection) },
                 onCallSiren = { phoneId ->
                     activity.writeOutcome("a siren could not be called") {
-                        callSiren(phoneId, current.memberId)
+                        callSiren(phoneId, current.memberId, connection = connection)
                     }
                 },
-                resetOf = ::phoneReset,
+                resetOf = { phoneId -> phoneReset(phoneId, connection) },
                 onAskReset = { phoneId ->
                     activity.writeOutcome("a place reset could not be asked") {
-                        askReset(phoneId, current.memberId)
+                        askReset(phoneId, current.memberId, connection = connection)
                     }
                 },
                 onStopSiren = { phoneId ->
                     try {
                         withinAnswerWait {
-                            stopSiren(phoneId, current.memberId)
+                            stopSiren(phoneId, current.memberId, connection = connection)
                         }
                     } catch (cancellation: CancellationException) {
                         throw cancellation
@@ -461,6 +474,7 @@ internal fun SignedInScreen(
                         forgetPhone(
                             current.memberId,
                             phoneId.substringAfter('.'),
+                            connection = connection,
                         )
                         true
                     } catch (cancellation: CancellationException) {
@@ -476,7 +490,7 @@ internal fun SignedInScreen(
                 },
                 onEndSearch = { phoneId ->
                     try {
-                        withinAnswerWait { endSearch(phoneId) }
+                        withinAnswerWait { endSearch(phoneId, connection = connection) }
                     } catch (cancellation: CancellationException) {
                         throw cancellation
                     } catch (refusal: Exception) {
@@ -491,7 +505,7 @@ internal fun SignedInScreen(
             labels = labels,
             onLabel = { kind, key, name ->
                 activity.lifecycleScope.launch {
-                    writeLabel(current.memberId, kind, key, name)
+                    writeLabel(current.memberId, kind, key, name, connection = connection)
                 }
             },
         )

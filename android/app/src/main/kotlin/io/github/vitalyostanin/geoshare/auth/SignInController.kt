@@ -24,7 +24,7 @@ private const val TAG = "geoshare.auth"
  * nothing beyond the signing certificate's SHA-1 in the project's Firebase
  * settings, which is what every group's project already carries.
  */
-class SignInController(private val auth: FirebaseAuth = FirebaseAuth.getInstance()) {
+class SignInController(private val auth: FirebaseAuth) {
     private val current = MutableStateFlow<AuthState>(AuthState.Starting)
     val state: StateFlow<AuthState> = current.asStateFlow()
 

@@ -4,9 +4,8 @@ import android.Manifest
 import android.content.Context
 import android.content.pm.PackageManager
 import androidx.core.content.ContextCompat
-import com.google.firebase.auth.FirebaseAuth
 import io.github.vitalyostanin.geoshare.permission.backgroundLocationGranted
-import io.github.vitalyostanin.geoshare.project.FamilyProject
+import io.github.vitalyostanin.geoshare.project.Connections
 
 /**
  * The conditions as they stand on the device, ready for [refusalToStart].
@@ -15,10 +14,10 @@ import io.github.vitalyostanin.geoshare.project.FamilyProject
  * without a device to read them from.
  */
 fun startConditions(context: Context, fromBackground: Boolean): StartConditions = StartConditions(
-    connected = FamilyProject.connected,
-    // Asked only once there is a project to ask it of: FirebaseAuth throws
-    // rather than answering "nobody" when no default app has been started.
-    signedIn = FamilyProject.connected && FirebaseAuth.getInstance().currentUser != null,
+    connected = Connections.connected,
+    // Signed in to any one of the groups is reason enough to start: the
+    // service writes into every group that has a session, and skips the rest.
+    signedIn = Connections.all.value.any { it.auth.currentUser != null },
     enabled = SharingSetting(context).enabled,
     locationGranted = granted(context, Manifest.permission.ACCESS_FINE_LOCATION),
     backgroundLocationGranted = backgroundLocationGranted(context),

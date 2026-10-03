@@ -109,4 +109,25 @@ class WatchingTest {
             watchedUntil(watchers, "anna", emptyMap(), sought = true),
         )
     }
+
+    @Test
+    fun `the device is watched while anybody in any group watches it`() {
+        val family = listOf(now.plusSeconds(600))
+        val hike = listOf(now.plusSeconds(60))
+
+        assertEquals(
+            listOf(now.plusSeconds(60), now.plusSeconds(600)),
+            watchedInAnyGroup(listOf(family, hike)),
+        )
+    }
+
+    @Test
+    fun `no group watching is no watching`() {
+        assertEquals(emptyList<Instant>(), watchedInAnyGroup(listOf(emptyList(), emptyList())))
+    }
+
+    @Test
+    fun `no groups at all is no watching`() {
+        assertEquals(emptyList<Instant>(), watchedInAnyGroup(emptyList()))
+    }
 }

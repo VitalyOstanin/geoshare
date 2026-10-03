@@ -1,10 +1,10 @@
 package io.github.vitalyostanin.geoshare.map
 
 import com.google.firebase.firestore.DocumentSnapshot
-import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.ListenerRegistration
 import com.google.firebase.firestore.MetadataChanges
 import io.github.vitalyostanin.geoshare.log.AppLog
+import io.github.vitalyostanin.geoshare.project.GroupConnection
 import io.github.vitalyostanin.geoshare.service.PositionField
 import io.github.vitalyostanin.geoshare.service.positionId
 import io.github.vitalyostanin.geoshare.service.positionsOf
@@ -96,72 +96,72 @@ data class MembersInView(
  * refusal rather than with nothing, and that refusal is the member saying they
  * no longer share — so it drops the marker instead of being reported.
  */
-fun memberPositions(
-    documents: List<String>,
-    store: FirebaseFirestore = FirebaseFirestore.getInstance(),
-): Flow<MembersInView> = callbackFlow {
-    val known = mutableMapOf<String, MemberPosition>()
-    val refused = mutableSetOf<String>()
-    val subscriptions = mutableMapOf<String, ListenerRegistration>()
-    val positions = positionsOf(store)
+fun memberPositions(documents: List<String>, connection: GroupConnection): Flow<MembersInView> =
+    callbackFlow {
+        val known = mutableMapOf<String, MemberPosition>()
+        val refused = mutableSetOf<String>()
+        val subscriptions = mutableMapOf<String, ListenerRegistration>()
+        val positions = positionsOf(connection)
 
-    fun publish() = trySend(MembersInView(known.values.toList(), refused.size))
+        fun publish() = trySend(MembersInView(known.values.toList(), refused.size))
 
-    // A refusal stays a refusal until the member says otherwise, and what they
-    // say does not reach this screen: a permission lives in their grant, which
-    // a refused client cannot read either. So the subscription is made
-    // again on a timer, and a permission handed back brings the marker back
-    // with it rather than waiting for the screen to be opened afresh.
-    fun follow(id: String) {
-        subscriptions[id] =
-            // With the metadata changes as well: whether this phone's own write
-            // is still waiting is not part of the document, and a listener told
-            // only of the data would hear of it only as a side effect.
-            positions.document(id).addSnapshotListener(MetadataChanges.INCLUDE) { snapshot, error ->
-                if (error != null) {
-                    AppLog.i(TAG, "$id is out of reach: ${error.code}")
-                    refused.add(id)
-                    known.remove(id)
-                    publish()
+        // A refusal stays a refusal until the member says otherwise, and what they
+        // say does not reach this screen: a permission lives in their grant, which
+        // a refused client cannot read either. So the subscription is made
+        // again on a timer, and a permission handed back brings the marker back
+        // with it rather than waiting for the screen to be opened afresh.
+        fun follow(id: String) {
+            val document = positions.document(id)
 
-                    launch {
-                        delay(RETRY_AFTER.toMillis())
-                        subscriptions.remove(id)?.remove()
-                        follow(id)
+            subscriptions[id] =
+                // With the metadata changes as well: whether this phone's own write
+                // is still waiting is not part of the document, and a listener told
+                // only of the data would hear of it only as a side effect.
+                document.addSnapshotListener(MetadataChanges.INCLUDE) { snapshot, error ->
+                    if (error != null) {
+                        AppLog.i(TAG, "$id is out of reach: ${error.code}")
+                        refused.add(id)
+                        known.remove(id)
+                        publish()
+
+                        launch {
+                            delay(RETRY_AFTER.toMillis())
+                            subscriptions.remove(id)?.remove()
+                            follow(id)
+                        }
+
+                        return@addSnapshotListener
                     }
 
-                    return@addSnapshotListener
-                }
+                    refused.remove(id)
 
-                refused.remove(id)
+                    // A document that is not there is not a complaint: a member
+                    // whose grant names a phone they have since reinstalled has
+                    // one, and so does every device before its first write.
+                    val position = if (snapshot?.exists() == true) positionOf(snapshot) else null
 
-                // A document that is not there is not a complaint: a member
-                // whose grant names a phone they have since reinstalled has
-                // one, and so does every device before its first write.
-                val position = if (snapshot?.exists() == true) positionOf(snapshot) else null
+                    if (position == null) {
+                        known.remove(id)
+                        publish()
 
-                if (position == null) {
-                    known.remove(id)
+                        return@addSnapshotListener
+                    }
+
+                    known[id] = position
                     publish()
-
-                    return@addSnapshotListener
                 }
+        }
 
-                known[id] = position
-                publish()
-            }
+        documents.forEach { follow(it) }
+
+        // Said once at the start, so that a screen with nothing to draw shows an
+        // empty map rather than waiting for an answer that never comes: a member
+        // whose grant this phone may not read has no document to subscribe to at
+        // all.
+        publish()
+
+        awaitClose { subscriptions.values.forEach { it.remove() } }
     }
-
-    documents.forEach { follow(it) }
-
-    // Said once at the start, so that a screen with nothing to draw shows an
-    // empty map rather than waiting for an answer that never comes: a member
-    // whose grant this phone may not read has no document to subscribe to at
-    // all.
-    publish()
-
-    awaitClose { subscriptions.values.forEach { it.remove() } }
-}
 
 /**
  * A document turns into a position, or into nothing.

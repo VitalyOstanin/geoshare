@@ -15,7 +15,8 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.repeatOnLifecycle
 import io.github.vitalyostanin.geoshare.collection.Watcher
 import io.github.vitalyostanin.geoshare.membership.Roster
-import io.github.vitalyostanin.geoshare.service.CurrentGroup
+import io.github.vitalyostanin.geoshare.project.Connections
+import io.github.vitalyostanin.geoshare.project.GroupConnection
 import io.github.vitalyostanin.geoshare.service.MapOnScreen
 import io.github.vitalyostanin.geoshare.service.databaseLink
 import io.github.vitalyostanin.geoshare.service.groupRoster
@@ -48,12 +49,12 @@ fun rememberMemberPositions(
     /** The group's searches, whose standing phones this phone may read regardless of a grant. */
     searches: Map<String, Search> = emptyMap(),
 ): State<MembersInView> {
-    val writing = groupNow()
+    val connection = groupNow()
     val sought = soughtPhoneIds(searches)
     val documents = remember(grants, own, sought) { positionDocuments(grants, own, sought) }
-    val positions = remember(writing, documents) { memberPositions(documents) }
+    val positions = remember(connection, documents) { memberPositions(documents, connection) }
     val written = positions.collectAsStateWithLifecycle(initialValue = MembersInView())
-    val falsePlaces = remember(writing) { namedFalsePlaces() }
+    val falsePlaces = remember(connection) { namedFalsePlaces(connection) }
     val places = falsePlaces.collectAsStateWithLifecycle(initialValue = emptyList())
 
     // What the phones said about themselves since their positions were
@@ -72,8 +73,7 @@ fun rememberMemberPositions(
 }
 
 /**
- * Which group this phone is writing into, as something a subscription can be
- * rebuilt on.
+ * The group the screens show, as something a subscription can be rebuilt on.
  *
  * Every path below is built around the name, and founding a group or joining
  * one changes where this phone writes while the screen is open. Without this
@@ -84,8 +84,10 @@ fun rememberMemberPositions(
  * minutes.
  */
 @Composable
-private fun groupNow(): CurrentGroup.Writing =
-    CurrentGroup.writings.collectAsStateWithLifecycle().value
+private fun groupNow(): GroupConnection =
+    checkNotNull(Connections.selected.collectAsStateWithLifecycle().value) {
+        "a screen of a group was shown with no group to show"
+    }
 
 /**
  * The group's searches, collected while a screen is up.
@@ -96,8 +98,8 @@ private fun groupNow(): CurrentGroup.Writing =
  */
 @Composable
 fun rememberSearches(): State<Map<String, Search>> {
-    val writing = groupNow()
-    val searches = remember(writing) { groupSearches() }
+    val connection = groupNow()
+    val searches = remember(connection) { groupSearches(connection) }
 
     return searches.collectAsStateWithLifecycle(initialValue = emptyMap())
 }
@@ -148,12 +150,12 @@ fun rememberMemberGrants(
     profiles: Map<String, MemberProfile>?,
     ownId: String,
 ): State<Map<String, MemberGrant>> {
-    val writing = groupNow()
+    val connection = groupNow()
     // Our own entry as well, named or not: the name given to this phone is
     // read back from it, and a member whose profile has not been written yet
     // would otherwise see the name they typed vanish.
     val memberIds = remember(profiles, ownId) { (profiles.orEmpty().keys + ownId).sorted() }
-    val grants = remember(writing, memberIds) { memberGrants(memberIds) }
+    val grants = remember(connection, memberIds) { memberGrants(memberIds, connection) }
 
     return grants.collectAsStateWithLifecycle(initialValue = emptyMap())
 }
@@ -168,9 +170,11 @@ fun rememberMemberGrants(
  */
 @Composable
 fun rememberWatchers(memberId: String, deviceId: String): State<List<Watcher>> {
-    val writing = groupNow()
+    val connection = groupNow()
     val looking =
-        remember(writing, memberId, deviceId) { watchers(positionId(memberId, deviceId)) }
+        remember(connection, memberId, deviceId) {
+            watchers(positionId(memberId, deviceId), connection)
+        }
 
     return looking.collectAsStateWithLifecycle(initialValue = emptyList())
 }
@@ -185,8 +189,8 @@ fun rememberWatchers(memberId: String, deviceId: String): State<List<Watcher>> {
  */
 @Composable
 fun rememberMemberProfiles(): State<Map<String, MemberProfile>?> {
-    val writing = groupNow()
-    val profiles = remember(writing) { memberProfiles() }
+    val connection = groupNow()
+    val profiles = remember(connection) { memberProfiles(connection) }
 
     return profiles.collectAsStateWithLifecycle(initialValue = null)
 }
@@ -202,8 +206,8 @@ fun rememberMemberProfiles(): State<Map<String, MemberProfile>?> {
  */
 @Composable
 fun rememberGroupRoster(): State<Roster?> {
-    val writing = groupNow()
-    val roster = remember(writing) { groupRoster() }
+    val connection = groupNow()
+    val roster = remember(connection) { groupRoster(connection) }
 
     return roster.collectAsStateWithLifecycle(initialValue = null)
 }
@@ -214,8 +218,8 @@ fun rememberGroupRoster(): State<Roster?> {
  */
 @Composable
 fun rememberDatabaseLink(): State<LinkState> {
-    val writing = groupNow()
-    val link = remember(writing) { databaseLink() }
+    val connection = groupNow()
+    val link = remember(connection) { databaseLink(connection) }
 
     return link.collectAsStateWithLifecycle(initialValue = LinkState())
 }
@@ -229,8 +233,8 @@ fun rememberDatabaseLink(): State<LinkState> {
  */
 @Composable
 fun rememberOwnSharedWith(memberId: String): State<Map<String, Instant>> {
-    val writing = groupNow()
-    val permissions = remember(writing, memberId) { ownSharedWith(memberId) }
+    val connection = groupNow()
+    val permissions = remember(connection, memberId) { ownSharedWith(memberId, connection) }
 
     return permissions.collectAsStateWithLifecycle(initialValue = emptyMap())
 }
@@ -243,10 +247,10 @@ fun rememberOwnSharedWith(memberId: String): State<Map<String, Instant>> {
  */
 @Composable
 fun rememberOwnLabels(memberId: String): State<Labels> {
-    val writing = groupNow()
+    val connection = groupNow()
     val context = LocalContext.current
     val cache = remember(context) { LabelCache(context) }
-    val labels = remember(writing, memberId) { ownLabels(memberId, cache) }
+    val labels = remember(connection, memberId) { ownLabels(memberId, cache, connection) }
 
     val kept = remember(memberId) { cache.read(memberId) }
 
@@ -285,17 +289,17 @@ fun PublishProfile(
     // never having published: the new group has been told nothing. Written
     // again on being let into a group as well, because the attempt made before
     // this phone was on the roster was refused.
-    val writing = groupNow()
+    val connection = groupNow()
     val telling =
         ProfileTold(
-            group = writing.name,
+            group = "${connection.projectId}/${connection.group}",
             memberId = memberId,
             displayName = name,
             pictureUrl = pictureUrl,
             deviceId = deviceId,
         )
 
-    LaunchedEffect(writing, telling, owner) {
+    LaunchedEffect(connection, telling, owner) {
         owner.repeatOnLifecycle(Lifecycle.State.RESUMED) {
             if (published.told() == telling) {
                 return@repeatOnLifecycle
@@ -310,8 +314,10 @@ fun PublishProfile(
                     memberId = memberId,
                     displayName = name,
                     pictureUrl = pictureUrl,
+                    connection = connection,
                 )
-            val listed = publishDevice(memberId = memberId, deviceId = deviceId)
+            val listed =
+                publishDevice(memberId = memberId, deviceId = deviceId, connection = connection)
 
             if (named && listed) {
                 published.remember(telling)
@@ -331,9 +337,10 @@ fun PublishProfile(
 @Composable
 fun KeepWatching(memberId: String, deviceId: String) {
     val owner = LocalLifecycleOwner.current
+    val connection = groupNow()
 
-    LaunchedEffect(memberId, deviceId, owner) {
-        val writer = WatchWriter(memberId, deviceId)
+    LaunchedEffect(connection, memberId, deviceId, owner) {
+        val writer = WatchWriter(memberId, deviceId, connection)
 
         owner.repeatOnLifecycle(Lifecycle.State.RESUMED) {
             // Said twice on purpose: once to the other members through the

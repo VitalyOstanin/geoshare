@@ -1,10 +1,10 @@
 package io.github.vitalyostanin.geoshare.service
 
 import com.google.firebase.firestore.DocumentSnapshot
-import com.google.firebase.firestore.FirebaseFirestore
 import io.github.vitalyostanin.geoshare.collection.CircleLimits
 import io.github.vitalyostanin.geoshare.collection.circleLimitsStand
 import io.github.vitalyostanin.geoshare.log.AppLog
+import io.github.vitalyostanin.geoshare.project.GroupConnection
 import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.callbackFlow
@@ -26,21 +26,20 @@ private const val TAG = "geoshare.circling"
  * applied in part: half a set of limits is a rule nobody has reasoned about,
  * and the ones in the build are the ones that were.
  */
-fun circlingLimits(store: FirebaseFirestore = FirebaseFirestore.getInstance()): Flow<CircleLimits> =
-    callbackFlow {
-        val subscription =
-            circlingSetting(store).addSnapshotListener { snapshot, error ->
-                if (error != null) {
-                    close(error)
+fun circlingLimits(connection: GroupConnection): Flow<CircleLimits> = callbackFlow {
+    val subscription =
+        circlingSetting(connection).addSnapshotListener { snapshot, error ->
+            if (error != null) {
+                close(error)
 
-                    return@addSnapshotListener
-                }
-
-                trySend(limitsOf(snapshot))
+                return@addSnapshotListener
             }
 
-        awaitClose { subscription.remove() }
-    }.comingBack("circling setting")
+            trySend(limitsOf(snapshot))
+        }
+
+    awaitClose { subscription.remove() }
+}.comingBack("circling setting")
 
 /** The document read as limits, falling back to the build's own. */
 private fun limitsOf(snapshot: DocumentSnapshot?): CircleLimits {

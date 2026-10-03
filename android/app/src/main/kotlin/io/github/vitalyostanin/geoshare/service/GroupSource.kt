@@ -4,7 +4,6 @@ import android.content.Context
 import com.google.firebase.Timestamp
 import com.google.firebase.firestore.DocumentSnapshot
 import com.google.firebase.firestore.FieldValue
-import com.google.firebase.firestore.FirebaseFirestore
 import io.github.vitalyostanin.geoshare.log.AppLog
 import io.github.vitalyostanin.geoshare.membership.INVITATION_LASTS
 import io.github.vitalyostanin.geoshare.membership.Invitation
@@ -12,6 +11,8 @@ import io.github.vitalyostanin.geoshare.membership.Roster
 import io.github.vitalyostanin.geoshare.membership.newInvitationCode
 import io.github.vitalyostanin.geoshare.membership.rosterFounded
 import io.github.vitalyostanin.geoshare.membership.rosterWithout
+import io.github.vitalyostanin.geoshare.project.Connections
+import io.github.vitalyostanin.geoshare.project.GroupConnection
 import io.github.vitalyostanin.geoshare.project.PendingInvitation
 import io.github.vitalyostanin.geoshare.project.PendingInvitationStore
 import kotlinx.coroutines.CancellationException
@@ -36,25 +37,24 @@ private const val TAG = "geoshare.group"
  * carries no roster, and that is a state of its own: it is what tells the
  * founder they may make one.
  */
-fun groupRoster(store: FirebaseFirestore = FirebaseFirestore.getInstance()): Flow<Roster?> =
-    callbackFlow {
-        val subscription =
-            groupDocument(store).addSnapshotListener { snapshot, error ->
-                if (error != null) {
-                    close(error)
+fun groupRoster(connection: GroupConnection): Flow<Roster?> = callbackFlow {
+    val subscription =
+        connection.groupDocument.addSnapshotListener { snapshot, error ->
+            if (error != null) {
+                close(error)
 
-                    return@addSnapshotListener
-                }
-
-                trySend(snapshot?.takeIf { it.exists() }?.let(::rosterOf))
+                return@addSnapshotListener
             }
 
-        awaitClose { subscription.remove() }
-        // A refusal reads the same way as a group that was never made, which
-        // is what it amounts to for this phone: whoever is looking is offered
-        // the two ways into a group rather than left with a roster they are
-        // no longer on.
-    }.comingBack("roster", forgetting = { null })
+            trySend(snapshot?.takeIf { it.exists() }?.let(::rosterOf))
+        }
+
+    awaitClose { subscription.remove() }
+    // A refusal reads the same way as a group that was never made, which
+    // is what it amounts to for this phone: whoever is looking is offered
+    // the two ways into a group rather than left with a roster they are
+    // no longer on.
+}.comingBack("roster", forgetting = { null })
 
 private fun rosterOf(snapshot: DocumentSnapshot): Roster = Roster(
     members = snapshot.get(GroupField.MEMBERS).asIds(),
@@ -92,7 +92,7 @@ suspend fun foundGroup(
     context: Context,
     uid: String,
     name: String? = null,
-    store: FirebaseFirestore = FirebaseFirestore.getInstance(),
+    connection: GroupConnection,
 ) {
     val roster = rosterFounded(uid)
     // The rules refuse the field at all once it is blank (nameFits), so it is
@@ -106,8 +106,8 @@ suspend fun foundGroup(
             roster.asDocument() + (GroupField.NAME to name)
         }
 
-    groupDocumentOf(store, uid).set(fields).await()
-    CurrentGroup.moveTo(context, uid)
+    groupDocumentOf(connection.store, uid).set(fields).await()
+    Connections.moveTo(context, connection.projectId, uid)
 
     AppLog.i(TAG, "the group has been founded")
 }
@@ -120,8 +120,8 @@ suspend fun foundGroup(
  * one touches only the field it changes and leaves members and admins as
  * they are.
  */
-suspend fun renameGroup(name: String, store: FirebaseFirestore = FirebaseFirestore.getInstance()) {
-    groupDocument(store).update(GroupField.NAME, name).await()
+suspend fun renameGroup(name: String, connection: GroupConnection) {
+    connection.groupDocument.update(GroupField.NAME, name).await()
 
     AppLog.i(TAG, "the group has been renamed")
 }
@@ -155,13 +155,13 @@ data class MadeInvitation(
 suspend fun makeInvitation(
     uid: String,
     email: String,
-    store: FirebaseFirestore = FirebaseFirestore.getInstance(),
+    connection: GroupConnection,
 ): MadeInvitation {
     val code = newInvitationCode()
     val expiresAt = Instant.now().plus(INVITATION_LASTS)
     val address = email.trim()
 
-    invitationsOf(store)
+    invitationsOf(connection)
         .document(code)
         .set(
             mapOf(
@@ -173,7 +173,7 @@ suspend fun makeInvitation(
 
     AppLog.i(TAG, "an invitation has been made, good until $expiresAt")
 
-    return MadeInvitation(CurrentGroup.name, code, expiresAt, address)
+    return MadeInvitation(connection.group, code, expiresAt, address)
 }
 
 /**
@@ -197,11 +197,11 @@ suspend fun joinGroup(
     context: Context,
     uid: String,
     invitation: Invitation,
-    store: FirebaseFirestore = FirebaseFirestore.getInstance(),
+    connection: GroupConnection,
 ) {
-    val group = groupDocumentOf(store, invitation.group)
+    val group = groupDocumentOf(connection.store, invitation.group)
 
-    store
+    connection.store
         .batch()
         .set(joinsIn(group).document(uid), mapOf(JoinField.CODE to invitation.code))
         .update(group, GroupField.MEMBERS, FieldValue.arrayUnion(uid))
@@ -209,7 +209,7 @@ suspend fun joinGroup(
         .commit()
         .await()
 
-    CurrentGroup.moveTo(context, invitation.group)
+    Connections.moveTo(context, connection.projectId, invitation.group)
 
     AppLog.i(TAG, "joined a group on a code")
 }
@@ -221,15 +221,11 @@ suspend fun joinGroup(
  * still able to say who is in it, and the rules refuse such a write whole
  * rather than perform half of it.
  */
-suspend fun removeFromGroup(
-    roster: Roster,
-    uid: String,
-    store: FirebaseFirestore = FirebaseFirestore.getInstance(),
-) {
+suspend fun removeFromGroup(roster: Roster, uid: String, connection: GroupConnection) {
     // The two lists alone: a whole document written back would drop the
     // founder and the name of the group, and the rules refuse a write that
     // touches either.
-    groupDocument(store).update(rosterWithout(roster, uid).asDocument()).await()
+    connection.groupDocument.update(rosterWithout(roster, uid).asDocument()).await()
 
     AppLog.i(TAG, "a member has been taken off the roster")
 }
@@ -240,14 +236,10 @@ suspend fun removeFromGroup(
  * One element added or taken rather than the list written whole, so that two
  * administrators changing different members at once do not undo each other.
  */
-suspend fun setRunning(
-    uid: String,
-    runs: Boolean,
-    store: FirebaseFirestore = FirebaseFirestore.getInstance(),
-) {
+suspend fun setRunning(uid: String, runs: Boolean, connection: GroupConnection) {
     val change = if (runs) FieldValue.arrayUnion(uid) else FieldValue.arrayRemove(uid)
 
-    groupDocument(store).update(GroupField.ADMINS, change).await()
+    connection.groupDocument.update(GroupField.ADMINS, change).await()
 
     AppLog.i(TAG, if (runs) "a member has been handed the group" else "a member has given it back")
 }
@@ -268,10 +260,10 @@ suspend fun consumePendingInvitation(
     context: Context,
     uid: String,
     pending: PendingInvitation,
-    store: FirebaseFirestore = FirebaseFirestore.getInstance(),
+    connection: GroupConnection,
 ) {
     try {
-        joinGroup(context, uid, Invitation(pending.groupId, pending.code), store)
+        joinGroup(context, uid, Invitation(pending.groupId, pending.code), connection)
         PendingInvitationStore.clear(context)
     } catch (cancellation: CancellationException) {
         throw cancellation

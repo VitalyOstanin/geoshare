@@ -13,6 +13,7 @@ import io.github.vitalyostanin.geoshare.R
 import io.github.vitalyostanin.geoshare.log.AppLog
 import io.github.vitalyostanin.geoshare.map.shouldForget
 import io.github.vitalyostanin.geoshare.permission.devicePermissions
+import io.github.vitalyostanin.geoshare.project.GroupConnection
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.withTimeoutOrNull
 import java.time.Duration
@@ -86,10 +87,11 @@ suspend fun answerResets(
     memberId: String,
     phoneId: String,
     jumps: JumpFilterSetting,
+    connection: GroupConnection,
 ) {
     val done = DoneReset(context)
 
-    phoneReset(phoneId).collect { asked ->
+    phoneReset(phoneId, connection).collect { asked ->
         if (asked == null || !shouldForget(asked, done.askedAt, Instant.now())) {
             return@collect
         }
@@ -102,7 +104,7 @@ suspend fun answerResets(
                 context.getString(R.string.siren_called_by_you)
             } else {
                 withTimeoutOrNull(RESET_NAME_WAIT.toMillis()) {
-                    memberDisplayName(asked.askedBy)
+                    memberDisplayName(asked.askedBy, connection)
                 } ?: asked.askedBy.take(SHORTENED_ID_LENGTH)
             }
         val now = Instant.now()
@@ -110,7 +112,7 @@ suspend fun answerResets(
         done.keep(asked.askedAt, name, now)
 
         try {
-            resetDone(phoneId)
+            resetDone(phoneId, connection)
         } catch (cancellation: CancellationException) {
             throw cancellation
         } catch (refusal: Exception) {

@@ -2,10 +2,10 @@ package io.github.vitalyostanin.geoshare.service
 
 import com.google.firebase.firestore.DocumentSnapshot
 import com.google.firebase.firestore.FieldValue
-import com.google.firebase.firestore.FirebaseFirestore
 import io.github.vitalyostanin.geoshare.log.AppLog
 import io.github.vitalyostanin.geoshare.map.Siren
 import io.github.vitalyostanin.geoshare.map.sirenOf
+import io.github.vitalyostanin.geoshare.project.GroupConnection
 import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.callbackFlow
@@ -40,12 +40,9 @@ private val ESTIMATE = DocumentSnapshot.ServerTimestampBehavior.ESTIMATE
  * is being called and to mark when it heard, and the caller's screen, to see
  * whether the phone heard or gave it up as switched off.
  */
-fun phoneSiren(
-    phoneId: String,
-    store: FirebaseFirestore = FirebaseFirestore.getInstance(),
-): Flow<Siren?> = callbackFlow {
+fun phoneSiren(phoneId: String, connection: GroupConnection): Flow<Siren?> = callbackFlow {
     val subscription =
-        sirensOf(store).document(phoneId).addSnapshotListener { snapshot, error ->
+        sirensOf(connection).document(phoneId).addSnapshotListener { snapshot, error ->
             if (error != null) {
                 close(error)
 
@@ -66,12 +63,8 @@ fun phoneSiren(
  * left over from a call this phone already answered, so the new call starts
  * from nothing.
  */
-suspend fun callSiren(
-    phoneId: String,
-    callerId: String,
-    store: FirebaseFirestore = FirebaseFirestore.getInstance(),
-) {
-    sirensOf(store)
+suspend fun callSiren(phoneId: String, callerId: String, connection: GroupConnection) {
+    sirensOf(connection)
         .document(phoneId)
         .set(
             mapOf(
@@ -84,11 +77,8 @@ suspend fun callSiren(
 }
 
 /** Marks that the phone named by [phoneId] heard its own call. Written only by that phone. */
-suspend fun heardSiren(
-    phoneId: String,
-    store: FirebaseFirestore = FirebaseFirestore.getInstance(),
-) {
-    sirensOf(store)
+suspend fun heardSiren(phoneId: String, connection: GroupConnection) {
+    sirensOf(connection)
         .document(phoneId)
         .update(mapOf(SirenField.HEARD_AT to FieldValue.serverTimestamp()))
         .await()
@@ -97,12 +87,8 @@ suspend fun heardSiren(
 }
 
 /** Stops a standing call before its phone answers or its freshness runs out. */
-suspend fun stopSiren(
-    phoneId: String,
-    stopperId: String,
-    store: FirebaseFirestore = FirebaseFirestore.getInstance(),
-) {
-    sirensOf(store)
+suspend fun stopSiren(phoneId: String, stopperId: String, connection: GroupConnection) {
+    sirensOf(connection)
         .document(phoneId)
         .update(
             mapOf(

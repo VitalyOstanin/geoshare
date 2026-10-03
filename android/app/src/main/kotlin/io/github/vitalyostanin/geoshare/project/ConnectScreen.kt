@@ -86,7 +86,7 @@ fun ConnectScreen(
                     // An invitation pasted on a phone already in this
                     // project: nobody is signed out, so there is no
                     // browser to send them to.
-                    alreadyConnected = FamilyProject.projectId == state.settings.projectId,
+                    alreadyConnected = Connections.of(state.settings.projectId) != null,
                     onCancel = onCancel,
                     onConnect = onConnect,
                 )

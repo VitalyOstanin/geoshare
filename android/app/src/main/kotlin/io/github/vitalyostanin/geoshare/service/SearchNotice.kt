@@ -5,6 +5,7 @@ import android.content.Context
 import androidx.core.content.getSystemService
 import io.github.vitalyostanin.geoshare.map.stands
 import io.github.vitalyostanin.geoshare.permission.devicePermissions
+import io.github.vitalyostanin.geoshare.project.GroupConnection
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.collectLatest
 import java.time.Duration
@@ -27,15 +28,15 @@ private val SEARCH_NOTICE_REFRESH: Duration = Duration.ofMinutes(1)
  * Shown again once a minute while it stands, in case the process is killed
  * and restarted with the notification's own state lost with it.
  */
-suspend fun keepSearchNotification(context: Context, phoneId: String) {
-    ownSearch(phoneId).collectLatest { search ->
+suspend fun keepSearchNotification(context: Context, phoneId: String, connection: GroupConnection) {
+    ownSearch(phoneId, connection).collectLatest { search ->
         if (search == null) {
             cancelSearchNotification(context)
 
             return@collectLatest
         }
 
-        val openedByName = memberDisplayName(search.openedBy)
+        val openedByName = memberDisplayName(search.openedBy, connection)
 
         while (search.stands(Instant.now())) {
             // A member who refused notifications still gets the banner over

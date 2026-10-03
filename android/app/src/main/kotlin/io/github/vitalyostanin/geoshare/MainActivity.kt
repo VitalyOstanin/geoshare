@@ -31,6 +31,7 @@ import androidx.core.os.LocaleListCompat
 import androidx.core.view.WindowCompat
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.lifecycleScope
+import com.google.firebase.FirebaseApp
 import io.github.vitalyostanin.geoshare.auth.AuthState
 import io.github.vitalyostanin.geoshare.auth.SignInController
 import io.github.vitalyostanin.geoshare.auth.SignInScreen
@@ -51,7 +52,9 @@ import io.github.vitalyostanin.geoshare.permission.startupScreen
 import io.github.vitalyostanin.geoshare.project.ConnectFlow
 import io.github.vitalyostanin.geoshare.project.ConnectScreen
 import io.github.vitalyostanin.geoshare.project.ConnectState
-import io.github.vitalyostanin.geoshare.project.FamilyProject
+import io.github.vitalyostanin.geoshare.project.Connections
+import io.github.vitalyostanin.geoshare.project.GroupConnection
+import io.github.vitalyostanin.geoshare.project.INHERITED
 import io.github.vitalyostanin.geoshare.project.PendingInvitationStore
 import io.github.vitalyostanin.geoshare.project.fetchSettings
 import io.github.vitalyostanin.geoshare.project.pendingInvitationFor
@@ -82,7 +85,19 @@ import kotlinx.coroutines.withTimeoutOrNull
  * Android 13 that only reaches the screens from an activity of this kind.
  */
 class MainActivity : AppCompatActivity() {
-    internal lateinit var signIn: SignInController
+    /**
+     * One sign-in per group's project (ADR-0002), by the name of the Firebase
+     * instance it signs in to: each project holds its own session, and the
+     * screen of a group shows that group's. Made the first time a group is
+     * shown, and started then if the screen is up.
+     */
+    private val signIns = mutableMapOf<String, Pair<FirebaseApp, SignInController>>()
+    private var watchingSessions = false
+
+    /** The sign-in of the group the screens show. */
+    internal val signIn: SignInController
+        get() = signInOf(checkNotNull(Connections.selected.value) { "no group is shown" })
+
     private lateinit var sharing: SharingSetting
 
     /**
@@ -165,7 +180,7 @@ class MainActivity : AppCompatActivity() {
         connectFlow = ConnectFlow(
             scope = lifecycleScope,
             fetch = ::fetchSettings,
-            connected = { FamilyProject.settings },
+            connected = { Connections.selected.value?.settings },
         )
         // A recreated activity (a rotation) still carries the link it was
         // opened with, which has already been acted on.
@@ -190,7 +205,7 @@ class MainActivity : AppCompatActivity() {
         // as a default argument, and it would throw rather than answer. A
         // link is what moves the phone past this, so the screens that paint
         // ConnectFlow's states are all there is to build here.
-        if (!FamilyProject.connected) {
+        if (!Connections.connected) {
             setContent {
                 MaterialTheme {
                     Surface(modifier = Modifier.fillMaxSize()) {
@@ -215,8 +230,6 @@ class MainActivity : AppCompatActivity() {
         // and asking inside the drawing put five questions to the package
         // manager on every position that arrived.
         startupAvailable = startupScreen(this) != null
-
-        signIn = SignInController()
 
         sharing = SharingSetting(this)
         device = DeviceIdentity(this)
@@ -248,7 +261,7 @@ class MainActivity : AppCompatActivity() {
 
             MaterialTheme(colorScheme = if (dark) darkColorScheme() else lightColorScheme()) {
                 Surface(modifier = Modifier.fillMaxSize()) {
-                    val state by signIn.state.collectAsStateWithLifecycle()
+                    val shown by Connections.selected.collectAsStateWithLifecycle()
                     var sharingOn by remember { mutableStateOf(sharing.enabled) }
                     var startupSet by remember { mutableStateOf(backgroundWork.startupSet) }
                     var jumpsFiltered by remember { mutableStateOf(jumps.enabled) }
@@ -285,12 +298,32 @@ class MainActivity : AppCompatActivity() {
                         }
                     }
 
+                    val connection = shown
+
+                    // The last group left or removed while the screen is up:
+                    // what is left to do is connect to another.
+                    if (connection == null) {
+                        ConnectScreen(
+                            state = connectState,
+                            onPasteLink = connectFlow::pasteLink,
+                            onCancel = connectFlow::cancel,
+                            onRetry = connectFlow::retry,
+                            onConnect = connectFlow::connect,
+                        )
+
+                        return@Surface
+                    }
+
+                    val signIn = remember(connection.app) { signInOf(connection) }
+                    val state by signIn.state.collectAsStateWithLifecycle()
+
                     when (val current = state) {
                         // Signed in, the map is the application; the sign-in
                         // screen has nothing left to say.
                         is AuthState.SignedIn ->
                             SignedInScreen(
                                 activity = this,
+                                connection = connection,
                                 current = current,
                                 theme = theme,
                                 onTheme = { wanted -> theme = wanted },
@@ -323,49 +356,62 @@ class MainActivity : AppCompatActivity() {
     }
 
     /**
-     * What [ConnectState.Done] leads to: the new settings are kept, a group
-     * invitation carried alongside them is kept for the sign-in that follows
-     * the restart to spend, and — for a phone that already talked to another
-     * project — its service is stopped and its session signed out of first,
-     * since both belong to a database this phone is about to stop asking
-     * about. Ends by restarting into the settings just kept, which is the
-     * only way to move a running process to another Firebase project
-     * (ADR-0001).
+     * What [ConnectState.Done] leads to: the group's project joins the list
+     * and is shown, and a group invitation carried alongside it is kept for
+     * the sign-in that follows to spend.
+     *
+     * Nothing is restarted and nothing signed out: every group has a Firebase
+     * instance of its own (ADR-0026), so the groups this device was already
+     * in go on as they were. A link back to a project already listed shows
+     * that group rather than starting it again, and its session stays — the
+     * account is the same, and the invitation is spent straight away.
+     *
+     * The first group a device connects to is the one exception to staying on
+     * the screen: the activity was built without a group to show, so it is
+     * built again.
      */
     private fun acceptConnection(done: ConnectState.Done) {
-        val hadProject = FamilyProject.connected
-        val sameProject = FamilyProject.projectId == done.settings.projectId
+        val first = !Connections.connected
+        val projectId = done.settings.projectId
 
-        // Not SharingService.stop: its stop action is an intent the service
-        // handles later, and the process ends before it would. stopService
-        // is settled by the system at once, so a sticky service is not
-        // brought back after the exit; the switch is turned off directly so
-        // sharing into the new group starts only when the member asks for it.
-        if (hadProject && !sameProject) {
-            SharingSetting(this).turnOffNow()
-            stopService(Intent(this, SharingService::class.java))
-        }
-
-        FamilyProject.save(this, done.settings)
         PendingInvitationStore.save(this, pendingInvitationFor(done))
 
-        // An invitation into another group of the same project keeps the
-        // session: the account is the same, and the sign-in after the restart
-        // finds it already there and spends the invitation straight away.
-        if (hadProject && !sameProject) {
-            signIn.signOut()
+        if (Connections.of(projectId) == null) {
+            Connections.connect(this, done.settings, INHERITED)
+        } else {
+            Connections.select(this, projectId)
         }
 
-        startActivity(
-            Intent(this, MainActivity::class.java)
-                .setFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK),
-        )
+        connectFlow.cancel()
 
-        // Runtime.exit over Process.killProcess: the settings and the
-        // invitation above were just written to disk, and this lets the JVM
-        // run its own shutdown path rather than being cut off by a signal —
-        // closer to how the process ends on its own than a kill is.
-        Runtime.getRuntime().exit(0)
+        if (first) {
+            recreate()
+        }
+    }
+
+    /**
+     * The sign-in of [connection]'s project, made the first time it is asked
+     * for. A group removed and joined again gets a new instance, and so a new
+     * sign-in in place of the one made for the instance that is gone.
+     */
+    internal fun signInOf(connection: GroupConnection): SignInController {
+        val kept = signIns[connection.app.name]
+
+        if (kept != null && kept.first === connection.app) {
+            return kept.second
+        }
+
+        kept?.second?.stop()
+
+        val made = SignInController(connection.auth)
+
+        signIns[connection.app.name] = connection.app to made
+
+        if (watchingSessions) {
+            made.start()
+        }
+
+        return made
     }
 
     /**
@@ -600,12 +646,13 @@ class MainActivity : AppCompatActivity() {
     override fun onStart() {
         super.onStart()
 
-        // onCreate left signIn unset when there was no project to sign in to.
-        if (!FamilyProject.connected) {
+        // Nothing to sign in to before a group is connected.
+        if (!Connections.connected) {
             return
         }
 
-        signIn.start()
+        watchingSessions = true
+        signIns.values.forEach { (_, controller) -> controller.start() }
         // Coming back from the settings screen is the usual way a permission
         // changes, and nothing tells the application about it.
         batteryFree = batteryUnrestricted(this)
@@ -614,8 +661,9 @@ class MainActivity : AppCompatActivity() {
     }
 
     override fun onStop() {
-        if (FamilyProject.connected) {
-            signIn.stop()
+        if (watchingSessions) {
+            watchingSessions = false
+            signIns.values.forEach { (_, controller) -> controller.stop() }
         }
 
         super.onStop()
@@ -636,13 +684,16 @@ class MainActivity : AppCompatActivity() {
      * a network signs out all the same; its line is then removed from another
      * of the member's phones or from the page.
      */
-    internal suspend fun forgetThisPhone(memberId: String) {
+    internal suspend fun forgetThisPhone(memberId: String, connection: GroupConnection) {
         sharing.enabled = false
         stopService(Intent(this, SharingService::class.java))
 
         val forgotten =
             try {
-                withTimeoutOrNull(SIGN_OUT_WAIT_MS) { forgetPhone(memberId, device.id) } != null
+                withTimeoutOrNull(SIGN_OUT_WAIT_MS) {
+                    forgetPhone(memberId, device.id, connection)
+                } !=
+                    null
             } catch (cancellation: CancellationException) {
                 throw cancellation
             } catch (error: Exception) {

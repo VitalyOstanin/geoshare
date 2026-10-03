@@ -1,9 +1,9 @@
 package io.github.vitalyostanin.geoshare.map
 
 import com.google.firebase.firestore.DocumentSnapshot
-import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.ListenerRegistration
 import io.github.vitalyostanin.geoshare.log.AppLog
+import io.github.vitalyostanin.geoshare.project.GroupConnection
 import io.github.vitalyostanin.geoshare.service.GrantField
 import io.github.vitalyostanin.geoshare.service.ProfileField
 import io.github.vitalyostanin.geoshare.service.comingBack
@@ -27,11 +27,9 @@ private const val TAG = "geoshare.profiles"
  * without anybody reopening the screen. It costs one read per profile and then
  * nothing, because names change far more rarely than positions do.
  */
-fun memberProfiles(
-    store: FirebaseFirestore = FirebaseFirestore.getInstance(),
-): Flow<Map<String, MemberProfile>> = callbackFlow {
+fun memberProfiles(connection: GroupConnection): Flow<Map<String, MemberProfile>> = callbackFlow {
     val subscription =
-        membersOf(store)
+        membersOf(connection)
             .addSnapshotListener { snapshot, error ->
                 if (error != null) {
                     close(error)
@@ -85,13 +83,13 @@ private fun profileOf(document: DocumentSnapshot): MemberProfile? {
  */
 fun memberGrants(
     memberIds: List<String>,
-    store: FirebaseFirestore = FirebaseFirestore.getInstance(),
+    connection: GroupConnection,
 ): Flow<Map<String, MemberGrant>> = callbackFlow {
     val known = mutableMapOf<String, MemberGrant>()
     val phones = mutableMapOf<String, Map<String, PhoneStatus>>()
     val subscriptions = mutableMapOf<String, ListenerRegistration>()
-    val grants = grantsOf(store)
-    val phoneDocuments = phonesOf(store)
+    val grants = grantsOf(connection)
+    val phoneDocuments = phonesOf(connection)
 
     fun publish() = trySend(combinedGrants(known, phones))
 

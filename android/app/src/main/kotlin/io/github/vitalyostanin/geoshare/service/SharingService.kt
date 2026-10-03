@@ -12,7 +12,6 @@ import androidx.core.content.ContextCompat
 import androidx.core.content.getSystemService
 import androidx.lifecycle.LifecycleService
 import androidx.lifecycle.lifecycleScope
-import com.google.firebase.auth.FirebaseAuth
 import io.github.vitalyostanin.geoshare.collection.Accuracy
 import io.github.vitalyostanin.geoshare.collection.Answered
 import io.github.vitalyostanin.geoshare.collection.Asked
@@ -67,14 +66,17 @@ import io.github.vitalyostanin.geoshare.collection.shouldWrite
 import io.github.vitalyostanin.geoshare.collection.stillSettling
 import io.github.vitalyostanin.geoshare.collection.walkNote
 import io.github.vitalyostanin.geoshare.collection.walkingNow
+import io.github.vitalyostanin.geoshare.collection.watchedInAnyGroup
 import io.github.vitalyostanin.geoshare.collection.watchedUntil
 import io.github.vitalyostanin.geoshare.collection.whomToAsk
 import io.github.vitalyostanin.geoshare.collection.whyAJump
 import io.github.vitalyostanin.geoshare.collection.word
 import io.github.vitalyostanin.geoshare.log.AppLog
 import io.github.vitalyostanin.geoshare.map.stands
-import io.github.vitalyostanin.geoshare.project.FamilyProject
+import io.github.vitalyostanin.geoshare.project.Connections
+import io.github.vitalyostanin.geoshare.project.GroupConnection
 import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.awaitCancellation
 import kotlinx.coroutines.coroutineScope
@@ -85,7 +87,11 @@ import kotlinx.coroutines.flow.channelFlow
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.emptyFlow
+import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.flow.flowOf
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.onStart
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withTimeoutOrNull
@@ -152,7 +158,7 @@ class SharingService : LifecycleService() {
     /**
      * Whether [onCreate] actually wired anything up.
      *
-     * Read before every later touch of Firebase, rather than [FamilyProject]
+     * Read before every later touch of Firebase, rather than [Connections]
      * itself: what matters here is not whether a project has since been
      * connected, but whether this instance is the one that registered the
      * listener [onDestroy] is about to remove.
@@ -172,66 +178,27 @@ class SharingService : LifecycleService() {
     private var sessionWait: Job? = null
 
     /**
-     * The account, whenever there is one.
+     * The groups the device is signed in to, each with what writes into it
+     * and listens to it, whenever that changes.
      *
-     * Registered rather than read once: the answer at the moment the service
-     * starts is not the answer a second later, and a service holding up a
-     * notification that says it is sharing has to be either sharing or gone.
+     * Followed rather than read once: the answer at the moment the service
+     * starts is not the answer a second later, a group can be joined or left
+     * while it runs, and a service holding up a notification that says it is
+     * sharing has to be either sharing or gone.
      */
-    private val session =
-        FirebaseAuth.AuthStateListener { auth ->
-            val memberId = auth.currentUser?.uid
+    private val links = MutableStateFlow<List<GroupLink>>(emptyList())
 
-            when (sessionChange(collectingFor, memberId)) {
-                SessionChange.None -> Unit
+    /** What listens to each group for a siren, a search or a reset, by link. */
+    private val listening = mutableMapOf<GroupLink, Job>()
 
-                SessionChange.Start -> {
-                    sessionWait?.cancel()
-                    sessionWait = null
-                    startCollecting()
-                }
-
-                SessionChange.Restart -> {
-                    AppLog.i(TAG, "another account signed in, collecting for it instead")
-                    stopCollecting()
-                    startCollecting()
-                }
-
-                SessionChange.Stop -> {
-                    AppLog.i(TAG, "signed out, no longer collecting")
-                    stopCollecting()
-                    awaitSession()
-                }
-            }
-        }
-
-    /**
-     * The account the running collection writes for, or nothing while none runs.
-     *
-     * The phone can change hands: signed out of one account and into another,
-     * it keeps the same id, and a collection left running for the first account
-     * would go on writing under its name with the second one's session — every
-     * write refused, and the notification saying it shares all the same.
-     */
-    private var collectingFor: String? = null
-
-    /**
-     * Everything a write outside the collection loop needs: where the phone
-     * was last seen to be, how it was collecting at the time and what writes
-     * its documents. Held on the service because the cable is pulled at a
-     * moment the loop is not looking.
-     */
-    private var writer: PositionWriter? = null
-    private var status: PhoneStatusWriter? = null
+    /** Every write outside the screens, carried into each linked group. */
+    private val writer = EveryGroup { links.value }
 
     /** The alarm stream at full volume while a call to this phone sounds. */
     private val sirens by lazy { SirenAnswer(this, lifecycleScope) }
 
     /** What the satellites themselves are saying, apart from the written fix. */
     private val skyNotes by lazy { SkyNotes(this, { radio }, { lastFix }, { heardAt }) }
-
-    /** This phone's siren address while the service collects, for the stop action. */
-    private var ownPhoneId: String? = null
 
     private var lastFix: Fix? = null
 
@@ -480,18 +447,17 @@ class SharingService : LifecycleService() {
 
         // The platform can restart a foreground service on its own after a
         // process death, past every gate `startConditions` puts in front of
-        // `start`. Without this a phone that has never been connected to a
-        // family's project would reach FirebaseAuth.getInstance() with no
-        // default app behind it and throw rather than answer.
-        if (!FamilyProject.connected) {
-            AppLog.w(TAG, "not connected to a family's project yet; nothing to collect for")
+        // `start`. A device that has never been connected to a group has
+        // nothing to write into, and nothing to wait for either.
+        if (!Connections.connected) {
+            AppLog.w(TAG, "not connected to any group yet; nothing to collect for")
             stopSelf()
 
             return
         }
 
         usable = true
-        FirebaseAuth.getInstance().addAuthStateListener(session)
+        lifecycleScope.launch { followTheGroups() }
         radio.start()
 
         trail = trailStore.read()
@@ -536,20 +502,24 @@ class SharingService : LifecycleService() {
         if (intent?.action == ACTION_FOUND) {
             AppLog.i(TAG, "this phone says it has been found")
 
-            val phoneId = ownPhoneId
-
             // Not a reason to stop sharing: only the search on this phone is
             // over, and the service goes on exactly as it was. The
             // notification comes down on its own, once [keepSearchNotification]
-            // hears the document is gone.
-            if (phoneId != null) {
+            // hears the document is gone. Ended in every group: a device found
+            // is found for all of them, and a group not looking for it refuses
+            // the deletion, which costs a line in the log.
+            for (link in links.value) {
                 lifecycleScope.launch {
                     try {
-                        endSearch(phoneId)
+                        endSearch(link.phoneId, link.connection)
                     } catch (cancellation: CancellationException) {
                         throw cancellation
                     } catch (refusal: Exception) {
-                        AppLog.w(TAG, "could not end the search from its own notification", refusal)
+                        AppLog.w(
+                            TAG,
+                            "could not end the search in $link from its own notification",
+                            refusal,
+                        )
                     }
                 }
             }
@@ -559,19 +529,19 @@ class SharingService : LifecycleService() {
             AppLog.i(TAG, "the siren is stopped on the phone itself")
             sirens.quieten()
 
-            val memberId = FirebaseAuth.getInstance().currentUser?.uid
-            val phoneId = ownPhoneId
-
             // Written so that the caller's screen reads "stopped" rather than
-            // counting down twenty seconds that are no longer sounding.
-            if (memberId != null && phoneId != null) {
+            // counting down twenty seconds that are no longer sounding — in
+            // every group, since the sound is one and stops for all of them; a
+            // group that called no siren refuses the write, which costs a line
+            // in the log.
+            for (link in links.value) {
                 lifecycleScope.launch {
                     try {
-                        stopSiren(phoneId, memberId)
+                        stopSiren(link.phoneId, link.memberId, link.connection)
                     } catch (cancellation: CancellationException) {
                         throw cancellation
                     } catch (refusal: Exception) {
-                        AppLog.w(TAG, "could not say the siren was stopped", refusal)
+                        AppLog.w(TAG, "could not say the siren was stopped in $link", refusal)
                     }
                 }
             }
@@ -592,8 +562,9 @@ class SharingService : LifecycleService() {
 
     override fun onDestroy() {
         if (usable) {
-            FirebaseAuth.getInstance().removeAuthStateListener(session)
             radio.stop()
+            unlink(links.value)
+            links.value = emptyList()
             stopCollecting()
         }
 
@@ -602,17 +573,107 @@ class SharingService : LifecycleService() {
     }
 
     /**
-     * Takes down everything [startCollecting] set up for one account: the
-     * collection, the writers made for it, the cable receiver and whatever it
-     * was showing or sounding for that account.
+     * Follows the groups and who is signed in to each, and keeps a link to
+     * every group with a session: made when a session turns up, taken down
+     * when it ends or the group is left. The collection runs while there is
+     * at least one link and stops when the last one goes.
+     */
+    @OptIn(ExperimentalCoroutinesApi::class)
+    private suspend fun followTheGroups() {
+        Connections.all.flatMapLatest { connections ->
+            if (connections.isEmpty()) {
+                flowOf(emptyList())
+            } else {
+                combine(
+                    connections.map { connection ->
+                        signedInTo(connection).map {
+                            connection to
+                                it
+                        }
+                    },
+                ) {
+                    it.toList()
+                }
+            }
+        }.collect { signedIn -> relink(signedIn) }
+    }
+
+    private fun relink(signedIn: List<Pair<GroupConnection, String?>>) {
+        val device = DeviceIdentity(this)
+        val kept = links.value
+        val next =
+            signedIn.mapNotNull { (connection, uid) ->
+                uid?.let {
+                    kept.firstOrNull { link -> link.serves(connection, uid) }
+                        ?: GroupLink(connection, uid, device)
+                }
+            }
+
+        unlink(kept.filter { it !in next })
+        links.value = next
+        next.filter { it !in kept }.forEach(::listenTo)
+
+        when {
+            next.isEmpty() && kept.isNotEmpty() -> {
+                AppLog.i(TAG, "signed out of every group, no longer collecting")
+                stopCollecting()
+                awaitSession()
+            }
+
+            next.isNotEmpty() -> {
+                sessionWait?.cancel()
+                sessionWait = null
+                startCollecting()
+            }
+        }
+    }
+
+    /**
+     * What the service does for one group besides writing into it: hears a
+     * siren, a search or a request to forget the place there, and takes back
+     * what the device's previous id left in it.
+     */
+    private fun listenTo(link: GroupLink) {
+        AppLog.i(TAG, "writing into $link")
+
+        listening[link] =
+            lifecycleScope.launch {
+                val device = DeviceIdentity(this@SharingService)
+
+                // Once, after the move to the system's id: the old position
+                // would otherwise stay on the map beside the new one.
+                launch { leavePreviousId(link.memberId, device, link.connection) }
+                launch {
+                    keepSearchNotification(this@SharingService, link.phoneId, link.connection)
+                }
+                launch { sirens.answer(link.memberId, link.phoneId, link.connection) }
+                launch {
+                    answerResets(
+                        this@SharingService,
+                        link.memberId,
+                        link.phoneId,
+                        jumps,
+                        link.connection,
+                    )
+                }
+            }
+    }
+
+    private fun unlink(gone: List<GroupLink>) {
+        for (link in gone) {
+            AppLog.i(TAG, "no longer writing into $link")
+            listening.remove(link)?.cancel()
+        }
+    }
+
+    /**
+     * Takes down everything [startCollecting] set up: the collection, the
+     * cable receiver and whatever it was showing or sounding. What listens to
+     * each group is taken down by [unlink], group by group.
      */
     private fun stopCollecting() {
         collection?.cancel()
         collection = null
-        collectingFor = null
-        writer = null
-        status = null
-        ownPhoneId = null
         runCatching { unregisterReceiver(power) }
         // [keepSearchNotification] is cancelled along with [collection] and
         // leaves nothing to take its own notification down; the phone may
@@ -632,14 +693,17 @@ class SharingService : LifecycleService() {
      * cable or [STATUS_EVERY] says again.
      */
     private fun tellHowThePhoneIs() {
-        val status = status ?: return
+        if (links.value.isEmpty()) {
+            return
+        }
+
         val mode = lastMode
         val percent = batteryPercent()
         val cable = charging()
 
         lifecycleScope.launch {
             try {
-                status.write(mode, percent, cable)
+                writer.tellStatus(mode, percent, cable)
             } catch (cancellation: CancellationException) {
                 throw cancellation
             } catch (error: Exception) {
@@ -669,7 +733,7 @@ class SharingService : LifecycleService() {
      * now rather than at the next threshold.
      */
     private suspend fun writeIfWorth(
-        writer: PositionWriter,
+        writer: EveryGroup,
         fix: Fix,
         mode: CollectionMode,
         always: Boolean = false,
@@ -827,7 +891,7 @@ class SharingService : LifecycleService() {
      * what is wanted here. The phone is standing where it was and asking the
      * provider for nothing; the news is that it is still there to say so.
      */
-    private suspend fun sayAgain(writer: PositionWriter, mode: CollectionMode): Boolean {
+    private suspend fun sayAgain(writer: EveryGroup, mode: CollectionMode): Boolean {
         val known = lastFix ?: lastKnown ?: return false
         // The same position said again carries the same note about the
         // receiver: it is a statement about the answer, and the answer has not
@@ -861,21 +925,12 @@ class SharingService : LifecycleService() {
             return
         }
 
-        val memberId = FirebaseAuth.getInstance().currentUser?.uid
-
-        if (memberId == null) {
+        if (links.value.isEmpty()) {
             AppLog.w(TAG, "no session yet, waiting for one")
             awaitSession()
 
             return
         }
-
-        collectingFor = memberId
-
-        val device = DeviceIdentity(this)
-        val writer = PositionWriter(memberId, device)
-
-        this.writer = writer
 
         ContextCompat.registerReceiver(
             this,
@@ -888,25 +943,13 @@ class SharingService : LifecycleService() {
             ContextCompat.RECEIVER_NOT_EXPORTED,
         )
 
-        status = PhoneStatusWriter(memberId, device)
-
-        // Once, after the move to the system's id: the old position would
-        // otherwise stay on the map beside the new one.
-        lifecycleScope.launch { leavePreviousId(memberId, device) }
-
         collection =
             lifecycleScope.launch {
-                val ownDevice = positionId(memberId, device.id)
-
                 launch { keepTellingHowThePhoneIs() }
-                ownPhoneId = ownDevice
-                launch { keepSearchNotification(this@SharingService, ownDevice) }
-                launch { sirens.answer(memberId, ownDevice) }
-                launch { answerResets(this@SharingService, memberId, ownDevice, jumps) }
 
                 // A flipped source switch restarts the round like a new mode
                 // does: the request itself has to change, not only the reading.
-                modes(memberId, device).combine(sources.changes()) { mode, _ ->
+                modes().combine(sources.changes()) { mode, _ ->
                     mode
                 }.collectLatest { mode ->
                     AppLog.i(TAG, "collecting in mode $mode")
@@ -972,7 +1015,8 @@ class SharingService : LifecycleService() {
      * battery, which are looked at on a timer. Repeats are dropped, so a review
      * that finds the same mode does not interrupt the collection.
      */
-    private fun modes(memberId: String, device: DeviceIdentity): Flow<CollectionMode> {
+    @OptIn(ExperimentalCoroutinesApi::class)
+    private fun modes(): Flow<CollectionMode> {
         val reviews =
             flow {
                 while (true) {
@@ -981,34 +1025,20 @@ class SharingService : LifecycleService() {
                 }
             }
 
-        val claims = watchers(positionId(memberId, device.id)).onStart { emit(emptyList()) }
-        val permissions: Flow<Map<String, Instant>?> = ownSharedWith(memberId)
-        // Said again, as none, at the moment the search runs out: nothing
-        // arrives from the database then, and without it every viewer would
-        // go on counting until the claims themselves happened to change.
-        val search =
-            channelFlow {
-                ownSearch(positionId(memberId, device.id)).collectLatest { found ->
-                    send(found)
-
-                    if (found != null && found.stands(Instant.now())) {
-                        delay(Duration.between(Instant.now(), found.endsAt).toMillis())
-                        send(null)
-                    }
-                }
-            }.onStart { emit(null) }
-
-        // Who is looking is the screen's business; the service needs only the
-        // moments the claims of those allowed to see this phone run out. While
-        // the group is looking for this very phone every claim counts,
-        // whatever the grant says: the rules already answer every viewer, and
-        // a phone still gating them by who it shares with would be fast for
-        // fewer of the group than can actually see it.
+        // Every group the device is linked to, each saying when its watching
+        // runs out; a group joined or left while the service runs is followed
+        // from then on.
         val looking =
-            combine(claims, permissions.onStart { emit(null) }, search) { seen, shared, standing ->
-                val sought = standing?.stands(Instant.now()) == true
-
-                watchedUntil(seen, memberId, shared, sought)
+            links.flatMapLatest { linked ->
+                if (linked.isEmpty()) {
+                    flowOf(emptyList())
+                } else {
+                    combine(
+                        linked.map {
+                            it.watching()
+                        },
+                    ) { perGroup -> watchedInAnyGroup(perGroup.toList()) }
+                }
             }
 
         return combine(
@@ -1101,7 +1131,7 @@ class SharingService : LifecycleService() {
      * out before it ever wrote a position has no document to add this to, and
      * that is the one case the write fails in.
      */
-    private suspend fun tellThemAnswersAreBeingLeftOut(writer: PositionWriter, reason: String) {
+    private suspend fun tellThemAnswersAreBeingLeftOut(writer: EveryGroup, reason: String) {
         val now = Instant.now()
 
         leftOutCount += 1
@@ -1236,7 +1266,7 @@ class SharingService : LifecycleService() {
             lifecycleScope.launch {
                 delay(SESSION_WAIT.toMillis())
 
-                if (FirebaseAuth.getInstance().currentUser == null) {
+                if (links.value.isEmpty()) {
                     AppLog.w(TAG, "no session turned up, stopping rather than promising to share")
                     stopSelf()
                 }
@@ -1259,7 +1289,7 @@ class SharingService : LifecycleService() {
      * still means. Counted from the last write rather than from entering the
      * mode, because the phone arrives here with a write already behind it.
      */
-    private suspend fun keepSaying(writer: PositionWriter, mode: CollectionMode) {
+    private suspend fun keepSaying(writer: EveryGroup, mode: CollectionMode) {
         while (true) {
             val wrote = wroteAt
             val quiet = if (wrote == null) IDLE_REPEAT else Duration.between(wrote, Instant.now())
@@ -1294,7 +1324,7 @@ class SharingService : LifecycleService() {
      * whatever the filter would have said: what is being reported is not a new
      * place but the fact that the phone is still there to report it.
      */
-    private suspend fun rescueWhileSilent(writer: PositionWriter, mode: CollectionMode) {
+    private suspend fun rescueWhileSilent(writer: EveryGroup, mode: CollectionMode) {
         val silence = rescueAfter(mode) ?: return
         val priority = rescuePriority(mode) ?: return
         val asked = asking(rescueAccuracy(mode)) ?: return
@@ -1357,8 +1387,19 @@ class SharingService : LifecycleService() {
      * stopped arriving while the phone was quiet would be a list that is wrong
      * exactly when the phone starts answering again.
      */
+    @OptIn(ExperimentalCoroutinesApi::class)
     private suspend fun keepTheFalsePlaces() {
-        namedFalsePlaces().collect { places ->
+        // Every group's list at once: a place that puts phones somewhere false
+        // does so whichever group the position is going to.
+        links.flatMapLatest { linked ->
+            if (linked.isEmpty()) {
+                emptyFlow()
+            } else {
+                combine(linked.map { namedFalsePlaces(it.connection) }) { perGroup ->
+                    perGroup.toList().flatten().distinct()
+                }
+            }
+        }.collect { places ->
             falsePlaces = places
             falsePlaceStore.write(places)
         }
@@ -1371,8 +1412,13 @@ class SharingService : LifecycleService() {
      * settings weighs answers against the limits in the build, which catch a
      * transmitter of any shape and only take a few more answers to do it.
      */
+    @OptIn(ExperimentalCoroutinesApi::class)
     private suspend fun keepWhatCountsAsCircling() {
-        circlingLimits().collect { circleLimits = it }
+        // The first group's, since one device can go by only one idea of it;
+        // the groups that settle it are the ones a device joined first.
+        links.flatMapLatest { linked ->
+            linked.firstOrNull()?.let { circlingLimits(it.connection) } ?: emptyFlow()
+        }.collect { circleLimits = it }
     }
 
     /**
@@ -1480,7 +1526,7 @@ class SharingService : LifecycleService() {
      * with a true position to measure from, the road the spoofer keeps drawing
      * is seventy kilometres away and is caught by the speed rule again.
      */
-    private suspend fun askTheOtherRadios(writer: PositionWriter, mode: CollectionMode) {
+    private suspend fun askTheOtherRadios(writer: EveryGroup, mode: CollectionMode) {
         if (!otherRadiosAreDue(jumpsInARow, askedTheOtherRadiosAt, Instant.now())) {
             return
         }
@@ -1751,7 +1797,7 @@ class SharingService : LifecycleService() {
      * back, and the next fix carries the same news.
      */
     private suspend fun writeQuietly(
-        writer: PositionWriter,
+        writer: EveryGroup,
         written: Written,
         mode: CollectionMode,
         // How the phone arrived at this, worked out by the caller: on these

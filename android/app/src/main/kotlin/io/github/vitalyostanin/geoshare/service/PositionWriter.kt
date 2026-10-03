@@ -2,10 +2,10 @@ package io.github.vitalyostanin.geoshare.service
 
 import com.google.firebase.Timestamp
 import com.google.firebase.firestore.FieldValue
-import com.google.firebase.firestore.FirebaseFirestore
 import io.github.vitalyostanin.geoshare.collection.CollectionMode
 import io.github.vitalyostanin.geoshare.collection.Fix
 import io.github.vitalyostanin.geoshare.collection.FoundBy
+import io.github.vitalyostanin.geoshare.project.GroupConnection
 import kotlinx.coroutines.tasks.await
 import java.time.Instant
 import java.util.Date
@@ -31,7 +31,7 @@ import java.util.Date
 class PositionWriter(
     private val memberId: String,
     private val device: DeviceIdentity,
-    private val store: FirebaseFirestore = FirebaseFirestore.getInstance(),
+    private val connection: GroupConnection,
 ) {
     suspend fun write(
         fix: Fix,
@@ -70,7 +70,7 @@ class PositionWriter(
                 PositionField.FOUND_BY to foundBy.name,
             ) + width(fix) + settling(settling)
 
-        positionsOf(store)
+        positionsOf(connection)
             .document(positionId(memberId, device.id))
             .set(position)
             .await()
@@ -93,7 +93,7 @@ class PositionWriter(
      * everybody's map. The caller treats a failure as nothing happening.
      */
     suspend fun noteLeftOut(count: Int, reason: String, since: Instant) {
-        positionsOf(store)
+        positionsOf(connection)
             .document(positionId(memberId, device.id))
             .update(
                 mapOf(

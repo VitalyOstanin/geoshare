@@ -75,9 +75,9 @@ data class SettingsState(
     /** The invitation just made, held until the screen is left. */
     val invitation: MadeInvitation?,
     /**
-     * This phone's Hosting site, read out of `FamilyProject` once rather than
-     * in the panel that needs it: what an invitation link is built against
-     * (`ConnectLink.invitationLink`).
+     * The Hosting site of the group shown, read out of its connection once
+     * rather than in the panel that needs it: what an invitation link is
+     * built against (`ConnectLink.invitationLink`).
      */
     val site: String?,
     /**

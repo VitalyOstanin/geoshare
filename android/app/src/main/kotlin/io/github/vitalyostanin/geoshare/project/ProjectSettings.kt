@@ -35,7 +35,7 @@ data class ProjectSettings(
     val gcmSenderId: String,
     val site: String,
 ) {
-    /** What [FamilyProject] hands Firebase; the storage bucket is never asked for. */
+    /** What [Connections] hands Firebase; the storage bucket is never asked for. */
     fun toOptions(): FirebaseOptions = FirebaseOptions.Builder()
         .setProjectId(projectId)
         .setApplicationId(applicationId)

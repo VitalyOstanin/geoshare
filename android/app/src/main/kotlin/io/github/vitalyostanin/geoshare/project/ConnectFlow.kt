@@ -72,7 +72,7 @@ enum class FailureKind {
  * the JVM.
  *
  * [fetch] and [connected] are taken as parameters rather than reached for
- * directly ([fetchSettings], [FamilyProject]), so a test can run the whole
+ * directly ([fetchSettings], [Connections]), so a test can run the whole
  * flow without a network or a saved project.
  */
 class ConnectFlow(

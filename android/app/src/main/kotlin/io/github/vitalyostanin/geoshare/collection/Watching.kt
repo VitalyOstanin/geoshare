@@ -88,3 +88,14 @@ fun watchedUntil(
         else -> sharedWith[watcher.memberId]?.let { minOf(watcher.until, it) }
     }
 }
+
+/**
+ * The moments the watching of this device runs out, over every group it is
+ * in.
+ *
+ * A device watched in one group is collected for as closely as if every group
+ * were watching it: the same positions go to all of them, so a viewer in the
+ * family keeps them fresh for the hike as well. The groups are only ever
+ * joined here, never weighed against each other.
+ */
+fun watchedInAnyGroup(perGroup: List<List<Instant>>): List<Instant> = perGroup.flatten().sorted()

@@ -2,10 +2,10 @@ package io.github.vitalyostanin.geoshare.service
 
 import android.content.Context
 import android.os.Build
-import com.google.firebase.auth.FirebaseAuth
-import com.google.firebase.firestore.FirebaseFirestore
 import io.github.vitalyostanin.geoshare.log.AppLog
-import io.github.vitalyostanin.geoshare.project.FamilyProject
+import io.github.vitalyostanin.geoshare.project.Connections
+import io.github.vitalyostanin.geoshare.project.GroupConnection
+import io.github.vitalyostanin.geoshare.project.INHERITED
 import io.github.vitalyostanin.geoshare.project.ProjectSettings
 
 private const val TAG = "geoshare.standin"
@@ -58,28 +58,34 @@ private val DEMO_SETTINGS = ProjectSettings(
  */
 object StandInServices {
     /**
-     * Points Firebase at the emulators when this is one. Called before
-     * anything touches the database: the library refuses to be redirected
-     * once it has been used.
+     * Points Firebase at the emulators when this is one: every instance
+     * started so far, and every one started later the moment it is. Called
+     * before anything touches the database: the library refuses to be
+     * redirected once an instance has been used.
      *
-     * An emulator that has never been connected to a family's project has
-     * nothing [FamilyProject] could have started Firebase with by this point,
-     * so it is given the demo settings first — otherwise there would be no
-     * default app for [FirebaseFirestore.getInstance] below to find.
+     * An emulator that has never been connected to a group has nothing
+     * [Connections] could have started Firebase with by this point, so it is
+     * given the demo settings — otherwise there would be no group for the
+     * screens to show.
      */
     fun apply(context: Context) {
         if (Build.HARDWARE !in EMULATED_BOARDS) {
             return
         }
 
-        if (!FamilyProject.connected) {
-            FamilyProject.save(context, DEMO_SETTINGS)
-        }
-
         AppLog.i(TAG, "talking to the stand-in services at $HOST")
-        FirebaseFirestore.getInstance().useEmulator(HOST, FIRESTORE_PORT)
-        FirebaseAuth.getInstance().useEmulator(HOST, AUTH_PORT)
         inUse = true
+        Connections.onStarted = ::pointAtTheStandIns
+        Connections.all.value.forEach(::pointAtTheStandIns)
+
+        if (!Connections.connected) {
+            Connections.connect(context, DEMO_SETTINGS, INHERITED)
+        }
+    }
+
+    private fun pointAtTheStandIns(connection: GroupConnection) {
+        connection.store.useEmulator(HOST, FIRESTORE_PORT)
+        connection.auth.useEmulator(HOST, AUTH_PORT)
     }
 
     /** True once this build has been pointed at the stand-ins. */

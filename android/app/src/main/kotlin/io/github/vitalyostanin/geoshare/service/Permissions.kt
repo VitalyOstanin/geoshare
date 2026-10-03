@@ -2,7 +2,7 @@ package io.github.vitalyostanin.geoshare.service
 
 import com.google.firebase.Timestamp
 import com.google.firebase.firestore.DocumentSnapshot
-import com.google.firebase.firestore.FirebaseFirestore
+import io.github.vitalyostanin.geoshare.project.GroupConnection
 import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.callbackFlow
@@ -16,28 +16,26 @@ import java.time.Instant
  * starting from nothing. The rules read them from the same document, so
  * withdrawing one takes effect without any phone having to write again.
  */
-fun ownSharedWith(
-    memberId: String,
-    store: FirebaseFirestore = FirebaseFirestore.getInstance(),
-): Flow<Map<String, Instant>> = callbackFlow {
-    val subscription =
-        grantsOf(store)
-            .document(memberId)
-            .addSnapshotListener { snapshot, error ->
-                if (error != null) {
-                    close(error)
+fun ownSharedWith(memberId: String, connection: GroupConnection): Flow<Map<String, Instant>> =
+    callbackFlow {
+        val subscription =
+            grantsOf(connection)
+                .document(memberId)
+                .addSnapshotListener { snapshot, error ->
+                    if (error != null) {
+                        close(error)
 
-                    return@addSnapshotListener
+                        return@addSnapshotListener
+                    }
+
+                    trySend(snapshot?.let(::permissionsOf).orEmpty())
                 }
 
-                trySend(snapshot?.let(::permissionsOf).orEmpty())
-            }
-
-    awaitClose { subscription.remove() }
-    // The permissions shown are the ones this phone may still read; refused,
-    // it knows of none, and the screen should not offer to withdraw what it
-    // cannot see.
-}.comingBack("permissions", forgetting = { emptyMap() })
+        awaitClose { subscription.remove() }
+        // The permissions shown are the ones this phone may still read; refused,
+        // it knows of none, and the screen should not offer to withdraw what it
+        // cannot see.
+    }.comingBack("permissions", forgetting = { emptyMap() })
 
 /**
  * The permissions a grant carries: a reader, and the moment their permission

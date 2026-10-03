@@ -3,10 +3,10 @@ package io.github.vitalyostanin.geoshare.service
 import com.google.firebase.Timestamp
 import com.google.firebase.firestore.DocumentSnapshot
 import com.google.firebase.firestore.FieldValue
-import com.google.firebase.firestore.FirebaseFirestore
 import io.github.vitalyostanin.geoshare.log.AppLog
 import io.github.vitalyostanin.geoshare.map.Search
 import io.github.vitalyostanin.geoshare.map.searchOf
+import io.github.vitalyostanin.geoshare.project.GroupConnection
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.Flow
@@ -28,11 +28,9 @@ private const val PHONE_NAME_LIMIT = 100
  * nobody's place. A refusal is read as no searches, which is what the phone
  * showed before any of this existed.
  */
-fun groupSearches(
-    store: FirebaseFirestore = FirebaseFirestore.getInstance(),
-): Flow<Map<String, Search>> = callbackFlow {
+fun groupSearches(connection: GroupConnection): Flow<Map<String, Search>> = callbackFlow {
     val subscription =
-        searchesOf(store).addSnapshotListener { snapshot, error ->
+        searchesOf(connection).addSnapshotListener { snapshot, error ->
             if (error != null) {
                 close(error)
 
@@ -84,12 +82,9 @@ private fun Timestamp.toInstant(): Instant = Instant.ofEpochSecond(seconds, nano
  * for, not who else in the group is, and one document costs it far less than
  * the collection every screen already follows.
  */
-fun ownSearch(
-    phoneId: String,
-    store: FirebaseFirestore = FirebaseFirestore.getInstance(),
-): Flow<Search?> = callbackFlow {
+fun ownSearch(phoneId: String, connection: GroupConnection): Flow<Search?> = callbackFlow {
     val subscription =
-        searchesOf(store).document(phoneId).addSnapshotListener { snapshot, error ->
+        searchesOf(connection).document(phoneId).addSnapshotListener { snapshot, error ->
             if (error != null) {
                 close(error)
 
@@ -121,9 +116,9 @@ suspend fun openSearch(
     phoneName: String?,
     adminId: String,
     hours: Int,
-    store: FirebaseFirestore = FirebaseFirestore.getInstance(),
+    connection: GroupConnection,
 ) {
-    searchesOf(store)
+    searchesOf(connection)
         .document(phoneId)
         .set(
             mapOf(
@@ -145,9 +140,9 @@ suspend fun renewSearch(
     phoneName: String?,
     adminId: String,
     hours: Int,
-    store: FirebaseFirestore = FirebaseFirestore.getInstance(),
+    connection: GroupConnection,
 ) {
-    searchesOf(store)
+    searchesOf(connection)
         .document(phoneId)
         .update(
             mapOf(
@@ -161,11 +156,8 @@ suspend fun renewSearch(
 }
 
 /** Ends a search: the phone was found, and its place closes to all but whom it shares with. */
-suspend fun endSearch(
-    phoneId: String,
-    store: FirebaseFirestore = FirebaseFirestore.getInstance(),
-) {
-    searchesOf(store).document(phoneId).delete().await()
+suspend fun endSearch(phoneId: String, connection: GroupConnection) {
+    searchesOf(connection).document(phoneId).delete().await()
 
     AppLog.i(TAG, "a search has been ended")
 }
@@ -179,11 +171,8 @@ suspend fun endSearch(
  * The account id, shortened, where the member has published no name — the
  * same fallback every screen falls back to.
  */
-suspend fun memberDisplayName(
-    memberId: String,
-    store: FirebaseFirestore = FirebaseFirestore.getInstance(),
-): String = try {
-    membersOf(store)
+suspend fun memberDisplayName(memberId: String, connection: GroupConnection): String = try {
+    membersOf(connection)
         .document(memberId)
         .get()
         .await()

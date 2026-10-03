@@ -1,8 +1,8 @@
 package io.github.vitalyostanin.geoshare.service
 
-import com.google.firebase.firestore.FirebaseFirestore
 import io.github.vitalyostanin.geoshare.collection.WATCH_AHEAD
 import io.github.vitalyostanin.geoshare.collection.Watcher
+import io.github.vitalyostanin.geoshare.project.GroupConnection
 import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.callbackFlow
@@ -22,10 +22,10 @@ import java.time.Instant
 fun watchers(
     /** The document this phone writes its own marker into, which is the one to ignore. */
     ownWatchId: String,
-    store: FirebaseFirestore = FirebaseFirestore.getInstance(),
+    connection: GroupConnection,
 ): Flow<List<Watcher>> = callbackFlow {
     val subscription =
-        watchOf(store)
+        watchOf(connection)
             .addSnapshotListener { snapshot, error ->
                 if (error != null) {
                     close(error)
