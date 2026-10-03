@@ -123,20 +123,6 @@ class SearchesTest {
     }
 
     @Test
-    fun `the next moment to look again is the nearest end`() {
-        val searches =
-            mapOf(
-                "grandma.oldphone" to
-                    written("grandma.oldphone", renewedHoursAgo = 2, hours = 24)!!,
-                "uncle.phone" to written("uncle.phone", renewedHoursAgo = 1, hours = 6)!!,
-                "gone.phone" to written("gone.phone", renewedHoursAgo = 9, hours = 6)!!,
-            )
-
-        assertEquals(now.plus(Duration.ofHours(5)), nextSearchEnd(searches, now))
-        assertNull(nextSearchEnd(emptyMap(), now))
-    }
-
-    @Test
     fun `a choice of hours is an end counted from now`() {
         assertEquals(now.plus(Duration.ofHours(72)), endIfChosen(72, now))
     }

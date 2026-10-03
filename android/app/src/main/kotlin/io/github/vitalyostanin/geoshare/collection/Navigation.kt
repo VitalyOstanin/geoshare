@@ -66,49 +66,6 @@ fun navConstellation(type: Int): Constellation = when (type shr SYSTEM_BYTE) {
     else -> Constellation.Other
 }
 
-/**
- * The words for the signal a message came on.
- *
- * The type is kept as the number as well, in the file: a phone newer than this
- * code will name signals this does not know, and the number is what lets them
- * be looked up later rather than lost as "other".
- */
-@Suppress("MagicNumber")
-fun navWord(type: Int): String = when (type) {
-    0x0101 -> "GPS L1 C/A"
-    0x0102 -> "GPS L2 CNAV"
-    0x0103 -> "GPS L5 CNAV"
-    0x0104 -> "GPS CNAV2"
-    0x0201 -> "SBAS"
-    0x0301 -> "GLONASS L1 C/A"
-    0x0401 -> "QZSS L1 C/A"
-    0x0501 -> "BeiDou D1"
-    0x0502 -> "BeiDou D2"
-    0x0503 -> "BeiDou CNAV1"
-    0x0504 -> "BeiDou CNAV2"
-    0x0601 -> "Galileo I"
-    0x0602 -> "Galileo F"
-    0x0701 -> "IRNSS L5 C/A"
-    0x0702 -> "IRNSS L5"
-    0x0703 -> "IRNSS L1"
-    else -> String.format(Locale.ROOT, "type 0x%04X", type)
-}
-
-/**
- * Whether the message arrived intact.
- *
- * "Rebuilt" is the interesting one: the receiver found the parity wrong and
- * worked out what the words must have been. A signal being talked over by a
- * stronger one produces exactly that, and so does a satellite low on the
- * horizon, so it counts for nothing on its own and for something beside the
- * loudness of the satellite it came from.
- */
-fun navStatusWord(status: Int): String = when (status) {
-    1 -> "passed"
-    2 -> "rebuilt"
-    else -> "unknown"
-}
-
 /** Bytes as a spreadsheet can hold them: two characters each, no separators. */
 fun hexOf(bytes: ByteArray): String =
     bytes.joinToString("") { String.format(Locale.ROOT, "%02X", it) }

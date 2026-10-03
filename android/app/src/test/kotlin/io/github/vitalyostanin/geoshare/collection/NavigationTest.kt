@@ -26,21 +26,6 @@ class NavigationTest {
     }
 
     @Test
-    fun `the signal is named where it is known and numbered where it is not`() {
-        assertEquals("GPS L1 C/A", navWord(0x0101))
-        assertEquals("GLONASS L1 C/A", navWord(0x0301))
-        assertEquals("Galileo I", navWord(0x0601))
-        assertEquals("type 0x0905", navWord(0x0905))
-    }
-
-    @Test
-    fun `parity is said in words`() {
-        assertEquals("passed", navStatusWord(1))
-        assertEquals("rebuilt", navStatusWord(2))
-        assertEquals("unknown", navStatusWord(0))
-    }
-
-    @Test
     fun `the words are written as two characters a byte`() {
         assertEquals("007FFF10", hexOf(byteArrayOf(0, 0x7F, -1, 0x10)))
         assertEquals("", hexOf(byteArrayOf()))

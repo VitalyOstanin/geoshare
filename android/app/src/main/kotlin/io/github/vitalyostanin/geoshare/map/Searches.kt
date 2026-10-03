@@ -94,12 +94,5 @@ fun standingSearches(searches: Map<String, Search>, now: Instant): Map<String, S
 fun soughtPhones(searches: Map<String, Search>, now: Instant): Set<String> =
     standingSearches(searches, now).keys
 
-/**
- * When the next of the standing searches runs out, or null when none does: the
- * moment to look at the list again, since nothing else will say so.
- */
-fun nextSearchEnd(searches: Map<String, Search>, now: Instant): Instant? =
-    standingSearches(searches, now).values.minOfOrNull { it.endsAt }
-
 /** The end a choice of hours would have, if the search were opened or renewed now. */
 fun endIfChosen(hours: Int, now: Instant): Instant = now.plus(Duration.ofHours(hours.toLong()))
