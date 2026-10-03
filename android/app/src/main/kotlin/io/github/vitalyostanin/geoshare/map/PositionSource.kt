@@ -14,7 +14,6 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.callbackFlow
 import kotlinx.coroutines.launch
 import java.time.Duration
-import java.time.Instant
 
 private const val TAG = "geoshare.positions"
 
@@ -193,11 +192,11 @@ private fun positionOf(document: DocumentSnapshot): MemberPosition? {
         deviceName = null,
         latitude = latitude,
         longitude = longitude,
-        takenAt = Instant.ofEpochSecond(takenAt.seconds, takenAt.nanoseconds.toLong()),
+        takenAt = takenAt.toInstant(),
         writtenAt =
         document
             .getTimestamp(PositionField.WRITTEN_AT)
-            ?.let { Instant.ofEpochSecond(it.seconds, it.nanoseconds.toLong()) },
+            ?.toInstant(),
         mode = document.getString(PositionField.MODE),
         batteryPercent = document.getLong(PositionField.BATTERY_PERCENT)?.toInt(),
         charging = document.getBoolean(PositionField.CHARGING) ?: false,
@@ -209,7 +208,7 @@ private fun positionOf(document: DocumentSnapshot): MemberPosition? {
         leftOutSince =
         document
             .getTimestamp(PositionField.LEFT_OUT_SINCE)
-            ?.let { Instant.ofEpochSecond(it.seconds, it.nanoseconds.toLong()) },
+            ?.toInstant(),
         unsent = document.metadata.hasPendingWrites(),
     )
 }

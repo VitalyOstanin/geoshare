@@ -1,6 +1,5 @@
 package io.github.vitalyostanin.geoshare.service
 
-import com.google.firebase.Timestamp
 import com.google.firebase.firestore.DocumentSnapshot
 import com.google.firebase.firestore.FieldValue
 import io.github.vitalyostanin.geoshare.log.AppLog
@@ -12,7 +11,6 @@ import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.callbackFlow
 import kotlinx.coroutines.tasks.await
-import java.time.Instant
 
 private const val TAG = "geoshare.searches"
 
@@ -70,8 +68,6 @@ private fun searchFrom(document: DocumentSnapshot): Search? = searchOf(
 )
 
 private val ESTIMATE = DocumentSnapshot.ServerTimestampBehavior.ESTIMATE
-
-private fun Timestamp.toInstant(): Instant = Instant.ofEpochSecond(seconds, nanoseconds.toLong())
 
 /**
  * The search standing for one phone, or null while nobody is looking for it:

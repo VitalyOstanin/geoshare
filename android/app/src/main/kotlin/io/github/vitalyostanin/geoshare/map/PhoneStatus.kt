@@ -39,9 +39,7 @@ fun phonesFrom(data: Map<String, Any?>?): Map<String, PhoneStatus> = data.orEmpt
     .take(PHONES_PER_MEMBER)
     .mapNotNull { (deviceId, entry) ->
         val fields = entry as? Map<*, *> ?: return@mapNotNull null
-        val moment = (fields[PhoneField.ONLINE_AT] as? Timestamp)?.let {
-            Instant.ofEpochSecond(it.seconds, it.nanoseconds.toLong())
-        }
+        val moment = (fields[PhoneField.ONLINE_AT] as? Timestamp)?.toInstant()
         val percent = (fields[PhoneField.BATTERY_PERCENT] as? Number)?.toInt()
 
         deviceId to

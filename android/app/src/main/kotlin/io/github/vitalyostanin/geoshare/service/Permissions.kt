@@ -53,6 +53,6 @@ fun permissionsOf(document: DocumentSnapshot): Map<String, Instant> {
             val readerId = reader as? String ?: return@mapNotNull null
             val moment = until as? Timestamp ?: return@mapNotNull null
 
-            readerId to Instant.ofEpochSecond(moment.seconds, moment.nanoseconds.toLong())
+            readerId to moment.toInstant()
         }.toMap()
 }
