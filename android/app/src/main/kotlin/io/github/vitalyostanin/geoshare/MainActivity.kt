@@ -180,7 +180,7 @@ class MainActivity : AppCompatActivity() {
         connectFlow = ConnectFlow(
             scope = lifecycleScope,
             fetch = ::fetchSettings,
-            connected = { Connections.selected.value?.settings },
+            connected = { Connections.all.value.map { it.settings } },
         )
         // A recreated activity (a rotation) still carries the link it was
         // opened with, which has already been acted on.

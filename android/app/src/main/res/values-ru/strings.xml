@@ -351,6 +351,13 @@
         <item quantity="other">%1$d участника сейчас не делятся с вами.</item>
     </plurals>
 
+    <string name="group_switcher_open">Группа: %1$s. Выбрать другую</string>
+    <string name="group_switcher_title">Группы</string>
+    <string name="group_switcher_current">Показана</string>
+    <string name="group_switcher_siren">сирена</string>
+    <string name="group_switcher_search">поиск</string>
+    <string name="group_switcher_join">+ Вступить в группу по ссылке</string>
+
     <plurals name="map_more_count">
         <item quantity="one">%1$d участник</item>
         <item quantity="few">%1$d участника</item>
@@ -406,6 +413,7 @@
          ConnectFlow. Экран А, пока ссылка ещё не предложена: тот же плейсхолдер,
          что раньше показывался вместо карты до подключения проекта. -->
     <string name="connect_not_connected_title">Приложение ещё не подключено.</string>
+    <string name="connect_join_title">Вступить ещё в одну группу</string>
     <string name="connect_not_connected_hint">Откройте ссылку подключения.</string>
     <string name="connect_paste_link">Вставить ссылку</string>
     <!-- Экран А снова, когда вставка не содержала ссылку этого проекта. -->
@@ -418,19 +426,13 @@
     <string name="connect_field_for_account">Для аккаунта</string>
     <string name="connect_field_project">Проект</string>
     <string name="connect_confirm_hint">Дальше вход через Google в браузере.</string>
-    <string name="connect_confirm_hint_joining">Дальше приложение перезапустится и вступит в группу под текущим аккаунтом.</string>
+    <string name="connect_confirm_hint_joining">Дальше приложение вступит в группу под текущим аккаунтом.</string>
     <string name="connect_cancel">Отмена</string>
     <string name="connect_action">Подключиться</string>
     <!-- Экран В: загрузка не удалась, для любого из FailureKind. -->
     <string name="connect_failed_title">Не удалось получить настройки с сайта %1$s.web.app.</string>
     <string name="connect_failed_hint">Нет связи, или по этой ссылке нет проекта geoshare.</string>
     <string name="connect_retry">Повторить</string>
-    <!-- Экран Г: ссылка называет не тот проект, к которому телефон уже подключён. -->
-    <string name="connect_switch_title">Сменить проект?</string>
-    <string name="connect_switch_hint">Сейчас приложение подключено к проекту %1$s. После смены передача позиции туда прекратится, группа там вас больше не увидит.</string>
-    <string name="connect_field_new_project">Новый проект</string>
-    <string name="connect_keep">Оставить</string>
-    <string name="connect_switch">Сменить</string>
     <string name="connect_wrong_account_title">Это приглашение выдано для %1$s.</string>
     <string name="connect_wrong_account_text">Вы вошли как %1$s. Выйдите и войдите нужным аккаунтом — приглашение сохранится до следующего входа.</string>
     <string name="connect_wrong_account_switch">Сменить аккаунт</string>

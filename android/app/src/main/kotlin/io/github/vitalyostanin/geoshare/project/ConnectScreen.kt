@@ -36,12 +36,10 @@ import io.github.vitalyostanin.geoshare.R
 
 /**
  * The screens ADR-0018 describes for [ConnectState]: A phone offering a link
- * to paste, what the site answered before it is accepted, a failed
- * download, and the choice a second project's link forces on a phone that
- * already has one. What [ConnectState.Done] leads to — saving the settings,
- * carrying an invitation across the restart and restarting — is done by
- * `MainActivity` rather than here, and drawn as nothing since the process
- * ends before another frame of this would be shown.
+ * to paste, what the site answered before it is accepted, and a failed
+ * download. What [ConnectState.Done] leads to — keeping the settings and the
+ * invitation, and signing in to the project they name — is done by
+ * `MainActivity` rather than here, and drawn as nothing.
  *
  * The caller decides where this goes: the whole of the window for a phone
  * without a project yet (MainActivity's own placeholder), or an overlay
@@ -74,6 +72,13 @@ fun ConnectScreen(
                     onPasteLink = onPasteLink,
                 )
 
+            is ConnectState.AskingForLink ->
+                NotConnected(
+                    showError = false,
+                    onPasteLink = onPasteLink,
+                    onCancel = onCancel,
+                )
+
             is ConnectState.Fetching -> {
                 AppMark()
                 CircularProgressIndicator()
@@ -94,13 +99,9 @@ fun ConnectScreen(
             is ConnectState.Failed ->
                 Failed(site = state.link.site, onCancel = onCancel, onRetry = onRetry)
 
-            is ConnectState.SwitchProject ->
-                SwitchProject(state = state, onCancel = onCancel, onConnect = onConnect)
-
             // MainActivity reacts to Done on its own, outside this
-            // composable, by saving the settings and restarting; nothing is
-            // drawn here since the process ends before another frame would
-            // be.
+            // composable, by keeping the settings and closing the flow;
+            // nothing is left to draw here.
             is ConnectState.Done -> Unit
         }
     }
@@ -126,15 +127,32 @@ private fun AppMark() {
 /**
  * Screen А: nothing offered yet, with [showError] for a paste that held no
  * link this project recognises ([ConnectState.NoLinkPasted]).
+ *
+ * Given [onCancel] it is a device already in a group asking to join one more
+ * ([ConnectState.AskingForLink]): the title says that rather than that it is
+ * not connected, and there is a way back to the map.
  */
 @Composable
-private fun NotConnected(showError: Boolean, onPasteLink: (String) -> Unit) {
+private fun NotConnected(
+    showError: Boolean,
+    onPasteLink: (String) -> Unit,
+    onCancel: (() -> Unit)? = null,
+) {
     val context = LocalContext.current
 
     AppMark()
 
     Text(
-        text = stringResource(R.string.connect_not_connected_title),
+        text =
+        stringResource(
+            if (onCancel ==
+                null
+            ) {
+                R.string.connect_not_connected_title
+            } else {
+                R.string.connect_join_title
+            },
+        ),
         style = MaterialTheme.typography.headlineSmall,
         textAlign = TextAlign.Center,
     )
@@ -171,6 +189,12 @@ private fun NotConnected(showError: Boolean, onPasteLink: (String) -> Unit) {
         },
     ) {
         Text(text = stringResource(R.string.connect_paste_link))
+    }
+
+    if (onCancel != null) {
+        TextButton(onClick = onCancel) {
+            Text(text = stringResource(R.string.connect_cancel))
+        }
     }
 }
 
@@ -252,39 +276,7 @@ private fun Failed(site: String, onCancel: () -> Unit, onRetry: () -> Unit) {
     )
 }
 
-/** Screen Г: [state]'s link names a project other than the one this phone already has. */
-@Composable
-private fun SwitchProject(
-    state: ConnectState.SwitchProject,
-    onCancel: () -> Unit,
-    onConnect: () -> Unit,
-) {
-    Text(
-        text = stringResource(R.string.connect_switch_title),
-        style = MaterialTheme.typography.headlineSmall,
-    )
-
-    Text(
-        text = stringResource(R.string.connect_switch_hint, state.currentProjectId),
-        style = MaterialTheme.typography.bodyMedium,
-        color = MaterialTheme.colorScheme.onSurfaceVariant,
-        textAlign = TextAlign.Center,
-    )
-
-    // The same captions the confirmation shows (ADR-0019): switching goes
-    // straight to Done, so this is the only screen that could show them.
-    InvitationFields(state.link.invitation)
-    ConnectField(R.string.connect_field_new_project, state.settings.projectId)
-
-    ConnectButtons(
-        cancelLabel = R.string.connect_keep,
-        actionLabel = R.string.connect_switch,
-        onCancel = onCancel,
-        onAction = onConnect,
-    )
-}
-
-/** One row of the key/value block Б and Г show: [label] on the left, [value] on the right. */
+/** One row of the key/value block Б shows: [label] on the left, [value] on the right. */
 @Composable
 private fun ConnectField(@StringRes label: Int, value: String) {
     Row(

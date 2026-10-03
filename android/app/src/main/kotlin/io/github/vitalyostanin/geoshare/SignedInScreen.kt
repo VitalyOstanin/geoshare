@@ -13,6 +13,7 @@ import io.github.vitalyostanin.geoshare.auth.AuthState
 import io.github.vitalyostanin.geoshare.collection.Constellation
 import io.github.vitalyostanin.geoshare.download.DownloadSetting
 import io.github.vitalyostanin.geoshare.log.AppLog
+import io.github.vitalyostanin.geoshare.map.GroupSwitch
 import io.github.vitalyostanin.geoshare.map.KeepWatching
 import io.github.vitalyostanin.geoshare.map.LocalLink
 import io.github.vitalyostanin.geoshare.map.MapScreen
@@ -23,6 +24,7 @@ import io.github.vitalyostanin.geoshare.map.labelledPositions
 import io.github.vitalyostanin.geoshare.map.labelledProfiles
 import io.github.vitalyostanin.geoshare.map.publishSharing
 import io.github.vitalyostanin.geoshare.map.rememberDatabaseLink
+import io.github.vitalyostanin.geoshare.map.rememberGroupChoices
 import io.github.vitalyostanin.geoshare.map.rememberGroupRoster
 import io.github.vitalyostanin.geoshare.map.rememberMemberGrants
 import io.github.vitalyostanin.geoshare.map.rememberMemberPositions
@@ -36,6 +38,7 @@ import io.github.vitalyostanin.geoshare.map.withinAnswerWait
 import io.github.vitalyostanin.geoshare.map.writeLabel
 import io.github.vitalyostanin.geoshare.map.writePhoneName
 import io.github.vitalyostanin.geoshare.project.ConnectLink
+import io.github.vitalyostanin.geoshare.project.Connections
 import io.github.vitalyostanin.geoshare.project.GroupConnection
 import io.github.vitalyostanin.geoshare.project.PendingInvitation
 import io.github.vitalyostanin.geoshare.project.PendingInvitationStore
@@ -197,6 +200,8 @@ internal fun SignedInScreen(
 
     // Watched rather than read once: the answer to the roaming question is
     // written by a receiver while this screen may be open.
+    val everyGroup by Connections.all.collectAsStateWithLifecycle()
+    val groupChoices by rememberGroupChoices(everyGroup, activity.device.id)
     val downloadSetting = remember { DownloadSetting(activity) }
     val downloads by remember { downloadSetting.changes() }
         .collectAsStateWithLifecycle(downloadSetting.state())
@@ -508,6 +513,13 @@ internal fun SignedInScreen(
                     writeLabel(current.memberId, kind, key, name, connection = connection)
                 }
             },
+            groups =
+            GroupSwitch(
+                choices = groupChoices,
+                selected = connection.projectId,
+                onSelect = { projectId -> Connections.select(activity, projectId) },
+                onJoin = activity.connectFlow::askForLink,
+            ),
         )
     }
 }

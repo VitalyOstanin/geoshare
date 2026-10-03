@@ -120,6 +120,8 @@ fun MapScreen(
     labels: Labels,
     /** Gives a phone or a person a name for this member alone, or takes it away. */
     onLabel: (LabelKind, String, String?) -> Unit,
+    /** The groups this device is in, for the chip that switches between them. */
+    groups: GroupSwitch,
     modifier: Modifier = Modifier,
 ) {
     val now by currentTime()
@@ -139,6 +141,8 @@ fun MapScreen(
     var focus by remember { mutableStateOf<MapFocus?>(null) }
     var followMode by remember { mutableStateOf(FollowMode.NONE) }
     var mapHelpOpen by remember { mutableStateOf(false) }
+    var groupsOpen by remember { mutableStateOf(false) }
+    val switcher = switcherShown(groups.choices.size)
     // Whether a hand is holding the following still; the button says so.
     var followPaused by remember { mutableStateOf(false) }
     var followTarget by remember { mutableStateOf<FollowTarget?>(null) }
@@ -451,6 +455,32 @@ fun MapScreen(
                 )
             }
 
+            if (switcher) {
+                GroupChip(
+                    caption =
+                    groups.choices.firstOrNull { it.projectId == groups.selected }?.caption
+                        ?: groups.selected,
+                    onClick = { groupsOpen = true },
+                    modifier = Modifier.align(Alignment.TopStart).statusBarsPadding(),
+                )
+            }
+
+            if (groupsOpen) {
+                GroupSheet(
+                    choices = groups.choices,
+                    selected = groups.selected,
+                    onSelect = { projectId ->
+                        groupsOpen = false
+                        groups.onSelect(projectId)
+                    },
+                    onJoin = {
+                        groupsOpen = false
+                        groups.onJoin()
+                    },
+                    onClose = { groupsOpen = false },
+                )
+            }
+
             AccountButton(
                 displayName = ownDisplayName,
                 pictureUrl = ownPictureUrl,
@@ -462,13 +492,12 @@ fun MapScreen(
                     .padding(12.dp),
             )
 
-            // Told to the member over the map whenever one of their own
-            // phones is being looked for, and below the row of round buttons
-            // rather than on top of it: the two are read in different
-            // moments, and a banner covering the buttons would be in the way
-            // of the one thing this screen is for. A member carrying two
-            // phones may have both looked for at once, so this is a list
-            // rather than one banner.
+            // Told to the member over the map whenever one of their own phones is
+            // being looked for, and below the row of round buttons and the group
+            // chip rather than on top of them: the two are read in different
+            // moments, and a banner covering the buttons would be in the way of the
+            // one thing this screen is for. A member carrying two phones may have
+            // both looked for at once, so this is a list rather than one banner.
             val ownSearches =
                 remember(searches, now, ownMemberId) {
                     standingSearches(searches, now).values.filter { it.memberId == ownMemberId }
@@ -483,7 +512,7 @@ fun MapScreen(
                     Modifier
                         .align(Alignment.TopCenter)
                         .statusBarsPadding()
-                        .padding(top = 64.dp, start = 12.dp, end = 12.dp),
+                        .padding(top = bannerOffset(switcher), start = 12.dp, end = 12.dp),
                 ) {
                     if (link.lost) {
                         LinkBanner(link)
@@ -541,7 +570,7 @@ fun MapScreen(
                         Modifier
                             .align(Alignment.TopCenter)
                             .statusBarsPadding()
-                            .padding(top = 64.dp, start = 12.dp, end = 12.dp),
+                            .padding(top = bannerOffset(switcher), start = 12.dp, end = 12.dp),
                     )
                 }
             }

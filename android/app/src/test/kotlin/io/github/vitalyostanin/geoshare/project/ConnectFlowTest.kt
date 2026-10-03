@@ -42,7 +42,7 @@ class ConnectFlowTest {
      * back here, letting a test read [ConnectState.Fetching] in between.
      */
     private fun flow(
-        connected: () -> ProjectSettings? = { null },
+        connected: () -> List<ProjectSettings> = { emptyList() },
         fetch: suspend (ConnectLink) -> SettingsFetch,
     ) = ConnectFlow(CoroutineScope(Dispatchers.Unconfined), fetch, connected)
 
@@ -104,24 +104,52 @@ class ConnectFlowTest {
     }
 
     @Test
-    fun `a link naming a different project than the one connected shows SwitchProject`() {
+    fun `a link to a project the device is not in yet joins it beside the others`() {
         val flow = flow(
-            connected = { OTHER_SETTINGS },
+            connected = { listOf(OTHER_SETTINGS) },
             fetch = { SettingsFetch.Fetched(SETTINGS) },
         )
 
         flow.linkArrived("https://$SITE.web.app/join")
 
-        assertEquals(
-            ConnectState.SwitchProject(OTHER_SETTINGS.projectId, OWNER_LINK, SETTINGS),
-            flow.state.value,
+        assertEquals(ConnectState.Confirm(OWNER_LINK, SETTINGS), flow.state.value)
+    }
+
+    @Test
+    fun `the owner's own link to a group that is not the one shown is a no-op too`() {
+        val flow = flow(
+            connected = { listOf(OTHER_SETTINGS, SETTINGS) },
+            fetch = { error("fetch should not run for a site already connected") },
         )
+
+        flow.linkArrived("https://$SITE.web.app/join")
+
+        assertEquals(ConnectState.NotConnected, flow.state.value)
+    }
+
+    @Test
+    fun `asking to join another group shows the paste screen without an error`() {
+        val flow = flow(connected = { listOf(SETTINGS) }, fetch = { SettingsFetch.Offline })
+
+        flow.askForLink()
+
+        assertEquals(ConnectState.AskingForLink, flow.state.value)
+    }
+
+    @Test
+    fun `cancelling the request for a link leaves the flow idle`() {
+        val flow = flow(connected = { listOf(SETTINGS) }, fetch = { SettingsFetch.Offline })
+
+        flow.askForLink()
+        flow.cancel()
+
+        assertEquals(ConnectState.NotConnected, flow.state.value)
     }
 
     @Test
     fun `the owner's own link to the already-connected site is a no-op without fetching`() {
         val flow = flow(
-            connected = { SETTINGS },
+            connected = { listOf(SETTINGS) },
             fetch = { error("fetch should not run for a site already connected") },
         )
 
@@ -133,7 +161,7 @@ class ConnectFlowTest {
     @Test
     fun `an invitation link to the already-connected site settles on Confirm without fetching`() {
         val flow = flow(
-            connected = { SETTINGS },
+            connected = { listOf(SETTINGS) },
             fetch = { error("fetch should not run for a site already connected") },
         )
 

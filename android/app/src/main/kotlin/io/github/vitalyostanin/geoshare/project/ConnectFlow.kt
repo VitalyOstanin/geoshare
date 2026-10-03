@@ -20,12 +20,19 @@ sealed interface ConnectState {
      * Nothing in hand: no link has been offered since the flow was created,
      * or the previous attempt was cancelled, finished or dismissed as a
      * no-op. This says nothing about whether the phone itself already has a
-     * project — a link can still arrive here to switch it.
+     * project — a link can still arrive here to join another.
      */
     data object NotConnected : ConnectState
 
     /** Pasted text held no [ConnectLink]; reported rather than left unanswered. */
     data object NoLinkPasted : ConnectState
+
+    /**
+     * A device already in a group asked to join another: the same paste
+     * screen a device with nothing connected shows, offered on request
+     * rather than because there is nothing else to show.
+     */
+    data object AskingForLink : ConnectState
 
     /** [link]'s settings are being downloaded from [ConnectLink.settingsUrl]. */
     data class Fetching(val link: ConnectLink) : ConnectState
@@ -37,21 +44,10 @@ sealed interface ConnectState {
     data class Failed(val link: ConnectLink, val kind: FailureKind) : ConnectState
 
     /**
-     * [link] names a project other than [currentProjectId], the one this
-     * phone already talks to — shown instead of [Confirm] because accepting
-     * it means leaving that project rather than joining a first one.
-     */
-    data class SwitchProject(
-        val currentProjectId: String,
-        val link: ConnectLink,
-        val settings: ProjectSettings,
-    ) : ConnectState
-
-    /**
      * [settings] and [invitation] were accepted, and there is nothing
      * further for [ConnectFlow] to do about them: keeping the settings,
-     * carrying [invitation] across the restart moving to them takes, and
-     * spending it once signed in again are all done by whoever collects
+     * keeping [invitation] until the sign-in they lead to, and spending it
+     * once signed in are all done by whoever collects
      * [state] rather than by this class, since every one of them touches
      * Firebase or the phone's own storage, neither of which [ConnectFlow] is
      * given a way to reach.
@@ -78,7 +74,7 @@ enum class FailureKind {
 class ConnectFlow(
     private val scope: CoroutineScope,
     private val fetch: suspend (ConnectLink) -> SettingsFetch,
-    private val connected: () -> ProjectSettings?,
+    private val connected: () -> List<ProjectSettings>,
 ) {
     private val mutableState = MutableStateFlow<ConnectState>(ConnectState.NotConnected)
     val state: StateFlow<ConnectState> = mutableState.asStateFlow()
@@ -109,8 +105,7 @@ class ConnectFlow(
      * whoever sent it made a mistake worth reporting on screen.
      */
     fun linkArrived(dataString: String?) {
-        // The launcher's intent and the restart after Done carry no data at
-        // all; only an intent that brought an address is worth a warning.
+        // The launcher's intent carries no data at all; only an intent that brought an address is worth a warning.
         if (dataString == null) {
             return
         }
@@ -126,6 +121,11 @@ class ConnectFlow(
         beginFetch(link)
     }
 
+    /** Shows the paste screen to a device that wants to join one more group. */
+    fun askForLink() {
+        mutableState.value = ConnectState.AskingForLink
+    }
+
     /** Tries [ConnectState.Failed.link]'s site again. */
     fun retry() {
         val failed = mutableState.value as? ConnectState.Failed ?: return
@@ -138,29 +138,25 @@ class ConnectFlow(
         mutableState.value = ConnectState.NotConnected
     }
 
-    /** Accepts [ConnectState.Confirm] or [ConnectState.SwitchProject]. */
+    /** Accepts [ConnectState.Confirm]. */
     fun connect() {
-        val (settings, invitation) = when (val current = mutableState.value) {
-            is ConnectState.Confirm -> current.settings to current.link.invitation
-            is ConnectState.SwitchProject -> current.settings to current.link.invitation
-            else -> return
-        }
+        val current = mutableState.value as? ConnectState.Confirm ?: return
 
-        mutableState.value = ConnectState.Done(settings, invitation)
+        mutableState.value = ConnectState.Done(current.settings, current.link.invitation)
     }
 
     /**
-     * Starts a fetch for [link], unless the phone's own [connected] project
-     * already answers to [link]'s site — a settings file pasted back at the
+     * Starts a fetch for [link], unless one of the projects the device is
+     * [connected] to already answers to [link]'s site — a settings file pasted back at the
      * phone that already has it (an invitation re-pasted on the owner's own
      * device, or the owner's link pasted a second time) needs no download,
      * and skipping it is what keeps that paste working offline or against
      * an emulator with no site to reach.
      */
     private fun beginFetch(link: ConnectLink) {
-        val settings = connected()
+        val settings = connected().firstOrNull { it.site == link.site }
 
-        if (settings != null && settings.site == link.site) {
+        if (settings != null) {
             mutableState.value = settle(link, settings)
 
             return
@@ -180,20 +176,17 @@ class ConnectFlow(
     /**
      * What [settings] — fetched, or already the phone's own — turn into
      * once the project they name is known: [ConnectState.Confirm] for a
-     * phone with nothing to leave,
-     * [ConnectState.SwitchProject] for one already talking to a different
-     * project, and for a link back to the one it already talks to, either
-     * [ConnectState.Confirm] when it still carries an invitation or a
-     * silent [ConnectState.NotConnected] when it is only the owner's own
-     * link — accepting that again would change nothing.
+     * project the device is not in yet — joined beside the groups it is
+     * already in, none of which it leaves — and for a link back to one it is
+     * in, either [ConnectState.Confirm] when it still carries an invitation
+     * or a silent [ConnectState.NotConnected] when it is only the owner's
+     * own link — accepting that again would change nothing.
      */
     private fun settle(link: ConnectLink, settings: ProjectSettings): ConnectState {
-        val current = connected()?.projectId
+        val listed = connected().any { it.projectId == settings.projectId }
 
         return when {
-            current == null -> ConnectState.Confirm(link, settings)
-
-            current != settings.projectId -> ConnectState.SwitchProject(current, link, settings)
+            !listed -> ConnectState.Confirm(link, settings)
 
             link.invitation != null -> ConnectState.Confirm(link, settings)
 
