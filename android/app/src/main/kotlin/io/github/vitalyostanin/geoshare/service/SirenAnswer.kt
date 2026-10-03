@@ -121,7 +121,7 @@ class SirenAnswer(private val context: Context, private val scope: CoroutineScop
             }
 
             // After the notification, so the screen comes on with it there.
-            screen = lightScreen(context, SIREN_SECONDS)
+            screen = lightScreen(context, Duration.ofSeconds(SIREN_SECONDS))
 
             delay(Duration.between(Instant.now(), until).toMillis().coerceAtLeast(0))
         } finally {

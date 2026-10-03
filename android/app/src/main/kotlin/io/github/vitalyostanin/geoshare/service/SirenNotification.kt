@@ -12,6 +12,7 @@ import androidx.core.content.getSystemService
 import io.github.vitalyostanin.geoshare.MainActivity
 import io.github.vitalyostanin.geoshare.R
 import io.github.vitalyostanin.geoshare.map.SIREN_SECONDS
+import java.time.Duration
 import java.time.Instant
 
 const val SIREN_NOTIFICATION_ID = 4
@@ -96,7 +97,7 @@ fun sirenNotification(
         .setWhen(until.toEpochMilli())
         .setUsesChronometer(true)
         .setChronometerCountDown(true)
-        .setTimeoutAfter(SIREN_SECONDS * 1000)
+        .setTimeoutAfter(Duration.ofSeconds(SIREN_SECONDS).toMillis())
         .build()
 }
 

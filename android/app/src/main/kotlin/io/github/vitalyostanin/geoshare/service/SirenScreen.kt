@@ -3,6 +3,7 @@ package io.github.vitalyostanin.geoshare.service
 import android.content.Context
 import android.os.PowerManager
 import androidx.core.content.getSystemService
+import java.time.Duration
 
 /**
  * Lights the screen for as long as the siren sounds: the phone found in a
@@ -14,12 +15,12 @@ import androidx.core.content.getSystemService
  * — the very thing the siren's notification keeps away from.
  */
 @Suppress("DEPRECATION")
-fun lightScreen(context: Context, seconds: Long): PowerManager.WakeLock? = context
+fun lightScreen(context: Context, lasting: Duration): PowerManager.WakeLock? = context
     .getSystemService<PowerManager>()
     ?.newWakeLock(
         PowerManager.SCREEN_BRIGHT_WAKE_LOCK or PowerManager.ACQUIRE_CAUSES_WAKEUP,
         "geoshare:siren",
-    )?.apply { acquire(seconds * 1000) }
+    )?.apply { acquire(lasting.toMillis()) }
 
 /** Lets the screen go dark again on its usual timeout. */
 fun PowerManager.WakeLock.letGo() {
