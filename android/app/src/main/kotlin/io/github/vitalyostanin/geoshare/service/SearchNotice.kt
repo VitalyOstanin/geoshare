@@ -27,24 +27,29 @@ private val SEARCH_NOTICE_REFRESH: Duration = Duration.ofMinutes(1)
  * notification up past the end everybody else's screen already reads.
  * Shown again once a minute while it stands, in case the process is killed
  * and restarted with the notification's own state lost with it.
+ *
+ * One notification per group, tagged with its project: a search ending in
+ * one group must not take down the one still standing in another.
  */
 suspend fun keepSearchNotification(context: Context, phoneId: String, connection: GroupConnection) {
     ownSearch(phoneId, connection).collectLatest { search ->
         if (search == null) {
-            cancelSearchNotification(context)
+            cancelSearchNotification(context, connection.projectId)
 
             return@collectLatest
         }
 
         val openedByName = memberDisplayName(search.openedBy, connection)
+        val group = groupNameForNotice(context, connection)
 
         while (search.stands(Instant.now())) {
             // A member who refused notifications still gets the banner over
             // the map; the service goes on either way.
             if (devicePermissions(context).notificationsGranted) {
                 context.getSystemService<NotificationManager>()?.notify(
+                    connection.projectId,
                     SEARCH_NOTIFICATION_ID,
-                    searchNotification(context, search, openedByName),
+                    searchNotification(context, search, openedByName, group),
                 )
             }
 
@@ -53,6 +58,6 @@ suspend fun keepSearchNotification(context: Context, phoneId: String, connection
             delay(minOf(left, SEARCH_NOTICE_REFRESH).toMillis().coerceAtLeast(0))
         }
 
-        cancelSearchNotification(context)
+        cancelSearchNotification(context, connection.projectId)
     }
 }

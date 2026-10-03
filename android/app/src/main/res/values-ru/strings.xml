@@ -246,6 +246,7 @@
     <string name="sought_found">Меня нашли</string>
     <string name="siren_notification_title">Включили сирену: %1$s</string>
     <string name="siren_notification_text">Устройство звучит, чтобы его нашли.</string>
+    <string name="siren_notification_text_in_group">Группа «%1$s». Устройство звучит, чтобы его нашли.</string>
     <string name="siren_called_by_you">Вы</string>
     <string name="siren_seconds_left">Ещё %1$d с.</string>
     <string name="siren_off">Выключить сирену</string>
@@ -280,6 +281,7 @@
     <string name="sought_channel_name">Вас ищут</string>
     <string name="sought_channel_description">Показывается, пока вас ищет группа.</string>
     <string name="sought_notification_title">Вашу позицию видит вся группа</string>
+    <string name="sought_notification_title_in_group">Вашу позицию видит вся группа «%1$s»</string>
     <string name="sought_notification_text">Открыли поиск: %1$s, до %2$s</string>
 
     <string name="visibility_title">Кто видит, где я</string>

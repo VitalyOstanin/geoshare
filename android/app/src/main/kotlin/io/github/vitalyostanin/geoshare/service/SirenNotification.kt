@@ -30,7 +30,13 @@ private const val CHANNEL_ID = "siren"
  * is unfolded. Somebody who has found the phone should not have to know that
  * to stop the noise, so the folded one carries its own button.
  */
-fun sirenNotification(context: Context, callerName: String, until: Instant): Notification {
+fun sirenNotification(
+    context: Context,
+    callerName: String,
+    /** The group that called, named only while the device is in more than one. */
+    group: String?,
+    until: Instant,
+): Notification {
     createSirenChannel(context)
 
     val open =
@@ -50,7 +56,12 @@ fun sirenNotification(context: Context, callerName: String, until: Instant): Not
         )
 
     val title = context.getString(R.string.siren_notification_title, callerName)
-    val text = context.getString(R.string.siren_notification_text)
+    val text =
+        if (group == null) {
+            context.getString(R.string.siren_notification_text)
+        } else {
+            context.getString(R.string.siren_notification_text_in_group, group)
+        }
 
     val folded =
         RemoteViews(context.packageName, R.layout.siren_notification_collapsed).apply {

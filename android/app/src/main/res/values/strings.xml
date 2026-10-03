@@ -280,6 +280,7 @@
     <string name="sought_found">I\'m found</string>
     <string name="siren_notification_title">Siren switched on by %1$s</string>
     <string name="siren_notification_text">The device is sounding so that it can be found.</string>
+    <string name="siren_notification_text_in_group">Group “%1$s”. The device is sounding so that it can be found.</string>
     <string name="siren_called_by_you">you</string>
     <string name="siren_seconds_left">%1$d s left.</string>
     <string name="siren_off">Stop the siren</string>
@@ -314,6 +315,7 @@
     <string name="sought_channel_name">Being looked for</string>
     <string name="sought_channel_description">Shown while the group is looking for you.</string>
     <string name="sought_notification_title">Your position is seen by the whole group</string>
+    <string name="sought_notification_title_in_group">Your position is seen by the whole group “%1$s”</string>
     <string name="sought_notification_text">Opened by %1$s, until %2$s</string>
 
     <string name="visibility_title">Who sees where I am</string>

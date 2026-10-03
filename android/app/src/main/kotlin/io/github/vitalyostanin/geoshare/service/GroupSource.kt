@@ -54,7 +54,7 @@ fun groupRoster(connection: GroupConnection): Flow<Roster?> =
             is RosterRead.Read -> emit(read.roster)
 
             // A refusal reads the same way as a group that was never made, which
-            // is what it amounts to for this phone: whoever is looking is offered
+            // is what it amounts to for this device: whoever is looking is offered
             // the two ways into a group rather than left with a roster they are
             // no longer on.
             RosterRead.Refused -> emit(null)

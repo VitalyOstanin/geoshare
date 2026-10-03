@@ -38,15 +38,25 @@ private val RESET_NAME_WAIT: Duration = Duration.ofSeconds(3)
 private val RESET_AT: DateTimeFormatter = DateTimeFormatter.ofPattern("HH:mm")
 
 /**
- * The last request this phone carried out: its server stamp, to leave the same
- * document alone after a restart, and who asked and when it was done, for the
- * line under the settings' own "forget" button.
+ * The last request this device carried out: its server stamp in each group, to
+ * leave the same document alone after a restart, and who asked and when it
+ * was done, for the line under the settings' own "forget" button.
+ *
+ * The stamp is kept by group, because a request in one group says nothing
+ * about the requests in another; the line is the device's, whichever group
+ * asked last.
  */
 class DoneReset(context: Context) {
     private val store = context.getSharedPreferences(FILE, Context.MODE_PRIVATE)
 
-    val askedAt: Instant?
-        get() = store.getLong(KEY_ASKED_AT, -1).takeIf { it >= 0 }?.let(Instant::ofEpochMilli)
+    /**
+     * The request carried out last in [projectId]'s group. What a build that
+     * knew one group kept stands in until that group's own is written.
+     */
+    fun askedAt(projectId: String): Instant? = (
+        store.getLong("$KEY_ASKED_AT.$projectId", -1).takeIf { it >= 0 }
+            ?: store.getLong(KEY_ASKED_AT, -1).takeIf { it >= 0 }
+        )?.let(Instant::ofEpochMilli)
 
     /** Who asked, as a name, or null while nobody has asked from elsewhere. */
     val by: String? get() = store.getString(KEY_BY, null)
@@ -54,9 +64,9 @@ class DoneReset(context: Context) {
     val doneAt: Instant?
         get() = store.getLong(KEY_DONE_AT, -1).takeIf { it >= 0 }?.let(Instant::ofEpochMilli)
 
-    fun keep(askedAt: Instant, by: String, doneAt: Instant) {
+    fun keep(projectId: String, askedAt: Instant, by: String, doneAt: Instant) {
         store.edit()
-            .putLong(KEY_ASKED_AT, askedAt.toEpochMilli())
+            .putLong("$KEY_ASKED_AT.$projectId", askedAt.toEpochMilli())
             .putString(KEY_BY, by)
             .putLong(KEY_DONE_AT, doneAt.toEpochMilli())
             .apply()
@@ -92,7 +102,9 @@ suspend fun answerResets(
     val done = DoneReset(context)
 
     phoneReset(phoneId, connection).collect { asked ->
-        if (asked == null || !shouldForget(asked, done.askedAt, Instant.now())) {
+        val before = done.askedAt(connection.projectId)
+
+        if (asked == null || !shouldForget(asked, before, Instant.now())) {
             return@collect
         }
 
@@ -109,7 +121,7 @@ suspend fun answerResets(
             }
         val now = Instant.now()
 
-        done.keep(asked.askedAt, name, now)
+        done.keep(connection.projectId, asked.askedAt, name, now)
 
         try {
             resetDone(phoneId, connection)

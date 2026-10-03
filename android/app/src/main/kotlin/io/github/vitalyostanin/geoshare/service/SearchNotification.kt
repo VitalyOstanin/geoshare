@@ -29,7 +29,13 @@ private val SOUGHT_ENDS_AT: DateTimeFormatter = DateTimeFormatter.ofPattern("d M
  * whole group watching for this phone is, and a member who has put the phone
  * down should be woken by it the way they would be by a call.
  */
-fun searchNotification(context: Context, search: Search, openedByName: String): Notification {
+fun searchNotification(
+    context: Context,
+    search: Search,
+    openedByName: String,
+    /** The group looking, named only while the device is in more than one. */
+    group: String?,
+): Notification {
     createSearchChannel(context)
 
     val open =
@@ -51,7 +57,13 @@ fun searchNotification(context: Context, search: Search, openedByName: String): 
     return NotificationCompat
         .Builder(context, CHANNEL_ID)
         .setSmallIcon(R.drawable.ic_notification)
-        .setContentTitle(context.getString(R.string.sought_notification_title))
+        .setContentTitle(
+            if (group == null) {
+                context.getString(R.string.sought_notification_title)
+            } else {
+                context.getString(R.string.sought_notification_title_in_group, group)
+            },
+        )
         .setContentText(
             context.getString(
                 R.string.sought_notification_text,
@@ -69,9 +81,22 @@ fun searchNotification(context: Context, search: Search, openedByName: String): 
         .build()
 }
 
-/** Takes the notification down: the search was called off, or the member said they were found. */
-fun cancelSearchNotification(context: Context) {
-    context.getSystemService<NotificationManager>()?.cancel(SEARCH_NOTIFICATION_ID)
+/**
+ * Takes the notification of [projectId]'s search down — the search was called
+ * off, or the member said they were found — or every group's when it is null.
+ */
+fun cancelSearchNotification(context: Context, projectId: String? = null) {
+    val notifications = context.getSystemService<NotificationManager>() ?: return
+
+    if (projectId != null) {
+        notifications.cancel(projectId, SEARCH_NOTIFICATION_ID)
+
+        return
+    }
+
+    notifications.activeNotifications
+        .filter { it.id == SEARCH_NOTIFICATION_ID }
+        .forEach { notifications.cancel(it.tag, it.id) }
 }
 
 private fun createSearchChannel(context: Context) {

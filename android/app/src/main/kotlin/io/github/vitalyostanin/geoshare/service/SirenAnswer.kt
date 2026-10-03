@@ -62,11 +62,11 @@ class SirenAnswer(private val context: Context, private val scope: CoroutineScop
                 return@collect
             }
 
-            if (!shouldSound(called, answered.calledAt, Instant.now())) {
+            if (!shouldSound(called, answered.calledAt(connection.projectId), Instant.now())) {
                 return@collect
             }
 
-            answered.calledAt = called.calledAt
+            answered.keep(connection.projectId, called.calledAt)
             sounding?.cancel()
             // Apart from the subscription: the phone's own "heard" write
             // comes back through it, and must not cut the sound short.
@@ -111,10 +111,12 @@ class SirenAnswer(private val context: Context, private val scope: CoroutineScop
                     } ?: called.calledBy.take(SHORTENED_ID_LENGTH)
                 }
 
+            val group = groupNameForNotice(context, connection)
+
             if (devicePermissions(context).notificationsGranted) {
                 context.getSystemService<NotificationManager>()?.notify(
                     SIREN_NOTIFICATION_ID,
-                    sirenNotification(context, callerName, until),
+                    sirenNotification(context, callerName, group, until),
                 )
             }
 
