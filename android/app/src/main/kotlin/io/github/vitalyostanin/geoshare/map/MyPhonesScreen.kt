@@ -72,8 +72,10 @@ fun MyPhonesScreen(
     resetOf: (phoneId: String) -> Flow<Reset?>,
     /** Asks one of these phones to forget its place; answers how the write came out. */
     onAskReset: suspend (phoneId: String) -> WriteOutcome,
-    /** Takes a phone out of the group; answers whether the database allowed it. */
+    /** Takes a phone out of every group; answers whether each database allowed it. */
     onForgetPhone: suspend (phoneId: String) -> Boolean,
+    /** The groups a removed phone leaves, named in the dialog when there is more than one. */
+    groupNames: List<String> = emptyList(),
     /** The group's searches, by the phone each one is looking for. */
     searches: Map<String, Search> = emptyMap(),
     /** Whether this member runs the group: only they may open a search, on their own phones. */
@@ -441,6 +443,17 @@ fun MyPhonesScreen(
             text = {
                 Column {
                     Text(text = stringResource(R.string.phone_remove_text))
+
+                    if (groupNames.size > 1) {
+                        Text(
+                            text =
+                            stringResource(
+                                R.string.phone_remove_groups,
+                                groupNames.joinToString(", "),
+                            ),
+                            modifier = Modifier.padding(top = 8.dp),
+                        )
+                    }
 
                     if (removeTrouble) {
                         Text(

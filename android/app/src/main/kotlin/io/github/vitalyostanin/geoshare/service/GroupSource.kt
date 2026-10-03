@@ -245,6 +245,59 @@ suspend fun setRunning(uid: String, runs: Boolean, connection: GroupConnection) 
 }
 
 /**
+ * Takes the member signed in as [memberId] out of the group: off the roster
+ * and off the administrators, with everything they wrote into it — the
+ * positions and the claims to be looking of each of their devices, whom they
+ * share with, the list of their devices, their profile and the names they
+ * gave others.
+ *
+ * One batch, so that the member is not left on the roster with nothing of
+ * theirs in the group, nor gone from it with their positions still there for
+ * whoever was allowed to read them. Their devices are read first: a device
+ * the member no longer carries may still have a position lying in the group,
+ * and only this list names it. [deviceId] is added in case this device was
+ * never listed.
+ *
+ * Only the member may write any of it, so it is done by the member; coming
+ * back takes a new invitation (ADR-0025).
+ */
+suspend fun leaveGroup(memberId: String, deviceId: String, connection: GroupConnection) {
+    val listed =
+        phonesOf(connection)
+            .document(memberId)
+            .get()
+            .await()
+            .data
+            ?.keys
+            .orEmpty()
+    val batch = connection.store.batch()
+
+    for (device in listed + deviceId) {
+        val document = positionId(memberId, device)
+
+        batch.delete(positionsOf(connection).document(document))
+        batch.delete(watchOf(connection).document(document))
+    }
+
+    batch
+        .delete(grantsOf(connection).document(memberId))
+        .delete(phonesOf(connection).document(memberId))
+        .delete(membersOf(connection).document(memberId))
+        .delete(labelsOf(connection).document(memberId))
+        .update(
+            connection.groupDocument,
+            mapOf(
+                GroupField.MEMBERS to FieldValue.arrayRemove(memberId),
+                GroupField.ADMINS to FieldValue.arrayRemove(memberId),
+            ),
+        )
+        .commit()
+        .await()
+
+    AppLog.i(TAG, "left the group")
+}
+
+/**
  * Spends the pending invitation a restart carried over (`ConnectState.Done`,
  * [PendingInvitationStore]), through the same write [joinGroup] performs for
  * a code typed into the group section — there is no invitation-specific path

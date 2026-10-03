@@ -11,26 +11,36 @@ private const val TAG = "geoshare.project"
 private const val FIELD_GROUP_ID = "groupId"
 private const val FIELD_CODE = "code"
 private const val FIELD_TO = "to"
+private const val FIELD_PROJECT = "project"
 
 /**
- * An [Invitation]'s group and code, kept across the restart
- * [ConnectState.Done] leads to (ADR-0001), so the sign-in that follows it can
- * spend it the way a group invitation is spent everywhere else.
- * [invitedAddress] is the shortened address the link names, kept so that an
- * account which is plainly not the one invited is told so before anything is
- * written (ADR-0019); the other captions were shown once already and are not
- * needed again.
+ * An [Invitation]'s group and code, kept from [ConnectState.Done] until the
+ * sign-in to [projectId] that follows it, so that sign-in can spend it the way
+ * a group invitation is spent everywhere else. [invitedAddress] is the
+ * shortened address the link names, kept so that an account which is plainly
+ * not the one invited is told so before anything is written (ADR-0019); the
+ * other captions were shown once already and are not needed again.
  */
 data class PendingInvitation(
     val groupId: String,
     val code: String,
     val invitedAddress: String? = null,
+    /** The project it invites to; null when kept by a build that knew a single project. */
+    val projectId: String? = null,
 ) {
     fun toJson(): String = JSONObject()
         .put(FIELD_GROUP_ID, groupId)
         .put(FIELD_CODE, code)
         .apply { invitedAddress?.let { put(FIELD_TO, it) } }
+        .apply { projectId?.let { put(FIELD_PROJECT, it) } }
         .toString()
+
+    /**
+     * Whether a sign-in to [projectId] is the one to spend this on: a device
+     * in several groups signs in to each on its own, and the code is good in
+     * one project only.
+     */
+    fun isFor(projectId: String): Boolean = this.projectId == null || this.projectId == projectId
 
     /**
      * Whether [signedInEmail] is plainly not the account this was made out
@@ -57,31 +67,32 @@ data class PendingInvitation(
             val groupId = document.optString(FIELD_GROUP_ID)
             val code = document.optString(FIELD_CODE)
             val invitedAddress = document.optString(FIELD_TO).ifBlank { null }
+            val projectId = document.optString(FIELD_PROJECT).ifBlank { null }
 
             return if (groupId.isBlank() || code.isBlank()) {
                 null
             } else {
-                PendingInvitation(groupId, code, invitedAddress)
+                PendingInvitation(groupId, code, invitedAddress, projectId)
             }
         }
     }
 }
 
 /**
- * The [PendingInvitation] [ConnectState.Done] leaves for the restart to
- * spend, or none for an owner's own link — [Invitation.groupId] and
+ * The [PendingInvitation] [ConnectState.Done] leaves for the sign-in to its
+ * project to spend, or none for an owner's own link — [Invitation.groupId] and
  * [Invitation.code] are what a join needs, and [Invitation.invitedAddress]
  * what tells a wrong account apart before joining; the other captions have
  * nothing left to say once the confirmation screen that showed them is gone.
  */
-fun pendingInvitationFor(done: ConnectState.Done): PendingInvitation? =
-    done.invitation?.let { PendingInvitation(it.groupId, it.code, it.invitedAddress) }
+fun pendingInvitationFor(done: ConnectState.Done): PendingInvitation? = done.invitation?.let {
+    PendingInvitation(it.groupId, it.code, it.invitedAddress, done.settings.projectId)
+}
 
 /**
  * Where a [PendingInvitation] waits between [ConnectState.Done] writing it
- * and the sign-in after the restart reading it back —
- * [Connections.files]' own file, since both the write and the read
- * belong to the same restart.
+ * and the sign-in to its project reading it back — [Connections.files]' own
+ * file, beside the list of groups it was written together with.
  */
 object PendingInvitationStore {
     /** Keeps [invitation] for the next start, or clears what was kept when there is none. */

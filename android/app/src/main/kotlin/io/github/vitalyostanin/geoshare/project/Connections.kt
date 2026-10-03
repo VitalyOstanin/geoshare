@@ -133,21 +133,18 @@ object Connections {
     fun select(context: Context, projectId: String) = publish(context, kept.selecting(projectId))
 
     /**
-     * Forgets the group of [projectId], and the instance it was reached
-     * through with it — and so its session.
+     * Forgets the group of [projectId]; its session is the caller's to sign
+     * out first.
      *
-     * The default instance stays: the library does not let it be made again
-     * under another project, and it still belongs to the project it was made
-     * for if the device ever joins that project again.
+     * The instance it was reached through is left running until the process
+     * ends. The screens and the service let go of their subscriptions only
+     * once they see the list without it — on the next frame, in their own
+     * coroutines — and an instance deleted under a subscription still held
+     * fails it. Joining the project again in the same run takes the same
+     * instance back.
      */
     fun remove(context: Context, projectId: String) {
-        val gone = of(projectId)
-
         publish(context, kept.without(projectId))
-
-        if (gone != null && gone.app.name != FirebaseApp.DEFAULT_APP_NAME) {
-            gone.app.delete()
-        }
 
         AppLog.i(TAG, "no longer in $projectId")
     }

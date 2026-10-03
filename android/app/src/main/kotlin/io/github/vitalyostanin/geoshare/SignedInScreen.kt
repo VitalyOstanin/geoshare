@@ -51,7 +51,6 @@ import io.github.vitalyostanin.geoshare.service.callSiren
 import io.github.vitalyostanin.geoshare.service.consumePendingInvitation
 import io.github.vitalyostanin.geoshare.service.endSearch
 import io.github.vitalyostanin.geoshare.service.forgetAidingData
-import io.github.vitalyostanin.geoshare.service.forgetPhone
 import io.github.vitalyostanin.geoshare.service.foundGroup
 import io.github.vitalyostanin.geoshare.service.joinGroup
 import io.github.vitalyostanin.geoshare.service.leavePreviousId
@@ -66,6 +65,7 @@ import io.github.vitalyostanin.geoshare.service.renewSearch
 import io.github.vitalyostanin.geoshare.service.setRunning
 import io.github.vitalyostanin.geoshare.service.stopSiren
 import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.async
 import kotlinx.coroutines.launch
 import java.time.Instant
 
@@ -129,16 +129,20 @@ internal fun SignedInScreen(
         leavePreviousId(current.memberId, activity.device, connection = connection)
     }
 
-    // Only the restart ConnectState.Done led to ever
-    // leaves one of these behind; an ordinary sign-in
-    // finds nothing and this does nothing.
+    // Only ConnectState.Done ever leaves one of these
+    // behind; an ordinary sign-in finds nothing and
+    // this does nothing.
     var wrongAccount by remember {
         mutableStateOf<PendingInvitation?>(null)
     }
 
     LaunchedEffect(connection, current.memberId) {
-        val pending = PendingInvitationStore.read(activity)
-            ?: return@LaunchedEffect
+        // Kept for the sign-in to the group it invites
+        // to, which need not be the one on the screen.
+        val pending =
+            PendingInvitationStore.read(activity)
+                ?.takeIf { it.isFor(connection.projectId) }
+                ?: return@LaunchedEffect
 
         // Plainly another account: said before any
         // write, and the invitation is kept for the
@@ -415,10 +419,7 @@ internal fun SignedInScreen(
                     }
                 },
                 onSignOut = {
-                    activity.lifecycleScope.launch {
-                        activity.forgetThisPhone(current.memberId, connection)
-                        activity.signIn.signOut()
-                    }
+                    activity.lifecycleScope.launch { activity.signOutEverywhere() }
                 },
                 // A suspend function called from the
                 // dialog's own coroutine rather than
@@ -474,25 +475,9 @@ internal fun SignedInScreen(
                         )
                     }
                 },
-                onForgetPhone = { phoneId ->
-                    try {
-                        forgetPhone(
-                            current.memberId,
-                            phoneId.substringAfter('.'),
-                            connection = connection,
-                        )
-                        true
-                    } catch (cancellation: CancellationException) {
-                        throw cancellation
-                    } catch (refusal: Exception) {
-                        AppLog.w(
-                            MainActivity.TAG,
-                            "a phone could not be removed",
-                            refusal,
-                        )
-                        false
-                    }
-                },
+                // From every group, each under the account it knows the
+                // member by: the device is the same one in all of them.
+                onForgetPhone = { phoneId -> forgetDeviceEverywhere(phoneId.substringAfter('.')) },
                 onEndSearch = { phoneId ->
                     try {
                         withinAnswerWait { endSearch(phoneId, connection = connection) }
@@ -519,6 +504,17 @@ internal fun SignedInScreen(
                 selected = connection.projectId,
                 onSelect = { projectId -> Connections.select(activity, projectId) },
                 onJoin = activity.connectFlow::askForLink,
+                // In the activity's scope rather than the dialog's: the
+                // dialog goes with the screen the moment the group does,
+                // and what follows the batch must not go with it.
+                onLeave = { ask ->
+                    val leaving = Connections.of(ask.projectId)
+
+                    leaving == null ||
+                        activity.lifecycleScope
+                            .async { activity.leave(leaving, ask.how) }
+                            .await()
+                },
             ),
         )
     }

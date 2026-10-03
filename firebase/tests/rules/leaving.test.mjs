@@ -3,7 +3,7 @@
 import { describe, it } from 'node:test';
 
 import { assertFails, assertSucceeds } from '@firebase/rules-unit-testing';
-import { arrayRemove, setDoc, updateDoc, writeBatch } from 'firebase/firestore';
+import { arrayRemove, doc, setDoc, updateDoc, writeBatch } from 'firebase/firestore';
 
 import {
     setUpRules,
@@ -19,6 +19,8 @@ import {
     positionFrom,
     someGrant,
     someProfile,
+    watchOf,
+    GROUP,
 } from './helpers.mjs';
 
 setUpRules();
@@ -126,6 +128,36 @@ describe('leaving a group', () => {
                 .delete(grantOf(db, BOB))
                 .delete(memberOf(db, BOB))
                 .update(groupDoc(db), { members: arrayRemove(BOB) })
+                .commit(),
+        );
+    });
+
+    // The batch the application sends: every document the member wrote into
+    // the group, for each of their devices, some of which were never made.
+    it('an administrator leaves with everything they wrote, in the batch the app sends', async () => {
+        await testEnv.withSecurityRulesDisabled(async (context) => {
+            const db = context.firestore();
+
+            await setDoc(groupDoc(db), { members: [ALICE, BOB], admins: [ALICE, BOB] });
+            await setDoc(memberOf(db, BOB), someProfile('Bob'));
+            await setDoc(grantOf(db, BOB), someGrant({ [ALICE]: FOREVER }));
+            await setDoc(positionOf(db, BOB), positionFrom(BOB));
+            await setDoc(watchOf(db, BOB), { memberId: BOB, since: new Date() });
+            await setDoc(doc(db, `groups/${GROUP}/devices/${BOB}`), { phone: { model: 'X' } });
+        });
+        const db = testEnv.authenticatedContext(BOB).firestore();
+
+        await assertSucceeds(
+            writeBatch(db)
+                .delete(positionOf(db, BOB))
+                .delete(watchOf(db, BOB))
+                .delete(positionOf(db, BOB, 'tablet'))
+                .delete(watchOf(db, BOB, 'tablet'))
+                .delete(grantOf(db, BOB))
+                .delete(doc(db, `groups/${GROUP}/devices/${BOB}`))
+                .delete(memberOf(db, BOB))
+                .delete(doc(db, `groups/${GROUP}/labels/${BOB}`))
+                .update(groupDoc(db), { members: arrayRemove(BOB), admins: arrayRemove(BOB) })
                 .commit(),
         );
     });

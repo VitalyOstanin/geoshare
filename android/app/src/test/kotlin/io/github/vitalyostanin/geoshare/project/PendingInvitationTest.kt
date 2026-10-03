@@ -50,6 +50,7 @@ class PendingInvitationTest {
                 groupId = "group-1",
                 code = "ABCDEFGH",
                 invitedAddress = "ivan…@example.com",
+                projectId = "geoshare-example",
             ),
             pendingInvitationFor(done),
         )
@@ -84,5 +85,29 @@ class PendingInvitationTest {
     @Test
     fun `an owner's own link leaves nothing pending`() {
         assertNull(pendingInvitationFor(ConnectState.Done(SETTINGS, LINK.invitation)))
+    }
+
+    @Test
+    fun `the project an invitation is for survives the json`() {
+        val invitation = PendingInvitation("group-1", "ABCDEFGH", projectId = "geoshare-hike")
+
+        assertEquals(invitation, PendingInvitation.parse(invitation.toJson()))
+    }
+
+    // A device in two groups signs in to each on its own; an invitation to
+    // one is not to be spent on the sign-in to the other.
+    @Test
+    fun `an invitation is spent only on a sign-in to its own project`() {
+        val invitation = PendingInvitation("group-1", "ABCDEFGH", projectId = "geoshare-hike")
+
+        assertEquals(true, invitation.isFor("geoshare-hike"))
+        assertEquals(false, invitation.isFor("example-family"))
+    }
+
+    // Kept by a build that knew a single project: it can only have been for
+    // the project the device was in.
+    @Test
+    fun `an invitation kept without a project is for any`() {
+        assertEquals(true, PendingInvitation("group-1", "ABCDEFGH").isFor("example-family"))
     }
 }

@@ -56,6 +56,8 @@ fun GroupSection(
     onOpenAdmin: () -> Unit,
     /** The way to this member's own phones, to ring one of them. */
     onOpenMyPhones: () -> Unit,
+    /** Leaving the group, or null when it is offered elsewhere. */
+    onLeaveGroup: (() -> Unit)?,
     modifier: Modifier = Modifier,
 ) {
     val standing = standingIn(roster, ownMemberId)
@@ -82,6 +84,7 @@ fun GroupSection(
                     standing = standing,
                     onOpenAdmin = onOpenAdmin,
                     onOpenMyPhones = onOpenMyPhones,
+                    onLeaveGroup = onLeaveGroup,
                 )
         }
 
@@ -216,6 +219,7 @@ private fun TheGroup(
     standing: Standing,
     onOpenAdmin: () -> Unit,
     onOpenMyPhones: () -> Unit,
+    onLeaveGroup: (() -> Unit)?,
 ) {
     for (memberId in roster.members) {
         MemberRow(
@@ -250,6 +254,18 @@ private fun TheGroup(
         modifier = Modifier.padding(start = 8.dp),
     ) {
         Text(text = stringResource(R.string.my_phones_open))
+    }
+
+    if (onLeaveGroup != null) {
+        TextButton(
+            onClick = onLeaveGroup,
+            modifier = Modifier.padding(start = 8.dp),
+        ) {
+            Text(
+                text = stringResource(R.string.group_leave),
+                color = MaterialTheme.colorScheme.error,
+            )
+        }
     }
 }
 

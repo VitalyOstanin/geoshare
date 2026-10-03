@@ -155,6 +155,8 @@ fun SettingsScreen(
     /** The way to the screen where the group is run, offered to whoever runs it. */
     onOpenAdmin: () -> Unit,
     onOpenMyPhones: () -> Unit,
+    /** Leaving the group, offered here while it is the only one; null while the list offers it. */
+    onLeaveGroup: (() -> Unit)?,
     modifier: Modifier = Modifier,
 ) {
     Surface(modifier = modifier.fillMaxSize()) {
@@ -275,6 +277,7 @@ fun SettingsScreen(
                 onPasteLink = actions.onPasteLink,
                 onOpenAdmin = onOpenAdmin,
                 onOpenMyPhones = onOpenMyPhones,
+                onLeaveGroup = onLeaveGroup,
             )
 
             HorizontalDivider()

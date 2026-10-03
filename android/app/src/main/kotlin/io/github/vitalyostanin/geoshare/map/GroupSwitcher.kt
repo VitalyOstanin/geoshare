@@ -4,6 +4,7 @@ import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -12,7 +13,10 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Surface
@@ -20,7 +24,10 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.State
 import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Path
@@ -34,7 +41,9 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import io.github.vitalyostanin.geoshare.R
+import io.github.vitalyostanin.geoshare.membership.Leave
 import io.github.vitalyostanin.geoshare.membership.Roster
+import io.github.vitalyostanin.geoshare.membership.howToLeave
 import io.github.vitalyostanin.geoshare.project.GroupConnection
 import io.github.vitalyostanin.geoshare.service.groupRoster
 import io.github.vitalyostanin.geoshare.service.groupSearches
@@ -48,6 +57,7 @@ import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.flowOf
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.onStart
 import java.time.Instant
 
@@ -87,11 +97,13 @@ data class GroupChoice(
     val members: Int?,
     val siren: Boolean,
     val search: Boolean,
+    /** What leaving the group would do for the account this device is signed in as there. */
+    val leave: Leave,
 )
 
 /**
  * The groups the map can switch between, and what it asks for when the
- * member switches or wants to join one more.
+ * member switches, wants to join one more or leaves one.
  */
 data class GroupSwitch(
     val choices: List<GroupChoice>,
@@ -99,6 +111,8 @@ data class GroupSwitch(
     val selected: String,
     val onSelect: (String) -> Unit,
     val onJoin: () -> Unit,
+    /** Leaves a group the way asked, true once it is gone from this device. */
+    val onLeave: suspend (LeaveAsk) -> Boolean,
 )
 
 /**
@@ -126,6 +140,8 @@ fun groupChoice(
     unnamedPattern: String,
     searches: Map<String, Search>,
     ownSiren: Siren?,
+    /** Who this device is signed in as in the group, or null when it is not. */
+    uid: String?,
     now: Instant,
 ): GroupChoice {
     val sounding =
@@ -142,6 +158,7 @@ fun groupChoice(
         members = roster?.members?.size,
         siren = sounding,
         search = standingSearches(searches, now).isNotEmpty(),
+        leave = uid?.let { howToLeave(roster, it) } ?: Leave.NOT_ON_ROSTER,
     )
 }
 
@@ -163,19 +180,26 @@ fun rememberGroupChoices(
         remember(connections, deviceId, unnamed) {
             val perGroup =
                 connections.map { connection ->
-                    val ownSiren =
+                    // Who the device is there, and its siren there, which
+                    // is addressed by that same account.
+                    val session: Flow<Pair<String?, Siren?>> =
                         signedInTo(connection).flatMapLatest { uid ->
-                            uid?.let { phoneSiren(positionId(it, deviceId), connection) }
-                                ?: flowOf(null)
+                            if (uid == null) {
+                                flowOf(null to null)
+                            } else {
+                                phoneSiren(positionId(uid, deviceId), connection)
+                                    .onStart { emit(null) }
+                                    .map { uid to it }
+                            }
                         }
 
                     combine(
                         groupRoster(connection).onStart { emit(null) },
                         memberProfiles(connection).onStart { emit(emptyMap()) },
                         groupSearches(connection).onStart { emit(emptyMap()) },
-                        ownSiren.onStart { emit(null) },
+                        session.onStart { emit(null to null) },
                         ticking(),
-                    ) { roster, profiles, searches, siren, now ->
+                    ) { roster, profiles, searches, (uid, siren), now ->
                         groupChoice(
                             connection.projectId,
                             roster,
@@ -183,6 +207,7 @@ fun rememberGroupChoices(
                             unnamed,
                             searches,
                             siren,
+                            uid,
                             now,
                         )
                     }
@@ -257,7 +282,8 @@ fun GroupChip(caption: String, onClick: () -> Unit, modifier: Modifier = Modifie
 /**
  * The groups this device is in, from the bottom of the screen: the one shown
  * is marked, and under each name its members and what stands in it. Pressing
- * a group shows it; the last line opens the paste screen to join another.
+ * a group shows it, and its «⋮» offers to leave it without showing it first;
+ * the last line opens the paste screen to join another.
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -266,6 +292,7 @@ fun GroupSheet(
     selected: String,
     onSelect: (String) -> Unit,
     onJoin: () -> Unit,
+    onLeave: (GroupChoice) -> Unit,
     onClose: () -> Unit,
 ) {
     ModalBottomSheet(onDismissRequest = onClose) {
@@ -282,6 +309,7 @@ fun GroupSheet(
                     choice = choice,
                     current = choice.projectId == selected,
                     onClick = { onSelect(choice.projectId) },
+                    onLeave = { onLeave(choice) },
                 )
             }
 
@@ -301,7 +329,14 @@ fun GroupSheet(
 }
 
 @Composable
-private fun GroupRow(choice: GroupChoice, current: Boolean, onClick: () -> Unit) {
+private fun GroupRow(
+    choice: GroupChoice,
+    current: Boolean,
+    onClick: () -> Unit,
+    onLeave: () -> Unit,
+) {
+    var menuOpen by remember { mutableStateOf(false) }
+
     val details =
         buildList {
             choice.members?.let {
@@ -356,6 +391,27 @@ private fun GroupRow(choice: GroupChoice, current: Boolean, onClick: () -> Unit)
                 fontWeight = FontWeight.Bold,
                 modifier = Modifier.semantics { contentDescription = shown },
             )
+        }
+
+        Box {
+            val more = stringResource(R.string.group_switcher_more, choice.caption)
+
+            IconButton(
+                onClick = { menuOpen = true },
+                modifier = Modifier.semantics { contentDescription = more },
+            ) {
+                Text(text = "⋮", style = MaterialTheme.typography.titleMedium)
+            }
+
+            DropdownMenu(expanded = menuOpen, onDismissRequest = { menuOpen = false }) {
+                DropdownMenuItem(
+                    text = { Text(text = stringResource(R.string.group_leave)) },
+                    onClick = {
+                        menuOpen = false
+                        onLeave()
+                    },
+                )
+            }
         }
     }
 }

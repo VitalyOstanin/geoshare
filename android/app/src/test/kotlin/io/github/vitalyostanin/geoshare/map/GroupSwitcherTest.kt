@@ -1,6 +1,7 @@
 package io.github.vitalyostanin.geoshare.map
 
 import androidx.compose.ui.unit.dp
+import io.github.vitalyostanin.geoshare.membership.Leave
 import io.github.vitalyostanin.geoshare.membership.Roster
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -43,6 +44,7 @@ class GroupSwitcherTest {
         roster: Roster? = this.roster,
         searches: Map<String, Search> = emptyMap(),
         ownSiren: Siren? = null,
+        uid: String? = "boris",
     ) = groupChoice(
         projectId = "geoshare-hike",
         roster = roster,
@@ -50,6 +52,7 @@ class GroupSwitcherTest {
         unnamedPattern = "%1\$s's group",
         searches = searches,
         ownSiren = ownSiren,
+        uid = uid,
         now = now,
     )
 
@@ -108,5 +111,20 @@ class GroupSwitcherTest {
     fun `a siren long over is not`() {
         assertFalse(choice(ownSiren = siren(calledSecondsAgo = 600)).siren)
         assertFalse(choice().siren)
+    }
+
+    @Test
+    fun `a member signed in there may leave the roster`() {
+        assertEquals(Leave.ROSTER, choice().leave)
+    }
+
+    @Test
+    fun `the only administrator only takes the group off this device`() {
+        assertEquals(Leave.DEVICE_ONLY, choice(uid = "anna").leave)
+    }
+
+    @Test
+    fun `a group this device is not signed in to has no roster place to leave`() {
+        assertEquals(Leave.NOT_ON_ROSTER, choice(uid = null).leave)
     }
 }

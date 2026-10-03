@@ -42,8 +42,10 @@ import androidx.compose.ui.unit.dp
 import io.github.vitalyostanin.geoshare.R
 import io.github.vitalyostanin.geoshare.collection.Watcher
 import io.github.vitalyostanin.geoshare.collection.watchingMembers
+import io.github.vitalyostanin.geoshare.membership.Leave
 import io.github.vitalyostanin.geoshare.membership.Roster
 import io.github.vitalyostanin.geoshare.membership.Standing
+import io.github.vitalyostanin.geoshare.membership.howToLeave
 import io.github.vitalyostanin.geoshare.membership.standingIn
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.flowOf
@@ -142,6 +144,7 @@ fun MapScreen(
     var followMode by remember { mutableStateOf(FollowMode.NONE) }
     var mapHelpOpen by remember { mutableStateOf(false) }
     var groupsOpen by remember { mutableStateOf(false) }
+    var leaveAsk by remember { mutableStateOf<LeaveAsk?>(null) }
     val switcher = switcherShown(groups.choices.size)
     // Whether a hand is holding the following still; the button says so.
     var followPaused by remember { mutableStateOf(false) }
@@ -477,7 +480,19 @@ fun MapScreen(
                         groupsOpen = false
                         groups.onJoin()
                     },
+                    onLeave = { choice ->
+                        groupsOpen = false
+                        leaveAsk = LeaveAsk(choice.projectId, choice.caption, choice.leave)
+                    },
                     onClose = { groupsOpen = false },
+                )
+            }
+
+            leaveAsk?.let { ask ->
+                LeaveGroupDialog(
+                    ask = ask,
+                    onLeave = { groups.onLeave(ask) },
+                    onDismiss = { leaveAsk = null },
                 )
             }
 
@@ -699,6 +714,22 @@ fun MapScreen(
             onClose = { settingsOpen = false },
             onOpenAdmin = { adminOpen = true },
             onOpenMyPhones = { myPhonesOpen = true },
+            // With one group there is no list to leave it from, so the
+            // settings offer it; with more, the list does, for any of them.
+            onLeaveGroup =
+            if (switcher) {
+                null
+            } else {
+                {
+                    leaveAsk =
+                        LeaveAsk(
+                            projectId = groups.selected,
+                            caption =
+                            groups.choices.firstOrNull()?.caption ?: groups.selected,
+                            how = howToLeave(settings.roster, ownMemberId),
+                        )
+                }
+            },
         )
     }
 
@@ -720,6 +751,8 @@ fun MapScreen(
             resetOf = actions.resetOf,
             onAskReset = actions.onAskReset,
             onForgetPhone = actions.onForgetPhone,
+            groupNames =
+            groups.choices.filter { it.leave != Leave.NOT_ON_ROSTER }.map { it.caption },
             searches = searches,
             mayLookFor = runsTheGroup,
             onSearch = actions.onSearch,

@@ -34,6 +34,7 @@ import androidx.lifecycle.lifecycleScope
 import com.google.firebase.FirebaseApp
 import io.github.vitalyostanin.geoshare.auth.AuthState
 import io.github.vitalyostanin.geoshare.auth.SignInController
+import io.github.vitalyostanin.geoshare.auth.SignInFailure
 import io.github.vitalyostanin.geoshare.auth.SignInScreen
 import io.github.vitalyostanin.geoshare.log.AppLog
 import io.github.vitalyostanin.geoshare.map.UnansweredException
@@ -69,7 +70,6 @@ import io.github.vitalyostanin.geoshare.service.SourcesSetting
 import io.github.vitalyostanin.geoshare.service.ThemeSetting
 import io.github.vitalyostanin.geoshare.service.darkWanted
 import io.github.vitalyostanin.geoshare.service.dndAccessGranted
-import io.github.vitalyostanin.geoshare.service.forgetPhone
 import io.github.vitalyostanin.geoshare.service.languageChosen
 import io.github.vitalyostanin.geoshare.service.languageTag
 import io.github.vitalyostanin.geoshare.service.refusalToStart
@@ -77,7 +77,6 @@ import io.github.vitalyostanin.geoshare.service.startConditions
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.withTimeoutOrNull
 
 /**
  * An AppCompat activity for one reason: the language a member picks inside the
@@ -339,7 +338,35 @@ class MainActivity : AppCompatActivity() {
                                 aidingDoubted = aidingDoubted,
                             )
 
-                        else ->
+                        else -> {
+                            // A sign-in started here and cancelled leaves the
+                            // group listed but not shown: the device goes
+                            // back to a group it is signed in to. Only one
+                            // started while this screen was up counts, or a
+                            // group whose last attempt was cancelled could
+                            // never be shown again.
+                            var started by remember(connection) { mutableStateOf(false) }
+
+                            LaunchedEffect(current, connection) {
+                                if (current is AuthState.SigningIn) {
+                                    started = true
+                                }
+
+                                val cancelled =
+                                    (current as? AuthState.SignedOut)?.failure ==
+                                        SignInFailure.Cancelled
+
+                                if (started && cancelled) {
+                                    Connections.all.value
+                                        .firstOrNull {
+                                            it !== connection && it.auth.currentUser != null
+                                        }
+                                        ?.let {
+                                            Connections.select(this@MainActivity, it.projectId)
+                                        }
+                                }
+                            }
+
                             SignInScreen(
                                 state = current,
                                 onSignIn = {
@@ -349,6 +376,7 @@ class MainActivity : AppCompatActivity() {
                                     lifecycleScope.launch { signIn.signInAsStandIn(account) }
                                 },
                             )
+                        }
                     }
                 }
             }
@@ -391,8 +419,8 @@ class MainActivity : AppCompatActivity() {
 
     /**
      * The sign-in of [connection]'s project, made the first time it is asked
-     * for. A group removed and joined again gets a new instance, and so a new
-     * sign-in in place of the one made for the instance that is gone.
+     * for. A group removed and joined again in the same run comes back on the
+     * same instance, and so to the same sign-in.
      */
     internal fun signInOf(connection: GroupConnection): SignInController {
         val kept = signIns[connection.app.name]
@@ -670,40 +698,14 @@ class MainActivity : AppCompatActivity() {
     }
 
     /**
-     * Takes this phone out of the group before its account signs out.
-     *
-     * A phone signed out is usually a phone changing hands, and what it wrote
-     * would otherwise stay behind for good: a marker greying on everybody's
-     * map, a line in the lists naming a phone the member no longer has. Only
-     * the member may remove them, so it has to happen while they are still
-     * signed in.
-     *
-     * The service is stopped first, so that no position written after the
-     * removal puts the phone back, and the switch is turned off: whoever signs
-     * in next decides for themselves whether to share. The wait is short, and a phone without
-     * a network signs out all the same; its line is then removed from another
-     * of the member's phones or from the page.
+     * Stops the service and turns the switch off, ahead of this device
+     * leaving the last group it is in or signing out: no position written
+     * afterwards puts the device back, and whoever signs in next decides for
+     * themselves whether to share.
      */
-    internal suspend fun forgetThisPhone(memberId: String, connection: GroupConnection) {
+    internal fun stopSharing() {
         sharing.enabled = false
         stopService(Intent(this, SharingService::class.java))
-
-        val forgotten =
-            try {
-                withTimeoutOrNull(SIGN_OUT_WAIT_MS) {
-                    forgetPhone(memberId, device.id, connection)
-                } !=
-                    null
-            } catch (cancellation: CancellationException) {
-                throw cancellation
-            } catch (error: Exception) {
-                AppLog.w(TAG, "could not take this phone out of the group", error)
-                false
-            }
-
-        if (!forgotten) {
-            AppLog.w(TAG, "signing out with this phone still listed")
-        }
     }
 
     /**
@@ -728,7 +730,7 @@ class MainActivity : AppCompatActivity() {
     internal companion object {
         const val TAG = "geoshare.main"
 
-        /** How long signing out waits for this phone to be taken out of the group. */
+        /** How long signing out or leaving waits for each group to answer. */
         const val SIGN_OUT_WAIT_MS = 5_000L
     }
 }

@@ -271,6 +271,7 @@
     <string name="phone_remove">Удалить устройство</string>
     <string name="phone_remove_title">Удалить «%1$s»?</string>
     <string name="phone_remove_text">Устройство исчезнет с карты и из списков у всех участников группы. Имя, которое вы ему дали, тоже удалится. Если устройство снова выйдет на связь под вашим аккаунтом, оно появится опять.</string>
+    <string name="phone_remove_groups">Устройство удалится из всех групп: %1$s.</string>
     <string name="phone_remove_go">Удалить</string>
     <string name="phone_remove_refused">Не удалось удалить устройство. Проверьте связь и попробуйте ещё раз.</string>
     <!-- Показывается тому, кого ищут, отдельным уведомлением: то, что позицию
@@ -357,6 +358,16 @@
     <string name="group_switcher_siren">сирена</string>
     <string name="group_switcher_search">поиск</string>
     <string name="group_switcher_join">+ Вступить в группу по ссылке</string>
+
+    <string name="group_switcher_more">Ещё: %1$s</string>
+    <string name="group_leave">Выйти из группы</string>
+    <string name="group_leave_title">Выйти из группы «%1$s»?</string>
+    <string name="group_leave_text">Участники перестанут видеть вас и ваши устройства. Вернуться можно будет только по новому приглашению.</string>
+    <string name="group_leave_runs_it_text">Вы остаётесь в группе — её нельзя оставить без того, кто ею управляет. Группа будет убрана только с этого устройства.</string>
+    <string name="group_leave_not_on_roster_text">Вас нет в списке этой группы. Группа будет убрана с этого устройства.</string>
+    <string name="group_leave_go">Выйти</string>
+    <string name="group_leave_device_go">Убрать с устройства</string>
+    <string name="group_leave_refused">Не удалось выйти из группы. Проверьте связь и повторите.</string>
 
     <plurals name="map_more_count">
         <item quantity="one">%1$d участник</item>
