@@ -58,6 +58,7 @@ import io.github.vitalyostanin.geoshare.collection.remembering
 import io.github.vitalyostanin.geoshare.collection.rescueAccuracy
 import io.github.vitalyostanin.geoshare.collection.rescueAfter
 import io.github.vitalyostanin.geoshare.collection.said
+import io.github.vitalyostanin.geoshare.collection.sameAnswer
 import io.github.vitalyostanin.geoshare.collection.saysMoreThan
 import io.github.vitalyostanin.geoshare.collection.secondOpinionDue
 import io.github.vitalyostanin.geoshare.collection.secondOpinionEvery
@@ -996,7 +997,9 @@ class SharingService : LifecycleService() {
                         awaitCancellation()
                     }
 
-                    firstPosition(mode)?.let { fix ->
+                    val first = firstPosition(mode)
+
+                    first?.let { fix ->
                         freshenTheSecondOpinion(mode)
                         writeIfWorth(writer, fix, mode, always = true)
                     }
@@ -1010,6 +1013,11 @@ class SharingService : LifecycleService() {
 
                         positionUpdates(this@SharingService, spec, asked).collect { fix ->
                             heardAt = Instant.now()
+
+                            if (sameAnswer(first, fix)) {
+                                return@collect
+                            }
+
                             freshenTheSecondOpinion(mode)
                             writeIfWorth(writer, fix, mode)
                         }

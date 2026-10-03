@@ -149,6 +149,20 @@ fun makeupOf(counts: Map<Constellation, Counted>): FixMakeup {
 }
 
 /**
+ * Whether the receiver's status says the answer beside it was built without a
+ * single satellite.
+ *
+ * The fused provider names no source, and on these phones it answers from the
+ * Wi-Fi and the towers while the receiver goes on listening: the status then
+ * counts satellites heard and none used. Such an answer is the one a false sky
+ * cannot reach, and the rules about the sky have nothing to say about it.
+ * Nothing at all is not the same as none: an empty count is a status that was
+ * missing or too old, and says nothing either way.
+ */
+fun restsOnNoSatellite(counts: Map<Constellation, Counted>): Boolean =
+    counts.isNotEmpty() && counts.values.all { it.usedInFix == 0 }
+
+/**
  * Whether the fix was built out of the band a false signal is transmitted in,
  * while the band it cannot reach was there to be built out of and was not.
  *

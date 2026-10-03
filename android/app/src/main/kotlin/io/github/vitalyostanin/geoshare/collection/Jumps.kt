@@ -218,6 +218,10 @@ enum class JumpReason {
  * nothing to ask: no status, a status too old to be about this fix, or a phone
  * that hears one band and has nothing to compare.
  *
+ * The same status decides whether the rules about the sky are asked at all: an
+ * answer it shows resting on no satellite came from the Wi-Fi or the towers,
+ * and a sky judged false says nothing about it.
+ *
  * Whether the receiver has settled since the phone was switched on is asked
  * last of the rules that need no anchor, and it is asked before the anchor is
  * required because the first answer after a boot is the one with nothing
@@ -263,15 +267,18 @@ fun whyAJump(
         return JumpReason.OneBand
     }
 
-    if (fromOneTransmitter(skySays)) {
+    // What the sky says is held only against an answer built out of it.
+    val fromTheSky = !restsOnNoSatellite(restsOn)
+
+    if (fromTheSky && fromOneTransmitter(skySays)) {
         return JumpReason.OneTransmitter
     }
 
-    if (skySays.satelliteTimeApart) {
+    if (fromTheSky && skySays.satelliteTimeApart) {
         return JumpReason.TimeApart
     }
 
-    if (skySays.offTheOrbits) {
+    if (fromTheSky && skySays.offTheOrbits) {
         return JumpReason.OffOrbit
     }
 

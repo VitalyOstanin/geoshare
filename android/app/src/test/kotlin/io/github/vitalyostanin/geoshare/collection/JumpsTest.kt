@@ -326,6 +326,36 @@ class JumpsTest {
         )
     }
 
+    // The fused provider answering from the Wi-Fi while the receiver hears a
+    // sky judged false: the status counts satellites heard and none used.
+    @Test
+    fun `an answer resting on no satellite is not held to the sky`() {
+        val first = fixAt(61.03268, 4.40299, 0, accuracy = 60.0)
+        val second = fixAt(61.03270, 4.40305, 60, accuracy = 100.0)
+        val noneUsed = mapOf(Constellation.Gps to Counted(heard = 5, usedInFix = 0))
+        val skies = listOf(
+            SkySays(offTheOrbits = true),
+            SkySays(satelliteTimeApart = true),
+            SkySays(shape = SkyShape.Flat, otherBandSilent = true),
+        )
+
+        for (sky in skies) {
+            assertNull(whyAJump(first, second, restsOn = noneUsed, skySays = sky))
+        }
+    }
+
+    @Test
+    fun `an answer resting on a single satellite is still held to the sky`() {
+        val first = fixAt(61.03268, 4.40299, 0, accuracy = 60.0)
+        val second = fixAt(61.03270, 4.40305, 60, accuracy = 80.0)
+        val oneUsed = mapOf(Constellation.Gps to Counted(heard = 5, usedInFix = 1))
+
+        assertEquals(
+            JumpReason.OffOrbit,
+            whyAJump(first, second, restsOn = oneUsed, skySays = SkySays(offTheOrbits = true)),
+        )
+    }
+
     @Test
     fun `a fix the satellites' time ran along with passes`() {
         val first = fixAt(61.03268, 4.40299, 0, accuracy = 60.0)

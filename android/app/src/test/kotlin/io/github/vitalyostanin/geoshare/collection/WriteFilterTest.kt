@@ -125,4 +125,26 @@ class WriteFilterTest {
         assertFalse(metres.isNaN())
         assertEquals(20_015_114.0, metres, 1.0)
     }
+
+    @Test
+    fun `the same answer handed over twice is recognised`() {
+        val again = home.copy(accuracyMetres = 30.0, from = "fused")
+
+        assertTrue(sameAnswer(home, again))
+    }
+
+    @Test
+    fun `a later answer from the same place is a new one`() {
+        assertFalse(sameAnswer(home, north(metres = 0.0, afterSeconds = 1)))
+    }
+
+    @Test
+    fun `an answer from elsewhere at the same moment is a new one`() {
+        assertFalse(sameAnswer(home, north(metres = 5.0, afterSeconds = 0)))
+    }
+
+    @Test
+    fun `nothing before means nothing to repeat`() {
+        assertFalse(sameAnswer(null, home))
+    }
 }

@@ -138,6 +138,19 @@ fun apart(from: Fix, to: Fix): Duration {
 fun sinceFirst(run: List<Fix>): List<Duration> = run.map { apart(run.first(), it) }
 
 /**
+ * Whether [next] is the answer [before] already was, handed over a second time.
+ *
+ * Opening a subscription makes the provider deliver the position it last
+ * found, which is the one a moment-old single request has just returned. Read
+ * twice, it goes through the rules twice, and a fix left out comes back as the
+ * fix before it that agrees with it.
+ */
+fun sameAnswer(before: Fix?, next: Fix): Boolean = before != null &&
+    before.takenAt == next.takenAt &&
+    before.latitude == next.latitude &&
+    before.longitude == next.longitude
+
+/**
  * The radius the distances here are measured on, in metres: the mean sphere,
  * the same one the page measures on.
  */
