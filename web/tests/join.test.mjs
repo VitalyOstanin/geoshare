@@ -210,6 +210,18 @@ test('a pasted link is found among a messenger\'s own text around it', () => {
     });
 });
 
+// A link cut off right after its "#" still has the invitation in the query.
+test('an empty fragment does not hide the invitation in the query', () => {
+    assert.deepEqual(invitationTyped('https://imaginary-group.web.app/join?g=g&c=ABCDEFGH#'), {
+        site: 'imaginary-group',
+        groupId: 'g',
+        code: 'ABCDEFGH',
+        by: '',
+        name: '',
+        to: '',
+    });
+});
+
 test('a pasted link with neither a group nor a code carries no invitation', () => {
     assert.equal(invitationTyped('https://imaginary-group.web.app/join?utm_source=chat'), null);
 });

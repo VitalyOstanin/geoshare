@@ -102,7 +102,9 @@ export function invitationTyped(text) {
 
     if (found !== null) {
         const [, site, query, fragment] = found;
-        const raw = (fragment ?? query ?? '').replace(TRAILING_PUNCTUATION, '');
+        // `||` rather than `??`: a link cut off right after its "#" has an
+        // empty fragment, and the invitation is then in the query.
+        const raw = (fragment || query || '').replace(TRAILING_PUNCTUATION, '');
         const invitation = parseInvitation(raw);
 
         return invitation === null ? null : { site, ...invitation };
