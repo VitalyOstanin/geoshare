@@ -260,6 +260,23 @@ class CarriedTest {
     }
 
     @Test
+    fun `a counter started again by a reboot is counted from its new start`() {
+        // Five thousand steps before the reboot, ten in the first reading
+        // after it, then three hundred more walked without a rest.
+        val stirs = listOf(
+            Stir(noon, steps = 5_000),
+            Stir(noon.plusSeconds(60), steps = 10),
+            Stir(noon.plusSeconds(120), steps = 160),
+            Stir(noon.plusSeconds(180), steps = 310),
+        )
+
+        val walked = walkingNow(stirs)
+
+        assertEquals(300L, walked?.steps)
+        assertEquals(noon.plusSeconds(60), walked?.since)
+    }
+
+    @Test
     fun `a phone whose counter has been read once is not walking yet`() {
         assertNull(walkingNow(listOf(Stir(noon, steps = 1_000))))
     }

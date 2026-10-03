@@ -329,6 +329,10 @@ data class Walk(val since: Instant, val steps: Long)
  * were taken at is not known any closer than the batch that carried them — so
  * the later of the two is used, and the rule waits for a position taken after
  * that.
+ *
+ * A count lower than the one before it is a counter that started again with a
+ * reboot. Nothing says when the steps in that reading were taken, so the
+ * stretch starts after them.
  */
 fun walkingNow(stirs: List<Stir>): Walk? {
     val counted = stirs.filter { it.steps != null }.sortedBy { it.at }
@@ -346,7 +350,10 @@ fun walkingNow(stirs: List<Stir>): Walk? {
         val walked = now.steps!! > before.steps!!
         val rested = Duration.between(before.at, now.at) > WALKING_BREAK
 
-        if (!walked || rested) {
+        if (now.steps < before.steps) {
+            base = now.steps
+            since = now.at
+        } else if (!walked || rested) {
             base = before.steps!!
             since = now.at
         }
