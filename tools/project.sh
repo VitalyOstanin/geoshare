@@ -3,7 +3,7 @@
 # looking at it, keeping it up to date and removing it.
 #
 #   tools/project.sh create <project-id> [--location <region>] [--name <display name>]
-#                           [--sha-from <existing-project-id>] [--json]
+#                           [--sha-from <existing-project-id> | --sha <fingerprint>...] [--json]
 #   tools/project.sh show <project-id> [--wait] [--usage] [--days <n>] [--json]
 #   tools/project.sh update <project-id> [--json]
 #   tools/project.sh delete <project-id> --yes [--json]
@@ -182,8 +182,16 @@ app_id() {
 # builds are signed on another machine than this: the debug key lives in the
 # build container's volume, and this machine's may not be the one that signed
 # the application on the phones.
+#
+# --sha names them outright, once per fingerprint, for a project made under
+# another account than the one that can read the project they are known in.
 fingerprints() {
     local from="$1"
+
+    if (( ${#sha_given[@]} )); then
+        printf '%s\n' "${sha_given[@]}"
+        return
+    fi
 
     if [[ -n "${from}" ]]; then
         firebase apps:android:sha:list "$(app_id "${from}" ANDROID)" --project "${from}" --json |
@@ -1068,6 +1076,7 @@ shift 2
 location="${DEFAULT_LOCATION}"
 name="geoshare"
 sha_from=""
+sha_given=()
 json_mode=0
 wait_google=0
 days=0
@@ -1081,6 +1090,7 @@ while [[ $# -gt 0 ]]; do
         --location) location="$2"; shift 2 ;;
         --name) name="$2"; shift 2 ;;
         --sha-from) sha_from="$2"; shift 2 ;;
+        --sha) sha_given+=("$2"); shift 2 ;;
         --json) json_mode=1; shift ;;
         --wait) wait_google=1; shift ;;
         --days) days="$2"; with_usage=1; shift 2 ;;
