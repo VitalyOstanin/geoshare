@@ -14,12 +14,12 @@ private const val FIELD_API_KEY = "apiKey"
 private const val FIELD_GCM_SENDER_ID = "gcmSenderId"
 private const val FIELD_SITE = "site"
 
-/** What `tools/new-project.sh`'s `hosting_site` names a group's Hosting site. */
+/** What `tools/project.sh`'s `hosting_site` names a group's Hosting site. */
 private val SITE_PATTERN = Regex("[a-z0-9-]+")
 
 /**
  * What a group's site hands the phone in `geoshare.json`, written by
- * `tools/new-project.sh`'s `app_settings`: enough to start Firebase with,
+ * `tools/project.sh`'s `app_settings`: enough to start Firebase with,
  * without a project baked into the build. One build serves every group, so
  * it carries none of its own, and this is the document a connection link
  * downloads in its place.

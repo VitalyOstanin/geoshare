@@ -1,6 +1,6 @@
 # Setting up a group's Firebase project
 
-For a programmer or an AI agent running `tools/new-project.sh` on behalf of the
+For a programmer or an AI agent running `tools/project.sh` on behalf of the
 project owner — the person whose Google account will hold the project. Why a
 script and not a page: [ADR-0003](ADR/0003-project-setup-by-script.md).
 
@@ -10,6 +10,7 @@ script and not a page: [ADR-0003](ADR/0003-project-setup-by-script.md).
 - [Where to run it](#where-to-run-it)
 - [Before the first run](#before-the-first-run)
 - [Steps](#steps)
+- [Afterwards](#afterwards)
 - [Reading the result with --json](#reading-the-result-with---json)
 - [Signing key fingerprints](#signing-key-fingerprints)
 - [Things not to do](#things-not-to-do)
@@ -50,7 +51,7 @@ and signs in with Google. Members are invited later from the application.
 1. Create everything the script can create:
 
    ```sh
-   tools/new-project.sh create <project-id> [--location <region>] [--name <display name>] [--json]
+   tools/project.sh create <project-id> [--location <region>] [--name <display name>] [--json]
    ```
 
    Every step checks what is already there, so a run that stopped half way is
@@ -63,16 +64,38 @@ and signs in with Google. Members are invited later from the application.
 3. Check that the project is ready:
 
    ```sh
-   tools/new-project.sh configs <project-id> [--wait] [--json]
+   tools/project.sh show <project-id> [--wait] [--json]
    ```
 
-   `configs` checks sign-in with Google itself, through the same Google API
+   `show` checks sign-in with Google itself, through the same Google API
    `create` uses to turn on Firestore. Without `--wait` it checks once and, if
    the provider is still off, prints the console step and stops; with
    `--wait` it polls every 15 seconds for up to 20 minutes instead, so it can
    run right after step 2 while the project owner is still in the console.
 
 4. Hand the connection link and the QR code to the project owner.
+
+## Afterwards
+
+The same script looks after a project once it is there:
+
+```sh
+tools/project.sh show <project-id> --usage [--days <n>] [--json]
+tools/project.sh update <project-id> [--json]
+tools/project.sh delete <project-id> --yes [--json]
+```
+
+- `show --usage` adds how much of the free plan the project has used:
+  Firestore reads, writes and deletes since the daily quota last reset
+  (around midnight Pacific time), stored data, and Hosting's transfer this
+  month and storage. `--days <n>` adds the reads, writes and deletes of the
+  n quota days before today. The numbers come from Cloud Monitoring; only the
+  project owner's account, or one they gave access, can read them.
+- `update` deploys this working copy's rules and page to the project, with a
+  fresh `geoshare.json`. Run it after pulling a change to either.
+- `delete` shuts the project down: unusable at once, deleted for good after
+  30 days, and restorable by its owner until then. Without `--yes` it only
+  says what it would remove.
 
 ## Reading the result with --json
 
@@ -92,9 +115,9 @@ standard output gets one JSON object at the end:
 
 - `manualSteps` is what is left for the project owner in the console; show it
   to them as it is, links included. `create` always lists both console steps,
-  since it cannot check either. `configs` checks sign-in with Google itself
+  since it cannot check either. `show` checks sign-in with Google itself
   and lists that step only while it is still off.
-- `done` becomes `true` only in the output of `configs`, and only once
+- `done` becomes `true` only in the output of `show`, and only once
   sign-in with Google is confirmed on. The redirect URI step is never read
   back by either command, so a `done` of `true` does not mean it was set —
   ask the project owner, or try signing in on the page: without it the page
@@ -119,7 +142,7 @@ be added in the console under Project settings, Your apps, Android.
   Logic. The API keys of the project are public by design and are limited to
   Firebase services; AI Logic is one of them, so with it on anybody holding the
   key could spend the project's quota.
-- Do not copy `build/new-project/<id>/firebase-config.js` over the working
+- Do not copy `build/project/<id>/firebase-config.js` over the working
   copy's own configuration unless this working copy is meant to talk to the
   new project from now on.
 

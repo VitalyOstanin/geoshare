@@ -1,17 +1,20 @@
 #!/usr/bin/env bash
-# Sets up a Firebase project of one's own for geoshare, from this machine.
+# A group's own Firebase project for geoshare, from this machine: making it,
+# looking at it, keeping it up to date and removing it.
 #
-#   tools/new-project.sh create <project-id> [--location <region>] [--name <display name>]
-#                               [--sha-from <existing-project-id>] [--json]
-#   tools/new-project.sh configs <project-id> [--wait] [--json]
+#   tools/project.sh create <project-id> [--location <region>] [--name <display name>]
+#                           [--sha-from <existing-project-id>] [--json]
+#   tools/project.sh show <project-id> [--wait] [--usage] [--days <n>] [--json]
+#   tools/project.sh update <project-id> [--json]
+#   tools/project.sh delete <project-id> --yes [--json]
 #
 # Step by step for whoever runs it: docs/new-project.md; the console step for
 # the project owner: docs/console-steps.md.
 #
-# Two steps with one step in the Firebase console between them, because the
-# console is the only place left that turns on sign-in with Google: the
-# provider needs an OAuth client, and Google shut down the API that created
-# one outside the console on 19 March 2026.
+# Making a project takes two runs with one step in the Firebase console
+# between them, because the console is the only place left that turns on
+# sign-in with Google: the provider needs an OAuth client, and Google shut
+# down the API that created one outside the console on 19 March 2026.
 #
 #   1. `create` makes the project, registers the Android app and the page,
 #      adds the fingerprints of the keys the application is signed with,
@@ -19,17 +22,25 @@
 #      application's settings beside it as geoshare.json.
 #   2. In the console: Authentication, Sign-in method, Google, Enable, Save.
 #      The console makes the OAuth client on its own.
-#   3. `configs` checks that a project is ready: the Android app is
-#      registered and knows a signing key, and sign-in with Google is on.
-#      --wait has it poll for the last one instead of reporting it as a
-#      manual step. It also writes firebase-config.js next to it, for a
-#      working copy pointed at this project.
+#   3. `show` checks that a project is ready: the Android app is registered
+#      and knows a signing key, and sign-in with Google is on. --wait has it
+#      poll for the last one instead of reporting it as a manual step. It also
+#      writes firebase-config.js under build/project/<id>/, for a working copy
+#      pointed at this project. --usage adds how much of the free plan the
+#      project has used today, and --days <n> the n quota days before it.
+#
+# `update` deploys this working copy's rules and page to a project that is
+# already there, with its settings file; `create` run again does the same
+# along with everything else it skips. `delete` asks Google to shut the
+# project down: it is unusable at once and gone for good after 30 days, and
+# can be restored until then. It does nothing without --yes.
 #
 # --json is for a program or an agent running this rather than somebody at a
-# terminal. Both commands keep their running commentary, but on standard
-# error instead — the firebase command line's own commentary moves there too,
-# under the same --non-interactive that already turns its prompts into
-# failures — and add one line of JSON on standard output once they are done:
+# terminal. Every command keeps its running commentary, but on standard error
+# instead — the firebase command line's own commentary moves there too, under
+# the same --non-interactive that already turns its prompts into failures —
+# and adds its result as JSON on standard output once it is done. For
+# `create` and `show`:
 #
 #   {
 #     "projectId": "...", "site": "...",
@@ -39,20 +50,18 @@
 #     "done": false
 #   }
 #
-# manualSteps lists what is still left for a human in the console. `create`
-# cannot check either console step, so it always lists both: turning on
-# sign-in with Google, and the redirect URI its OAuth client needs. `configs`
-# can check the first one itself and lists it only while it is still off; the
-# redirect URI step stays off its list either way, since nothing here reads it
-# back — a done of true from `configs` means sign-in with Google is confirmed
-# on, not that the redirect URI was ever set. done is false while any step
-# manualSteps lists is outstanding.
+# with "usage" added by `show --usage`. manualSteps lists what is still left
+# for a human in the console. `create` cannot check either console step, so
+# it always lists both: turning on sign-in with Google, and the redirect URI
+# its OAuth client needs. `show` can check the first one itself and lists it
+# only while it is still off; the redirect URI step stays off its list either
+# way, since nothing here reads it back — a done of true from `show` means
+# sign-in with Google is confirmed on, not that the redirect URI was ever
+# set. done is false while any step manualSteps lists is outstanding.
 #
 # The configuration files of this working copy are left alone: they name the
 # project it already talks to, and a script that quietly pointed a working
-# copy at another project would be a surprise at the next build. `configs`
-# writes its copy of the page's configuration under build/new-project/<id>/
-# instead; copy it into place when that is what is wanted.
+# copy at another project would be a surprise at the next build.
 #
 # Needs a signed-in firebase command line (`firebase login`, or
 # `firebase login --no-localhost` from a shell without a browser of its own,
@@ -81,7 +90,7 @@ firebase() {
 }
 
 usage() {
-    sed -n '4,6p' "${BASH_SOURCE[0]}" | sed 's/^# //' >&2
+    sed -n '5,9p' "${BASH_SOURCE[0]}" | sed 's/^# //' >&2
     exit 2
 }
 
@@ -98,7 +107,7 @@ require_login() {
 }
 
 # The id of the one app of a platform, out of the listing's JSON. The listing
-# is read rather than the id kept from `apps:create`, so that `configs` works
+# is read rather than the id kept from `apps:create`, so that `show` works
 # on a project whose apps were registered by hand as well.
 app_id() {
     local project="$1" platform="$2"
@@ -159,7 +168,7 @@ print(len(json.loads(raw[raw.index("{"):])["result"]))
 
 # The fingerprints the Android app already knows, straight out of its own
 # configuration: sign-in checks the calling application against these, so an
-# app with none of them yet cannot sign anybody in. `configs` reads this to
+# app with none of them yet cannot sign anybody in. `show` reads this to
 # confirm they are there; `create` writes them below instead of reading them.
 android_fingerprints() {
     local project="$1" android="$2"
@@ -264,7 +273,7 @@ print(json.loads(sys.stdin.read()).get("enabled", False))
 }
 
 # The Hosting site already made for the project, empty if it has none yet.
-# Split out of hosting_site() so that `configs` can ask the same question
+# Split out of hosting_site() so that `show` and `update` can ask the same question
 # without the power to create one.
 existing_site() {
     local project="$1"
@@ -395,6 +404,43 @@ print(json.dumps({
 '
 }
 
+# Deploys this working copy's rules and page to the project, with the
+# application's settings beside the page as geoshare.json.
+deploy_site() {
+    local project="$1" android="$2" site_id="$3"
+
+    # The page and the rules go out from a copy of their own under build/: the
+    # page in the working tree carries this working copy's firebase-config.js,
+    # and deployed as it is, the new project's page would talk to the old
+    # project. The copy gets a configuration of the new project's own, a
+    # firebase.json pointing at it, and a .firebaserc of its own for the "page"
+    # target, which leaves the working copy's .firebaserc alone.
+    local out="${REPO_ROOT}/build/project/${project}"
+    local site="${out}/site"
+
+    echo "==> page configuration for the copy"
+    rm -rf "${site}"
+    # The same layout as the repository, so firebase.json is taken unchanged.
+    mkdir -p "${site}/web"
+    cp -r "${REPO_ROOT}/web/public" "${site}/web/public"
+    rm -f "${site}/web/public/firebase-config.js"
+    cp -r "${REPO_ROOT}/firebase" "${site}/firebase"
+    cp "${REPO_ROOT}/firebase.json" "${site}/firebase.json"
+    FIREBASE_PROJECT="${project}" FIREBASE_SITE="${site_id}" \
+        WEB_CONFIG_TARGET="${site}/web/public/firebase-config.js" \
+        "${REPO_ROOT}/tools/web-config.sh"
+
+    echo "==> application settings"
+    app_settings "${project}" "${android}" "${site_id}" > "${site}/web/public/geoshare.json"
+
+    echo "==> rules and page"
+    (
+        cd "${site}"
+        firebase target:apply hosting page "${site_id}" --project "${project}"
+        firebase deploy --only firestore:rules,hosting --project "${project}"
+    )
+}
+
 # Every step checks what is already there, so a run that stopped half way can
 # be started again with the same command.
 create() {
@@ -473,36 +519,7 @@ create() {
         done
     fi
 
-    # The page and the rules go out from a copy of their own under build/: the
-    # page in the working tree carries this working copy's firebase-config.js,
-    # and deployed as it is, the new project's page would talk to the old
-    # project. The copy gets a configuration of the new project's own, a
-    # firebase.json pointing at it, and a .firebaserc of its own for the "page"
-    # target, which leaves the working copy's .firebaserc alone.
-    local out="${REPO_ROOT}/build/new-project/${project}"
-    local site="${out}/site"
-
-    echo "==> page configuration for the copy"
-    rm -rf "${site}"
-    # The same layout as the repository, so firebase.json is taken unchanged.
-    mkdir -p "${site}/web"
-    cp -r "${REPO_ROOT}/web/public" "${site}/web/public"
-    rm -f "${site}/web/public/firebase-config.js"
-    cp -r "${REPO_ROOT}/firebase" "${site}/firebase"
-    cp "${REPO_ROOT}/firebase.json" "${site}/firebase.json"
-    FIREBASE_PROJECT="${project}" FIREBASE_SITE="${site_id}" \
-        WEB_CONFIG_TARGET="${site}/web/public/firebase-config.js" \
-        "${REPO_ROOT}/tools/web-config.sh"
-
-    echo "==> application settings"
-    app_settings "${project}" "${android}" "${site_id}" > "${site}/web/public/geoshare.json"
-
-    echo "==> rules and page"
-    (
-        cd "${site}"
-        firebase target:apply hosting page "${site_id}" --project "${project}"
-        firebase deploy --only firestore:rules,hosting --project "${project}"
-    )
+    deploy_site "${project}" "${android}" "${site_id}"
 
     cat <<EOF
 
@@ -524,7 +541,7 @@ Done with the part that runs from here. Two steps are left in the consoles:
 
 Then run:
 
-  tools/new-project.sh configs ${project}
+  tools/project.sh show ${project}
 EOF
 
     echo
@@ -536,9 +553,9 @@ EOF
     fi
 }
 
-configs() {
-    local project="$1" wait_google="$2"
-    local out="${REPO_ROOT}/build/new-project/${project}"
+show() {
+    local project="$1" wait_google="$2" with_usage="$3"
+    local out="${REPO_ROOT}/build/project/${project}"
 
     echo "==> Android app"
     if [[ "$(app_count "${project}" ANDROID)" -eq 0 ]]; then
@@ -630,13 +647,25 @@ ${project} still needs one step before it can sign phones in:
 EOF
     fi
 
+    local usage_json=""
+
+    if (( with_usage )); then
+        echo
+        if (( json_mode )); then
+            usage_json="$(usage_report "${project}" json)"
+        else
+            usage_report "${project}" text
+        fi
+    fi
+
     # done here means the one thing this function can check for itself, sign-in
     # with Google, is confirmed on — not that every console step ever happened.
     # The redirect URI step from create's second console link is never read
     # back, by this function or anything else, so it stays out of manualSteps
     # and out of done either way.
     if (( json_mode )); then
-        PROJECT="${project}" SITE="${site_id}" GOOGLE_ON="${google_on}" python3 -c '
+        PROJECT="${project}" SITE="${site_id}" GOOGLE_ON="${google_on}" USAGE="${usage_json}" \
+            python3 -c '
 import json, os
 
 project = os.environ["PROJECT"]
@@ -650,16 +679,260 @@ manual_steps = [] if google_on else [{
            "/authentication/providers",
 }]
 
-print(json.dumps({
+result = {
     "projectId": project,
     "site": site,
     "connectLink": f"https://{site}.web.app/join",
     "settingsUrl": f"https://{site}.web.app/geoshare.json",
     "manualSteps": manual_steps,
     "done": google_on,
-}, indent=2))
+}
+
+if os.environ["USAGE"]:
+    result["usage"] = json.loads(os.environ["USAGE"])
+
+print(json.dumps(result, indent=2))
 ' >&3
     fi
+}
+
+# Puts this working copy's rules and page on a project made earlier: what a
+# change to either needs to reach a group, without the steps of `create` that
+# only ever happen once.
+update() {
+    local project="$1"
+
+    echo "==> Android app"
+    if [[ "$(app_count "${project}" ANDROID)" -eq 0 ]]; then
+        echo "no Android app registered in ${project} yet; run \`create\` first" >&2
+        exit 1
+    fi
+
+    local android
+    android="$(app_id "${project}" ANDROID)"
+
+    echo "==> Hosting site"
+    local site_id
+    site_id="$(existing_site "${project}")"
+
+    if [[ -z "${site_id}" ]]; then
+        echo "no Hosting site in ${project} yet; run \`create\` first" >&2
+        exit 1
+    fi
+    echo "    ${site_id}"
+
+    deploy_site "${project}" "${android}" "${site_id}"
+
+    if (( json_mode )); then
+        PROJECT="${project}" SITE="${site_id}" python3 -c '
+import json, os
+
+print(json.dumps({"projectId": os.environ["PROJECT"], "site": os.environ["SITE"], "deployed": True}))
+' >&3
+    fi
+}
+
+# Asks Google to shut the project down. It is unusable at once, kept for 30
+# days in which its owner can bring it back, and then deleted with everything
+# in it: https://docs.cloud.google.com/resource-manager/docs/delete-restore-projects
+# The firebase command line has no command for it, so Resource Manager is
+# asked directly, the way enable_api() asks Service Usage.
+delete_project() {
+    local project="$1"
+    local token response status
+
+    if (( ! confirmed )); then
+        echo "delete removes ${project} and everything in it — the group's places," \
+            "members and page; run it again with --yes to go ahead" >&2
+        exit 2
+    fi
+
+    token="$(firebase_access_token)"
+    response="$(curl -s -w $'\n%{http_code}' -X DELETE -H "Authorization: Bearer ${token}" \
+        "https://cloudresourcemanager.googleapis.com/v3/projects/${project}")"
+    status="${response##*$'\n'}"
+
+    if [[ "${status}" != "200" ]]; then
+        echo "deleting ${project}: HTTP ${status}" >&2
+        echo "${response%$'\n'*}" >&2
+        exit 1
+    fi
+
+    cat <<EOF
+${project} is shut down: unusable now, deleted for good in 30 days. Until
+then its owner can bring it back:
+
+  https://console.cloud.google.com/cloud-resource-manager?pendingDeletion=true
+EOF
+
+    if (( json_mode )); then
+        PROJECT="${project}" python3 -c '
+import json, os
+from datetime import datetime, timedelta, timezone
+
+until = datetime.now(timezone.utc).replace(microsecond=0) + timedelta(days=30)
+print(json.dumps({
+    "projectId": os.environ["PROJECT"],
+    "deleteRequested": True,
+    "restorableUntil": until.strftime("%Y-%m-%dT%H:%M:%SZ"),
+}))
+' >&3
+    fi
+}
+
+# The free plan's limits the project's usage is held against. Firestore's are
+# from https://firebase.google.com/docs/firestore/quotas and are not published
+# as metrics; Hosting's are, and are read alongside its usage instead.
+readonly FREE_READS_PER_DAY=50000
+readonly FREE_WRITES_PER_DAY=20000
+readonly FREE_DELETES_PER_DAY=20000
+readonly FREE_STORED_BYTES=$((1024 * 1024 * 1024))
+
+# How much of the free plan the project has used: Firestore's reads, writes
+# and deletes since the daily quota last reset — around midnight Pacific
+# time, by the same documentation — its stored data, and Hosting's transfer
+# this month and its storage. Read from Cloud Monitoring with the same
+# sign-in as everything else here, so that the project owner, or whoever runs
+# this for them, can see what is left without opening the console.
+usage_report() {
+    local project="$1" format="$2"
+    local token
+
+    token="$(firebase_access_token)"
+
+    TOKEN="${token}" PROJECT="${project}" FORMAT="${format}" DAYS="${days}" \
+        READS="${FREE_READS_PER_DAY}" WRITES="${FREE_WRITES_PER_DAY}" \
+        DELETES="${FREE_DELETES_PER_DAY}" STORED="${FREE_STORED_BYTES}" \
+        python3 - <<'EOF'
+import json, os, sys, urllib.parse, urllib.request
+from datetime import datetime, timedelta, timezone
+from zoneinfo import ZoneInfo
+
+project = os.environ["PROJECT"]
+token = os.environ["TOKEN"]
+now = datetime.now(timezone.utc).replace(microsecond=0)
+quota_day = (
+    now.astimezone(ZoneInfo("America/Los_Angeles"))
+    .replace(hour=0, minute=0, second=0)
+    .astimezone(timezone.utc)
+)
+
+
+def stamp(moment):
+    return moment.strftime("%Y-%m-%dT%H:%M:%SZ")
+
+
+def series(metric, start, aligner, period, end=None):
+    end = end or now
+    query = urllib.parse.urlencode({
+        "filter": f'metric.type = "{metric}"',
+        "interval.startTime": stamp(start),
+        "interval.endTime": stamp(end),
+        "aggregation.alignmentPeriod": f"{max(period, 60)}s",
+        "aggregation.perSeriesAligner": aligner,
+        "aggregation.crossSeriesReducer": "REDUCE_SUM",
+    })
+    request = urllib.request.Request(
+        f"https://monitoring.googleapis.com/v3/projects/{project}/timeSeries?{query}",
+        headers={"Authorization": f"Bearer {token}"},
+    )
+    with urllib.request.urlopen(request, timeout=60) as response:
+        found = json.load(response).get("timeSeries", [])
+
+    # Newest first; a metric nothing has been counted in yet has no series.
+    points = [point["value"] for one in found for point in one["points"]]
+    return [float(next(iter(value.values()))) for value in points]
+
+
+def counted(metric, start=None, end=None):
+    start = start or quota_day
+    period = int(((end or now) - start).total_seconds())
+    return int(sum(series(metric, start, "ALIGN_SUM", period, end)))
+
+
+# Each earlier quota day asked for on its own, from one Pacific midnight to
+# the next, so that no window straddles a reset.
+earlier = []
+for back in range(int(os.environ["DAYS"]), 0, -1):
+    start = (quota_day.astimezone(ZoneInfo("America/Los_Angeles")) - timedelta(days=back)).replace(
+        hour=0, minute=0, second=0).astimezone(timezone.utc)
+    end = (start.astimezone(ZoneInfo("America/Los_Angeles")) + timedelta(days=1)).replace(
+        hour=0, minute=0, second=0).astimezone(timezone.utc)
+    earlier.append({
+        "from": stamp(start),
+        "reads": counted("firestore.googleapis.com/document/read_count", start, end),
+        "writes": counted("firestore.googleapis.com/document/write_count", start, end),
+        "deletes": counted("firestore.googleapis.com/document/delete_count", start, end),
+    })
+
+
+def latest(metric):
+    values = series(metric, now - timedelta(days=2), "ALIGN_MAX", 3600)
+    return int(values[0]) if values else 0
+
+
+report = {
+    "projectId": project,
+    "quotaDayFrom": stamp(quota_day),
+    "firestore": {
+        "reads": {"used": counted("firestore.googleapis.com/document/read_count"),
+                  "limit": int(os.environ["READS"])},
+        "writes": {"used": counted("firestore.googleapis.com/document/write_count"),
+                   "limit": int(os.environ["WRITES"])},
+        "deletes": {"used": counted("firestore.googleapis.com/document/delete_count"),
+                    "limit": int(os.environ["DELETES"])},
+        "storedBytes": {"used": latest("firestore.googleapis.com/storage/data_and_index_storage_bytes"),
+                        "limit": int(os.environ["STORED"])},
+    },
+    "earlierDays": earlier,
+    "hosting": {
+        "sentBytesThisMonth": {"used": latest("firebasehosting.googleapis.com/network/monthly_sent"),
+                               "limit": latest("firebasehosting.googleapis.com/network/monthly_sent_limit")},
+        "storedBytes": {"used": latest("firebasehosting.googleapis.com/storage/total_bytes"),
+                        "limit": latest("firebasehosting.googleapis.com/storage/limit")},
+    },
+}
+
+if os.environ["FORMAT"] == "json":
+    print(json.dumps(report))
+    sys.exit()
+
+
+def size(value):
+    for unit in ("B", "KiB", "MiB", "GiB"):
+        if value < 1024 or unit == "GiB":
+            return f"{value:.0f} {unit}" if unit == "B" else f"{value:.1f} {unit}"
+        value /= 1024
+
+
+def share(entry):
+    return f"{100 * entry['used'] / entry['limit']:.1f}%" if entry["limit"] else "?"
+
+
+since = quota_day.astimezone().strftime("%Y-%m-%d %H:%M")
+rows = [
+    (f"Firestore reads since {since}", report["firestore"]["reads"], str),
+    ("Firestore writes", report["firestore"]["writes"], str),
+    ("Firestore deletes", report["firestore"]["deletes"], str),
+    ("Firestore stored data", report["firestore"]["storedBytes"], size),
+    ("Hosting transfer this month", report["hosting"]["sentBytesThisMonth"], size),
+    ("Hosting storage", report["hosting"]["storedBytes"], size),
+]
+
+for what, entry, shown in rows:
+    print(f"{what:<42} {shown(entry['used']):>11} of {shown(entry['limit']):>11}  {share(entry):>6}")
+
+if earlier:
+    print()
+    print(f"{'quota day from':<18} {'reads':>13} {'writes':>13} {'deletes':>13}")
+    for day in earlier:
+        start = datetime.strptime(day["from"], "%Y-%m-%dT%H:%M:%SZ").replace(tzinfo=timezone.utc)
+        cells = [
+            f"{day[kind]} {100 * day[kind] / int(os.environ[kind.upper()]):.0f}%"
+            for kind in ("reads", "writes", "deletes")
+        ]
+        print(f"{start.astimezone().strftime('%a %Y-%m-%d %H:%M'):<18} {cells[0]:>13} {cells[1]:>13} {cells[2]:>13}")
+EOF
 }
 
 [[ $# -ge 2 ]] || usage
@@ -673,6 +946,9 @@ name="geoshare"
 sha_from=""
 json_mode=0
 wait_google=0
+days=0
+with_usage=0
+confirmed=0
 
 while [[ $# -gt 0 ]]; do
     case "$1" in
@@ -681,6 +957,9 @@ while [[ $# -gt 0 ]]; do
         --sha-from) sha_from="$2"; shift 2 ;;
         --json) json_mode=1; shift ;;
         --wait) wait_google=1; shift ;;
+        --days) days="$2"; with_usage=1; shift 2 ;;
+        --usage) with_usage=1; shift ;;
+        --yes) confirmed=1; shift ;;
         *) usage ;;
     esac
 done
@@ -698,6 +977,8 @@ fi
 
 case "${command}" in
     create) require_login; create "${project}" "${location}" "${name}" "${sha_from}" ;;
-    configs) require_login; configs "${project}" "${wait_google}" ;;
+    show) require_login; show "${project}" "${wait_google}" "${with_usage}" ;;
+    update) require_login; update "${project}" ;;
+    delete) require_login; delete_project "${project}" ;;
     *) usage ;;
 esac

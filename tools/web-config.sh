@@ -6,7 +6,7 @@
 # FIREBASE_PROJECT names another project than the working copy's default,
 # FIREBASE_SITE the Hosting site the page is served from when it is not named
 # after the project, and WEB_CONFIG_TARGET another file to write;
-# tools/new-project.sh uses all three.
+# tools/project.sh uses all three.
 #
 # The result names the project, and the project is not the repository's
 # business — the file is ignored by git, the same way the Android one is. Run

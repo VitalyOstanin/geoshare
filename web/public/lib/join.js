@@ -24,7 +24,7 @@ function capCaption(value) {
 /**
  * The project a link is for, read off the host it was opened from.
  *
- * `tools/new-project.sh` calls a site the label before ".web.app" in the
+ * `tools/project.sh` calls a site the label before ".web.app" in the
  * address it deploys to, and that is the only name of the project this page
  * is allowed to show — nothing here ever names the project's owner. A host
  * that is not such an address, the emulator or a custom domain among them,
