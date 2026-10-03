@@ -64,7 +64,7 @@ private fun profileOf(document: DocumentSnapshot): MemberProfile? {
     return MemberProfile(
         memberId = document.id,
         displayName = displayName,
-        pictureUrl = document.getString(ProfileField.PHOTO_URL)?.takeIf { it.isNotBlank() },
+        pictureUrl = accountPicture(document.getString(ProfileField.PHOTO_URL)),
     )
 }
 

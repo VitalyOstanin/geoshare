@@ -15,7 +15,7 @@ import {
     updateDoc,
     writeBatch,
 } from 'https://www.gstatic.com/firebasejs/12.19.0/firebase-firestore.js';
-import { profileName } from './members.js';
+import { pictureAddress, profileName } from './members.js';
 import { combinedGrants, phonesOf } from './phones.js';
 import {
     INVITATION_LASTS_MS,
@@ -346,7 +346,7 @@ export function publishProfile(member, known, onError) {
         return Promise.resolve();
     }
 
-    const photoUrl = member.picture ?? null;
+    const photoUrl = pictureAddress(member.picture);
 
     if (known && known.displayName === displayName && known.photoUrl === photoUrl) {
         return Promise.resolve();

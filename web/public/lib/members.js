@@ -109,25 +109,21 @@ export function memberInitial(name) {
     return [...name.trim()].slice(0, 1).join('').toUpperCase();
 }
 
+/** The host account pictures are kept on, and the only one drawn from. */
+const ACCOUNT_PICTURE = /^https:\/\/[a-z0-9.-]*\.googleusercontent\.com\/.*$/;
+
 /**
  * The address of a member's picture, or nothing.
  *
  * A profile is written by the member it describes, so the address in it is
- * whatever they put there; only the two schemes a picture can be fetched over
- * are drawn, and anything else leaves the marker with its initial.
+ * whatever they put there. Only the host the sign-in provider keeps account
+ * pictures on is drawn — the one the content policy lets images in from, and
+ * the one the rules and the Android client hold the address to; anything else
+ * would have every viewer call on a server of the member's choosing, and
+ * leaves the marker with its initial.
  */
 export function pictureAddress(pictureUrl) {
-    if (!pictureUrl) {
-        return null;
-    }
-
-    try {
-        const address = new URL(pictureUrl);
-
-        return address.protocol === 'https:' || address.protocol === 'http:' ? address.href : null;
-    } catch {
-        return null;
-    }
+    return typeof pictureUrl === 'string' && ACCOUNT_PICTURE.test(pictureUrl) ? pictureUrl : null;
 }
 
 /**

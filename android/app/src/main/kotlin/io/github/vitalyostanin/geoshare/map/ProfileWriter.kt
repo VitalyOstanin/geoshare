@@ -44,8 +44,10 @@ suspend fun publishProfile(
         mapOf(
             ProfileField.DISPLAY_NAME to displayName,
             // Written as a field rather than left out, so that an account that
-            // loses its picture loses it on the other screens too.
-            ProfileField.PHOTO_URL to pictureUrl,
+            // loses its picture loses it on the other screens too. Held to
+            // the account host, as the rules hold it, so that a picture kept
+            // anywhere else costs the picture and not the whole profile.
+            ProfileField.PHOTO_URL to accountPicture(pictureUrl),
             ProfileField.UPDATED_AT to FieldValue.serverTimestamp(),
         )
 

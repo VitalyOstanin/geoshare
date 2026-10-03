@@ -110,6 +110,16 @@ test('an address in any other scheme draws no picture', () => {
     assert.equal(pictureAddress(null), null);
 });
 
+// Every viewer fetches it, so an address on a server of the member's choosing
+// would tell that server where each of them is online from.
+test('a picture anywhere but the account host draws no picture', () => {
+    assert.equal(pictureAddress('https://example.com/me.png'), null);
+    assert.equal(pictureAddress('http://lh3.googleusercontent.com/a/x'), null);
+    assert.equal(pictureAddress('https://example.com/lh3.googleusercontent.com/a/x'), null);
+    assert.equal(pictureAddress('https://googleusercontent.com.example.com/a/x'), null);
+    assert.equal(pictureAddress('https://x@example.com/.googleusercontent.com/a'), null);
+});
+
 // The same rule the Android panel follows: a member carrying two phones has
 // them next to each other, in the same places at every glance.
 test('the phones of one member keep their places', () => {

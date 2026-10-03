@@ -85,6 +85,13 @@ nothing else:
    every device's position and watch — and the rules weigh each of those
    deletions on its own, as the member's own data (ADR-0026).
 
+Somebody an administrator takes off the roster is no longer shown to anyone by
+the permissions they gave: a position, a grant or a list of devices is read by
+a permission only while its owner is on the roster, since they can no longer
+withdraw it themselves. They can still delete their own profile, grant, devices
+and positions, which is how a device that finds itself taken off clears what it
+left behind.
+
 The group document is never deleted: its members, profiles, grants and
 positions would be left behind with nothing to say who may read them.
 
@@ -304,7 +311,11 @@ person", and they live in the grant below, where only the people concerned can
 read them; the rules refuse a profile carrying any other field.
 
 Both values come from the account the member signed in with, and neither client
-uploads an image: the picture is the address the provider already serves. A client
+uploads an image: the picture is the address the provider already serves. The
+rules take only an address on `*.googleusercontent.com` over https, where the
+provider keeps account pictures, and both clients draw nothing from anywhere
+else: every member's device fetches the picture, and an address of the member's
+choosing would have each of them call on that server. A client
 writes the document only when what the account says differs from what is stored,
 because names change about never and the free tier counts every write.
 
@@ -365,8 +376,9 @@ the two.
 Read one document at a time by the member, by the readers their grant names,
 and by the administrators: an administrator is shown the phones and whether
 they are working, not whom they are shared with or where they are. The rules
-hold the number of phones to ten and not the fields of each, since a rule
-cannot walk a map; the readers drop an entry that is not what a phone writes.
+hold the number of phones to ten and every entry to the fields above, each of
+its type and, for the strings, no longer than a name; the readers still drop an
+entry that is not what a phone writes.
 
 A phone also names itself in `grants/{uid}.devices`, which is what the builds
 before this document read, and the readers follow the phones of both lists —

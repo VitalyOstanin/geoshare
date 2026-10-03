@@ -3,7 +3,7 @@
 import { describe, it } from 'node:test';
 
 import { assertFails, assertSucceeds } from '@firebase/rules-unit-testing';
-import { arrayRemove, doc, setDoc, updateDoc, writeBatch } from 'firebase/firestore';
+import { arrayRemove, deleteDoc, doc, getDoc, setDoc, updateDoc, writeBatch } from 'firebase/firestore';
 
 import {
     setUpRules,
@@ -160,5 +160,86 @@ describe('leaving a group', () => {
                 .update(groupDoc(db), { members: arrayRemove(BOB), admins: arrayRemove(BOB) })
                 .commit(),
         );
+    });
+});
+
+// Somebody an administrator took off the roster: Bob, who had let Alice watch
+// him for good, and who can no longer withdraw it.
+describe('a member taken off the roster', () => {
+    const devicesOf = (db, uid) => doc(db, `groups/${GROUP}/devices/${uid}`);
+
+    // Alice an ordinary member, the group run by somebody else.
+    const runByAnother = { members: [ALICE, STRANGER], admins: [STRANGER] };
+
+    const plantBobTakenOff = () =>
+        testEnv.withSecurityRulesDisabled(async (context) => {
+            const db = context.firestore();
+
+            await setDoc(groupDoc(db), { members: [ALICE], admins: [ALICE] });
+            await setDoc(memberOf(db, BOB), someProfile('Bob'));
+            await setDoc(grantOf(db, BOB), someGrant({ [ALICE]: FOREVER }));
+            await setDoc(positionOf(db, BOB), positionFrom(BOB));
+            await setDoc(devicesOf(db, BOB), { phone: { model: 'X' } });
+        });
+
+    it('is watched by nobody, whatever they once allowed', async () => {
+        await plantBobTakenOff();
+        await testEnv.withSecurityRulesDisabled(async (context) => {
+            await setDoc(groupDoc(context.firestore()), runByAnother);
+        });
+        const db = testEnv.authenticatedContext(ALICE).firestore();
+
+        await assertFails(getDoc(positionOf(db, BOB)));
+        await assertFails(getDoc(grantOf(db, BOB)));
+    });
+
+    it('has their phones shown to nobody but an administrator', async () => {
+        await plantBobTakenOff();
+        await testEnv.withSecurityRulesDisabled(async (context) => {
+            await setDoc(groupDoc(context.firestore()), runByAnother);
+        });
+
+        const alice = testEnv.authenticatedContext(ALICE).firestore();
+        const administrator = testEnv.authenticatedContext(STRANGER).firestore();
+
+        await assertFails(getDoc(devicesOf(alice, BOB)));
+        await assertSucceeds(getDoc(devicesOf(administrator, BOB)));
+    });
+
+    it('takes away everything they wrote about themselves', async () => {
+        await plantBobTakenOff();
+        const db = testEnv.authenticatedContext(BOB).firestore();
+
+        await assertSucceeds(
+            writeBatch(db)
+                .delete(positionOf(db, BOB))
+                .delete(grantOf(db, BOB))
+                .delete(devicesOf(db, BOB))
+                .delete(memberOf(db, BOB))
+                .commit(),
+        );
+    });
+
+    it('takes away nothing of anybody else', async () => {
+        await plantBobTakenOff();
+        await testEnv.withSecurityRulesDisabled(async (context) => {
+            const db = context.firestore();
+
+            await setDoc(positionOf(db, ALICE), positionFrom(ALICE));
+            await setDoc(grantOf(db, ALICE), someGrant({}));
+        });
+        const db = testEnv.authenticatedContext(BOB).firestore();
+
+        await assertFails(deleteDoc(positionOf(db, ALICE)));
+        await assertFails(deleteDoc(grantOf(db, ALICE)));
+        await assertFails(deleteDoc(memberOf(db, ALICE)));
+    });
+
+    it('writes nothing more', async () => {
+        await plantBobTakenOff();
+        const db = testEnv.authenticatedContext(BOB).firestore();
+
+        await assertFails(setDoc(positionOf(db, BOB), positionFrom(BOB)));
+        await assertFails(updateDoc(grantOf(db, BOB), { sharedWith: {} }));
     });
 });

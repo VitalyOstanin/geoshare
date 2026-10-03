@@ -169,10 +169,26 @@ describe('profiles', () => {
         await assertFails(
             setDoc(memberOf(db, ALICE), {
                 displayName: 'Alice',
-                photoUrl: `https://example.com/${'a'.repeat(500)}`,
+                photoUrl: `https://lh3.googleusercontent.com/${'a'.repeat(500)}`,
                 updatedAt: new Date(),
             }),
         );
+    });
+
+    // Every member's phone fetches it: a picture on a server the member
+    // chose would tell that server where each of them is online from.
+    it('a picture kept anywhere but the account host is refused', async () => {
+        const db = testEnv.authenticatedContext(ALICE).firestore();
+
+        for (const photoUrl of [
+            'https://example.com/me.png',
+            'http://lh3.googleusercontent.com/a/example',
+            'https://example.com/lh3.googleusercontent.com/a/example',
+        ]) {
+            await assertFails(
+                setDoc(memberOf(db, ALICE), { displayName: 'Alice', photoUrl, updatedAt: new Date() }),
+            );
+        }
     });
 
     it('a member clears their own profile', async () => {
@@ -363,6 +379,63 @@ describe('devices', () => {
         );
 
         await assertFails(setDoc(devicesOf(db, ALICE), many));
+    });
+
+    // Nine phones written before, the tenth writing itself in: the write a
+    // member with ten phones makes.
+    it('the tenth phone, written as a phone writes itself, is taken', async () => {
+        const nine = Object.fromEntries(
+            Array.from({ length: 9 }, (unused, index) => [`phone-${index}`, { model: 'x' }]),
+        );
+
+        await testEnv.withSecurityRulesDisabled(async (context) => {
+            await setDoc(devicesOf(context.firestore(), ALICE), nine);
+        });
+
+        const db = testEnv.authenticatedContext(ALICE).firestore();
+        const tenth = { ...someDevices.phone, name: 'kitchen', charging: true };
+
+        await assertSucceeds(setDoc(devicesOf(db, ALICE), { 'phone-9': tenth }, { merge: true }));
+    });
+
+    // The last place of ten carries the wrong thing: every place is looked
+    // at, not only the first.
+    it('a phone carrying a field no phone writes is refused, wherever it stands', async () => {
+        const nine = Object.fromEntries(
+            Array.from({ length: 9 }, (unused, index) => [`phone-${index}`, { model: 'x' }]),
+        );
+
+        await testEnv.withSecurityRulesDisabled(async (context) => {
+            await setDoc(devicesOf(context.firestore(), ALICE), nine);
+        });
+
+        const db = testEnv.authenticatedContext(ALICE).firestore();
+
+        await assertFails(
+            setDoc(
+                devicesOf(db, ALICE),
+                { 'phone-9': { model: 'x', extra: 'y' } },
+                { merge: true },
+            ),
+        );
+    });
+
+    it('a phone whose charge is not a number is refused', async () => {
+        const db = testEnv.authenticatedContext(ALICE).firestore();
+
+        await assertFails(setDoc(devicesOf(db, ALICE), { phone: { batteryPercent: 'full' } }));
+    });
+
+    it('a phone named at greater length than a name is refused', async () => {
+        const db = testEnv.authenticatedContext(ALICE).firestore();
+
+        await assertFails(setDoc(devicesOf(db, ALICE), { phone: { name: 'x'.repeat(101) } }));
+    });
+
+    it('an entry that is not a phone at all is refused', async () => {
+        const db = testEnv.authenticatedContext(ALICE).firestore();
+
+        await assertFails(setDoc(devicesOf(db, ALICE), { phone: 'x'.repeat(1000) }));
     });
 
     it('a stranger reads no phones', async () => {

@@ -24,6 +24,22 @@ rules_version = '2';
 // to reach.
 service cloud.firestore {
   match /databases/{database}/documents {
+    // A place a map can put a pin at: a latitude and a longitude on the globe.
+    function onTheGlobe(data) {
+      return data.latitude is number &&
+             data.latitude >= -90 &&
+             data.latitude <= 90 &&
+             data.longitude is number &&
+             data.longitude >= -180 &&
+             data.longitude <= 180;
+    }
+
+    // How long a name may be wherever one is written: a person's, a phone's,
+    // a place's.
+    function longestName() {
+      return 100;
+    }
+
     match /groups/{groupId} {
       function groupDocument() {
         return get(/databases/$(database)/documents/groups/$(groupId));
@@ -362,18 +378,13 @@ service cloud.firestore {
         function falsePlaceShape() {
           return request.resource.data.keys()
                    .hasOnly(['latitude', 'longitude', 'radiusMetres', 'named']) &&
-                 request.resource.data.latitude is number &&
-                 request.resource.data.latitude >= -90 &&
-                 request.resource.data.latitude <= 90 &&
-                 request.resource.data.longitude is number &&
-                 request.resource.data.longitude >= -180 &&
-                 request.resource.data.longitude <= 180 &&
+                 onTheGlobe(request.resource.data) &&
                  request.resource.data.radiusMetres is number &&
                  request.resource.data.radiusMetres > 0 &&
                  request.resource.data.radiusMetres <= 50000 &&
                  (!('named' in request.resource.data) ||
                   (request.resource.data.named is string &&
-                   request.resource.data.named.size() <= 100));
+                   request.resource.data.named.size() <= longestName()));
         }
 
         allow read: if isMember();
@@ -466,7 +477,7 @@ service cloud.firestore {
                  data.renewedBy == request.auth.uid &&
                  data.renewedAt == request.time &&
                  data.hours is int && data.hours >= 1 && data.hours <= 72 &&
-                 (!('phoneName' in data) || (data.phoneName is string && data.phoneName.size() <= 100));
+                 (!('phoneName' in data) || (data.phoneName is string && data.phoneName.size() <= longestName()));
         }
 
         // A search opened now names whoever opened it and when; a renewal
@@ -599,15 +610,21 @@ service cloud.firestore {
         // document: which phones a member carries, and whom they let watch,
         // are in the grant below, where only the people concerned can see
         // them.
+        //
+        // The picture is held to the host the sign-in provider keeps account
+        // pictures on. Every member's phone fetches it, and an address of the
+        // member's choosing would have each of them call on that server.
         function profileShape() {
           return request.resource.data.keys()
                    .hasOnly(['displayName', 'photoUrl', 'updatedAt']) &&
                  request.resource.data.displayName is string &&
-                 request.resource.data.displayName.size() <= 100 &&
+                 request.resource.data.displayName.size() <= longestName() &&
                  (!('photoUrl' in request.resource.data) ||
                   request.resource.data.photoUrl == null ||
                   (request.resource.data.photoUrl is string &&
-                   request.resource.data.photoUrl.size() <= 500));
+                   request.resource.data.photoUrl.size() <= 500 &&
+                   request.resource.data.photoUrl
+                     .matches('https://[a-z0-9.-]*[.]googleusercontent[.]com/.*')));
         }
 
         function isOwner() {
@@ -618,7 +635,9 @@ service cloud.firestore {
         // Stated apart from the delete: a deletion carries no document to
         // check the shape of, and a single write rule would refuse every one.
         allow create, update: if isOwner() && profileShape();
-        allow delete: if isOwner();
+        // Without membership: somebody taken off the roster takes away what
+        // they wrote about themselves, which nothing else will.
+        allow delete: if request.auth.uid == uid;
       }
 
       match /grants/{uid} {
@@ -659,6 +678,7 @@ service cloud.firestore {
         // this as well.
         function mayReadGrant() {
           return resource != null &&
+                 uid in groupMembers() &&
                  resource.data.get('sharedWith', {}).get(request.auth.uid, null) != null &&
                  resource.data.sharedWith[request.auth.uid] > request.time;
         }
@@ -668,7 +688,7 @@ service cloud.firestore {
         // collection exists to close.
         allow get: if isMember() && (isOwner() || mayReadGrant());
         allow create, update: if isOwner() && grantShape();
-        allow delete: if isOwner();
+        allow delete: if request.auth.uid == uid;
       }
 
       match /devices/{uid} {
@@ -681,11 +701,48 @@ service cloud.firestore {
         // Kept apart from the grant so that an administrator can be shown the
         // phones without being shown whom their owner shares with.
         //
-        // The rules hold the number of phones and not the fields of each: a
-        // rule cannot walk a map, and the readers weigh every entry as they
-        // take it, dropping what is not a phone.
+        // A rule cannot walk a map, but there are at most ten phones, so each
+        // of the ten places is looked at in turn: a place past the last phone
+        // has nothing in it to weigh. Only the entries this write changes are
+        // weighed — a phone writes its own entry and no other, and weighing
+        // all ten would run past what a rule may evaluate in one request. The
+        // readers still weigh every entry as they take it; the rule is what
+        // keeps one from being a megabyte of something else.
         function devicesShape() {
-          return request.resource.data.size() <= 10;
+          let phones = request.resource.data;
+          let ids = phones.keys();
+          let changed = phones.diff(resource == null ? {} : resource.data).affectedKeys();
+
+          return phones.size() <= 10 &&
+                 nthPhoneFits(phones, ids, changed, 0) && nthPhoneFits(phones, ids, changed, 1) &&
+                 nthPhoneFits(phones, ids, changed, 2) && nthPhoneFits(phones, ids, changed, 3) &&
+                 nthPhoneFits(phones, ids, changed, 4) && nthPhoneFits(phones, ids, changed, 5) &&
+                 nthPhoneFits(phones, ids, changed, 6) && nthPhoneFits(phones, ids, changed, 7) &&
+                 nthPhoneFits(phones, ids, changed, 8) && nthPhoneFits(phones, ids, changed, 9);
+        }
+
+        function nthPhoneFits(phones, ids, changed, n) {
+          return ids.size() <= n || !(ids[n] in changed) || phoneFits(phones[ids[n]]);
+        }
+
+        // What a phone writes about itself, and the name its owner gives it.
+        // Every field is optional: the status and the name are written apart.
+        function phoneFits(phone) {
+          return phone is map &&
+                 phone.keys().hasOnly(['model', 'name', 'onlineAt', 'mode',
+                                       'batteryPercent', 'charging']) &&
+                 (!('model' in phone) ||
+                  (phone.model is string && phone.model.size() <= longestName())) &&
+                 (!('name' in phone) ||
+                  (phone.name is string && phone.name.size() <= longestName())) &&
+                 (!('onlineAt' in phone) || phone.onlineAt is timestamp) &&
+                 (!('mode' in phone) ||
+                  (phone.mode is string && phone.mode.size() <= longestName())) &&
+                 (!('batteryPercent' in phone) ||
+                  (phone.batteryPercent is int &&
+                   phone.batteryPercent >= 0 &&
+                   phone.batteryPercent <= 100)) &&
+                 (!('charging' in phone) || phone.charging is bool);
         }
 
         function isOwner() {
@@ -695,7 +752,8 @@ service cloud.firestore {
         // The same permission that opens the positions: a reader who may watch
         // the member learns which phones there are to watch.
         function mayWatch() {
-          return exists(/databases/$(database)/documents/groups/$(groupId)/grants/$(uid)) &&
+          return uid in groupMembers() &&
+                 exists(/databases/$(database)/documents/groups/$(groupId)/grants/$(uid)) &&
                  get(/databases/$(database)/documents/groups/$(groupId)/grants/$(uid))
                    .data.get('sharedWith', {}).get(request.auth.uid, null) != null &&
                  get(/databases/$(database)/documents/groups/$(groupId)/grants/$(uid))
@@ -706,7 +764,7 @@ service cloud.firestore {
         // member the phones of everybody they were not given.
         allow get: if isMember() && (isOwner() || isGroupAdmin() || mayWatch());
         allow create, update: if isOwner() && devicesShape();
-        allow delete: if isOwner();
+        allow delete: if request.auth.uid == uid;
       }
 
       match /labels/{uid} {
@@ -774,8 +832,13 @@ service cloud.firestore {
                                  : grant().data.get('sharedWith', {}).get(request.auth.uid, null);
         }
 
+        // A permission given by somebody since taken off the roster lets
+        // nobody in: the owner can no longer withdraw it, and one given
+        // forever would keep their last place on show for good.
         function mayRead() {
-          return permission() != null && permission() > request.time;
+          return positionId.split('\\.')[0] in groupMembers() &&
+                 permission() != null &&
+                 permission() > request.time;
         }
 
         // What a position is allowed to be. Without this a member — or an
@@ -792,12 +855,7 @@ service cloud.firestore {
                              'accuracyMetres', 'foundBy', 'settling',
                              'leftOutCount', 'leftOutReason', 'leftOutSince']) &&
                  request.resource.data.memberId == request.auth.uid &&
-                 request.resource.data.latitude is number &&
-                 request.resource.data.latitude >= -90 &&
-                 request.resource.data.latitude <= 90 &&
-                 request.resource.data.longitude is number &&
-                 request.resource.data.longitude >= -180 &&
-                 request.resource.data.longitude <= 180 &&
+                 onTheGlobe(request.resource.data) &&
                  request.resource.data.takenAt is timestamp &&
                  // The moment the server stamped, which is the one clock the
                  // readers can trust: a phone cannot claim a position is newer
@@ -894,8 +952,9 @@ service cloud.firestore {
                                  ((positionShape() && leftOutShape()) ||
                                   (onlyTheLeftOutChanged() && leftOutShape()));
         // Stated apart from the write: a deletion carries no document whose
-        // owner could be checked.
-        allow delete: if ownsPosition();
+        // owner could be checked. Without membership, so that a phone taken
+        // off the roster can still take its last place away.
+        allow delete: if positionId.split('\\.')[0] == request.auth.uid;
       }
 
       match /watch/{watchId} {
