@@ -72,6 +72,25 @@ class CirclingTest {
     }
 
     @Test
+    fun `a wall clock set halfway through does not change the speed`() {
+        val circle = circleDrawn(clockSetHalfway(falseRoad))
+
+        assertNotNull(circle)
+        assertEquals(34.7, circle!!.speedMps, 1.0)
+    }
+
+    /**
+     * [run] as a phone whose wall clock was set a minute and a half forwards
+     * halfway through it would carry it, with the count since boot running on.
+     */
+    private fun clockSetHalfway(run: List<Fix>): List<Fix> = run.mapIndexed { index, fix ->
+        val awake = Duration.between(at, fix.takenAt)
+        val shifted = if (index < run.size / 2) fix.takenAt else fix.takenAt.plusSeconds(90)
+
+        fix.copy(takenAt = shifted, sinceBoot = awake)
+    }
+
+    @Test
     fun `a straight road is not a circle`() {
         val straight = road((0 until 10).map { (61.0300 + it * 0.00126) to 4.5700 })
 

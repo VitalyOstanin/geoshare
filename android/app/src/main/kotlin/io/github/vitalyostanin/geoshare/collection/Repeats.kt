@@ -1,7 +1,6 @@
 package io.github.vitalyostanin.geoshare.collection
 
 import java.time.Duration
-import java.time.Instant
 
 // Catching the transmitter by the route it goes round again.
 //
@@ -163,17 +162,18 @@ private fun periodsWorthTrying(lately: List<Fix>, limits: RepeatLimits): List<Du
  * does not line up at all.
  */
 private fun linedUpAcross(lately: List<Fix>, period: Duration, limits: RepeatLimits): Repeated? {
+    val at = sinceFirst(lately)
     val apart = mutableListOf<Double>()
 
-    for (answer in lately) {
-        val then = answer.takenAt.minus(period)
-        val before = nearestTo(lately, then) ?: continue
+    for (answer in lately.indices) {
+        val then = at[answer].minus(period)
+        val before = nearestTo(at, then) ?: continue
 
-        if (Duration.between(before.takenAt, then).abs() > REPEAT_NEAR_ENOUGH) {
+        if (at[before].minus(then).abs() > REPEAT_NEAR_ENOUGH) {
             continue
         }
 
-        apart += distanceMetres(before, answer)
+        apart += distanceMetres(lately[before], lately[answer])
     }
 
     if (apart.size < limits.pairsNeeded) {
@@ -200,9 +200,9 @@ private fun linedUpAcross(lately: List<Fix>, period: Duration, limits: RepeatLim
     )
 }
 
-/** The answer closest in time to a moment, or nothing where there are none. */
-private fun nearestTo(lately: List<Fix>, moment: Instant): Fix? =
-    lately.minByOrNull { Duration.between(it.takenAt, moment).abs() }
+/** Which of the moments [at] is closest to [moment], or nothing where there are none. */
+private fun nearestTo(at: List<Duration>, moment: Duration): Int? =
+    at.indices.minByOrNull { at[it].minus(moment).abs() }
 
 /**
  * How far across the last round reaches: the distance between its two
@@ -212,8 +212,9 @@ private fun nearestTo(lately: List<Fix>, moment: Instant): Fix? =
  * the radius, which asks the route to be a circle.
  */
 private fun reachOfTheRound(lately: List<Fix>, period: Duration): Double {
-    val since = lately.last().takenAt.minus(period)
-    val round = lately.filter { !it.takenAt.isBefore(since) }
+    val at = sinceFirst(lately)
+    val since = at.last().minus(period)
+    val round = lately.filterIndexed { index, _ -> at[index] >= since }
     var furthest = 0.0
 
     for (one in round.indices) {

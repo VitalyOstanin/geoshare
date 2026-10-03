@@ -4,6 +4,7 @@ import java.time.Duration
 import java.time.Instant
 import kotlin.math.asin
 import kotlin.math.cos
+import kotlin.math.min
 import kotlin.math.pow
 import kotlin.math.sin
 import kotlin.math.sqrt
@@ -128,8 +129,19 @@ fun apart(from: Fix, to: Fix): Duration {
     return Duration.between(from.takenAt, to.takenAt)
 }
 
-/** The radius the distances here are measured on, in metres. */
-const val EARTH_RADIUS_METRES: Double = 6_371_000.0
+/**
+ * How long after the first of [run] each of its fixes was taken, by [apart].
+ *
+ * One clock for the whole run, so that a period found between two of its
+ * fixes can be laid off from any other without crossing to the wall clock.
+ */
+fun sinceFirst(run: List<Fix>): List<Duration> = run.map { apart(run.first(), it) }
+
+/**
+ * The radius the distances here are measured on, in metres: the mean sphere,
+ * the same one the page measures on.
+ */
+const val EARTH_RADIUS_METRES: Double = 6_371_008.8
 
 /** Haversine: the fixes compared here are metres apart, not continents. */
 fun distanceMetres(from: Fix, to: Fix): Double {
@@ -142,5 +154,7 @@ fun distanceMetres(from: Fix, to: Fix): Double {
         sin(deltaLatitude / 2).pow(2) +
             cos(fromLatitude) * cos(toLatitude) * sin(deltaLongitude / 2).pow(2)
 
-    return 2 * EARTH_RADIUS_METRES * asin(sqrt(a))
+    // Rounding carries a past one for points on opposite sides of the Earth;
+    // capped, so that asin is never asked for what it has no answer to.
+    return 2 * EARTH_RADIUS_METRES * asin(sqrt(min(a, 1.0)))
 }

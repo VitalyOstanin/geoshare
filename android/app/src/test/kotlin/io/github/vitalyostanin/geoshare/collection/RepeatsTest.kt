@@ -173,6 +173,17 @@ class RepeatsTest {
             ),
         )
 
+    /**
+     * [run] as a phone whose wall clock was set a minute and a half forwards
+     * halfway through it would carry it, with the count since boot running on.
+     */
+    private fun clockSetHalfway(run: List<Fix>): List<Fix> = run.mapIndexed { index, fix ->
+        val awake = Duration.between(at, fix.takenAt)
+        val shifted = if (index < run.size / 2) fix.takenAt else fix.takenAt.plusSeconds(90)
+
+        fix.copy(takenAt = shifted, sinceBoot = awake)
+    }
+
     @Test
     fun `a route traced again is caught`() {
         val round = routeRepeated(falseRoute)
@@ -182,6 +193,13 @@ class RepeatsTest {
         assertTrue("and lands on itself", round.apartMetres < REPEAT_APART_METRES)
         assertTrue("with the whole run lining up", round.pairs >= REPEAT_PAIRS_NEEDED)
         assertTrue("across a route worth the name", round.reachMetres > 1_000.0)
+    }
+
+    @Test
+    fun `a wall clock set halfway through does not change the round`() {
+        val round = routeRepeated(clockSetHalfway(falseRoute))
+
+        assertEquals(routeRepeated(falseRoute)?.period, round?.period)
     }
 
     // The shape changed between the two days this was written from: the

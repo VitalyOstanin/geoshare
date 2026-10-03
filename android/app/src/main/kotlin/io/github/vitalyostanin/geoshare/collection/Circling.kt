@@ -1,7 +1,6 @@
 package io.github.vitalyostanin.geoshare.collection
 
 import java.time.Duration
-import java.time.Instant
 import kotlin.math.abs
 import kotlin.math.atan2
 import kotlin.math.cos
@@ -248,8 +247,8 @@ fun List<Fix>.andThen(fix: Fix, remembered: Duration = ANSWERS_REMEMBERED): List
     return fresh.takeLast(ANSWERS_KEPT)
 }
 
-/** A place in metres east and north of where the run began. */
-private data class Spot(val east: Double, val north: Double, val at: Instant)
+/** A place in metres east and north of where the run began, and how long after. */
+private data class Spot(val east: Double, val north: Double, val at: Duration)
 
 /** The centre a run of places turns out to be going round, and how far off it. */
 private data class Centre(val east: Double, val north: Double, val radius: Double)
@@ -269,11 +268,11 @@ private fun spotsOf(run: List<Fix>): List<Spot> {
     val shrink = cos(Math.toRadians(first.latitude))
     val perDegree = Math.toRadians(1.0) * EARTH_RADIUS_METRES
 
-    return run.map {
+    return run.zip(sinceFirst(run)) { fix, at ->
         Spot(
-            east = (it.longitude - first.longitude) * perDegree * shrink,
-            north = (it.latitude - first.latitude) * perDegree,
-            at = it.takenAt,
+            east = (fix.longitude - first.longitude) * perDegree * shrink,
+            north = (fix.latitude - first.latitude) * perDegree,
+            at = at,
         )
     }
 }
@@ -376,7 +375,7 @@ private fun speedAlong(spots: List<Spot>): Speed? {
     for (step in 1 until spots.size) {
         val was = spots[step - 1]
         val now = spots[step]
-        val seconds = Duration.between(was.at, now.at).toMillis() / A_SECOND
+        val seconds = now.at.minus(was.at).toMillis() / A_SECOND
 
         if (seconds <= 0.0) {
             return null

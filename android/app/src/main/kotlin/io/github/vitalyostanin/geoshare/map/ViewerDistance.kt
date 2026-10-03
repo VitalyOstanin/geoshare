@@ -1,5 +1,6 @@
 package io.github.vitalyostanin.geoshare.map
 
+import io.github.vitalyostanin.geoshare.collection.EARTH_RADIUS_METRES
 import java.time.Instant
 import kotlin.math.asin
 import kotlin.math.cos
@@ -8,9 +9,6 @@ import kotlin.math.pow
 import kotlin.math.roundToLong
 import kotlin.math.sin
 import kotlin.math.sqrt
-
-/** The radius the distance is measured on: the mean sphere the ring uses. */
-private const val EARTH_RADIUS_METRES = 6_371_008.8
 
 /** Where metres stop being the unit worth writing and kilometres start. */
 private const val METRES_IN_A_KILOMETRE = 1_000.0

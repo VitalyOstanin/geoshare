@@ -111,4 +111,18 @@ class WriteFilterTest {
 
         assertEquals(100.0, metres, 1.0)
     }
+
+    // Points on opposite sides of the Earth, where rounding carries the
+    // haversine past one, and half the way round is the page's figure: both
+    // measure on the mean sphere.
+    @Test
+    fun `points on opposite sides of the earth are half the mean circumference apart`() {
+        val here = Fix(latitude = 0.2329, longitude = 12.427, takenAt = start)
+        val there = Fix(latitude = -0.2329, longitude = -167.573, takenAt = start)
+
+        val metres = distanceMetres(here, there)
+
+        assertFalse(metres.isNaN())
+        assertEquals(20_015_114.0, metres, 1.0)
+    }
 }
