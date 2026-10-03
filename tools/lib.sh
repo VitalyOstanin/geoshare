@@ -1,3 +1,4 @@
+# shellcheck shell=bash
 # Shared by the scripts in this directory: the repository root, the pinned
 # versions, the proxy plumbing and building the image the first time it is
 # needed.
@@ -99,6 +100,7 @@ fi
 # and MEMORY, rather than by default: the machine has other work to do.
 readonly JOBS="${JOBS:-4}"
 readonly MEMORY="${MEMORY:-6g}"
+# shellcheck disable=SC2034 # read by the scripts that source this one
 limit_args=(--cpus "${JOBS}" --memory "${MEMORY}")
 
 ensure_sdk_image() {

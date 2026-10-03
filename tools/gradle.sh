@@ -8,6 +8,7 @@
 #   tools/gradle.sh testDebugUnitTest --info
 set -euo pipefail
 
+# shellcheck source=lib.sh
 source "$(dirname "${BASH_SOURCE[0]}")/lib.sh"
 
 # A named volume keeps the Gradle cache between runs; without it every build

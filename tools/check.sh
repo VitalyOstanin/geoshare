@@ -18,7 +18,8 @@
 # them somewhere else can be told which ones to run.
 set -euo pipefail
 
-readonly HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+readonly HERE
 
 list_only=
 everything=

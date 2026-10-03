@@ -19,9 +19,11 @@
 #   SIREN_SOUND_TARGET=/tmp/try-siren.ogg tools/siren-sound.sh
 set -euo pipefail
 
+# shellcheck source=lib.sh
 source "$(dirname "${BASH_SOURCE[0]}")/lib.sh"
 
-readonly HERE="$(dirname "${BASH_SOURCE[0]}")"
+HERE="$(dirname "${BASH_SOURCE[0]}")"
+readonly HERE
 readonly TARGET="${SIREN_SOUND_TARGET:-${REPO_ROOT}/android/app/src/main/res/raw/siren_sos.ogg}"
 
 # Fails early and by name rather than letting ffmpeg reject an unknown filter

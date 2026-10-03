@@ -6,6 +6,7 @@
 #   tools/web-test.sh
 set -euo pipefail
 
+# shellcheck source=lib.sh
 source "$(dirname "${BASH_SOURCE[0]}")/lib.sh"
 
 ensure_firebase_image

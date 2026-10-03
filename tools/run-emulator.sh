@@ -14,6 +14,7 @@
 #   EMULATOR_VARIANT=default tools/run-emulator.sh   # without Play services
 set -euo pipefail
 
+# shellcheck source=lib.sh
 source "$(dirname "${BASH_SOURCE[0]}")/lib.sh"
 
 readonly BOOT_TIMEOUT="${BOOT_TIMEOUT:-300}"

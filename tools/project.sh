@@ -78,6 +78,7 @@
 # prompt --non-interactive told the firebase command line not to show.
 set -euo pipefail
 
+# shellcheck source=lib.sh
 source "$(dirname "${BASH_SOURCE[0]}")/lib.sh"
 
 # npm's own notices ("npm notice run npx") on every start of the firebase

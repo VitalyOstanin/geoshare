@@ -16,6 +16,7 @@ set -euo pipefail
 
 # The same place every other script here gets the repository root and the
 # versions from: a copy of either is a copy that stops matching.
+# shellcheck source=lib.sh
 source "$(dirname "${BASH_SOURCE[0]}")/lib.sh"
 
 readonly TARGET="${WEB_CONFIG_TARGET:-${REPO_ROOT}/web/public/firebase-config.js}"

@@ -22,6 +22,7 @@
 #   tools/run-services.sh --seed     # fill again, leaving them running
 set -euo pipefail
 
+# shellcheck source=lib.sh
 source "$(dirname "${BASH_SOURCE[0]}")/lib.sh"
 
 readonly READY_TIMEOUT="${READY_TIMEOUT:-120}"

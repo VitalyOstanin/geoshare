@@ -8,6 +8,7 @@
 # runs before the project in the console exists and without credentials.
 set -euo pipefail
 
+# shellcheck source=lib.sh
 source "$(dirname "${BASH_SOURCE[0]}")/lib.sh"
 
 readonly NPM_VOLUME="${NPM_VOLUME:-geoshare-npm}"
