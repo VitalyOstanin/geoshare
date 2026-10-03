@@ -62,6 +62,7 @@ import io.github.vitalyostanin.geoshare.project.ConnectScreen
 import io.github.vitalyostanin.geoshare.project.ConnectState
 import io.github.vitalyostanin.geoshare.project.Connections
 import io.github.vitalyostanin.geoshare.project.GroupConnection
+import io.github.vitalyostanin.geoshare.project.GroupNames
 import io.github.vitalyostanin.geoshare.project.INHERITED
 import io.github.vitalyostanin.geoshare.project.PendingInvitationStore
 import io.github.vitalyostanin.geoshare.project.fetchSettings
@@ -439,6 +440,7 @@ class MainActivity : AppCompatActivity() {
         val projectId = done.settings.projectId
 
         PendingInvitationStore.save(this, pendingInvitationFor(done))
+        GroupNames.note(this, projectId, done.invitation?.groupName)
 
         if (Connections.of(projectId) == null) {
             Connections.connect(this, done.settings, INHERITED)

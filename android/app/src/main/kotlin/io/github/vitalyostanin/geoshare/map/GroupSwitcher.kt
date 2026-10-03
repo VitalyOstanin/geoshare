@@ -47,6 +47,7 @@ import io.github.vitalyostanin.geoshare.membership.Presence
 import io.github.vitalyostanin.geoshare.membership.Roster
 import io.github.vitalyostanin.geoshare.membership.howToLeave
 import io.github.vitalyostanin.geoshare.project.GroupConnection
+import io.github.vitalyostanin.geoshare.project.GroupNames
 import io.github.vitalyostanin.geoshare.service.groupRoster
 import io.github.vitalyostanin.geoshare.service.groupSearches
 import io.github.vitalyostanin.geoshare.service.phoneSiren
@@ -153,6 +154,8 @@ fun groupChoice(
     uid: String?,
     now: Instant,
     presence: Presence = Presence.UNKNOWN,
+    /** What the group was last known to be called, for when its roster is not read. */
+    known: String? = null,
 ): GroupChoice {
     val removed = presence == Presence.REMOVED
     val sounding =
@@ -165,7 +168,7 @@ fun groupChoice(
 
     return GroupChoice(
         projectId = projectId,
-        caption = roster?.let { groupCaption(it, profiles, unnamedPattern) } ?: projectId,
+        caption = roster?.let { groupCaption(it, profiles, unnamedPattern) } ?: known ?: projectId,
         members = roster?.members?.size?.takeUnless { removed },
         siren = sounding,
         search = standingSearches(searches, now).isNotEmpty(),
@@ -227,18 +230,28 @@ fun rememberGroupChoices(
                         ticking(),
                     ) { (roster, last), profiles, searches, session, now ->
                         val removed = session.presence == Presence.REMOVED
+                        val read = if (removed) last else roster
+                        val choice =
+                            groupChoice(
+                                connection.projectId,
+                                read,
+                                profiles,
+                                unnamed,
+                                searches,
+                                session.siren,
+                                session.uid,
+                                now,
+                                session.presence,
+                                GroupNames.of(context, connection.projectId),
+                            )
 
-                        groupChoice(
-                            connection.projectId,
-                            if (removed) last else roster,
-                            profiles,
-                            unnamed,
-                            searches,
-                            session.siren,
-                            session.uid,
-                            now,
-                            session.presence,
-                        )
+                        // Kept for the next time the roster cannot be read:
+                        // signed out there, the group cannot say its name.
+                        if (read != null) {
+                            GroupNames.note(context, connection.projectId, choice.caption)
+                        }
+
+                        choice
                     }
                 }
 

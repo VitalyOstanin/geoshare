@@ -47,6 +47,7 @@ class GroupSwitcherTest {
         ownSiren: Siren? = null,
         uid: String? = "boris",
         presence: Presence = Presence.UNKNOWN,
+        known: String? = null,
     ) = groupChoice(
         projectId = "geoshare-hike",
         roster = roster,
@@ -57,6 +58,7 @@ class GroupSwitcherTest {
         uid = uid,
         now = now,
         presence = presence,
+        known = known,
     )
 
     @Test
@@ -92,6 +94,18 @@ class GroupSwitcherTest {
 
         assertEquals("geoshare-hike", choice.caption)
         assertNull(choice.members)
+    }
+
+    // Signed out there, the device still remembers what the group was
+    // called: by the invitation it joined with, or by its last read.
+    @Test
+    fun `a group with no roster read is called what it was last known as`() {
+        assertEquals("Hike", choice(roster = null, known = "Hike").caption)
+    }
+
+    @Test
+    fun `a roster read says the name rather than what was remembered`() {
+        assertEquals("Hike", choice(known = "Old name").caption)
     }
 
     @Test

@@ -146,6 +146,7 @@ object Connections {
     fun remove(context: Context, projectId: String) {
         publish(context, kept.without(projectId))
         SeenOnRoster.forget(context, projectId)
+        GroupNames.forget(context, projectId)
 
         AppLog.i(TAG, "no longer in $projectId")
     }
