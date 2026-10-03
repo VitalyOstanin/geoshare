@@ -122,6 +122,21 @@ test('phones sharing a name are numbered in the order of their ids', () => {
     assert.equal(names.get('other'), 'MAR-LX1');
 });
 
+test('twins skip a number another device is already called by', () => {
+    const phones = phonesOf({
+        alpha: { model: 'BVL-N49' },
+        zulu: { model: 'BVL-N49' },
+        third: { model: 'MAR-LX1' },
+    });
+    const labels = labelsFrom({ devices: { [`${HER}.third`]: 'BVL-N49 (1)' } });
+
+    const names = phoneNames(HER, phones, labels);
+
+    assert.equal(names.get('third'), 'BVL-N49 (1)');
+    assert.equal(names.get('alpha'), 'BVL-N49 (2)');
+    assert.equal(names.get('zulu'), 'BVL-N49 (3)');
+});
+
 test('a phone named apart from its twin leaves the other unnumbered', () => {
     const phones = phonesOf({ alpha: { model: 'BVL-N49' }, zulu: { model: 'BVL-N49' } });
     const labels = labelsFrom({ devices: { [`${HER}.zulu`]: 'old phone' } });

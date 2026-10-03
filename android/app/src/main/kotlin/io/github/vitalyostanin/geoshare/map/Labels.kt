@@ -88,11 +88,21 @@ fun phoneNames(
     }
 
     val numbered = names.toMutableMap()
+    // A number is skipped where it would give a name another device already
+    // has: "Pixel (1)" named so by its owner stays the only one.
+    val taken = sharing.filterValues { it.size == 1 }.keys.toMutableSet()
 
     for ((name, deviceIds) in sharing) {
         if (deviceIds.size > 1) {
-            deviceIds.sorted().forEachIndexed { index, deviceId ->
-                numbered[deviceId] = "$name (${index + 1})"
+            var number = 0
+
+            for (deviceId in deviceIds.sorted()) {
+                do {
+                    number++
+                } while ("$name ($number)" in taken)
+
+                taken += "$name ($number)"
+                numbered[deviceId] = "$name ($number)"
             }
         }
     }

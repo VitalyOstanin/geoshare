@@ -111,6 +111,23 @@ class LabelsTest {
     }
 
     @Test
+    fun `twins skip a number another device is already called by`() {
+        val phones =
+            mapOf(
+                "alpha" to PhoneStatus(model = "BVL-N49"),
+                "zulu" to PhoneStatus(model = "BVL-N49"),
+                "third" to PhoneStatus(model = "MAR-LX1"),
+            )
+        val labels = Labels(phones = mapOf("her.third" to "BVL-N49 (1)"))
+
+        val names = phoneNames("her", phones, labels)
+
+        assertEquals("BVL-N49 (1)", names["third"])
+        assertEquals("BVL-N49 (2)", names["alpha"])
+        assertEquals("BVL-N49 (3)", names["zulu"])
+    }
+
+    @Test
     fun `a phone named apart from its twin leaves the other unnumbered`() {
         val phones =
             mapOf(

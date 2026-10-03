@@ -128,11 +128,22 @@ export function phoneNames(memberId, phones, labels, seen = new Map()) {
         }
     }
 
+    // A number is skipped where it would give a name another device already
+    // has: "Pixel (1)" named so by its owner stays the only one.
+    const taken = new Set([...sharing].filter(([, ids]) => ids.length === 1).map(([name]) => name));
+
     for (const [name, deviceIds] of sharing) {
         if (deviceIds.length > 1) {
-            deviceIds
-                .sort(compareIds)
-                .forEach((deviceId, index) => names.set(deviceId, `${name} (${index + 1})`));
+            let number = 0;
+
+            for (const deviceId of deviceIds.sort(compareIds)) {
+                do {
+                    number += 1;
+                } while (taken.has(`${name} (${number})`));
+
+                taken.add(`${name} (${number})`);
+                names.set(deviceId, `${name} (${number})`);
+            }
         }
     }
 
