@@ -60,6 +60,14 @@ function rememberSignIn(signedIn) {
 }
 
 export function start() {
+    showTheMap();
+    followProfiles();
+    followLabels();
+    followTheGroup();
+}
+
+/** Puts the map, the panel and the account up in place of the sign-in screen. */
+function showTheMap() {
     elements.signIn.hidden = true;
     elements.map.hidden = false;
     elements.followButton.hidden = false;
@@ -83,7 +91,10 @@ export function start() {
     // The map measures its element when it is created, and until the sign-in
     // screen goes away that measurement is of a hidden box.
     remeasure(state.view);
+}
 
+/** Follows the members' profiles, which say who is in the group and what each is called. */
+function followProfiles() {
     state.stopProfiles ??= watchProfiles(
         (profiles) => {
             state.accountProfiles = profiles;
@@ -110,7 +121,10 @@ export function start() {
             render();
         },
     );
+}
 
+/** Follows the names this member gave the others, kept for the next load as well. */
+function followLabels() {
     if (!state.stopLabels) {
         const memberId = state.member.memberId;
 
@@ -124,7 +138,10 @@ export function start() {
             render();
         });
     }
+}
 
+/** Follows the rest: the link, the roster, searches, false places and who is watching. */
+function followTheGroup() {
     // A silent database changes the banner, the markers, the rows and any
     // window offering a call, so all of them are drawn again.
     followLink(() => {

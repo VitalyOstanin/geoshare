@@ -161,6 +161,15 @@ const STYLE = {
  *        never covers the very place on the map the viewer is reading
  */
 export function createMap(element, onCardChange = () => {}, cardElement) {
+    const view = newView(newMap(element), onCardChange, cardElement);
+
+    listenToTheMap(view);
+
+    return view;
+}
+
+/** The map itself, with its controls and an ear for its errors. */
+function newMap(element) {
     const map = new MapLibre({
         container: element,
         style: STYLE,
@@ -185,7 +194,12 @@ export function createMap(element, onCardChange = () => {}, cardElement) {
         console.error('map:', event.error?.message ?? event.error ?? event);
     });
 
-    const view = {
+    return map;
+}
+
+/** What the page knows about the map beyond the map itself. */
+function newView(map, onCardChange, cardElement) {
+    return {
         map,
         markers: new Map(),
         centred: false,
@@ -225,6 +239,11 @@ export function createMap(element, onCardChange = () => {}, cardElement) {
         // while it answers. Set by the page, which judges the link.
         knownNote: null,
     };
+}
+
+/** What the map's own events change: the ring, the grouping, the pause and the card. */
+function listenToTheMap(view) {
+    const map = view.map;
 
     // The ring's source and layers come with the style; what has to wait is the
     // drawing, because positions can arrive before the style has.
@@ -280,12 +299,17 @@ export function createMap(element, onCardChange = () => {}, cardElement) {
         }
     });
 
+    closeOnATapOrEscape(view);
+}
+
+/** The two ways of putting the card away that are not its own cross. */
+function closeOnATapOrEscape(view) {
     // A tap away from everybody means the card is no longer being looked at,
     // which is how the phone reads the same tap. A tap on a marker is caught
     // first, in addMarker, and stopped there from bubbling — without that,
     // this handler would close the card the very tap that opened it was meant
     // to leave open.
-    map.on('click', () => {
+    view.map.on('click', () => {
         if (closeCards(view)) {
             view.onCardChange();
             redrawSelection(view);
@@ -312,8 +336,6 @@ export function createMap(element, onCardChange = () => {}, cardElement) {
             redrawSelection(view);
         }
     });
-
-    return view;
 }
 
 /**
@@ -384,57 +406,10 @@ function draw(view, { positions, names, faces, now }) {
     const alone = view.selection ? view.selection.positionId : null;
 
     for (const cluster of clusterMembers(placed, CLUSTER_RADIUS, alone)) {
-        const group = cluster.map((memberId) => byId.get(memberId)).filter(Boolean);
+        const key = placeMarker(view, cluster, byId, alone, { names, faces, now });
 
-        if (group.length === 0) {
-            continue;
-        }
-
-        // The positions in it are what a marker is: a group that gains or
-        // loses one is a different marker, with a different number of faces.
-        const key = cluster.join(',');
-
-        seen.add(key);
-
-        const entry = view.markers.get(key) ?? addMarker(view, key, group);
-
-        entry.members = group;
-
-        const at = [centreLongitude(group), centreLatitude(group)];
-
-        entry.marker.setLngLat(at);
-
-        // Restated on every draw rather than once: the pile is an order of
-        // what is on screen, and panning the map changes which member is in
-        // front of which without changing anything about the members.
-        //
-        // The member whose card is open stands over everybody: they are on a
-        // pin of their own (see clusterMembers), and another member in the
-        // same spot would otherwise cover the pin the circle is drawn for.
-        const looked = alone !== null && cluster.length === 1 && cluster[0] === alone;
-
-        entry.marker.getElement().style.zIndex = looked
-            ? HIGHEST
-            : markerOrder(view.map.project(at).y);
-
-        showPin(entry, names, faces, now);
-
-        // Framed in the member's colour, the colour of their circle: their pin
-        // stands apart and on top, and its label lying over a neighbour's
-        // read as one line with it.
-        entry.label.classList.toggle('open', looked);
-
-        if (looked) {
-            entry.label.style.setProperty('--frame', memberColour(group[0].memberId));
-        }
-
-        // What the card holds is built for the card that is open, and for no
-        // other: the card is a heading, a face and five rows, and building
-        // one per marker on every tick is work nobody sees.
-        entry.latest = { names, faces, now };
-
-        if (view.selection && view.selection.key === key) {
-            showCard(view, names, faces, now);
+        if (key !== null) {
+            seen.add(key);
         }
     }
 
@@ -445,46 +420,111 @@ function draw(view, { positions, names, faces, now }) {
         }
     }
 
-    // The marker a card was about can vanish between two drawings: coming
-    // closer takes a group apart into a marker each, and going away puts them
-    // back together. The card is about a member rather than about a pile of
-    // pins, so it moves to whichever marker now covers them, and only closes
-    // when the member themselves has left the positions.
-    //
-    // A card over a list follows the first member of the pile it was opened
-    // over: the member whose card was open a moment ago rejoins the nearest
-    // pile when that card is left (see clusterMembers), and a list closing
-    // under the hand that just opened it would read as a misfire.
-    //
-    // Whether it closed is the answer rather than a call to onCardChange from
-    // inside a drawing: a drawing is usually something the panel asked for,
-    // and showMembers reads the selection again the moment this returns.
-    let closed = false;
-
-    if (view.selection && !seen.has(view.selection.key)) {
-        const moved = markerKeyFor(
-            view,
-            view.selection.positionId ?? view.selection.key.split(',')[0],
-        );
-
-        if (moved === null) {
-            closeCards(view);
-            closed = true;
-        } else {
-            view.selection = openMember(
-                moved,
-                view.selection.positionId,
-                view.selection.list ?? null,
-            );
-            showCard(view, names, faces, now);
-        }
-    }
+    const closed = followTheCard(view, seen, { names, faces, now });
 
     // After the markers that went away have gone: a ring is drawn around a
     // marker whose card is open, and a marker taken off the map has none.
     drawWidth(view);
 
     return closed;
+}
+
+/**
+ * Puts one marker where the members of [cluster] stand, made or reused, and
+ * says which marker it was; null when none of them has a position any more.
+ */
+function placeMarker(view, cluster, byId, alone, { names, faces, now }) {
+    const group = cluster.map((memberId) => byId.get(memberId)).filter(Boolean);
+
+    if (group.length === 0) {
+        return null;
+    }
+
+    // The positions in it are what a marker is: a group that gains or
+    // loses one is a different marker, with a different number of faces.
+    const key = cluster.join(',');
+
+    const entry = view.markers.get(key) ?? addMarker(view, key, group);
+
+    entry.members = group;
+
+    const at = [centreLongitude(group), centreLatitude(group)];
+
+    entry.marker.setLngLat(at);
+
+    // Restated on every draw rather than once: the pile is an order of
+    // what is on screen, and panning the map changes which member is in
+    // front of which without changing anything about the members.
+    //
+    // The member whose card is open stands over everybody: they are on a
+    // pin of their own (see clusterMembers), and another member in the
+    // same spot would otherwise cover the pin the circle is drawn for.
+    const looked = alone !== null && cluster.length === 1 && cluster[0] === alone;
+
+    entry.marker.getElement().style.zIndex = looked
+        ? HIGHEST
+        : markerOrder(view.map.project(at).y);
+
+    showPin(entry, names, faces, now);
+
+    // Framed in the member's colour, the colour of their circle: their pin
+    // stands apart and on top, and its label lying over a neighbour's
+    // read as one line with it.
+    entry.label.classList.toggle('open', looked);
+
+    if (looked) {
+        entry.label.style.setProperty('--frame', memberColour(group[0].memberId));
+    }
+
+    // What the card holds is built for the card that is open, and for no
+    // other: the card is a heading, a face and five rows, and building
+    // one per marker on every tick is work nobody sees.
+    entry.latest = { names, faces, now };
+
+    if (view.selection && view.selection.key === key) {
+        showCard(view, names, faces, now);
+    }
+
+    return key;
+}
+
+/**
+ * Moves the open card to whichever marker now covers its member, or closes
+ * it when the member has left the positions; says whether it closed.
+ *
+ * The marker a card was about can vanish between two drawings: coming closer
+ * takes a group apart into a marker each, and going away puts them back
+ * together. The card is about a member rather than about a pile of pins.
+ *
+ * A card over a list follows the first member of the pile it was opened
+ * over: the member whose card was open a moment ago rejoins the nearest pile
+ * when that card is left (see clusterMembers), and a list closing under the
+ * hand that just opened it would read as a misfire.
+ *
+ * Whether it closed is the answer rather than a call to onCardChange from
+ * inside a drawing: a drawing is usually something the panel asked for, and
+ * showMembers reads the selection again the moment this returns.
+ */
+function followTheCard(view, seen, { names, faces, now }) {
+    if (!view.selection || seen.has(view.selection.key)) {
+        return false;
+    }
+
+    const moved = markerKeyFor(
+        view,
+        view.selection.positionId ?? view.selection.key.split(',')[0],
+    );
+
+    if (moved === null) {
+        closeCards(view);
+
+        return true;
+    }
+
+    view.selection = openMember(moved, view.selection.positionId, view.selection.list ?? null);
+    showCard(view, names, faces, now);
+
+    return false;
 }
 
 /**
@@ -581,6 +621,46 @@ function emptyRing() {
 }
 
 function addMarker(view, key, group) {
+    const { element, label, pin, faces, soughtMark } = buildPin(group.length);
+
+    // Held before the click handler, which reads it back on every tap rather
+    // than closing over the group this marker happened to have when it was
+    // made — the members under one key never change, but which of them the
+    // card is about does.
+    const entry = {
+        marker: null,
+        pin,
+        faces,
+        label,
+        element,
+        soughtMark,
+        members: group,
+        // What the last drawing knew, kept for the moment the card is opened
+        // between two drawings.
+        latest: null,
+    };
+
+    // A tap on the marker is a choice about the card, and it must not reach
+    // the map underneath: the map's own click handler closes whatever card is
+    // open, and left alone it would close this same tap's card the instant it
+    // opened.
+    element.addEventListener('click', (event) => tapMarker(view, key, entry, event));
+
+    // Placed before it is added: a marker with nowhere to be cannot be put on
+    // a map, and the caller sets the position again on every update anyway.
+    // Hung by its bottom edge, which is the point of the pin: the member is
+    // where the point is, and everything else stands above them.
+    entry.marker = new Marker({ element, anchor: 'bottom' })
+        .setLngLat([centreLongitude(group), centreLatitude(group)])
+        .addTo(view.map);
+
+    view.markers.set(key, entry);
+
+    return entry;
+}
+
+/** The elements of a marker holding [count] members: a label, a pin and a face for each. */
+function buildPin(count) {
     const element = document.createElement('div');
     element.className = 'member-marker';
 
@@ -603,7 +683,7 @@ function addMarker(view, key, group) {
 
     pin.append(body, point);
 
-    const circles = circleCount(group.length);
+    const circles = circleCount(count);
 
     // The head is a capsule, so it can be widened to hold the faces and keep
     // the round ends a single member has.
@@ -629,77 +709,46 @@ function addMarker(view, key, group) {
 
     element.append(soughtMark, label, pin);
 
-    // Held before the click handler, which reads it back on every tap rather
-    // than closing over the group this marker happened to have when it was
-    // made — the members under one key never change, but which of them the
-    // card is about does.
-    const entry = {
-        marker: null,
-        pin,
-        faces,
-        label,
-        element,
-        soughtMark,
-        members: group,
-        // What the last drawing knew, kept for the moment the card is opened
-        // between two drawings.
-        latest: null,
-    };
+    return { element, label, pin, faces, soughtMark };
+}
 
-    // A tap on the marker is a choice about the card, and it must not reach
-    // the map underneath: the map's own click handler closes whatever card is
-    // open, and left alone it would close this same tap's card the instant it
-    // opened.
-    element.addEventListener('click', (event) => {
-        event.stopPropagation();
+/** What a tap on a marker does to the card, which it opens, moves or closes. */
+function tapMarker(view, key, entry, event) {
+    event.stopPropagation();
 
-        const positionIds = entry.members.map((member) => member.positionId);
+    const positionIds = entry.members.map((member) => member.positionId);
 
-        // Worked out before it is stored, because closeCards is what takes
-        // the card off the screen and it does nothing at all once the
-        // selection is already empty: writing the answer down first would
-        // leave the card standing there with nothing selected behind it.
-        const tapped = markerTapped(view.selection, key, positionIds);
+    // Worked out before it is stored, because closeCards is what takes the card
+    // off the screen and it does nothing at all once the selection is already
+    // empty: writing the answer down first would leave the card standing there
+    // with nothing selected behind it.
+    const tapped = markerTapped(view.selection, key, positionIds);
 
-        if (tapped === null) {
-            closeCards(view);
-        } else {
-            view.selection = tapped;
+    if (tapped === null) {
+        closeCards(view);
+    } else {
+        view.selection = tapped;
 
-            // A marker for one member opens straight onto their card, so
-            // tapping it is as much a choice of who to follow as tapping
-            // their entry in the strip. A marker for several opens onto the
-            // list instead, and no one of them is meant until a row in it is
-            // tapped — that click sets the target itself, in groupList.
-            if (view.selection.positionId !== null) {
-                setFollowTarget(view, view.selection.positionId);
-            }
-
-            // Filled on the way open rather than kept filled: until it is
-            // asked for, an empty card costs nothing. entry.latest is set on
-            // every drawing, and a marker cannot be tapped before its first
-            // one.
-            if (entry.latest) {
-                showCard(view, entry.latest.names, entry.latest.faces, entry.latest.now);
-            }
+        // A marker for one member opens straight onto their card, so tapping it
+        // is as much a choice of who to follow as tapping their entry in the
+        // strip. A marker for several opens onto the list instead, and no one
+        // of them is meant until a row in it is tapped — that click sets the
+        // target itself, in groupList.
+        if (view.selection.positionId !== null) {
+            setFollowTarget(view, view.selection.positionId);
         }
 
-        view.onCardChange();
-        redrawSelection(view);
-        bringTheRingIntoSight(view);
-    });
+        // Filled on the way open rather than kept filled: until it is asked
+        // for, an empty card costs nothing. entry.latest is set on every
+        // drawing, and a marker cannot be tapped before its first one.
+        if (entry.latest) {
+            showCard(view, entry.latest.names, entry.latest.faces, entry.latest.now);
+        }
+    }
 
-    // Placed before it is added: a marker with nowhere to be cannot be put on
-    // a map, and the caller sets the position again on every update anyway.
-    // Hung by its bottom edge, which is the point of the pin: the member is
-    // where the point is, and everything else stands above them.
-    entry.marker = new Marker({ element, anchor: 'bottom' })
-        .setLngLat([centreLongitude(group), centreLatitude(group)])
-        .addTo(view.map);
-
-    view.markers.set(key, entry);
-
-    return entry;
+    view.onCardChange();
+    redrawSelection(view);
+    bringTheRingIntoSight(view);
 }
 
 /** How many circles a pin has: one per face, and one more for the count if any are left out. */

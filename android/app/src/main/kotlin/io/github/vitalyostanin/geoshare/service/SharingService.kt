@@ -105,16 +105,6 @@ import java.util.Locale
 private const val TAG = "geoshare.service"
 
 /**
- * How often the group is told that this phone's answers are being left out.
- *
- * Once a minute. Under a transmitter an answer arrives every seven seconds,
- * and telling the database about each of them would spend its free daily
- * allowance in an afternoon; what a reader wants from the field is whether
- * this is happening and roughly how much of it, and a minute answers that.
- */
-private val LEFT_OUT_TOLD_EVERY: Duration = Duration.ofMinutes(1)
-
-/**
  * How often the phone says how it is when nothing else has made it say so.
  *
  * On the beat a phone at rest writes its position again, for the same reason:
@@ -230,18 +220,8 @@ class SharingService : LifecycleService() {
      */
     private var restsOn: Map<Constellation, Counted> = emptyMap()
 
-    /**
-     * The last thing the towers and the Wi-Fi said, whoever asked them.
-     *
-     * Kept because it is the one opinion a transmitter drawing a false road
-     * cannot reach, and because the rule that uses it has to run while nothing
-     * looks wrong: a road drawn slowly breaks no other rule, so by the time
-     * another rule fires there would be nothing left to compare.
-     */
-    private var networkSaid: Fix? = null
-
-    /** When the second opinion was last asked for, by the clock or by a position. */
-    private var secondOpinionAskedAt: Instant? = null
+    /** What the towers and the Wi-Fi say, kept beside the satellites' own answer. */
+    private val opinion = NetworkOpinion(this)
 
     /**
      * The answers the satellites have given lately, newest last.
@@ -254,76 +234,16 @@ class SharingService : LifecycleService() {
     private var lately: List<Fix> = emptyList()
 
     /**
-     * Since when the phone's own sensors say it has not been carried anywhere,
-     * or nothing while it is moving and while they have said nothing yet.
+     * What the phone's own sensors say about it being carried.
      *
-     * Kept as the moment the stillness began rather than as a flag, because
-     * what a fix is weighed against is whether the stillness covers the way
-     * from the last position to this one.
+     * Whether there are sensors to ask is read once: sensors do not come and
+     * go, and the permission is asked for before the service starts
+     * collecting.
      */
-    private var standingSince: Instant? = null
+    private val carried by lazy { BeingCarried(sensorsNoticeMovement(this)) }
 
-    /**
-     * What the phone's own motion sensors have reported lately, oldest first.
-     *
-     * Kept as moments rather than as a flag because they arrive late: the step
-     * counter is read in batches, and a batch landing a minute after the fact
-     * still has to undo an anchor that covered the minute it describes.
-     */
-    private val stirsHeard = mutableListOf<Stir>()
-
-    /** What the step counter last stood at, and when anything last stirred. */
-    private var stepsNow: Long? = null
-    private var lastStir: Instant? = null
-
-    /**
-     * Where the phone was standing when it was last put down.
-     *
-     * The place the answers are weighed against while nothing touches the
-     * phone, which is the one comparison a slow creep cannot walk away from
-     * unnoticed: the position written before each answer creeps along with the
-     * lie, and this does not.
-     */
-    private var putDown: PutDown? = null
-
-    /**
-     * When the stretch of walking the phone is in the middle of began, and
-     * where it said it was at the time.
-     *
-     * The pair is the other rule's anchor turned around: there a place is kept
-     * while the phone lies still, here a place is kept while the phone is
-     * carried, so that an answer refusing to follow the walking can be seen.
-     * Only a narrow answer measured off the sky is kept — see
-     * [pinnedWhileWalking] for why the others say nothing.
-     */
-    private var walkStarted: Instant? = null
-
-    private var walkedFrom: Fix? = null
-
-    /**
-     * The run of answers left out since the last position was written: how
-     * many, why the last one was, when the run began and when the group was
-     * last told about it.
-     *
-     * Kept so that the card of a phone under a transmitter can say what is
-     * happening to it. Everything here is cleared by a position being written,
-     * because a written position is the run ending.
-     */
-    private var leftOutCount = 0
-
-    private var leftOutReason: String? = null
-
-    private var leftOutSince: Instant? = null
-
-    private var leftOutToldAt: Instant? = null
-
-    /**
-     * Whether this phone has sensors to ask at all.
-     *
-     * Read once: sensors do not come and go, and the permission is asked for
-     * before the service starts collecting.
-     */
-    private val sensorsTell by lazy { sensorsNoticeMovement(this) }
+    /** The run of answers left out since the last position was written. */
+    private val leftOut = LeftOutRun()
 
     /** Where this phone keeps being, kept across restarts of the process. */
     private val trailStore by lazy { TrailStore(this) }
@@ -385,7 +305,7 @@ class SharingService : LifecycleService() {
      * have nothing to compare against.
      */
     private val radio by lazy {
-        RadioWatch(this) { orbitReference(networkSaid, lastFix, Instant.now()) }
+        RadioWatch(this) { orbitReference(opinion.said, lastFix, Instant.now()) }
     }
     private var lastMode: CollectionMode = CollectionMode.Standby
 
@@ -502,51 +422,11 @@ class SharingService : LifecycleService() {
         }
 
         if (intent?.action == ACTION_FOUND) {
-            AppLog.i(TAG, "this phone says it has been found")
-
-            // Not a reason to stop sharing: only the search on this phone is
-            // over, and the service goes on exactly as it was. The
-            // notification comes down on its own, once [keepSearchNotification]
-            // hears the document is gone. Ended in every group: a device found
-            // is found for all of them, and a group not looking for it refuses
-            // the deletion, which costs a line in the log.
-            for (link in links.value) {
-                lifecycleScope.launch {
-                    try {
-                        endSearch(link.phoneId, link.connection)
-                    } catch (cancellation: CancellationException) {
-                        throw cancellation
-                    } catch (refusal: Exception) {
-                        AppLog.w(
-                            TAG,
-                            "could not end the search in $link from its own notification",
-                            refusal,
-                        )
-                    }
-                }
-            }
+            endTheSearchEverywhere()
         }
 
         if (intent?.action == ACTION_SIREN_OFF) {
-            AppLog.i(TAG, "the siren is stopped on the phone itself")
-            sirens.quieten()
-
-            // Written so that the caller's screen reads "stopped" rather than
-            // counting down twenty seconds that are no longer sounding — in
-            // every group, since the sound is one and stops for all of them; a
-            // group that called no siren refuses the write, which costs a line
-            // in the log.
-            for (link in links.value) {
-                lifecycleScope.launch {
-                    try {
-                        stopSiren(link.phoneId, link.memberId, link.connection)
-                    } catch (cancellation: CancellationException) {
-                        throw cancellation
-                    } catch (refusal: Exception) {
-                        AppLog.w(TAG, "could not say the siren was stopped in $link", refusal)
-                    }
-                }
-            }
+            quietenTheSirenEverywhere()
         }
 
         return if (enterForeground()) {
@@ -559,6 +439,56 @@ class SharingService : LifecycleService() {
             stopSelf()
 
             START_NOT_STICKY
+        }
+    }
+
+    /** The person holding this device says it has been found. */
+    private fun endTheSearchEverywhere() {
+        AppLog.i(TAG, "this phone says it has been found")
+
+        // Not a reason to stop sharing: only the search on this phone is
+        // over, and the service goes on exactly as it was. The
+        // notification comes down on its own, once [keepSearchNotification]
+        // hears the document is gone. Ended in every group: a device found
+        // is found for all of them, and a group not looking for it refuses
+        // the deletion, which costs a line in the log.
+        for (link in links.value) {
+            lifecycleScope.launch {
+                try {
+                    endSearch(link.phoneId, link.connection)
+                } catch (cancellation: CancellationException) {
+                    throw cancellation
+                } catch (refusal: Exception) {
+                    AppLog.w(
+                        TAG,
+                        "could not end the search in $link from its own notification",
+                        refusal,
+                    )
+                }
+            }
+        }
+    }
+
+    /** Whoever holds this device stops its siren before its time is up. */
+    private fun quietenTheSirenEverywhere() {
+        AppLog.i(TAG, "the siren is stopped on the phone itself")
+        sirens.quieten()
+
+        // Written so that the caller's screen reads "stopped" rather than
+        // counting down twenty seconds that are no longer sounding — in
+        // every group, since the sound is one and stops for all of them; a
+        // group that called no siren refuses the write, which costs a line
+        // in the log.
+        for (link in links.value) {
+            lifecycleScope.launch {
+                try {
+                    stopSiren(link.phoneId, link.memberId, link.connection)
+                } catch (cancellation: CancellationException) {
+                    throw cancellation
+                } catch (refusal: Exception) {
+                    AppLog.w(TAG, "could not say the siren was stopped in $link", refusal)
+                }
+            }
         }
     }
 
@@ -759,7 +689,7 @@ class SharingService : LifecycleService() {
             forgetThePlace()
         }
 
-        rememberASecondOpinion(fix)
+        opinion.remember(fix)
         rememberTheShapeOfIt(fix, trusted)
 
         // Read once, before anything is decided: the receiver goes on
@@ -787,16 +717,16 @@ class SharingService : LifecycleService() {
                 whyAJump(
                     lastFix,
                     fix,
-                    standingSince,
-                    networkSaid,
+                    carried.standingSince,
+                    opinion.said,
                     Instant.now(),
                     lately,
                     falsePlaces,
                     circleLimits,
                     restsOn = restsOn,
                     skySays = radio.skySays(),
-                    putDown = putDown,
-                    carrying = carryingSince(putDown, stirsHeard, sensorsTell),
+                    putDown = carried.putDown,
+                    carrying = carried.carrying(),
                     settling = settling,
                 )
             }
@@ -810,7 +740,7 @@ class SharingService : LifecycleService() {
         // towers or the Wi-Fi around the phone have to name the same place,
         // and past the width only an answer as narrow as the Wi-Fi's will do.
         val agreed =
-            jump != null && agreementStands(jump, candidate, fix, networkSaid, Instant.now())
+            jump != null && agreementStands(jump, candidate, fix, opinion.said, Instant.now())
 
         // The other way out of an anchor that has gone wrong, and the only one
         // that works against a width or a false place: the phone answering
@@ -825,7 +755,7 @@ class SharingService : LifecycleService() {
         // about the filter instead.
         noteFix(fix, mode, jump, agreed, home, trusted)
 
-        noticeAnAnswerThatWillNotFollow(fix, whence)
+        carried.noticeAnAnswerThatWillNotFollow(fix, whence)
 
         if (jump != null && jumps.enabled && !agreed && !home) {
             candidate = fix
@@ -884,9 +814,9 @@ class SharingService : LifecycleService() {
         lastFix = fix
         lastWritten = written
         wroteAt = Instant.now()
-        forgetTheAnswersLeftOut()
+        leftOut.forget()
         rememberThePlace(fix)
-        anchorWhereItLies(fix)
+        carried.anchorWhereItLies(fix, Instant.now())
 
         if (fenceMoves(fenceCentre.value, fix)) {
             fenceCentre.value = fix
@@ -944,6 +874,85 @@ class SharingService : LifecycleService() {
             return
         }
 
+        hearTheCable()
+
+        collection =
+            lifecycleScope.launch {
+                launch { keepTellingHowThePhoneIs() }
+
+                // A flipped source switch restarts the round like a new mode
+                // does: the request itself has to change, not only the reading.
+                modes().combine(sources.changes()) { mode, _ ->
+                    mode
+                }.collectLatest { mode -> collectIn(mode) }
+            }
+    }
+
+    /**
+     * Collects in one mode until the next one replaces it: asks once, then
+     * listens, rescuing the silence and keeping the second opinion meanwhile.
+     */
+    private suspend fun collectIn(mode: CollectionMode) {
+        AppLog.i(TAG, "collecting in mode $mode")
+        lastMode = mode
+        // A mode beginning is news about the phone as well as a reason to ask
+        // for a position, and the first of them is the service starting.
+        tellHowThePhoneIs()
+
+        val spec = requestSpec(mode)
+
+        if (spec == null) {
+            // Nothing to ask for, so nothing would be written either; the
+            // position already known is repeated instead, and the next mode
+            // arrives on its own.
+            keepSaying(writer, mode)
+
+            return
+        }
+
+        // Entering a mode is news: somebody started looking, or the night
+        // ended. Neither should wait for the next threshold, and a watcher who
+        // has just opened the map should see where the phone is rather than
+        // where it was ten minutes ago — which is what the filter would have
+        // answered for a phone standing still.
+        val asked = asking(mode.accuracy)
+
+        if (asked == null) {
+            // Every source the member left on is one this phone does not have:
+            // an answer could only be left out.
+            AppLog.w(TAG, "nothing to ask in mode $mode with the sources left on")
+            awaitCancellation()
+        }
+
+        val first = firstPosition(mode)
+
+        first?.let { fix ->
+            opinion.freshen(mode)
+            writeIfWorth(writer, fix, mode, always = true)
+        }
+
+        coroutineScope {
+            heardAt = Instant.now()
+            launch { rescueWhileSilent(writer, mode) }
+            launch { skyNotes.watchTheSatellites(mode) }
+            launch { skyNotes.noteTheSkyWhileSilent(mode) }
+            launch { opinion.keep(mode) }
+
+            positionUpdates(this@SharingService, spec, asked).collect { fix ->
+                heardAt = Instant.now()
+
+                if (sameAnswer(first, fix)) {
+                    return@collect
+                }
+
+                opinion.freshen(mode)
+                writeIfWorth(writer, fix, mode)
+            }
+        }
+    }
+
+    /** Listens for the cable going in or coming out, which is said at once. */
+    private fun hearTheCable() {
         ContextCompat.registerReceiver(
             this,
             power,
@@ -954,76 +963,6 @@ class SharingService : LifecycleService() {
             // Only the system sends these, and nothing else may reach in.
             ContextCompat.RECEIVER_NOT_EXPORTED,
         )
-
-        collection =
-            lifecycleScope.launch {
-                launch { keepTellingHowThePhoneIs() }
-
-                // A flipped source switch restarts the round like a new mode
-                // does: the request itself has to change, not only the reading.
-                modes().combine(sources.changes()) { mode, _ ->
-                    mode
-                }.collectLatest { mode ->
-                    AppLog.i(TAG, "collecting in mode $mode")
-                    lastMode = mode
-                    // A mode beginning is news about the phone as well as a
-                    // reason to ask for a position, and the first of them is
-                    // the service starting.
-                    tellHowThePhoneIs()
-
-                    val spec = requestSpec(mode)
-
-                    if (spec == null) {
-                        // Nothing to ask for, so nothing would be written
-                        // either; the position already known is repeated
-                        // instead, and the next mode arrives on its own.
-                        keepSaying(writer, mode)
-
-                        return@collectLatest
-                    }
-
-                    // Entering a mode is news: somebody started looking, or the
-                    // night ended. Neither should wait for the next threshold,
-                    // and a watcher who has just opened the map should see
-                    // where the phone is rather than where it was ten minutes
-                    // ago — which is what the filter would have answered for a
-                    // phone standing still.
-                    val asked = asking(mode.accuracy)
-
-                    if (asked == null) {
-                        // Every source the member left on is one this phone
-                        // does not have: an answer could only be left out.
-                        AppLog.w(TAG, "nothing to ask in mode $mode with the sources left on")
-                        awaitCancellation()
-                    }
-
-                    val first = firstPosition(mode)
-
-                    first?.let { fix ->
-                        freshenTheSecondOpinion(mode)
-                        writeIfWorth(writer, fix, mode, always = true)
-                    }
-
-                    coroutineScope {
-                        heardAt = Instant.now()
-                        launch { rescueWhileSilent(writer, mode) }
-                        launch { skyNotes.watchTheSatellites(mode) }
-                        launch { skyNotes.noteTheSkyWhileSilent(mode) }
-                        launch { keepASecondOpinion(mode) }
-
-                        positionUpdates(this@SharingService, spec, asked).collect { fix ->
-                            heardAt = Instant.now()
-
-                            if (sameAnswer(first, fix)) {
-                                return@collect
-                            }
-
-                            freshenTheSecondOpinion(mode)
-                            writeIfWorth(writer, fix, mode)
-                        }
-                    }
-                }
-            }
     }
 
     /**
@@ -1067,7 +1006,7 @@ class SharingService : LifecycleService() {
             MapOnScreen.state,
             reviews,
         ) { untils, moving, standing, ownMap, _ ->
-            noteMovement(moving)
+            carried.hear(moving, Instant.now())
             currentMode(untils, moving.going, standing, ownMap)
         }.distinctUntilChanged()
     }
@@ -1082,54 +1021,7 @@ class SharingService : LifecycleService() {
      * second question is the one a transmitter cannot answer for us.
      */
     private suspend fun noticeBeingCarried() {
-        stirs(this).collect { stir -> noteStir(stir) }
-    }
-
-    /**
-     * Keeps what the motion sensors have said, so that the anchor can be
-     * undone by a report that arrives after the fact.
-     */
-    private fun noteStir(stir: Stir) {
-        stirsHeard += stir
-        lastStir = maxOf(lastStir ?: stir.at, stir.at)
-        stir.steps?.let { counted -> stepsNow = maxOf(stepsNow ?: counted, counted) }
-
-        val old = Instant.now().minus(STIRS_KEPT)
-
-        stirsHeard.removeAll { it.at.isBefore(old) }
-    }
-
-    /**
-     * Moves the anchor to where the phone has just said it is, where the
-     * anchor it had is no longer about a phone lying untouched.
-     *
-     * An anchor is left where it is for as long as nothing has stirred: that
-     * is the whole of its value, since an anchor that followed the answers
-     * would follow a creep as readily as the last position does. It is moved
-     * once something has been carried somewhere and then put down again, and
-     * [putDownAt] is what decides that the phone has settled.
-     */
-    private fun anchorWhereItLies(believed: Fix) {
-        val carrying = carryingSince(putDown, stirsHeard, sensorsTell)
-
-        if (putDown != null && !carrying.stirred && (carrying.steps ?: 0) < CARRIED_STEPS) {
-            return
-        }
-
-        val settled = putDownAt(believed, lastStir, sensorsTell, Instant.now(), stepsNow)
-
-        // Said once per anchor rather than per fix: what this line answers is
-        // whether the rule is awake at all on a given phone, and a phone
-        // standing still would otherwise repeat it every few minutes.
-        if (settled?.at != putDown?.at) {
-            AppLog.i(
-                TAG,
-                settled?.let { "the phone is standing where it was put down, at ${theSpot(it)}" }
-                    ?: "nothing to anchor on: the phone has been moved too recently",
-            )
-        }
-
-        putDown = settled
+        stirs(this).collect { stir -> carried.hear(stir, Instant.now()) }
     }
 
     /**
@@ -1151,120 +1043,10 @@ class SharingService : LifecycleService() {
      * that is the one case the write fails in.
      */
     private suspend fun tellThemAnswersAreBeingLeftOut(writer: EveryGroup, reason: String) {
-        val now = Instant.now()
+        val news = leftOut.note(reason, Instant.now()) ?: return
 
-        leftOutCount += 1
-        leftOutReason = reason
-
-        if (leftOutSince == null) {
-            leftOutSince = now
-        }
-
-        val told = leftOutToldAt
-
-        if (told != null && Duration.between(told, now) < LEFT_OUT_TOLD_EVERY) {
-            return
-        }
-
-        leftOutToldAt = now
-
-        runCatching { writer.noteLeftOut(leftOutCount, reason, leftOutSince ?: now) }
+        runCatching { writer.noteLeftOut(news.count, news.reason, news.since) }
             .onFailure { AppLog.i(TAG, "nowhere to say answers are being left out yet") }
-    }
-
-    /**
-     * Forgets the run of left-out answers, because a position has been
-     * written.
-     *
-     * The document itself needs no clearing: it is written whole, and the
-     * three fields simply stop being in it.
-     */
-    private fun forgetTheAnswersLeftOut() {
-        leftOutCount = 0
-        leftOutReason = null
-        leftOutSince = null
-        leftOutToldAt = null
-    }
-
-    /**
-     * Says so when the phone has been carried somewhere and the answer has
-     * stayed behind.
-     *
-     * Nothing is decided by it yet: the line goes in the log, the position is
-     * treated exactly as it would have been, and what the line is for is the
-     * measurement — how often this happens over a day of ordinary carrying,
-     * and what it looks like when it does. The threshold of [PINNED_STEPS] was
-     * chosen to be far beyond a room rather than measured, which is the other
-     * way round from every other threshold here, and it should be measured
-     * before anything is left out on the strength of it.
-     *
-     * The place a walk is measured from is taken from a narrow satellite
-     * answer and no other, because only such an answer claims to know where
-     * the phone is closely enough for standing still to mean anything.
-     */
-    private fun noticeAnAnswerThatWillNotFollow(fix: Fix, whence: FoundBy) {
-        val walk = walkingNow(stirsHeard) ?: return
-
-        if (walk.steps == 0L) {
-            return
-        }
-
-        if (whence != FoundBy.Satellites) {
-            AppLog.keep(TAG, walkNote(walk, whence, null, fix))
-
-            return
-        }
-
-        if (walkStarted != walk.since || walkedFrom == null) {
-            walkStarted = walk.since
-            walkedFrom = fix
-            AppLog.keep(TAG, walkNote(walk, whence, null, fix))
-
-            return
-        }
-
-        val from = walkedFrom ?: return
-
-        AppLog.keep(TAG, walkNote(walk, whence, from, fix))
-
-        if (!pinnedWhileWalking(walk, from, fix, sensorsTell)) {
-            return
-        }
-
-        val away = "%.0f m from where the walk began, ±%.0f m, at %.5f,%.5f"
-            .format(
-                Locale.ROOT,
-                distanceMetres(from, fix),
-                fix.accuracyMetres ?: 0.0,
-                fix.latitude,
-                fix.longitude,
-            )
-
-        // Kept apart: PINNED_STEPS is waiting on a day of the phone being
-        // carried, and the ordinary log does not hold a day.
-        AppLog.keep(TAG, "carried ${walk.steps} steps and the answer has not followed: $away")
-    }
-
-    /** Where an anchor stands, for the one line that says it was set. */
-    private fun theSpot(anchor: PutDown): String =
-        "%.5f,%.5f".format(Locale.ROOT, anchor.at.latitude, anchor.at.longitude)
-
-    /**
-     * Keeps the moment the phone was last carried anywhere.
-     *
-     * The stillness is dated from the first report of it and left alone by
-     * every report that repeats it: the timer is reviewed on a clock, so the
-     * same answer arrives again every few minutes, and taking the latest of
-     * them would keep the stillness permanently one review old and cover
-     * nothing.
-     */
-    private fun noteMovement(moving: Moving) {
-        standingSince =
-            when {
-                !moving.told -> null
-                moving.going -> null
-                else -> standingSince ?: Instant.now()
-            }
     }
 
     /**
@@ -1372,30 +1154,8 @@ class SharingService : LifecycleService() {
                 continue
             }
 
-            noteWhatTheNetworkKnows()
+            opinion.noteWhatItKnows()
         }
-    }
-
-    /**
-     * Keeps an answer the phone did not measure, for the rule that weighs the
-     * satellites against something they cannot reach.
-     *
-     * An assistance service answers over the network, from a list of the Wi-Fi
-     * around the phone rather than from the sky, and arrives under the name of
-     * the satellites like everything else the provider hands over. The name is
-     * therefore not what it is taken by — the note is, and a note admitting
-     * that nothing was measured is a note from beyond the transmitter's reach.
-     *
-     * It matters most where there is no second opinion otherwise: a phone with
-     * no SIM has no towers to ask, and these answers are the only ones it ever
-     * gets that the spoofer did not write.
-     */
-    private fun rememberASecondOpinion(fix: Fix) {
-        if (answeredBy(noteOf(fix.reported?.alongside)) != Answered.Assistance) {
-            return
-        }
-
-        networkSaid = fix
     }
 
     /**
@@ -1461,76 +1221,6 @@ class SharingService : LifecycleService() {
     }
 
     /**
-     * Keeps an answer from the towers and the Wi-Fi standing beside the
-     * satellites' own.
-     *
-     * The only rule here that has to run while everything looks right. A
-     * transmitter drawing a false road slowly breaks no other rule — not the
-     * speed, not the width, not the sensors of a phone in a moving car — and
-     * the first moment anything is visibly wrong is the moment the road ends,
-     * hours later. So the second opinion is fetched on a clock rather than on
-     * suspicion, and the cost of that is one scan every [secondOpinionEvery].
-     *
-     * The slow modes fetch it with each position instead, through
-     * [freshenTheSecondOpinion].
-     *
-     * What comes back is never written, only compared: an answer from the
-     * towers is worth a district, and the rules that decide what goes in the
-     * document are asked about it elsewhere.
-     */
-    private suspend fun keepASecondOpinion(mode: CollectionMode) {
-        if (secondOpinionWithEachFix(mode)) {
-            return
-        }
-
-        while (true) {
-            askForASecondOpinion()
-            delay(secondOpinionEvery(mode).toMillis())
-        }
-    }
-
-    /**
-     * Makes sure a position about to be judged in a slow mode has an answer
-     * from the other radios beside it.
-     *
-     * What the platform already knows is taken first, for nothing; the towers
-     * and the Wi-Fi are asked only when that is too old to compare and the
-     * mode's own round has passed since they were last asked. Nobody is
-     * watching in these modes, so the half minute the asking may take delays
-     * nothing that anybody sees.
-     */
-    private suspend fun freshenTheSecondOpinion(mode: CollectionMode) {
-        if (!secondOpinionWithEachFix(mode)) {
-            return
-        }
-
-        lastNetworkPosition(this)?.let { known ->
-            val held = networkSaid
-
-            if (held == null || known.takenAt.isAfter(held.takenAt)) {
-                networkSaid = known
-            }
-        }
-
-        if (secondOpinionDue(mode, networkSaid, secondOpinionAskedAt, Instant.now(), awakeFor())) {
-            askForASecondOpinion()
-        }
-    }
-
-    private suspend fun askForASecondOpinion() {
-        secondOpinionAskedAt = Instant.now()
-
-        val asked =
-            withTimeoutOrNull(NETWORK_ANSWER_WAIT.toMillis()) {
-                networkPosition(this@SharingService)
-            } ?: lastNetworkPosition(this)
-
-        if (asked != null) {
-            networkSaid = asked
-        }
-    }
-
-    /**
      * Puts the satellites aside and asks the towers and the Wi-Fi instead.
      *
      * Called from the one place a spoofed phone reaches: the branch where an
@@ -1556,10 +1246,7 @@ class SharingService : LifecycleService() {
 
         AppLog.w(TAG, "$jumpsInARow answers in a row left out; asking the towers and the Wi-Fi")
 
-        val asked =
-            withTimeoutOrNull(NETWORK_ANSWER_WAIT.toMillis()) {
-                networkPosition(this@SharingService)
-            } ?: lastNetworkPosition(this)
+        val asked = opinion.answerNow()
 
         if (!networkAnswerStands(asked, Instant.now(), falsePlaces, awakeFor())) {
             AppLog.w(TAG, "the other radios had nothing to put in its place: ${saying(asked)}")
@@ -1572,7 +1259,7 @@ class SharingService : LifecycleService() {
         // Kept whatever happens next: an answer that is not worth writing is
         // still worth having as the second opinion, which is what the rules
         // about contradiction and about confirming a width are asked against.
-        networkSaid = fix
+        opinion.said = fix
 
         // The towers answer about a district and the Wi-Fi about a flat, and
         // whichever answers first is the one that arrives. An answer that
@@ -1592,7 +1279,7 @@ class SharingService : LifecycleService() {
         // Whatever built it, it was not a receiver that had been carried
         // there, and the sensors are the thing that says so. Everything else
         // the filter asks stays waived, as above.
-        if (driftedWhilePutDown(putDown, fix, carryingSince(putDown, stirsHeard, sensorsTell))) {
+        if (driftedWhilePutDown(carried.putDown, fix, carried.carrying())) {
             AppLog.w(
                 TAG,
                 "the other radios walked away from a phone nobody touched too: ${saying(fix)}",
@@ -1605,39 +1292,6 @@ class SharingService : LifecycleService() {
 
         jumpsInARow = 0
         writeIfWorth(writer, fix, mode, always = true, trusted = true)
-    }
-
-    /**
-     * What the towers and the Wi-Fi have to say when Play Services has nothing.
-     *
-     * Written down rather than used: the question being answered here is
-     * whether a phone whose satellites are jammed could be placed by its other
-     * radios at all, and that has to be known before the collection is moved
-     * onto them.
-     */
-    private suspend fun noteWhatTheNetworkKnows() {
-        val asked =
-            withTimeoutOrNull(NETWORK_ANSWER_WAIT.toMillis()) {
-                networkPosition(this@SharingService)
-            }
-        val known = lastNetworkPosition(this)
-
-        AppLog.i(TAG, "the network says ${saying(asked)}, and knew ${saying(known)} before that")
-    }
-
-    /** How a fix reads in the line above, and how its absence reads. */
-    private fun saying(fix: Fix?): String = when (fix) {
-        null -> "nothing"
-
-        else ->
-            String.format(
-                Locale.ROOT,
-                "%.5f,%.5f ±%.0f m, %d s old",
-                fix.latitude,
-                fix.longitude,
-                fix.accuracyMetres ?: 0.0,
-                Duration.between(fix.takenAt, Instant.now()).seconds,
-            )
     }
 
     /** Who to ask with this accuracy, given the phone and the switches. */
@@ -1807,7 +1461,7 @@ class SharingService : LifecycleService() {
         lately = lately,
         circleLimits = circleLimits,
         falsePlaces = falsePlaces,
-        networkSaid = networkSaid,
+        networkSaid = opinion.said,
         awakeFor = awakeFor(),
     )
 
@@ -1927,15 +1581,6 @@ class SharingService : LifecycleService() {
 
         /** What a phone that will not say counts as, so it is not treated as flat. */
         private const val FULL_BATTERY = 100
-
-        /**
-         * How long the network is given to answer when Play Services will not.
-         *
-         * A tower answers in seconds and a scan of the Wi-Fi around the phone
-         * takes a few more; half a minute is long enough for both and short
-         * enough to be over before the next round of asking.
-         */
-        private val NETWORK_ANSWER_WAIT: Duration = Duration.ofSeconds(30)
 
         const val ACTION_STOP = "io.github.vitalyostanin.geoshare.STOP"
 
