@@ -245,9 +245,31 @@ service cloud.firestore {
                (isFounder() || withinAnAdministrator());
       }
 
+      // A member taking themselves off the roster, and off the administrators
+      // with it: nobody else, and nothing but the two lists. The founder may
+      // too, as administering already lets them. What an administrator may
+      // not do is leave a roster nobody can change any more — the same line
+      // administering holds — while a member who runs nothing leaves even a
+      // group nobody runs, which their going does not make any worse.
+      function leaving() {
+        let uid = request.auth.uid;
+        let adminsBefore = resource.data.get('admins', []);
+        let adminsAfter = request.resource.data.get('admins', []);
+        return request.auth != null &&
+               uid in resource.data.members &&
+               request.resource.data.diff(resource.data).affectedKeys()
+                 .hasOnly(['members', 'admins']) &&
+               request.resource.data.members.toSet() ==
+                 resource.data.members.toSet().difference([uid].toSet()) &&
+               adminsAfter.toSet() == adminsBefore.toSet().difference([uid].toSet()) &&
+               (!(uid in adminsBefore) ||
+                adminsAfter.size() >= 1 ||
+                founderOf(resource.data) in request.resource.data.members);
+      }
+
       allow read: if isMember();
       allow create: if founding();
-      allow update: if joining() || administering() || renaming();
+      allow update: if joining() || administering() || renaming() || leaving();
       // A group is left by being taken off the roster. Deleting the document
       // would leave its members, profiles, grants and positions behind with
       // nothing to say who may read them.
