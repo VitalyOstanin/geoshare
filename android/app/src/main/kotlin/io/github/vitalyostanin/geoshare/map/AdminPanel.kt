@@ -315,162 +315,51 @@ fun AdminPanel(
     }
 
     if (helpOpen) {
-        HelpSheet(
-            title = stringResource(R.string.help_title_screen),
-            entries =
-            listOf(
-                HelpEntry(
-                    R.drawable.ic_place_reset,
-                    HelpLook.Plain,
-                    stringResource(R.string.help_reset),
-                ),
-                HelpEntry(R.drawable.ic_siren, HelpLook.Alarm, stringResource(R.string.help_siren)),
-                HelpEntry(
-                    R.drawable.ic_search_alarm,
-                    HelpLook.Alarm,
-                    stringResource(R.string.help_search),
-                ),
-                HelpEntry(
-                    R.drawable.ic_search_alarm,
-                    HelpLook.AlarmFilled,
-                    stringResource(R.string.help_search_standing),
-                ),
-            ),
-            onClose = { helpOpen = false },
-        )
+        AdminHelpSheet(onClose = { helpOpen = false })
     }
 
-    // Changing the group's own name (ADR-0016) is a write of its own, so a
-    // roster write refused elsewhere on the panel says nothing about whether
-    // this one would be too.
     if (renaming) {
-        val nameToSave = groupNameText(renameText)
-
-        AlertDialog(
-            onDismissRequest = { renaming = false },
-            title = { Text(text = stringResource(R.string.group_name_label)) },
-            text = {
-                Column {
-                    OutlinedTextField(
-                        value = renameText,
-                        onValueChange = { renameText = it.take(GROUP_NAME_LIMIT) },
-                        singleLine = true,
-                    )
-
-                    WriteTrouble(renameTrouble)
-                }
-            },
-            confirmButton = {
-                TextButton(
-                    onClick = ::writeRename,
-                    enabled = nameToSave != null && writable(renameBusy, renameTrouble),
-                ) {
-                    Text(text = stringResource(R.string.group_name_save))
-                }
-            },
-            dismissButton = {
-                TextButton(onClick = { renaming = false }) {
-                    Text(text = stringResource(R.string.search_cancel))
-                }
-            },
+        RenameGroupDialog(
+            text = renameText,
+            onTextChange = { renameText = it },
+            trouble = renameTrouble,
+            busy = renameBusy,
+            onSave = ::writeRename,
+            onDismiss = { renaming = false },
         )
     }
 
-    // Who may spend the code is asked for up front (ADR-0015) rather than
-    // left to the address the link happens to be sent to: the rules check the
-    // account it names, and a code with none would let in whoever holds it.
     if (inviting) {
-        AlertDialog(
-            onDismissRequest = { inviting = false },
-            title = { Text(text = stringResource(R.string.group_invite_title, caption)) },
-            text = {
-                Column {
-                    OutlinedTextField(
-                        value = inviteEmail,
-                        onValueChange = { inviteEmail = it.take(ADDRESS_LIMIT) },
-                        label = { Text(text = stringResource(R.string.group_invite_address)) },
-                        singleLine = true,
-                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
-                    )
-
-                    Text(
-                        text = stringResource(R.string.group_invite_note),
-                        style = MaterialTheme.typography.bodySmall,
-                        modifier = Modifier.padding(top = 8.dp),
-                    )
-                }
+        InviteDialog(
+            caption = caption,
+            email = inviteEmail,
+            onEmailChange = { inviteEmail = it },
+            onCreate = { address ->
+                inviting = false
+                onMakeInvitation(address)
             },
-            confirmButton = {
-                TextButton(
-                    onClick = {
-                        inviting = false
-                        onMakeInvitation(inviteEmail.trim())
-                    },
-                    // A keyboard leaves a space after a suggested word; the
-                    // address is what is between the spaces.
-                    enabled = looksLikeAnAddress(inviteEmail.trim()),
-                ) {
-                    Text(text = stringResource(R.string.group_invite_create))
-                }
-            },
-            dismissButton = {
-                TextButton(onClick = { inviting = false }) {
-                    Text(text = stringResource(R.string.search_cancel))
-                }
-            },
+            onDismiss = { inviting = false },
         )
     }
 
-    // Giving up one's own role cannot be undone from here: only another
-    // administrator can hand it back.
     if (givingUp) {
-        AlertDialog(
-            onDismissRequest = { givingUp = false },
-            title = { Text(text = stringResource(R.string.group_give_up_title)) },
-            text = { Text(text = stringResource(R.string.group_give_up_text)) },
-            confirmButton = {
-                TextButton(
-                    onClick = {
-                        givingUp = false
-                        onSetRunning(ownMemberId, false)
-                    },
-                ) {
-                    Text(text = stringResource(R.string.group_give_up))
-                }
+        GiveUpDialog(
+            onGiveUp = {
+                givingUp = false
+                onSetRunning(ownMemberId, false)
             },
-            dismissButton = {
-                TextButton(onClick = { givingUp = false }) {
-                    Text(text = stringResource(R.string.group_keep_running))
-                }
-            },
+            onDismiss = { givingUp = false },
         )
     }
 
-    // Removal is not undone from here either: the member comes back only by a
-    // new invitation.
     removing?.let { (memberId, name) ->
-        AlertDialog(
-            onDismissRequest = { removing = null },
-            title = { Text(text = stringResource(R.string.group_remove_title, name)) },
-            text = { Text(text = stringResource(R.string.group_remove_text)) },
-            confirmButton = {
-                TextButton(
-                    onClick = {
-                        removing = null
-                        onRemoveMember(memberId)
-                    },
-                ) {
-                    Text(
-                        text = stringResource(R.string.group_remove_go),
-                        color = MaterialTheme.colorScheme.error,
-                    )
-                }
+        RemoveMemberDialog(
+            name = name,
+            onRemove = {
+                removing = null
+                onRemoveMember(memberId)
             },
-            dismissButton = {
-                TextButton(onClick = { removing = null }) {
-                    Text(text = stringResource(R.string.search_cancel))
-                }
-            },
+            onDismiss = { removing = null },
         )
     }
 

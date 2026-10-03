@@ -53,9 +53,6 @@ import kotlinx.coroutines.launch
 import java.time.Instant
 import kotlin.math.roundToInt
 
-/** How often the siren banner decides whether the phone is still sounding. */
-private const val SIREN_BANNER_TICK_MS = 1_000L
-
 /** Above this a surface counts as pale, below it as dark. */
 internal const val HALF_LIT = 0.5f
 
@@ -221,34 +218,9 @@ fun MapScreen(
     // Loaded here rather than inside the map: the map draws bitmaps, and
     // fetching a picture is the screen's business, not the drawing's.
     val faces = rememberMemberFaces(profiles)
-    // Worked out here rather than inside the map: the fallbacks come from the
-    // resources, and the map draws pictures, not strings from a resource file.
-    // A member carrying two phones gets two markers, and a pair of markers with
-    // the same name on them says nothing about which phone is where; the name
-    // of the phone is added only then, because most members have one.
-    val carried = positions.groupingBy { it.memberId }.eachCount()
-    val people =
-        positions.associate { position ->
-            position.positionId to
-                memberName(
-                    profile = profiles[position.memberId],
-                    memberId = position.memberId,
-                    own = position.memberId == ownMemberId,
-                    ownName = ownName,
-                )
-        }
-    val names =
-        positions.associate { position ->
-            val name = people.getValue(position.positionId)
-            val device = position.deviceName
-
-            position.positionId to
-                if (carried.getOrDefault(position.memberId, 1) > 1 && !device.isNullOrBlank()) {
-                    "$name · $device"
-                } else {
-                    name
-                }
-        }
+    val named = shownNames(positions, profiles, ownMemberId, ownName)
+    val people = named.people
+    val names = named.markers
 
     // Named at the place a member's card is opened, from whichever of the
     // three ways it happened to open: a tap on the strip, a tap on the
@@ -444,33 +416,7 @@ fun MapScreen(
             }
 
             if (mapHelpOpen) {
-                HelpSheet(
-                    title = stringResource(R.string.help_title_map),
-                    entries =
-                    listOf(
-                        HelpEntry(
-                            R.drawable.ic_follow_none,
-                            HelpLook.Plain,
-                            stringResource(R.string.help_follow_none),
-                        ),
-                        HelpEntry(
-                            R.drawable.ic_follow_one,
-                            HelpLook.Plain,
-                            stringResource(R.string.help_follow_one),
-                        ),
-                        HelpEntry(
-                            R.drawable.ic_follow_all,
-                            HelpLook.Plain,
-                            stringResource(R.string.help_follow_all),
-                        ),
-                        HelpEntry(
-                            R.drawable.ic_sources,
-                            HelpLook.Plain,
-                            stringResource(R.string.help_sources),
-                        ),
-                    ),
-                    onClose = { mapHelpOpen = false },
-                )
+                MapHelpSheet(onClose = { mapHelpOpen = false })
             }
 
             if (switcher) {
@@ -522,88 +468,37 @@ fun MapScreen(
                     .padding(12.dp),
             )
 
-            // Told to the member over the map whenever one of their own phones is
-            // being looked for, and below the row of round buttons and the group
-            // chip rather than on top of them: the two are read in different
-            // moments, and a banner covering the buttons would be in the way of the
-            // one thing this screen is for. A member carrying two phones may have
-            // both looked for at once, so this is a list rather than one banner.
-            val ownSearches =
-                remember(searches, now, ownMemberId) {
-                    standingSearches(searches, now).values.filter { it.memberId == ownMemberId }
-                }
+            // Below the row of round buttons and the group chip rather than on
+            // top of them: the two are read in different moments, and a banner
+            // covering the buttons would be in the way of the one thing this
+            // screen is for.
+            OwnBanners(
+                searches = searches,
+                now = now,
+                ownMemberId = ownMemberId,
+                names = names,
+                profiles = profiles,
+                ownName = ownName,
+                onFound = actions.onEndSearch,
+                modifier =
+                Modifier
+                    .align(Alignment.TopCenter)
+                    .statusBarsPadding()
+                    .padding(top = bannerOffset(switcher), start = 12.dp, end = 12.dp),
+            )
 
-            val link = LocalLink.current
-
-            if (ownSearches.isNotEmpty() || link.lost) {
-                Column(
-                    verticalArrangement = Arrangement.spacedBy(8.dp),
-                    modifier =
-                    Modifier
-                        .align(Alignment.TopCenter)
-                        .statusBarsPadding()
-                        .padding(top = bannerOffset(switcher), start = 12.dp, end = 12.dp),
-                ) {
-                    if (link.lost) {
-                        LinkBanner(link)
-                    }
-
-                    ownSearches.forEach { search ->
-                        SoughtBanner(
-                            search = search,
-                            phoneName =
-                            names[search.phoneId] ?: search.phoneName ?: shortName(search.phoneId),
-                            openedByName =
-                            memberName(
-                                profile = profiles[search.openedBy],
-                                memberId = search.openedBy,
-                                own = search.openedBy == ownMemberId,
-                                ownName = ownName,
-                            ),
-                            onFound = { actions.onEndSearch(search.phoneId) },
-                        )
-                    }
-                }
-            }
-
-            // The siren sounding on this very phone, with the one button that
-            // matters while it does; the notification carries the same one
-            // for a phone that is locked or showing something else.
-            val ownSirenFlow =
-                remember(ownPhoneId) {
-                    ownPhoneId?.let(actions.sirenOf) ?: flowOf(null)
-                }
-            val ownSiren by ownSirenFlow.collectAsState(initial = null)
-            val sirenNow by produceState(Instant.now(), ownSiren) {
-                while (ownSiren != null) {
-                    value = Instant.now()
-                    delay(SIREN_BANNER_TICK_MS)
-                }
-            }
-            val sirenScope = rememberCoroutineScope()
-
-            ownSiren?.let { siren ->
-                val state = sirenState(siren, sirenNow)
-
-                if (state is SirenState.Sounding) {
-                    SirenBanner(
-                        callerName =
-                        memberName(
-                            profile = profiles[siren.calledBy],
-                            memberId = siren.calledBy,
-                            own = siren.calledBy == ownMemberId,
-                            ownName = ownName,
-                        ),
-                        until = state.until,
-                        onStop = { sirenScope.launch { actions.onStopSiren(siren.phoneId) } },
-                        modifier =
-                        Modifier
-                            .align(Alignment.TopCenter)
-                            .statusBarsPadding()
-                            .padding(top = bannerOffset(switcher), start = 12.dp, end = 12.dp),
-                    )
-                }
-            }
+            OwnSirenBanner(
+                ownPhoneId = ownPhoneId,
+                actions = actions,
+                profiles = profiles,
+                ownMemberId = ownMemberId,
+                ownName = ownName,
+                modifier =
+                Modifier
+                    .align(Alignment.TopCenter)
+                    .statusBarsPadding()
+                    .padding(top = bannerOffset(switcher), start = 12.dp, end = 12.dp),
+            )
 
             if (opened != null) {
                 val openedSearch = searches[opened.positionId]?.takeIf { it.stands(now) }
@@ -659,64 +554,23 @@ fun MapScreen(
 
         HorizontalDivider()
 
-        // Above the buttons rather than on a card: an open map is a fact about
-        // the household, not about the member whose card happens to be open,
-        // and a member with no position of their own still watches.
-        if (lookingNames.isNotEmpty()) {
-            Text(
-                text = stringResource(R.string.map_watching, lookingNames.joinToString(", ")),
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp),
-            )
-        }
-
-        if (members.isEmpty()) {
-            Text(
-                text =
-                if (outOfReach > 0) {
-                    pluralStringResource(R.plurals.map_out_of_reach, outOfReach, outOfReach)
-                } else {
-                    stringResource(R.string.map_nobody_yet)
-                },
-                style = MaterialTheme.typography.bodyMedium,
-                modifier = Modifier.navigationBarsPadding().padding(16.dp),
-            )
-        } else {
-            MemberButtons(
-                members = members,
-                names = names,
-                faces = faces,
-                // Whoever the open card is about: one member, or everybody
-                // under a marker whose list is showing.
-                openCards =
-                openedPositionId?.let { setOf(it) }
-                    ?: group.map { it.positionId }.toSet(),
-                now = now,
-                searches = searches,
-                showAll = showAll,
-                awaitingTarget = awaitingTarget,
-                onSelect = ::lookAt,
-                onShowAll = { showAll = it },
-                modifier = Modifier.navigationBarsPadding(),
-                onCentre = { positionId, x -> stripCentres[positionId] = x },
-            )
-
-            // A member whose position is refused simply has no marker, which
-            // reads as a member who is not sharing — and so does a phone that
-            // cannot reach the group at all. One line is the difference.
-            if (outOfReach > 0) {
-                Text(
-                    text = pluralStringResource(R.plurals.map_out_of_reach, outOfReach, outOfReach),
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier =
-                    Modifier
-                        .navigationBarsPadding()
-                        .padding(horizontal = 16.dp, vertical = 4.dp),
-                )
-            }
-        }
+        BelowTheMap(
+            lookingNames = lookingNames,
+            members = members,
+            names = names,
+            faces = faces,
+            // Whoever the open card is about: one member, or everybody under a
+            // marker whose list is showing.
+            openCards = openedPositionId?.let { setOf(it) } ?: group.map { it.positionId }.toSet(),
+            now = now,
+            searches = searches,
+            showAll = showAll,
+            awaitingTarget = awaitingTarget,
+            outOfReach = outOfReach,
+            onSelect = ::lookAt,
+            onShowAll = { showAll = it },
+            onCentre = { positionId, x -> stripCentres[positionId] = x },
+        )
     }
 
     if (settingsOpen) {
@@ -746,69 +600,22 @@ fun MapScreen(
                 }
             },
         )
-    }
 
-    // Over the settings, as the admin panel is. The phones are read from this
-    // member's own grant, which the member always may read.
-    if (settingsOpen && myPhonesOpen) {
-        MyPhonesScreen(
-            phones =
-            phoneLines(
-                ownMemberId,
-                settings.grants[ownMemberId]?.phones.orEmpty(),
-                labels,
-            ),
-            ownPhoneId = ownPhoneId,
-            now = now,
-            sirenOf = actions.sirenOf,
-            onCallSiren = actions.onCallSiren,
-            onStopSiren = actions.onStopSiren,
-            resetOf = actions.resetOf,
-            onAskReset = actions.onAskReset,
-            onForgetPhone = actions.onForgetPhone,
-            groupNames =
-            groups.choices.filter { it.leave != Leave.NOT_ON_ROSTER }.map { it.caption },
-            searches = searches,
-            mayLookFor = runsTheGroup,
-            onSearch = actions.onSearch,
-            onEndSearch = actions.onEndSearch,
-            onClose = { myPhonesOpen = false },
-        )
-    }
-
-    // Over the settings rather than instead of them: the way back out is the
-    // screen it was opened from, whichever of the two ways back is used.
-    //
-    // [runsTheGroup] is weighed again on every draw rather than only when the
-    // panel was opened: an administrator can stop being one while it is up —
-    // somebody else takes the role away, or this phone is taken off the
-    // roster and the refused subscription empties it — and a panel left
-    // standing would go on offering writes that are now refused.
-    if (settingsOpen && adminOpen && runsTheGroup) {
-        AdminPanel(
-            roster = settings.roster ?: Roster(),
+        OverTheSettings(
+            myPhonesOpen = myPhonesOpen,
+            adminOpen = adminOpen,
+            runsTheGroup = runsTheGroup,
+            settings = settings,
+            actions = actions,
             profiles = profiles,
-            grants = settings.grants,
             ownMemberId = ownMemberId,
+            ownPhoneId = ownPhoneId,
             labels = labels,
             now = now,
-            invitation = settings.invitation,
-            site = settings.site,
-            trouble = settings.groupTrouble,
             searches = searches,
-            onMakeInvitation = actions.onMakeInvitation,
-            onRemoveMember = actions.onRemoveMember,
-            onSetRunning = actions.onSetRunning,
-            onRenameGroup = actions.onRenameGroup,
-            onSearch = actions.onSearch,
-            onEndSearch = actions.onEndSearch,
-            ownPhoneId = ownPhoneId,
-            sirenOf = actions.sirenOf,
-            onCallSiren = actions.onCallSiren,
-            onStopSiren = actions.onStopSiren,
-            resetOf = actions.resetOf,
-            onAskReset = actions.onAskReset,
-            onClose = { adminOpen = false },
+            groups = groups,
+            onCloseMyPhones = { myPhonesOpen = false },
+            onCloseAdmin = { adminOpen = false },
         )
     }
 
