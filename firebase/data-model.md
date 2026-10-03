@@ -59,8 +59,8 @@ The household that started before any of this has a group named `family`, and
 it keeps that name: the rule names the founder only while a group is being
 created, and that one was created before the rule existed.
 
-After that the roster changes in exactly two ways, and the rules allow nothing
-else:
+After that the roster changes in exactly three ways, and the rules allow
+nothing else:
 
 1. **Somebody joins.** The write adds the caller and only the caller, leaves
    every other field alone, and is allowed only while an invitation they hold
@@ -76,6 +76,14 @@ else:
    place second. Nor can they touch the founder's role or place. The founder
    owns the project and reads the whole database from the console anyway, so
    nothing is hidden from them; the other administrators own nothing.
+3. **Somebody leaves.** The write takes the caller, and only the caller, off
+   `members` and `admins` and changes nothing else. An administrator may not
+   leave a roster nobody could change any more: after them there is still an
+   administrator, or the founder is still on it. A member who runs nothing
+   leaves any group. The application sends it in one batch with the deletion
+   of what the member wrote there — their profile, grants, devices, labels and
+   every device's position and watch — and the rules weigh each of those
+   deletions on its own, as the member's own data (ADR-0026).
 
 The group document is never deleted: its members, profiles, grants and
 positions would be left behind with nothing to say who may read them.

@@ -8,7 +8,7 @@ date is the decision's.
 
 | №    | Decision                                                                                                             | Status                              | Date       |
 |------|----------------------------------------------------------------------------------------------------------------------|-------------------------------------|------------|
-| 0001 | [One build for every group, settings read at runtime](0001-one-build-settings-at-runtime.md)                         | Accepted                            | 2026-09-30 |
+| 0001 | [One build for every group, settings read at runtime](0001-one-build-settings-at-runtime.md)                         | Accepted, partly superseded by 0026 | 2026-09-30 |
 | 0002 | [Sign in with Google through the browser flow](0002-sign-in-through-the-browser.md)                                  | Accepted                            | 2026-09-30 |
 | 0003 | [A group's project is set up by a script](0003-project-setup-by-script.md)                                           | Accepted                            | 2026-09-30 |
 | 0004 | [Firestore as the shared store, with applications of our own](0004-firebase-as-the-shared-store.md)                  | Accepted                            | 2026-09-11 |
@@ -33,3 +33,4 @@ date is the decision's.
 | 0023 | [The sky is held against the published orbits](0023-the-sky-is-held-against-published-orbits.md)              | Accepted, partly superseded by 0024 | 2026-10-02 |
 | 0024 | [GLONASS joins the orbit check](0024-glonass-joins-the-orbit-check.md)                                        | Accepted                            | 2026-10-02 |
 | 0025 | [An invitation admits once and lasts at most a day](0025-an-invitation-admits-once.md)                        | Accepted                            | 2026-10-03 |
+| 0026 | [Several groups on one device](0026-several-groups-on-one-device.md)                                          | Accepted                            | 2026-10-03 |

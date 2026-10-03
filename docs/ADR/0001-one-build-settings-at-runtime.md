@@ -1,6 +1,6 @@
 # ADR-0001: One build for every group, project settings read at runtime
 
-- Status: Accepted
+- Status: Accepted; the process restart on a change of project superseded by ADR-0026
 - Date: 2026-09-30
 
 ## Context
