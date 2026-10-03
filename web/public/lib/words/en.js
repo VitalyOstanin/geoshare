@@ -122,6 +122,7 @@ export const EN = {
     leftOutOneBand: 'A fix without GLONASS',
     leftOutOneTransmitter: 'The signal is not from orbit',
     leftOutTimeApart: 'The satellites\' time stepped',
+    leftOutOffOrbit: 'Satellites off their orbits',
     leftOutRepeating: 'The track repeats itself',
     leftOutSettling: 'The receiver has not settled',
     leftOutBySource: 'The source is switched off',
@@ -190,6 +191,12 @@ export const EN = {
     reasonMeansTimeApart: 'The device counts the seconds since it was switched on, and nothing '
         + 'transmitted can reach that count. A signal built to move the device has to move the '
         + 'time it carries, and the step shows up here.',
+    reasonSignOffOrbit: 'Seen from where the towers and Wi-Fi place the device, a satellite it '
+        + 'hears is below the horizon, or its signal arrived hundreds of kilometres sooner or '
+        + 'later than its distance allows.',
+    reasonMeansOffOrbit: 'Where every satellite is at every moment is published daily by '
+        + 'stations around the world, out of reach of anything near the device. Signals that do '
+        + 'not fit those orbits were made up for some other place.',
     reasonSignSettling: 'The first five minutes after the device was switched on, while the answer '
         + 'rests on fewer than four satellites.',
     reasonMeansSettling: 'In those minutes the receiver reports places the device has never been. '

@@ -15,6 +15,7 @@ const WRITTEN = [
     'Drifted',
     'FalsePlace',
     'Hurried',
+    'OffOrbit',
     'OneBand',
     'OneTransmitter',
     'Repeating',

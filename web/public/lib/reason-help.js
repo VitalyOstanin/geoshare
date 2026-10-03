@@ -29,6 +29,7 @@ const HELP_ORDER = [
     'OneBand',
     'OneTransmitter',
     'TimeApart',
+    'OffOrbit',
     'Settling',
     'Source',
 ];
