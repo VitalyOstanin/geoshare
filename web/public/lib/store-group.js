@@ -13,6 +13,7 @@ import {
     serverTimestamp,
     setDoc,
     updateDoc,
+    writeBatch,
 } from 'https://www.gstatic.com/firebasejs/12.19.0/firebase-firestore.js';
 import { profileName } from './members.js';
 import { combinedGrants, phonesOf } from './phones.js';
@@ -119,25 +120,29 @@ export async function makeInvitation(memberId, email) {
 }
 
 /**
- * Joins a group on an invitation: the code first, the roster second.
+ * Joins a group on an invitation: the code, the roster and the spending of the
+ * code, in one batch.
  *
- * In that order because the rule weighing the roster reads the code from the
- * document written first. Which group is not this browser's to assume — the
- * invitation says so, and both writes are addressed by that name rather than
- * by the group being looked at, which until this succeeds is a different one.
+ * One batch because the rules weigh the three together: the roster grows only
+ * if the code the claim names is gone afterwards, and the code goes only if
+ * the roster grows — which is what makes a code admit one person once.
+ *
+ * Which group is not this browser's to assume — the invitation says so, and
+ * every write is addressed by that name rather than by the group being looked
+ * at, which until this succeeds is a different one.
  *
  * The roster is not read, and cannot be: the group document is closed to
  * everybody who is not on it. So the server is asked to append rather than
  * told the whole list.
  */
 export async function joinGroup(memberId, invitation) {
-    await setDoc(doc(store, 'groups', invitation.group, 'joins', memberId), {
-        code: invitation.code,
-    });
+    const group = doc(store, 'groups', invitation.group);
 
-    await updateDoc(doc(store, 'groups', invitation.group), {
-        members: arrayUnion(memberId),
-    });
+    await writeBatch(store)
+        .set(doc(group, 'joins', memberId), { code: invitation.code })
+        .update(group, { members: arrayUnion(memberId) })
+        .delete(doc(group, 'invitations', invitation.code))
+        .commit();
 
     rememberGroup(invitation.group);
 }

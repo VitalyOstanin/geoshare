@@ -115,13 +115,15 @@ group. The rules read it, and a rule reads without the caller's permission.
 An invitation cannot be edited once it is out, only withdrawn by deleting it:
 editing would let an expiry be pushed out for a code already handed round.
 
-What the rules cannot do is spend a code: a write that adds the caller and a
-write that marks the invitation used are two writes, and nothing makes the
-second follow the first. A code therefore admits more than once while it lasts,
-but only the account whose verified address is `email`, compared without regard
-to case. An invitation made before addresses existed has no `email` and admits
-whoever holds it until it runs out, within a day; a new one cannot be made
-without an address.
+A code is spent by joining (ADR-0025). The person joining writes their claim,
+adds themselves to the roster and deletes the invitation in one batch; the
+rules let the roster grow only when the invitation is gone at the end of that
+batch, and let the invitation go only when the same batch puts its holder on
+the roster. A code therefore admits once, and only the account whose verified
+address is `email`, compared without regard to case. An invitation made before
+addresses existed has no `email` and admits whoever holds it first; a new one
+cannot be made without an address. `expiresAt` may be at most 25 hours after
+the invitation is written.
 
 ## joins/{uid}
 

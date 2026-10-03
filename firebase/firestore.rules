@@ -153,16 +153,23 @@ service cloud.firestore {
       // the write through an evaluation error, and an error refuses the ones
       // that should have been allowed just as readily: the administrator
       // editing the roster is weighed against this same line.
+      //
+      // Read as the write leaves it, so that the claim may ride in the same
+      // batch as the roster rather than ahead of it.
       function claimedCode() {
-        return exists(/databases/$(database)/documents/groups/$(groupId)/joins/$(request.auth.uid))
-                 ? get(/databases/$(database)/documents/groups/$(groupId)/joins/$(request.auth.uid))
+        return existsAfter(/databases/$(database)/documents/groups/$(groupId)/joins/$(request.auth.uid))
+                 ? getAfter(/databases/$(database)/documents/groups/$(groupId)/joins/$(request.auth.uid))
                      .data.get('code', '')
                  : '';
       }
 
+      // The invitation is there before the write and gone after it: joining
+      // spends the code in the same batch, so a code lets one person in once.
+      // Taken off the roster later, they do not walk back in on the same link.
       function invitationStands() {
         return claimedCode() != '' &&
                exists(/databases/$(database)/documents/groups/$(groupId)/invitations/$(claimedCode())) &&
+               !existsAfter(/databases/$(database)/documents/groups/$(groupId)/invitations/$(claimedCode())) &&
                get(/databases/$(database)/documents/groups/$(groupId)/invitations/$(claimedCode()))
                  .data.expiresAt > request.time &&
                invitedAccount(
@@ -253,13 +260,30 @@ service cloud.firestore {
         //
         // The code is the name of the document rather than a field, so an
         // invitation cannot be found except by knowing it.
+        //
+        // It lasts a day, as the application makes them, with an hour's grace
+        // for a phone whose clock runs ahead of the server's. Without a limit
+        // an administrator's code, once forwarded, would admit for good.
         function invitationShape() {
           return request.resource.data.keys().hasOnly(['createdBy', 'expiresAt', 'email']) &&
                  request.resource.data.createdBy == request.auth.uid &&
                  request.resource.data.expiresAt is timestamp &&
+                 request.resource.data.expiresAt <= request.time + duration.value(25, 'h') &&
                  request.resource.data.email is string &&
                  request.resource.data.email.matches('[^@\\s]+@[^@\\s]+[.][^@\\s]+') &&
                  request.resource.data.email.size() <= 254;
+        }
+
+        // The person joining on this code, deleting it in the batch that puts
+        // them on the roster. The roster write is weighed by joining(), which
+        // in turn asks for the code to be gone, so neither half stands alone.
+        function spentByJoining() {
+          return request.auth != null &&
+                 existsAfter(/databases/$(database)/documents/groups/$(groupId)/joins/$(request.auth.uid)) &&
+                 getAfter(/databases/$(database)/documents/groups/$(groupId)/joins/$(request.auth.uid))
+                   .data.get('code', '') == code &&
+                 !(request.auth.uid in get(/databases/$(database)/documents/groups/$(groupId)).data.members) &&
+                 request.auth.uid in getAfter(/databases/$(database)/documents/groups/$(groupId)).data.members;
         }
 
         allow read: if false;
@@ -267,7 +291,7 @@ service cloud.firestore {
         // Withdrawing an invitation is deleting it; changing one in place
         // would let an expiry be pushed out for a code already handed round.
         allow update: if false;
-        allow delete: if isGroupAdmin();
+        allow delete: if isGroupAdmin() || spentByJoining();
       }
 
       match /joins/{uid} {

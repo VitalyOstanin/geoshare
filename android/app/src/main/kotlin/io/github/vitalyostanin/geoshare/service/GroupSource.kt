@@ -177,15 +177,15 @@ suspend fun makeInvitation(
 }
 
 /**
- * Joins a group on an invitation: the code first, the roster second.
+ * Joins a group on an invitation: the code, the roster and the spending of the
+ * code, in one batch.
  *
- * In that order because the rule weighing the roster reads the code from the
- * document written first. Both writes are the caller's own, and neither is any
- * use without the other: a code on file lets nobody in by itself, and a roster
- * write without one is refused.
+ * One batch because the rules weigh the three together: the roster grows only
+ * if the code the claim names is gone afterwards, and the code goes only if
+ * the roster grows. That is what makes a code admit one person once.
  *
- * Which group is not this phone's to assume: the invitation says so, and both
- * writes are addressed by that name rather than by the group the phone is in
+ * Which group is not this phone's to assume: the invitation says so, and every
+ * write is addressed by that name rather than by the group the phone is in
  * — which, until this succeeds, is a different one.
  *
  * The roster is not read, and cannot be: the group document is closed to
@@ -201,9 +201,13 @@ suspend fun joinGroup(
 ) {
     val group = groupDocumentOf(store, invitation.group)
 
-    joinsIn(group).document(uid).set(mapOf(JoinField.CODE to invitation.code)).await()
-
-    group.update(GroupField.MEMBERS, FieldValue.arrayUnion(uid)).await()
+    store
+        .batch()
+        .set(joinsIn(group).document(uid), mapOf(JoinField.CODE to invitation.code))
+        .update(group, GroupField.MEMBERS, FieldValue.arrayUnion(uid))
+        .delete(invitationsIn(group).document(invitation.code))
+        .commit()
+        .await()
 
     CurrentGroup.moveTo(context, invitation.group)
 

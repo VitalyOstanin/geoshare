@@ -75,7 +75,10 @@ fun labelsOf(store: FirebaseFirestore): CollectionReference =
  * permission; a client that could read it would hold every code of the group.
  */
 fun invitationsOf(store: FirebaseFirestore): CollectionReference =
-    groupDocument(store).collection("invitations")
+    invitationsIn(groupDocument(store))
+
+/** The same collection under a group this phone is joining, where joining spends the code. */
+fun invitationsIn(group: DocumentReference): CollectionReference = group.collection("invitations")
 
 /**
  * Where the person joining puts the code they are holding.

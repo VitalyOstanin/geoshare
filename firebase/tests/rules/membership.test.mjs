@@ -3,7 +3,7 @@
 import { describe, it } from 'node:test';
 
 import { assertFails, assertSucceeds } from '@firebase/rules-unit-testing';
-import { deleteDoc, getDoc, arrayUnion, setDoc, updateDoc } from 'firebase/firestore';
+import { deleteDoc, getDoc, arrayUnion, setDoc, updateDoc, writeBatch } from 'firebase/firestore';
 
 import { setUpRules, ALICE, BOB, STRANGER, STRANGER_EMAIL, testEnv, CODE, OTHER_CODE, groupDoc, invitationOf, claimOf, inTenMinutes, plantAnAdministrator, plantAnInvitation, plantAnAddressedInvitation, signedInAs } from './helpers.mjs';
 
@@ -131,6 +131,23 @@ describe('invitations', () => {
         await assertFails(getDoc(invitationOf(db, CODE)));
     });
 
+    // A day, as the application makes them, and an hour's grace for a phone
+    // whose clock runs ahead of the server's.
+    it('an invitation lasts no longer than a day', async () => {
+        await plantAnAdministrator();
+
+        const db = testEnv.authenticatedContext(ALICE).firestore();
+        const lasting = (hours) => ({
+            createdBy: ALICE,
+            expiresAt: new Date(Date.now() + hours * 60 * 60 * 1000),
+            email: STRANGER_EMAIL,
+        });
+
+        await assertSucceeds(setDoc(invitationOf(db, CODE), lasting(24)));
+        await assertFails(setDoc(invitationOf(db, OTHER_CODE), lasting(26)));
+        await assertFails(setDoc(invitationOf(db, OTHER_CODE), lasting(24 * 365)));
+    });
+
     it('an invitation cannot be given a later expiry once it is out', async () => {
         await plantAnAdministrator();
         await plantAnInvitation();
@@ -170,8 +187,12 @@ describe('invitations', () => {
     });
 });
 
+// The roster write and the spending of the code, which go together or not at all.
+const spending = (db, members, code = CODE) =>
+    writeBatch(db).update(groupDoc(db), { members }).delete(invitationOf(db, code)).commit();
+
 describe('joining a group', () => {
-    const join = (db, roster) => updateDoc(groupDoc(db), { members: roster });
+    const join = (db, roster) => spending(db, roster);
 
     it('somebody holding a live code adds themselves to the roster', async () => {
         await plantAnAdministrator();
@@ -195,7 +216,7 @@ describe('joining a group', () => {
 
         await assertFails(getDoc(groupDoc(db)));
         await assertSucceeds(setDoc(claimOf(db, STRANGER), { code: CODE }));
-        await assertSucceeds(updateDoc(groupDoc(db), { members: arrayUnion(STRANGER) }));
+        await assertSucceeds(spending(db, arrayUnion(STRANGER)));
     });
 
     it('somebody holding no code at all is refused', async () => {
@@ -265,10 +286,120 @@ describe('joining a group', () => {
     });
 });
 
+// A code lets one person in once. Joining and deleting the invitation are one
+// batch, which the rules weigh as a whole: the roster only grows if the code
+// is gone afterwards, and the code only goes if the roster grows.
+describe('a code is spent by joining', () => {
+    // How the application writes it: the claim, the roster and the code at once.
+    it('the claim, the roster and the code go together in one batch', async () => {
+        await plantAnAdministrator();
+        await plantAnAddressedInvitation();
+
+        const db = signedInAs(STRANGER_EMAIL);
+
+        await assertSucceeds(
+            writeBatch(db)
+                .set(claimOf(db, STRANGER), { code: CODE })
+                .update(groupDoc(db), { members: arrayUnion(STRANGER) })
+                .delete(invitationOf(db, CODE))
+                .commit(),
+        );
+    });
+
+    it('joining that leaves the invitation standing is refused', async () => {
+        await plantAnAdministrator();
+        await plantAnAddressedInvitation();
+
+        const db = signedInAs(STRANGER_EMAIL);
+
+        await assertSucceeds(setDoc(claimOf(db, STRANGER), { code: CODE }));
+        await assertFails(updateDoc(groupDoc(db), { members: arrayUnion(STRANGER) }));
+    });
+
+    // Taken off the roster, the person cannot walk back in on the same link.
+    it('a spent code does not let its holder in again', async () => {
+        await plantAnAdministrator();
+        await plantAnAddressedInvitation();
+
+        const db = signedInAs(STRANGER_EMAIL);
+
+        await assertSucceeds(setDoc(claimOf(db, STRANGER), { code: CODE }));
+        await assertSucceeds(spending(db, arrayUnion(STRANGER)));
+
+        await testEnv.withSecurityRulesDisabled(async (context) => {
+            await updateDoc(groupDoc(context.firestore()), { members: [ALICE, BOB] });
+        });
+
+        await assertFails(updateDoc(groupDoc(db), { members: arrayUnion(STRANGER) }));
+        await assertFails(spending(db, arrayUnion(STRANGER)));
+    });
+
+    // An invitation made before addresses admits whoever holds it, so the
+    // only thing standing between it and a forwarded link is being spent.
+    it('a code without an address admits one person only', async () => {
+        await plantAnAdministrator();
+        await plantAnInvitation();
+
+        const first = testEnv.authenticatedContext(STRANGER).firestore();
+        const second = testEnv.authenticatedContext('somebody-else').firestore();
+
+        await assertSucceeds(setDoc(claimOf(first, STRANGER), { code: CODE }));
+        await assertSucceeds(spending(first, arrayUnion(STRANGER)));
+
+        await assertSucceeds(setDoc(claimOf(second, 'somebody-else'), { code: CODE }));
+        await assertFails(updateDoc(groupDoc(second), { members: arrayUnion('somebody-else') }));
+    });
+
+    // Otherwise anybody holding a code could withdraw it from the person it
+    // was meant for.
+    it('the holder of a code cannot delete it without joining', async () => {
+        await plantAnAdministrator();
+        await plantAnAddressedInvitation();
+
+        const db = signedInAs(STRANGER_EMAIL);
+
+        await assertSucceeds(setDoc(claimOf(db, STRANGER), { code: CODE }));
+        await assertFails(deleteDoc(invitationOf(db, CODE)));
+    });
+
+    it('a member who does not run the group deletes no invitation', async () => {
+        await plantAnAdministrator();
+        await plantAnInvitation();
+
+        const db = testEnv.authenticatedContext(BOB).firestore();
+
+        await assertFails(deleteDoc(invitationOf(db, CODE)));
+    });
+
+    // Joining spends the code it was let in on, not another one of the group's.
+    it('joining cannot spend somebody else\'s code', async () => {
+        await plantAnAdministrator();
+        await plantAnInvitation();
+        await plantAnInvitation(OTHER_CODE);
+
+        const db = testEnv.authenticatedContext(STRANGER).firestore();
+
+        await assertSucceeds(setDoc(claimOf(db, STRANGER), { code: CODE }));
+        await assertFails(
+            writeBatch(db)
+                .update(groupDoc(db), { members: arrayUnion(STRANGER) })
+                .delete(invitationOf(db, CODE))
+                .delete(invitationOf(db, OTHER_CODE))
+                .commit(),
+        );
+        await assertFails(
+            writeBatch(db)
+                .update(groupDoc(db), { members: arrayUnion(STRANGER) })
+                .delete(invitationOf(db, OTHER_CODE))
+                .commit(),
+        );
+    });
+});
+
 // ADR-0015: the code admits the account it was made out to, and only once
 // Google has confirmed that the address is that account's.
 describe('joining on an invitation made out to an address', () => {
-    const join = (db) => updateDoc(groupDoc(db), { members: arrayUnion(STRANGER) });
+    const join = (db) => spending(db, arrayUnion(STRANGER));
 
     it('the account the invitation names joins', async () => {
         await plantAnAdministrator();

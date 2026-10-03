@@ -32,3 +32,4 @@ date is the decision's.
 | 0022 | [Background downloads follow the member's network choice](0022-downloads-follow-the-network-choice.md)        | Accepted                            | 2026-10-02 |
 | 0023 | [The sky is held against the published orbits](0023-the-sky-is-held-against-published-orbits.md)              | Accepted, partly superseded by 0024 | 2026-10-02 |
 | 0024 | [GLONASS joins the orbit check](0024-glonass-joins-the-orbit-check.md)                                        | Accepted                            | 2026-10-02 |
+| 0025 | [An invitation admits once and lasts at most a day](0025-an-invitation-admits-once.md)                        | Accepted                            | 2026-10-03 |
