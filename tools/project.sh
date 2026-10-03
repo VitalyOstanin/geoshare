@@ -867,6 +867,8 @@ usage_report() {
 
     token="$(firebase_access_token)"
 
+    echo "==> free plan usage, from Cloud Monitoring" >&2
+
     TOKEN="${token}" PROJECT="${project}" FORMAT="${format}" DAYS="${days}" \
         READS="${FREE_READS_PER_DAY}" WRITES="${FREE_WRITES_PER_DAY}" \
         DELETES="${FREE_DELETES_PER_DAY}" STORED="${FREE_STORED_BYTES}" \
@@ -917,6 +919,12 @@ def counted(metric, start=None, end=None):
     return int(sum(series(metric, start, "ALIGN_SUM", period, end)))
 
 
+def progress(line):
+    # Each question to Cloud Monitoring takes a moment, and a dozen of them in
+    # a row would otherwise read as the script having stopped.
+    print(f"    {line}", file=sys.stderr, flush=True)
+
+
 # Each earlier quota day asked for on its own, from one Pacific midnight to
 # the next, so that no window straddles a reset.
 earlier = []
@@ -925,6 +933,7 @@ for back in range(int(os.environ["DAYS"]), 0, -1):
         hour=0, minute=0, second=0).astimezone(timezone.utc)
     end = (start.astimezone(ZoneInfo("America/Los_Angeles")) + timedelta(days=1)).replace(
         hour=0, minute=0, second=0).astimezone(timezone.utc)
+    progress(f"Firestore on {start.astimezone().strftime('%a %Y-%m-%d')}")
     earlier.append({
         "from": stamp(start),
         "reads": counted("firestore.googleapis.com/document/read_count", start, end),
@@ -938,26 +947,32 @@ def latest(metric):
     return int(values[0]) if values else 0
 
 
+progress("Firestore today")
+firestore = {
+    "reads": {"used": counted("firestore.googleapis.com/document/read_count"),
+              "limit": int(os.environ["READS"])},
+    "writes": {"used": counted("firestore.googleapis.com/document/write_count"),
+               "limit": int(os.environ["WRITES"])},
+    "deletes": {"used": counted("firestore.googleapis.com/document/delete_count"),
+                "limit": int(os.environ["DELETES"])},
+    "storedBytes": {"used": latest("firestore.googleapis.com/storage/data_and_index_storage_bytes"),
+                    "limit": int(os.environ["STORED"])},
+}
+
+progress("Hosting")
+hosting = {
+    "sentBytesThisMonth": {"used": latest("firebasehosting.googleapis.com/network/monthly_sent"),
+                           "limit": latest("firebasehosting.googleapis.com/network/monthly_sent_limit")},
+    "storedBytes": {"used": latest("firebasehosting.googleapis.com/storage/total_bytes"),
+                    "limit": latest("firebasehosting.googleapis.com/storage/limit")},
+}
+
 report = {
     "projectId": project,
     "quotaDayFrom": stamp(quota_day),
-    "firestore": {
-        "reads": {"used": counted("firestore.googleapis.com/document/read_count"),
-                  "limit": int(os.environ["READS"])},
-        "writes": {"used": counted("firestore.googleapis.com/document/write_count"),
-                   "limit": int(os.environ["WRITES"])},
-        "deletes": {"used": counted("firestore.googleapis.com/document/delete_count"),
-                    "limit": int(os.environ["DELETES"])},
-        "storedBytes": {"used": latest("firestore.googleapis.com/storage/data_and_index_storage_bytes"),
-                        "limit": int(os.environ["STORED"])},
-    },
+    "firestore": firestore,
     "earlierDays": earlier,
-    "hosting": {
-        "sentBytesThisMonth": {"used": latest("firebasehosting.googleapis.com/network/monthly_sent"),
-                               "limit": latest("firebasehosting.googleapis.com/network/monthly_sent_limit")},
-        "storedBytes": {"used": latest("firebasehosting.googleapis.com/storage/total_bytes"),
-                        "limit": latest("firebasehosting.googleapis.com/storage/limit")},
-    },
+    "hosting": hosting,
 }
 
 if os.environ["FORMAT"] == "json":
