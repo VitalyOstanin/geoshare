@@ -8,6 +8,7 @@ import {
     orderedForNavigation,
     pictureAddress,
     positionDocuments,
+    profileName,
     shortName,
 } from '../public/lib/members.js';
 
@@ -146,4 +147,18 @@ test('the documents do not depend on the order the devices arrived in', () => {
     const other = positionDocuments(new Map([grantWith('alice', ['one', 'two'])]));
 
     assert.deepEqual(one, other);
+});
+
+test('a member goes by the name of their account', () => {
+    assert.equal(profileName('  Anna Petrova ', 'anna.petrova@example.com'), 'Anna Petrova');
+});
+
+test('an account without a name goes by its shortened address', () => {
+    assert.equal(profileName(null, 'tester@example.com'), 'test…@example.com');
+    assert.equal(profileName('   ', 'tester@example.com'), 'test…@example.com');
+});
+
+test('an account with neither has nothing to say', () => {
+    assert.equal(profileName(null, null), null);
+    assert.equal(profileName('', ' '), null);
 });

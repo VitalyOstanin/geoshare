@@ -1,5 +1,6 @@
 // Who the page lists, and in what order.
 
+import { shortenedAddress } from './join.js';
 import { compareIds } from './order.js';
 import { WORDS } from './words.js';
 
@@ -64,6 +65,23 @@ const SHORT_ID_LENGTH = 6;
 
 export function shortName(memberId) {
     return memberId.slice(0, SHORT_ID_LENGTH);
+}
+
+/**
+ * The name a member goes by in the group: the account's own, or, for an
+ * account without one, its shortened address — the same the admin saw on the
+ * invitation, and more use to them than the start of an id.
+ */
+export function profileName(name, email) {
+    const own = name?.trim();
+
+    if (own) {
+        return own;
+    }
+
+    const address = email?.trim();
+
+    return address ? shortenedAddress(address) : null;
 }
 
 /**

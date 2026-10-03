@@ -14,6 +14,7 @@ import {
     setDoc,
     updateDoc,
 } from 'https://www.gstatic.com/firebasejs/12.19.0/firebase-firestore.js';
+import { profileName } from './members.js';
 import { combinedGrants, phonesOf } from './phones.js';
 import {
     INVITATION_LASTS_MS,
@@ -334,7 +335,7 @@ export function devicesOf(snapshot) {
  * and the free tier counts every write.
  */
 export function publishProfile(member, known, onError) {
-    const displayName = member.name?.trim();
+    const displayName = profileName(member.name, member.email);
 
     if (!displayName) {
         return Promise.resolve();

@@ -144,9 +144,15 @@ private fun soughtPhoneIds(searches: Map<String, Search>): List<String> {
  * come from somewhere else.
  */
 @Composable
-fun rememberMemberGrants(profiles: Map<String, MemberProfile>?): State<Map<String, MemberGrant>> {
+fun rememberMemberGrants(
+    profiles: Map<String, MemberProfile>?,
+    ownId: String,
+): State<Map<String, MemberGrant>> {
     val writing = groupNow()
-    val memberIds = remember(profiles) { profiles.orEmpty().keys.sorted() }
+    // Our own entry as well, named or not: the name given to this phone is
+    // read back from it, and a member whose profile has not been written yet
+    // would otherwise see the name they typed vanish.
+    val memberIds = remember(profiles, ownId) { (profiles.orEmpty().keys + ownId).sorted() }
     val grants = remember(writing, memberIds) { memberGrants(memberIds) }
 
     return grants.collectAsStateWithLifecycle(initialValue = emptyMap())
@@ -264,10 +270,14 @@ fun rememberOwnLabels(memberId: String): State<Labels> {
  * next launch.
  */
 @Composable
-fun PublishProfile(memberId: String, displayName: String?, pictureUrl: String?, deviceId: String) {
-    // An account with no name of its own has nothing to say about itself that
-    // the id does not already say, so nothing is written.
-    val name = displayName?.takeIf { it.isNotBlank() } ?: return
+fun PublishProfile(
+    memberId: String,
+    displayName: String?,
+    email: String?,
+    pictureUrl: String?,
+    deviceId: String,
+) {
+    val name = profileName(displayName, email) ?: return
     val context = LocalContext.current
     val published = remember(context) { PublishedProfile(context) }
     val owner = LocalLifecycleOwner.current

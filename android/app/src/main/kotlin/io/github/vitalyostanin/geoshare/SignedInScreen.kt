@@ -97,7 +97,7 @@ internal fun SignedInScreen(
 ) {
     val profiles by rememberMemberProfiles()
     val searches by rememberSearches()
-    val grants by rememberMemberGrants(profiles)
+    val grants by rememberMemberGrants(profiles, current.memberId)
     val ownDocument =
         remember(current.memberId) {
             positionId(current.memberId, activity.device.id)
@@ -188,6 +188,7 @@ internal fun SignedInScreen(
     PublishProfile(
         memberId = current.memberId,
         displayName = current.displayName,
+        email = current.email,
         pictureUrl = current.pictureUrl,
         deviceId = activity.device.id,
     )

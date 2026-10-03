@@ -5,6 +5,7 @@ import com.google.firebase.firestore.FieldValue
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.SetOptions
 import io.github.vitalyostanin.geoshare.log.AppLog
+import io.github.vitalyostanin.geoshare.project.ConnectLink
 import io.github.vitalyostanin.geoshare.service.GrantField
 import io.github.vitalyostanin.geoshare.service.ProfileField
 import io.github.vitalyostanin.geoshare.service.grantsOf
@@ -15,6 +16,15 @@ import java.time.Instant
 import java.util.Date
 
 private const val TAG = "geoshare.profile"
+
+/**
+ * The name a member goes by in the group: the account's own, or, for an
+ * account without one, its shortened address — the same the admin saw on the
+ * invitation, and more use to them than the start of an id.
+ */
+fun profileName(displayName: String?, email: String?): String? =
+    displayName?.trim()?.takeIf { it.isNotEmpty() }
+        ?: email?.trim()?.takeIf { it.isNotEmpty() }?.let(ConnectLink::shortenedAddress)
 
 /**
  * Says who this phone's member is.
