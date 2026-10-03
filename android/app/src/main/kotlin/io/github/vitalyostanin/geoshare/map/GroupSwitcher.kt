@@ -452,3 +452,58 @@ private fun GroupRow(
         }
     }
 }
+
+/**
+ * The chip, the list it opens and the question before leaving a group, for a
+ * screen that has nothing else to coordinate them with.
+ *
+ * The sign-in screen of a group is such a screen: without it, a group picked
+ * in the list before the device signed in to it could not be left for another
+ * until a sign-in was started and cancelled. Drawn only with more than one
+ * group, like the map's own chip.
+ */
+@Composable
+fun GroupSwitcher(groups: GroupSwitch, modifier: Modifier = Modifier) {
+    var open by remember { mutableStateOf(false) }
+    var leaveAsk by remember { mutableStateOf<LeaveAsk?>(null) }
+
+    if (!switcherShown(groups.choices.size)) {
+        return
+    }
+
+    GroupChip(
+        caption =
+        groups.choices.firstOrNull { it.projectId == groups.selected }?.caption
+            ?: groups.selected,
+        onClick = { open = true },
+        modifier = modifier,
+    )
+
+    if (open) {
+        GroupSheet(
+            choices = groups.choices,
+            selected = groups.selected,
+            onSelect = { projectId ->
+                open = false
+                groups.onSelect(projectId)
+            },
+            onJoin = {
+                open = false
+                groups.onJoin()
+            },
+            onLeave = { choice ->
+                open = false
+                leaveAsk = LeaveAsk(choice.projectId, choice.caption, choice.leave)
+            },
+            onClose = { open = false },
+        )
+    }
+
+    leaveAsk?.let { ask ->
+        LeaveGroupDialog(
+            ask = ask,
+            onLeave = { groups.onLeave(ask) },
+            onDismiss = { leaveAsk = null },
+        )
+    }
+}

@@ -13,7 +13,9 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.app.AppCompatDelegate
 import androidx.compose.foundation.isSystemInDarkTheme
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.darkColorScheme
@@ -24,6 +26,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.window.Dialog
@@ -38,8 +41,11 @@ import io.github.vitalyostanin.geoshare.auth.SignInController
 import io.github.vitalyostanin.geoshare.auth.SignInFailure
 import io.github.vitalyostanin.geoshare.auth.SignInScreen
 import io.github.vitalyostanin.geoshare.log.AppLog
+import io.github.vitalyostanin.geoshare.map.GroupSwitch
+import io.github.vitalyostanin.geoshare.map.GroupSwitcher
 import io.github.vitalyostanin.geoshare.map.UnansweredException
 import io.github.vitalyostanin.geoshare.map.WriteOutcome
+import io.github.vitalyostanin.geoshare.map.rememberGroupChoices
 import io.github.vitalyostanin.geoshare.map.withinAnswerWait
 import io.github.vitalyostanin.geoshare.permission.PermissionStep
 import io.github.vitalyostanin.geoshare.permission.batteryExemptionRequest
@@ -76,6 +82,7 @@ import io.github.vitalyostanin.geoshare.service.languageTag
 import io.github.vitalyostanin.geoshare.service.refusalToStart
 import io.github.vitalyostanin.geoshare.service.startConditions
 import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.async
 import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.launch
 
@@ -345,7 +352,7 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    /** Signing in to the group shown, and going back to another if that is cancelled. */
+    /** Signing in to the group shown, and the ways back to another group. */
     @Composable
     private fun SignInGate(
         connection: GroupConnection,
@@ -376,15 +383,40 @@ class MainActivity : AppCompatActivity() {
             }
         }
 
-        SignInScreen(
-            state = current,
-            onSignIn = {
-                lifecycleScope.launch { signIn.signIn(this@MainActivity) }
-            },
-            onSignInAsStandIn = { account ->
-                lifecycleScope.launch { signIn.signInAsStandIn(account) }
-            },
-        )
+        val everyGroup by Connections.all.collectAsStateWithLifecycle()
+        val choices by rememberGroupChoices(everyGroup, device.id)
+
+        Box(modifier = Modifier.fillMaxSize()) {
+            SignInScreen(
+                state = current,
+                onSignIn = {
+                    lifecycleScope.launch { signIn.signIn(this@MainActivity) }
+                },
+                onSignInAsStandIn = { account ->
+                    lifecycleScope.launch { signIn.signInAsStandIn(account) }
+                },
+            )
+
+            // The way back to another group, the same chip and list as on the
+            // map: a group picked before the device signed in to it is not a
+            // place to be kept in.
+            GroupSwitcher(
+                groups =
+                GroupSwitch(
+                    choices = choices,
+                    selected = connection.projectId,
+                    onSelect = { projectId -> Connections.select(this@MainActivity, projectId) },
+                    onJoin = connectFlow::askForLink,
+                    onLeave = { ask ->
+                        val leaving = Connections.of(ask.projectId)
+
+                        leaving == null ||
+                            lifecycleScope.async { leave(leaving, ask.how) }.await()
+                    },
+                ),
+                modifier = Modifier.align(Alignment.TopStart).statusBarsPadding(),
+            )
+        }
     }
 
     /**
