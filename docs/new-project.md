@@ -38,7 +38,10 @@ and signs in with Google. Members are invited later from the application.
 1. Sign the Firebase command line in as the project owner:
    `npx firebase-tools login`, or `npx firebase-tools login --no-localhost` in
    Cloud Shell or any shell without a browser of its own. This is the only
-   sign-in the script needs; without it the script stops right away.
+   sign-in the script needs. Run at a terminal without it, or with a sign-in
+   that no longer works, the script starts this login itself and goes on once
+   it succeeds; with `--json` or without a terminal it stops right away and
+   names the command.
 2. If the project owner's Google account has never used Firebase, they open
    <https://console.firebase.google.com/> once and accept the terms. The terms
    cannot be accepted from the command line.

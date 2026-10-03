@@ -72,6 +72,11 @@ set -euo pipefail
 
 source "$(dirname "${BASH_SOURCE[0]}")/lib.sh"
 
+# npm's own notices ("npm notice run npx") on every start of the firebase
+# command line, here and in tools/web-config.sh, say nothing to whoever reads
+# the output.
+export npm_config_loglevel=error
+
 # The package the application is built under; the Android app registered here
 # has to match it, or sign-in refuses the application.
 readonly PACKAGE_NAME="io.github.vitalyostanin.geoshare"
@@ -99,33 +104,64 @@ usage() {
 # helper function. login:list reads the local token file only, so this costs
 # nothing on the network.
 require_login() {
-    if ! firebase login:list --json | grep -q '"result"'; then
-        echo "not logged in to the firebase command line; run \`firebase login\`" \
-            "(or \`firebase login --no-localhost\` in Cloud Shell) first" >&2
+    # Asking for the projects is both the check and the refresh: it fails when
+    # nobody is signed in or the sign-in was revoked, and on success it leaves
+    # a fresh access token in the firebase command line's own file.
+    if firebase projects:list > /dev/null 2>&1; then
+        remember_access_token
+        return
+    fi
+
+    local reason="nobody is signed in to the firebase command line"
+    local login=(login)
+
+    if firebase login:list --json 2> /dev/null | grep -q '"result"'; then
+        reason="the firebase command line's sign-in no longer works"
+        login+=(--reauth)
+    fi
+
+    # Google Cloud Shell has no browser of its own to come back to.
+    if [[ -n "${CLOUD_SHELL:-}" ]]; then
+        login+=(--no-localhost)
+    fi
+
+    # Signing in needs a person at a browser. Somebody at a terminal is helped
+    # through it here and now; a program reading --json gets the reason and
+    # the command instead, since nobody would see the page it opens.
+    if (( json_mode )) || [[ ! -t 0 || ! -t 2 ]]; then
+        echo "${reason}; run \`npx firebase-tools@${FIREBASE_TOOLS_VERSION} ${login[*]}\`" \
+            "as the project owner, then this again" >&2
         exit 1
     fi
-}
 
+    echo "${reason}. Signing in now: a page in the browser asks for the Google" \
+        "account that owns the project." >&2
+    npx --yes "firebase-tools@${FIREBASE_TOOLS_VERSION}" "${login[@]}"
+
+    if ! firebase projects:list > /dev/null 2>&1; then
+        echo "still not signed in; nothing was changed" >&2
+        exit 1
+    fi
+
+    remember_access_token
+}
 # The id of the one app of a platform, out of the listing's JSON. The listing
 # is read rather than the id kept from `apps:create`, so that `show` works
 # on a project whose apps were registered by hand as well.
 app_id() {
     local project="$1" platform="$2"
+    local ids
 
-    firebase apps:list "${platform}" --project "${project}" --json |
-        python3 -c '
-import json, sys
+    ids="$(apps_of "${project}" "${platform}")"
 
-raw = sys.stdin.read()
-apps = json.loads(raw[raw.index("{"):])["result"]
+    if [[ "$(grep -c . <<< "${ids}" || true)" -ne 1 ]]; then
+        echo "expected one ${platform} app in ${project}, found:" \
+            "$(grep -c . <<< "${ids}" || true)" >&2
+        exit 1
+    fi
 
-if len(apps) != 1:
-    sys.exit(f"expected one app, found {len(apps)}")
-
-print(apps[0]["appId"])
-'
+    echo "${ids}"
 }
-
 # The SHA-1 and SHA-256 of every key the builds are signed with, as
 # `gradle signingReport` prints them — or, with --sha-from, the ones an
 # existing project already accepts. The second is the one to use when the
@@ -157,15 +193,24 @@ for entry in json.loads(raw[raw.index("{"):])["result"]:
 app_count() {
     local project="$1" platform="$2"
 
-    firebase apps:list "${platform}" --project "${project}" --json |
+    apps_of "${project}" "${platform}" | grep -c . || true
+}
+
+# The app ids of one platform, one per line, from the Firebase Management API.
+apps_of() {
+    local project="$1" platform="$2"
+    local kind="androidApps"
+
+    [[ "${platform}" == "WEB" ]] && kind="webApps"
+
+    api_get "https://firebase.googleapis.com/v1beta1/projects/${project}/${kind}" |
         python3 -c '
 import json, sys
 
-raw = sys.stdin.read()
-print(len(json.loads(raw[raw.index("{"):])["result"]))
+for app in json.load(sys.stdin).get("apps", []):
+    print(app["appId"])
 '
 }
-
 # The fingerprints the Android app already knows, straight out of its own
 # configuration: sign-in checks the calling application against these, so an
 # app with none of them yet cannot sign anybody in. `show` reads this to
@@ -173,12 +218,12 @@ print(len(json.loads(raw[raw.index("{"):])["result"]))
 android_fingerprints() {
     local project="$1" android="$2"
 
-    firebase apps:sdkconfig ANDROID "${android}" --project "${project}" --json |
+    api_get "https://firebase.googleapis.com/v1beta1/projects/${project}/androidApps/${android}/config" |
         python3 -c '
-import json, sys
+import base64, json, sys
 
-raw = sys.stdin.read()
-config = json.loads(json.loads(raw[raw.index("{"):])["result"]["fileContents"])
+answer = json.load(sys.stdin)
+config = json.loads(base64.b64decode(answer["configFileContents"]))
 client = config["client"][0]
 
 for entry in client.get("oauth_client", []):
@@ -188,21 +233,45 @@ for entry in client.get("oauth_client", []):
 }
 
 # The Firebase command line's own access token, kept fresh at
-# ~/.config/configstore/firebase-tools.json by every command it runs; the
-# projects:list call is only there to make it run one before the token is
-# read. Shared by enable_api() and google_sign_in_enabled() below, the two
-# places this script asks a Google API directly rather than through the
-# firebase command line, which has no command for either.
+# ~/.config/configstore/firebase-tools.json by every command it runs, and
+# remembered after the first read. Every Google API this script asks
+# directly — for what the firebase command line has no command for, and for
+# the readings `show` makes many of — goes through it.
 firebase_access_token() {
-    firebase projects:list > /dev/null
-    python3 -c '
+    # An access token lasts an hour; one older than three quarters of that is
+    # refreshed the same way require_login() got it, so that a long `create`
+    # or a 20-minute --wait does not run out halfway.
+    if [[ -z "${ACCESS_TOKEN:-}" ]] || (( SECONDS - ACCESS_TOKEN_AT > 2700 )); then
+        firebase projects:list > /dev/null
+        remember_access_token
+    fi
+
+    echo "${ACCESS_TOKEN}"
+}
+
+# Reads the access token the firebase command line has just refreshed, once,
+# so that every Google API asked below uses it without starting the command
+# line again: each start of it costs seconds before any work is done.
+remember_access_token() {
+    ACCESS_TOKEN="$(python3 -c '
 import json, os
 
 path = os.path.expanduser("~/.config/configstore/firebase-tools.json")
 print(json.load(open(path))["tokens"]["access_token"])
-'
+')"
+    ACCESS_TOKEN_AT="${SECONDS}"
 }
 
+# GETs a Google API with the remembered token and prints the body. Reading
+# through the APIs the firebase command line itself calls takes a fraction of
+# a second; the same through the command line takes several.
+api_get() {
+    local url="$1"
+    local token
+
+    token="$(firebase_access_token)"
+    curl -sf -H "Authorization: Bearer ${token}" "${url}"
+}
 # Turns on a Google API in the project. A project made by projects:create
 # starts with the Firestore API off, and creating the database fails with 403
 # until it is on; the firebase command line has no command for it, so this
@@ -278,18 +347,16 @@ print(json.loads(sys.stdin.read()).get("enabled", False))
 existing_site() {
     local project="$1"
 
-    firebase hosting:sites:list --project "${project}" --json |
+    api_get "https://firebasehosting.googleapis.com/v1beta1/projects/${project}/sites" |
         python3 -c '
 import json, sys
 
-raw = sys.stdin.read()
-sites = json.loads(raw[raw.index("{"):])["result"].get("sites", [])
+sites = json.load(sys.stdin).get("sites", [])
 default = [s for s in sites if s.get("type") == "DEFAULT_SITE"]
 chosen = (default or sites)[:1]
 print(chosen[0]["name"].rsplit("/", 1)[1] if chosen else "")
 '
 }
-
 # The Hosting site the page is served from, made if the project has none.
 #
 # A project made from 15 October 2026 on gets no site of its own: Hosting
