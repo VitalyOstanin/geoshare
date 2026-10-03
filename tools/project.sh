@@ -7,6 +7,14 @@
 #   tools/project.sh show <project-id> [--wait] [--usage] [--days <n>] [--json]
 #   tools/project.sh update <project-id> [--json]
 #   tools/project.sh delete <project-id> --yes [--json]
+#   any of them with [--account <google-address>]
+#
+# The project is named on every run, so one machine looks after several
+# projects — a family's, a trip's, one to try things on — without a working
+# copy per project. --account picks which of the Google accounts the firebase
+# command line is signed in to does the asking (`firebase login:add` signs in
+# another one); without it the command line's default account does, as it
+# always has.
 #
 # Step by step for whoever runs it: docs/new-project.md; the console step for
 # the project owner: docs/console-steps.md.
@@ -91,11 +99,11 @@ firebase() {
     # subcommand honours it, so it goes on every call through here rather
     # than being repeated at each call site: a prompt this script cannot
     # answer becomes a failure instead of a hang.
-    npx --yes "firebase-tools@${FIREBASE_TOOLS_VERSION}" --non-interactive "$@"
+    npx --yes "firebase-tools@${FIREBASE_TOOLS_VERSION}" --non-interactive "${account_args[@]}" "$@"
 }
 
 usage() {
-    sed -n '5,9p' "${BASH_SOURCE[0]}" | sed 's/^# //' >&2
+    sed -n '5,10p' "${BASH_SOURCE[0]}" | sed 's/^# //' >&2
     exit 2
 }
 
@@ -115,7 +123,12 @@ require_login() {
     local reason="nobody is signed in to the firebase command line"
     local login=(login)
 
-    if firebase login:list --json 2> /dev/null | grep -q '"result"'; then
+    if [[ -n "${account}" ]]; then
+        # An account other than the default one is signed in on its own with
+        # login:add, and signed in again the same way once it stops working.
+        reason="the firebase command line has no working sign-in for ${account}"
+        login=(login:add "${account}")
+    elif firebase login:list --json 2> /dev/null | grep -q '"result"'; then
         reason="the firebase command line's sign-in no longer works"
         login+=(--reauth)
     fi
@@ -253,11 +266,18 @@ firebase_access_token() {
 # so that every Google API asked below uses it without starting the command
 # line again: each start of it costs seconds before any work is done.
 remember_access_token() {
-    ACCESS_TOKEN="$(python3 -c '
+    ACCESS_TOKEN="$(ACCOUNT="${account}" python3 -c '
 import json, os
 
 path = os.path.expanduser("~/.config/configstore/firebase-tools.json")
-print(json.load(open(path))["tokens"]["access_token"])
+store = json.load(open(path))
+wanted = os.environ["ACCOUNT"].lower()
+
+# The default account sits at the top of the file, every one added with
+# login:add in additionalAccounts beside it, each with tokens of its own.
+accounts = [store] + store.get("additionalAccounts", [])
+match = [a for a in accounts if not wanted or a["user"]["email"].lower() == wanted]
+print(match[0]["tokens"]["access_token"])
 ')"
     ACCESS_TOKEN_AT="${SECONDS}"
 }
@@ -493,7 +513,7 @@ deploy_site() {
     rm -f "${site}/web/public/firebase-config.js"
     cp -r "${REPO_ROOT}/firebase" "${site}/firebase"
     cp "${REPO_ROOT}/firebase.json" "${site}/firebase.json"
-    FIREBASE_PROJECT="${project}" FIREBASE_SITE="${site_id}" \
+    FIREBASE_PROJECT="${project}" FIREBASE_SITE="${site_id}" FIREBASE_ACCOUNT="${account}" \
         WEB_CONFIG_TARGET="${site}/web/public/firebase-config.js" \
         "${REPO_ROOT}/tools/web-config.sh"
 
@@ -654,7 +674,7 @@ show() {
 
     echo "==> page configuration"
     mkdir -p "${out}"
-    (cd "${REPO_ROOT}" && FIREBASE_PROJECT="${project}" FIREBASE_SITE="${site_id}" \
+    (cd "${REPO_ROOT}" && FIREBASE_PROJECT="${project}" FIREBASE_SITE="${site_id}" FIREBASE_ACCOUNT="${account}" \
         WEB_CONFIG_TARGET="${out}/firebase-config.js" "${REPO_ROOT}/tools/web-config.sh")
 
     echo "==> sign-in with Google"
@@ -1031,6 +1051,8 @@ wait_google=0
 days=0
 with_usage=0
 confirmed=0
+account=""
+account_args=()
 
 while [[ $# -gt 0 ]]; do
     case "$1" in
@@ -1042,6 +1064,7 @@ while [[ $# -gt 0 ]]; do
         --days) days="$2"; with_usage=1; shift 2 ;;
         --usage) with_usage=1; shift ;;
         --yes) confirmed=1; shift ;;
+        --account) account="$2"; account_args=(--account "$2"); shift 2 ;;
         *) usage ;;
     esac
 done

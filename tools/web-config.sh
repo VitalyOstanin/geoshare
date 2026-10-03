@@ -5,8 +5,9 @@
 #
 # FIREBASE_PROJECT names another project than the working copy's default,
 # FIREBASE_SITE the Hosting site the page is served from when it is not named
-# after the project, and WEB_CONFIG_TARGET another file to write;
-# tools/project.sh uses all three.
+# after the project, FIREBASE_ACCOUNT the Google account to ask as when it is
+# not the firebase command line's default one, and WEB_CONFIG_TARGET another
+# file to write; tools/project.sh uses all four.
 #
 # The result names the project, and the project is not the repository's
 # business — the file is ignored by git, the same way the Android one is. Run
@@ -23,6 +24,10 @@ project_args=()
 
 if [[ -n "${FIREBASE_PROJECT:-}" ]]; then
     project_args=(--project "${FIREBASE_PROJECT}")
+fi
+
+if [[ -n "${FIREBASE_ACCOUNT:-}" ]]; then
+    project_args+=(--account "${FIREBASE_ACCOUNT}")
 fi
 
 # The one web app of the project. Passed by platform rather than by id, so that

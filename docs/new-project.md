@@ -42,6 +42,12 @@ and signs in with Google. Members are invited later from the application.
    that no longer works, the script starts this login itself and goes on once
    it succeeds; with `--json` or without a terminal it stops right away and
    names the command.
+
+   Whoever looks after several projects under different Google accounts —
+   a family's under one, a test project under another — signs each further
+   account in with `npx firebase-tools login:add <address>` and names it on
+   every run with `--account <address>`. Without `--account` the script asks
+   as the command line's default account.
 2. If the project owner's Google account has never used Firebase, they open
    <https://console.firebase.google.com/> once and accept the terms. The terms
    cannot be accepted from the command line.
