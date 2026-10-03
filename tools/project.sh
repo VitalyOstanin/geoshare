@@ -283,6 +283,27 @@ print(match[0]["tokens"]["access_token"])
     ACCESS_TOKEN_AT="${SECONDS}"
 }
 
+# Stops with a message naming the account when the project cannot be reached:
+# it does not exist, or the account asking is not one of its members. Without
+# this every later reading fails on its own, and the first one to say anything
+# says something beside the point.
+require_access() {
+    local project="$1"
+
+    if api_get "https://firebase.googleapis.com/v1beta1/projects/${project}" > /dev/null; then
+        return
+    fi
+
+    local who="${account}"
+
+    [[ -n "${who}" ]] || who="the firebase command line's default account"
+
+    echo "${who} cannot reach" \
+        "${project}: there is no such project, or that account has no access to it" \
+        "(--account picks another)" >&2
+    exit 1
+}
+
 # GETs a Google API with the remembered token and prints the body. Reading
 # through the APIs the firebase command line itself calls takes a fraction of
 # a second; the same through the command line takes several.
@@ -1083,8 +1104,8 @@ fi
 
 case "${command}" in
     create) require_login; create "${project}" "${location}" "${name}" "${sha_from}" ;;
-    show) require_login; show "${project}" "${wait_google}" "${with_usage}" ;;
-    update) require_login; update "${project}" ;;
-    delete) require_login; delete_project "${project}" ;;
+    show) require_login; require_access "${project}"; show "${project}" "${wait_google}" "${with_usage}" ;;
+    update) require_login; require_access "${project}"; update "${project}" ;;
+    delete) require_login; require_access "${project}"; delete_project "${project}" ;;
     *) usage ;;
 esac
