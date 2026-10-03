@@ -312,6 +312,13 @@ require_access() {
     exit 1
 }
 
+# The authorization header for curl, read by it from a file descriptor: a
+# token on curl's command line is visible to every user of the machine in the
+# list of processes, and printf is a builtin that runs as no process at all.
+bearer() {
+    printf 'Authorization: Bearer %s\n' "$1"
+}
+
 # GETs a Google API with the remembered token and prints the body. Reading
 # through the APIs the firebase command line itself calls takes a fraction of
 # a second; the same through the command line takes several.
@@ -320,7 +327,7 @@ api_get() {
     local token
 
     token="$(firebase_access_token)"
-    curl -sf -H "Authorization: Bearer ${token}" "${url}"
+    curl -sf -H @<(bearer "${token}") "${url}"
 }
 # Turns on a Google API in the project. A project made by projects:create
 # starts with the Firestore API off, and creating the database fails with 403
@@ -332,7 +339,7 @@ enable_api() {
 
     token="$(firebase_access_token)"
 
-    curl -sf -X POST -H "Authorization: Bearer ${token}" -H "Content-Type: application/json" \
+    curl -sf -X POST -H @<(bearer "${token}") -H "Content-Type: application/json" \
         "https://serviceusage.googleapis.com/v1/projects/${project}/services/${api}:enable" \
         > /dev/null
 
@@ -340,7 +347,7 @@ enable_api() {
     local attempt
 
     for attempt in $(seq 1 30); do
-        if curl -sf -H "Authorization: Bearer ${token}" \
+        if curl -sf -H @<(bearer "${token}") \
             "https://serviceusage.googleapis.com/v1/projects/${project}/services/${api}" |
             grep -q '"state": "ENABLED"'; then
             return
@@ -369,7 +376,7 @@ google_sign_in_enabled() {
     token="$(firebase_access_token)"
     url="https://identitytoolkit.googleapis.com/admin/v2/projects/${project}"
     url="${url}/defaultSupportedIdpConfigs/google.com"
-    response="$(curl -s -w $'\n%{http_code}' -H "Authorization: Bearer ${token}" "${url}")"
+    response="$(curl -s -w $'\n%{http_code}' -H @<(bearer "${token}") "${url}")"
     status="${response##*$'\n'}"
     body="${response%$'\n'*}"
 
@@ -872,7 +879,7 @@ delete_project() {
     fi
 
     token="$(firebase_access_token)"
-    response="$(curl -s -w $'\n%{http_code}' -X DELETE -H "Authorization: Bearer ${token}" \
+    response="$(curl -s -w $'\n%{http_code}' -X DELETE -H @<(bearer "${token}") \
         "https://cloudresourcemanager.googleapis.com/v3/projects/${project}")"
     status="${response##*$'\n'}"
 
