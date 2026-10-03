@@ -1,6 +1,5 @@
 package io.github.vitalyostanin.geoshare.map
 
-import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
@@ -10,16 +9,13 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedIconButton
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
@@ -199,36 +195,11 @@ private fun AdminPhoneRow(
             val sirenState = siren?.let { sirenState(it, sirenNow) }
             val sounding = sirenState is SirenState.Waiting || sirenState is SirenState.Sounding
 
-            if (siren != null && sounding) {
-                Button(
-                    onClick = onStopSiren,
-                    enabled = !LocalLink.current.lost,
-                    colors =
-                    ButtonDefaults.buttonColors(
-                        containerColor = Color(SOUGHT_COLOUR),
-                        contentColor = Color.White,
-                    ),
-                ) {
-                    Icon(
-                        painter = painterResource(R.drawable.ic_siren_off),
-                        contentDescription = null,
-                        modifier = Modifier.padding(end = 4.dp),
-                    )
-                    Text(text = stringResource(R.string.siren_stop_short))
-                }
-            } else if (mayRing) {
-                // Round and red, as on the page: the one button in the row
-                // that makes this phone sound loud.
-                OutlinedIconButton(
-                    onClick = onSiren,
-                    border = BorderStroke(1.dp, Color(SOUGHT_COLOUR)),
-                ) {
-                    Icon(
-                        painter = painterResource(R.drawable.ic_siren),
-                        contentDescription = stringResource(R.string.siren_hint),
-                        tint = Color(SOUGHT_COLOUR),
-                    )
-                }
+            // Round and red, as on the page: the one button in the row that
+            // makes this phone sound loud. A call already going is stopped
+            // from here even on a row that could not have rung it.
+            if (sounding || mayRing) {
+                SirenButton(sounding = sounding, onCall = onSiren, onStop = onStopSiren)
             }
 
             if (mayLookFor) {

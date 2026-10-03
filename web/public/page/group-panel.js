@@ -8,7 +8,7 @@ import {
     isWrongAccount,
     shortenedAddress,
 } from '../lib/join.js';
-import { outsideTheBox } from '../lib/mode-help.js';
+import { outsideTheBox } from '../lib/outside-the-box.js';
 import { lookAt } from '../lib/map.js';
 import { memberName } from '../lib/members.js';
 import { standingSearches } from '../lib/searches.js';

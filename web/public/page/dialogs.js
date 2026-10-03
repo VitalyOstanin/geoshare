@@ -1,7 +1,7 @@
 // The small windows: help, confirming a write, naming a member or a phone.
 
 import { ageText, positionAge } from '../lib/age.js';
-import { outsideTheBox } from '../lib/mode-help.js';
+import { outsideTheBox } from '../lib/outside-the-box.js';
 import { labelText } from '../lib/labels.js';
 import { WORDS } from '../lib/words.js';
 import { ADMINISTRATOR, standingIn } from '../lib/membership.js';

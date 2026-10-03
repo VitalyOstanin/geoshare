@@ -22,7 +22,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
@@ -37,7 +36,6 @@ import io.github.vitalyostanin.geoshare.membership.Roster
 import io.github.vitalyostanin.geoshare.membership.looksLikeAnAddress
 import io.github.vitalyostanin.geoshare.membership.runsTheGroup
 import io.github.vitalyostanin.geoshare.service.MadeInvitation
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.launch
 import java.time.Duration
@@ -133,10 +131,8 @@ fun AdminPanel(
     // length picked so far -- held apart from whether the write is refused,
     // so a refusal on one phone's search does not linger once a different one
     // is opened.
-    var searchAsk by remember { mutableStateOf<SearchAsk?>(null) }
+    val searching = rememberAskedWrite<SearchAsk>()
     var searchHours by remember { mutableStateOf(DEFAULT_SEARCH_HOURS) }
-    var searchTrouble by remember { mutableStateOf<WriteOutcome?>(null) }
-    var searchBusy by remember { mutableStateOf(false) }
     val scope = rememberCoroutineScope()
 
     // The siren of every phone this panel offers to ring, followed while it
@@ -147,62 +143,14 @@ fun AdminPanel(
         }
     val sirens by remember(ringable) { sirensOf(ringable, sirenOf) }
         .collectAsState(initial = emptyMap())
-    var sirenAsk by remember { mutableStateOf<SirenAsk?>(null) }
-    var sirenTrouble by remember { mutableStateOf<WriteOutcome?>(null) }
-    var sirenBusy by remember { mutableStateOf(false) }
-    // The countdown reads seconds, and the panel's own clock ticks far slower.
-    val sirenNow by produceState(now, sirens) {
-        value = Instant.now()
-
-        while (anyLive(sirens.values, value)) {
-            delay(SIREN_TICK_MS)
-            value = Instant.now()
-        }
-    }
-
-    fun writeSiren() {
-        val ask = sirenAsk ?: return
-
-        sirenBusy = true
-        scope.launch {
-            val outcome = onCallSiren(ask.selected)
-
-            sirenBusy = false
-
-            if (outcome == WriteOutcome.DONE) {
-                sirenAsk = null
-                sirenTrouble = null
-            } else {
-                sirenTrouble = outcome
-            }
-        }
-    }
+    val ringing = rememberAskedWrite<SirenAsk>()
+    val sirenNow by sirenClock(now, sirens)
 
     // The requests to forget a place on the same phones, followed the same
     // way, so a reset asked from anywhere shows on its row too.
     val resets by remember(ringable) { resetsOf(ringable, resetOf) }
         .collectAsState(initial = emptyMap())
-    var resetAsk by remember { mutableStateOf<PhoneLine?>(null) }
-    var resetTrouble by remember { mutableStateOf<WriteOutcome?>(null) }
-    var resetBusy by remember { mutableStateOf(false) }
-
-    fun writeReset() {
-        val phone = resetAsk ?: return
-
-        resetBusy = true
-        scope.launch {
-            val outcome = onAskReset(phone.phoneId)
-
-            resetBusy = false
-
-            if (outcome == WriteOutcome.DONE) {
-                resetAsk = null
-                resetTrouble = null
-            } else {
-                resetTrouble = outcome
-            }
-        }
-    }
+    val resetting = rememberAskedWrite<PhoneLine>()
 
     fun writeRename() {
         val name = groupNameText(renameText) ?: return
@@ -223,27 +171,8 @@ fun AdminPanel(
     }
 
     fun askSearch(phone: PhoneLine, memberName: String, renew: Boolean) {
-        searchAsk = SearchAsk(phone, memberName, renew)
+        searching.ask(SearchAsk(phone, memberName, renew))
         searchHours = DEFAULT_SEARCH_HOURS
-        searchTrouble = null
-    }
-
-    fun writeSearch() {
-        val ask = searchAsk ?: return
-
-        searchBusy = true
-        scope.launch {
-            val outcome = onSearch(ask.phone.phoneId, ask.phone.name, ask.renew, searchHours)
-
-            searchBusy = false
-
-            if (outcome == WriteOutcome.DONE) {
-                searchAsk = null
-                searchTrouble = null
-            } else {
-                searchTrouble = outcome
-            }
-        }
     }
 
     Surface(modifier = modifier.fillMaxSize()) {
@@ -313,20 +242,17 @@ fun AdminPanel(
                     sirens = sirens,
                     sirenNow = sirenNow,
                     onSiren = { phone ->
-                        sirenTrouble = null
-                        sirenAsk =
+                        ringing.ask(
                             SirenAsk(
                                 name = line.displayName ?: line.memberId.take(NAME_SHOWN_INSTEAD),
                                 phones = listOf(phone),
                                 selected = phone.phoneId,
-                            )
+                            ),
+                        )
                     },
                     onStopSiren = { phoneId -> scope.launch { onStopSiren(phoneId) } },
                     resets = resets,
-                    onReset = { phone ->
-                        resetTrouble = null
-                        resetAsk = phone
-                    },
+                    onReset = { phone -> resetting.ask(phone) },
                 )
             }
 
@@ -548,31 +474,31 @@ fun AdminPanel(
         )
     }
 
-    sirenAsk?.let { ask ->
+    ringing.asked?.let { ask ->
         SirenDialog(
             memberName = ask.name,
             phones = ask.phones,
             selected = ask.selected,
-            onSelect = { sirenAsk = ask.copy(selected = it) },
+            onSelect = { ringing.change(ask.copy(selected = it)) },
             now = now,
-            trouble = sirenTrouble,
-            busy = sirenBusy,
-            onGo = ::writeSiren,
-            onCancel = { sirenAsk = null },
+            trouble = ringing.trouble,
+            busy = ringing.busy,
+            onGo = { ringing.write { onCallSiren(it.selected) } },
+            onCancel = ringing::cancel,
         )
     }
 
-    resetAsk?.let { phone ->
+    resetting.asked?.let { phone ->
         ResetDialog(
             phoneName = phone.name,
-            trouble = resetTrouble,
-            busy = resetBusy,
-            onGo = ::writeReset,
-            onCancel = { resetAsk = null },
+            trouble = resetting.trouble,
+            busy = resetting.busy,
+            onGo = { resetting.write { onAskReset(it.phoneId) } },
+            onCancel = resetting::cancel,
         )
     }
 
-    searchAsk?.let { ask ->
+    searching.asked?.let { ask ->
         SearchDialog(
             memberName = ask.memberName,
             phoneName = ask.phone.name,
@@ -580,10 +506,12 @@ fun AdminPanel(
             hours = searchHours,
             onHoursChange = { searchHours = it },
             now = now,
-            trouble = searchTrouble,
-            busy = searchBusy,
-            onGo = ::writeSearch,
-            onCancel = { searchAsk = null },
+            trouble = searching.trouble,
+            busy = searching.busy,
+            onGo = {
+                searching.write { onSearch(it.phone.phoneId, it.phone.name, it.renew, searchHours) }
+            },
+            onCancel = searching::cancel,
         )
     }
 }
@@ -627,9 +555,6 @@ private data class SearchAsk(val phone: PhoneLine, val memberName: String, val r
 
 /** Whose phone is about to be rung, and which of their phones is picked. */
 private data class SirenAsk(val name: String, val phones: List<PhoneLine>, val selected: String)
-
-/** How often the siren's countdown on the row is redrawn. */
-private const val SIREN_TICK_MS = 1_000L
 
 /**
  * The phone a standing search is about, out of what this screen already knows

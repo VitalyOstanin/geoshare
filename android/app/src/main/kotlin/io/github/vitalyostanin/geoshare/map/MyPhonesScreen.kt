@@ -15,8 +15,6 @@ import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -28,7 +26,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
@@ -40,7 +37,6 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import io.github.vitalyostanin.geoshare.R
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.launch
 import java.time.Instant
@@ -102,73 +98,21 @@ fun MyPhonesScreen(
         }
     val sirens by remember(ringable) { sirensOf(ringable, sirenOf) }
         .collectAsState(initial = emptyMap())
-    var sirenAsk by remember { mutableStateOf<PhoneLine?>(null) }
-    var sirenTrouble by remember { mutableStateOf<WriteOutcome?>(null) }
-    var sirenBusy by remember { mutableStateOf(false) }
-    // Which phone the search dialog is about, held apart from whether the
-    // write is refused, the same way the siren state above is.
-    var searchAsk by remember { mutableStateOf<PhoneLine?>(null) }
+    val ringing = rememberAskedWrite<PhoneLine>()
+    val searching = rememberAskedWrite<PhoneLine>()
     var searchHours by remember { mutableStateOf(DEFAULT_SEARCH_HOURS) }
-    var searchTrouble by remember { mutableStateOf<WriteOutcome?>(null) }
-    var searchBusy by remember { mutableStateOf(false) }
     var helpOpen by remember { mutableStateOf(false) }
     // The phone the member asked to remove, held while the dialog is up.
     var removeAsk by remember { mutableStateOf<PhoneLine?>(null) }
     var removeTrouble by remember { mutableStateOf(false) }
     var removeBusy by remember { mutableStateOf(false) }
-    // The countdown reads seconds, and the screen's own clock ticks far slower.
-    val sirenNow by produceState(now, sirens) {
-        value = Instant.now()
-
-        while (anyLive(sirens.values, value)) {
-            delay(MY_PHONES_TICK_MS)
-            value = Instant.now()
-        }
-    }
-
-    fun writeSiren() {
-        val phone = sirenAsk ?: return
-
-        sirenBusy = true
-        scope.launch {
-            val outcome = onCallSiren(phone.phoneId)
-
-            sirenBusy = false
-
-            if (outcome == WriteOutcome.DONE) {
-                sirenAsk = null
-                sirenTrouble = null
-            } else {
-                sirenTrouble = outcome
-            }
-        }
-    }
+    val sirenNow by sirenClock(now, sirens)
 
     // The requests to forget a place on the same phones: this one forgets
     // its own from the settings, where the button has always been.
     val resets by remember(ringable) { resetsOf(ringable, resetOf) }
         .collectAsState(initial = emptyMap())
-    var resetAsk by remember { mutableStateOf<PhoneLine?>(null) }
-    var resetTrouble by remember { mutableStateOf<WriteOutcome?>(null) }
-    var resetBusy by remember { mutableStateOf(false) }
-
-    fun writeReset() {
-        val phone = resetAsk ?: return
-
-        resetBusy = true
-        scope.launch {
-            val outcome = onAskReset(phone.phoneId)
-
-            resetBusy = false
-
-            if (outcome == WriteOutcome.DONE) {
-                resetAsk = null
-                resetTrouble = null
-            } else {
-                resetTrouble = outcome
-            }
-        }
-    }
+    val resetting = rememberAskedWrite<PhoneLine>()
 
     fun writeRemoval() {
         val phone = removeAsk ?: return
@@ -189,27 +133,8 @@ fun MyPhonesScreen(
     }
 
     fun askSearch(phone: PhoneLine) {
-        searchAsk = phone
+        searching.ask(phone)
         searchHours = DEFAULT_SEARCH_HOURS
-        searchTrouble = null
-    }
-
-    fun writeSearch() {
-        val phone = searchAsk ?: return
-
-        searchBusy = true
-        scope.launch {
-            val outcome = onSearch(phone.phoneId, phone.name, false, searchHours)
-
-            searchBusy = false
-
-            if (outcome == WriteOutcome.DONE) {
-                searchAsk = null
-                searchTrouble = null
-            } else {
-                searchTrouble = outcome
-            }
-        }
     }
 
     Surface(modifier = modifier.fillMaxSize()) {
@@ -315,49 +240,17 @@ fun MyPhonesScreen(
                     FlowRow(verticalArrangement = Arrangement.Center) {
                         // Plain and before the siren, as on the admin panel.
                         if (phone.phoneId != ownPhoneId) {
-                            ResetButton(
-                                onClick = {
-                                    resetTrouble = null
-                                    resetAsk = phone
-                                },
-                            )
+                            ResetButton(onClick = { resetting.ask(phone) })
                         }
 
                         // A phone does not ring itself: the button belongs to
                         // every row but the one this screen is drawn on.
                         if (phone.phoneId != ownPhoneId) {
-                            if (sounding) {
-                                Button(
-                                    onClick = { scope.launch { onStopSiren(phone.phoneId) } },
-                                    enabled = !LocalLink.current.lost,
-                                    colors =
-                                    ButtonDefaults.buttonColors(
-                                        containerColor = Color(SOUGHT_COLOUR),
-                                        contentColor = Color.White,
-                                    ),
-                                ) {
-                                    Icon(
-                                        painter = painterResource(R.drawable.ic_siren_off),
-                                        contentDescription = null,
-                                        modifier = Modifier.padding(end = 4.dp),
-                                    )
-                                    Text(text = stringResource(R.string.siren_stop_short))
-                                }
-                            } else {
-                                OutlinedIconButton(
-                                    border = BorderStroke(1.dp, Color(SOUGHT_COLOUR)),
-                                    onClick = {
-                                        sirenTrouble = null
-                                        sirenAsk = phone
-                                    },
-                                ) {
-                                    Icon(
-                                        painter = painterResource(R.drawable.ic_siren),
-                                        contentDescription = stringResource(R.string.siren_hint),
-                                        tint = Color(SOUGHT_COLOUR),
-                                    )
-                                }
-                            }
+                            SirenButton(
+                                sounding = sounding,
+                                onCall = { ringing.ask(phone) },
+                                onStop = { scope.launch { onStopSiren(phone.phoneId) } },
+                            )
                         }
 
                         // Every phone offers it, this one included: an
@@ -480,31 +373,31 @@ fun MyPhonesScreen(
         )
     }
 
-    resetAsk?.let { phone ->
+    resetting.asked?.let { phone ->
         ResetDialog(
             phoneName = phone.name,
-            trouble = resetTrouble,
-            busy = resetBusy,
-            onGo = ::writeReset,
-            onCancel = { resetAsk = null },
+            trouble = resetting.trouble,
+            busy = resetting.busy,
+            onGo = { resetting.write { onAskReset(it.phoneId) } },
+            onCancel = resetting::cancel,
         )
     }
 
-    sirenAsk?.let { phone ->
+    ringing.asked?.let { phone ->
         SirenDialog(
             memberName = stringResource(R.string.map_member_you),
             phones = listOf(phone),
             selected = phone.phoneId,
             onSelect = {},
             now = now,
-            trouble = sirenTrouble,
-            busy = sirenBusy,
-            onGo = ::writeSiren,
-            onCancel = { sirenAsk = null },
+            trouble = ringing.trouble,
+            busy = ringing.busy,
+            onGo = { ringing.write { onCallSiren(it.phoneId) } },
+            onCancel = ringing::cancel,
         )
     }
 
-    searchAsk?.let { phone ->
+    searching.asked?.let { phone ->
         SearchDialog(
             memberName = stringResource(R.string.map_member_you),
             phoneName = phone.name,
@@ -512,16 +405,13 @@ fun MyPhonesScreen(
             hours = searchHours,
             onHoursChange = { searchHours = it },
             now = now,
-            trouble = searchTrouble,
-            busy = searchBusy,
-            onGo = ::writeSearch,
-            onCancel = { searchAsk = null },
+            trouble = searching.trouble,
+            busy = searching.busy,
+            onGo = { searching.write { onSearch(it.phoneId, it.name, false, searchHours) } },
+            onCancel = searching::cancel,
         )
     }
 }
-
-/** How often the sounding countdown redraws, same cadence as [AdminPanel]'s own. */
-private const val MY_PHONES_TICK_MS = 1_000L
 
 /** Same pattern as [AdminPanel]'s own: private to each file, so each spells it out itself. */
 private val SEARCH_ENDS_AT: DateTimeFormatter = DateTimeFormatter.ofPattern("d MMM HH:mm")

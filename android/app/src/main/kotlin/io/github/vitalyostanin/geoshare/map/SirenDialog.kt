@@ -1,16 +1,24 @@
 package io.github.vitalyostanin.geoshare.map
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
+import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.FilterChip
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedIconButton
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import io.github.vitalyostanin.geoshare.R
@@ -91,4 +99,42 @@ private fun sirenPhoneChipLabel(phone: PhoneLine, now: Instant): String {
     val age = ageText(positionAge(onlineAt, now))
 
     return stringResource(R.string.siren_phone_chip, phone.name, age)
+}
+
+/**
+ * A phone's siren button on a row: round and red while it would ring the
+ * phone, as on the page, and a filled stop button while a call is waiting or
+ * sounding.
+ */
+@Composable
+fun SirenButton(sounding: Boolean, onCall: () -> Unit, onStop: () -> Unit) {
+    if (sounding) {
+        Button(
+            onClick = onStop,
+            enabled = !LocalLink.current.lost,
+            colors =
+            ButtonDefaults.buttonColors(
+                containerColor = Color(SOUGHT_COLOUR),
+                contentColor = Color.White,
+            ),
+        ) {
+            Icon(
+                painter = painterResource(R.drawable.ic_siren_off),
+                contentDescription = null,
+                modifier = Modifier.padding(end = 4.dp),
+            )
+            Text(text = stringResource(R.string.siren_stop_short))
+        }
+    } else {
+        OutlinedIconButton(
+            onClick = onCall,
+            border = BorderStroke(1.dp, Color(SOUGHT_COLOUR)),
+        ) {
+            Icon(
+                painter = painterResource(R.drawable.ic_siren),
+                contentDescription = stringResource(R.string.siren_hint),
+                tint = Color(SOUGHT_COLOUR),
+            )
+        }
+    }
 }

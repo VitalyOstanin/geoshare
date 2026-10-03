@@ -9,7 +9,7 @@ import {
     shortenedAddress,
     siteFromHost,
 } from '../lib/join.js';
-import { outsideTheBox } from '../lib/mode-help.js';
+import { outsideTheBox } from '../lib/outside-the-box.js';
 import { looksLikeAnEmail } from '../lib/membership.js';
 import { shortName } from '../lib/members.js';
 import { standingSearches } from '../lib/searches.js';

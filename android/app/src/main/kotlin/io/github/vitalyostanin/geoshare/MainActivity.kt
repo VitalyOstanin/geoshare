@@ -18,6 +18,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.darkColorScheme
 import androidx.compose.material3.lightColorScheme
+import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -172,10 +173,35 @@ class MainActivity : AppCompatActivity() {
         // instead of a repair.
         enableEdgeToEdge()
 
-        // Independent of the project check below: a link is worth acting on
-        // whether or not this phone already has one, and singleTask means
-        // this is the only place onCreate ever sees one — a later arrival
-        // comes through onNewIntent instead.
+        listenForLinks(savedInstanceState)
+
+        // Nothing below may touch Firebase without a family's project behind
+        // it: SignInController alone would reach for FirebaseAuth.getInstance
+        // as a default argument, and it would throw rather than answer. A
+        // link is what moves the phone past this, so the screens that paint
+        // ConnectFlow's states are all there is to build here.
+        if (!Connections.connected) {
+            setContent { ConnectOnly() }
+
+            return
+        }
+
+        readSettings()
+
+        // Before anything is drawn: the window is what shows while the screen
+        // is still being built, and a white flash on the way into a dark map
+        // is what the setting exists to avoid.
+        paintWindow(darkWanted(appearance.choice, systemIsDark()))
+
+        setContent { GroupsScreen() }
+    }
+
+    /** Follows the links this activity is handed, the first one included. */
+    private fun listenForLinks(savedInstanceState: Bundle?) {
+        // Independent of the project check in onCreate: a link is worth
+        // acting on whether or not this phone already has one, and singleTask
+        // means this is the only place onCreate ever sees one — a later
+        // arrival comes through onNewIntent instead.
         connectFlow = ConnectFlow(
             scope = lifecycleScope,
             fetch = ::fetchSettings,
@@ -198,32 +224,22 @@ class MainActivity : AppCompatActivity() {
                 }
             }
         }
+    }
 
-        // Nothing below may touch Firebase without a family's project behind
-        // it: SignInController alone would reach for FirebaseAuth.getInstance
-        // as a default argument, and it would throw rather than answer. A
-        // link is what moves the phone past this, so the screens that paint
-        // ConnectFlow's states are all there is to build here.
-        if (!Connections.connected) {
-            setContent {
-                MaterialTheme {
-                    Surface(modifier = Modifier.fillMaxSize()) {
-                        val connectState by connectFlow.state.collectAsStateWithLifecycle()
+    /** All there is to show before the device is in any group: connecting to one. */
+    @Composable
+    private fun ConnectOnly() {
+        MaterialTheme {
+            Surface(modifier = Modifier.fillMaxSize()) {
+                val connectState by connectFlow.state.collectAsStateWithLifecycle()
 
-                        ConnectScreen(
-                            state = connectState,
-                            onPasteLink = connectFlow::pasteLink,
-                            onCancel = connectFlow::cancel,
-                            onRetry = connectFlow::retry,
-                            onConnect = connectFlow::connect,
-                        )
-                    }
-                }
+                ConnectFlowScreen(connectFlow, connectState)
             }
-
-            return
         }
+    }
 
+    /** The settings the screens read, each from where it is kept. */
+    private fun readSettings() {
         // Asked once: the answer is the set of applications installed by the
         // maker of the phone, which does not change while the screen is open,
         // and asking inside the drawing put five questions to the package
@@ -239,148 +255,136 @@ class MainActivity : AppCompatActivity() {
         aidingDoubt = AidingDoubtSetting(this)
         batteryFree = batteryUnrestricted(this)
         sirenLoud = dndAccessGranted(this)
+    }
 
-        // Before anything is drawn: the window is what shows while the screen
-        // is still being built, and a white flash on the way into a dark map
-        // is what the setting exists to avoid.
-        paintWindow(darkWanted(appearance.choice, systemIsDark()))
+    /** The groups: the map of the one shown, or signing in to it. */
+    @Composable
+    private fun GroupsScreen() {
+        var theme by remember { mutableStateOf(appearance.choice) }
+        // Read from the platform rather than kept here: the same answer is
+        // given in the phone's own settings from Android 13, and whichever
+        // place it was given in, this is where it is read back from.
+        val language = languageChosen(spokenLanguages().toLanguageTags())
+        val dark = darkWanted(theme, isSystemInDarkTheme())
 
-        setContent {
-            var theme by remember { mutableStateOf(appearance.choice) }
-            // Read from the platform rather than kept here: the same answer is
-            // given in the phone's own settings from Android 13, and whichever
-            // place it was given in, this is where it is read back from.
-            val language = languageChosen(spokenLanguages().toLanguageTags())
-            val dark = darkWanted(theme, isSystemInDarkTheme())
+        // The window stays behind the screen for the whole session: it is
+        // what the system animates to and from, and what shows around a
+        // screen that does not fill it.
+        LaunchedEffect(dark) { paintWindow(dark) }
 
-            // The window stays behind the screen for the whole session: it is
-            // what the system animates to and from, and what shows around a
-            // screen that does not fill it.
-            LaunchedEffect(dark) { paintWindow(dark) }
+        MaterialTheme(colorScheme = if (dark) darkColorScheme() else lightColorScheme()) {
+            Surface(modifier = Modifier.fillMaxSize()) {
+                val shown by Connections.selected.collectAsStateWithLifecycle()
+                var sharingOn by remember { mutableStateOf(sharing.enabled) }
+                var startupSet by remember { mutableStateOf(backgroundWork.startupSet) }
+                var jumpsFiltered by remember { mutableStateOf(jumps.enabled) }
+                var sourcesLeftOut by remember { mutableStateOf(sources.leftOut) }
+                // Read once per screen rather than watched: the service writes
+                // it after half an hour of epochs, and a member who has just
+                // erased the aiding data is told by the row itself rather than
+                // by this.
+                val aidingDoubted = remember { aidingDoubt.doubted }
 
-            MaterialTheme(colorScheme = if (dark) darkColorScheme() else lightColorScheme()) {
-                Surface(modifier = Modifier.fillMaxSize()) {
-                    val shown by Connections.selected.collectAsStateWithLifecycle()
-                    var sharingOn by remember { mutableStateOf(sharing.enabled) }
-                    var startupSet by remember { mutableStateOf(backgroundWork.startupSet) }
-                    var jumpsFiltered by remember { mutableStateOf(jumps.enabled) }
-                    var sourcesLeftOut by remember { mutableStateOf(sources.leftOut) }
-                    // Read once per screen rather than watched: the
-                    // service writes it after half an hour of epochs, and
-                    // a member who has just erased the aiding data is
-                    // told by the row itself rather than by this.
-                    val aidingDoubted = remember { aidingDoubt.doubted }
+                // A link can still arrive on a phone that already has a
+                // project, to offer an invitation or to name a different one;
+                // ConnectState.NotConnected and Done are left out since
+                // neither has anything of its own to show above the map.
+                val connectState by connectFlow.state.collectAsStateWithLifecycle()
 
-                    // A link can still arrive on a phone that already has a
-                    // project, to offer an invitation or to name a different
-                    // one; ConnectState.NotConnected and Done are left out
-                    // since neither has anything of its own to show above
-                    // the map.
-                    val connectState by connectFlow.state.collectAsStateWithLifecycle()
-
-                    if (connectState !is ConnectState.NotConnected &&
-                        connectState !is ConnectState.Done
+                if (connectState !is ConnectState.NotConnected &&
+                    connectState !is ConnectState.Done
+                ) {
+                    Dialog(
+                        onDismissRequest = connectFlow::cancel,
+                        properties = DialogProperties(usePlatformDefaultWidth = false),
                     ) {
-                        Dialog(
-                            onDismissRequest = connectFlow::cancel,
-                            properties = DialogProperties(usePlatformDefaultWidth = false),
-                        ) {
-                            Surface(modifier = Modifier.fillMaxSize()) {
-                                ConnectScreen(
-                                    state = connectState,
-                                    onPasteLink = connectFlow::pasteLink,
-                                    onCancel = connectFlow::cancel,
-                                    onRetry = connectFlow::retry,
-                                    onConnect = connectFlow::connect,
-                                )
-                            }
-                        }
-                    }
-
-                    val connection = shown
-
-                    // The last group left or removed while the screen is up:
-                    // what is left to do is connect to another.
-                    if (connection == null) {
-                        ConnectScreen(
-                            state = connectState,
-                            onPasteLink = connectFlow::pasteLink,
-                            onCancel = connectFlow::cancel,
-                            onRetry = connectFlow::retry,
-                            onConnect = connectFlow::connect,
-                        )
-
-                        return@Surface
-                    }
-
-                    val signIn = remember(connection.app) { signInOf(connection) }
-                    val state by signIn.state.collectAsStateWithLifecycle()
-
-                    when (val current = state) {
-                        // Signed in, the map is the application; the sign-in
-                        // screen has nothing left to say.
-                        is AuthState.SignedIn ->
-                            SignedInScreen(
-                                activity = this,
-                                connection = connection,
-                                current = current,
-                                theme = theme,
-                                onTheme = { wanted -> theme = wanted },
-                                language = language,
-                                sharingOn = sharingOn,
-                                onSharingOn = { wanted -> sharingOn = wanted },
-                                startupSet = startupSet,
-                                onStartupSet = { set -> startupSet = set },
-                                jumpsFiltered = jumpsFiltered,
-                                onJumpsFiltered = { wanted -> jumpsFiltered = wanted },
-                                sourcesLeftOut = sourcesLeftOut,
-                                onSourcesLeftOut = { left -> sourcesLeftOut = left },
-                                aidingDoubted = aidingDoubted,
-                            )
-
-                        else -> {
-                            // A sign-in started here and cancelled leaves the
-                            // group listed but not shown: the device goes
-                            // back to a group it is signed in to. Only one
-                            // started while this screen was up counts, or a
-                            // group whose last attempt was cancelled could
-                            // never be shown again.
-                            var started by remember(connection) { mutableStateOf(false) }
-
-                            LaunchedEffect(current, connection) {
-                                if (current is AuthState.SigningIn) {
-                                    started = true
-                                }
-
-                                val cancelled =
-                                    (current as? AuthState.SignedOut)?.failure ==
-                                        SignInFailure.Cancelled
-
-                                if (started && cancelled) {
-                                    Connections.all.value
-                                        .firstOrNull {
-                                            it !== connection && it.auth.currentUser != null
-                                        }
-                                        ?.let {
-                                            Connections.select(this@MainActivity, it.projectId)
-                                        }
-                                }
-                            }
-
-                            SignInScreen(
-                                state = current,
-                                onSignIn = {
-                                    lifecycleScope.launch { signIn.signIn(this@MainActivity) }
-                                },
-                                onSignInAsStandIn = { account ->
-                                    lifecycleScope.launch { signIn.signInAsStandIn(account) }
-                                },
-                            )
+                        Surface(modifier = Modifier.fillMaxSize()) {
+                            ConnectFlowScreen(connectFlow, connectState)
                         }
                     }
                 }
+
+                val connection = shown
+
+                // The last group left or removed while the screen is up:
+                // what is left to do is connect to another.
+                if (connection == null) {
+                    ConnectFlowScreen(connectFlow, connectState)
+
+                    return@Surface
+                }
+
+                val signIn = remember(connection.app) { signInOf(connection) }
+                val state by signIn.state.collectAsStateWithLifecycle()
+
+                when (val current = state) {
+                    // Signed in, the map is the application; the sign-in
+                    // screen has nothing left to say.
+                    is AuthState.SignedIn ->
+                        SignedInScreen(
+                            activity = this,
+                            connection = connection,
+                            current = current,
+                            theme = theme,
+                            onTheme = { wanted -> theme = wanted },
+                            language = language,
+                            sharingOn = sharingOn,
+                            onSharingOn = { wanted -> sharingOn = wanted },
+                            startupSet = startupSet,
+                            onStartupSet = { set -> startupSet = set },
+                            jumpsFiltered = jumpsFiltered,
+                            onJumpsFiltered = { wanted -> jumpsFiltered = wanted },
+                            sourcesLeftOut = sourcesLeftOut,
+                            onSourcesLeftOut = { left -> sourcesLeftOut = left },
+                            aidingDoubted = aidingDoubted,
+                        )
+
+                    else -> SignInGate(connection, current, signIn)
+                }
             }
         }
+    }
+
+    /** Signing in to the group shown, and going back to another if that is cancelled. */
+    @Composable
+    private fun SignInGate(
+        connection: GroupConnection,
+        current: AuthState,
+        signIn: SignInController,
+    ) {
+        // A sign-in started here and cancelled leaves the group listed but
+        // not shown: the device goes back to a group it is signed in to. Only
+        // one started while this screen was up counts, or a group whose last
+        // attempt was cancelled could never be shown again.
+        var started by remember(connection) { mutableStateOf(false) }
+
+        LaunchedEffect(current, connection) {
+            if (current is AuthState.SigningIn) {
+                started = true
+            }
+
+            val cancelled = (current as? AuthState.SignedOut)?.failure == SignInFailure.Cancelled
+
+            if (started && cancelled) {
+                Connections.all.value
+                    .firstOrNull {
+                        it !== connection && it.auth.currentUser != null
+                    }
+                    ?.let {
+                        Connections.select(this@MainActivity, it.projectId)
+                    }
+            }
+        }
+
+        SignInScreen(
+            state = current,
+            onSignIn = {
+                lifecycleScope.launch { signIn.signIn(this@MainActivity) }
+            },
+            onSignInAsStandIn = { account ->
+                lifecycleScope.launch { signIn.signInAsStandIn(account) }
+            },
+        )
     }
 
     /**
@@ -733,4 +737,16 @@ class MainActivity : AppCompatActivity() {
         /** How long signing out or leaving waits for each group to answer. */
         const val SIGN_OUT_WAIT_MS = 5_000L
     }
+}
+
+/** The connecting screen, driven by [flow]: offered on its own and over the map alike. */
+@Composable
+private fun ConnectFlowScreen(flow: ConnectFlow, state: ConnectState) {
+    ConnectScreen(
+        state = state,
+        onPasteLink = flow::pasteLink,
+        onCancel = flow::cancel,
+        onRetry = flow::retry,
+        onConnect = flow::connect,
+    )
 }
