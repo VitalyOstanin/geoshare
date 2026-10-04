@@ -6,6 +6,7 @@ import com.google.firebase.firestore.DocumentSnapshot
 import com.google.firebase.firestore.FieldValue
 import io.github.vitalyostanin.geoshare.collection.listenAgainAfter
 import io.github.vitalyostanin.geoshare.log.AppLog
+import io.github.vitalyostanin.geoshare.map.PublishedProfile
 import io.github.vitalyostanin.geoshare.membership.INVITATION_LASTS
 import io.github.vitalyostanin.geoshare.membership.Invitation
 import io.github.vitalyostanin.geoshare.membership.Presence
@@ -258,12 +259,18 @@ suspend fun makeInvitation(
  * is asked to append rather than told the whole list, and the rule ends up
  * comparing the same two lists it would have compared anyway.
  *
- * What a member taken off the roster left in the group goes in the same batch.
- * Taken off by an administrator, they kept whom they let watch, which nobody
- * else may delete, and coming back would hand it out again unasked. Leaving
- * on their own deletes it already; this is the other way out. In the batch
- * rather than when the removal is noticed, which happens a moment before a
- * join just as well and would then delete what the join wrote.
+ * Whom a member taken off the roster let watch goes in the same batch. Taken
+ * off by an administrator, they kept it, as nobody else may delete it, and
+ * coming back would hand it out again unasked. Leaving on their own deletes
+ * it already; this is the other way out. In the batch rather than when the
+ * removal is noticed, which happens a moment before a join just as well and
+ * would then delete what the join wrote. The profile and the phones are left:
+ * they are written again as soon as the phone is back, and the names the
+ * member gave their phones are kept with them.
+ *
+ * The grant also held the list of this member's phones, so what this phone
+ * remembers having published is forgotten, and it puts itself on the list
+ * again.
  */
 suspend fun joinGroup(
     context: Context,
@@ -276,14 +283,13 @@ suspend fun joinGroup(
     connection.store
         .batch()
         .delete(grantsIn(group).document(uid))
-        .delete(phonesIn(group).document(uid))
-        .delete(membersIn(group).document(uid))
         .set(joinsIn(group).document(uid), mapOf(JoinField.CODE to invitation.code))
         .update(group, GroupField.MEMBERS, FieldValue.arrayUnion(uid))
         .delete(invitationsIn(group).document(invitation.code))
         .commit()
         .await()
 
+    PublishedProfile(context).forget()
     Connections.moveTo(context, connection.projectId, invitation.group)
 
     AppLog.i(TAG, "joined a group on a code")

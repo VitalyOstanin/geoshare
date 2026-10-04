@@ -4,9 +4,9 @@ import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
 
 import { assertFails, assertSucceeds } from '@firebase/rules-unit-testing';
-import { deleteDoc, doc, getDoc, arrayUnion, setDoc, updateDoc, writeBatch } from 'firebase/firestore';
+import { deleteDoc, getDoc, arrayUnion, setDoc, updateDoc, writeBatch } from 'firebase/firestore';
 
-import { setUpRules, GROUP, ALICE, BOB, STRANGER, STRANGER_EMAIL, FOREVER, testEnv, grantOf, memberOf, someGrant, someProfile, CODE, OTHER_CODE, groupDoc, invitationOf, claimOf, inTenMinutes, plantAnAdministrator, plantAnInvitation, plantAnAddressedInvitation, signedInAs } from './helpers.mjs';
+import { setUpRules, ALICE, BOB, STRANGER, STRANGER_EMAIL, FOREVER, testEnv, grantOf, someGrant, CODE, OTHER_CODE, groupDoc, invitationOf, claimOf, inTenMinutes, plantAnAdministrator, plantAnInvitation, plantAnAddressedInvitation, signedInAs } from './helpers.mjs';
 
 setUpRules();
 
@@ -294,8 +294,6 @@ describe('joining clears what an earlier membership left', () => {
     const joiningAfresh = (db) =>
         writeBatch(db)
             .delete(grantOf(db, STRANGER))
-            .delete(doc(db, `groups/${GROUP}/devices/${STRANGER}`))
-            .delete(memberOf(db, STRANGER))
             .set(claimOf(db, STRANGER), { code: CODE })
             .update(groupDoc(db), { members: arrayUnion(STRANGER) })
             .delete(invitationOf(db, CODE))
@@ -305,11 +303,7 @@ describe('joining clears what an earlier membership left', () => {
         await plantAnAdministrator();
         await plantAnInvitation();
         await testEnv.withSecurityRulesDisabled(async (context) => {
-            const db = context.firestore();
-
-            await setDoc(grantOf(db, STRANGER), someGrant({ [ALICE]: FOREVER }));
-            await setDoc(doc(db, `groups/${GROUP}/devices/${STRANGER}`), {});
-            await setDoc(memberOf(db, STRANGER), someProfile('Stranger'));
+            await setDoc(grantOf(context.firestore(), STRANGER), someGrant({ [ALICE]: FOREVER }));
         });
 
         const db = testEnv.authenticatedContext(STRANGER).firestore();
