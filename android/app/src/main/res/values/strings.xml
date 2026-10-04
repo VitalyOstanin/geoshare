@@ -106,6 +106,7 @@
     <string name="map_detail_close">Close</string>
     <string name="admin_phone_online">%1$s: in touch %2$s</string>
     <string name="admin_phone_silent">%1$s: not in touch yet</string>
+    <string name="admin_phone_this">%1$s: this device</string>
     <string name="admin_phone_charging">charging</string>
     <string name="phone_online">In touch %1$s</string>
     <string name="phone_silent">Not in touch yet</string>

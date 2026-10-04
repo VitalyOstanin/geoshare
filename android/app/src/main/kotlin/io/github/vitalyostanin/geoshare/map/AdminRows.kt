@@ -78,7 +78,7 @@ internal fun AdminMemberRow(
                 // the application. Anybody but oneself may be looked for,
                 // administrators included: the one who is lost is not always
                 // the one who does not run the group.
-                mayRing = phone.phoneId != ownPhoneId,
+                own = phone.phoneId == ownPhoneId,
                 mayLookFor = !line.isYou,
                 siren = sirens[phone.phoneId],
                 sirenNow = sirenNow,
@@ -127,7 +127,8 @@ private fun AdminPhoneRow(
     now: Instant,
     /** The search standing for this phone, or null while nobody is looking for it. */
     search: Search?,
-    mayRing: Boolean,
+    /** Whether it is the phone the panel is open on: in touch now, and never rung from itself. */
+    own: Boolean,
     mayLookFor: Boolean,
     siren: Siren?,
     sirenNow: Instant,
@@ -145,7 +146,12 @@ private fun AdminPhoneRow(
     ) {
         Column(modifier = Modifier.weight(1f)) {
             Text(
-                text = phoneText(phone, now),
+                text =
+                if (own) {
+                    stringResource(R.string.admin_phone_this, phone.name)
+                } else {
+                    phoneText(phone, now)
+                },
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
@@ -188,7 +194,7 @@ private fun AdminPhoneRow(
             // Before the siren and plain, as on the page: the quiet one of
             // the buttons that reach into this phone. Offered where the siren
             // is, since this phone's own place is reset from its settings.
-            if (mayRing) {
+            if (!own) {
                 ResetButton(onClick = onReset)
             }
 
@@ -198,7 +204,7 @@ private fun AdminPhoneRow(
             // Round and red, as on the page: the one button in the row that
             // makes this phone sound loud. A call already going is stopped
             // from here even on a row that could not have rung it.
-            if (sounding || mayRing) {
+            if (sounding || !own) {
                 SirenButton(sounding = sounding, onCall = onSiren, onStop = onStopSiren)
             }
 

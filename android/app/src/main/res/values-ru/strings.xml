@@ -94,6 +94,7 @@
     <string name="map_detail_close">Закрыть</string>
     <string name="admin_phone_online">%1$s: на связи %2$s</string>
     <string name="admin_phone_silent">%1$s: ещё не выходил на связь</string>
+    <string name="admin_phone_this">%1$s: это устройство</string>
     <string name="admin_phone_charging">на зарядке</string>
     <string name="phone_online">На связи %1$s</string>
     <string name="phone_silent">Ещё не выходило на связь</string>

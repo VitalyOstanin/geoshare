@@ -74,8 +74,17 @@ class WatchWriter(
      * Nothing depends on this arriving — the marker expires anyway — but
      * arriving is what lets the other phones go back to their slow mode in
      * seconds rather than minutes.
+     *
+     * Nothing is written once the group no longer has this member signed in:
+     * the screen goes away because of the sign-out, which has taken the claim
+     * down with the rest of the device's documents, and the rules would refuse
+     * a write without the account anyway.
      */
     suspend fun stopLooking() {
+        if (connection.auth.currentUser?.uid != memberId) {
+            return
+        }
+
         try {
             document.delete().await()
         } catch (cancellation: CancellationException) {
