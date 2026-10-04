@@ -108,7 +108,7 @@ class SirenAnswer(private val context: Context, private val scope: CoroutineScop
                 } else {
                     withTimeoutOrNull(SIREN_NAME_WAIT.toMillis()) {
                         memberDisplayName(called.calledBy, connection)
-                    } ?: called.calledBy.take(SHORTENED_ID_LENGTH)
+                    } ?: unnamedMember(context, called.calledBy)
                 }
 
             val group = groupNameForNotice(context, connection)

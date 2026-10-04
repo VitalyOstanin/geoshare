@@ -388,6 +388,7 @@
     <string name="group_removed_text">Администратор группы «%1$s» убрал вас из неё. Ваше место туда больше не передаётся.</string>
     <string name="group_removed_drop">Убрать группу</string>
     <string name="group_removed_join">Вступить по ссылке</string>
+    <string name="member_unnamed">Участник без имени · %1$s</string>
     <string name="group_leave_refused">Не удалось выйти из группы. Проверьте связь и повторите.</string>
 
     <plurals name="map_more_count">

@@ -161,6 +161,8 @@ fun SettingsScreen(
     groupCaption: String,
     /** Whether the device is in more than one group, so signing out can be from this one alone. */
     severalGroups: Boolean,
+    /** The group shown, when the device was taken off it; its section then says so. */
+    removed: RemovedGroup?,
     modifier: Modifier = Modifier,
 ) {
     var signingOut by remember { mutableStateOf(false) }
@@ -284,6 +286,7 @@ fun SettingsScreen(
                 onOpenAdmin = onOpenAdmin,
                 onOpenMyPhones = onOpenMyPhones,
                 onLeaveGroup = onLeaveGroup,
+                removed = removed,
             )
 
             HorizontalDivider()

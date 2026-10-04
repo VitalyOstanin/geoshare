@@ -55,7 +55,7 @@ internal fun AdminMemberRow(
 ) {
     Column(modifier = Modifier.fillMaxWidth().padding(start = 16.dp, end = 8.dp, top = 8.dp)) {
         Text(
-            text = line.displayName ?: line.memberId.take(NAME_SHOWN_INSTEAD),
+            text = line.displayName ?: unnamedMember(line.memberId),
             style = MaterialTheme.typography.bodyLarge,
         )
 

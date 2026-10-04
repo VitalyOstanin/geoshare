@@ -39,7 +39,9 @@ suspend fun keepSearchNotification(context: Context, phoneId: String, connection
             return@collectLatest
         }
 
-        val openedByName = memberDisplayName(search.openedBy, connection)
+        val openedByName =
+            memberDisplayName(search.openedBy, connection)
+                ?: unnamedMember(context, search.openedBy)
         val group = groupNameForNotice(context, connection)
 
         while (search.stands(Instant.now())) {

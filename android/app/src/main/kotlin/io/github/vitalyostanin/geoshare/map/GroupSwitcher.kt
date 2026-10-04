@@ -216,7 +216,7 @@ fun rememberGroupChoices(
                     // The last roster read, kept past a refusal: a group the
                     // device was taken off is still called what it was called.
                     val named =
-                        groupRoster(connection)
+                        whileSignedIn(connection, none = null) { groupRoster(connection) }
                             .onStart { emit(null) }
                             .runningFold(Pair<Roster?, Roster?>(null, null)) { (_, last), now ->
                                 now to (now ?: last)
@@ -224,8 +224,10 @@ fun rememberGroupChoices(
 
                     combine(
                         named,
-                        memberProfiles(connection).onStart { emit(emptyMap()) },
-                        groupSearches(connection).onStart { emit(emptyMap()) },
+                        whileSignedIn(connection, none = emptyMap()) { memberProfiles(connection) }
+                            .onStart { emit(emptyMap()) },
+                        whileSignedIn(connection, none = emptyMap()) { groupSearches(connection) }
+                            .onStart { emit(emptyMap()) },
                         session.onStart { emit(Session()) },
                         ticking(),
                     ) { (roster, last), profiles, searches, session, now ->
@@ -267,6 +269,15 @@ private data class Session(
     val siren: Siren? = null,
     val presence: Presence = Presence.UNKNOWN,
 )
+
+/**
+ * What [read] gives while this device has a session in [connection], and
+ * [none] while it has not: a group signed out of refuses every read, and
+ * asking it again and again would only fill the log until the next sign-in.
+ */
+@OptIn(ExperimentalCoroutinesApi::class)
+private fun <T> whileSignedIn(connection: GroupConnection, none: T, read: () -> Flow<T>): Flow<T> =
+    signedInTo(connection).flatMapLatest { uid -> if (uid == null) flowOf(none) else read() }
 
 private fun ticking(): Flow<Instant> = flow {
     while (true) {

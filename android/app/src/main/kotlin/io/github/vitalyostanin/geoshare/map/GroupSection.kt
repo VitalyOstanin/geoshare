@@ -58,6 +58,12 @@ fun GroupSection(
     onOpenMyPhones: () -> Unit,
     /** Leaving the group, or null when it is offered elsewhere. */
     onLeaveGroup: (() -> Unit)?,
+    /**
+     * The group, when an administrator took this device off it. Its roster
+     * no longer has this account, which would otherwise read as no group at
+     * all and offer to found one.
+     */
+    removed: RemovedGroup? = null,
     modifier: Modifier = Modifier,
 ) {
     val standing = standingIn(roster, ownMemberId)
@@ -69,8 +75,11 @@ fun GroupSection(
             modifier = Modifier.padding(start = 16.dp, top = 16.dp, end = 16.dp, bottom = 4.dp),
         )
 
-        when (standing) {
-            Standing.Ungrouped, Standing.Outsider ->
+        when {
+            removed != null ->
+                RemovedNotice(removed = removed, modifier = Modifier.padding(horizontal = 16.dp))
+
+            standing == Standing.Ungrouped || standing == Standing.Outsider ->
                 WayIn(
                     onFoundGroup = onFoundGroup,
                     onJoinGroup = onJoinGroup,
@@ -223,7 +232,7 @@ private fun TheGroup(
 ) {
     for (memberId in roster.members) {
         MemberRow(
-            name = profiles[memberId]?.displayName ?: memberId.take(NAME_FALLBACK_LENGTH),
+            name = profiles[memberId]?.displayName ?: unnamedMember(memberId),
             runsTheGroup = runsTheGroup(roster, memberId),
         )
     }
@@ -288,6 +297,3 @@ private fun MemberRow(name: String, runsTheGroup: Boolean) {
         }
     }
 }
-
-/** How much of an account id stands in for a name nobody has published. */
-private const val NAME_FALLBACK_LENGTH = 6

@@ -34,6 +34,13 @@ fun orderedForNavigation(
 fun shortName(memberId: String): String = memberId.take(SHORT_ID_LENGTH)
 
 /**
+ * The end of what a member without a published name is called in a line of
+ * text, after the words saying they have none: enough to tell two such
+ * members apart, and to find them in the console.
+ */
+fun idTail(memberId: String): String = memberId.take(ID_TAIL_LENGTH)
+
+/**
  * What a member is called on screen, which the web page works out the same way.
  *
  * One's own marker says "you" rather than one's own name: the name is on the
@@ -48,6 +55,12 @@ fun memberName(
     own: Boolean,
     /** What one's own marker says; it comes from the resources, which this file does not read. */
     ownName: String,
-): String = if (own) ownName else profile?.displayName ?: shortName(memberId)
+    /**
+     * What a member without a name is called, for a line of text; left out
+     * where there is room only for a few characters, as on a marker.
+     */
+    unnamed: String? = null,
+): String = if (own) ownName else profile?.displayName ?: unnamed ?: shortName(memberId)
 
 private const val SHORT_ID_LENGTH = 6
+private const val ID_TAIL_LENGTH = 4

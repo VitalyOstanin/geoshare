@@ -106,6 +106,33 @@ class MemberOrderTest {
     }
 
     @Test
+    fun `a line of text names a member without a name the way it is given`() {
+        val id = "Qm7d0Kh8oOOL8dKLzdocJ2isAjIh"
+
+        assertEquals(
+            "Member without a name · ${idTail(id)}",
+            memberName(
+                null,
+                id,
+                own = false,
+                ownName = "You",
+                unnamed = "Member without a name · ${idTail(id)}",
+            ),
+        )
+        assertEquals("Qm7d", idTail(id))
+    }
+
+    @Test
+    fun `a published name wins over what a member without one is called`() {
+        val profile = MemberProfile(memberId = "her", displayName = "Ann", pictureUrl = null)
+
+        assertEquals(
+            "Ann",
+            memberName(profile, "her", own = false, ownName = "You", unnamed = "nobody"),
+        )
+    }
+
+    @Test
     fun `a longer roster keeps the button for the rest`() {
         assertEquals(2, membersOnTheStrip(4))
         assertEquals(2, membersOnTheStrip(9))

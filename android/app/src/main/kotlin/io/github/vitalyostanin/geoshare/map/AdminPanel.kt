@@ -220,6 +220,8 @@ fun AdminPanel(
             HorizontalDivider()
 
             for (line in lines) {
+                val lineName = line.displayName ?: unnamedMember(line.memberId)
+
                 AdminMemberRow(
                     line = line,
                     now = now,
@@ -232,12 +234,12 @@ fun AdminPanel(
                     onRemove = {
                         removing =
                             line.memberId to
-                            (line.displayName ?: line.memberId.take(NAME_SHOWN_INSTEAD))
+                            lineName
                     },
                     onSearch = { phone ->
                         askSearch(
                             phone,
-                            line.displayName ?: line.memberId.take(NAME_SHOWN_INSTEAD),
+                            lineName,
                             renew = false,
                         )
                     },
@@ -247,7 +249,7 @@ fun AdminPanel(
                     onSiren = { phone ->
                         ringing.ask(
                             SirenAsk(
-                                name = line.displayName ?: line.memberId.take(NAME_SHOWN_INSTEAD),
+                                name = lineName,
                                 phones = listOf(phone),
                                 selected = phone.phoneId,
                             ),
@@ -264,22 +266,22 @@ fun AdminPanel(
             // it without ending it first.
             for (search in standing.values) {
                 val phone = phoneLine(search, lines)
+                val soughtName =
+                    lines.firstOrNull { it.memberId == search.memberId }?.displayName
+                        ?: unnamedMember(search.memberId)
 
                 AdminSearchSummary(
                     search = search,
                     phoneName = phone.name,
-                    memberName =
-                    lines.firstOrNull { it.memberId == search.memberId }?.displayName
-                        ?: search.memberId.take(NAME_SHOWN_INSTEAD),
+                    memberName = soughtName,
                     openedByYou = search.openedBy == ownMemberId,
                     openedByName =
                     profiles[search.openedBy]?.displayName
-                        ?: search.openedBy.take(NAME_SHOWN_INSTEAD),
+                        ?: unnamedMember(search.openedBy),
                     onRenew = {
                         askSearch(
                             phone,
-                            lines.firstOrNull { it.memberId == search.memberId }?.displayName
-                                ?: search.memberId.take(NAME_SHOWN_INSTEAD),
+                            soughtName,
                             renew = true,
                         )
                     },

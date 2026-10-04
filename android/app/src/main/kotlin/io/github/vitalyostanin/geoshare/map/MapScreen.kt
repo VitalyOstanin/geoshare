@@ -143,6 +143,22 @@ fun MapScreen(
     var groupsOpen by remember { mutableStateOf(false) }
     var leaveAsk by remember { mutableStateOf<LeaveAsk?>(null) }
     val switcher = switcherShown(groups.choices.size)
+    // The group shown, when an administrator has taken this device off it:
+    // the map and the settings both say so, in the same words.
+    val removed =
+        groups.choices
+            .firstOrNull { it.projectId == groups.selected && it.removed }
+            ?.let { shown ->
+                RemovedGroup(
+                    caption = shown.caption,
+                    onDrop = {
+                        groups.onLeave(
+                            LeaveAsk(shown.projectId, shown.caption, Leave.NOT_ON_ROSTER),
+                        )
+                    },
+                    onJoin = groups.onJoin,
+                )
+            }
     // Whether a hand is holding the following still; the button says so.
     var followPaused by remember { mutableStateOf(false) }
     var followTarget by remember { mutableStateOf<FollowTarget?>(null) }
@@ -206,6 +222,7 @@ fun MapScreen(
                 memberId = member,
                 own = member == ownMemberId,
                 ownName = ownName,
+                unnamed = unnamedMember(member),
             )
         }
     // Read through the resources rather than through a composable, because the
@@ -347,20 +364,7 @@ fun MapScreen(
                 modifier = Modifier.fillMaxSize(),
             )
 
-            val shown = groups.choices.firstOrNull { it.projectId == groups.selected }
-
-            if (shown?.removed == true) {
-                RemovedScreen(
-                    caption = shown.caption,
-                    switcher = switcher,
-                    onDrop = {
-                        groups.onLeave(
-                            LeaveAsk(shown.projectId, shown.caption, Leave.NOT_ON_ROSTER),
-                        )
-                    },
-                    onJoin = groups.onJoin,
-                )
-            }
+            removed?.let { RemovedScreen(removed = it, switcher = switcher) }
 
             // The controls on one side and the account on the other, the way
             // map applications lay them out: a row keeps a second control from
@@ -517,6 +521,7 @@ fun MapScreen(
                             memberId = it.openedBy,
                             own = it.openedBy == ownMemberId,
                             ownName = ownName,
+                            unnamed = unnamedMember(it.openedBy),
                         )
                     },
                     runsTheGroup = runsTheGroup,
@@ -554,7 +559,7 @@ fun MapScreen(
 
         // Nothing below the card that says the device was taken off: the
         // strip would go on counting members of a group it no longer sees.
-        if (groups.choices.firstOrNull { it.projectId == groups.selected }?.removed != true) {
+        if (removed == null) {
             HorizontalDivider()
 
             BelowTheMap(
@@ -608,6 +613,7 @@ fun MapScreen(
             groups.choices.firstOrNull { it.projectId == groups.selected }?.caption
                 ?: groups.selected,
             severalGroups = switcher,
+            removed = removed,
         )
 
         OverTheSettings(

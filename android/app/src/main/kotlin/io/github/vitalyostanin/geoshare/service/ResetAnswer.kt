@@ -117,7 +117,7 @@ suspend fun answerResets(
             } else {
                 withTimeoutOrNull(RESET_NAME_WAIT.toMillis()) {
                     memberDisplayName(asked.askedBy, connection)
-                } ?: asked.askedBy.take(SHORTENED_ID_LENGTH)
+                } ?: unnamedMember(context, asked.askedBy)
             }
         val now = Instant.now()
 

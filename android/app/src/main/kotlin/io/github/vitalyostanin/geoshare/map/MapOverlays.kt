@@ -104,6 +104,7 @@ internal fun OwnBanners(
                     memberId = search.openedBy,
                     own = search.openedBy == ownMemberId,
                     ownName = ownName,
+                    unnamed = unnamedMember(search.openedBy),
                 ),
                 onFound = { onFound(search.phoneId) },
             )
@@ -151,6 +152,7 @@ internal fun OwnSirenBanner(
             memberId = siren.calledBy,
             own = siren.calledBy == ownMemberId,
             ownName = ownName,
+            unnamed = unnamedMember(siren.calledBy),
         ),
         until = state.until,
         onStop = { sirenScope.launch { actions.onStopSiren(siren.phoneId) } },

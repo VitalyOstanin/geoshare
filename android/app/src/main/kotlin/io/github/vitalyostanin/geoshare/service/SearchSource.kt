@@ -1,9 +1,12 @@
 package io.github.vitalyostanin.geoshare.service
 
+import android.content.Context
 import com.google.firebase.firestore.DocumentSnapshot
 import com.google.firebase.firestore.FieldValue
+import io.github.vitalyostanin.geoshare.R
 import io.github.vitalyostanin.geoshare.log.AppLog
 import io.github.vitalyostanin.geoshare.map.Search
+import io.github.vitalyostanin.geoshare.map.idTail
 import io.github.vitalyostanin.geoshare.map.searchOf
 import io.github.vitalyostanin.geoshare.project.GroupConnection
 import kotlinx.coroutines.CancellationException
@@ -164,23 +167,23 @@ suspend fun endSearch(phoneId: String, connection: GroupConnection) {
  * and a name that changed in the meantime is not worth a subscription of its
  * own for.
  *
- * The account id, shortened, where the member has published no name — the
- * same fallback every screen falls back to.
+ * Null where the member has published no name, or it could not be read:
+ * the caller says so in its own words, which this file cannot read.
  */
-suspend fun memberDisplayName(memberId: String, connection: GroupConnection): String = try {
+suspend fun memberDisplayName(memberId: String, connection: GroupConnection): String? = try {
     membersOf(connection)
         .document(memberId)
         .get()
         .await()
         .getString(ProfileField.DISPLAY_NAME)
         ?.takeIf { it.isNotBlank() }
-        ?: memberId.take(SHORTENED_ID_LENGTH)
 } catch (cancellation: CancellationException) {
     throw cancellation
 } catch (refusal: Exception) {
     AppLog.w(TAG, "could not read the name of $memberId", refusal)
-    memberId.take(SHORTENED_ID_LENGTH)
+    null
 }
 
-/** How much of an account id stands in for a name nobody has published. */
-internal const val SHORTENED_ID_LENGTH = 6
+/** What a member without a published name is called in a notification. */
+fun unnamedMember(context: Context, memberId: String): String =
+    context.getString(R.string.member_unnamed, idTail(memberId))

@@ -30,26 +30,22 @@ import io.github.vitalyostanin.geoshare.R
 import kotlinx.coroutines.launch
 
 /**
+ * A group an administrator took this device off, with the two ways on from
+ * it: [onDrop] takes the group off the device, [onJoin] asks for a link to
+ * come back by.
+ */
+data class RemovedGroup(val caption: String, val onDrop: suspend () -> Unit, val onJoin: () -> Unit)
+
+/**
  * What stands in place of the map while the group shown is one an
  * administrator took this device off.
  *
- * The connection itself stays until the member says otherwise: [onDrop]
- * takes the group off the device, [onJoin] asks for a link to come back by.
- * Drawn over the map rather than instead of it, so the round buttons above
+ * The connection itself stays until the member says otherwise. Drawn over
+ * the map rather than instead of it, so the round buttons above
  * and the group chip stay where they are.
  */
-@OptIn(ExperimentalLayoutApi::class)
 @Composable
-fun RemovedScreen(
-    caption: String,
-    switcher: Boolean,
-    onDrop: suspend () -> Unit,
-    onJoin: () -> Unit,
-    modifier: Modifier = Modifier,
-) {
-    val scope = rememberCoroutineScope()
-    var busy by remember { mutableStateOf(false) }
-
+fun RemovedScreen(removed: RemovedGroup, switcher: Boolean, modifier: Modifier = Modifier) {
     Surface(color = MaterialTheme.colorScheme.surface, modifier = modifier.fillMaxSize()) {
         Box(contentAlignment = Alignment.TopCenter) {
             Surface(
@@ -62,43 +58,56 @@ fun RemovedScreen(
                     .padding(top = bannerOffset(switcher), start = 16.dp, end = 16.dp)
                     .fillMaxWidth(),
             ) {
-                Column(modifier = Modifier.padding(18.dp)) {
-                    Text(
-                        text = stringResource(R.string.group_removed_title),
-                        fontSize = 18.sp,
-                        fontWeight = FontWeight.Medium,
-                        modifier = Modifier.padding(bottom = 8.dp),
-                    )
+                RemovedNotice(removed = removed, modifier = Modifier.padding(18.dp))
+            }
+        }
+    }
+}
 
-                    Text(
-                        text = stringResource(R.string.group_removed_text, caption),
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        modifier = Modifier.padding(bottom = 8.dp),
-                    )
+/**
+ * What the screens say about [removed], the same on the map and in the
+ * settings: that the device was taken off, and what can be done about it.
+ */
+@OptIn(ExperimentalLayoutApi::class)
+@Composable
+fun RemovedNotice(removed: RemovedGroup, modifier: Modifier = Modifier) {
+    val scope = rememberCoroutineScope()
+    var busy by remember { mutableStateOf(false) }
 
-                    FlowRow(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-                        TextButton(
-                            onClick = {
-                                busy = true
-                                scope.launch {
-                                    try {
-                                        onDrop()
-                                    } finally {
-                                        busy = false
-                                    }
-                                }
-                            },
-                            enabled = !busy,
-                        ) {
-                            Text(text = stringResource(R.string.group_removed_drop))
-                        }
+    Column(modifier = modifier) {
+        Text(
+            text = stringResource(R.string.group_removed_title),
+            fontSize = 18.sp,
+            fontWeight = FontWeight.Medium,
+            modifier = Modifier.padding(bottom = 8.dp),
+        )
 
-                        TextButton(onClick = onJoin, enabled = !busy) {
-                            Text(text = stringResource(R.string.group_removed_join))
+        Text(
+            text = stringResource(R.string.group_removed_text, removed.caption),
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier.padding(bottom = 8.dp),
+        )
+
+        FlowRow(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+            TextButton(
+                onClick = {
+                    busy = true
+                    scope.launch {
+                        try {
+                            removed.onDrop()
+                        } finally {
+                            busy = false
                         }
                     }
-                }
+                },
+                enabled = !busy,
+            ) {
+                Text(text = stringResource(R.string.group_removed_drop))
+            }
+
+            TextButton(onClick = removed.onJoin, enabled = !busy) {
+                Text(text = stringResource(R.string.group_removed_join))
             }
         }
     }
