@@ -85,9 +85,12 @@ class SignInController(private val auth: FirebaseAuth) {
         current.value = AuthState.SigningIn
 
         try {
+            // Built on this group's own instance: the one-argument builder
+            // reaches for the default one, and the page would sign in to the
+            // first group's project instead of this one.
             val provider =
                 OAuthProvider
-                    .newBuilder("google.com")
+                    .newBuilder("google.com", auth)
                     // Otherwise the page silently reuses the browser's last
                     // Google session, and a member with more than one account
                     // never gets to choose which of them this phone shares as.
