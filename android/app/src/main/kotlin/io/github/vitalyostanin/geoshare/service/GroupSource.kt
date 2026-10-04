@@ -257,6 +257,13 @@ suspend fun makeInvitation(
  * everybody who is not on it, which is everybody about to join. So the server
  * is asked to append rather than told the whole list, and the rule ends up
  * comparing the same two lists it would have compared anyway.
+ *
+ * What a member taken off the roster left in the group goes in the same batch.
+ * Taken off by an administrator, they kept whom they let watch, which nobody
+ * else may delete, and coming back would hand it out again unasked. Leaving
+ * on their own deletes it already; this is the other way out. In the batch
+ * rather than when the removal is noticed, which happens a moment before a
+ * join just as well and would then delete what the join wrote.
  */
 suspend fun joinGroup(
     context: Context,
@@ -268,6 +275,9 @@ suspend fun joinGroup(
 
     connection.store
         .batch()
+        .delete(grantsIn(group).document(uid))
+        .delete(phonesIn(group).document(uid))
+        .delete(membersIn(group).document(uid))
         .set(joinsIn(group).document(uid), mapOf(JoinField.CODE to invitation.code))
         .update(group, GroupField.MEMBERS, FieldValue.arrayUnion(uid))
         .delete(invitationsIn(group).document(invitation.code))

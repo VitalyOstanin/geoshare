@@ -36,7 +36,10 @@ fun positionsOf(connection: GroupConnection): CollectionReference =
     connection.groupDocument.collection("positions")
 
 fun membersOf(connection: GroupConnection): CollectionReference =
-    connection.groupDocument.collection("members")
+    membersIn(connection.groupDocument)
+
+/** The same collection under a group this phone is joining. */
+fun membersIn(group: DocumentReference): CollectionReference = group.collection("members")
 
 fun watchOf(connection: GroupConnection): CollectionReference =
     connection.groupDocument.collection("watch")
@@ -48,8 +51,10 @@ fun watchOf(connection: GroupConnection): CollectionReference =
  * group, and neither of these is the group's business: only the member and the
  * readers they named can see them.
  */
-fun grantsOf(connection: GroupConnection): CollectionReference =
-    connection.groupDocument.collection("grants")
+fun grantsOf(connection: GroupConnection): CollectionReference = grantsIn(connection.groupDocument)
+
+/** The same collection under a group this phone is joining. */
+fun grantsIn(group: DocumentReference): CollectionReference = group.collection("grants")
 
 /**
  * The phones of each member and what each last said about itself: when it was
@@ -60,8 +65,10 @@ fun grantsOf(connection: GroupConnection): CollectionReference =
  * cable. Apart from the grants because an administrator reads it, and whom a
  * member shares with is not theirs to see.
  */
-fun phonesOf(connection: GroupConnection): CollectionReference =
-    connection.groupDocument.collection("devices")
+fun phonesOf(connection: GroupConnection): CollectionReference = phonesIn(connection.groupDocument)
+
+/** The same collection under a group this phone is joining. */
+fun phonesIn(group: DocumentReference): CollectionReference = group.collection("devices")
 
 /**
  * What each member calls the phones and the people of the group, for

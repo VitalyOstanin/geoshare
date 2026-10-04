@@ -1,7 +1,13 @@
 package io.github.vitalyostanin.geoshare.auth
 
 import android.app.Activity
+import android.content.Context
+import android.content.Intent
+import androidx.localbroadcastmanager.content.LocalBroadcastManager
+import com.google.android.gms.tasks.Task
+import com.google.firebase.auth.AuthResult
 import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.auth.FirebaseAuthException
 import com.google.firebase.auth.OAuthProvider
 import io.github.vitalyostanin.geoshare.log.AppLog
 import io.github.vitalyostanin.geoshare.service.STAND_IN_PASSWORD
@@ -12,6 +18,20 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.tasks.await
 
 private const val TAG = "geoshare.auth"
+
+/** What Firebase answers a browser sign-in started while it thinks one is still open. */
+private const val ALREADY_PRESENTED = "ERROR_WEB_CONTEXT_ALREADY_PRESENTED"
+
+/*
+ * The message Firebase's own sign-in activity sends when the member comes back
+ * from the browser page without finishing it, spelled the way that activity
+ * spells it. Not public API: a release that renames either leaves the message
+ * unheard, and the sign-in goes back to failing until the app is restarted —
+ * the behaviour this replaces, not a new one.
+ */
+private const val AUTH_INTENT_ACTION =
+    "com.google.firebase.auth.ACTION_RECEIVE_FIREBASE_AUTH_INTENT"
+private const val EXTRA_CANCELED = "com.google.firebase.auth.internal.EXTRA_CANCELED"
 
 /**
  * The sign-in as the screen sees it: one state to render and two calls to make.
@@ -27,6 +47,13 @@ private const val TAG = "geoshare.auth"
 class SignInController(private val auth: FirebaseAuth) {
     private val current = MutableStateFlow<AuthState>(AuthState.Starting)
     val state: StateFlow<AuthState> = current.asStateFlow()
+
+    /**
+     * Which call of [signIn] is the latest. A flow given up on below still
+     * fails afterwards, and its failure must not overwrite the state of the
+     * flow that replaced it.
+     */
+    private var attempt = 0
 
     private val listener =
         FirebaseAuth.AuthStateListener { updated ->
@@ -82,6 +109,7 @@ class SignInController(private val auth: FirebaseAuth) {
      * below rather than by keeping this call itself alive across the restart.
      */
     suspend fun signIn(activity: Activity) {
+        val mine = ++attempt
         current.value = AuthState.SigningIn
 
         try {
@@ -102,8 +130,13 @@ class SignInController(private val auth: FirebaseAuth) {
             // returns. Firebase keeps the flow's own result waiting for
             // exactly that case rather than losing it, which is why it is
             // asked for before a new flow is started.
-            (auth.pendingAuthResult ?: auth.startActivityForSignInWithProvider(activity, provider))
-                .await()
+            val pending = auth.pendingAuthResult
+
+            if (pending != null) {
+                pending.await()
+            } else {
+                startOverAnyOpenFlow(activity, provider)
+            }
             // The state is not set here: the listener above answers for the
             // session, and it is the same answer after a restart.
         } catch (cancellation: CancellationException) {
@@ -114,8 +147,44 @@ class SignInController(private val auth: FirebaseAuth) {
             val failure = classifySignInFailure(error)
 
             AppLog.w(TAG, "sign-in failed as $failure", error)
-            current.value = AuthState.SignedOut(failure)
+
+            if (mine == attempt) {
+                current.value = AuthState.SignedOut(failure)
+            }
         }
+    }
+
+    /**
+     * Starts the browser flow, first giving up on one Firebase still holds open.
+     *
+     * Firebase keeps one flow open per process and lets it go when its own
+     * activity hears how the page ended. That activity can be closed without
+     * hearing it: the member returns through the launcher, and the launcher
+     * clears everything above this application's single-task activity. The
+     * flow then stays open until the process dies, and every sign-in after it
+     * fails as already in progress. Telling Firebase the page was left is what
+     * its activity would have said had it been resumed.
+     */
+    private suspend fun startOverAnyOpenFlow(activity: Activity, provider: OAuthProvider) {
+        try {
+            startFlow(activity, provider).await()
+        } catch (error: FirebaseAuthException) {
+            if (error.errorCode != ALREADY_PRESENTED) throw error
+
+            AppLog.w(TAG, "a browser sign-in was still held open; giving up on it")
+            giveUpOpenFlow(activity)
+            startFlow(activity, provider).await()
+        }
+    }
+
+    private fun startFlow(activity: Activity, provider: OAuthProvider): Task<AuthResult> =
+        auth.startActivityForSignInWithProvider(activity, provider)
+
+    private fun giveUpOpenFlow(context: Context) {
+        val left = Intent(AUTH_INTENT_ACTION).putExtra(EXTRA_CANCELED, true)
+
+        // Synchronous so that the flow is let go before the next one asks.
+        LocalBroadcastManager.getInstance(context).sendBroadcastSync(left)
     }
 
     /** Ends the session, which the listener above answers by asking to sign in again. */
