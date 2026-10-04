@@ -8,11 +8,16 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
@@ -21,6 +26,7 @@ import androidx.compose.ui.unit.dp
 import io.github.vitalyostanin.geoshare.R
 import io.github.vitalyostanin.geoshare.project.ConnectLink
 import io.github.vitalyostanin.geoshare.service.MadeInvitation
+import java.time.Instant
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 
@@ -65,10 +71,23 @@ internal fun invitationLinkText(
  * screen that asks for them.
  */
 @Composable
-internal fun AdminInvitation(invitation: MadeInvitation?, link: String?, onOpenInvite: () -> Unit) {
+internal fun AdminInvitation(
+    invitation: MadeInvitation?,
+    /** Whether the invitation still stands, as the database has it; null while unknown. */
+    standing: Boolean?,
+    /** The clock the invitation is held against: one that has run out admits nobody. */
+    now: Instant,
+    link: String?,
+    onOpenInvite: () -> Unit,
+) {
     val context = LocalContext.current
+    var qrOpen by remember { mutableStateOf(false) }
 
-    if (invitation != null && link != null) {
+    // Used or run out, the link is taken away: one that admits nobody would
+    // only be handed on to somebody who then cannot get in.
+    if (invitation != null && (standing == false || !now.isBefore(invitation.expiresAt))) {
+        InvitationOver(invitation, used = standing == false, onOpenInvite = onOpenInvite)
+    } else if (invitation != null && link != null) {
         Text(
             text =
             stringResource(
@@ -78,6 +97,16 @@ internal fun AdminInvitation(invitation: MadeInvitation?, link: String?, onOpenI
             style = MaterialTheme.typography.titleMedium,
             modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
         )
+
+        InvitationQr(
+            link = link,
+            onOpen = { qrOpen = true },
+            modifier = Modifier.fillMaxWidth().wrapContentWidth().padding(vertical = 4.dp),
+        )
+
+        if (qrOpen) {
+            FullScreenQr(link = link, onClose = { qrOpen = false })
+        }
 
         SelectionContainer {
             Text(
@@ -146,5 +175,48 @@ internal fun AdminInvitation(invitation: MadeInvitation?, link: String?, onOpenI
                 Text(text = stringResource(R.string.group_make_invitation))
             }
         }
+    }
+}
+
+/**
+ * What is left of an invitation once it admits nobody: that it was used, or
+ * when it ran out, and the way to make the next one.
+ */
+@Composable
+private fun InvitationOver(invitation: MadeInvitation, used: Boolean, onOpenInvite: () -> Unit) {
+    Text(
+        text =
+        stringResource(
+            R.string.group_invite_screen_title,
+            ConnectLink.shortenedAddress(invitation.email),
+        ),
+        style = MaterialTheme.typography.titleMedium,
+        modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
+    )
+
+    Text(
+        text =
+        if (used) {
+            stringResource(R.string.group_invite_used)
+        } else {
+            stringResource(
+                R.string.group_invite_expired,
+                INVITATION_EXPIRES_AT.format(invitation.expiresAt.atZone(ZoneId.systemDefault())),
+            )
+        },
+        style = MaterialTheme.typography.bodyMedium,
+        modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp),
+    )
+
+    TextButton(
+        onClick = onOpenInvite,
+        modifier = Modifier.padding(horizontal = 8.dp),
+    ) {
+        Text(
+            text =
+            stringResource(
+                if (used) R.string.group_make_invitation else R.string.group_invite_again,
+            ),
+        )
     }
 }

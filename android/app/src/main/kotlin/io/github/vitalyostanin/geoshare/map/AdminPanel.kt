@@ -37,6 +37,7 @@ import io.github.vitalyostanin.geoshare.membership.looksLikeAnAddress
 import io.github.vitalyostanin.geoshare.membership.runsTheGroup
 import io.github.vitalyostanin.geoshare.service.MadeInvitation
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.launch
 import java.time.Duration
 import java.time.Instant
@@ -102,6 +103,8 @@ fun AdminPanel(
     resetOf: (phoneId: String) -> Flow<Reset?>,
     /** Asks a phone to forget its place; answers how the write came out. */
     onAskReset: suspend (phoneId: String) -> WriteOutcome,
+    /** Whether an invitation made here still stands, followed for as long as asked. */
+    invitationStanding: (code: String) -> Flow<Boolean?>,
     onClose: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -286,8 +289,15 @@ fun AdminPanel(
 
             HorizontalDivider()
 
+            val invitationLeft by
+                remember(invitation?.code) {
+                    invitation?.let { invitationStanding(it.code) } ?: flowOf(null)
+                }.collectAsState(initial = null)
+
             AdminInvitation(
                 invitation = invitation,
+                standing = invitationLeft,
+                now = now,
                 link =
                 invitation?.let {
                     invitationLinkText(

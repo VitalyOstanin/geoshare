@@ -207,6 +207,35 @@ data class MadeInvitation(
 )
 
 /**
+ * Whether the invitation under [code] still stands: true while its document
+ * is there, false once it is gone — spent by the member it was for, the only
+ * way the application ever removes one.
+ *
+ * Only the server's answers count: the administrator's own write is in the
+ * cache from the moment it is made, and a code nobody has used yet would
+ * otherwise read as one for a moment before it reached the server. Null until
+ * the server has answered, and for good on a project whose rules do not let
+ * the administrator read it back yet: the screen then says nothing rather
+ * than guess.
+ */
+fun invitationStanding(code: String, connection: GroupConnection): Flow<Boolean?> = callbackFlow {
+    val subscription =
+        invitationsOf(connection).document(code).addSnapshotListener { snapshot, error ->
+            if (error != null) {
+                close(error)
+
+                return@addSnapshotListener
+            }
+
+            if (snapshot != null && !snapshot.metadata.isFromCache) {
+                trySend(snapshot.exists())
+            }
+        }
+
+    awaitClose { subscription.remove() }
+}.comingBack("invitation", forgetting = { null })
+
+/**
  * Makes an invitation, addressed to one account, and returns what a link to it
  * is built from.
  *

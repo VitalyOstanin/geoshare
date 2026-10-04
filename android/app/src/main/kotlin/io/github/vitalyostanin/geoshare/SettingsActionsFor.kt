@@ -22,6 +22,7 @@ import io.github.vitalyostanin.geoshare.service.callSiren
 import io.github.vitalyostanin.geoshare.service.endSearch
 import io.github.vitalyostanin.geoshare.service.forgetAidingData
 import io.github.vitalyostanin.geoshare.service.foundGroup
+import io.github.vitalyostanin.geoshare.service.invitationStanding
 import io.github.vitalyostanin.geoshare.service.joinGroup
 import io.github.vitalyostanin.geoshare.service.makeInvitation
 import io.github.vitalyostanin.geoshare.service.openSearch
@@ -257,6 +258,7 @@ internal fun settingsActions(
         }
     },
     sirenOf = { phoneId -> phoneSiren(phoneId, connection) },
+    invitationStanding = { code -> invitationStanding(code, connection) },
     onCallSiren = { phoneId ->
         activity.writeOutcome("a siren could not be called") {
             callSiren(phoneId, current.memberId, connection = connection)

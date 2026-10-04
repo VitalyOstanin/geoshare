@@ -197,7 +197,13 @@
     <string name="group_invite_note">Вступить сможет только тот, кто войдёт в приложение с этим адресом. Приглашение действует сутки.</string>
     <string name="group_invite_create">Создать</string>
     <string name="group_invite_screen_title">Приглашение для %1$s</string>
-    <string name="group_invite_expires">Действует до %1$s. Отправьте ссылку участнику: она подключает приложение к проекту группы и впускает в группу.</string>
+    <string name="group_invite_expires">Действует до %1$s. Покажите QR-код или отправьте ссылку участнику.</string>
+    <string name="group_invite_qr">QR-код приглашения. Нажмите, чтобы показать во весь экран</string>
+    <string name="group_invite_qr_scan">Отсканируйте камерой телефона участника</string>
+    <string name="group_invite_qr_close">Закрыть</string>
+    <string name="group_invite_used">Использовано: участник вступил в группу по этому приглашению.</string>
+    <string name="group_invite_expired">Срок истёк %1$s. Ссылка больше не впускает в группу.</string>
+    <string name="group_invite_again">Создать приглашение заново</string>
     <string name="group_invite_send">Отправить</string>
     <string name="group_copy">Скопировать</string>
     <string name="group_copied">Приглашение скопировано</string>

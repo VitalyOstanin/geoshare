@@ -316,6 +316,7 @@ internal fun OverTheSettings(
             onStopSiren = actions.onStopSiren,
             resetOf = actions.resetOf,
             onAskReset = actions.onAskReset,
+            invitationStanding = actions.invitationStanding,
             onClose = onCloseAdmin,
         )
     }

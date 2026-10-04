@@ -28,6 +28,10 @@ maplibre = "13.6.1"
 # Loads the account picture into the map screen. Two artefacts: the Compose
 # entry point and the network layer it fetches through.
 coil = "3.6.2"
+# Draws an invitation as a QR code on the administrator's screen. The core
+# alone: it encodes and decodes in plain Java, without the camera or
+# Android parts of the wider project.
+zxing = "3.5.4"
 junit = "4.13.2"
 # The real implementation of the classes org.json.* names, in place of the
 # Android stub jar the unit test classpath otherwise resolves them to: that
@@ -62,6 +66,7 @@ maplibre-android = { module = "org.maplibre.gl:android-sdk", version.ref = "mapl
 
 coil-compose = { module = "io.coil-kt.coil3:coil-compose", version.ref = "coil" }
 coil-network-okhttp = { module = "io.coil-kt.coil3:coil-network-okhttp", version.ref = "coil" }
+zxing-core = { module = "com.google.zxing:core", version.ref = "zxing" }
 
 kotlinx-coroutines-android = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-android", version.ref = "coroutines" }
 # Awaits a Play Services Task from a coroutine; Firebase returns those.

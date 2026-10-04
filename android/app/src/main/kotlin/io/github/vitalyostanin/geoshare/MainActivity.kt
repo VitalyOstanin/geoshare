@@ -143,6 +143,14 @@ class MainActivity : AppCompatActivity() {
     internal var permissionNotice by mutableStateOf<PermissionStep?>(null)
 
     /**
+     * What the sharing switch shows, kept here rather than in the drawing:
+     * signing out turns sharing off from outside the screen, and a switch
+     * that remembered its own value went on reading "on" over a setting
+     * that was off, with nothing started when the member signed in again.
+     */
+    private var sharingOn by mutableStateOf(false)
+
+    /**
      * The steps the system has already been asked about. A second request for
      * the same one is answered without showing anything, so asking twice would
      * look to the member like a button that does nothing.
@@ -256,6 +264,7 @@ class MainActivity : AppCompatActivity() {
         startupAvailable = startupScreen(this) != null
 
         sharing = SharingSetting(this)
+        sharingOn = sharing.enabled
         device = DeviceIdentity(this)
         appearance = ThemeSetting(this)
         backgroundWork = BackgroundWorkSetting(this)
@@ -284,7 +293,6 @@ class MainActivity : AppCompatActivity() {
         MaterialTheme(colorScheme = if (dark) darkColorScheme() else lightColorScheme()) {
             Surface(modifier = Modifier.fillMaxSize()) {
                 val shown by Connections.selected.collectAsStateWithLifecycle()
-                var sharingOn by remember { mutableStateOf(sharing.enabled) }
                 var startupSet by remember { mutableStateOf(backgroundWork.startupSet) }
                 var jumpsFiltered by remember { mutableStateOf(jumps.enabled) }
                 var sourcesLeftOut by remember { mutableStateOf(sources.leftOut) }
@@ -747,6 +755,7 @@ class MainActivity : AppCompatActivity() {
      */
     internal fun stopSharing() {
         sharing.enabled = false
+        sharingOn = false
         stopService(Intent(this, SharingService::class.java))
     }
 

@@ -168,4 +168,6 @@ data class SettingsActions(
     val onAskReset: suspend (phoneId: String) -> WriteOutcome,
     /** Takes one of the member's own phones out of the group; answers whether it went. */
     val onForgetPhone: suspend (phoneId: String) -> Boolean,
+    /** Whether an invitation made here still stands, as the database has it; null while unknown. */
+    val invitationStanding: (code: String) -> Flow<Boolean?>,
 )

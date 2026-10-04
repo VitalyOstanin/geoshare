@@ -292,9 +292,14 @@ service cloud.firestore {
       allow delete: if false;
 
       match /invitations/{code} {
-        // Nobody reads these, including the people who made them: a reader
+        // Nobody lists these, including the people who made them: a reader
         // could collect the codes of a group and let themselves in. The rules
         // read them, and a rule reads without the caller's permission.
+        //
+        // Whoever runs the group may read one by its code: they already hold
+        // every code they made, and could make another at will, so reading
+        // one back gives them nothing new. It is how their screen learns that
+        // the invitation it shows has been used.
         //
         // The code is the name of the document rather than a field, so an
         // invitation cannot be found except by knowing it.
@@ -324,7 +329,8 @@ service cloud.firestore {
                  request.auth.uid in getAfter(/databases/$(database)/documents/groups/$(groupId)).data.members;
         }
 
-        allow read: if false;
+        allow get: if isGroupAdmin();
+        allow list: if false;
         allow create: if isGroupAdmin() && invitationShape();
         // Withdrawing an invitation is deleting it; changing one in place
         // would let an expiry be pushed out for a code already handed round.

@@ -4,9 +4,9 @@ import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
 
 import { assertFails, assertSucceeds } from '@firebase/rules-unit-testing';
-import { deleteDoc, getDoc, arrayUnion, setDoc, updateDoc, writeBatch } from 'firebase/firestore';
+import { collection, deleteDoc, getDoc, getDocs, arrayUnion, setDoc, updateDoc, writeBatch } from 'firebase/firestore';
 
-import { setUpRules, ALICE, BOB, STRANGER, STRANGER_EMAIL, FOREVER, testEnv, grantOf, someGrant, CODE, OTHER_CODE, groupDoc, invitationOf, claimOf, inTenMinutes, plantAnAdministrator, plantAnInvitation, plantAnAddressedInvitation, signedInAs } from './helpers.mjs';
+import { setUpRules, GROUP, ALICE, BOB, STRANGER, STRANGER_EMAIL, FOREVER, testEnv, grantOf, someGrant, CODE, OTHER_CODE, groupDoc, invitationOf, claimOf, inTenMinutes, plantAnAdministrator, plantAnInvitation, plantAnAddressedInvitation, signedInAs } from './helpers.mjs';
 
 setUpRules();
 
@@ -130,6 +130,29 @@ describe('invitations', () => {
         const db = testEnv.authenticatedContext(BOB).firestore();
 
         await assertFails(getDoc(invitationOf(db, CODE)));
+    });
+
+    // The administrator's screen keeps the invitation it shows until it is
+    // used, and learns of that by reading it back by its code.
+    it('the administrator reads an invitation by its code', async () => {
+        await plantAnAdministrator();
+        await plantAnInvitation();
+
+        const db = testEnv.authenticatedContext(ALICE).firestore();
+
+        await assertSucceeds(getDoc(invitationOf(db, CODE)));
+    });
+
+    // Reading by code gives nothing the administrator does not hold already;
+    // the list would hand over every code still open, other administrators'
+    // included.
+    it('the administrator cannot list the invitations', async () => {
+        await plantAnAdministrator();
+        await plantAnInvitation();
+
+        const db = testEnv.authenticatedContext(ALICE).firestore();
+
+        await assertFails(getDocs(collection(db, `groups/${GROUP}/invitations`)));
     });
 
     // A day, as the application makes them, and an hour's grace for a phone
