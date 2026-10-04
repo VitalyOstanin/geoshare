@@ -137,7 +137,8 @@ data class SettingsActions(
     /** Gives the group a name, or changes the one it has; answers how the write came out. */
     val onRenameGroup: suspend (String) -> WriteOutcome,
     val onPhoneNameChange: (String?) -> Unit,
-    val onSignOut: () -> Unit,
+    /** Signs out of the group shown, or of every group when [everywhere] says so. */
+    val onSignOut: (everywhere: Boolean) -> Unit,
     /**
      * Opens a search for one phone, or renews one already standing; answers
      * whether the database allowed it, refused it or left it unanswered.

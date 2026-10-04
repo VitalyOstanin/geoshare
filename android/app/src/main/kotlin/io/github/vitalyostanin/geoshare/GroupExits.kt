@@ -1,6 +1,7 @@
 package io.github.vitalyostanin.geoshare
 
 import io.github.vitalyostanin.geoshare.log.AppLog
+import io.github.vitalyostanin.geoshare.map.PublishedProfile
 import io.github.vitalyostanin.geoshare.membership.Leave
 import io.github.vitalyostanin.geoshare.project.Connections
 import io.github.vitalyostanin.geoshare.project.GroupConnection
@@ -100,25 +101,51 @@ internal suspend fun forgetDeviceEverywhere(deviceId: String): Boolean = signedI
  * wait is short, and a device without a network signs out all the same; its
  * line is then removed from another of the member's devices or from the page.
  *
- * The same person signs in to every group, so signing out is from all of
- * them at once.
+ * Signing out of every group at once is for a device changing hands; one
+ * group alone is [signOutHere].
  */
 internal suspend fun MainActivity.signOutEverywhere() {
     stopSharing()
 
     for ((connection, memberId) in signedIn()) {
-        val forgotten =
-            answered("take this device out of ${connection.projectId}") {
-                forgetPhone(memberId, device.id, connection)
-            }
+        signOutOf(connection, memberId)
+    }
 
-        if (!forgotten) {
-            AppLog.w(
-                MainActivity.TAG,
-                "signing out of ${connection.projectId} with this device listed",
-            )
+    PublishedProfile(this).forget()
+}
+
+/**
+ * Takes this device out of [connection]'s group and signs out of it alone,
+ * leaving the group on the list with its sign-in screen.
+ *
+ * The service keeps writing into the other groups; it stops only when none
+ * of them has a session left, since there is then nowhere to write.
+ *
+ * What the phone told the group is forgotten as well: the device's
+ * documents are gone, and signing in again has to write them anew rather
+ * than take them for already there.
+ */
+internal suspend fun MainActivity.signOutHere(connection: GroupConnection) {
+    connection.auth.currentUser?.uid?.let { signOutOf(connection, it) }
+    PublishedProfile(this).forget()
+
+    if (signedIn().isEmpty()) {
+        stopSharing()
+    }
+}
+
+private suspend fun MainActivity.signOutOf(connection: GroupConnection, memberId: String) {
+    val forgotten =
+        answered("take this device out of ${connection.projectId}") {
+            forgetPhone(memberId, device.id, connection)
         }
 
-        connection.auth.signOut()
+    if (!forgotten) {
+        AppLog.w(
+            MainActivity.TAG,
+            "signing out of ${connection.projectId} with this device listed",
+        )
     }
+
+    connection.auth.signOut()
 }

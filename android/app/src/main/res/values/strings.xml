@@ -17,6 +17,13 @@
     <string name="sign_in_failed_unknown">Sign-in did not go through. Try again.</string>
 
     <string name="sign_out_action">Sign out</string>
+    <string name="sign_out_choose_title">Sign out</string>
+    <string name="sign_out_here">Only in the group “%1$s”</string>
+    <string name="sign_out_here_note">The device leaves this group. Your other groups stay as they are, and your location keeps going to them.</string>
+    <string name="sign_out_everywhere">In every group</string>
+    <string name="sign_out_everywhere_note">The device leaves every group and location sharing turns off. Do this before handing the phone to someone else.</string>
+    <string name="sign_out_confirm_title">Sign out?</string>
+    <string name="sign_out_confirm_text">The device leaves the group “%1$s” and location sharing turns off.</string>
 
     <string name="sharing_action">Share my position</string>
     <string name="sharing_channel_name">Position sharing</string>
@@ -421,6 +428,7 @@
          shows, and the list of groups it opens (map/GroupSwitcher.kt); drawn
          only while the device is in more than one group. -->
     <string name="group_switcher_open">Group: %1$s. Choose another</string>
+    <string name="group_switcher_label">Group</string>
     <string name="group_switcher_title">Groups</string>
     <string name="group_switcher_current">Shown</string>
     <string name="group_switcher_siren">siren</string>

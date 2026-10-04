@@ -552,25 +552,30 @@ fun MapScreen(
             }
         }
 
-        HorizontalDivider()
+        // Nothing below the card that says the device was taken off: the
+        // strip would go on counting members of a group it no longer sees.
+        if (groups.choices.firstOrNull { it.projectId == groups.selected }?.removed != true) {
+            HorizontalDivider()
 
-        BelowTheMap(
-            lookingNames = lookingNames,
-            members = members,
-            names = names,
-            faces = faces,
-            // Whoever the open card is about: one member, or everybody under a
-            // marker whose list is showing.
-            openCards = openedPositionId?.let { setOf(it) } ?: group.map { it.positionId }.toSet(),
-            now = now,
-            searches = searches,
-            showAll = showAll,
-            awaitingTarget = awaitingTarget,
-            outOfReach = outOfReach,
-            onSelect = ::lookAt,
-            onShowAll = { showAll = it },
-            onCentre = { positionId, x -> stripCentres[positionId] = x },
-        )
+            BelowTheMap(
+                lookingNames = lookingNames,
+                members = members,
+                names = names,
+                faces = faces,
+                // Whoever the open card is about: one member, or everybody under a
+                // marker whose list is showing.
+                openCards =
+                openedPositionId?.let { setOf(it) } ?: group.map { it.positionId }.toSet(),
+                now = now,
+                searches = searches,
+                showAll = showAll,
+                awaitingTarget = awaitingTarget,
+                outOfReach = outOfReach,
+                onSelect = ::lookAt,
+                onShowAll = { showAll = it },
+                onCentre = { positionId, x -> stripCentres[positionId] = x },
+            )
+        }
     }
 
     if (settingsOpen) {
@@ -599,6 +604,10 @@ fun MapScreen(
                         )
                 }
             },
+            groupCaption =
+            groups.choices.firstOrNull { it.projectId == groups.selected }?.caption
+                ?: groups.selected,
+            severalGroups = switcher,
         )
 
         OverTheSettings(

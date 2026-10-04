@@ -157,8 +157,14 @@ fun SettingsScreen(
     onOpenMyPhones: () -> Unit,
     /** Leaving the group, offered here while it is the only one; null while the list offers it. */
     onLeaveGroup: (() -> Unit)?,
+    /** What the group shown is called, for the question signing out asks. */
+    groupCaption: String,
+    /** Whether the device is in more than one group, so signing out can be from this one alone. */
+    severalGroups: Boolean,
     modifier: Modifier = Modifier,
 ) {
+    var signingOut by remember { mutableStateOf(false) }
+
     Surface(modifier = modifier.fillMaxSize()) {
         // Scrolled rather than fitted: the permissions are one row per member,
         // and a group large enough to need them is large enough to run off a
@@ -316,12 +322,21 @@ fun SettingsScreen(
             HorizontalDivider()
 
             TextButton(
-                onClick = actions.onSignOut,
+                onClick = { signingOut = true },
                 modifier = Modifier.padding(horizontal = 8.dp),
             ) {
                 Text(text = stringResource(R.string.sign_out_action))
             }
         }
+    }
+
+    if (signingOut) {
+        SignOutDialog(
+            caption = groupCaption,
+            severalGroups = severalGroups,
+            onSignOut = actions.onSignOut,
+            onDismiss = { signingOut = false },
+        )
     }
 }
 

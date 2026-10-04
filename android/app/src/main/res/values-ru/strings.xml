@@ -17,6 +17,13 @@
     <string name="sign_in_failed_unknown">Войти не удалось. Попробуйте ещё раз.</string>
 
     <string name="sign_out_action">Выйти</string>
+    <string name="sign_out_choose_title">Выйти из аккаунта</string>
+    <string name="sign_out_here">Только в группе «%1$s»</string>
+    <string name="sign_out_here_note">Устройство пропадёт из этой группы. В остальных группах всё останется как есть, место туда передаётся дальше.</string>
+    <string name="sign_out_everywhere">Во всех группах</string>
+    <string name="sign_out_everywhere_note">Устройство пропадёт из всех групп, передача места выключится. Так делают перед тем, как отдать телефон другому человеку.</string>
+    <string name="sign_out_confirm_title">Выйти из аккаунта?</string>
+    <string name="sign_out_confirm_text">Устройство пропадёт из группы «%1$s», передача места выключится.</string>
 
     <string name="sharing_action">Делиться своим местом</string>
     <string name="sharing_channel_name">Передача места</string>
@@ -355,6 +362,7 @@
     </plurals>
 
     <string name="group_switcher_open">Группа: %1$s. Выбрать другую</string>
+    <string name="group_switcher_label">Группа</string>
     <string name="group_switcher_title">Группы</string>
     <string name="group_switcher_current">Показана</string>
     <string name="group_switcher_siren">сирена</string>

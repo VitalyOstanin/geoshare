@@ -13,9 +13,11 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.app.AppCompatDelegate
 import androidx.compose.foundation.isSystemInDarkTheme
-import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.statusBarsPadding
+import androidx.compose.foundation.layout.statusBars
+import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.darkColorScheme
@@ -26,7 +28,6 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.window.Dialog
@@ -387,17 +388,10 @@ class MainActivity : AppCompatActivity() {
         val everyGroup by Connections.all.collectAsStateWithLifecycle()
         val choices by rememberGroupChoices(everyGroup, device.id)
 
-        Box(modifier = Modifier.fillMaxSize()) {
-            SignInScreen(
-                state = current,
-                onSignIn = {
-                    lifecycleScope.launch { signIn.signIn(this@MainActivity) }
-                },
-                onSignInAsStandIn = { account ->
-                    lifecycleScope.launch { signIn.signInAsStandIn(account) }
-                },
-            )
-
+        // A column rather than the chip laid over the screen: sideways the
+        // centred text reached up to the chip. Below it the sign-in screen
+        // keeps its own margin, and the status bar is taken here once.
+        Column(modifier = Modifier.fillMaxSize().windowInsetsPadding(WindowInsets.statusBars)) {
             // The way back to another group, the same chip and list as on the
             // map: a group picked before the device signed in to it is not a
             // place to be kept in.
@@ -415,7 +409,17 @@ class MainActivity : AppCompatActivity() {
                             lifecycleScope.async { leave(leaving, ask.how) }.await()
                     },
                 ),
-                modifier = Modifier.align(Alignment.TopStart).statusBarsPadding(),
+            )
+
+            SignInScreen(
+                state = current,
+                onSignIn = {
+                    lifecycleScope.launch { signIn.signIn(this@MainActivity) }
+                },
+                onSignInAsStandIn = { account ->
+                    lifecycleScope.launch { signIn.signInAsStandIn(account) }
+                },
+                modifier = Modifier.weight(1f),
             )
         }
     }

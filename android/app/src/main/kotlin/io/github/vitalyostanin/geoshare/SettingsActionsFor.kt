@@ -223,8 +223,14 @@ internal fun settingsActions(
             renameGroup(name, connection = connection)
         }
     },
-    onSignOut = {
-        activity.lifecycleScope.launch { activity.signOutEverywhere() }
+    onSignOut = { everywhere ->
+        activity.lifecycleScope.launch {
+            if (everywhere) {
+                activity.signOutEverywhere()
+            } else {
+                activity.signOutHere(connection)
+            }
+        }
     },
     // A suspend function called from the dialog's own coroutine rather than
     // wrapped in lifecycleScope.launch here: the dialog has to stay open on

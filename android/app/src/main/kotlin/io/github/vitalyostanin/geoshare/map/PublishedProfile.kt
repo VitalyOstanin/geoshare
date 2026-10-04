@@ -56,9 +56,10 @@ class PublishedProfile(context: Context) {
     /**
      * Forgets what was told, so the next chance writes it all again.
      *
-     * For a phone coming back to a group it was taken off: joining deletes
-     * the grant that held this phone in its list, and what was remembered
-     * would otherwise say there is nothing to write.
+     * For a phone coming back to a group it was taken off, or signing in
+     * again after signing out: either way the documents that held this phone
+     * in the group's lists are gone, and what was remembered would otherwise
+     * say there is nothing to write.
      */
     fun forget() {
         store.edit().clear().apply()

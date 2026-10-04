@@ -280,7 +280,13 @@ private fun ticking(): Flow<Instant> = flow {
  * buttons on the left; pressing it opens the list of groups.
  */
 @Composable
-fun GroupChip(caption: String, onClick: () -> Unit, modifier: Modifier = Modifier) {
+fun GroupChip(
+    caption: String,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+    /** How far below the top it stands: under the round buttons on the map, flush where it has a label. */
+    top: Dp = SWITCHER_TOP,
+) {
     val described = stringResource(R.string.group_switcher_open, caption)
     val muted = MaterialTheme.colorScheme.onSurfaceVariant
 
@@ -292,7 +298,7 @@ fun GroupChip(caption: String, onClick: () -> Unit, modifier: Modifier = Modifie
         shadowElevation = 3.dp,
         modifier =
         modifier
-            .padding(top = SWITCHER_TOP, start = 12.dp)
+            .padding(top = top, start = 12.dp)
             .heightIn(min = SWITCHER_HEIGHT)
             .widthIn(max = SWITCHER_MAX_WIDTH)
             .semantics { contentDescription = described },
@@ -484,13 +490,26 @@ fun GroupSwitcher(groups: GroupSwitch, modifier: Modifier = Modifier) {
         return
     }
 
-    GroupChip(
-        caption =
-        groups.choices.firstOrNull { it.projectId == groups.selected }?.caption
-            ?: groups.selected,
-        onClick = { open = true },
-        modifier = modifier,
-    )
+    // Labelled here and not on the map: on the map the chip sits among the
+    // group's own buttons, while here it is the only thing at the top of a
+    // screen about something else, and reads as a stray name without a word
+    // saying what it is.
+    Column(modifier = modifier.padding(top = 12.dp)) {
+        Text(
+            text = stringResource(R.string.group_switcher_label),
+            style = MaterialTheme.typography.labelSmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier.padding(start = 14.dp, bottom = 4.dp),
+        )
+
+        GroupChip(
+            caption =
+            groups.choices.firstOrNull { it.projectId == groups.selected }?.caption
+                ?: groups.selected,
+            onClick = { open = true },
+            top = 0.dp,
+        )
+    }
 
     if (open) {
         GroupSheet(
