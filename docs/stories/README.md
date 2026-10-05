@@ -98,7 +98,8 @@ Each story names its records in `ADR`; the same links the other way round:
 | 30 | [0030](../ADR/0030-names-for-oneself.md)                             | Names for people and phones, for oneself alone                         | MEM-16                                                         |
 | 31 | [0031](../ADR/0031-a-refused-reader-asks-again.md)                   | A refused reader asks again when the granter says so                   | MEM-10, DEV-09                                                 |
 | 32 | [0032](../ADR/0032-scanning-an-invitation-with-camerax-and-zxing.md) | An invitation is scanned with CameraX and zxing                        | MEM-21                                                         |
+| 33 | [0033](../ADR/0033-a-setup-page-finishes-the-project.md)             | A setup page finishes the group's project                              | OWN-09                                                         |
 
-Stories that rest on no record: OWN-07, OWN-09, OWN-10, ADM-10, ADM-11, MEM-06,
-MEM-11, MEM-12, MEM-15, MEM-22, DEV-05, DEV-06, DEV-12, DEV-13, DEV-14.
+Stories that rest on no record: OWN-07, OWN-10, ADM-10, ADM-11, MEM-06, MEM-11,
+MEM-12, MEM-15, MEM-22, DEV-05, DEV-06, DEV-12, DEV-13, DEV-14.
 They are either planned, or follow from a record named by a neighbouring story.

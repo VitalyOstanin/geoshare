@@ -14,7 +14,7 @@ but the stories here are about the project, not about the group.
 - [OWN-06 Look after several projects from one machine](#own-06-look-after-several-projects-from-one-machine)
 - [OWN-07 Remove the project](#own-07-remove-the-project)
 - [OWN-08 Set up the project without a prepared machine](#own-08-set-up-the-project-without-a-prepared-machine)
-- [OWN-09 Set up the project from the phone](#own-09-set-up-the-project-from-the-phone)
+- [OWN-09 Set up the project from a page in the browser](#own-09-set-up-the-project-from-a-page-in-the-browser)
 - [OWN-10 Use the published build without building one](#own-10-use-the-published-build-without-building-one)
 
 ## OWN-01 Make the group's project from one script
@@ -143,18 +143,29 @@ Acceptance:
 - the fingerprint of the key the published application is signed with is
   known to the script without a build container.
 
-## OWN-09 Set up the project from the phone
+## OWN-09 Set up the project from a page in the browser
 
 - Status: planned
-- ADR: —
+- ADR: 0033
 - Tests: —
 - Not covered: planned
 
-As a project owner without a computer I make the group's project from the
-application itself, so that the whole setup happens on one phone.
+As a project owner without a terminal I create the project in the Firebase
+console and let a setup page finish it, so that a browser on a computer or on
+the phone is all the setup needs.
 
 Acceptance:
-- to be agreed.
+- "Create your own group" on the connection screen explains the three stages
+  and opens the setup page;
+- the page lists the projects of the Google account it is allowed into and
+  sets up the chosen one: the Firestore API, the database, the web and
+  Android applications with the fingerprints, the rules, the site named after
+  the project, the page and `geoshare.json`;
+- run again on the same project, it changes nothing that is already there;
+- it stops with a plain reason when the site name is taken by another
+  project;
+- it waits for sign-in with Google to be turned on, and ends with the
+  connection link and its QR code.
 
 ## OWN-10 Use the published build without building one
 

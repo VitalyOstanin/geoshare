@@ -10,7 +10,7 @@ date is the decision's.
 |------|----------------------------------------------------------------------------------------------------------------------|-------------------------------------|------------|
 | 0001 | [One build for every group, settings read at runtime](0001-one-build-settings-at-runtime.md)                         | Accepted, partly superseded by 0026 | 2026-09-30 |
 | 0002 | [Sign in with Google through the browser flow](0002-sign-in-through-the-browser.md)                                  | Accepted                            | 2026-09-30 |
-| 0003 | [A group's project is set up by a script](0003-project-setup-by-script.md)                                           | Accepted                            | 2026-09-30 |
+| 0003 | [A group's project is set up by a script](0003-project-setup-by-script.md)                                           | Accepted, partly superseded by 0033 | 2026-09-30 |
 | 0004 | [Firestore as the shared store, with applications of our own](0004-firebase-as-the-shared-store.md)                  | Accepted                            | 2026-09-11 |
 | 0005 | [Every group runs its own Firebase project](0005-a-project-per-group.md)                                             | Accepted                            | 2026-09-11 |
 | 0006 | [MapLibre on both clients, OpenStreetMap raster tiles](0006-maplibre-and-osm-tiles.md)                               | Accepted                            | 2026-09-11 |
@@ -40,3 +40,4 @@ date is the decision's.
 | 0030 | [Names for people and phones, for oneself alone](0030-names-for-oneself.md)                                          | Accepted                            | 2026-10-05 |
 | 0031 | [A refused reader asks again when the granter says so](0031-a-refused-reader-asks-again.md)                          | Accepted                            | 2026-10-05 |
 | 0032 | [An invitation is scanned with CameraX and zxing](0032-scanning-an-invitation-with-camerax-and-zxing.md)             | Accepted                            | 2026-10-05 |
+| 0033 | [A setup page finishes the group's project](0033-a-setup-page-finishes-the-project.md)                               | Accepted                            | 2026-10-05 |
