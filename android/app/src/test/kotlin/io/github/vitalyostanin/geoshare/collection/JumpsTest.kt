@@ -212,6 +212,30 @@ class JumpsTest {
         assertTrue(agreementStands(JumpReason.Speed, first, second, wifi, second.takenAt))
     }
 
+    // The pair that took a phone lying on a table two hundred metres west:
+    // both answers from the Wi-Fi, and the second of them, remembered as the
+    // network's word, was all that stood behind it.
+    @Test
+    fun `an answer from the wi-fi does not vouch for itself`() {
+        val first = fixAt(61.03346, 4.40158, 10, accuracy = 83.0)
+        val second = fixAt(61.03348, 4.40128, 18, accuracy = 83.0)
+
+        assertFalse(agreementStands(JumpReason.Speed, first, second, second, second.takenAt))
+        assertFalse(agreementStands(JumpReason.Speed, first, second, first, second.takenAt))
+    }
+
+    // A mode beginning hands the provider's last answer over again: the
+    // answer left out a moment ago comes back as the next one and would agree
+    // with itself to the metre.
+    @Test
+    fun `an answer heard twice does not agree with itself`() {
+        val left = fixAt(61.07768, 4.40300, 17, accuracy = 15.0)
+        val again = fixAt(61.07768, 4.40300, 17, accuracy = 15.0)
+        val wifi = fixAt(61.07775, 4.40290, 30, accuracy = 60.0)
+
+        assertFalse(agreementStands(JumpReason.Speed, left, again, wifi, again.takenAt))
+    }
+
     // A tower names a district, and a district agrees with an answer a
     // kilometre from the phone: enough to overrule a width, whose answer is
     // that vague already, and not enough to overrule a speed.

@@ -435,6 +435,17 @@ fun agreementStands(
         return false
     }
 
+    // An answer worked out from the Wi-Fi is remembered as the network's
+    // word as it arrives, so the pair under judgement can be that word; and
+    // a mode beginning hands the last answer over again, so the pair can be
+    // one answer twice. Measured against itself it is always nought metres off.
+    if (sameAnswer(candidate, next) ||
+        sameAnswer(networkSays, next) ||
+        sameAnswer(networkSays, candidate)
+    ) {
+        return false
+    }
+
     return backedUpBy(next, networkSays, now)
 }
 
