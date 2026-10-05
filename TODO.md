@@ -813,3 +813,37 @@ Worth settling before it is built:
 - **The runtime settings.** The project's settings are read at start-up
   (`FirebaseOptions`); keeping room for a second, named connection is cheaper
   to plan now than to retrofit.
+
+## Short messages between the members of a group
+
+A minimal chat inside a group: a member writes a line, the others in the same
+group see it. Meant for what goes with a position rather than instead of a
+messenger — "I'm at the entrance", "wait for me at the car", "running late" —
+so that the map and the words about it are on one screen.
+
+Minimal means:
+
+- **Text only, one thread per group.** No pictures, files, voice, reactions
+  or threads inside threads; no messages between two members alone at first.
+- **Members only.** The rules let a member of the group read and write its
+  messages and nobody else, the way the roster already is; a member taken off
+  the group stops reading them at once.
+- **Kept briefly.** Old messages go after a fixed time or past a fixed count,
+  so a group's project stays inside the free quota and the database is not an
+  archive of the family's talk.
+
+Worth settling before it is built:
+
+- **Being told of a new message.** Without push (see "The phones fetch their
+  own updates" and the paid-tier question for waking a phone) a message
+  reaches a phone only while the application or its service listens. Whether
+  the service listens to the thread, and what that costs the battery, decides
+  whether this is a chat or a notice board.
+- **Where the messages live.** A collection under the group in its own
+  project; each message carries its author and the server's time, and the
+  rules hold its shape the way they hold every other document's.
+- **The page.** Whether the web page reads and writes the thread too, or the
+  phones alone.
+- **Relation to the shared list and notes** (see "Beyond a location"): both
+  are short text shared within a group, and may be better as one feature than
+  two.
