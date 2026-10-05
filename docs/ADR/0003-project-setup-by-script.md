@@ -1,6 +1,6 @@
 # ADR-0003: A group's project is set up by a script
 
-- Status: Accepted; the founder's path superseded by ADR-0033
+- Status: Accepted; the project owner's path superseded by ADR-0033
 - Date: 2026-09-30
 
 ## Context
