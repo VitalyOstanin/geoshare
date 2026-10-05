@@ -13,7 +13,12 @@ import io.github.vitalyostanin.geoshare.R
 
 const val SHARING_NOTIFICATION_ID = 1
 
-private const val CHANNEL_ID = "sharing"
+// Renamed rather than changed in place: whether a channel badges the launcher
+// icon is fixed once the channel exists, and the first one did not.
+private const val CHANNEL_ID = "sharing_badged"
+
+/** The channel before it badged the icon, removed so the settings list it once. */
+private const val OLD_CHANNEL_ID = "sharing"
 
 /**
  * The notification a foreground service is required to show.
@@ -62,8 +67,12 @@ private fun createChannel(context: Context) {
             NotificationManager.IMPORTANCE_LOW,
         ).apply {
             description = context.getString(R.string.sharing_channel_description)
-            setShowBadge(false)
         }
 
-    context.getSystemService<NotificationManager>()?.createNotificationChannel(channel)
+    context.getSystemService<NotificationManager>()?.run {
+        // The badge says on the home screen that the place is going out,
+        // which the notification alone says only inside the shade.
+        deleteNotificationChannel(OLD_CHANNEL_ID)
+        createNotificationChannel(channel)
+    }
 }

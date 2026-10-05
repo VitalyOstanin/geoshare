@@ -48,11 +48,15 @@ fun rememberMemberPositions(
     own: String,
     /** The group's searches, whose standing phones this phone may read regardless of a grant. */
     searches: Map<String, Search> = emptyMap(),
+    /** The profiles, whose changes say that a refused place may be open now. */
+    profiles: Map<String, MemberProfile>? = null,
 ): State<MembersInView> {
     val connection = groupNow()
     val sought = soughtPhoneIds(searches)
+    val changes = rememberProfileChanges(profiles)
     val documents = remember(grants, own, sought) { positionDocuments(grants, own, sought) }
-    val positions = remember(connection, documents) { memberPositions(documents, connection) }
+    val positions =
+        remember(connection, documents) { memberPositions(documents, connection, changes) }
     val written = positions.collectAsStateWithLifecycle(initialValue = MembersInView())
     val falsePlaces = remember(connection) { namedFalsePlaces(connection) }
     val places = falsePlaces.collectAsStateWithLifecycle(initialValue = emptyList())
@@ -155,7 +159,8 @@ fun rememberMemberGrants(
     // read back from it, and a member whose profile has not been written yet
     // would otherwise see the name they typed vanish.
     val memberIds = remember(profiles, ownId) { (profiles.orEmpty().keys + ownId).sorted() }
-    val grants = remember(connection, memberIds) { memberGrants(memberIds, connection) }
+    val changes = rememberProfileChanges(profiles)
+    val grants = remember(connection, memberIds) { memberGrants(memberIds, connection, changes) }
 
     return grants.collectAsStateWithLifecycle(initialValue = emptyMap())
 }

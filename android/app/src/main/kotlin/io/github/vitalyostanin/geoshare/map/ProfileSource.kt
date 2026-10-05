@@ -12,9 +12,9 @@ import io.github.vitalyostanin.geoshare.service.membersOf
 import io.github.vitalyostanin.geoshare.service.permissionsOf
 import io.github.vitalyostanin.geoshare.service.phonesOf
 import kotlinx.coroutines.channels.awaitClose
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.callbackFlow
+import kotlinx.coroutines.flow.emptyFlow
 import kotlinx.coroutines.launch
 
 private const val TAG = "geoshare.profiles"
@@ -65,6 +65,7 @@ private fun profileOf(document: DocumentSnapshot): MemberProfile? {
         memberId = document.id,
         displayName = displayName,
         pictureUrl = accountPicture(document.getString(ProfileField.PHOTO_URL)),
+        updatedAt = document.getTimestamp(ProfileField.UPDATED_AT)?.toInstant(),
     )
 }
 
@@ -84,12 +85,15 @@ private fun profileOf(document: DocumentSnapshot): MemberProfile? {
 fun memberGrants(
     memberIds: List<String>,
     connection: GroupConnection,
+    /** Says when to ask again at once for every grant still refused. */
+    retryNow: Flow<Unit> = emptyFlow(),
 ): Flow<Map<String, MemberGrant>> = callbackFlow {
     val known = mutableMapOf<String, MemberGrant>()
     val phones = mutableMapOf<String, Map<String, PhoneStatus>>()
     val subscriptions = mutableMapOf<String, ListenerRegistration>()
     val grants = grantsOf(connection)
     val phoneDocuments = phonesOf(connection)
+    val refusals = Refusals(this)
 
     fun publish() = trySend(combinedGrants(known, phones))
 
@@ -101,8 +105,7 @@ fun memberGrants(
                     known.remove(memberId)
                     publish()
 
-                    launch {
-                        delay(RETRY_AFTER.toMillis())
+                    refusals.retryLater(memberId) {
                         subscriptions.remove(memberId)?.remove()
                         follow(memberId)
                     }
@@ -135,8 +138,7 @@ fun memberGrants(
                     phones.remove(memberId)
                     publish()
 
-                    launch {
-                        delay(RETRY_AFTER.toMillis())
+                    refusals.retryLater(key) {
                         subscriptions.remove(key)?.remove()
                         followPhones(memberId)
                     }
@@ -158,6 +160,8 @@ fun memberGrants(
         follow(it)
         followPhones(it)
     }
+
+    launch { retryNow.collect { refusals.retryNow() } }
 
     // Said once, so that a screen with nobody to follow draws an empty map
     // instead of waiting for an answer that is not coming.

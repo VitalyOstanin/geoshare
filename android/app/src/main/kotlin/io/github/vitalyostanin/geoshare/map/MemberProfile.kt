@@ -1,5 +1,7 @@
 package io.github.vitalyostanin.geoshare.map
 
+import java.time.Instant
+
 /**
  * What a member says about themselves, so that a marker can carry a person
  * rather than the first characters of an account id.
@@ -13,4 +15,6 @@ data class MemberProfile(
     val displayName: String,
     /** The account picture, as the provider hosts it; absent for an account without one. */
     val pictureUrl: String?,
+    /** When the member last touched the profile; see [rememberProfileChanges]. */
+    val updatedAt: Instant? = null,
 )

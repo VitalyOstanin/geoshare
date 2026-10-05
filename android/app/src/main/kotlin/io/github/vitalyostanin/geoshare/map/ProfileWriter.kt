@@ -112,6 +112,27 @@ suspend fun publishDevice(
 }
 
 /**
+ * Touches this member's profile, so that the members tell a changed grant at once.
+ *
+ * A reader the grant used to refuse cannot hear it change, and would ask again
+ * only on its timer; the profiles every member follows can be heard. Says
+ * nothing of whom the place went to. Worth a line when it fails, since the
+ * timer still brings the marker, only later.
+ */
+private suspend fun announceSharing(memberId: String, connection: GroupConnection) {
+    try {
+        membersOf(connection)
+            .document(memberId)
+            .update(ProfileField.UPDATED_AT, FieldValue.serverTimestamp())
+            .await()
+    } catch (cancellation: CancellationException) {
+        throw cancellation
+    } catch (error: Exception) {
+        AppLog.i(TAG, "could not say that the permissions changed: $error")
+    }
+}
+
+/**
  * Says who this member lets watch them, and until when.
  *
  * Written into the grant rather than straight into the positions: every phone
@@ -140,6 +161,7 @@ suspend fun publishSharing(
             .await()
 
         AppLog.i(TAG, "the permissions of $memberId are now published")
+        announceSharing(memberId, connection)
 
         return true
     } catch (cancellation: CancellationException) {

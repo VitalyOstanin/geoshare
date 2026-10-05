@@ -107,7 +107,7 @@ internal fun SignedInScreen(
         remember(current.memberId) {
             positionId(current.memberId, activity.device.id)
         }
-    val onTheMap by rememberMemberPositions(grants, ownDocument, searches)
+    val onTheMap by rememberMemberPositions(grants, ownDocument, searches, profiles)
     val labels by rememberOwnLabels(current.memberId)
     val sharedWith by rememberOwnSharedWith(current.memberId)
     val roster by rememberGroupRoster()
