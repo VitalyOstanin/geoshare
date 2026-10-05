@@ -13,6 +13,7 @@ import io.github.vitalyostanin.geoshare.auth.AuthState
 import io.github.vitalyostanin.geoshare.collection.Constellation
 import io.github.vitalyostanin.geoshare.download.DownloadSetting
 import io.github.vitalyostanin.geoshare.log.AppLog
+import io.github.vitalyostanin.geoshare.map.FirstShareQuestion
 import io.github.vitalyostanin.geoshare.map.GroupSwitch
 import io.github.vitalyostanin.geoshare.map.KeepWatching
 import io.github.vitalyostanin.geoshare.map.LocalLink
@@ -283,6 +284,28 @@ internal fun SignedInScreen(
                             .await()
                 },
             ),
+        )
+
+        // Once per group, over the map: whom to show this member's place to,
+        // while nobody has been given it yet.
+        FirstShareQuestion(
+            connection = connection,
+            memberId = current.memberId,
+            profiles = profiles,
+            onShare = { readers, span ->
+                activity.lifecycleScope.launch {
+                    val now = Instant.now()
+
+                    publishSharing(
+                        memberId = current.memberId,
+                        sharedWith =
+                        readers.fold(sharedWith) { given, reader ->
+                            withShare(given, reader, span, now)
+                        },
+                        connection = connection,
+                    )
+                }
+            },
         )
     }
 }

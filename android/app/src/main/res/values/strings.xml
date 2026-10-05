@@ -340,6 +340,12 @@
     <string name="visibility_eight_hours">for eight hours</string>
     <string name="visibility_day">for a day</string>
     <string name="visibility_forever">with no end</string>
+    <string name="visibility_state_none">cannot see</string>
+    <string name="visibility_state_always">always</string>
+    <string name="first_share_title">Who should see where you are?</string>
+    <string name="first_share_span">For</string>
+    <string name="first_share_go">Show</string>
+    <string name="first_share_later">Later</string>
     <!-- A permission given earlier, counting down: %1$s is a time of day. -->
     <string name="visibility_until">until %1$s</string>
     <!-- The name of the way a device was collecting when it wrote the position.

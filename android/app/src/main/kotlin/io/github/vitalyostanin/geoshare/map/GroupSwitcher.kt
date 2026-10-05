@@ -30,6 +30,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.pluralStringResource
@@ -330,17 +331,7 @@ fun GroupChip(
 
             // The triangle that says the chip opens a list rather than
             // standing for the group on its own.
-            Canvas(modifier = Modifier.size(width = 10.dp, height = 5.dp)) {
-                val triangle =
-                    Path().apply {
-                        moveTo(0f, 0f)
-                        lineTo(size.width, 0f)
-                        lineTo(size.width / 2, size.height)
-                        close()
-                    }
-
-                drawPath(triangle, muted)
-            }
+            ListTriangle(color = muted)
         }
     }
 }
@@ -548,5 +539,21 @@ fun GroupSwitcher(groups: GroupSwitch, modifier: Modifier = Modifier) {
             onLeave = { groups.onLeave(ask) },
             onDismiss = { leaveAsk = null },
         )
+    }
+}
+
+/** The small triangle pointing down that marks a value as one of a list. */
+@Composable
+internal fun ListTriangle(color: Color) {
+    Canvas(modifier = Modifier.size(width = 10.dp, height = 5.dp)) {
+        val triangle =
+            Path().apply {
+                moveTo(0f, 0f)
+                lineTo(size.width, 0f)
+                lineTo(size.width / 2, size.height)
+                close()
+            }
+
+        drawPath(triangle, color)
     }
 }

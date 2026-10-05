@@ -306,6 +306,12 @@
     <string name="visibility_eight_hours">на восемь часов</string>
     <string name="visibility_day">на сутки</string>
     <string name="visibility_forever">без ограничения</string>
+    <string name="visibility_state_none">не видит</string>
+    <string name="visibility_state_always">всегда</string>
+    <string name="first_share_title">Кому показывать, где вы?</string>
+    <string name="first_share_span">Срок</string>
+    <string name="first_share_go">Показывать</string>
+    <string name="first_share_later">Позже</string>
     <!-- A permission given earlier, counting down: %1$s is a time of day. -->
     <string name="visibility_until">до %1$s</string>
 

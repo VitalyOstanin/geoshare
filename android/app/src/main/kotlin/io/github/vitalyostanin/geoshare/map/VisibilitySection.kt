@@ -1,16 +1,18 @@
 package io.github.vitalyostanin.geoshare.map
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -109,8 +111,36 @@ private fun ReaderRow(
         // over the names, and which reader is being changed stops being
         // obvious at exactly the moment it matters.
         Box {
-            TextButton(onClick = { open = true }) {
-                Text(text = sharingText(until, now))
+            // A value in a frame with a triangle, as a list's chosen entry is
+            // drawn, not a button: in blue without a frame "not shown" read as
+            // an order to hide, when it is how things stand.
+            val never = sharingOf(until, now) == Sharing.Never
+            val tint =
+                if (never) {
+                    MaterialTheme.colorScheme.onSurfaceVariant
+                } else {
+                    MaterialTheme.colorScheme.onSurface
+                }
+
+            Surface(
+                onClick = { open = true },
+                shape = RoundedCornerShape(8.dp),
+                border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
+            ) {
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    modifier =
+                    Modifier.padding(start = 12.dp, end = 10.dp, top = 8.dp, bottom = 8.dp),
+                ) {
+                    Text(
+                        text = sharingText(until, now),
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = tint,
+                    )
+
+                    ListTriangle(color = MaterialTheme.colorScheme.onSurfaceVariant)
+                }
             }
 
             DropdownMenu(expanded = open, onDismissRequest = { open = false }) {
@@ -129,7 +159,8 @@ private fun ReaderRow(
 }
 
 /**
- * What the row says a permission is now.
+ * What the row says a permission is now: a state ("cannot see", "always"),
+ * where the menu offers the same as choices ("do not show", "no limit").
  *
  * A permission given hours ago is none of the choices any more, so it is shown
  * as the time it ends rather than as the span it was given for. The moment is
@@ -139,9 +170,9 @@ private fun ReaderRow(
 @Composable
 private fun sharingText(until: Instant?, now: Instant): String =
     when (val sharing = sharingOf(until, now)) {
-        Sharing.Endless -> stringResource(R.string.visibility_forever)
+        Sharing.Endless -> stringResource(R.string.visibility_state_always)
 
-        Sharing.Never -> stringResource(R.string.visibility_none)
+        Sharing.Never -> stringResource(R.string.visibility_state_none)
 
         is Sharing.Until ->
             stringResource(
@@ -150,7 +181,7 @@ private fun sharingText(until: Instant?, now: Instant): String =
             )
     }
 
-private fun spanLabel(span: ShareSpan): Int = when (span) {
+internal fun spanLabel(span: ShareSpan): Int = when (span) {
     ShareSpan.None -> R.string.visibility_none
     ShareSpan.Hour -> R.string.visibility_hour
     ShareSpan.EightHours -> R.string.visibility_eight_hours
