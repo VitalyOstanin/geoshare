@@ -77,3 +77,13 @@ class PublishedProfile(context: Context) {
             .apply()
     }
 }
+
+/**
+ * Whether what this phone remembers telling the group still stands.
+ *
+ * Remembered on the phone, so it cannot see the profile taken away behind its
+ * back — by an administrator tidying the group, or by a removal and a return.
+ * The server saying the document is gone is the one thing that overrules it.
+ */
+fun stillTold(told: ProfileTold?, telling: ProfileTold, goneOnServer: Boolean): Boolean =
+    told == telling && !goneOnServer

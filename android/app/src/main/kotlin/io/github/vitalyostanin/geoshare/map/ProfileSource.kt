@@ -20,6 +20,37 @@ import kotlinx.coroutines.launch
 private const val TAG = "geoshare.profiles"
 
 /**
+ * Whether the server says this member's own profile is gone from the group.
+ *
+ * Only an answer from the server counts, and only one with no write of this
+ * phone still on its way: a write the server refuses shows up in the cache
+ * first and vanishes afterwards, and that is not the profile being taken away.
+ * Nothing is said where the document cannot be read — a phone not yet let into
+ * the group has no profile there to lose.
+ */
+fun ownProfileGone(connection: GroupConnection, memberId: String): Flow<Boolean> = callbackFlow {
+    val subscription =
+        membersOf(connection)
+            .document(memberId)
+            .addSnapshotListener { snapshot, error ->
+                if (error != null) {
+                    close()
+
+                    return@addSnapshotListener
+                }
+
+                if (snapshot != null &&
+                    !snapshot.metadata.isFromCache &&
+                    !snapshot.metadata.hasPendingWrites()
+                ) {
+                    trySend(!snapshot.exists())
+                }
+            }
+
+    awaitClose { subscription.remove() }
+}
+
+/**
  * Who the members are, as they say so themselves.
  *
  * A subscription like the positions one, and for the same reason: a member who
