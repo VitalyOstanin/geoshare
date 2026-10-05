@@ -534,6 +534,16 @@ fun MapScreen(
                     onNamePerson =
                     { naming = LabelKind.MEMBER to opened.memberId }
                         .takeIf { opened.memberId != ownMemberId },
+                    onShareBack =
+                    { span: ShareSpan -> actions.onShare(opened.memberId, span) }
+                        .takeIf {
+                            offersShareBack(
+                                opened.memberId,
+                                ownMemberId,
+                                settings.sharedWith,
+                                now,
+                            )
+                        },
                     // Against the strip rather than floating over the map: the
                     // card is a sheet pulled up out of it, over the button of
                     // the member it is about.

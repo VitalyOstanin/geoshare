@@ -128,6 +128,8 @@ internal fun MemberDetail(
     onClose: () -> Unit,
     onNamePhone: () -> Unit,
     onNamePerson: (() -> Unit)?,
+    /** Shows them this member's place for a span; null where the card does not offer it. */
+    onShareBack: ((ShareSpan) -> Unit)? = null,
     modifier: Modifier = Modifier,
 ) {
     val pull =
@@ -164,6 +166,7 @@ internal fun MemberDetail(
                 detailsOpen = detailsOpen,
                 onNamePhone = onNamePhone,
                 onNamePerson = onNamePerson,
+                onShareBack = onShareBack,
             )
         }
     }
@@ -184,6 +187,7 @@ private fun DetailBody(
     detailsOpen: Boolean,
     onNamePhone: () -> Unit,
     onNamePerson: (() -> Unit)?,
+    onShareBack: ((ShareSpan) -> Unit)?,
 ) {
     Column(
         modifier =
@@ -225,6 +229,12 @@ private fun DetailBody(
         }
 
         DetailSummary(member = member, away = away, now = now)
+
+        // Under the summary, before the rows behind the handle: it is said
+        // the moment the card is opened, the time it is noticed.
+        if (onShareBack != null) {
+            ShareBackLine(name = name, onShare = onShareBack)
+        }
 
         if (search != null && openedByName != null) {
             DetailSought(

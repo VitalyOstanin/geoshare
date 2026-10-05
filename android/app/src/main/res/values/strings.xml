@@ -346,6 +346,8 @@
     <string name="first_share_span">For</string>
     <string name="first_share_go">Show</string>
     <string name="first_share_later">Later</string>
+    <string name="map_share_back">%1$s cannot see where you are</string>
+    <string name="map_share_back_go">Show</string>
     <!-- A permission given earlier, counting down: %1$s is a time of day. -->
     <string name="visibility_until">until %1$s</string>
     <!-- The name of the way a device was collecting when it wrote the position.
