@@ -73,11 +73,12 @@ private const val FACE_STEP_DP = 28f
  */
 const val PIN_MAX_CIRCLES = 3
 
-/** The label above the pin: its text, the box around it and the gap down to the head. */
+/** The label above the pin: its text, the box around it and the gap down to the head, in the page's numbers. */
 private const val LABEL_TEXT_DP = 13f
-private const val LABEL_PADDING_DP = 5f
+private const val LABEL_PADDING_ACROSS_DP = 6f
+private const val LABEL_PADDING_DOWN_DP = 2f
 private const val LABEL_GAP_DP = 4f
-private const val LABEL_CORNER_DP = 6f
+private const val LABEL_CORNER_DP = 8f
 
 /** The frame around the name of the member whose card is open, as the page draws it. */
 private const val LABEL_FRAME_DP = 2f
@@ -277,7 +278,8 @@ private fun pinBitmap(
     val pointInset = dpToPx(context, PIN_POINT_INSET_DP)
     val edge = dpToPx(context, PIN_EDGE_DP)
     val gap = dpToPx(context, LABEL_GAP_DP)
-    val padding = dpToPx(context, LABEL_PADDING_DP)
+    val across = dpToPx(context, LABEL_PADDING_ACROSS_DP)
+    val down = dpToPx(context, LABEL_PADDING_DOWN_DP)
     val ring = if (soughtMark != null) dpToPx(context, SOUGHT_RING_DP) else 0
     val framed = if (frame != null) dpToPx(context, LABEL_FRAME_DP) else 0
 
@@ -292,8 +294,8 @@ private fun pinBitmap(
         }
 
     val metrics = textPaint.fontMetrics
-    val labelHeight = (metrics.descent - metrics.ascent).toInt() + padding * 2
-    val labelWidth = textPaint.measureText(label).toInt() + padding * 2
+    val labelHeight = (metrics.descent - metrics.ascent).toInt() + down * 2
+    val labelWidth = textPaint.measureText(label).toInt() + across * 2
 
     // The capsule above the name, in white on the sought colour rather than
     // the name's dark on white: it is what the whole group is scanning the
@@ -308,12 +310,12 @@ private fun pinBitmap(
     val soughtMetrics = soughtPaint.fontMetrics
     val soughtHeight =
         if (soughtMark != null) {
-            (soughtMetrics.descent - soughtMetrics.ascent).toInt() + padding * 2
+            (soughtMetrics.descent - soughtMetrics.ascent).toInt() + down * 2
         } else {
             0
         }
     val soughtWidth =
-        if (soughtMark != null) soughtPaint.measureText(soughtMark).toInt() + padding * 2 else 0
+        if (soughtMark != null) soughtPaint.measureText(soughtMark).toInt() + across * 2 else 0
     val soughtStack = if (soughtMark != null) soughtHeight + gap else 0
 
     val width = maxOf(labelWidth + framed * 2, soughtWidth, headWidth + (edge + ring) * 2)
@@ -348,7 +350,7 @@ private fun pinBitmap(
             corner,
             soughtBoxPaint,
         )
-        canvas.drawText(soughtMark, middle, padding - soughtMetrics.ascent, soughtPaint)
+        canvas.drawText(soughtMark, middle, down - soughtMetrics.ascent, soughtPaint)
     }
 
     val labelTop = (soughtStack + framed).toFloat()
@@ -378,7 +380,7 @@ private fun pinBitmap(
         boxPaint,
     )
 
-    canvas.drawText(label, middle, labelTop + padding - metrics.ascent, textPaint)
+    canvas.drawText(label, middle, labelTop + down - metrics.ascent, textPaint)
 
     val headCentre = headTop + head / 2f
     val shape =

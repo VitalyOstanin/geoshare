@@ -32,7 +32,7 @@
     color: var(--on-surface);
     font: inherit;
     font-weight: 600;
-    font-size: 0.85rem;
+    font-size: var(--text-body);
     display: flex;
     align-items: center;
     box-shadow: 0 1px 4px rgba(0, 0, 0, 0.3);
@@ -105,7 +105,7 @@
 
 .follow-item-note,
 #follow-hint {
-    font-size: 0.8rem;
+    font-size: var(--text-small);
     opacity: 0.75;
 }
 
@@ -135,7 +135,7 @@
     border-radius: 0.5rem;
     background: rgba(32, 32, 32, 0.88);
     color: #ffffff;
-    font-size: 0.85rem;
+    font-size: var(--text-body);
 }
 
 /* The strip is where a member is picked while the page waits for one. */

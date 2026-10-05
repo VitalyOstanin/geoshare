@@ -20,8 +20,6 @@ import androidx.compose.foundation.layout.statusBars
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
-import androidx.compose.material3.darkColorScheme
-import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -291,7 +289,7 @@ class MainActivity : AppCompatActivity() {
         // screen that does not fill it.
         LaunchedEffect(dark) { paintWindow(dark) }
 
-        MaterialTheme(colorScheme = if (dark) darkColorScheme() else lightColorScheme()) {
+        MaterialTheme(colorScheme = appColours(dark)) {
             Surface(modifier = Modifier.fillMaxSize()) {
                 val shown by Connections.selected.collectAsStateWithLifecycle()
                 // The group whose sign-in did not finish, said over the map of
@@ -593,7 +591,7 @@ class MainActivity : AppCompatActivity() {
      * which of the two this is.
      */
     private fun paintWindow(dark: Boolean) {
-        val scheme = if (dark) darkColorScheme() else lightColorScheme()
+        val scheme = appColours(dark)
 
         window.setBackgroundDrawable(ColorDrawable(scheme.background.toArgb()))
 

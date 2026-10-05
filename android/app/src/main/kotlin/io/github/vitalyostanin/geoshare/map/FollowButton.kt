@@ -56,6 +56,9 @@ private val FOLLOW_MENU_WIDTH = 260.dp
 /** How faded the follow button is while a hand holds the following still, as on the page. */
 private const val PAUSED_ALPHA = 0.75f
 
+/** A target that has gone from the map: the button half there, as the page draws it. */
+private const val LOST_ALPHA = 0.5f
+
 /**
  * The button that opens a choice of [FollowMode] and, once it is closed
  * again, says out loud what was just chosen.
@@ -130,7 +133,13 @@ internal fun FollowButton(
             modifier =
             Modifier
                 .height(FOLLOW_BUTTON_HEIGHT)
-                .alpha(if (paused) PAUSED_ALPHA else 1f),
+                .alpha(
+                    when {
+                        !targetAvailable -> LOST_ALPHA
+                        paused -> PAUSED_ALPHA
+                        else -> 1f
+                    },
+                ),
             shape = CircleShape,
             color =
             if (mode != FollowMode.NONE) {
@@ -153,12 +162,7 @@ internal fun FollowButton(
                     Icon(
                         painter = painterResource(icon),
                         contentDescription = label,
-                        tint =
-                        if (!targetAvailable) {
-                            MaterialTheme.colorScheme.onSurfaceVariant
-                        } else {
-                            MaterialTheme.colorScheme.onSurface
-                        },
+                        tint = MaterialTheme.colorScheme.onSurface,
                     )
                 }
 

@@ -16,6 +16,8 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import io.github.vitalyostanin.geoshare.R
@@ -47,7 +49,17 @@ fun SoughtBanner(
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.errorContainer),
         modifier = modifier.fillMaxWidth(),
     ) {
-        Column(modifier = Modifier.padding(12.dp)) {
+        val stripe = MaterialTheme.colorScheme.error
+
+        // Filled and edged in red, where a warning is only edged: a search
+        // shown beside the lost connection has to be the louder of the two.
+        Column(
+            modifier =
+            Modifier
+                .drawBehind {
+                    drawRect(stripe, size = Size(SOUGHT_STRIPE.toPx(), size.height))
+                }.padding(start = 12.dp + SOUGHT_STRIPE, top = 12.dp, end = 12.dp, bottom = 12.dp),
+        ) {
             Text(
                 text =
                 stringResource(
@@ -87,3 +99,6 @@ fun SoughtBanner(
         }
     }
 }
+
+/** The red edge on the left of the banner, as wide as the warnings' edge. */
+private val SOUGHT_STRIPE = 4.dp
