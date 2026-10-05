@@ -12,6 +12,7 @@ import com.google.firebase.auth.OAuthProvider
 import io.github.vitalyostanin.geoshare.log.AppLog
 import io.github.vitalyostanin.geoshare.service.STAND_IN_PASSWORD
 import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -21,6 +22,12 @@ private const val TAG = "geoshare.auth"
 
 /** What Firebase answers a browser sign-in started while it thinks one is still open. */
 private const val ALREADY_PRESENTED = "ERROR_WEB_CONTEXT_ALREADY_PRESENTED"
+
+/**
+ * How long a return to the screen waits for a browser sign-in to finish before
+ * giving up on it: a page that did finish signs in well within it.
+ */
+private const val RETURN_GRACE_MILLIS = 5_000L
 
 /*
  * The message Firebase's own sign-in activity sends when the member comes back
@@ -61,6 +68,11 @@ class SignInController(private val auth: FirebaseAuth) {
 
             current.value =
                 if (user == null) {
+                    // The listener also answers every return to the screen,
+                    // and "nobody yet" would wipe out an attempt the browser
+                    // has not answered: that one ends on its own.
+                    if (current.value == AuthState.SigningIn) return@AuthStateListener
+
                     AuthState.SignedOut()
                 } else {
                     AppLog.i(TAG, "signed in as ${user.uid}")
@@ -174,6 +186,27 @@ class SignInController(private val auth: FirebaseAuth) {
             AppLog.w(TAG, "a browser sign-in was still held open; giving up on it")
             giveUpOpenFlow(activity)
             startFlow(activity, provider).await()
+        }
+    }
+
+    /**
+     * Gives up on a browser sign-in the member came back from without its answer.
+     *
+     * Coming back through the launcher closes Firebase's own activity without
+     * letting it say the page was left, and a page that broke ("missing initial
+     * state") never answers at all: the attempt would wait for good, with
+     * nothing on the screen or in the log. Called on every return to the
+     * screen; after [RETURN_GRACE_MILLIS] it says what that activity would
+     * have said, which ends the attempt as cancelled.
+     */
+    suspend fun cameBack(context: Context) {
+        if (current.value != AuthState.SigningIn) return
+
+        delay(RETURN_GRACE_MILLIS)
+
+        if (current.value == AuthState.SigningIn && auth.currentUser == null) {
+            AppLog.w(TAG, "came back without the sign-in page's answer; giving up on it")
+            giveUpOpenFlow(context)
         }
     }
 

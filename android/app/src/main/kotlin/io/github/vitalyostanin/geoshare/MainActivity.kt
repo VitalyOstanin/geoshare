@@ -758,7 +758,10 @@ class MainActivity : AppCompatActivity() {
         }
 
         watchingSessions = true
-        signIns.values.forEach { (_, controller) -> controller.start() }
+        signIns.values.forEach { (_, controller) ->
+            controller.start()
+            lifecycleScope.launch { controller.cameBack(this@MainActivity) }
+        }
         // Coming back from the settings screen is the usual way a permission
         // changes, and nothing tells the application about it.
         batteryFree = batteryUnrestricted(this)
