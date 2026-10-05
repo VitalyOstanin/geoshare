@@ -463,9 +463,9 @@
     <string name="group_leave_not_on_roster_text">You are not on this group\'s list. The group is removed from this device.</string>
     <string name="group_leave_go">Leave</string>
     <string name="group_leave_device_go">Remove from device</string>
-    <string name="group_switcher_removed">you were taken off this group</string>
-    <string name="group_removed_title">You were taken off the group</string>
-    <string name="group_removed_text">An administrator of “%1$s” took you off it. Your position is no longer sent there.</string>
+    <string name="group_switcher_removed">you were removed from this group</string>
+    <string name="group_removed_title">You were removed from the group</string>
+    <string name="group_removed_text">An administrator of “%1$s” removed you from it. Your position is no longer sent there.</string>
     <string name="group_removed_drop">Remove the group</string>
     <string name="group_removed_join">Join by link</string>
     <!-- The same card when the invitation this device came with was refused:

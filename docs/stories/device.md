@@ -141,7 +141,7 @@ As a member taken off a roster I am told so on that group's map instead of an
 empty map, so that I know what happened.
 
 Acceptance:
-- "You were taken off the group", with "Remove the group" and "Join by
+- "You were removed from the group", with "Remove the group" and "Join by
   link";
 - the group's settings say the same;
 - the connection is not removed on its own;

@@ -395,9 +395,9 @@
     <string name="group_leave_not_on_roster_text">Вас нет в списке этой группы. Группа будет убрана с этого устройства.</string>
     <string name="group_leave_go">Выйти</string>
     <string name="group_leave_device_go">Убрать с устройства</string>
-    <string name="group_switcher_removed">вас сняли с группы</string>
-    <string name="group_removed_title">Вас сняли с группы</string>
-    <string name="group_removed_text">Администратор группы «%1$s» убрал вас из неё. Ваше место туда больше не передаётся.</string>
+    <string name="group_switcher_removed">вас удалили из группы</string>
+    <string name="group_removed_title">Вас удалили из группы</string>
+    <string name="group_removed_text">Администратор группы «%1$s» удалил вас из неё. Ваше место туда больше не передаётся.</string>
     <string name="group_removed_drop">Убрать группу</string>
     <string name="group_removed_join">Вступить по ссылке</string>
     <string name="group_join_refused_title">Не удалось вступить в «%1$s»</string>
