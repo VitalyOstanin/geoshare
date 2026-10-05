@@ -168,7 +168,9 @@ fun MapScreen(
                         )
                     },
                     onJoin = groups.onJoin,
-                    refused = settings.refusedJoin.takeUnless { shown.removed },
+                    // A refusal is the newer word: one removed and then
+                    // turned down by a spent link is told about the link.
+                    refused = settings.refusedJoin?.takeIf { it.projectId == shown.projectId },
                 )
             }
     // Whether a hand is holding the following still; the button says so.

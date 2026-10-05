@@ -21,6 +21,7 @@ import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -291,10 +292,14 @@ fun AdminPanel(
 
             HorizontalDivider()
 
+            // Keyed as a whole: collectAsState keeps the last value across a
+            // new flow, and a fresh code would go on reading as the spent one.
             val invitationLeft by
-                remember(invitation?.code) {
-                    invitation?.let { invitationStanding(it.code) } ?: flowOf(null)
-                }.collectAsState(initial = null)
+                key(invitation?.code) {
+                    remember {
+                        invitation?.let { invitationStanding(it.code) } ?: flowOf(null)
+                    }.collectAsState(initial = null)
+                }
 
             AdminInvitation(
                 invitation = invitation,
