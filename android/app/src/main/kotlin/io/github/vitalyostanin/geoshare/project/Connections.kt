@@ -148,6 +148,7 @@ object Connections {
         SeenOnRoster.forget(context, projectId)
         GroupNames.forget(context, projectId)
         RemovedHere.forget(context, projectId)
+        SignInStarted.forget(context, projectId)
 
         AppLog.i(TAG, "no longer in $projectId")
     }

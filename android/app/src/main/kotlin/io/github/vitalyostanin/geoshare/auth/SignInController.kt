@@ -51,7 +51,10 @@ private const val EXTRA_CANCELED = "com.google.firebase.auth.internal.EXTRA_CANC
  * nothing beyond the signing certificate's SHA-1 in the project's Firebase
  * settings, which is what every group's project already carries.
  */
-class SignInController(private val auth: FirebaseAuth) {
+class SignInController(
+    private val auth: FirebaseAuth,
+    private val started: SignInMark = NoSignInMark,
+) {
     private val current = MutableStateFlow<AuthState>(AuthState.Starting)
     val state: StateFlow<AuthState> = current.asStateFlow()
 
@@ -73,8 +76,16 @@ class SignInController(private val auth: FirebaseAuth) {
                     // has not answered: that one ends on its own.
                     if (current.value == AuthState.SigningIn) return@AuthStateListener
 
-                    AuthState.SignedOut()
+                    val startedEarlier = started.has()
+
+                    if (startedEarlier) {
+                        AppLog.w(TAG, "an earlier screen's sign-in never finished")
+                        started.forget()
+                    }
+
+                    signedOutAfter(startedEarlier)
                 } else {
+                    started.forget()
                     AppLog.i(TAG, "signed in as ${user.uid}")
                     AuthState.SignedIn(
                         memberId = user.uid,
@@ -123,6 +134,7 @@ class SignInController(private val auth: FirebaseAuth) {
     suspend fun signIn(activity: Activity) {
         val mine = ++attempt
         current.value = AuthState.SigningIn
+        started.note()
 
         try {
             // Built on this group's own instance: the one-argument builder
@@ -161,6 +173,7 @@ class SignInController(private val auth: FirebaseAuth) {
             AppLog.w(TAG, "sign-in failed as $failure", error)
 
             if (mine == attempt) {
+                started.forget()
                 current.value = AuthState.SignedOut(failure)
             }
         }

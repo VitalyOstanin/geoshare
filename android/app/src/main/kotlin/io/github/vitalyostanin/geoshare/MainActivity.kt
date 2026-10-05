@@ -66,6 +66,7 @@ import io.github.vitalyostanin.geoshare.project.GroupNames
 import io.github.vitalyostanin.geoshare.project.INHERITED
 import io.github.vitalyostanin.geoshare.project.PendingInvitationStore
 import io.github.vitalyostanin.geoshare.project.RemovedHere
+import io.github.vitalyostanin.geoshare.project.SignInStarted
 import io.github.vitalyostanin.geoshare.project.fetchSettings
 import io.github.vitalyostanin.geoshare.project.pendingInvitationFor
 import io.github.vitalyostanin.geoshare.service.AidingDoubtSetting
@@ -520,7 +521,11 @@ class MainActivity : AppCompatActivity() {
 
         kept?.second?.stop()
 
-        val made = SignInController(connection.auth)
+        val made =
+            SignInController(
+                connection.auth,
+                SignInStarted.mark(this, connection.projectId),
+            )
 
         signIns[connection.app.name] = connection.app to made
 
