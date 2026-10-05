@@ -358,11 +358,21 @@ class SharingService : LifecycleService() {
      * fifteen minutes it is already filling up, which is the case the reader
      * most wants told — and under a transmitter there is no next fix at all.
      */
+    private var powerSettling: Job? = null
+
     private val power =
         object : BroadcastReceiver() {
             override fun onReceive(context: Context, intent: Intent) {
                 AppLog.i(TAG, "power changed: ${intent.action}")
-                tellHowThePhoneIs()
+                // A loose cable says connected and disconnected several times
+                // a second, and each would be a write into every group: only
+                // where it settles is news.
+                powerSettling?.cancel()
+                powerSettling =
+                    lifecycleScope.launch {
+                        delay(POWER_SETTLES.toMillis())
+                        tellHowThePhoneIs()
+                    }
             }
         }
 
@@ -1598,6 +1608,9 @@ class SharingService : LifecycleService() {
          * new list being followed, with room to spare.
          */
         private val WATCHING_OUTLIVES_A_RELINK: Duration = Duration.ofSeconds(5)
+
+        /** How long the cable has to stay in or out before it is said. */
+        private val POWER_SETTLES: Duration = Duration.ofSeconds(2)
 
         /** How long a freshly started service waits for the account to be restored. */
         private val SESSION_WAIT: Duration = Duration.ofMinutes(1)
