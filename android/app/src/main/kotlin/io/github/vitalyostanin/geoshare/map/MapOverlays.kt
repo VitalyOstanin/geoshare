@@ -286,6 +286,11 @@ internal fun OverTheSettings(
             onForgetPhone = actions.onForgetPhone,
             groupNames =
             groups.choices.filter { it.leave != Leave.NOT_ON_ROSTER }.map { it.caption },
+            groupCaption =
+            groups.choices
+                .firstOrNull { it.projectId == groups.selected }
+                ?.caption
+                ?.takeIf { switcherShown(groups.choices.size) },
             searches = searches,
             mayLookFor = runsTheGroup,
             onSearch = actions.onSearch,

@@ -4,6 +4,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -643,16 +644,23 @@ private fun BackgroundWorkSection(
         return
     }
 
+    // The title on a line of its own: beside a button, a word and a tick it
+    // was left a few letters' width on a phone and broke inside words.
+    Text(
+        text = stringResource(R.string.background_startup),
+        modifier = Modifier.padding(start = 16.dp, end = 16.dp, top = 4.dp),
+    )
+
     Row(
-        modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 4.dp),
+        modifier = Modifier.fillMaxWidth().padding(start = 4.dp, end = 16.dp),
         horizontalArrangement = Arrangement.spacedBy(12.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        Text(text = stringResource(R.string.background_startup), modifier = Modifier.weight(1f))
-
         TextButton(onClick = onOpenStartup) {
             Text(text = stringResource(R.string.background_startup_open))
         }
+
+        Spacer(modifier = Modifier.weight(1f))
 
         // A tick rather than a switch, and a word beside it: the switches on
         // this screen change what the phone does, and this one only records

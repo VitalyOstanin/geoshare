@@ -317,6 +317,7 @@
     <string name="my_phones_this">this device</string>
     <string name="my_phones_none">No device has shared its position from this account yet</string>
     <string name="my_phones_open">My devices</string>
+    <string name="my_phones_group">In the group “%1$s”. Devices of the other groups show after switching the group on the map.</string>
     <string name="phone_remove">Remove device</string>
     <string name="phone_remove_title">Remove “%1$s”?</string>
     <string name="phone_remove_text">The device will disappear from the map and the lists of everybody in the group. The name you gave it goes too. If the device is in touch under your account again, it comes back.</string>

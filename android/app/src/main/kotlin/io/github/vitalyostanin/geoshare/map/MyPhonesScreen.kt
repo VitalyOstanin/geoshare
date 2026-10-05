@@ -72,6 +72,12 @@ fun MyPhonesScreen(
     onForgetPhone: suspend (phoneId: String) -> Boolean,
     /** The groups a removed phone leaves, named in the dialog when there is more than one. */
     groupNames: List<String> = emptyList(),
+    /**
+     * The group the list is of, said under the title while the device is in
+     * more than one: the phones are read from that group alone, and a phone
+     * the member has only in another one shows after switching to it.
+     */
+    groupCaption: String? = null,
     /** The group's searches, by the phone each one is looking for. */
     searches: Map<String, Search> = emptyMap(),
     /** Whether this member runs the group: only they may open a search, on their own phones. */
@@ -162,6 +168,15 @@ fun MyPhonesScreen(
                 TextButton(onClick = onClose) {
                     Text(text = stringResource(R.string.settings_close))
                 }
+            }
+
+            if (groupCaption != null) {
+                Text(
+                    text = stringResource(R.string.my_phones_group, groupCaption),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.padding(start = 16.dp, end = 16.dp, bottom = 8.dp),
+                )
             }
 
             HorizontalDivider()
