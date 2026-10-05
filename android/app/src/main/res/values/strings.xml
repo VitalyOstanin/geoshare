@@ -14,7 +14,9 @@
     <string name="write_unanswered">The database did not answer in 15 seconds. The write goes out once the connection is back; it cannot be called off.</string>
     <string name="sign_in_failed_offline">No connection. Sign-in needs the network for a moment.</string>
     <string name="sign_in_failed_misconfigured">This group\'s project is not set up for signing in with Google yet.</string>
-    <string name="sign_in_failed_unknown">Sign-in did not go through. Try again.</string>
+    <string name="sign_in_unfinished">Sign-in did not finish. If the sign-in page showed an error, sign in again. If it keeps happening, make Chrome the default browser.</string>
+    <string name="sign_in_unfinished_group">Sign-in to “%1$s” did not finish. If the sign-in page showed an error, sign in again; if it keeps happening, make Chrome the default browser.</string>
+    <string name="sign_in_unfinished_go">Sign in</string>
 
     <string name="sign_out_action">Sign out</string>
     <string name="sign_out_choose_title">Sign out</string>

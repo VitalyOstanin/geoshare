@@ -41,6 +41,7 @@ import io.github.vitalyostanin.geoshare.auth.AuthState
 import io.github.vitalyostanin.geoshare.auth.SignInController
 import io.github.vitalyostanin.geoshare.auth.SignInFailure
 import io.github.vitalyostanin.geoshare.auth.SignInScreen
+import io.github.vitalyostanin.geoshare.auth.UnfinishedSignIn
 import io.github.vitalyostanin.geoshare.log.AppLog
 import io.github.vitalyostanin.geoshare.map.GroupSwitch
 import io.github.vitalyostanin.geoshare.map.GroupSwitcher
@@ -293,6 +294,9 @@ class MainActivity : AppCompatActivity() {
         MaterialTheme(colorScheme = if (dark) darkColorScheme() else lightColorScheme()) {
             Surface(modifier = Modifier.fillMaxSize()) {
                 val shown by Connections.selected.collectAsStateWithLifecycle()
+                // The group whose sign-in did not finish, said over the map of
+                // the group the device went back to.
+                var unfinished by remember { mutableStateOf<String?>(null) }
                 var startupSet by remember { mutableStateOf(backgroundWork.startupSet) }
                 var jumpsFiltered by remember { mutableStateOf(jumps.enabled) }
                 var sourcesLeftOut by remember { mutableStateOf(sources.leftOut) }
@@ -356,7 +360,20 @@ class MainActivity : AppCompatActivity() {
                             aidingDoubted = aidingDoubted,
                         )
 
-                    else -> SignInGate(connection, current, signIn)
+                    else ->
+                        SignInGate(connection, current, signIn) { projectId ->
+                            unfinished = projectId
+                        }
+                }
+
+                unfinished?.let { projectId ->
+                    if (state is AuthState.SignedIn) {
+                        UnfinishedSignIn(
+                            caption = GroupNames.of(this, projectId) ?: projectId,
+                            onSignIn = { signInAgain(projectId) },
+                            onShown = { unfinished = null },
+                        )
+                    }
                 }
             }
         }
@@ -368,6 +385,8 @@ class MainActivity : AppCompatActivity() {
         connection: GroupConnection,
         current: AuthState,
         signIn: SignInController,
+        /** Told which group's sign-in did not finish when the device goes back to another. */
+        onUnfinished: (String) -> Unit,
     ) {
         // A sign-in started here and cancelled leaves the group listed but
         // not shown: the device goes back to a group it is signed in to. Only
@@ -389,6 +408,7 @@ class MainActivity : AppCompatActivity() {
                     }
                     ?.let {
                         Connections.select(this@MainActivity, it.projectId)
+                        onUnfinished(connection.projectId)
                     }
             }
         }
@@ -465,6 +485,14 @@ class MainActivity : AppCompatActivity() {
         if (first) {
             recreate()
         }
+    }
+
+    /** Shows [projectId]'s group and opens its sign-in page once more. */
+    private fun signInAgain(projectId: String) {
+        val connection = Connections.of(projectId) ?: return
+
+        Connections.select(this, projectId)
+        lifecycleScope.launch { signInOf(connection).signIn(this@MainActivity) }
     }
 
     /**

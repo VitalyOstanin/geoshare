@@ -99,21 +99,32 @@ private fun SignedOut(
         }
     }
 
-    // A dismissed chooser is the person saying "not now"; answering it with an
-    // error message would be arguing.
-    if (failure != null && failure != SignInFailure.Cancelled) {
-        Text(
-            text = stringResource(failureMessage(failure)),
-            style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.error,
-            textAlign = TextAlign.Center,
-        )
+    when (failure) {
+        null -> Unit
+
+        // A page closed without an answer is as often the browser losing the
+        // page's own state as the person saying "not now", and from here the
+        // two look the same: said quietly, with what helps when it was the
+        // browser, rather than as an error.
+        SignInFailure.Cancelled, SignInFailure.Unknown ->
+            Text(
+                text = stringResource(R.string.sign_in_unfinished),
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                textAlign = TextAlign.Center,
+            )
+
+        SignInFailure.Offline, SignInFailure.Misconfigured ->
+            Text(
+                text = stringResource(failureMessage(failure)),
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.error,
+                textAlign = TextAlign.Center,
+            )
     }
 }
 
 private fun failureMessage(failure: SignInFailure): Int = when (failure) {
-    SignInFailure.Cancelled -> R.string.sign_in_failed_unknown
     SignInFailure.Offline -> R.string.sign_in_failed_offline
-    SignInFailure.Misconfigured -> R.string.sign_in_failed_misconfigured
-    SignInFailure.Unknown -> R.string.sign_in_failed_unknown
+    else -> R.string.sign_in_failed_misconfigured
 }

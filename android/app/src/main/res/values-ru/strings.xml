@@ -14,7 +14,9 @@
     <string name="write_unanswered">База не ответила за 15 секунд. Запись уйдёт, когда связь вернётся; отменить её нельзя.</string>
     <string name="sign_in_failed_offline">Нет связи. Для входа сеть нужна хотя бы на минуту.</string>
     <string name="sign_in_failed_misconfigured">Проект этой группы ещё не настроен на вход через Google.</string>
-    <string name="sign_in_failed_unknown">Войти не удалось. Попробуйте ещё раз.</string>
+    <string name="sign_in_unfinished">Вход не завершён. Если страница входа показала ошибку, войдите ещё раз. Повторяется — сделайте браузером по умолчанию Chrome.</string>
+    <string name="sign_in_unfinished_group">Вход в «%1$s» не завершён. Если страница входа показала ошибку, войдите ещё раз; повторяется — сделайте браузером по умолчанию Chrome.</string>
+    <string name="sign_in_unfinished_go">Войти</string>
 
     <string name="sign_out_action">Выйти</string>
     <string name="sign_out_choose_title">Выйти из аккаунта</string>
