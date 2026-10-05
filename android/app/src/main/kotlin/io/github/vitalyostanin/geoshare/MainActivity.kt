@@ -65,6 +65,7 @@ import io.github.vitalyostanin.geoshare.project.GroupConnection
 import io.github.vitalyostanin.geoshare.project.GroupNames
 import io.github.vitalyostanin.geoshare.project.INHERITED
 import io.github.vitalyostanin.geoshare.project.PendingInvitationStore
+import io.github.vitalyostanin.geoshare.project.RemovedHere
 import io.github.vitalyostanin.geoshare.project.fetchSettings
 import io.github.vitalyostanin.geoshare.project.pendingInvitationFor
 import io.github.vitalyostanin.geoshare.service.AidingDoubtSetting
@@ -437,9 +438,18 @@ class MainActivity : AppCompatActivity() {
                 ),
             )
 
+            // Read again whenever the session changes: the service signs out
+            // of a group it was removed from while this screen may be up.
+            val removedElsewhere =
+                remember(current, connection) {
+                    RemovedHere.has(this@MainActivity, connection.projectId)
+                }
+
             SignInScreen(
                 state = current,
+                removedElsewhere = removedElsewhere,
                 onSignIn = {
+                    RemovedHere.forget(this@MainActivity, connection.projectId)
                     lifecycleScope.launch { signIn.signIn(this@MainActivity) }
                 },
                 onSignInAsStandIn = { account ->

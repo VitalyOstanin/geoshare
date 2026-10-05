@@ -35,6 +35,8 @@ fun SignInScreen(
     onSignIn: () -> Unit,
     onSignInAsStandIn: (String) -> Unit,
     modifier: Modifier = Modifier,
+    /** The device was signed out because another device of the member removed it. */
+    removedElsewhere: Boolean = false,
 ) {
     Column(
         modifier =
@@ -62,6 +64,7 @@ fun SignInScreen(
             is AuthState.SignedOut ->
                 SignedOut(
                     failure = state.failure,
+                    removedElsewhere = removedElsewhere,
                     onSignIn = onSignIn,
                     onSignInAsStandIn = onSignInAsStandIn,
                 )
@@ -76,6 +79,7 @@ fun SignInScreen(
 @Composable
 private fun SignedOut(
     failure: SignInFailure?,
+    removedElsewhere: Boolean,
     onSignIn: () -> Unit,
     onSignInAsStandIn: (String) -> Unit,
 ) {
@@ -100,7 +104,17 @@ private fun SignedOut(
     }
 
     when (failure) {
-        null -> Unit
+        // Said quietly, like an unfinished sign-in: nothing went wrong on
+        // this device, and signing in again is all it takes.
+        null ->
+            if (removedElsewhere) {
+                Text(
+                    text = stringResource(R.string.sign_in_removed_elsewhere),
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    textAlign = TextAlign.Center,
+                )
+            }
 
         // A page closed without an answer is as often the browser losing the
         // page's own state as the person saying "not now", and from here the

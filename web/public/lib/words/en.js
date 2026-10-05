@@ -336,7 +336,7 @@ export const EN = {
     phoneRemoveNote:
         'The device will disappear from the map and the lists of everybody in the group. ' +
         'The name you gave it goes too. ' +
-        'If the device is in touch under your account again, it comes back.',
+        'If the device is on, it leaves the group and stops sharing its location.',
     phoneRemoveGo: 'Remove',
     sirenTitle: (member, phone) => `Switch on the siren: ${member} · ${phone}?`,
     sirenPhoneChip: (name, age) => `${name} · ${age}`,

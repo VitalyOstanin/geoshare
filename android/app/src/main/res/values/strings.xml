@@ -15,6 +15,7 @@
     <string name="sign_in_failed_offline">No connection. Sign-in needs the network for a moment.</string>
     <string name="sign_in_failed_misconfigured">This group\'s project is not set up for signing in with Google yet.</string>
     <string name="sign_in_unfinished">Sign-in did not finish. If the sign-in page showed an error, sign in again. If it keeps happening, make Chrome the default browser.</string>
+    <string name="sign_in_removed_elsewhere">This device was removed from the group on another of your devices. Sign in again to share your location.</string>
     <string name="sign_in_unfinished_group">Sign-in to “%1$s” did not finish. If the sign-in page showed an error, sign in again; if it keeps happening, make Chrome the default browser.</string>
     <string name="sign_in_unfinished_go">Sign in</string>
 
@@ -322,7 +323,7 @@
     <string name="my_phones_group">In the group “%1$s”. Devices of the other groups show after switching the group on the map.</string>
     <string name="phone_remove">Remove device</string>
     <string name="phone_remove_title">Remove “%1$s”?</string>
-    <string name="phone_remove_text">The device will disappear from the map and the lists of everybody in the group. The name you gave it goes too. If the device is in touch under your account again, it comes back.</string>
+    <string name="phone_remove_text">The device will disappear from the map and the lists of everybody in the group. The name you gave it goes too. If the device is on, it leaves the group and stops sharing its location.</string>
     <string name="phone_remove_groups">It is removed from every group: %1$s.</string>
     <string name="phone_remove_go">Remove</string>
     <string name="phone_remove_refused">The device could not be removed. Check the connection and try again.</string>

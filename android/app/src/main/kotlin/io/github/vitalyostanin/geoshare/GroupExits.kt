@@ -7,6 +7,7 @@ import io.github.vitalyostanin.geoshare.project.Connections
 import io.github.vitalyostanin.geoshare.project.GroupConnection
 import io.github.vitalyostanin.geoshare.project.PendingInvitationStore
 import io.github.vitalyostanin.geoshare.project.refusedJoinOf
+import io.github.vitalyostanin.geoshare.service.LeavingHere
 import io.github.vitalyostanin.geoshare.service.forgetPhone
 import io.github.vitalyostanin.geoshare.service.leaveGroup
 import kotlinx.coroutines.CancellationException
@@ -56,10 +57,12 @@ internal suspend fun MainActivity.leave(connection: GroupConnection, how: Leave)
                 Leave.ROSTER ->
                     answered("leave the group") { leaveGroup(memberId, device.id, connection) }
 
-                Leave.DEVICE_ONLY, Leave.NOT_ON_ROSTER ->
+                Leave.DEVICE_ONLY, Leave.NOT_ON_ROSTER -> {
+                    LeavingHere.note(connection.projectId)
                     answered("take this device out of the group") {
                         forgetPhone(memberId, device.id, connection)
                     }
+                }
             }
 
         if (!done && how == Leave.ROSTER) {
@@ -143,6 +146,10 @@ internal suspend fun MainActivity.signOutHere(connection: GroupConnection) {
 }
 
 private suspend fun MainActivity.signOutOf(connection: GroupConnection, memberId: String) {
+    // The service hears the line going the same way as a removal from
+    // another device; told first, it does not sign out a second time.
+    LeavingHere.note(connection.projectId)
+
     val forgotten =
         answered("take this device out of ${connection.projectId}") {
             forgetPhone(memberId, device.id, connection)

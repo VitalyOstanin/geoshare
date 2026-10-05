@@ -147,6 +147,7 @@ object Connections {
         publish(context, kept.without(projectId))
         SeenOnRoster.forget(context, projectId)
         GroupNames.forget(context, projectId)
+        RemovedHere.forget(context, projectId)
 
         AppLog.i(TAG, "no longer in $projectId")
     }

@@ -4,6 +4,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
@@ -12,6 +13,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.selection.toggleable
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Checkbox
@@ -32,6 +34,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import io.github.vitalyostanin.geoshare.R
 import io.github.vitalyostanin.geoshare.collection.Constellation
@@ -48,6 +52,32 @@ import io.github.vitalyostanin.geoshare.service.ThemeChoice
 import io.github.vitalyostanin.geoshare.service.aidingErasureNote
 import io.github.vitalyostanin.geoshare.service.doneResetLine
 import java.time.Instant
+
+/**
+ * A setting that switches as a whole row: the word beside a switch is where
+ * most taps land, and a row where only the switch answers ignores them.
+ */
+@Composable
+private fun SwitchRow(
+    checked: Boolean,
+    onCheckedChange: (Boolean) -> Unit,
+    verticalPadding: Dp = 4.dp,
+    label: @Composable RowScope.() -> Unit,
+) {
+    Row(
+        modifier =
+        Modifier
+            .fillMaxWidth()
+            .toggleable(value = checked, role = Role.Switch, onValueChange = onCheckedChange)
+            .padding(horizontal = 16.dp, vertical = verticalPadding),
+        horizontalArrangement = Arrangement.spacedBy(12.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        label()
+
+        Switch(checked = checked, onCheckedChange = null)
+    }
+}
 
 /**
  * The way out of a last position that has gone wrong.
@@ -197,14 +227,12 @@ fun SettingsScreen(
 
             HorizontalDivider()
 
-            Row(
-                modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 12.dp),
-                horizontalArrangement = Arrangement.spacedBy(12.dp),
-                verticalAlignment = Alignment.CenterVertically,
+            SwitchRow(
+                checked = settings.sharing,
+                onCheckedChange = actions.onSharingChange,
+                verticalPadding = 12.dp,
             ) {
                 Text(text = stringResource(R.string.sharing_action), modifier = Modifier.weight(1f))
-
-                Switch(checked = settings.sharing, onCheckedChange = actions.onSharingChange)
             }
 
             // Shown once the system has stopped asking: from there on the
@@ -226,17 +254,11 @@ fun SettingsScreen(
                 }
             }
 
-            Row(
-                modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 4.dp),
-                horizontalArrangement = Arrangement.spacedBy(12.dp),
-                verticalAlignment = Alignment.CenterVertically,
+            SwitchRow(
+                checked = settings.jumpsFiltered,
+                onCheckedChange = actions.onJumpsFilteredChange,
             ) {
                 Text(text = stringResource(R.string.jumps_title), modifier = Modifier.weight(1f))
-
-                Switch(
-                    checked = settings.jumpsFiltered,
-                    onCheckedChange = actions.onJumpsFilteredChange,
-                )
             }
 
             // Said under the switch rather than left to the title: what it
@@ -476,17 +498,11 @@ private fun SourcesSection(
     )
 
     SourceChoice.entries.forEach { source ->
-        Row(
-            modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 4.dp),
-            horizontalArrangement = Arrangement.spacedBy(12.dp),
-            verticalAlignment = Alignment.CenterVertically,
+        SwitchRow(
+            checked = source.name !in leftOut,
+            onCheckedChange = { counted -> onSourceUseChange(source, counted) },
         ) {
             Text(text = stringResource(sourceChoiceLabel(source)), modifier = Modifier.weight(1f))
-
-            Switch(
-                checked = source.name !in leftOut,
-                onCheckedChange = { counted -> onSourceUseChange(source, counted) },
-            )
         }
     }
 }
@@ -519,10 +535,9 @@ private fun DownloadsSection(
     DownloadNetwork.entries.forEach { network ->
         val allowed = network in downloads.allowed
 
-        Row(
-            modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 4.dp),
-            horizontalArrangement = Arrangement.spacedBy(12.dp),
-            verticalAlignment = Alignment.CenterVertically,
+        SwitchRow(
+            checked = allowed,
+            onCheckedChange = { wanted -> onDownloadNetworkChange(network, wanted) },
         ) {
             Column(modifier = Modifier.weight(1f)) {
                 Text(text = stringResource(downloadNetworkLabel(network)))
@@ -535,11 +550,6 @@ private fun DownloadsSection(
                     )
                 }
             }
-
-            Switch(
-                checked = allowed,
-                onCheckedChange = { wanted -> onDownloadNetworkChange(network, wanted) },
-            )
         }
     }
 
@@ -664,13 +674,24 @@ private fun BackgroundWorkSection(
 
         // A tick rather than a switch, and a word beside it: the switches on
         // this screen change what the phone does, and this one only records
-        // that the member has been to a screen nothing here can read.
-        Text(
-            text = stringResource(R.string.background_startup_done),
-            style = MaterialTheme.typography.bodyMedium,
-        )
+        // that the member has been to a screen nothing here can read. The
+        // word ticks it too.
+        Row(
+            modifier =
+            Modifier.toggleable(
+                value = startupSet,
+                role = Role.Checkbox,
+                onValueChange = onStartupSetChange,
+            ),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Text(
+                text = stringResource(R.string.background_startup_done),
+                style = MaterialTheme.typography.bodyMedium,
+            )
 
-        Checkbox(checked = startupSet, onCheckedChange = onStartupSetChange)
+            Checkbox(checked = startupSet, onCheckedChange = null)
+        }
     }
 
     // Said under the row rather than in a dialog: it explains why this one row

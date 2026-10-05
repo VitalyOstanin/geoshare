@@ -15,6 +15,7 @@
     <string name="sign_in_failed_offline">Нет связи. Для входа сеть нужна хотя бы на минуту.</string>
     <string name="sign_in_failed_misconfigured">Проект этой группы ещё не настроен на вход через Google.</string>
     <string name="sign_in_unfinished">Вход не завершён. Если страница входа показала ошибку, войдите ещё раз. Повторяется — сделайте браузером по умолчанию Chrome.</string>
+    <string name="sign_in_removed_elsewhere">Это устройство удалили из группы с другого вашего устройства. Чтобы снова делиться местом, войдите ещё раз.</string>
     <string name="sign_in_unfinished_group">Вход в «%1$s» не завершён. Если страница входа показала ошибку, войдите ещё раз; повторяется — сделайте браузером по умолчанию Chrome.</string>
     <string name="sign_in_unfinished_go">Войти</string>
 
@@ -288,7 +289,7 @@
     <string name="my_phones_group">В группе «%1$s». Устройства других групп — после переключения группы на карте.</string>
     <string name="phone_remove">Удалить устройство</string>
     <string name="phone_remove_title">Удалить «%1$s»?</string>
-    <string name="phone_remove_text">Устройство исчезнет с карты и из списков у всех участников группы. Имя, которое вы ему дали, тоже удалится. Если устройство снова выйдет на связь под вашим аккаунтом, оно появится опять.</string>
+    <string name="phone_remove_text">Устройство исчезнет с карты и из списков у всех участников группы. Имя, которое вы ему дали, тоже удалится. Если устройство включено, оно выйдет из группы и перестанет передавать место.</string>
     <string name="phone_remove_groups">Устройство удалится из всех групп: %1$s.</string>
     <string name="phone_remove_go">Удалить</string>
     <string name="phone_remove_refused">Не удалось удалить устройство. Проверьте связь и попробуйте ещё раз.</string>

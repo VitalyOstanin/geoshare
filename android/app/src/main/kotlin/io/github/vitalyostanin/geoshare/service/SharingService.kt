@@ -73,10 +73,12 @@ import io.github.vitalyostanin.geoshare.collection.whomToAsk
 import io.github.vitalyostanin.geoshare.collection.whyAJump
 import io.github.vitalyostanin.geoshare.collection.word
 import io.github.vitalyostanin.geoshare.log.AppLog
+import io.github.vitalyostanin.geoshare.map.PublishedProfile
 import io.github.vitalyostanin.geoshare.map.stands
 import io.github.vitalyostanin.geoshare.membership.Presence
 import io.github.vitalyostanin.geoshare.project.Connections
 import io.github.vitalyostanin.geoshare.project.GroupConnection
+import io.github.vitalyostanin.geoshare.project.RemovedHere
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.Job
@@ -91,6 +93,7 @@ import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.emptyFlow
+import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.flowOf
@@ -594,6 +597,8 @@ class SharingService : LifecycleService() {
             lifecycleScope.launch {
                 val device = DeviceIdentity(this@SharingService)
 
+                LeavingHere.forget(link.connection.projectId)
+                launch { signOutWhenRemoved(link, device) }
                 // Once, after the move to the system's id: the old position
                 // would otherwise stay on the map beside the new one.
                 launch { leavePreviousId(link.memberId, device, link.connection) }
@@ -611,6 +616,29 @@ class SharingService : LifecycleService() {
                     )
                 }
             }
+    }
+
+    /**
+     * Signs out of [link]'s group once another device of the member has
+     * removed this one from "My devices".
+     *
+     * Writing on would undo the removal: the next status puts the device's
+     * line back, and with it the marker on everybody's map. A device removed
+     * that way has usually changed hands, so it stops there rather than asks.
+     */
+    private suspend fun signOutWhenRemoved(link: GroupLink, device: DeviceIdentity) {
+        val projectId = link.connection.projectId
+
+        ownLine(link.connection, link.memberId, device.id).goneAfterListed().firstOrNull() ?: return
+
+        if (LeavingHere.has(projectId)) {
+            return
+        }
+
+        AppLog.i(TAG, "removed from $link by another device, signing out of it")
+        RemovedHere.note(this, projectId)
+        PublishedProfile(this).forget()
+        link.connection.auth.signOut()
     }
 
     private fun unlink(gone: List<GroupLink>) {
