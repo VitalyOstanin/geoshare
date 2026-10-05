@@ -71,6 +71,24 @@ export async function appSettings(api, androidAppName, siteId) {
     };
 }
 
+/**
+ * The firebase-config.js the group's page imports, as tools/web-config.sh
+ * writes it: the web app's own config, with sign-in sent through the group's
+ * site rather than firebaseapp.com, since browsers that keep each site's
+ * storage apart lose a redirect sign-in passing through another domain.
+ */
+export async function webConfigFile(api, webAppName, siteId) {
+    const firebaseConfig = await api('GET', `${FIREBASE}/${webAppName}/config`);
+
+    firebaseConfig.authDomain = `${siteId}.web.app`;
+
+    return [
+        '// Written by the setup page out of the Firebase project itself.',
+        `export const firebaseConfig = ${JSON.stringify(firebaseConfig, null, 4)};`,
+        '',
+    ].join('\n');
+}
+
 async function sha256Hex(bytes) {
     const digest = await crypto.subtle.digest('SHA-256', bytes);
 
@@ -116,6 +134,34 @@ export async function deploySite(api, siteId, files, config = {}) {
     await api('POST', `${HOSTING}/sites/${siteId}/releases?versionName=${version.name}`, {});
 
     return siteUrl(siteId);
+}
+
+/** The paths of the files the site serves now: those of the live channel's release. */
+export async function releasedPaths(api, siteId) {
+    const channel = await api('GET', `${HOSTING}/sites/${siteId}/channels/live`);
+    const version = channel.release?.version?.name;
+    const paths = new Set();
+
+    if (!version) {
+        return paths;
+    }
+
+    let pageToken = '';
+
+    do {
+        const page = await api(
+            'GET',
+            `${HOSTING}/${version}/files?status=ACTIVE${pageToken ? `&pageToken=${pageToken}` : ''}`,
+        );
+
+        for (const file of page.files ?? []) {
+            paths.add(file.path);
+        }
+
+        pageToken = page.nextPageToken ?? '';
+    } while (pageToken);
+
+    return paths;
 }
 
 /**

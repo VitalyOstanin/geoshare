@@ -1,0 +1,151 @@
+<!doctype html>
+<html lang="ru">
+    <head>
+        <meta charset="utf-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1" />
+        <title>Geoshare: заведение группы</title>
+        <link rel="icon" href="favicon.svg" type="image/svg+xml" />
+        <link rel="icon" href="favicon-32.png" sizes="32x32" type="image/png" />
+        <link rel="stylesheet" href="styles/base.css" />
+        <script src="boot-theme.js"></script>
+        <style>
+            /* base.css makes the body a fixed-height column for the map; this
+               page is a document that scrolls. */
+            body { height: auto; min-height: 100dvh; }
+            main { margin: 0 auto; max-width: 28rem; width: 100%; box-sizing: border-box;
+                   padding: 1.5rem; display: flex; flex-direction: column; gap: 1.1rem; }
+            main > section { display: flex; flex-direction: column; gap: 1.1rem; }
+            section[hidden] { display: none; }
+            .kicker { font-size: var(--text-body); font-weight: 600; color: var(--link);
+                      letter-spacing: 0.02em; text-transform: uppercase; }
+            h1 { margin: 0; font-size: 1.5rem; font-weight: 600; }
+            p, ol { margin: 0; line-height: 1.45; }
+            ol { padding-left: 1.25rem; display: flex; flex-direction: column; gap: 0.6rem; }
+            .muted { opacity: 0.8; }
+            .small { font-size: var(--text-body); }
+            .button { box-sizing: border-box; min-height: 3rem; display: flex; align-items: center;
+                      justify-content: center; border-radius: 1.5rem; padding: 0 1.2rem;
+                      font: inherit; font-weight: 600; text-decoration: none; cursor: pointer;
+                      border: 1px solid var(--edge); background: transparent; color: var(--link); }
+            .button.primary { border-color: var(--link); background: var(--link);
+                              color: var(--on-link); }
+            .button:disabled { border-color: var(--off-fill); background: var(--off-fill);
+                               color: var(--on-off); cursor: default; }
+            .card { display: flex; flex-direction: column; gap: 0.6rem; padding: 1rem;
+                    border-radius: 0.75rem; border: 1px solid var(--edge); }
+            .card.active { border: 2px solid var(--link); }
+            .row { display: flex; gap: 0.5rem; align-items: center; justify-content: space-between; }
+            .ok { color: var(--charging); font-weight: 600; }
+            .bad { color: var(--error); }
+            code { padding: 0.6rem; border-radius: 0.5rem; background: var(--off-fill);
+                   overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0;
+                   flex-grow: 1; font-size: var(--text-body); }
+            label.choice { display: flex; gap: 0.75rem; align-items: center; padding: 0.9rem 1rem;
+                           border-radius: 0.75rem; border: 1px solid var(--edge); cursor: pointer; }
+            label.choice:has(input:checked) { border: 2px solid var(--link); }
+            label.choice input, label.tick input { width: 1.25rem; height: 1.25rem; margin: 0; }
+            label.tick { display: flex; gap: 0.6rem; align-items: center; }
+            .choice-text { display: flex; flex-direction: column; }
+            #choices, #steps { display: flex; flex-direction: column; gap: 0.5rem; }
+            #steps { gap: 0; border-radius: 0.75rem; border: 1px solid var(--edge); }
+            .line { display: flex; gap: 0.75rem; align-items: center; padding: 0.75rem 1rem;
+                    border-bottom: 1px solid var(--edge); }
+            .line:last-child { border-bottom: 0; }
+            .line .mark { width: 1.4rem; height: 1.4rem; flex-shrink: 0; border-radius: 50%;
+                          display: flex; align-items: center; justify-content: center;
+                          font-size: var(--text-body); font-weight: 700;
+                          background: var(--off-fill); color: var(--on-off); }
+            .line.running .mark { background: var(--link); color: var(--on-link); }
+            .line.done .mark { background: var(--charging); color: #fff; }
+            .line.failed .mark { background: var(--error); color: #fff; }
+            .line.pending { opacity: 0.75; }
+            .line .why { font-size: var(--text-body); color: var(--error); overflow-wrap: anywhere; }
+        </style>
+    </head>
+    <body>
+        <main>
+            <section id="step-1">
+                <div class="kicker" data-kicker="1"></div>
+                <h1 data-text="s1Title"></h1>
+                <ol id="s1-list"></ol>
+                <a id="s1-console" class="button primary" target="_blank" rel="noopener"></a>
+                <div class="card small muted" data-text="s1Plan"></div>
+                <button id="s1-next" class="button" data-text="s1Next"></button>
+            </section>
+
+            <section id="step-2" hidden>
+                <div class="kicker" data-kicker="2"></div>
+                <h1 data-text="s2Title"></h1>
+                <p class="muted" data-text="s2Text"></p>
+                <button id="s2-auth" class="button" data-text="s2Auth"></button>
+                <div id="s2-got" class="small ok" hidden></div>
+                <div id="s2-error" class="small bad" hidden></div>
+                <div id="s2-projects" hidden>
+                    <p><strong data-text="s2Pick"></strong></p>
+                    <div id="choices"></div>
+                </div>
+                <button id="s2-go" class="button primary" disabled></button>
+            </section>
+
+            <section id="step-3" hidden>
+                <div class="kicker" data-kicker="3"></div>
+                <h1 id="s3-title"></h1>
+                <p class="muted" data-text="s3Text"></p>
+                <div id="steps"></div>
+                <p id="s3-taken" class="bad" hidden></p>
+                <button id="s3-retry" class="button" hidden data-text="s3Retry"></button>
+                <button id="s3-next" class="button primary" hidden data-text="s3Next"></button>
+            </section>
+
+            <section id="step-4" hidden>
+                <div class="kicker" data-kicker="4"></div>
+                <h1 data-text="s4Title"></h1>
+                <p class="muted" data-text="s4Text"></p>
+                <div class="card">
+                    <div class="row">
+                        <strong data-text="s4SignIn"></strong>
+                        <span id="s4-state" class="small muted"></span>
+                    </div>
+                    <div class="small muted" data-text="s4SignInHow"></div>
+                    <a id="s4-providers" class="small" target="_blank" rel="noopener"
+                       data-text="s4OpenProviders"></a>
+                </div>
+                <div class="card active">
+                    <strong data-text="s4Redirect"></strong>
+                    <div class="small muted" data-text="s4RedirectHow"></div>
+                    <div class="row">
+                        <code id="s4-uri"></code>
+                        <button id="s4-copy" class="button" data-text="s4Copy"></button>
+                    </div>
+                    <a id="s4-credentials" class="small" target="_blank" rel="noopener"
+                       data-text="s4OpenCredentials"></a>
+                    <label class="tick small">
+                        <input type="checkbox" id="s4-tick" /><span data-text="s4Tick"></span>
+                    </label>
+                </div>
+                <p class="small muted" data-text="s4Note"></p>
+                <button id="s4-next" class="button primary" disabled data-text="s4Next"></button>
+            </section>
+
+            <section id="step-5" hidden>
+                <div class="kicker" data-kicker="5"></div>
+                <h1 id="s5-title"></h1>
+                <p class="muted" data-text="s5Text"></p>
+                <a id="s5-open" class="button primary" target="_blank" rel="noopener"
+                   data-text="s5Open"></a>
+                <div class="card" style="align-items: center">
+                    <div class="small muted" data-text="s5Camera"></div>
+                    <!-- No QR generator is among the vendored libraries, so the
+                         link itself stands in; the note says so. -->
+                    <div class="small muted" data-text="s5NoQr"></div>
+                    <code id="s5-link"></code>
+                </div>
+                <p id="s5-foot" class="small muted"></p>
+            </section>
+        </main>
+
+        <!-- The Google Identity Services library is loaded by the script, so a
+             blocked request is shown as a sentence and not a broken page. -->
+        <script type="module" src="setup-app.js"></script>
+    </body>
+</html>

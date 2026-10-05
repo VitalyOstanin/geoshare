@@ -7,7 +7,9 @@ import {
     deploySite,
     ensureSite,
     googleSignInEnabled,
+    releasedPaths,
     versionConfig,
+    webConfigFile,
 } from '../public/lib/setup-hosting.js';
 
 const PROJECT = 'example-try-61d5c3';
@@ -197,4 +199,37 @@ test('google sign-in is on only when the config says so, and off when there is n
     assert.equal(await googleSignInEnabled(off, PROJECT), false);
     assert.equal(await googleSignInEnabled(missing, PROJECT), false);
     await assert.rejects(googleSignInEnabled(broken, PROJECT), { status: 403 });
+});
+
+test("the group's page signs in through its own site", async () => {
+    const api = fakeApi([
+        [
+            /GET .*webApps\/w\/config$/,
+            { projectId: PROJECT, appId: '1:2:web:3', apiKey: 'k', authDomain: `${PROJECT}.firebaseapp.com` },
+        ],
+    ]);
+    const file = await webConfigFile(api, `projects/${PROJECT}/webApps/w`, PROJECT);
+    const config = JSON.parse(file.slice(file.indexOf('{'), file.lastIndexOf('}') + 1));
+
+    assert.match(file, /^\/\/ .*\nexport const firebaseConfig = /);
+    assert.equal(config.authDomain, `${PROJECT}.web.app`);
+    assert.equal(config.appId, '1:2:web:3');
+});
+
+test('the files the site serves are read from the live release, page by page', async () => {
+    const version = `sites/${PROJECT}/versions/v1`;
+    const api = fakeApi([
+        [/GET .*channels\/live$/, { release: { version: { name: version } } }],
+        [/pageToken=next$/, { files: [{ path: '/geoshare.json' }] }],
+        [/files\?status=ACTIVE$/, { files: [{ path: '/index.html' }], nextPageToken: 'next' }],
+    ]);
+
+    assert.deepEqual([...(await releasedPaths(api, PROJECT))], ['/index.html', '/geoshare.json']);
+});
+
+test('a site with nothing released serves no files', async () => {
+    const api = fakeApi([[/GET .*channels\/live$/, {}]]);
+
+    assert.equal((await releasedPaths(api, PROJECT)).size, 0);
+    assert.equal(api.calls.length, 1);
 });
