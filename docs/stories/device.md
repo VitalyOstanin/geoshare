@@ -78,6 +78,7 @@ Acceptance:
 ## DEV-05 Get the permissions it needs, once
 
 - Status: done
+- ADR: —
 
 As a member I am led through the location, background, activity and battery
 permissions step by step, so that the service is not killed and I know why
@@ -91,6 +92,7 @@ Acceptance:
 ## DEV-06 Start again after the phone restarts
 
 - Status: partly — built, not yet checked on the phones
+- ADR: —
 
 As a member I let the service start by itself after the phone restarts, so
 that I do not have to remember to open the application.
@@ -136,6 +138,7 @@ Acceptance:
 ## DEV-09 Pick up a permission as soon as it is given
 
 - Status: done
+- ADR: 0008, 0031
 
 As a member given a permission to see somebody I see their place at once, so
 that I do not wait a minute after they share.
@@ -148,12 +151,15 @@ Acceptance:
 ## DEV-10 Report that it is alive
 
 - Status: done
+- ADR: 0010, 0027
 
 As a member I let my phone say when it last wrote, in which mode and whether
 it is charging, so that an administrator notices it has gone quiet (ADM-06).
 
 Acceptance:
-- the phone's status is written about once an hour and when the mode changes.
+- the phone's status is written when its mode changes, when it is plugged in
+  or out, and otherwise as often as an idle phone rewrites its place;
+- it carries no place.
 
 ## DEV-11 Keep a log the member can hand over
 
@@ -171,6 +177,7 @@ Acceptance:
 ## DEV-12 Wake when somebody needs it
 
 - Status: planned
+- ADR: —
 
 As a member whose phone is asleep I let a push wake it when somebody opens a
 search, calls the siren or resets its place, so that it answers at once and
@@ -182,6 +189,7 @@ Acceptance:
 ## DEV-13 Update itself
 
 - Status: planned
+- ADR: —
 
 As a member I let the application learn about a new published build and
 install it, so that I do not have to look for updates.
@@ -194,6 +202,7 @@ Acceptance:
 ## DEV-14 Use the location services of Huawei phones
 
 - Status: planned
+- ADR: —
 
 As a member with a Huawei phone without Google I let the application use the
 geofence and activity recognition of Huawei's own services, so that standing

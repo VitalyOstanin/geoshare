@@ -76,7 +76,7 @@ Acceptance:
 ## OWN-05 See what the project spends of the free tier
 
 - Status: done
-- ADR: —
+- ADR: 0027
 
 As a project owner I see the reads, writes and storage of the last days
 against the free tier, so that I learn in time whether the group outgrows it.
@@ -131,6 +131,7 @@ Acceptance:
 ## OWN-09 Set up the project from the phone
 
 - Status: planned
+- ADR: —
 
 As a project owner without a computer I make the group's project from the
 application itself, so that the whole setup happens on one phone.
@@ -141,6 +142,7 @@ Acceptance:
 ## OWN-10 Use the published build without building one
 
 - Status: planned
+- ADR: —
 
 As a project owner I give the members the application from the repository's
 releases page, signed with one key, so that nobody has to build it.

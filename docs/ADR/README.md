@@ -34,3 +34,8 @@ date is the decision's.
 | 0024 | [GLONASS joins the orbit check](0024-glonass-joins-the-orbit-check.md)                                        | Accepted                            | 2026-10-02 |
 | 0025 | [An invitation admits once and lasts at most a day](0025-an-invitation-admits-once.md)                        | Accepted                            | 2026-10-03 |
 | 0026 | [Several groups on one device](0026-several-groups-on-one-device.md)                                          | Accepted                            | 2026-10-03 |
+| 0027 | [What an administrator sees and may do](0027-what-an-administrator-sees.md)                                    | Accepted                            | 2026-10-05 |
+| 0028 | [A siren on a lost phone](0028-a-siren-on-a-lost-phone.md)                                                     | Accepted                            | 2026-10-05 |
+| 0029 | [Resetting a stuck place from another screen](0029-resetting-a-stuck-place.md)                                 | Accepted                            | 2026-10-05 |
+| 0030 | [Names for people and phones, for oneself alone](0030-names-for-oneself.md)                                    | Accepted                            | 2026-10-05 |
+| 0031 | [A refused reader asks again when the granter says so](0031-a-refused-reader-asks-again.md)                    | Accepted                            | 2026-10-05 |

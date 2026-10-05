@@ -70,14 +70,15 @@ Acceptance:
 ## ADM-04 Take a member off the roster
 
 - Status: done
-- ADR: 0026
+- ADR: 0026, 0027
 
 As an administrator I take a member off the roster, so that they no longer see
 the group nor are seen in it.
 
 Acceptance:
-- an ordinary member can be taken off; an administrator must first stop being
-  one (ADM-05);
+- the founder can take anybody off; another administrator takes off only a
+  member who runs nothing, so another administrator is taken off in two
+  steps: the role first (ADM-05);
 - nobody can take off the last administrator;
 - the device of the member taken off says so instead of showing the map
   (DEV-08).
@@ -85,17 +86,21 @@ Acceptance:
 ## ADM-05 Make a member an administrator, or stop being one
 
 - Status: done
+- ADR: 0027
 
 As an administrator I make another member an administrator, or step down
 myself, so that the group is never left to one person.
 
 Acceptance:
 - any administrator can make any member an administrator;
-- an administrator can stop running the group while another one stays.
+- an administrator can stop running the group while another one stays;
+- nobody but the founder can take the founder off the roster or off the
+  administrators.
 
 ## ADM-06 See who is in the group and whether their phones are alive
 
 - Status: done
+- ADR: 0027
 
 As an administrator I see the roster with each member's phones: their names,
 when each last wrote, in which mode and whether it is charging, so that I
@@ -131,7 +136,7 @@ Acceptance:
 
 - Status: partly — a phone that is asleep hears the call only when it next
   wakes on its own; waking it needs a push
-- ADR: —
+- ADR: 0026, 0028
 
 As an administrator, or as the phone's owner, I make the phone sound like an
 alarm, so that it is found under a cushion or in a bag.
@@ -146,7 +151,7 @@ Acceptance:
 ## ADM-09 Reset the place of a stuck phone
 
 - Status: partly — as ADM-08, the phone acts when it next wakes
-- ADR: —
+- ADR: 0014, 0026, 0029
 
 As an administrator, or as the phone's owner, I reset the place of a phone
 whose marker is stuck, so that it takes the next place however far it is from
@@ -161,6 +166,7 @@ Acceptance:
 ## ADM-10 Record the places where receivers are lied to
 
 - Status: planned — the rules allow it, no screen writes it yet
+- ADR: —
 
 As an administrator I record a place where receivers are known to be told a
 lie, with a centre, a radius and a name, and set the group's threshold for a
@@ -175,6 +181,7 @@ Acceptance:
 ## ADM-11 Start an update of the application on a member's phone
 
 - Status: planned
+- ADR: —
 
 As an administrator I start, one phone at a time, the installation of the
 already published build, so that a household keeps its phones on one version
@@ -187,7 +194,7 @@ Acceptance:
 ## ADM-12 Not see a member's place without their permission
 
 - Status: done
-- ADR: 0008, 0011
+- ADR: 0008, 0011, 0027
 
 As an administrator I have no more right to a member's position than any other
 member, so that running the group is not watching it.

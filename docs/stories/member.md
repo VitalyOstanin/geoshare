@@ -119,6 +119,7 @@ Acceptance:
 ### MEM-06 Sign in again after a sign-in that did not finish
 
 - Status: done
+- ADR: —
 
 As a member whose sign-in page showed an error or was closed I am told that
 sign-in did not finish and given a button to try again, so that I am not left
@@ -176,7 +177,7 @@ Acceptance:
 ### MEM-10 Show my place to chosen members for a time
 
 - Status: done
-- ADR: 0008
+- ADR: 0008, 0031
 
 As a member I choose whom I show my place to, and for how long: an hour, eight
 hours, a day or always, so that nobody watches me unless I let them.
@@ -190,6 +191,7 @@ Acceptance:
 ### MEM-11 Stop sharing my place
 
 - Status: done
+- ADR: —
 
 As a member I switch sharing off on the phone or from its notification, so
 that the phone stops writing my place.
@@ -201,6 +203,7 @@ Acceptance:
 ### MEM-12 Show my place back to somebody who cannot see it
 
 - Status: done
+- ADR: —
 
 As a member looking at somebody who cannot see me I am told so on their card
 and offered to show my place to them, so that sharing is mutual when I want
@@ -243,6 +246,7 @@ Acceptance:
 ### MEM-15 Follow one member on the map
 
 - Status: done
+- ADR: —
 
 As a member I keep the map centred on one member as they move, so that I do
 not have to pan by hand.
@@ -253,6 +257,7 @@ Acceptance:
 ### MEM-16 Name people and phones for myself
 
 - Status: done
+- ADR: 0030
 
 As a member I call a phone "new phone" rather than its model, and a person
 "grandma" rather than the name on her account, for myself alone, so that the
@@ -279,7 +284,7 @@ Acceptance:
 ### MEM-18 Hear when a search, a siren or a reset concerns me
 
 - Status: done
-- ADR: 0011
+- ADR: 0011, 0028, 0029
 
 As a member I am told on the phone when somebody opens a search for one of my
 devices, makes it sound or resets its place, so that nothing is done to my
@@ -321,6 +326,7 @@ Acceptance:
 ### MEM-21 Join by scanning a QR code
 
 - Status: planned
+- ADR: —
 
 As a person shown an invitation QR code on another phone I scan it from the
 connection screen, so that I do not need the link sent to me.
@@ -332,6 +338,7 @@ Acceptance:
 ### MEM-22 Keep a shared list, reminders and notes on the map
 
 - Status: planned
+- ADR: —
 
 As a member I keep a shopping list with the group, reminders, and notes pinned
 to a place, so that the group's everyday things live with its map.
