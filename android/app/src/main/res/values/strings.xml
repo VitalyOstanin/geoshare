@@ -533,6 +533,19 @@
     <string name="connect_scan_qr">Scan QR code</string>
     <!-- Screen А again, once a paste held nothing this project recognised. -->
     <string name="connect_no_link_in_clipboard">There is no connection link in the clipboard.</string>
+    <!-- OwnGroupScreen (project/OwnGroupScreen.kt): "Create your own group",
+         offered under the connection buttons to someone with no invitation. -->
+    <string name="connect_own_group_prompt">No invitation?</string>
+    <string name="connect_own_group_button">Create your own group</string>
+    <string name="connect_own_group_title">Your own group</string>
+    <string name="connect_own_group_back">Back</string>
+    <string name="connect_own_group_intro">The group lives in your own free Google Firebase project: only you and its members see where anyone is. Setting it up takes about 10 minutes.</string>
+    <string name="connect_own_group_step_1">Create a project in the Firebase console — the page tells you what to press.</string>
+    <string name="connect_own_group_step_2">Allow the page to set this project up: the database, the rules and the group page.</string>
+    <string name="connect_own_group_step_3">Do two steps in the console that Google leaves to the owner alone.</string>
+    <string name="connect_own_group_note">You will need a Google account that will own the group. A computer is handier, but a phone works too.</string>
+    <string name="connect_own_group_open">Open the setup page</string>
+    <string name="connect_own_group_open_hint">It opens in the browser. At the end the page brings you back here by a connection link.</string>
     <!-- QrScanDialog (project/QrScanDialog.kt): the camera with a square to aim
          with, opened from screen А or from the settings' invitation field. -->
     <string name="qr_scan_title">Scanning</string>

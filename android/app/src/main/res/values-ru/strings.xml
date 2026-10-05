@@ -458,6 +458,19 @@
     <string name="help_follow_all">Все участники в кадре</string>
     <string name="help_sources">Источники позиции: какие позиции устройство учитывает — спутники, Wi-Fi, вышки</string>
 
+    <!-- OwnGroupScreen (project/OwnGroupScreen.kt): «Создать свою группу» под
+         кнопками подключения, для того, у кого нет приглашения. -->
+    <string name="connect_own_group_prompt">Приглашения нет?</string>
+    <string name="connect_own_group_button">Создать свою группу</string>
+    <string name="connect_own_group_title">Своя группа</string>
+    <string name="connect_own_group_back">Назад</string>
+    <string name="connect_own_group_intro">Группа существует в вашем собственном бесплатном проекте Google Firebase: место участников видите только вы и они. Заведение занимает около 10 минут.</string>
+    <string name="connect_own_group_step_1">В консоли Firebase создать проект — страница подскажет, что нажимать.</string>
+    <string name="connect_own_group_step_2">Разрешить странице настроить этот проект: базу, правила и страницу группы.</string>
+    <string name="connect_own_group_step_3">Сделать два шага в консоли, которые Google делает только сам владелец.</string>
+    <string name="connect_own_group_note">Понадобится аккаунт Google, которому будет принадлежать группа. С компьютера удобнее, но можно и с телефона.</string>
+    <string name="connect_own_group_open">Открыть страницу заведения</string>
+    <string name="connect_own_group_open_hint">Откроется в браузере. В конце страница вернёт вас сюда по ссылке подключения.</string>
     <!-- Экран подключения (project/ConnectScreen.kt), рисуется по состояниям
          ConnectFlow. Экран А, пока ссылка ещё не предложена: тот же плейсхолдер,
          что раньше показывался вместо карты до подключения проекта. -->

@@ -20,7 +20,9 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.FilledTonalButton
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -144,6 +146,14 @@ private fun NotConnected(
     onCancel: (() -> Unit)? = null,
 ) {
     val context = LocalContext.current
+    var creating by rememberSaveable { mutableStateOf(false) }
+
+    // Someone with no invitation reads how to set up a group of their own in
+    // place of this screen; back brings the buttons again.
+    if (creating) {
+        OwnGroupScreen(onBack = { creating = false })
+        return
+    }
 
     AppMark()
 
@@ -209,6 +219,19 @@ private fun NotConnected(
         TextButton(onClick = onCancel) {
             Text(text = stringResource(R.string.connect_cancel))
         }
+    }
+
+    HorizontalDivider(modifier = Modifier.padding(top = 16.dp))
+
+    Text(
+        text = stringResource(R.string.connect_own_group_prompt),
+        style = MaterialTheme.typography.bodyMedium,
+        color = MaterialTheme.colorScheme.onSurfaceVariant,
+        textAlign = TextAlign.Center,
+    )
+
+    OutlinedButton(onClick = { creating = true }) {
+        Text(text = stringResource(R.string.connect_own_group_button))
     }
 
     if (scanning) {
