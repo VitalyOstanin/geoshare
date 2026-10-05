@@ -14,6 +14,7 @@ import io.github.vitalyostanin.geoshare.map.withinAnswerWait
 import io.github.vitalyostanin.geoshare.map.writePhoneName
 import io.github.vitalyostanin.geoshare.membership.Roster
 import io.github.vitalyostanin.geoshare.project.GroupConnection
+import io.github.vitalyostanin.geoshare.project.RefusedJoin
 import io.github.vitalyostanin.geoshare.service.LanguageChoice
 import io.github.vitalyostanin.geoshare.service.MadeInvitation
 import io.github.vitalyostanin.geoshare.service.ThemeChoice
@@ -54,6 +55,12 @@ internal class GroupAnswers {
      * the button is owed an answer.
      */
     var groupTrouble by mutableStateOf(false)
+
+    /**
+     * The invitation this device came with, when the rules turned it down:
+     * said on the map in place of an empty group, not as [groupTrouble].
+     */
+    var refusedJoin by mutableStateOf<RefusedJoin?>(null)
 }
 
 /**

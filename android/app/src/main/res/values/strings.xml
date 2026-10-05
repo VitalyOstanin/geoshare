@@ -468,6 +468,11 @@
     <string name="group_removed_text">An administrator of “%1$s” took you off it. Your position is no longer sent there.</string>
     <string name="group_removed_drop">Remove the group</string>
     <string name="group_removed_join">Join by link</string>
+    <!-- The same card when the invitation this device came with was refused:
+         used, withdrawn or run out, which the device cannot tell apart. -->
+    <string name="group_join_refused_title">Could not join “%1$s”</string>
+    <string name="group_join_refused_text">The invitation no longer works: it was used, withdrawn or ran out. Ask for a new link.</string>
+    <string name="group_join_refused_text_by">The invitation no longer works: it was used, withdrawn or ran out. Ask the person who invited you for a new link: %1$s.</string>
     <string name="member_unnamed">Member without a name · %1$s</string>
     <string name="group_leave_refused">Could not leave the group. Check the connection and try again.</string>
 

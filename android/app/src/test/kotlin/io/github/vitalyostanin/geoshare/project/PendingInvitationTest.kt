@@ -42,7 +42,7 @@ class PendingInvitationTest {
     }
 
     @Test
-    fun `Done carrying an invitation leaves its group, code and invited address`() {
+    fun `Done carrying an invitation leaves its group, code, invited address and inviter`() {
         val done = ConnectState.Done(SETTINGS, INVITATION)
 
         assertEquals(
@@ -51,6 +51,7 @@ class PendingInvitationTest {
                 code = "ABCDEFGH",
                 invitedAddress = "ivan…@example.com",
                 projectId = "geoshare-example",
+                inviter = "Anya",
             ),
             pendingInvitationFor(done),
         )
@@ -109,5 +110,52 @@ class PendingInvitationTest {
     @Test
     fun `an invitation kept without a project is for any`() {
         assertEquals(true, PendingInvitation("group-1", "ABCDEFGH").isFor("example-family"))
+    }
+
+    @Test
+    fun `the inviter and the refusal survive the json`() {
+        val invitation =
+            PendingInvitation(
+                "group-1",
+                "ABCDEFGH",
+                projectId = "geoshare-hike",
+                inviter = "Anya",
+                refused = true,
+            )
+
+        assertEquals(invitation, PendingInvitation.parse(invitation.toJson()))
+    }
+
+    // Kept by a build from before the refusal was remembered: it is still to
+    // be tried.
+    @Test
+    fun `an invitation kept without the refusal is not refused`() {
+        val parsed = PendingInvitation.parse("""{"groupId": "group-1", "code": "ABCDEFGH"}""")
+
+        assertEquals(false, parsed?.refused)
+    }
+
+    @Test
+    fun `a refused invitation is said on its own group's map, naming the inviter`() {
+        val refused =
+            PendingInvitation(
+                "group-1",
+                "ABCDEFGH",
+                projectId = "geoshare-hike",
+                inviter = "Anya",
+                refused = true,
+            )
+
+        assertEquals(RefusedJoin("geoshare-hike", "Anya"), refusedJoinOf(refused, "geoshare-hike"))
+        assertNull(refusedJoinOf(refused, "example-family"))
+    }
+
+    @Test
+    fun `an invitation still to be tried is not a refusal`() {
+        val waiting =
+            PendingInvitation("group-1", "ABCDEFGH", projectId = "geoshare-hike", inviter = "Anya")
+
+        assertNull(refusedJoinOf(waiting, "geoshare-hike"))
+        assertNull(refusedJoinOf(null, "geoshare-hike"))
     }
 }

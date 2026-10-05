@@ -413,9 +413,10 @@ suspend fun leaveGroup(memberId: String, deviceId: String, connection: GroupConn
  * a code typed into the group section — there is no invitation-specific path
  * of its own.
  *
- * Cleared once the answer is final either way: a refusal from the rules
- * ([refusedOutright]) means the code has run out or was never good, and
- * trying it again on the next sign-in would only refuse it again. A network
+ * Cleared once spent. A refusal from the rules ([refusedOutright]) means the
+ * code has run out or was never good, and trying it again on the next sign-in
+ * would only refuse it again: it is marked [PendingInvitation.refused]
+ * instead, so the map can say so (see [refusedJoinOf]). A network
  * failure says nothing about the code itself, so [pending] is left for the
  * next sign-in to find and try again.
  */
@@ -432,7 +433,7 @@ suspend fun consumePendingInvitation(
         throw cancellation
     } catch (refusal: Exception) {
         if (refusedOutright(refusal)) {
-            PendingInvitationStore.clear(context)
+            PendingInvitationStore.save(context, pending.copy(refused = true))
         }
 
         throw refusal

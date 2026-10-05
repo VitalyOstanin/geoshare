@@ -143,11 +143,22 @@ fun MapScreen(
     var groupsOpen by remember { mutableStateOf(false) }
     var leaveAsk by remember { mutableStateOf<LeaveAsk?>(null) }
     val switcher = switcherShown(groups.choices.size)
-    // The group shown, when an administrator has taken this device off it:
+    // The group shown, when an administrator has taken this device off it,
+    // or when the invitation it came with was refused and it never got in:
     // the map and the settings both say so, in the same words.
+    val outside =
+        standingIn(settings.roster, ownMemberId).let {
+            it == Standing.Ungrouped || it == Standing.Outsider
+        }
     val removed =
         groups.choices
-            .firstOrNull { it.projectId == groups.selected && it.removed }
+            .firstOrNull { shown ->
+                shown.projectId == groups.selected &&
+                    (
+                        shown.removed ||
+                            (outside && settings.refusedJoin?.projectId == shown.projectId)
+                        )
+            }
             ?.let { shown ->
                 RemovedGroup(
                     caption = shown.caption,
@@ -157,6 +168,7 @@ fun MapScreen(
                         )
                     },
                     onJoin = groups.onJoin,
+                    refused = settings.refusedJoin.takeUnless { shown.removed },
                 )
             }
     // Whether a hand is holding the following still; the button says so.

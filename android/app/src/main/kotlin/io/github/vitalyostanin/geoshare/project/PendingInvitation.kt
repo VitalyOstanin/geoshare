@@ -12,14 +12,21 @@ private const val FIELD_GROUP_ID = "groupId"
 private const val FIELD_CODE = "code"
 private const val FIELD_TO = "to"
 private const val FIELD_PROJECT = "project"
+private const val FIELD_BY = "by"
+private const val FIELD_REFUSED = "refused"
 
 /**
  * An [Invitation]'s group and code, kept from [ConnectState.Done] until the
  * sign-in to [projectId] that follows it, so that sign-in can spend it the way
  * a group invitation is spent everywhere else. [invitedAddress] is the
  * shortened address the link names, kept so that an account which is plainly
- * not the one invited is told so before anything is written (ADR-0019); the
- * other captions were shown once already and are not needed again.
+ * not the one invited is told so before anything is written (ADR-0019).
+ * [inviter] is who the link said invited, the person to ask for a new link
+ * should this one be refused.
+ *
+ * [refused] marks one the rules turned down: it is not tried again, but kept
+ * so the map can go on saying so until the group is dropped or another link
+ * is opened.
  */
 data class PendingInvitation(
     val groupId: String,
@@ -27,12 +34,16 @@ data class PendingInvitation(
     val invitedAddress: String? = null,
     /** The project it invites to; null when kept by a build that knew a single project. */
     val projectId: String? = null,
+    val inviter: String? = null,
+    val refused: Boolean = false,
 ) {
     fun toJson(): String = JSONObject()
         .put(FIELD_GROUP_ID, groupId)
         .put(FIELD_CODE, code)
         .apply { invitedAddress?.let { put(FIELD_TO, it) } }
         .apply { projectId?.let { put(FIELD_PROJECT, it) } }
+        .apply { inviter?.let { put(FIELD_BY, it) } }
+        .apply { if (refused) put(FIELD_REFUSED, true) }
         .toString()
 
     /**
@@ -68,11 +79,13 @@ data class PendingInvitation(
             val code = document.optString(FIELD_CODE)
             val invitedAddress = document.optString(FIELD_TO).ifBlank { null }
             val projectId = document.optString(FIELD_PROJECT).ifBlank { null }
+            val inviter = document.optString(FIELD_BY).ifBlank { null }
+            val refused = document.optBoolean(FIELD_REFUSED, false)
 
             return if (groupId.isBlank() || code.isBlank()) {
                 null
             } else {
-                PendingInvitation(groupId, code, invitedAddress, projectId)
+                PendingInvitation(groupId, code, invitedAddress, projectId, inviter, refused)
             }
         }
     }
@@ -81,13 +94,32 @@ data class PendingInvitation(
 /**
  * The [PendingInvitation] [ConnectState.Done] leaves for the sign-in to its
  * project to spend, or none for an owner's own link — [Invitation.groupId] and
- * [Invitation.code] are what a join needs, and [Invitation.invitedAddress]
- * what tells a wrong account apart before joining; the other captions have
- * nothing left to say once the confirmation screen that showed them is gone.
+ * [Invitation.code] are what a join needs, [Invitation.invitedAddress] what
+ * tells a wrong account apart before joining, and [Invitation.inviter] whom a
+ * refusal sends the person back to; the group's name is the connection's own
+ * by then.
  */
 fun pendingInvitationFor(done: ConnectState.Done): PendingInvitation? = done.invitation?.let {
-    PendingInvitation(it.groupId, it.code, it.invitedAddress, done.settings.projectId)
+    PendingInvitation(
+        it.groupId,
+        it.code,
+        it.invitedAddress,
+        done.settings.projectId,
+        inviter = it.inviter,
+    )
 }
+
+/**
+ * An invitation to [projectId]'s group the rules refused: used, withdrawn or
+ * run out — the three are not told apart, since the invited account may not
+ * read the invitation (ADR-0018). [inviter] is whom to ask for a new link.
+ */
+data class RefusedJoin(val projectId: String, val inviter: String?)
+
+/** [RefusedJoin] for [pending], when it is one the rules turned down. */
+fun refusedJoinOf(pending: PendingInvitation?, projectId: String): RefusedJoin? = pending?.takeIf {
+    it.refused && it.isFor(projectId)
+}?.let { RefusedJoin(projectId, it.inviter) }
 
 /**
  * Where a [PendingInvitation] waits between [ConnectState.Done] writing it

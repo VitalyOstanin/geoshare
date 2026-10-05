@@ -27,14 +27,21 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import io.github.vitalyostanin.geoshare.R
+import io.github.vitalyostanin.geoshare.project.RefusedJoin
 import kotlinx.coroutines.launch
 
 /**
- * A group an administrator took this device off, with the two ways on from
- * it: [onDrop] takes the group off the device, [onJoin] asks for a link to
- * come back by.
+ * A group an administrator took this device off, or — with [refused] — one
+ * the invitation it came with was refused for, with the two ways on from it:
+ * [onDrop] takes the group off the device, [onJoin] asks for a link to come
+ * back by.
  */
-data class RemovedGroup(val caption: String, val onDrop: suspend () -> Unit, val onJoin: () -> Unit)
+data class RemovedGroup(
+    val caption: String,
+    val onDrop: suspend () -> Unit,
+    val onJoin: () -> Unit,
+    val refused: RefusedJoin? = null,
+)
 
 /**
  * What stands in place of the map while the group shown is one an
@@ -75,15 +82,29 @@ fun RemovedNotice(removed: RemovedGroup, modifier: Modifier = Modifier) {
     var busy by remember { mutableStateOf(false) }
 
     Column(modifier = modifier) {
+        val refused = removed.refused
+        val title =
+            if (refused == null) {
+                stringResource(R.string.group_removed_title)
+            } else {
+                stringResource(R.string.group_join_refused_title, removed.caption)
+            }
+        val text =
+            when {
+                refused == null -> stringResource(R.string.group_removed_text, removed.caption)
+                refused.inviter == null -> stringResource(R.string.group_join_refused_text)
+                else -> stringResource(R.string.group_join_refused_text_by, refused.inviter)
+            }
+
         Text(
-            text = stringResource(R.string.group_removed_title),
+            text = title,
             fontSize = 18.sp,
             fontWeight = FontWeight.Medium,
             modifier = Modifier.padding(bottom = 8.dp),
         )
 
         Text(
-            text = stringResource(R.string.group_removed_text, removed.caption),
+            text = text,
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             modifier = Modifier.padding(bottom = 8.dp),

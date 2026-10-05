@@ -5,6 +5,8 @@ import io.github.vitalyostanin.geoshare.map.PublishedProfile
 import io.github.vitalyostanin.geoshare.membership.Leave
 import io.github.vitalyostanin.geoshare.project.Connections
 import io.github.vitalyostanin.geoshare.project.GroupConnection
+import io.github.vitalyostanin.geoshare.project.PendingInvitationStore
+import io.github.vitalyostanin.geoshare.project.refusedJoinOf
 import io.github.vitalyostanin.geoshare.service.forgetPhone
 import io.github.vitalyostanin.geoshare.service.leaveGroup
 import kotlinx.coroutines.CancellationException
@@ -71,6 +73,12 @@ internal suspend fun MainActivity.leave(connection: GroupConnection, how: Leave)
 
     connection.auth.signOut()
     Connections.remove(this, connection.projectId)
+
+    // A refused invitation to the group is said on its map; with the
+    // group gone there is nothing left to say it on.
+    if (refusedJoinOf(PendingInvitationStore.read(this), connection.projectId) != null) {
+        PendingInvitationStore.clear(this)
+    }
 
     return true
 }

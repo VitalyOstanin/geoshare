@@ -7,6 +7,7 @@ import io.github.vitalyostanin.geoshare.download.DownloadState
 import io.github.vitalyostanin.geoshare.membership.Invitation
 import io.github.vitalyostanin.geoshare.membership.Roster
 import io.github.vitalyostanin.geoshare.permission.PermissionStep
+import io.github.vitalyostanin.geoshare.project.RefusedJoin
 import io.github.vitalyostanin.geoshare.service.AidingErasure
 import io.github.vitalyostanin.geoshare.service.LanguageChoice
 import io.github.vitalyostanin.geoshare.service.MadeInvitation
@@ -89,6 +90,8 @@ data class SettingsState(
      * be guessing if it named one of them.
      */
     val groupTrouble: Boolean,
+    /** The invitation this device came with, when the rules refused it. */
+    val refusedJoin: RefusedJoin? = null,
     /** What this phone's owner named it for everybody, if they did. */
     val phoneName: String?,
     /**

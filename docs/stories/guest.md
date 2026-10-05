@@ -59,19 +59,21 @@ Acceptance:
 
 ## GST-04 Be told that an invitation cannot be used
 
-- Status: partly — another account is told apart; a used or run-out
-  invitation gets one message for both, which also covers a group that
-  already exists
-- ADR: 0015, 0019, 0025
-- Tests: rules `membership.test.mjs` (a code that has run out; a spent code; another account)
-- Not covered: the words the screen says
+- Status: done
+- ADR: 0015, 0018, 0019, 0025
+- Tests: rules `membership.test.mjs` (a code that has run out; a spent code; another account); Android `PendingInvitationTest`
+- Not covered: the card on the map and its words, by hand
 
 As a person whose invitation has been used, has run out or was made for
-another account I am told which of these it is, so that I ask for a new one
-rather than retrying.
+another account I am told so, so that I ask for a new one rather than
+retrying.
 
 Acceptance:
 - another account: both addresses are named and switching accounts is
   offered (MEM-02);
-- used or run out: the screen says which, and to ask an administrator for a
-  new link.
+- used, withdrawn or run out: the group's map says the invitation no longer
+  works and to ask the person who invited for a new link, naming them when
+  the link did; the three are not told apart, since the invited account may
+  not read the invitation (ADR-0018);
+- the card stays, the invitation is not tried again, until the group is
+  dropped from the device or another link is opened.

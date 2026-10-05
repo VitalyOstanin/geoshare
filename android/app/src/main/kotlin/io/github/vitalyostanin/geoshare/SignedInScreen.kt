@@ -44,6 +44,7 @@ import io.github.vitalyostanin.geoshare.project.GroupConnection
 import io.github.vitalyostanin.geoshare.project.PendingInvitation
 import io.github.vitalyostanin.geoshare.project.PendingInvitationStore
 import io.github.vitalyostanin.geoshare.project.WrongAccountDialog
+import io.github.vitalyostanin.geoshare.project.refusedJoinOf
 import io.github.vitalyostanin.geoshare.service.LanguageChoice
 import io.github.vitalyostanin.geoshare.service.MadeInvitation
 import io.github.vitalyostanin.geoshare.service.ThemeChoice
@@ -130,9 +131,16 @@ internal fun SignedInScreen(
     LaunchedEffect(connection, current.memberId) {
         // Kept for the sign-in to the group it invites
         // to, which need not be the one on the screen.
+        val kept = PendingInvitationStore.read(activity)
+
+        // One the rules already turned down is not tried again; the map
+        // goes on saying so until the group is dropped or another link
+        // is opened.
+        answers.refusedJoin = refusedJoinOf(kept, connection.projectId)
+
         val pending =
-            PendingInvitationStore.read(activity)
-                ?.takeIf { it.isFor(connection.projectId) }
+            kept
+                ?.takeIf { it.isFor(connection.projectId) && !it.refused }
                 ?: return@LaunchedEffect
 
         // Plainly another account: said before any
@@ -144,8 +152,8 @@ internal fun SignedInScreen(
             return@LaunchedEffect
         }
 
-        answers.groupTrouble =
-            !activity.withGroup("joined a group from a pending invitation") {
+        val joined =
+            activity.withGroup("joined a group from a pending invitation") {
                 consumePendingInvitation(
                     activity,
                     current.memberId,
@@ -153,6 +161,13 @@ internal fun SignedInScreen(
                     connection = connection,
                 )
             }
+
+        // Refused by the rules: the invitation is marked so, and the map
+        // says it in its own words. Anything else — no network — is the
+        // general trouble line, and the invitation waits for another try.
+        answers.refusedJoin =
+            refusedJoinOf(PendingInvitationStore.read(activity), connection.projectId)
+        answers.groupTrouble = !joined && answers.refusedJoin == null
     }
 
     wrongAccount?.let { pending ->
@@ -241,6 +256,7 @@ internal fun SignedInScreen(
                 invitation = answers.invitation,
                 site = connection.settings.site,
                 groupTrouble = answers.groupTrouble,
+                refusedJoin = answers.refusedJoin,
                 phoneName =
                 grants[current.memberId]?.phones?.get(activity.device.id)?.name,
                 searches = searches,
