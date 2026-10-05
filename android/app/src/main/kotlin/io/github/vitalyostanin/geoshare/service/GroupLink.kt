@@ -18,6 +18,7 @@ import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.onStart
+import kotlinx.coroutines.launch
 import java.time.Duration
 import java.time.Instant
 
@@ -79,9 +80,7 @@ class GroupLink(val connection: GroupConnection, val memberId: String, device: D
 
         return combine(
             claims,
-            permissions.onStart {
-                emit(null)
-            },
+            permissions.unknownAfter(GRANT_AWAITED),
             search,
         ) { seen, shared, standing ->
             val sought = standing?.stands(Instant.now()) == true
@@ -150,5 +149,30 @@ class EveryGroup(private val links: () -> List<GroupLink>) {
         if (taken == 0) {
             throw last ?: IllegalStateException("no group to $what in")
         }
+    }
+}
+
+/**
+ * How long the first decision waits for the grant before counting every
+ * claim. Read from the cache it is there in a few hundredths of a second, and
+ * deciding before it arrives costs a round of collecting started and dropped
+ * again, a status written into every group included, on every start.
+ */
+private val GRANT_AWAITED: Duration = Duration.ofSeconds(1)
+
+/**
+ * This flow, preceded by a null standing for "not known yet" only when it has
+ * said nothing within [wait].
+ */
+internal fun <T> Flow<T?>.unknownAfter(wait: Duration): Flow<T?> = channelFlow {
+    val unknown =
+        launch {
+            delay(wait.toMillis())
+            send(null)
+        }
+
+    collect { value ->
+        unknown.cancel()
+        send(value)
     }
 }
