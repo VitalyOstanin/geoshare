@@ -475,7 +475,10 @@ class MainActivity : AppCompatActivity() {
         GroupNames.note(this, projectId, done.invitation?.groupName)
 
         if (Connections.of(projectId) == null) {
-            Connections.connect(this, done.settings, INHERITED)
+            // The invitation's group from the start: the inherited one is not
+            // there in a project of its own, and the service would write into
+            // it, refused, until the invitation is spent.
+            Connections.connect(this, done.settings, done.invitation?.groupId ?: INHERITED)
         } else {
             Connections.select(this, projectId)
         }
