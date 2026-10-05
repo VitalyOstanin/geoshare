@@ -1,0 +1,203 @@
+# Device
+
+A member's phone, as the service on it acts with nobody at the screen. The
+stories are written for the member who carries it: what the phone has to do
+on its own for the others to see a true place at a fair cost of battery.
+
+## Contents
+
+- [DEV-01 Write the place without being asked](#dev-01-write-the-place-without-being-asked)
+- [DEV-02 Collect faster while somebody watches](#dev-02-collect-faster-while-somebody-watches)
+- [DEV-03 Spend little while standing still](#dev-03-spend-little-while-standing-still)
+- [DEV-04 Work without Google Play services](#dev-04-work-without-google-play-services)
+- [DEV-05 Get the permissions it needs, once](#dev-05-get-the-permissions-it-needs-once)
+- [DEV-06 Start again after the phone restarts](#dev-06-start-again-after-the-phone-restarts)
+- [DEV-07 Leave out answers that cannot be true](#dev-07-leave-out-answers-that-cannot-be-true)
+- [DEV-08 Notice being taken off the roster](#dev-08-notice-being-taken-off-the-roster)
+- [DEV-09 Pick up a permission as soon as it is given](#dev-09-pick-up-a-permission-as-soon-as-it-is-given)
+- [DEV-10 Report that it is alive](#dev-10-report-that-it-is-alive)
+- [DEV-11 Keep a log the member can hand over](#dev-11-keep-a-log-the-member-can-hand-over)
+- [DEV-12 Wake when somebody needs it](#dev-12-wake-when-somebody-needs-it)
+- [DEV-13 Update itself](#dev-13-update-itself)
+- [DEV-14 Use the location services of Huawei phones](#dev-14-use-the-location-services-of-huawei-phones)
+
+## DEV-01 Write the place without being asked
+
+- Status: done
+- ADR: 0004, 0007
+
+As a member I let a foreground service on my phone write my place, so that the
+group sees it without my opening the application.
+
+Acceptance:
+- the service runs with a notification that says it shares and lets it stop;
+- each device writes `positions/{uid}.{deviceId}` of its own;
+- the same place is written into every group the device is signed in to.
+
+## DEV-02 Collect faster while somebody watches
+
+- Status: done
+- ADR: 0010
+
+As a member I let my phone collect fast only while somebody has the map open,
+so that the battery is spent when it is worth it.
+
+Acceptance:
+- a viewer renews a watch claim every minute; a claim older than three
+  minutes stops counting;
+- a phone that sees a live claim on itself switches to the viewing mode.
+
+## DEV-03 Spend little while standing still
+
+- Status: done
+- ADR: 0010
+
+As a member I let my phone stay quiet while I do not move, so that a day at
+home costs little battery.
+
+Acceptance:
+- moving is learnt from the system's activity transitions;
+- standing still inside a 150 m geofence keeps the receiver off;
+- an idle phone rewrites the same point about every 25 minutes so that it
+  does not go grey, and `takenAt` keeps when it was measured.
+
+## DEV-04 Work without Google Play services
+
+- Status: done
+- ADR: 0002, 0020
+
+As a member with a phone or tablet that has no Google Play services I still
+sign in and share my place, so that the group is not limited to phones with
+Google on them.
+
+Acceptance:
+- sign-in goes through the browser;
+- without Play services the platform's own providers are asked, and only the
+  sources switched on in the settings.
+
+## DEV-05 Get the permissions it needs, once
+
+- Status: done
+
+As a member I am led through the location, background, activity and battery
+permissions step by step, so that the service is not killed and I know why
+each is asked.
+
+Acceptance:
+- each step says what it is for;
+- for makers that stop background work the application opens their own list
+  of allowed applications and lets me say it is done.
+
+## DEV-06 Start again after the phone restarts
+
+- Status: partly — built, not yet checked on the phones
+
+As a member I let the service start by itself after the phone restarts, so
+that I do not have to remember to open the application.
+
+Acceptance:
+- after a restart the service runs if sharing was on;
+- it stays off if sharing was off.
+
+## DEV-07 Leave out answers that cannot be true
+
+- Status: partly — the check against the motion sensors only records, it does
+  not refuse yet
+- ADR: 0014, 0021, 0023, 0024
+
+As a member near a place where satellite signals are spoofed I let the phone
+leave out answers that cannot be true, so that the group does not see me
+jump to an airport.
+
+Acceptance:
+- satellites standing below the horizon, or at a distance off their published
+  orbits, mark the epoch false; two in a row leave the fix out;
+- a place that moved while the phone stood still is refused;
+- a recorded false place marks positions taken there;
+- the jump filter is a setting, off by default;
+- every answer left out is counted with its reason.
+
+## DEV-08 Notice being taken off the roster
+
+- Status: done
+- ADR: 0026
+
+As a member taken off a roster I am told so on that group's map instead of an
+empty map, so that I know what happened.
+
+Acceptance:
+- "You were taken off the group", with "Remove the group" and "Join by
+  link";
+- the group's settings say the same;
+- the connection is not removed on its own;
+- a refusal is read as removal only after the device has seen its account on
+  that roster.
+
+## DEV-09 Pick up a permission as soon as it is given
+
+- Status: done
+
+As a member given a permission to see somebody I see their place at once, so
+that I do not wait a minute after they share.
+
+Acceptance:
+- the one who grants touches their profile; the readers who were refused
+  retry at once on that signal;
+- without the signal they retry after a minute.
+
+## DEV-10 Report that it is alive
+
+- Status: done
+
+As a member I let my phone say when it last wrote, in which mode and whether
+it is charging, so that an administrator notices it has gone quiet (ADM-06).
+
+Acceptance:
+- the phone's status is written about once an hour and when the mode changes.
+
+## DEV-11 Keep a log the member can hand over
+
+- Status: done
+- ADR: 0021
+
+As a member I let the phone keep a log of what it received and left out, and
+of the raw satellite measurements, so that a wrong place can be looked into
+afterwards.
+
+Acceptance:
+- logs roll over and are kept within a limit;
+- the satellite file is in GnssLogger's layout, so other tools read it.
+
+## DEV-12 Wake when somebody needs it
+
+- Status: planned
+
+As a member whose phone is asleep I let a push wake it when somebody opens a
+search, calls the siren or resets its place, so that it answers at once and
+not at its next own wake-up, without a paid Firebase plan.
+
+Acceptance:
+- to be agreed.
+
+## DEV-13 Update itself
+
+- Status: planned
+
+As a member I let the application learn about a new published build and
+install it, so that I do not have to look for updates.
+
+Acceptance:
+- asks about once a day, over the networks allowed (MEM-20);
+- installs only a build signed with the same key;
+- starts the service again after the install.
+
+## DEV-14 Use the location services of Huawei phones
+
+- Status: planned
+
+As a member with a Huawei phone without Google I let the application use the
+geofence and activity recognition of Huawei's own services, so that standing
+still is as cheap there as on other phones.
+
+Acceptance:
+- to be agreed.
