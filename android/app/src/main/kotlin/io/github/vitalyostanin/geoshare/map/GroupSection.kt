@@ -5,6 +5,8 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
@@ -16,6 +18,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import io.github.vitalyostanin.geoshare.R
@@ -26,6 +29,7 @@ import io.github.vitalyostanin.geoshare.membership.invitationFrom
 import io.github.vitalyostanin.geoshare.membership.runsTheGroup
 import io.github.vitalyostanin.geoshare.membership.standingIn
 import io.github.vitalyostanin.geoshare.project.ConnectLink
+import io.github.vitalyostanin.geoshare.project.QrScanDialog
 
 /**
  * Who is in the group, and what the person looking may do about it.
@@ -159,6 +163,7 @@ private fun WayIn(
 ) {
     var typed by remember { mutableStateOf("") }
     var groupName by remember { mutableStateOf("") }
+    var scanning by remember { mutableStateOf(false) }
     val pasted = wayInPaste(typed)
 
     Text(
@@ -192,13 +197,34 @@ private fun WayIn(
     // throughout. The code's own half of the older shape is put into upper
     // case where it is read, which is after [wayInPaste] has told the two
     // apart.
+    //
+    // The icon at the end reads the link off another screen's QR code and
+    // puts it here, to be joined by the button below like a pasted one.
     OutlinedTextField(
         value = typed,
         onValueChange = { typed = it },
         label = { Text(text = stringResource(R.string.group_code_label)) },
+        trailingIcon = {
+            IconButton(onClick = { scanning = true }) {
+                Icon(
+                    painter = painterResource(R.drawable.ic_qr_scan),
+                    contentDescription = stringResource(R.string.connect_scan_qr),
+                )
+            }
+        },
         singleLine = true,
         modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 4.dp),
     )
+
+    if (scanning) {
+        QrScanDialog(
+            onFound = { link ->
+                scanning = false
+                typed = link
+            },
+            onDismiss = { scanning = false },
+        )
+    }
 
     Row(
         modifier = Modifier.fillMaxWidth().padding(horizontal = 8.dp),

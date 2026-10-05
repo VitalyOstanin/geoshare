@@ -24,6 +24,10 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -126,7 +130,8 @@ private fun AppMark() {
 
 /**
  * Screen А: nothing offered yet, with [showError] for a paste that held no
- * link this project recognises ([ConnectState.NoLinkPasted]).
+ * link this project recognises ([ConnectState.NoLinkPasted]). A link the
+ * scanner read goes the way a pasted one does.
  *
  * Given [onCancel] it is a device already in a group asking to join one more
  * ([ConnectState.AskingForLink]): the title says that rather than that it is
@@ -173,6 +178,15 @@ private fun NotConnected(
         )
     }
 
+    var scanning by rememberSaveable { mutableStateOf(false) }
+
+    // The scanner first: an invitation is most often shown on the
+    // administrator's screen right next to this one. The camera comes on
+    // only once it is pressed.
+    Button(onClick = { scanning = true }) {
+        Text(text = stringResource(R.string.connect_scan_qr))
+    }
+
     FilledTonalButton(
         onClick = {
             val pasted =
@@ -195,6 +209,16 @@ private fun NotConnected(
         TextButton(onClick = onCancel) {
             Text(text = stringResource(R.string.connect_cancel))
         }
+    }
+
+    if (scanning) {
+        QrScanDialog(
+            onFound = { link ->
+                scanning = false
+                onPasteLink(link)
+            },
+            onDismiss = { scanning = false },
+        )
     }
 }
 

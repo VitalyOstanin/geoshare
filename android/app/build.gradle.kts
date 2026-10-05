@@ -110,6 +110,9 @@ dependencies {
     implementation(libs.coil.network.okhttp)
 
     implementation(libs.zxing.core)
+    implementation(libs.camera.camera2)
+    implementation(libs.camera.lifecycle)
+    implementation(libs.camera.view)
 
     testImplementation(libs.junit)
     // Overrides the Android stub org.json.* on the unit test classpath, which

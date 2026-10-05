@@ -459,8 +459,18 @@
          что раньше показывался вместо карты до подключения проекта. -->
     <string name="connect_not_connected_title">Приложение ещё не подключено.</string>
     <string name="connect_join_title">Вступить ещё в одну группу</string>
-    <string name="connect_not_connected_hint">Откройте ссылку подключения.</string>
+    <string name="connect_not_connected_hint">Откройте ссылку подключения или наведите камеру на QR-код приглашения.</string>
     <string name="connect_paste_link">Вставить ссылку</string>
+    <string name="connect_scan_qr">Сканировать QR-код</string>
+    <string name="qr_scan_title">Сканирование</string>
+    <string name="qr_scan_hint">Наведите камеру на QR-код приглашения на экране другого телефона.</string>
+    <string name="qr_scan_found_group">Приглашение в «%1$s» распознано</string>
+    <string name="qr_scan_found">Ссылка подключения распознана</string>
+    <string name="qr_scan_foreign">Это не ссылка подключения geoshare. Наведите камеру на QR-код из панели группы.</string>
+    <string name="qr_camera_refused_title">Нет доступа к камере</string>
+    <string name="qr_camera_refused_text">Чтобы считать QR-код, разрешите приложению камеру. Можно и без неё: скопируйте ссылку приглашения и вставьте её.</string>
+    <string name="qr_camera_allow">Разрешить</string>
+    <string name="qr_camera_back">Назад</string>
     <!-- Экран А снова, когда вставка не содержала ссылку этого проекта. -->
     <string name="connect_no_link_in_clipboard">В буфере обмена нет ссылки подключения.</string>
     <!-- Экран Б: что ответил сайт, до подтверждения. -->

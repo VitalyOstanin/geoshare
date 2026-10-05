@@ -38,6 +38,15 @@
          is on the locked screen without anybody pressing power first. -->
     <uses-permission android:name="android.permission.WAKE_LOCK" />
 
+    <!-- The invitation scanner: asked for the first time it is opened, and
+         nothing else needs it. Not required of the hardware, so a phone
+         without a camera still installs and joins by pasting the link. -->
+    <uses-permission android:name="android.permission.CAMERA" />
+    <uses-feature android:name="android.hardware.camera.any" android:required="false" />
+    <!-- The short buzz when the scanner has read an invitation. Granted on
+         install. -->
+    <uses-permission android:name="android.permission.VIBRATE" />
+
     <!-- Asked for in a dialog of the system's own: a phone that stops the
          service while nobody is looking at the screen stops answering the
          other members, whose fast collecting arrives over a subscription. -->

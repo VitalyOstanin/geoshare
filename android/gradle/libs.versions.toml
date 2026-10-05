@@ -32,6 +32,10 @@ coil = "3.6.2"
 # alone: it encodes and decodes in plain Java, without the camera or
 # Android parts of the wider project.
 zxing = "3.5.4"
+# The camera behind the invitation scanner: a preview to aim with and the
+# frames zxing reads the code out of. No Play Services under it, so the
+# scanner works on a phone without them like the rest of the application.
+camerax = "1.6.2"
 junit = "4.13.2"
 # The real implementation of the classes org.json.* names, in place of the
 # Android stub jar the unit test classpath otherwise resolves them to: that
@@ -67,6 +71,9 @@ maplibre-android = { module = "org.maplibre.gl:android-sdk", version.ref = "mapl
 coil-compose = { module = "io.coil-kt.coil3:coil-compose", version.ref = "coil" }
 coil-network-okhttp = { module = "io.coil-kt.coil3:coil-network-okhttp", version.ref = "coil" }
 zxing-core = { module = "com.google.zxing:core", version.ref = "zxing" }
+camera-camera2 = { module = "androidx.camera:camera-camera2", version.ref = "camerax" }
+camera-lifecycle = { module = "androidx.camera:camera-lifecycle", version.ref = "camerax" }
+camera-view = { module = "androidx.camera:camera-view", version.ref = "camerax" }
 
 kotlinx-coroutines-android = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-android", version.ref = "coroutines" }
 # Awaits a Play Services Task from a coroutine; Firebase returns those.

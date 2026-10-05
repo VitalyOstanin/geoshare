@@ -25,17 +25,18 @@ date is the decision's.
 | 0015 | [An invitation is issued to one Google account](0015-invitation-for-one-google-account.md)                           | Accepted                            | 2026-09-30 |
 | 0016 | [A group has a name people choose](0016-group-has-a-name.md)                                                         | Accepted                            | 2026-09-30 |
 | 0017 | [The invitation link carries who invited and the group's name](0017-names-in-the-invitation-link.md)                 | Accepted                            | 2026-09-30 |
-| 0018 | [What the join page and the connection screen show](0018-what-the-connection-screens-show.md)                   | Accepted                            | 2026-09-30 |
-| 0019 | [Making an invitation and naming a group](0019-making-an-invitation-and-naming-a-group.md)                          | Accepted                            | 2026-09-30 |
-| 0020 | [Who is asked for the position](0020-who-is-asked-for-the-position.md)                                           | Accepted                            | 2026-10-02 |
-| 0021 | [The sky file is laid out as Google's GNSS logger lays out its own](0021-sky-file-in-google-logger-layout.md)      | Accepted                            | 2026-10-02 |
-| 0022 | [Background downloads follow the member's network choice](0022-downloads-follow-the-network-choice.md)        | Accepted                            | 2026-10-02 |
-| 0023 | [The sky is held against the published orbits](0023-the-sky-is-held-against-published-orbits.md)              | Accepted, partly superseded by 0024 | 2026-10-02 |
-| 0024 | [GLONASS joins the orbit check](0024-glonass-joins-the-orbit-check.md)                                        | Accepted                            | 2026-10-02 |
-| 0025 | [An invitation admits once and lasts at most a day](0025-an-invitation-admits-once.md)                        | Accepted                            | 2026-10-03 |
-| 0026 | [Several groups on one device](0026-several-groups-on-one-device.md)                                          | Accepted                            | 2026-10-03 |
-| 0027 | [What an administrator sees and may do](0027-what-an-administrator-sees.md)                                    | Accepted                            | 2026-10-05 |
-| 0028 | [A siren on a lost phone](0028-a-siren-on-a-lost-phone.md)                                                     | Accepted                            | 2026-10-05 |
-| 0029 | [Resetting a stuck place from another screen](0029-resetting-a-stuck-place.md)                                 | Accepted                            | 2026-10-05 |
-| 0030 | [Names for people and phones, for oneself alone](0030-names-for-oneself.md)                                    | Accepted                            | 2026-10-05 |
-| 0031 | [A refused reader asks again when the granter says so](0031-a-refused-reader-asks-again.md)                    | Accepted                            | 2026-10-05 |
+| 0018 | [What the join page and the connection screen show](0018-what-the-connection-screens-show.md)                        | Accepted                            | 2026-09-30 |
+| 0019 | [Making an invitation and naming a group](0019-making-an-invitation-and-naming-a-group.md)                           | Accepted                            | 2026-09-30 |
+| 0020 | [Who is asked for the position](0020-who-is-asked-for-the-position.md)                                               | Accepted                            | 2026-10-02 |
+| 0021 | [The sky file is laid out as Google's GNSS logger lays out its own](0021-sky-file-in-google-logger-layout.md)        | Accepted                            | 2026-10-02 |
+| 0022 | [Background downloads follow the member's network choice](0022-downloads-follow-the-network-choice.md)               | Accepted                            | 2026-10-02 |
+| 0023 | [The sky is held against the published orbits](0023-the-sky-is-held-against-published-orbits.md)                     | Accepted, partly superseded by 0024 | 2026-10-02 |
+| 0024 | [GLONASS joins the orbit check](0024-glonass-joins-the-orbit-check.md)                                               | Accepted                            | 2026-10-02 |
+| 0025 | [An invitation admits once and lasts at most a day](0025-an-invitation-admits-once.md)                               | Accepted                            | 2026-10-03 |
+| 0026 | [Several groups on one device](0026-several-groups-on-one-device.md)                                                 | Accepted                            | 2026-10-03 |
+| 0027 | [What an administrator sees and may do](0027-what-an-administrator-sees.md)                                          | Accepted                            | 2026-10-05 |
+| 0028 | [A siren on a lost phone](0028-a-siren-on-a-lost-phone.md)                                                           | Accepted                            | 2026-10-05 |
+| 0029 | [Resetting a stuck place from another screen](0029-resetting-a-stuck-place.md)                                       | Accepted                            | 2026-10-05 |
+| 0030 | [Names for people and phones, for oneself alone](0030-names-for-oneself.md)                                          | Accepted                            | 2026-10-05 |
+| 0031 | [A refused reader asks again when the granter says so](0031-a-refused-reader-asks-again.md)                          | Accepted                            | 2026-10-05 |
+| 0032 | [An invitation is scanned with CameraX and zxing](0032-scanning-an-invitation-with-camerax-and-zxing.md)             | Accepted                            | 2026-10-05 |

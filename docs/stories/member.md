@@ -354,17 +354,22 @@ Acceptance:
 
 ### MEM-21 Join by scanning a QR code
 
-- Status: planned
-- ADR: —
-- Tests: —
-- Not covered: planned
+- Status: done
+- ADR: 0032
+- Tests: Android `QrScanTest`, `ManifestTest`
+- Not covered: the camera, the vibration and the permission screens, by hand
 
 As a person shown an invitation QR code on another phone I scan it from the
 connection screen, so that I do not need the link sent to me.
 
 Acceptance:
-- the camera scanner sits beside pasting a link;
-- the phone vibrates when the code is read.
+- the camera scanner sits beside pasting a link, and in the settings'
+  invitation field;
+- the camera is asked for only when the scanner is opened;
+- a read link opens the same confirmation a pasted one does; the phone
+  vibrates when it is read;
+- a code that is not a connection link is said to be one, and scanning goes
+  on.
 
 ### MEM-22 Keep a shared list, reminders and notes on the map
 
