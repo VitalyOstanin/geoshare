@@ -25,6 +25,8 @@ on its own for the others to see a true place at a fair cost of battery.
 
 - Status: done
 - ADR: 0004, 0007
+- Tests: rules `positions.test.mjs`; Android `WriteFilterTest`
+- Not covered: the service and its notification, on a device
 
 As a member I let a foreground service on my phone write my place, so that the
 group sees it without my opening the application.
@@ -38,6 +40,7 @@ Acceptance:
 
 - Status: done
 - ADR: 0010
+- Tests: rules `access.test.mjs` (watch); Android `WatchingTest`, `ModeSelectionTest`, `CollectionModeTest`
 
 As a member I let my phone collect fast only while somebody has the map open,
 so that the battery is spent when it is worth it.
@@ -51,6 +54,8 @@ Acceptance:
 
 - Status: done
 - ADR: 0010
+- Tests: Android `GeofenceTest`, `StillnessTest`, `MovementTest`, `ModeSelectionTest`
+- Not covered: battery, measured on a device
 
 As a member I let my phone stay quiet while I do not move, so that a day at
 home costs little battery.
@@ -65,6 +70,8 @@ Acceptance:
 
 - Status: done
 - ADR: 0002, 0020
+- Tests: Android `SourcesTest`, `AskingTest`, `ProviderNoteTest`
+- Not covered: sign-in on a device without Play services, by hand
 
 As a member with a phone or tablet that has no Google Play services I still
 sign in and share my place, so that the group is not limited to phones with
@@ -79,6 +86,7 @@ Acceptance:
 
 - Status: done
 - ADR: —
+- Tests: Android `PermissionStepTest`, `BackgroundWorkTest`, `MovementPermissionTest`, `ManifestTest`
 
 As a member I am led through the location, background, activity and battery
 permissions step by step, so that the service is not killed and I know why
@@ -93,6 +101,8 @@ Acceptance:
 
 - Status: partly — built, not yet checked on the phones
 - ADR: —
+- Tests: Android `BootReceiverTest`, `StartConditionsTest`
+- Not covered: a restart of a real phone
 
 As a member I let the service start by itself after the phone restarts, so
 that I do not have to remember to open the application.
@@ -106,6 +116,7 @@ Acceptance:
 - Status: partly — the check against the motion sensors only records, it does
   not refuse yet
 - ADR: 0014, 0021, 0023, 0024
+- Tests: rules `positions.test.mjs` (answers left out); Android `JumpsTest`, `OrbitCheckTest`, `OrbitsTest`, `SkyTest`, `SlantTest`, `DriftTest`, `MovementTest`, `FalsePlacesTest`, `LeftOutRunTest`
 
 As a member near a place where satellite signals are spoofed I let the phone
 leave out answers that cannot be true, so that the group does not see me
@@ -123,6 +134,8 @@ Acceptance:
 
 - Status: done
 - ADR: 0026
+- Tests: rules `leaving.test.mjs` (a member taken off the roster); Android `PresenceTest`
+- Not covered: the screen itself
 
 As a member taken off a roster I am told so on that group's map instead of an
 empty map, so that I know what happened.
@@ -139,6 +152,7 @@ Acceptance:
 
 - Status: done
 - ADR: 0008, 0031
+- Tests: rules `access.test.mjs` (a member touches their own profile to say their sharing changed); Android `RefusalsTest`
 
 As a member given a permission to see somebody I see their place at once, so
 that I do not wait a minute after they share.
@@ -152,6 +166,8 @@ Acceptance:
 
 - Status: done
 - ADR: 0010, 0027
+- Tests: rules `access.test.mjs` (devices); Android `PhoneStatusTest`
+- Not covered: when the phone writes its status
 
 As a member I let my phone say when it last wrote, in which mode and whether
 it is charging, so that an administrator notices it has gone quiet (ADM-06).
@@ -165,6 +181,7 @@ Acceptance:
 
 - Status: done
 - ADR: 0021
+- Tests: Android `FileLogTest`, `SkyLogTest`
 
 As a member I let the phone keep a log of what it received and left out, and
 of the raw satellite measurements, so that a wrong place can be looked into
@@ -178,6 +195,8 @@ Acceptance:
 
 - Status: planned
 - ADR: —
+- Tests: —
+- Not covered: planned
 
 As a member whose phone is asleep I let a push wake it when somebody opens a
 search, calls the siren or resets its place, so that it answers at once and
@@ -190,6 +209,8 @@ Acceptance:
 
 - Status: planned
 - ADR: —
+- Tests: —
+- Not covered: planned
 
 As a member I let the application learn about a new published build and
 install it, so that I do not have to look for updates.
@@ -203,6 +224,8 @@ Acceptance:
 
 - Status: planned
 - ADR: —
+- Tests: —
+- Not covered: planned
 
 As a member with a Huawei phone without Google I let the application use the
 geofence and activity recognition of Huawei's own services, so that standing

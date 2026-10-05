@@ -21,6 +21,8 @@ but the stories here are about the project, not about the group.
 
 - Status: done
 - ADR: 0003, 0005
+- Tests: —
+- Not covered: the script is run by hand against a project; no automatic test
 
 As a project owner I run one script that makes the group's Firebase project,
 so that the group's data lives in a project of its own on the free plan and no
@@ -37,6 +39,8 @@ Acceptance:
 
 - Status: done
 - ADR: 0003
+- Tests: —
+- Not covered: checked by hand with `show --wait`
 
 As a project owner I do the one step the script cannot, by a page of
 instructions, so that the members can sign in with their Google accounts.
@@ -49,6 +53,7 @@ Acceptance:
 
 - Status: done
 - ADR: 0001, 0003
+- Tests: Android `ConnectLinkTest` (the owner's link), `ConnectFlowTest`
 
 As a project owner I get my own connection link and its QR code at the end of
 the setup, so that my phone connects to the project without an invitation and
@@ -63,6 +68,8 @@ Acceptance:
 
 - Status: done
 - ADR: 0003
+- Tests: —
+- Not covered: checked by hand on the projects in use
 
 As a project owner I bring a project already in use up to the current rules
 and page with one command, so that the group gets fixes without being set up
@@ -77,6 +84,8 @@ Acceptance:
 
 - Status: done
 - ADR: 0027
+- Tests: —
+- Not covered: checked by hand
 
 As a project owner I see the reads, writes and storage of the last days
 against the free tier, so that I learn in time whether the group outgrows it.
@@ -90,6 +99,8 @@ Acceptance:
 
 - Status: done
 - ADR: 0005
+- Tests: —
+- Not covered: checked by hand with two accounts
 
 As a project owner of several groups (a family, a trip) I name the project on
 every run and pick the Google account that holds it, so that one machine
@@ -104,6 +115,8 @@ Acceptance:
 
 - Status: done
 - ADR: —
+- Tests: —
+- Not covered: not run against a real project
 
 As a project owner I remove a project the group no longer uses, so that
 nothing is left running in my account.
@@ -118,6 +131,8 @@ Acceptance:
 - Status: partly — the script runs in Cloud Shell, but there it cannot read
   the fingerprint of the published build and only warns
 - ADR: 0003
+- Tests: —
+- Not covered: not covered
 
 As a project owner who is not a programmer I set up the project from Google
 Cloud Shell in a browser, following one page, so that I need no computer of
@@ -132,6 +147,8 @@ Acceptance:
 
 - Status: planned
 - ADR: —
+- Tests: —
+- Not covered: planned
 
 As a project owner without a computer I make the group's project from the
 application itself, so that the whole setup happens on one phone.
@@ -143,6 +160,8 @@ Acceptance:
 
 - Status: planned
 - ADR: —
+- Tests: —
+- Not covered: planned
 
 As a project owner I give the members the application from the repository's
 releases page, signed with one key, so that nobody has to build it.

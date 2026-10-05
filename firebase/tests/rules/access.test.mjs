@@ -3,7 +3,7 @@
 import { describe, it, beforeEach } from 'node:test';
 
 import { assertFails, assertSucceeds } from '@firebase/rules-unit-testing';
-import { collection, deleteDoc, doc, getDoc, getDocs, serverTimestamp, setDoc } from 'firebase/firestore';
+import { collection, deleteDoc, doc, getDoc, getDocs, serverTimestamp, setDoc, updateDoc } from 'firebase/firestore';
 
 import { setUpRules, GROUP, ALICE, BOB, STRANGER, testEnv, watchOf, memberOf, grantOf, someProfile, FOREVER, LONG_OVER, someGrant, watchFrom, plantAnAdministrator } from './helpers.mjs';
 
@@ -189,6 +189,15 @@ describe('profiles', () => {
                 setDoc(memberOf(db, ALICE), { displayName: 'Alice', photoUrl, updatedAt: new Date() }),
             );
         }
+    });
+
+    // How a member who has just changed whom they share with says so (DEV-09):
+    // every client listens to the profiles, and a refused reader asks again.
+    it('a member touches their own profile to say their sharing changed', async () => {
+        const db = testEnv.authenticatedContext(ALICE).firestore();
+
+        await assertSucceeds(setDoc(memberOf(db, ALICE), someProfile('Alice')));
+        await assertSucceeds(updateDoc(memberOf(db, ALICE), { updatedAt: serverTimestamp() }));
     });
 
     it('a member clears their own profile', async () => {

@@ -1,0 +1,29 @@
+# geoshare
+
+Notes for an AI agent working in this repository.
+
+## Contents
+
+- [Stories, records and tests change together](#stories-records-and-tests-change-together)
+
+## Stories, records and tests change together
+
+What the application does for each role is written down in
+[docs/stories/](docs/stories/README.md), and why it does it that way in
+[docs/ADR/](docs/ADR/README.md). A change of behaviour changes, in the same
+commit:
+
+1. the story: its status, its acceptance lines, its `Tests` and
+   `Not covered`; a new behaviour gets a new story with a new id;
+2. the tests that hold it — the rules' tests first, since the rules decide
+   who may do what; a test written for a story names the story's id in a
+   comment above it;
+3. a new ADR when the change is a decision somebody would otherwise have to
+   reconstruct from the code; an accepted ADR's body is never rewritten, a
+   new one supersedes it;
+4. the table of records against stories at the end of
+   `docs/stories/README.md`.
+
+`web/tests/stories.test.mjs` checks that every record and test a story names
+exists and that the table matches the stories. It does not check that the
+acceptance lines are true; the tests named do.

@@ -30,6 +30,7 @@ The words are those of [GLOSSARY.md](../../GLOSSARY.md).
 
 - Status: done
 - ADR: 0015, 0025
+- Tests: firebase/tests/rules/membership.test.mjs (invitations)
 
 As an administrator I make an invitation for one Google address, so that only
 that person can join on the link and only once.
@@ -42,8 +43,13 @@ Acceptance:
 - The id is the role's prefix and a number. A number is never given to another
   story, also after the story is dropped.
 - `ADR` names the records the story rests on, when there are any.
-- `Tests` names the tests that hold the acceptance lines, once they are
-  written.
+- `Tests` names the tests that hold the acceptance lines: the rules' tests
+  under `firebase/tests/rules`, the Android unit tests by class, the page's
+  tests under `web/tests`. A test written for a story names the story's id in
+  a comment above it, so the link is found from either side.
+- `Not covered` says which acceptance lines no automatic test holds — most
+  often what only a device shows: a sound, a notification, a restart — so
+  that they are checked by hand before a release.
 - Acceptance lines are what a test, or somebody with a phone in hand, can
   check.
 

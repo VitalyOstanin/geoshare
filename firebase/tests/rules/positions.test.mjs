@@ -6,7 +6,7 @@ import { describe, it } from 'node:test';
 import { assertFails, assertSucceeds } from '@firebase/rules-unit-testing';
 import { collection, doc, getDoc, getDocs, query, setDoc, updateDoc, where } from 'firebase/firestore';
 
-import { setUpRules, GROUP, ALICE, BOB, STRANGER, testEnv, positionOf, grantOf, LONG_OVER, someGrant, somePosition, positionFrom } from './helpers.mjs';
+import { setUpRules, GROUP, ALICE, BOB, STRANGER, testEnv, positionOf, grantOf, LONG_OVER, someGrant, somePosition, positionFrom, plantAnAdministrator } from './helpers.mjs';
 
 setUpRules();
 
@@ -167,6 +167,19 @@ describe('positions', () => {
         await testEnv.withSecurityRulesDisabled(async (context) => {
             await setDoc(grantOf(context.firestore(), BOB), someGrant({}));
         });
+
+        await assertFails(getDoc(positionOf(db, BOB)));
+    });
+
+    // Running the group is not watching it (ADM-12): without the member's
+    // permission an administrator reads their place only through a search.
+    it('an administrator cannot read a position not shared with them', async () => {
+        await plantAnAdministrator();
+        await testEnv.withSecurityRulesDisabled(async (context) => {
+            await setDoc(grantOf(context.firestore(), BOB), someGrant({}));
+        });
+
+        const db = testEnv.authenticatedContext(ALICE).firestore();
 
         await assertFails(getDoc(positionOf(db, BOB)));
     });

@@ -14,6 +14,7 @@ signed in, and nothing they do touches the database until they do.
 
 - Status: done
 - ADR: 0017, 0018
+- Tests: page `join.test.mjs`, `join-words.test.mjs`, `link.test.mjs`
 
 As a person sent a link I open it in any browser and see which group invites
 me, who invited and for which account, so that I know it is genuine before I
@@ -31,6 +32,7 @@ Acceptance:
 - Status: partly — the button is there, a published build is not yet
   (OWN-10)
 - ADR: 0018
+- Tests: page `join.test.mjs`
 
 As a person without the application I tap "Download the app" on the
 join page, so that I get it from the repository's releases.
@@ -44,6 +46,7 @@ Acceptance:
 
 - Status: done
 - ADR: 0001, 0019
+- Tests: Android `ConnectLinkTest`, `ConnectFlowTest`; page `join.test.mjs`
 
 As a person with the application installed I open the link in it from the join
 page, so that the application gets the project and the invitation in one step
@@ -60,6 +63,8 @@ Acceptance:
   invitation gets one message for both, which also covers a group that
   already exists
 - ADR: 0015, 0019, 0025
+- Tests: rules `membership.test.mjs` (a code that has run out; a spent code; another account)
+- Not covered: the words the screen says
 
 As a person whose invitation has been used, has run out or was made for
 another account I am told which of these it is, so that I ask for a new one

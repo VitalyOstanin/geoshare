@@ -23,6 +23,7 @@ administrator does too; the stories here are what only an administrator does.
 
 - Status: done
 - ADR: 0009, 0016, 0019
+- Tests: rules `membership.test.mjs` (membership; the name of a group); Android `MembershipTest`, `GroupCaptionTest`; page `group-name.test.mjs`, `membership.test.mjs`
 
 As the first person to sign in to a new project I found the group, giving it a
 name if I like, so that there is a group to invite the others to.
@@ -38,6 +39,8 @@ Acceptance:
 
 - Status: done
 - ADR: 0016, 0019
+- Tests: rules `membership.test.mjs` (the name of a group); Android `GroupSwitcherTest`
+- Not covered: that the new name reaches the other screens without a restart
 
 As an administrator I rename the group from the group panel, so that the
 members tell it apart from their other groups.
@@ -50,6 +53,7 @@ Acceptance:
 
 - Status: done
 - ADR: 0015, 0017, 0018, 0019, 0025
+- Tests: rules `membership.test.mjs` (invitations; a code is spent by joining; joining on an invitation made out to an address); Android `AdminInvitationTest`, `InvitationQrTest`, `ConnectLinkTest`; page `link.test.mjs`, `join.test.mjs`
 
 As an administrator I make an invitation for one Google address, so that only
 that person can join on the link and only once.
@@ -71,6 +75,7 @@ Acceptance:
 
 - Status: done
 - ADR: 0026, 0027
+- Tests: rules `running.test.mjs`, `leaving.test.mjs` (a member taken off the roster); Android `MembershipTest`, `GroupLineTest`; page `membership.test.mjs`, `group-lines.test.mjs`
 
 As an administrator I take a member off the roster, so that they no longer see
 the group nor are seen in it.
@@ -87,6 +92,7 @@ Acceptance:
 
 - Status: done
 - ADR: 0027
+- Tests: rules `running.test.mjs`; Android `MembershipTest`; page `membership.test.mjs`
 
 As an administrator I make another member an administrator, or step down
 myself, so that the group is never left to one person.
@@ -101,6 +107,7 @@ Acceptance:
 
 - Status: done
 - ADR: 0027
+- Tests: rules `access.test.mjs` (devices); Android `GroupLineTest`, `PhoneStatusTest`; page `group-lines.test.mjs`, `phones.test.mjs`
 
 As an administrator I see the roster with each member's phones: their names,
 when each last wrote, in which mode and whether it is charging, so that I
@@ -119,6 +126,8 @@ Acceptance:
 
 - Status: done
 - ADR: 0011
+- Tests: rules `searches.test.mjs`; Android `SearchesTest`; page `searches.test.mjs`
+- Not covered: the red ring on the map
 
 As an administrator I open a search for one device for a time I choose, so
 that everybody in the group sees where it is while we look, whatever its owner
@@ -137,6 +146,8 @@ Acceptance:
 - Status: partly — a phone that is asleep hears the call only when it next
   wakes on its own; waking it needs a push
 - ADR: 0026, 0028
+- Tests: rules `sirens.test.mjs`; Android `SirensTest`; page `sirens.test.mjs`
+- Not covered: the sound itself and its length, on a device
 
 As an administrator, or as the phone's owner, I make the phone sound like an
 alarm, so that it is found under a cushion or in a bag.
@@ -152,6 +163,8 @@ Acceptance:
 
 - Status: partly — as ADM-08, the phone acts when it next wakes
 - ADR: 0014, 0026, 0029
+- Tests: rules `resets.test.mjs`; Android `ResetsTest`; page `resets.test.mjs`
+- Not covered: that the phone forgets its place, on a device
 
 As an administrator, or as the phone's owner, I reset the place of a phone
 whose marker is stuck, so that it takes the next place however far it is from
@@ -167,6 +180,8 @@ Acceptance:
 
 - Status: planned — the rules allow it, no screen writes it yet
 - ADR: —
+- Tests: rules `places-and-settings.test.mjs`; Android `FalsePlacesTest`, `FalseMarksTest`, `CirclingTest`; page `false-places.test.mjs`
+- Not covered: planned: the screen that writes them
 
 As an administrator I record a place where receivers are known to be told a
 lie, with a centre, a radius and a name, and set the group's threshold for a
@@ -182,6 +197,8 @@ Acceptance:
 
 - Status: planned
 - ADR: —
+- Tests: —
+- Not covered: planned
 
 As an administrator I start, one phone at a time, the installation of the
 already published build, so that a household keeps its phones on one version
@@ -195,6 +212,7 @@ Acceptance:
 
 - Status: done
 - ADR: 0008, 0011, 0027
+- Tests: rules `positions.test.mjs` (an administrator cannot read a position not shared with them), `access.test.mjs` (devices: the administrator reads the phones without a permission, and not the grant), `the-rest.test.mjs`
 
 As an administrator I have no more right to a member's position than any other
 member, so that running the group is not watching it.

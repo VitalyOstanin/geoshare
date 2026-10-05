@@ -39,6 +39,8 @@ page in a browser. Joining comes first; leaving and signing out come last.
 
 - Status: done
 - ADR: 0001, 0002, 0015, 0019, 0025
+- Tests: rules `membership.test.mjs` (joining a group; a code is spent by joining); Android `ConnectFlowTest`, `ConnectLinkTest`, `SettingsFetchTest`, `ProjectSettingsTest`, `PendingInvitationTest`, `WayInPasteTest`; page `join.test.mjs`
+- Not covered: sign-in in the browser, by hand
 
 As a person given an invitation link I open it on my phone, sign in with the
 Google account it was made for and land on the group's map, so that I join
@@ -57,6 +59,8 @@ Acceptance:
 
 - Status: done
 - ADR: 0019
+- Tests: rules `membership.test.mjs` (another account holding the same code is refused); Android `PendingInvitationTest`
+- Not covered: the screen naming both addresses
 
 As a person signed in with another Google account than the one invited I am
 told both addresses and offered to switch accounts, so that I do not stay
@@ -70,6 +74,8 @@ Acceptance:
 
 - Status: done
 - ADR: 0026
+- Tests: Android `ConnectionListTest`, `ConnectFlowTest` (a link to a project the device is not in yet joins it beside the others), `GroupSwitcherTest`
+- Not covered: writing the position into every group; notifications naming the group
 
 As a member of a family and of a trip I am in both groups on one phone with
 one Google account, so that I do not need a second phone or a second
@@ -90,6 +96,7 @@ Acceptance:
 
 - Status: done
 - ADR: 0026
+- Tests: rules `leaving.test.mjs`; Android `LeavingTest`
 
 As a member I leave a group, so that I am off its roster and what I wrote
 there is gone.
@@ -105,6 +112,8 @@ Acceptance:
 
 - Status: done
 - ADR: 0026
+- Tests: —
+- Not covered: signing out of one group or of all of them; taking the watch claim back first
 
 As a member I sign this device out of one group, or of all of them, so that a
 phone I give away stops showing my groups and sending my place.
@@ -120,6 +129,8 @@ Acceptance:
 
 - Status: done
 - ADR: —
+- Tests: Android `SignInFailureTest`
+- Not covered: the message on the map after a cancelled sign-in
 
 As a member whose sign-in page showed an error or was closed I am told that
 sign-in did not finish and given a button to try again, so that I am not left
@@ -135,6 +146,7 @@ Acceptance:
 
 - Status: done
 - ADR: 0004
+- Tests: page tests as a whole: `members.test.mjs`, `searches.test.mjs`, `sirens.test.mjs`, `group-lines.test.mjs`
 
 As a member at a computer I sign in on the group's page and see the same map,
 so that I need no phone to look.
@@ -150,6 +162,7 @@ Acceptance:
 
 - Status: done
 - ADR: 0007
+- Tests: rules `positions.test.mjs` (a member writes a position for each of their phones); Android `ShownNamesTest`; page `members.test.mjs`
 
 As a member with a second phone or a tablet I sign in on it with the same
 account, so that it shows up as another device of mine rather than replacing
@@ -163,6 +176,8 @@ Acceptance:
 
 - Status: done
 - ADR: 0007, 0026
+- Tests: rules `access.test.mjs` (devices; grants)
+- Not covered: forgetting a device, end to end
 
 As a member I see the list of my devices in the group and forget one I no
 longer have, so that the group stops seeing a phone I sold.
@@ -178,6 +193,7 @@ Acceptance:
 
 - Status: done
 - ADR: 0008, 0031
+- Tests: rules `access.test.mjs` (grants), `positions.test.mjs` (permission run out, taken back); Android `ShareSpanTest`, `RefusalsTest`
 
 As a member I choose whom I show my place to, and for how long: an hour, eight
 hours, a day or always, so that nobody watches me unless I let them.
@@ -192,6 +208,8 @@ Acceptance:
 
 - Status: done
 - ADR: —
+- Tests: Android `StartConditionsTest` (the switch outranks the permissions)
+- Not covered: the switch kept over a restart and a new sign-in
 
 As a member I switch sharing off on the phone or from its notification, so
 that the phone stops writing my place.
@@ -204,6 +222,7 @@ Acceptance:
 
 - Status: done
 - ADR: —
+- Tests: Android `ShareBackTest`
 
 As a member looking at somebody who cannot see me I am told so on their card
 and offered to show my place to them, so that sharing is mutual when I want
@@ -217,6 +236,8 @@ Acceptance:
 
 - Status: done
 - ADR: 0010
+- Tests: rules `access.test.mjs` (watch); Android `WatchingTest`; page `watchers.test.mjs`
+- Not covered: the badge on the icon
 
 As a member I see who is looking at the map with me in it, so that I know when
 I am being watched.
@@ -232,6 +253,7 @@ Acceptance:
 
 - Status: done
 - ADR: 0006, 0007, 0010
+- Tests: Android `PositionAgeTest`, `AccuracyRingTest`, `MemberClustersTest`, `MemberOrderTest`, `GroupLineTest`; page `age.test.mjs`, `clusters.test.mjs`, `members.test.mjs`
 
 As a member I see on a map where the members who share with me are, how old
 each place is and how accurate, so that I know whether to trust it.
@@ -247,6 +269,7 @@ Acceptance:
 
 - Status: done
 - ADR: —
+- Tests: Android `FollowingTest`; page `following.test.mjs`
 
 As a member I keep the map centred on one member as they move, so that I do
 not have to pan by hand.
@@ -258,6 +281,7 @@ Acceptance:
 
 - Status: done
 - ADR: 0030
+- Tests: rules `access.test.mjs` (labels); Android `LabelsTest`; page `labels.test.mjs`
 
 As a member I call a phone "new phone" rather than its model, and a person
 "grandma" rather than the name on her account, for myself alone, so that the
@@ -271,6 +295,7 @@ Acceptance:
 
 - Status: done
 - ADR: 0014, 0020, 0023, 0024
+- Tests: rules `positions.test.mjs` (answers left out; how a position was arrived at); Android `FoundByTest`, `ModeExplainedTest`, `ReasonExplainedTest`, `LeftOutWordsTest`, `FalseMarksTest`; page `found.test.mjs`, `modes.test.mjs`, `reason-help.test.mjs`, `false-places.test.mjs`
 
 As a member I see on a card whether a place came from the satellites, the
 towers or Wi-Fi, and why the phone left some answers out, so that I can tell a
@@ -285,6 +310,8 @@ Acceptance:
 
 - Status: done
 - ADR: 0011, 0028, 0029
+- Tests: rules `searches.test.mjs` (the member whose phone it is calls it off), `sirens.test.mjs`, `resets.test.mjs`
+- Not covered: the notifications themselves
 
 As a member I am told on the phone when somebody opens a search for one of my
 devices, makes it sound or resets its place, so that nothing is done to my
@@ -300,6 +327,7 @@ Acceptance:
 
 - Status: done
 - ADR: 0013
+- Tests: Android `LanguageSettingTest`, `ThemeSettingTest`, `TranslationTest`; page `language.test.mjs`, `theme.test.mjs`, `words.test.mjs`
 
 As a member I choose Russian or English and light or dark, so that the
 application reads as I want.
@@ -313,6 +341,7 @@ Acceptance:
 
 - Status: done
 - ADR: 0022
+- Tests: Android `DownloadPolicyTest`
 
 As a member I choose whether the application downloads its own files over
 Wi-Fi, the mobile network at home and in roaming, so that a trip abroad does
@@ -327,6 +356,8 @@ Acceptance:
 
 - Status: planned
 - ADR: —
+- Tests: —
+- Not covered: planned
 
 As a person shown an invitation QR code on another phone I scan it from the
 connection screen, so that I do not need the link sent to me.
@@ -339,6 +370,8 @@ Acceptance:
 
 - Status: planned
 - ADR: —
+- Tests: —
+- Not covered: planned
 
 As a member I keep a shopping list with the group, reminders, and notes pinned
 to a place, so that the group's everyday things live with its map.
