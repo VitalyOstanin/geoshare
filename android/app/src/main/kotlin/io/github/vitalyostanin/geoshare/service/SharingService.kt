@@ -85,6 +85,7 @@ import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.channelFlow
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.combine
@@ -95,6 +96,7 @@ import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.onStart
+import kotlinx.coroutines.flow.shareIn
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withTimeoutOrNull
 import java.time.Duration
@@ -985,15 +987,29 @@ class SharingService : LifecycleService() {
 
         // Every group the device is linked to, each saying when its watching
         // runs out; a group joined or left while the service runs is followed
-        // from then on.
+        // from then on. A group already followed keeps its answer across that:
+        // listened to afresh it would begin by saying nobody looks, and every
+        // group joined would drop the phone out of its mode for an instant —
+        // a cancelled request, a new one and a status written for nothing.
+        val followed = HashMap<GroupLink, Flow<List<Instant>>>()
         val looking =
             links.flatMapLatest { linked ->
+                followed.keys.retainAll(linked.toSet())
+
                 if (linked.isEmpty()) {
                     flowOf(emptyList())
                 } else {
                     combine(
-                        linked.map {
-                            it.watching()
+                        linked.map { link ->
+                            followed.getOrPut(link) {
+                                link.watching().shareIn(
+                                    lifecycleScope,
+                                    SharingStarted.WhileSubscribed(
+                                        WATCHING_OUTLIVES_A_RELINK.toMillis(),
+                                    ),
+                                    replay = 1,
+                                )
+                            }
                         },
                     ) { perGroup -> watchedInAnyGroup(perGroup.toList()) }
                 }
@@ -1575,6 +1591,13 @@ class SharingService : LifecycleService() {
          * the clock.
          */
         private val MODE_REVIEW: Duration = Duration.ofMinutes(1)
+
+        /**
+         * How long a group's watching is kept listened to with nothing
+         * reading it: the moment between the list of groups changing and the
+         * new list being followed, with room to spare.
+         */
+        private val WATCHING_OUTLIVES_A_RELINK: Duration = Duration.ofSeconds(5)
 
         /** How long a freshly started service waits for the account to be restored. */
         private val SESSION_WAIT: Duration = Duration.ofMinutes(1)
