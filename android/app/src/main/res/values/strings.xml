@@ -571,6 +571,7 @@
     <string name="connect_field_invited_by">Invited by</string>
     <string name="connect_field_for_account">For account</string>
     <string name="connect_field_project">Project</string>
+    <string name="connect_confirm_storage">The group\'s data is kept in the Google Firebase project of whoever set it up. They see every member\'s places and history.</string>
     <string name="connect_confirm_hint">Next: sign in with Google in the browser.</string>
     <string name="connect_confirm_hint_joining">Next: the app joins the group with the current account.</string>
     <string name="connect_cancel">Cancel</string>

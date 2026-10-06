@@ -264,6 +264,15 @@ private fun Confirm(
     InvitationFields(invitation)
     ConnectField(R.string.connect_field_project, settings.projectId)
 
+    // Whoever set the project up reads it all from the Firebase console, rules
+    // or no rules; somebody joining is told so before they press the button.
+    Text(
+        text = stringResource(R.string.connect_confirm_storage),
+        style = MaterialTheme.typography.bodyMedium,
+        color = MaterialTheme.colorScheme.onSurfaceVariant,
+        textAlign = TextAlign.Center,
+    )
+
     Text(
         text =
         stringResource(
