@@ -49,3 +49,14 @@ fun presenceOf(read: RosterRead, uid: String, wasIn: Boolean): Presence = when (
 
     RosterRead.Unreachable -> Presence.UNKNOWN
 }
+
+/**
+ * What a device is taken to be in a group before the database has said
+ * anything: in it, as far as anybody knows, when it has been seen on the
+ * roster before; otherwise nothing until the answer comes.
+ *
+ * A group once stood in is written into at once, without the network
+ * included. One never stood in waits the fraction of a second the answer
+ * takes, rather than be written into and refuse it.
+ */
+fun presenceBeforeAnswer(wasIn: Boolean): Presence? = if (wasIn) Presence.UNKNOWN else null

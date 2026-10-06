@@ -40,4 +40,14 @@ class PresenceTest {
     fun `no network says nothing about the roster`() {
         assertEquals(Presence.UNKNOWN, presenceOf(RosterRead.Unreachable, "a", wasIn = true))
     }
+
+    @Test
+    fun `a group once stood in counts as unknown before the answer`() {
+        assertEquals(Presence.UNKNOWN, presenceBeforeAnswer(wasIn = true))
+    }
+
+    @Test
+    fun `a group never stood in waits for the answer`() {
+        assertEquals(null, presenceBeforeAnswer(wasIn = false))
+    }
 }

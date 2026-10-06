@@ -76,9 +76,11 @@ import io.github.vitalyostanin.geoshare.log.AppLog
 import io.github.vitalyostanin.geoshare.map.PublishedProfile
 import io.github.vitalyostanin.geoshare.map.stands
 import io.github.vitalyostanin.geoshare.membership.Presence
+import io.github.vitalyostanin.geoshare.membership.presenceBeforeAnswer
 import io.github.vitalyostanin.geoshare.project.Connections
 import io.github.vitalyostanin.geoshare.project.GroupConnection
 import io.github.vitalyostanin.geoshare.project.RemovedHere
+import io.github.vitalyostanin.geoshare.project.SeenOnRoster
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.Job
@@ -538,17 +540,29 @@ class SharingService : LifecycleService() {
                         // rather than written into and refused once a
                         // minute. Founding or joining one republishes the
                         // groups, and this is asked again from the start.
+                        // Until the first answer only a group once stood in
+                        // is written into; any other is held unlinked rather
+                        // than left out of the combination, which would hold
+                        // up every group with it.
                         signedInTo(connection).flatMapLatest { uid ->
                             if (uid == null) {
                                 flowOf(connection to null)
                             } else {
+                                val wasIn =
+                                    SeenOnRoster.has(
+                                        this@SharingService,
+                                        connection.projectId,
+                                        uid,
+                                    )
+
                                 presenceIn(this@SharingService, connection, uid)
-                                    .onStart { emit(Presence.UNKNOWN) }
+                                    .map<Presence, Presence?> { it }
+                                    .onStart { emit(presenceBeforeAnswer(wasIn)) }
                                     .map { presence ->
                                         connection to
                                             uid.takeIf {
-                                                presence != Presence.REMOVED &&
-                                                    presence != Presence.OUTSIDE
+                                                presence == Presence.IN ||
+                                                    presence == Presence.UNKNOWN
                                             }
                                     }
                             }
