@@ -64,6 +64,8 @@
             .line.done .mark { background: var(--charging); color: #fff; }
             .line.failed .mark { background: var(--error); color: #fff; }
             .line.pending { opacity: 0.75; }
+            .privacy { align-self: center; margin-top: 0.5rem; color: inherit; }
+            p.muted a { color: var(--link); }
             .line .why { font-size: var(--text-body); color: var(--error); overflow-wrap: anywhere; }
         </style>
     </head>
@@ -81,7 +83,8 @@
             <section id="step-2" hidden>
                 <div class="kicker" data-kicker="2"></div>
                 <h1 data-text="s2Title"></h1>
-                <p class="muted" data-text="s2Text"></p>
+                <p class="muted"><span data-text="s2Text"></span>
+                    <a href="setup-privacy.html" target="_blank" rel="noopener" data-text="privacy"></a></p>
                 <button id="s2-auth" class="button" data-text="s2Auth"></button>
                 <div id="s2-got" class="small ok" hidden></div>
                 <div id="s2-error" class="small bad" hidden></div>
@@ -145,6 +148,9 @@
                 </div>
                 <p id="s5-foot" class="small muted"></p>
             </section>
+
+            <a class="privacy small muted" href="setup-privacy.html" target="_blank" rel="noopener"
+                data-text="privacy"></a>
         </main>
 
         <!-- The Google Identity Services library is loaded by the script, so a
