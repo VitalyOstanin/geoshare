@@ -1,0 +1,102 @@
+<!doctype html>
+<html lang="ru">
+    <head>
+        <meta charset="utf-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1" />
+        <title>Geoshare: политика конфиденциальности</title>
+        <link rel="icon" href="favicon.svg" type="image/svg+xml" />
+        <link rel="icon" href="favicon-32.png" sizes="32x32" type="image/png" />
+        <link rel="stylesheet" href="styles/base.css" />
+        <script src="boot-theme.js"></script>
+        <style>
+            /* base.css makes the body a fixed-height column for the map; this
+               page is a document that scrolls. */
+            body { height: auto; min-height: 100dvh; }
+            main { margin: 0 auto; max-width: 40rem; width: 100%; box-sizing: border-box;
+                   padding: 1.5rem; display: flex; flex-direction: column; gap: 1rem; }
+            h1 { margin: 0; font-size: 1.5rem; font-weight: 600; }
+            h2 { margin: 1rem 0 0; font-size: 1.15rem; font-weight: 600; }
+            p, ul { margin: 0; line-height: 1.45; }
+            ul { padding-left: 1.25rem; display: flex; flex-direction: column; gap: 0.4rem; }
+            a { color: var(--link); }
+            hr { width: 100%; border: 0; border-top: 1px solid var(--edge); margin: 1rem 0; }
+        </style>
+    </head>
+    <body>
+        <main>
+            <h1>Политика конфиденциальности</h1>
+            <p>Страница <a href="./">geoshare-setup.web.app</a> помогает владельцу группы
+                Geoshare настроить свой проект Firebase: включить нужные службы, создать базу,
+                выложить правила доступа и страницу группы.</p>
+
+            <h2>Какой доступ запрашивается</h2>
+            <p>При входе через Google страница просит разрешение управлять проектами Firebase,
+                базой Firestore и включёнными службами Google Cloud. Доступ выдаёт Google; он
+                действует около часа и используется только для перечисленных шагов настройки
+                в проекте, который вы выбрали сами.</p>
+
+            <h2>Что происходит с данными</h2>
+            <ul>
+                <li>Страница работает целиком в вашем браузере и обращается напрямую к службам
+                    Google. Своего сервера у неё нет.</li>
+                <li>Ключ доступа хранится только в памяти открытой вкладки и пропадает при её
+                    закрытии. Он никуда не сохраняется и никому не передаётся.</li>
+                <li>Разработчик Geoshare не получает ни ваш адрес, ни список проектов, ни
+                    какие-либо другие данные аккаунта.</li>
+                <li>Страница не использует аналитику, рекламу и файлы cookie. В браузере
+                    запоминается только выбранная тема оформления.</li>
+                <li>Данные группы, в том числе местоположение участников, хранятся в
+                    вашем собственном проекте Firebase. Распоряжаетесь ими вы как владелец
+                    проекта; разработчик Geoshare доступа к ним не имеет.</li>
+            </ul>
+
+            <h2>Как отозвать доступ</h2>
+            <p>Доступ можно отозвать в любой момент на странице
+                <a href="https://myaccount.google.com/permissions">управления доступом
+                    аккаунта Google</a>. Удаление проекта Firebase удаляет и все данные
+                группы.</p>
+
+            <h2>Связь</h2>
+            <p>Вопросы о политике можно задать по адресу поддержки, указанному в окне входа
+                Google.</p>
+
+            <hr />
+
+            <h1 lang="en">Privacy policy</h1>
+            <p lang="en">The page <a href="./">geoshare-setup.web.app</a> helps the owner of
+                a Geoshare group set up their own Firebase project: turn on the services it
+                needs, create the database, deploy its access rules and the group's page.</p>
+
+            <h2 lang="en">What access is asked for</h2>
+            <p lang="en">When you sign in with Google, the page asks to manage your Firebase
+                projects, the Firestore database and the Google Cloud services turned on in
+                them. The access is granted by Google, lasts about an hour, and is used only
+                for the setup steps above, in the project you choose yourself.</p>
+
+            <h2 lang="en">What happens to data</h2>
+            <ul lang="en">
+                <li>The page runs entirely in your browser and talks to Google's services
+                    directly. It has no server of its own.</li>
+                <li>The access token is kept only in the memory of the open tab and is gone
+                    when the tab is closed. It is not stored anywhere or passed to anyone.</li>
+                <li>The developer of Geoshare receives neither your address, nor your list of
+                    projects, nor any other data of your account.</li>
+                <li>The page uses no analytics, advertising or cookies. The browser keeps
+                    only the colour theme you picked.</li>
+                <li>The group's data, members' locations among it, is kept in your own
+                    Firebase project. You control it as the project's owner; the developer
+                    of Geoshare has no access to it.</li>
+            </ul>
+
+            <h2 lang="en">Revoking access</h2>
+            <p lang="en">You can revoke the access at any time on the
+                <a href="https://myaccount.google.com/permissions">Google Account access
+                    page</a>. Deleting the Firebase project deletes all of the group's data
+                too.</p>
+
+            <h2 lang="en">Contact</h2>
+            <p lang="en">Questions about this policy go to the support address shown in
+                Google's sign-in window.</p>
+        </main>
+    </body>
+</html>
