@@ -29,6 +29,7 @@ import kotlinx.coroutines.flow.callbackFlow
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.filterNot
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.retryWhen
 import kotlinx.coroutines.flow.transform
 import kotlinx.coroutines.tasks.await
@@ -110,8 +111,12 @@ fun presenceIn(context: Context, connection: GroupConnection, uid: String): Flow
     rosterReads(connection)
         .filterNot { it is RosterRead.Unreachable }
         .map { read ->
+            presenceOf(read, uid, SeenOnRoster.has(context, connection.projectId, uid))
+        }.distinctUntilChanged()
+        // Told once per change rather than on every answer: a refused read is
+        // asked again with a growing pause, and each would say it anew.
+        .onEach { presence ->
             val projectId = connection.projectId
-            val presence = presenceOf(read, uid, SeenOnRoster.has(context, projectId, uid))
 
             when (presence) {
                 Presence.IN -> SeenOnRoster.note(context, projectId, uid)
@@ -119,9 +124,7 @@ fun presenceIn(context: Context, connection: GroupConnection, uid: String): Flow
                 Presence.OUTSIDE -> AppLog.i(TAG, "not in a group of $projectId yet")
                 Presence.UNKNOWN -> Unit
             }
-
-            presence
-        }.distinctUntilChanged()
+        }
 
 private fun rosterOf(snapshot: DocumentSnapshot): Roster = Roster(
     members = snapshot.get(GroupField.MEMBERS).asIds(),

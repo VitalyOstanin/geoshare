@@ -16,13 +16,12 @@ import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.repeatOnLifecycle
 import io.github.vitalyostanin.geoshare.collection.Watcher
-import io.github.vitalyostanin.geoshare.membership.Roster
-import io.github.vitalyostanin.geoshare.membership.RosterRead
+import io.github.vitalyostanin.geoshare.membership.RosterSeen
+import io.github.vitalyostanin.geoshare.membership.rosterSeen
 import io.github.vitalyostanin.geoshare.project.Connections
 import io.github.vitalyostanin.geoshare.project.GroupConnection
 import io.github.vitalyostanin.geoshare.service.MapOnScreen
 import io.github.vitalyostanin.geoshare.service.databaseLink
-import io.github.vitalyostanin.geoshare.service.groupRoster
 import io.github.vitalyostanin.geoshare.service.groupSearches
 import io.github.vitalyostanin.geoshare.service.namedFalsePlaces
 import io.github.vitalyostanin.geoshare.service.ownSharedWith
@@ -31,8 +30,6 @@ import io.github.vitalyostanin.geoshare.service.rosterReads
 import io.github.vitalyostanin.geoshare.service.watchers
 import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.delay
-import kotlinx.coroutines.flow.filter
-import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.withContext
 import java.time.Instant
 
@@ -207,43 +204,29 @@ fun rememberMemberProfiles(): State<Map<String, MemberProfile>?> {
 }
 
 /**
- * The roster, collected while a screen is up.
+ * The roster, collected while a screen is up, with whether the group
+ * document has answered at all since the screen came up.
  *
  * Nothing arrives for somebody outside the group, and nothing arrives before
  * the group is made: the document is closed to everybody not on it, and a
  * document that does not exist has nothing to send. Both come out as no
  * roster at all, which is why the screen offers founding a group and entering
  * a code side by side — from here the two cannot be told apart.
- */
-@Composable
-fun rememberGroupRoster(): State<Roster?> {
-    val connection = groupNow()
-    val roster = remember(connection) { groupRoster(connection) }
-
-    return roster.collectAsStateWithLifecycle(initialValue = null)
-}
-
-/**
- * Whether the group document has answered at all since the screen came up:
- * with what it holds, with nothing, or with a refusal.
  *
- * The roster alone cannot say it, since it starts out null before the first
- * answer exactly as it stays null when there is no group; a screen that
- * offered founding one on that would show it for a moment to every member on
- * every start. Silence does not count, so a device offline is not told it
- * has no group.
+ * The roster alone cannot say whether the answer has come, since it starts
+ * out null before it exactly as it stays null when there is no group; a
+ * screen that offered founding one on that would show it for a moment to
+ * every member on every start. Silence does not count, so a device offline
+ * is not told it has no group.
  */
 @Composable
-fun rememberRosterAnswered(): State<Boolean> {
+fun rememberRosterSeen(): State<RosterSeen> {
     val connection = groupNow()
-    val answered =
-        remember(connection) {
-            rosterReads(connection)
-                .filter { it != RosterRead.Unreachable }
-                .map { true }
-        }
+    val seen = remember(connection) { rosterSeen(rosterReads(connection)) }
 
-    return answered.collectAsStateWithLifecycle(initialValue = false)
+    return seen.collectAsStateWithLifecycle(
+        initialValue = RosterSeen(roster = null, answered = false),
+    )
 }
 
 /**

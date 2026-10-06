@@ -26,13 +26,12 @@ import io.github.vitalyostanin.geoshare.map.labelledProfiles
 import io.github.vitalyostanin.geoshare.map.publishSharing
 import io.github.vitalyostanin.geoshare.map.rememberDatabaseLink
 import io.github.vitalyostanin.geoshare.map.rememberGroupChoices
-import io.github.vitalyostanin.geoshare.map.rememberGroupRoster
 import io.github.vitalyostanin.geoshare.map.rememberMemberGrants
 import io.github.vitalyostanin.geoshare.map.rememberMemberPositions
 import io.github.vitalyostanin.geoshare.map.rememberMemberProfiles
 import io.github.vitalyostanin.geoshare.map.rememberOwnLabels
 import io.github.vitalyostanin.geoshare.map.rememberOwnSharedWith
-import io.github.vitalyostanin.geoshare.map.rememberRosterAnswered
+import io.github.vitalyostanin.geoshare.map.rememberRosterSeen
 import io.github.vitalyostanin.geoshare.map.rememberSearches
 import io.github.vitalyostanin.geoshare.map.rememberWatchers
 import io.github.vitalyostanin.geoshare.map.withShare
@@ -112,8 +111,13 @@ internal fun SignedInScreen(
     val onTheMap by rememberMemberPositions(grants, ownDocument, searches, profiles)
     val labels by rememberOwnLabels(current.memberId)
     val sharedWith by rememberOwnSharedWith(current.memberId)
-    val roster by rememberGroupRoster()
-    val rosterAnswered by rememberRosterAnswered()
+    val rosterSeen by rememberRosterSeen()
+    val roster = rosterSeen.roster
+    val rosterAnswered = rosterSeen.answered
+    // A project with no group of this account's own in it yet refuses the
+    // profile, the claim to be looking and the first share alike; they wait
+    // for the group rather than be written and refused on every return.
+    val outside = rosterSeen.outside(current.memberId)
     val link by rememberDatabaseLink()
     val answers = remember { GroupAnswers() }
 
@@ -196,19 +200,23 @@ internal fun SignedInScreen(
         activity.continueSharingSetup()
     }
 
-    KeepWatching(current.memberId, activity.device.id)
+    if (!outside) {
+        KeepWatching(current.memberId, activity.device.id)
+    }
 
     // The other half of the same collection: this
     // phone says it is looking, and reads who else is.
     val watching by rememberWatchers(current.memberId, activity.device.id)
 
-    PublishProfile(
-        memberId = current.memberId,
-        displayName = current.displayName,
-        email = current.email,
-        pictureUrl = current.pictureUrl,
-        deviceId = activity.device.id,
-    )
+    if (!outside) {
+        PublishProfile(
+            memberId = current.memberId,
+            displayName = current.displayName,
+            email = current.email,
+            pictureUrl = current.pictureUrl,
+            deviceId = activity.device.id,
+        )
+    }
 
     // Watched rather than read once: the answer to the roaming question is
     // written by a receiver while this screen may be open.
@@ -307,24 +315,26 @@ internal fun SignedInScreen(
 
         // Once per group, over the map: whom to show this member's place to,
         // while nobody has been given it yet.
-        FirstShareQuestion(
-            connection = connection,
-            memberId = current.memberId,
-            profiles = profiles,
-            onShare = { readers, span ->
-                activity.lifecycleScope.launch {
-                    val now = Instant.now()
+        if (!outside) {
+            FirstShareQuestion(
+                connection = connection,
+                memberId = current.memberId,
+                profiles = profiles,
+                onShare = { readers, span ->
+                    activity.lifecycleScope.launch {
+                        val now = Instant.now()
 
-                    publishSharing(
-                        memberId = current.memberId,
-                        sharedWith =
-                        readers.fold(sharedWith) { given, reader ->
-                            withShare(given, reader, span, now)
-                        },
-                        connection = connection,
-                    )
-                }
-            },
-        )
+                        publishSharing(
+                            memberId = current.memberId,
+                            sharedWith =
+                            readers.fold(sharedWith) { given, reader ->
+                                withShare(given, reader, span, now)
+                            },
+                            connection = connection,
+                        )
+                    }
+                },
+            )
+        }
     }
 }
