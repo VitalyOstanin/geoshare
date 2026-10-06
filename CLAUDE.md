@@ -5,6 +5,7 @@ Notes for an AI agent working in this repository.
 ## Contents
 
 - [Stories, records and tests change together](#stories-records-and-tests-change-together)
+- [The README in two languages](#the-readme-in-two-languages)
 
 ## Stories, records and tests change together
 
@@ -27,3 +28,12 @@ commit:
 `web/tests/stories.test.mjs` checks that every record and test a story names
 exists and that the table matches the stories. It does not check that the
 acceptance lines are true; the tests named do.
+
+## The README in two languages
+
+`README.md` is in English and `README.ru.md` beside it says the same in
+Russian; each links to the other at the top. A change to one changes the
+other in the same commit: what the project does, how to get it and how to
+set a group up must never read differently in the two. The screenshots are
+shared, and each language keeps its own wording rather than a word-for-word
+translation.
