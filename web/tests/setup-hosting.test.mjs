@@ -8,6 +8,7 @@ import {
     ensureSite,
     googleSignInEnabled,
     releasedPaths,
+    servesGroup,
     versionConfig,
     webConfigFile,
 } from '../public/lib/setup-hosting.js';
@@ -232,4 +233,17 @@ test('a site with nothing released serves no files', async () => {
 
     assert.equal((await releasedPaths(api, PROJECT)).size, 0);
     assert.equal(api.calls.length, 1);
+});
+
+test('a project is a group when its site serves geoshare.json', async () => {
+    const live = { release: { version: { name: `sites/${PROJECT}/versions/v` } } };
+    const released = (paths) => fakeApi([
+        [/GET .*channels\/live$/, live],
+        [/files\?status=ACTIVE$/, { files: paths.map((path) => ({ path })) }],
+    ]);
+
+    assert.equal(await servesGroup(released(['/index.html', '/geoshare.json']), PROJECT), true);
+    assert.equal(await servesGroup(released(['/index.html']), PROJECT), false);
+    assert.equal(await servesGroup(fakeApi([[/GET /, failure(404)]]), PROJECT), false);
+    await assert.rejects(servesGroup(fakeApi([[/GET /, failure(403)]]), PROJECT), { status: 403 });
 });

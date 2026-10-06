@@ -164,6 +164,19 @@ export async function releasedPaths(api, siteId) {
     return paths;
 }
 
+/** Whether the project's site already serves a group: its geoshare.json is released. */
+export async function servesGroup(api, siteId) {
+    try {
+        return (await releasedPaths(api, siteId)).has('/geoshare.json');
+    } catch (error) {
+        if (error.status === 404) {
+            return false;
+        }
+
+        throw error;
+    }
+}
+
 /**
  * The `hosting` section of firebase.json in the shape the Hosting API takes
  * for a version: `source` becomes `glob`, a rewrite's `destination` its

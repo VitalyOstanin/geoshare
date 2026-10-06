@@ -22,6 +22,7 @@ import {
     versionConfig,
     googleSignInEnabled,
     releasedPaths,
+    servesGroup,
 } from './lib/setup-hosting.js';
 
 // The page is Russian only for now; a second language is a second object of
@@ -52,6 +53,7 @@ const WORDS_RU = {
     s2Pick: 'Выберите проект группы',
     s2NoProjects: 'В этом аккаунте нет проектов Firebase. Вернитесь к шагу 1.',
     s2Go: (name) => `Настроить «${name}»`,
+    s2IsGroup: (id) => `${id} · уже настроен как группа`,
     s2Go0: 'Настроить',
     s3Title: (name) => `Настраиваю «${name}»`,
     s3Text: 'Не закрывайте вкладку. Обычно 2–5 минут: база после включения ещё немного ' +
@@ -221,6 +223,15 @@ function renderProjects(projects) {
         label.append(radio, text);
         radio.addEventListener('change', () => choose(project));
         box.append(label);
+        servesGroup(state.api, project.projectId)
+            .then((group) => {
+                if (group) {
+                    id.textContent = words.s2IsGroup(project.projectId);
+                }
+            })
+            .catch(() => {
+                // Unknown is told as nothing: the mark warns, it does not guard.
+            });
     });
 
     $('s2-projects').hidden = false;
