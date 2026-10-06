@@ -8,6 +8,7 @@
 import { initializeApp } from 'https://www.gstatic.com/firebasejs/12.19.0/firebase-app.js';
 import {
     GoogleAuthProvider,
+    connectAuthEmulator,
     getAuth,
     getRedirectResult,
     onAuthStateChanged,
@@ -16,6 +17,7 @@ import {
 } from 'https://www.gstatic.com/firebasejs/12.19.0/firebase-auth.js';
 import {
     collection,
+    connectFirestoreEmulator,
     deleteDoc,
     disableNetwork,
     doc,
@@ -143,6 +145,16 @@ const DEVICE_KEY = 'geoshare.device';
 export const app = initializeApp(firebaseConfig);
 export const auth = getAuth(app);
 export const store = getFirestore(app);
+
+// A trial stand and the page's snapshots talk to the Firebase emulators
+// instead of a real project; the config says so with an optional `emulators`
+// field, and its project id must start with `demo-` so nothing here can be
+// mistaken for, or reach, a real one. Without the field nothing changes.
+const emulators = firebaseConfig.emulators;
+if (emulators) {
+    connectAuthEmulator(auth, emulators.auth, { disableWarnings: true });
+    connectFirestoreEmulator(store, emulators.firestore.host, emulators.firestore.port);
+}
 
 export function watchSignIn(onChange) {
     return onAuthStateChanged(auth, (user) =>

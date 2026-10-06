@@ -8,4 +8,7 @@ export const firebaseConfig = {
     apiKey: 'the-web-api-key',
     authDomain: 'the-project-id.firebaseapp.com',
     messagingSenderId: 'the-sender-id',
+    // Optional, for a trial stand or snapshots against the Firebase emulators;
+    // the project id must then start with `demo-`.
+    // emulators: { auth: 'http://127.0.0.1:9099', firestore: { host: '127.0.0.1', port: 8080 } },
 };
