@@ -19,6 +19,12 @@ enum class Presence {
     /** It was on the roster and is no longer: an administrator took it off. */
     REMOVED,
 
+    /**
+     * The database answered, and the device is not on the roster and never
+     * was: a group not made yet, or one it has not joined.
+     */
+    OUTSIDE,
+
     /** Nothing said yet, or nothing that tells. */
     UNKNOWN,
 }
@@ -36,10 +42,10 @@ fun presenceOf(read: RosterRead, uid: String, wasIn: Boolean): Presence = when (
         when {
             read.roster != null && uid in read.roster.members -> Presence.IN
             wasIn -> Presence.REMOVED
-            else -> Presence.UNKNOWN
+            else -> Presence.OUTSIDE
         }
 
-    RosterRead.Refused -> if (wasIn) Presence.REMOVED else Presence.UNKNOWN
+    RosterRead.Refused -> if (wasIn) Presence.REMOVED else Presence.OUTSIDE
 
     RosterRead.Unreachable -> Presence.UNKNOWN
 }

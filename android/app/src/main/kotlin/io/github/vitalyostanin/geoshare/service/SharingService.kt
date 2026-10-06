@@ -533,9 +533,11 @@ class SharingService : LifecycleService() {
             } else {
                 combine(
                     connections.map { connection ->
-                        // A group the device was taken off refuses every
-                        // write; it is left alone rather than written into
-                        // and refused once a minute.
+                        // A group the device was taken off, or has not got
+                        // into yet, refuses every write; it is left alone
+                        // rather than written into and refused once a
+                        // minute. Founding or joining one republishes the
+                        // groups, and this is asked again from the start.
                         signedInTo(connection).flatMapLatest { uid ->
                             if (uid == null) {
                                 flowOf(connection to null)
@@ -543,7 +545,11 @@ class SharingService : LifecycleService() {
                                 presenceIn(this@SharingService, connection, uid)
                                     .onStart { emit(Presence.UNKNOWN) }
                                     .map { presence ->
-                                        connection to uid.takeIf { presence != Presence.REMOVED }
+                                        connection to
+                                            uid.takeIf {
+                                                presence != Presence.REMOVED &&
+                                                    presence != Presence.OUTSIDE
+                                            }
                                     }
                             }
                         }

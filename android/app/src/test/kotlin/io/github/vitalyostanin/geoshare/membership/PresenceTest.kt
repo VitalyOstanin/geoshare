@@ -27,13 +27,13 @@ class PresenceTest {
     // a device that has not joined yet hears the same refusal as one taken
     // off: only having been in tells the two apart.
     @Test
-    fun `a refused read before ever being in says nothing`() {
-        assertEquals(Presence.UNKNOWN, presenceOf(RosterRead.Refused, "a", wasIn = false))
+    fun `a refused read before ever being in is outside, not removed`() {
+        assertEquals(Presence.OUTSIDE, presenceOf(RosterRead.Refused, "a", wasIn = false))
     }
 
     @Test
     fun `a group not made yet is not one the device was taken off`() {
-        assertEquals(Presence.UNKNOWN, presenceOf(RosterRead.Read(null), "a", wasIn = false))
+        assertEquals(Presence.OUTSIDE, presenceOf(RosterRead.Read(null), "a", wasIn = false))
     }
 
     @Test

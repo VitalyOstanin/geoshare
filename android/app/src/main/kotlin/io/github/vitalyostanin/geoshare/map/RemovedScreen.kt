@@ -11,6 +11,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -53,6 +54,77 @@ data class RemovedGroup(
  */
 @Composable
 fun RemovedScreen(removed: RemovedGroup, switcher: Boolean, modifier: Modifier = Modifier) {
+    CardOverTheMap(switcher = switcher, modifier = modifier) {
+        RemovedNotice(removed = removed, modifier = Modifier.padding(18.dp))
+    }
+}
+
+/**
+ * What stands in place of the map while the device is connected to a project
+ * but has no group in it.
+ *
+ * Offers the two ways to get one: [onFoundGroup] founds a group, with the name
+ * typed or `null` when the field is left empty, and [onJoin] asks for a link
+ * to join one by.
+ */
+@OptIn(ExperimentalLayoutApi::class)
+@Composable
+fun NoGroupScreen(
+    switcher: Boolean,
+    onFoundGroup: (String?) -> Unit,
+    onJoin: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    var groupName by remember { mutableStateOf("") }
+
+    CardOverTheMap(switcher = switcher, modifier = modifier) {
+        Column(modifier = Modifier.padding(18.dp)) {
+            Text(
+                text = stringResource(R.string.group_none_title),
+                fontSize = 18.sp,
+                fontWeight = FontWeight.Medium,
+                modifier = Modifier.padding(bottom = 8.dp),
+            )
+
+            Text(
+                text = stringResource(R.string.group_none_map_text),
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.padding(bottom = 8.dp),
+            )
+
+            OutlinedTextField(
+                value = groupName,
+                onValueChange = { groupName = it.take(GROUP_NAME_LIMIT) },
+                label = { Text(text = stringResource(R.string.group_name_label)) },
+                singleLine = true,
+                modifier = Modifier.fillMaxWidth(),
+            )
+
+            FlowRow(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                TextButton(onClick = { onFoundGroup(groupNameText(groupName)) }) {
+                    Text(text = stringResource(R.string.group_found))
+                }
+
+                TextButton(onClick = onJoin) {
+                    Text(text = stringResource(R.string.group_removed_join))
+                }
+            }
+        }
+    }
+}
+
+/**
+ * The card the screens that stand in place of the map are drawn in: over the
+ * map rather than instead of it, so the round buttons above and the group
+ * chip stay where they are.
+ */
+@Composable
+private fun CardOverTheMap(
+    switcher: Boolean,
+    modifier: Modifier = Modifier,
+    content: @Composable () -> Unit,
+) {
     Surface(color = MaterialTheme.colorScheme.surface, modifier = modifier.fillMaxSize()) {
         Box(contentAlignment = Alignment.TopCenter) {
             Surface(
@@ -65,7 +137,7 @@ fun RemovedScreen(removed: RemovedGroup, switcher: Boolean, modifier: Modifier =
                     .padding(top = bannerOffset(switcher), start = 16.dp, end = 16.dp)
                     .fillMaxWidth(),
             ) {
-                RemovedNotice(removed = removed, modifier = Modifier.padding(18.dp))
+                content()
             }
         }
     }

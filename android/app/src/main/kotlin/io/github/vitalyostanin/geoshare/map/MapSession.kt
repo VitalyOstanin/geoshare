@@ -17,6 +17,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.repeatOnLifecycle
 import io.github.vitalyostanin.geoshare.collection.Watcher
 import io.github.vitalyostanin.geoshare.membership.Roster
+import io.github.vitalyostanin.geoshare.membership.RosterRead
 import io.github.vitalyostanin.geoshare.project.Connections
 import io.github.vitalyostanin.geoshare.project.GroupConnection
 import io.github.vitalyostanin.geoshare.service.MapOnScreen
@@ -26,9 +27,12 @@ import io.github.vitalyostanin.geoshare.service.groupSearches
 import io.github.vitalyostanin.geoshare.service.namedFalsePlaces
 import io.github.vitalyostanin.geoshare.service.ownSharedWith
 import io.github.vitalyostanin.geoshare.service.positionId
+import io.github.vitalyostanin.geoshare.service.rosterReads
 import io.github.vitalyostanin.geoshare.service.watchers
 import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.filter
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.withContext
 import java.time.Instant
 
@@ -217,6 +221,29 @@ fun rememberGroupRoster(): State<Roster?> {
     val roster = remember(connection) { groupRoster(connection) }
 
     return roster.collectAsStateWithLifecycle(initialValue = null)
+}
+
+/**
+ * Whether the group document has answered at all since the screen came up:
+ * with what it holds, with nothing, or with a refusal.
+ *
+ * The roster alone cannot say it, since it starts out null before the first
+ * answer exactly as it stays null when there is no group; a screen that
+ * offered founding one on that would show it for a moment to every member on
+ * every start. Silence does not count, so a device offline is not told it
+ * has no group.
+ */
+@Composable
+fun rememberRosterAnswered(): State<Boolean> {
+    val connection = groupNow()
+    val answered =
+        remember(connection) {
+            rosterReads(connection)
+                .filter { it != RosterRead.Unreachable }
+                .map { true }
+        }
+
+    return answered.collectAsStateWithLifecycle(initialValue = false)
 }
 
 /**

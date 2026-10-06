@@ -401,6 +401,8 @@
     <string name="group_removed_text">Администратор группы «%1$s» удалил вас из неё. Ваше место туда больше не передаётся.</string>
     <string name="group_removed_drop">Убрать группу</string>
     <string name="group_removed_join">Вступить по ссылке</string>
+    <string name="group_none_title">Группы пока нет</string>
+    <string name="group_none_map_text">Создайте группу — вы станете её администратором и сможете приглашать остальных. Если вас пригласили, вступите по ссылке из приглашения.</string>
     <string name="group_join_refused_title">Не удалось вступить в «%1$s»</string>
     <string name="group_join_refused_text">Приглашение больше не действует: им уже воспользовались, его отозвали или истёк срок. Попросите новую ссылку.</string>
     <string name="group_join_refused_text_by">Приглашение больше не действует: им уже воспользовались, его отозвали или истёк срок. Попросите новую ссылку у того, кто пригласил: %1$s.</string>

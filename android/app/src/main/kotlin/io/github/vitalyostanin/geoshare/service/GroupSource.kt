@@ -116,6 +116,7 @@ fun presenceIn(context: Context, connection: GroupConnection, uid: String): Flow
             when (presence) {
                 Presence.IN -> SeenOnRoster.note(context, projectId, uid)
                 Presence.REMOVED -> AppLog.i(TAG, "taken off the group of $projectId")
+                Presence.OUTSIDE -> AppLog.i(TAG, "not in a group of $projectId yet")
                 Presence.UNKNOWN -> Unit
             }
 

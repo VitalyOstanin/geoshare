@@ -173,6 +173,10 @@ fun MapScreen(
                     refused = settings.refusedJoin?.takeIf { it.projectId == shown.projectId },
                 )
             }
+    // A project the device reaches with no group of its own in it yet, told
+    // only once the database has answered: before that the roster is null
+    // for every member, and the card would flash on each start.
+    val noGroup = removed == null && outside && settings.rosterAnswered
     // Whether a hand is holding the following still; the button says so.
     var followPaused by remember { mutableStateOf(false) }
     var followTarget by remember { mutableStateOf<FollowTarget?>(null) }
@@ -380,6 +384,14 @@ fun MapScreen(
 
             removed?.let { RemovedScreen(removed = it, switcher = switcher) }
 
+            if (noGroup) {
+                NoGroupScreen(
+                    switcher = switcher,
+                    onFoundGroup = actions.onFoundGroup,
+                    onJoin = groups.onJoin,
+                )
+            }
+
             // The controls on one side and the account on the other, the way
             // map applications lay them out: a row keeps a second control from
             // ever landing on top of the first whatever either measures.
@@ -581,9 +593,10 @@ fun MapScreen(
             }
         }
 
-        // Nothing below the card that says the device was taken off: the
-        // strip would go on counting members of a group it no longer sees.
-        if (removed == null) {
+        // Nothing below the card that says the device was taken off, or that
+        // it has no group yet: the strip would go on counting members of a
+        // group it does not see.
+        if (removed == null && !noGroup) {
             HorizontalDivider()
 
             BelowTheMap(

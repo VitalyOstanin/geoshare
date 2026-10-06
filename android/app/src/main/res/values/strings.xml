@@ -469,6 +469,8 @@
     <string name="group_removed_text">An administrator of “%1$s” removed you from it. Your position is no longer sent there.</string>
     <string name="group_removed_drop">Remove the group</string>
     <string name="group_removed_join">Join by link</string>
+    <string name="group_none_title">No group yet</string>
+    <string name="group_none_map_text">Create a group: you will run it and can invite the others. If you were invited, join by the link from the invitation.</string>
     <!-- The same card when the invitation this device came with was refused:
          used, withdrawn or run out, which the device cannot tell apart. -->
     <string name="group_join_refused_title">Could not join “%1$s”</string>

@@ -66,6 +66,11 @@ data class SettingsState(
     /** Who is in the group, or nothing when this account cannot see a roster. */
     val roster: Roster?,
     /**
+     * Whether the group document has answered since the screen came up, so
+     * that a null [roster] means no group rather than no answer yet.
+     */
+    val rosterAnswered: Boolean,
+    /**
      * What each member gives out, as far as this phone has been let see it.
      *
      * Carried for the panel where the group is seen whole: a member who shares

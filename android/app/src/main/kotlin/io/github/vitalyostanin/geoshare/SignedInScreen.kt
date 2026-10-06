@@ -32,6 +32,7 @@ import io.github.vitalyostanin.geoshare.map.rememberMemberPositions
 import io.github.vitalyostanin.geoshare.map.rememberMemberProfiles
 import io.github.vitalyostanin.geoshare.map.rememberOwnLabels
 import io.github.vitalyostanin.geoshare.map.rememberOwnSharedWith
+import io.github.vitalyostanin.geoshare.map.rememberRosterAnswered
 import io.github.vitalyostanin.geoshare.map.rememberSearches
 import io.github.vitalyostanin.geoshare.map.rememberWatchers
 import io.github.vitalyostanin.geoshare.map.withShare
@@ -112,6 +113,7 @@ internal fun SignedInScreen(
     val labels by rememberOwnLabels(current.memberId)
     val sharedWith by rememberOwnSharedWith(current.memberId)
     val roster by rememberGroupRoster()
+    val rosterAnswered by rememberRosterAnswered()
     val link by rememberDatabaseLink()
     val answers = remember { GroupAnswers() }
 
@@ -252,6 +254,7 @@ internal fun SignedInScreen(
                 aidingDoubted = aidingDoubted,
                 downloads = downloads,
                 roster = roster,
+                rosterAnswered = rosterAnswered,
                 grants = grants,
                 invitation = answers.invitation,
                 site = connection.settings.site,
