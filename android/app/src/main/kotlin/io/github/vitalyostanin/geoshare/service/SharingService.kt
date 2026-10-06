@@ -1533,17 +1533,21 @@ class SharingService : LifecycleService() {
         // another name is the receiver's own last answer, read from the store.
         whence: FoundBy,
     ): Boolean = try {
-        writer.write(
-            written.fix,
-            mode,
-            batteryPercent(),
-            written.charging,
-            whence,
-            written.settling,
-        )
+        val into =
+            writer.write(
+                written.fix,
+                mode,
+                batteryPercent(),
+                written.charging,
+                whence,
+                written.settling,
+            )
         AppLog.i(
             TAG,
-            "wrote a position taken at ${written.fix.takenAt}, found by ${whence.said}" +
+            // The groups are named: one that refused the write has just said
+            // so, and a bare "wrote" after it would read as that one too.
+            "wrote a position in ${into.joinToString()} taken at ${written.fix.takenAt}, " +
+                "found by ${whence.said}" +
                 // Said in the line about the write rather than left to the
                 // document: what a phone wrote is the one thing a log of a
                 // boot cannot be read back from, and the first minutes after

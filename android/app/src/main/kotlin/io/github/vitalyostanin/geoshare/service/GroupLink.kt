@@ -129,15 +129,16 @@ class EveryGroup(private val links: () -> List<GroupLink>) {
     suspend fun tellStatus(mode: CollectionMode, batteryPercent: Int, charging: Boolean) =
         each("say how the device is") { link -> link.status.write(mode, batteryPercent, charging) }
 
-    private suspend fun each(what: String, write: suspend (GroupLink) -> Unit) {
+    /** Writes into every linked group and answers the projects that took it. */
+    private suspend fun each(what: String, write: suspend (GroupLink) -> Unit): List<String> {
         val linked = links()
-        var taken = 0
+        val taken = mutableListOf<String>()
         var last: Exception? = null
 
         for (link in linked) {
             try {
                 write(link)
-                taken++
+                taken += link.connection.projectId
             } catch (cancellation: CancellationException) {
                 throw cancellation
             } catch (refusal: Exception) {
@@ -146,9 +147,11 @@ class EveryGroup(private val links: () -> List<GroupLink>) {
             }
         }
 
-        if (taken == 0) {
+        if (taken.isEmpty()) {
             throw last ?: IllegalStateException("no group to $what in")
         }
+
+        return taken
     }
 }
 
