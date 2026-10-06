@@ -6,8 +6,9 @@ links with the project filled in. [Russian version](console-steps.ru.md).
 
 **1. Turn on sign-in with Google.**
 Open `https://console.firebase.google.com/project/<project-id>/authentication/providers`.
-Press Get started if it is there, then Google, Enable. Pick your address as the
-support address. Save.
+Press Get started if it is there, then Google, Enable. Type the group's name as
+the public-facing name; members see it when they sign in. Pick your address as
+the support address. Save.
 
 **2. Let the page sign in from its own address.**
 Open `https://console.cloud.google.com/auth/clients?project=<project-id>`.

@@ -7,7 +7,8 @@
 **1. Включить вход через Google.**
 Откройте `https://console.firebase.google.com/project/<project-id>/authentication/providers`.
 Нажмите Get started, если такая кнопка есть, затем Google, Enable. В поле
-адреса поддержки выберите свой адрес. Нажмите Save.
+Public-facing name for project впишите название группы — его участники увидят
+при входе. В поле адреса поддержки выберите свой адрес. Нажмите Save.
 
 **2. Разрешить странице вход со своего адреса.**
 Откройте `https://console.cloud.google.com/auth/clients?project=<project-id>`.

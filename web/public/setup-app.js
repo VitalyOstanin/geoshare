@@ -81,7 +81,8 @@ const WORDS_RU = {
     s4On: '✓ включён',
     s4Off: 'ещё не включён',
     s4Checking: 'проверяю…',
-    s4SignInHow: 'Get started → Google → Enable → почта поддержки → Save.',
+    s4SignInHow: 'Get started → Google → Enable → название (например, «Семья») и почта поддержки → ' +
+        'Save.',
     s4OpenProviders: 'Открыть способы входа',
     s4Redirect: '2. Адрес возврата страницы',
     s4RedirectHow:

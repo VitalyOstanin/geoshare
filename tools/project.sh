@@ -511,8 +511,9 @@ print(json.dumps({
     "settingsUrl": f"https://{site}.web.app/geoshare.json",
     "manualSteps": [
         {
-            "what": "Authentication, Sign-in method, Google, Enable, pick a "
-                    "support address, Save",
+            "what": "Authentication, Sign-in method, Google, Enable, type the name "
+                    "of the group as the public-facing name, pick a support "
+                    "address, Save",
             "url": f"https://console.firebase.google.com/project/{project}"
                    "/authentication/providers",
         },
@@ -772,9 +773,9 @@ ${project} still needs one step before it can sign phones in:
 
   https://console.firebase.google.com/project/${project}/authentication/providers
 
-  Authentication, Sign-in method, Google, Enable, pick a support address,
-  Save. Then run this command again, or with --wait to have it wait here
-  instead.
+  Authentication, Sign-in method, Google, Enable, type the name of the group as
+  the public-facing name, pick a support address, Save. Then run this command
+  again, or with --wait to have it wait here instead.
 EOF
     fi
 
@@ -804,8 +805,9 @@ site = os.environ["SITE"]
 google_on = os.environ["GOOGLE_ON"] == "1"
 
 manual_steps = [] if google_on else [{
-    "what": "Authentication, Sign-in method, Google, Enable, pick a "
-            "support address, Save",
+    "what": "Authentication, Sign-in method, Google, Enable, type the name "
+            "of the group as the public-facing name, pick a support "
+            "address, Save",
     "url": f"https://console.firebase.google.com/project/{project}"
            "/authentication/providers",
 }]
