@@ -21,7 +21,14 @@ const PHONE_ID_SHOWN = 8;
  * the member owns — a grant is closed to everybody it does not name — and the
  * panel says as much beside it.
  */
-export function groupOverview(roster, profiles, grants, ownMemberId, labels = NO_LABELS) {
+export function groupOverview(
+    roster,
+    profiles,
+    grants,
+    ownMemberId,
+    labels = NO_LABELS,
+    positionKnownAt = new Map(),
+) {
     return roster.members
         .map((memberId) => ({
             memberId,
@@ -35,7 +42,12 @@ export function groupOverview(roster, profiles, grants, ownMemberId, labels = NO
             removable: memberId !== ownMemberId && mayBeRemoved(roster, memberId, ownMemberId),
             mayBeMadeAdmin: mayBeMadeAdmin(roster, memberId, ownMemberId),
             mayStopRunning: mayStopRunning(roster, memberId, ownMemberId),
-            phones: phoneLines(memberId, grants.get(memberId)?.phones ?? new Map(), labels),
+            phones: phoneLines(
+                memberId,
+                grants.get(memberId)?.phones ?? new Map(),
+                labels,
+                positionKnownAt,
+            ),
         }))
         .sort(inReadingOrder);
 }
@@ -64,18 +76,35 @@ function inReadingOrder(one, other) {
  * may see where they are: an administrator reads these to tell a phone that
  * went quiet from one whose marker is stuck. Each is called what the map calls
  * it (phoneNames), else by the start of its id.
+ *
+ * positionKnownAt maps a phone's id to when its visible position was last
+ * known. The phone writes its own state only every so often, while a position
+ * is refreshed far more often, and the map already shows the later of the two:
+ * a line saying "22 minutes ago" under a marker saying "just now" would be the
+ * panel contradicting the map about the same phone.
  */
-export function phoneLines(memberId, phones, labels = NO_LABELS) {
+export function phoneLines(memberId, phones, labels = NO_LABELS, positionKnownAt = new Map()) {
     const names = phoneNames(memberId, phones, labels);
 
     return [...phones]
-        .map(([deviceId, phone]) => ({
+        .map(([deviceId, phone]) => {
             // The address the phone's siren is called at.
-            phoneId: `${memberId}.${deviceId}`,
-            name: names.get(deviceId) ?? deviceId.slice(0, PHONE_ID_SHOWN),
-            onlineAt: phone.onlineAt,
-            batteryPercent: phone.batteryPercent,
-            charging: phone.charging,
-        }))
+            const phoneId = `${memberId}.${deviceId}`;
+
+            return {
+                phoneId,
+                name: names.get(deviceId) ?? deviceId.slice(0, PHONE_ID_SHOWN),
+                onlineAt: laterOf(phone.onlineAt, positionKnownAt.get(phoneId)),
+                batteryPercent: phone.batteryPercent,
+                charging: phone.charging,
+            };
+        })
         .sort((one, other) => compareIds(one.name, other.name));
+}
+
+/** The later of two moments either of which may be missing; null if both are. */
+function laterOf(one, other) {
+    const known = [one, other].filter((moment) => moment !== null && moment !== undefined);
+
+    return known.length === 0 ? null : Math.max(...known);
 }

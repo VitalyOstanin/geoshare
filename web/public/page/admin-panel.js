@@ -87,6 +87,7 @@ export function drawAdmin(running) {
             state.grants,
             state.member.memberId,
             state.labels,
+            new Map(state.positions.map((position) => [position.positionId, position.knownAt])),
         ).map(adminRow),
     );
 

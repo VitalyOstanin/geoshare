@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 
-import { groupOverview } from '../public/lib/group-lines.js';
+import { groupOverview, phoneLines } from '../public/lib/group-lines.js';
 import { labelsFrom } from '../public/lib/labels.js';
 import { combinedGrants, phonesOf } from '../public/lib/phones.js';
 
@@ -115,4 +115,28 @@ test('the phones are listed by the names the map gives them', () => {
 
     assert.deepEqual(listed.map((phone) => phone.name), ['school phone', 'the old one']);
     assert.equal(listed[1].onlineAt, 5);
+});
+
+// The map shows the later of the phone's state and its position; the panel
+// has to say the same, or the two disagree about one phone.
+test('a position newer than the phone state sets the moment in touch', () => {
+    const phones = new Map([['dev-one', { onlineAt: 1000, batteryPercent: 50, charging: false }]]);
+    const [line] = phoneLines(CHILD, phones, undefined, new Map([[`${CHILD}.dev-one`, 5000]]));
+
+    assert.equal(line.onlineAt, 5000);
+});
+
+test('a position older than the phone state leaves the state in place', () => {
+    const phones = new Map([['dev-one', { onlineAt: 9000, batteryPercent: 50, charging: false }]]);
+    const [line] = phoneLines(CHILD, phones, undefined, new Map([[`${CHILD}.dev-one`, 5000]]));
+
+    assert.equal(line.onlineAt, 9000);
+});
+
+test('a phone with no state yet is in touch as of its position', () => {
+    const phones = new Map([['dev-one', { onlineAt: null, batteryPercent: null, charging: null }]]);
+    const [line] = phoneLines(CHILD, phones, undefined, new Map([[`${CHILD}.dev-one`, 5000]]));
+
+    assert.equal(line.onlineAt, 5000);
+    assert.equal(phoneLines(CHILD, phones)[0].onlineAt, null);
 });

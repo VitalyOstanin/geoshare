@@ -107,7 +107,12 @@ function drawPhones() {
 
     const memberId = state.member.memberId;
     const own = state.grants.get(memberId)?.phones ?? new Map();
-    const phones = phoneLines(memberId, own, state.labels);
+    const phones = phoneLines(
+        memberId,
+        own,
+        state.labels,
+        new Map(state.positions.map((position) => [position.positionId, position.knownAt])),
+    );
     const now = Date.now();
     const running = standingIn(state.roster, memberId) === ADMINISTRATOR;
     const standing = standingSearches(state.searches, now);
