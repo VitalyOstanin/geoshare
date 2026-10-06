@@ -1,8 +1,15 @@
 # Setting up a group's Firebase project
 
-For a programmer or an AI agent running `tools/project.sh` on behalf of the
-project owner — the person whose Google account will hold the project. Why a
-script and not a page: [ADR-0003](ADR/0003-project-setup-by-script.md).
+The project owner — the person whose Google account will hold the project —
+sets it up without a terminal: they create the project in the Firebase
+console, then open the setup page, <https://geoshare-setup.web.app/>, which
+finishes it and ends with the connection link
+([ADR-0033](ADR/0033-a-setup-page-finishes-the-project.md)). The application's
+connection screen leads there too, under "Create your own group".
+
+The rest of this document is for a programmer or an AI agent running
+`tools/project.sh` on behalf of the project owner, the way it was before the
+page ([ADR-0003](ADR/0003-project-setup-by-script.md)).
 
 ## Contents
 
