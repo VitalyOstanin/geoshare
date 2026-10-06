@@ -144,10 +144,15 @@ Acceptance:
 
 ## OWN-09 Set up the project from a page in the browser
 
-- Status: planned
+- Status: done
 - ADR: 0033
-- Tests: —
-- Not covered: planned
+- Tests: page `setup-project.test.mjs` (the database, the apps and their
+  fingerprints, the rules, a re-run that changes nothing),
+  `setup-hosting.test.mjs` (the site, a taken site name, the page and
+  `geoshare.json`)
+- Not covered: the "Create your own group" screen, the list of the account's
+  projects, the wait for sign-in with Google and the closing link and QR code
+  are checked by hand
 
 As a project owner without a terminal I create the project in the Firebase
 console and let a setup page finish it, so that a browser on a computer or on
