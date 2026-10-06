@@ -75,6 +75,8 @@ fun AdminPanel(
     trouble: Boolean,
     /** The group's searches, by the phone each is looking for. */
     searches: Map<String, Search>,
+    /** When each phone's shown position was last known, so a phone's age agrees with the map. */
+    seenAt: Map<String, Instant>,
     /** Makes an invitation good for the address typed into the dialog that asks for one. */
     onMakeInvitation: (String) -> Unit,
     onRemoveMember: (String) -> Unit,
@@ -109,7 +111,7 @@ fun AdminPanel(
     onClose: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    val lines = groupOverview(roster, profiles, grants, ownMemberId, labels)
+    val lines = groupOverview(roster, profiles, grants, ownMemberId, labels, seenAt)
     val standing = remember(searches, now) { standingSearches(searches, now) }
     // Read once and used both at the top of the panel and in the invitation
     // dialog's own title: what the invitation names is the same group this

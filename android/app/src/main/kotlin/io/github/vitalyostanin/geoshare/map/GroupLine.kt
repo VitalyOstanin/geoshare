@@ -60,20 +60,29 @@ data class PhoneLine(
 /**
  * A member's phones, in the order of their names. Each is called what the map
  * calls it (phoneNames), else by the start of its id.
+ *
+ * [seenAt] is when the position this phone is shown at was last known, by
+ * positionId. A phone writes its own state only every so often, while its
+ * position is refreshed far more often, so the state alone would say "22
+ * minutes ago" under a marker the map calls fresh. The later of the two is
+ * taken, as the map does.
  */
 fun phoneLines(
     memberId: String,
     phones: Map<String, PhoneStatus>,
     labels: Labels,
+    seenAt: Map<String, Instant> = emptyMap(),
 ): List<PhoneLine> {
     val names = phoneNames(memberId, phones, labels)
 
     return phones
         .map { (deviceId, phone) ->
+            val phoneId = positionId(memberId, deviceId)
+
             PhoneLine(
-                phoneId = positionId(memberId, deviceId),
+                phoneId = phoneId,
                 name = names[deviceId] ?: deviceId.take(PHONE_ID_SHOWN),
-                onlineAt = phone.onlineAt,
+                onlineAt = listOfNotNull(phone.onlineAt, seenAt[phoneId]).maxOrNull(),
                 batteryPercent = phone.batteryPercent,
                 charging = phone.charging,
             )
@@ -99,6 +108,7 @@ fun groupOverview(
     grants: Map<String, MemberGrant>,
     ownMemberId: String,
     labels: Labels = Labels(),
+    seenAt: Map<String, Instant> = emptyMap(),
 ): List<GroupLine> = roster.members
     .map { memberId ->
         GroupLine(
@@ -113,6 +123,6 @@ fun groupOverview(
             removable = memberId != ownMemberId && mayBeRemoved(roster, memberId, ownMemberId),
             mayBeMadeAdmin = mayBeMadeAdmin(roster, memberId, ownMemberId),
             mayStopRunning = mayStopRunning(roster, memberId, ownMemberId),
-            phones = phoneLines(memberId, grants[memberId]?.phones.orEmpty(), labels),
+            phones = phoneLines(memberId, grants[memberId]?.phones.orEmpty(), labels, seenAt),
         )
     }.sortedWith(compareByDescending(GroupLine::isYou).thenBy { it.displayName ?: it.memberId })

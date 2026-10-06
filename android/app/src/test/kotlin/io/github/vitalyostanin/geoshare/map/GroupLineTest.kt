@@ -136,4 +136,36 @@ class GroupLineTest {
         assertEquals(listOf("school phone", "the old one"), phones.map { it.name })
         assertEquals(Instant.ofEpochSecond(5), phones.last().onlineAt)
     }
+
+    // The state is written every so often and the position far more often, so
+    // the panel has to say what the map says: the later of the two.
+    @Test
+    fun `a phone's age is the later of its state and its position`() {
+        val id = "uid-parent.phone"
+        val state = Instant.ofEpochSecond(100)
+        val newer = Instant.ofEpochSecond(900)
+        val older = Instant.ofEpochSecond(50)
+        val phones = mapOf("phone" to PhoneStatus(name = "phone", onlineAt = state))
+
+        fun seen(at: Instant?) =
+            phoneLines(parent, phones, Labels(), mapOfNotNull(id, at)).single().onlineAt
+
+        assertEquals(newer, seen(newer))
+        assertEquals(state, seen(older))
+        assertEquals(state, seen(null))
+    }
+
+    @Test
+    fun `a phone with no state is as old as its position`() {
+        val id = "uid-parent.phone"
+        val at = Instant.ofEpochSecond(900)
+        val phones = mapOf("phone" to PhoneStatus(name = "phone"))
+
+        val line = phoneLines(parent, phones, Labels(), mapOf(id to at)).single()
+
+        assertEquals(at, line.onlineAt)
+    }
+
+    private fun mapOfNotNull(id: String, at: Instant?): Map<String, Instant> =
+        if (at == null) emptyMap() else mapOf(id to at)
 }

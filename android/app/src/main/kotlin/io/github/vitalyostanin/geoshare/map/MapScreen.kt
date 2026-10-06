@@ -665,6 +665,7 @@ fun MapScreen(
             labels = labels,
             now = now,
             searches = searches,
+            seenAt = positions.associate { it.positionId to it.knownAt },
             groups = groups,
             onCloseMyPhones = { myPhonesOpen = false },
             onCloseAdmin = { adminOpen = false },
