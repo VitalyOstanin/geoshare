@@ -51,7 +51,8 @@ rm -f "${OUT}/public/group/firebase-config.js" "${OUT}/public/group/geoshare.jso
 # The setup page needs the same modules and styles, and is the site's index.
 cp -r "${OUT}/public/group/." "${OUT}/public/"
 rm -r "${OUT}/public/group/setup.html" "${OUT}/public/group/setup-app.js" \
-    "${OUT}/public/group/lib/setup-project.js" "${OUT}/public/group/lib/setup-hosting.js"
+    "${OUT}/public/group/lib/setup-project.js" "${OUT}/public/group/lib/setup-hosting.js" \
+    "${OUT}/public/group/lib/qr-svg.js" "${OUT}/public/group/lib/vendor/qr.mjs"
 cp "${OUT}/public/setup.html" "${OUT}/public/index.html"
 cp "${REPO_ROOT}/firebase/firestore.rules" "${OUT}/public/firestore.rules"
 

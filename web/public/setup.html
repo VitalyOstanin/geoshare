@@ -16,6 +16,11 @@
                    padding: 1.5rem; display: flex; flex-direction: column; gap: 1.1rem; }
             main > section { display: flex; flex-direction: column; gap: 1.1rem; }
             section[hidden] { display: none; }
+            /* The QR code keeps white around it in the dark theme too: a camera
+               reads dark modules on light. */
+            .qr { width: 168px; height: 168px; border: 1px solid var(--edge);
+                  border-radius: 8px; overflow: hidden; }
+            .qr svg { display: block; width: 100%; height: 100%; }
             .kicker { font-size: var(--text-body); font-weight: 600; color: var(--link);
                       letter-spacing: 0.02em; text-transform: uppercase; }
             h1 { margin: 0; font-size: 1.5rem; font-weight: 600; }
@@ -135,9 +140,7 @@
                    data-text="s5Open"></a>
                 <div class="card" style="align-items: center">
                     <div class="small muted" data-text="s5Camera"></div>
-                    <!-- No QR generator is among the vendored libraries, so the
-                         link itself stands in; the note says so. -->
-                    <div class="small muted" data-text="s5NoQr"></div>
+                    <div id="s5-qr" class="qr"></div>
                     <code id="s5-link"></code>
                 </div>
                 <p id="s5-foot" class="small muted"></p>

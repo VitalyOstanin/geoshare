@@ -24,6 +24,7 @@ import {
     releasedPaths,
     servesGroup,
 } from './lib/setup-hosting.js';
+import { qrSvg } from './lib/qr-svg.js';
 
 // The page is Russian only for now; a second language is a second object of
 // the same keys, picked in `words` below.
@@ -97,8 +98,7 @@ const WORDS_RU = {
     s5Text: 'Подключите своё устройство первым: вы станете администратором группы и сможете ' +
         'приглашать остальных из приложения.',
     s5Open: 'Открыть в приложении geoshare',
-    s5Camera: 'Страница открыта на компьютере? Откройте эту ссылку на устройстве:',
-    s5NoQr: 'QR-код здесь не рисуется: ссылку можно отправить себе на устройство.',
+    s5Camera: 'Страница открыта на компьютере? Наведите камеру устройства:',
     s5Foot: (site) =>
         `Карта группы на компьютере: ${site}. Доступ, выданный этой странице, можно отозвать ` +
         'в настройках аккаунта Google — группе он больше не нужен.',
@@ -491,6 +491,7 @@ $('s4-next').addEventListener('click', () => {
     $('s5-title').textContent = words.s5Title(projectLabel(state.project));
     $('s5-open').href = link;
     $('s5-link').textContent = link;
+    $('s5-qr').replaceChildren(qrSvg(document, link));
     $('s5-foot').textContent = words.s5Foot(`${id}.web.app`);
     show(5);
 });
