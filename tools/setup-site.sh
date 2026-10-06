@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Builds the site of the setup page (ADR-0033) into build/setup-site.
 #
-#   tools/setup-site.sh --client-id <id> --sha <fingerprint>...
+#   tools/setup-site.sh --client-id <id> [--sha <fingerprint>...]
 #
 # The setup page deploys to a group's site the files of a group's page, so the
 # site holds them under group/ beside the setup page, which is its index:
@@ -35,9 +35,14 @@ while (( $# )); do
     esac
 done
 
-if [[ -z "${client_id}" || ${#sha_given[@]} -eq 0 ]]; then
-    echo "usage: tools/setup-site.sh --client-id <id> --sha <fingerprint>..." >&2
+if [[ -z "${client_id}" ]]; then
+    echo "usage: tools/setup-site.sh --client-id <id> [--sha <fingerprint>...]" >&2
     exit 2
+fi
+
+# Without --sha, the projects the page sets up accept the published builds.
+if (( ${#sha_given[@]} == 0 )); then
+    mapfile -t sha_given < <(grep -v '^#' "${REPO_ROOT}/android/release-fingerprints.txt")
 fi
 
 echo "==> building ${OUT#"${REPO_ROOT}"/}" >&2

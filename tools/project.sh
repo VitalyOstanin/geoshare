@@ -90,6 +90,9 @@ export npm_config_loglevel=error
 # has to match it, or sign-in refuses the application.
 readonly PACKAGE_NAME="io.github.vitalyostanin.geoshare"
 
+# The fingerprints of the key the published builds are signed with.
+readonly RELEASE_FINGERPRINTS="android/release-fingerprints.txt"
+
 # Where the database of the project this repository started on lives. Any
 # region is inside the free plan; this one is close to the family it was made
 # for.
@@ -176,12 +179,12 @@ app_id() {
 
     echo "${ids}"
 }
-# The SHA-1 and SHA-256 of every key the builds are signed with, as
-# `gradle signingReport` prints them — or, with --sha-from, the ones an
-# existing project already accepts. The second is the one to use when the
-# builds are signed on another machine than this: the debug key lives in the
-# build container's volume, and this machine's may not be the one that signed
-# the application on the phones.
+# The SHA-1 and SHA-256 of every key the builds are signed with: the published
+# one from the repository and the debug one as `gradle signingReport` prints
+# it — or, with --sha-from, the ones an existing project already accepts. The
+# second is the one to use when the builds are signed on another machine than
+# this: the debug key lives in the build container's volume, and this
+# machine's may not be the one that signed the application on the phones.
 #
 # --sha names them outright, once per fingerprint, for a project made under
 # another account than the one that can read the project they are known in.
@@ -206,9 +209,15 @@ for entry in json.loads(raw[raw.index("{"):])["result"]:
         return
     fi
 
-    "${REPO_ROOT}/tools/signing.sh" |
-        awk '/^SHA1:|^SHA-256:/ { print $2 }' |
-        sort -u
+    # The published key always, so the application from the releases page
+    # signs in; the debug key besides when this machine can build, so does
+    # what is built here. Cloud Shell has no container to build in, and gets
+    # the first alone.
+    {
+        grep -v '^#' "${REPO_ROOT}/${RELEASE_FINGERPRINTS}"
+        "${REPO_ROOT}/tools/signing.sh" 2>/dev/null |
+            awk '/^SHA1:|^SHA-256:/ { print $2 }' || true
+    } | sort -u
 }
 
 # How many apps of a platform the project has.

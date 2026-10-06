@@ -1,0 +1,6 @@
+# The SHA-1 and SHA-256 of the key the published builds are signed with. A
+# group's project lists them for its Android app, or Google sign-in refuses
+# the application downloaded from the releases page. They are not a secret:
+# anyone holding the application reads them off its certificate.
+DE:A8:99:3E:4E:0D:8F:E2:69:6C:4A:E5:0A:41:75:6F:2F:A8:9B:AE
+97:01:F9:E0:06:2C:27:05:C9:4E:05:CE:3C:13:02:5C:ED:D2:DF:C2:61:3A:B4:88:9C:BD:75:4C:53:89:4F:C8

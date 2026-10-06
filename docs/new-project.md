@@ -145,12 +145,15 @@ standard output gets one JSON object at the end:
 ## Signing key fingerprints
 
 Sign-in with Google accepts only an application signed with a key whose
-fingerprint the project knows. `create` takes the fingerprints from
-`tools/signing.sh`, which reads them from the build container of this
-repository. Where the application is not built on this machine, pass
-`--sha-from <project-id>` to copy them from a project that already works with
-the same build. Without either, the script warns and the fingerprints have to
-be added in the console under Project settings, Your apps, Android.
+fingerprint the project knows. `create` registers the key of the application
+on the releases page, listed in `android/release-fingerprints.txt` (ADR-0034),
+and adds the debug key's from `tools/signing.sh`, which reads them from the
+build container of this repository, when this machine can build. Where the
+application is built elsewhere, pass `--sha-from <project-id>` to copy the
+fingerprints from a project that already works with the same build, or
+`--sha <fingerprint>` once per fingerprint; either replaces both lists. A
+fingerprint missing later is added in the console under Project settings,
+Your apps, Android.
 
 ## Things not to do
 
