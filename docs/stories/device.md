@@ -1,7 +1,7 @@
 # Device
 
-A member's phone, as the service on it acts with nobody at the screen. The
-stories are written for the member who carries it: what the phone has to do
+A member's device, as the service on it acts with nobody at the screen. The
+stories are written for the member who carries it: what the device has to do
 on its own for the others to see a true place at a fair cost of battery.
 
 ## Contents
@@ -11,7 +11,7 @@ on its own for the others to see a true place at a fair cost of battery.
 - [DEV-03 Spend little while standing still](#dev-03-spend-little-while-standing-still)
 - [DEV-04 Work without Google Play services](#dev-04-work-without-google-play-services)
 - [DEV-05 Get the permissions it needs, once](#dev-05-get-the-permissions-it-needs-once)
-- [DEV-06 Start again after the phone restarts](#dev-06-start-again-after-the-phone-restarts)
+- [DEV-06 Start again after the device restarts](#dev-06-start-again-after-the-device-restarts)
 - [DEV-07 Leave out answers that cannot be true](#dev-07-leave-out-answers-that-cannot-be-true)
 - [DEV-08 Notice being taken off the roster](#dev-08-notice-being-taken-off-the-roster)
 - [DEV-09 Pick up a permission as soon as it is given](#dev-09-pick-up-a-permission-as-soon-as-it-is-given)
@@ -19,7 +19,7 @@ on its own for the others to see a true place at a fair cost of battery.
 - [DEV-11 Keep a log the member can hand over](#dev-11-keep-a-log-the-member-can-hand-over)
 - [DEV-12 Wake when somebody needs it](#dev-12-wake-when-somebody-needs-it)
 - [DEV-13 Update itself](#dev-13-update-itself)
-- [DEV-14 Use the location services of Huawei phones](#dev-14-use-the-location-services-of-huawei-phones)
+- [DEV-14 Use the location services of Huawei devices](#dev-14-use-the-location-services-of-huawei-devices)
 
 ## DEV-01 Write the place without being asked
 
@@ -28,7 +28,7 @@ on its own for the others to see a true place at a fair cost of battery.
 - Tests: rules `positions.test.mjs`; Android `WriteFilterTest`
 - Not covered: the service and its notification, on a device
 
-As a member I let a foreground service on my phone write my place, so that the
+As a member I let a foreground service on my device write my place, so that the
 group sees it without my opening the application.
 
 Acceptance:
@@ -42,13 +42,13 @@ Acceptance:
 - ADR: 0010
 - Tests: rules `access.test.mjs` (watch); Android `WatchingTest`, `ModeSelectionTest`, `CollectionModeTest`
 
-As a member I let my phone collect fast only while somebody has the map open,
+As a member I let my device collect fast only while somebody has the map open,
 so that the battery is spent when it is worth it.
 
 Acceptance:
 - a viewer renews a watch claim every minute; a claim older than three
   minutes stops counting;
-- a phone that sees a live claim on itself switches to the viewing mode.
+- a device that sees a live claim on itself switches to the viewing mode.
 
 ## DEV-03 Spend little while standing still
 
@@ -57,13 +57,13 @@ Acceptance:
 - Tests: Android `GeofenceTest`, `StillnessTest`, `MovementTest`, `ModeSelectionTest`
 - Not covered: battery, measured on a device
 
-As a member I let my phone stay quiet while I do not move, so that a day at
+As a member I let my device stay quiet while I do not move, so that a day at
 home costs little battery.
 
 Acceptance:
 - moving is learnt from the system's activity transitions;
 - standing still inside a 150 m geofence keeps the receiver off;
-- an idle phone rewrites the same point about every 25 minutes so that it
+- an idle device rewrites the same point about every 25 minutes so that it
   does not go grey, and `takenAt` keeps when it was measured.
 
 ## DEV-04 Work without Google Play services
@@ -73,8 +73,8 @@ Acceptance:
 - Tests: Android `SourcesTest`, `AskingTest`, `ProviderNoteTest`
 - Not covered: sign-in on a device without Play services, by hand
 
-As a member with a phone or tablet that has no Google Play services I still
-sign in and share my place, so that the group is not limited to phones with
+As a member with a device or tablet that has no Google Play services I still
+sign in and share my place, so that the group is not limited to devices with
 Google on them.
 
 Acceptance:
@@ -97,14 +97,14 @@ Acceptance:
 - for makers that stop background work the application opens their own list
   of allowed applications and lets me say it is done.
 
-## DEV-06 Start again after the phone restarts
+## DEV-06 Start again after the device restarts
 
-- Status: partly — built, not yet checked on the phones
+- Status: partly — built, not yet checked on the devices
 - ADR: —
 - Tests: Android `BootReceiverTest`, `StartConditionsTest`
-- Not covered: a restart of a real phone
+- Not covered: a restart of a real device
 
-As a member I let the service start by itself after the phone restarts, so
+As a member I let the service start by itself after the device restarts, so
 that I do not have to remember to open the application.
 
 Acceptance:
@@ -118,14 +118,14 @@ Acceptance:
 - ADR: 0014, 0021, 0023, 0024
 - Tests: rules `positions.test.mjs` (answers left out); Android `JumpsTest`, `OrbitCheckTest`, `OrbitsTest`, `SkyTest`, `SlantTest`, `DriftTest`, `MovementTest`, `FalsePlacesTest`, `LeftOutRunTest`
 
-As a member near a place where satellite signals are spoofed I let the phone
+As a member near a place where satellite signals are spoofed I let the device
 leave out answers that cannot be true, so that the group does not see me
 jump to an airport.
 
 Acceptance:
 - satellites standing below the horizon, or at a distance off their published
   orbits, mark the epoch false; two in a row leave the fix out;
-- a place that moved while the phone stood still is refused;
+- a place that moved while the device stood still is refused;
 - a recorded false place marks positions taken there;
 - the jump filter is a setting, off by default;
 - every answer left out is counted with its reason.
@@ -167,14 +167,14 @@ Acceptance:
 - Status: done
 - ADR: 0010, 0027
 - Tests: rules `access.test.mjs` (devices); Android `PhoneStatusTest`
-- Not covered: when the phone writes its status
+- Not covered: when the device writes its status
 
-As a member I let my phone say when it last wrote, in which mode and whether
+As a member I let my device say when it last wrote, in which mode and whether
 it is charging, so that an administrator notices it has gone quiet (ADM-06).
 
 Acceptance:
-- the phone's status is written when its mode changes, when it is plugged in
-  or out, and otherwise as often as an idle phone rewrites its place;
+- the device's status is written when its mode changes, when it is plugged in
+  or out, and otherwise as often as an idle device rewrites its place;
 - it carries no place.
 
 ## DEV-11 Keep a log the member can hand over
@@ -183,7 +183,7 @@ Acceptance:
 - ADR: 0021
 - Tests: Android `FileLogTest`, `SkyLogTest`
 
-As a member I let the phone keep a log of what it received and left out, and
+As a member I let the device keep a log of what it received and left out, and
 of the raw satellite measurements, so that a wrong place can be looked into
 afterwards.
 
@@ -198,7 +198,7 @@ Acceptance:
 - Tests: —
 - Not covered: planned
 
-As a member whose phone is asleep I let a push wake it when somebody opens a
+As a member whose device is asleep I let a push wake it when somebody opens a
 search, calls the siren or resets its place, so that it answers at once and
 not at its next own wake-up, without a paid Firebase plan.
 
@@ -220,16 +220,16 @@ Acceptance:
 - installs only a build signed with the same key;
 - starts the service again after the install.
 
-## DEV-14 Use the location services of Huawei phones
+## DEV-14 Use the location services of Huawei devices
 
 - Status: planned
 - ADR: —
 - Tests: —
 - Not covered: planned
 
-As a member with a Huawei phone without Google I let the application use the
+As a member with a Huawei device without Google I let the application use the
 geofence and activity recognition of Huawei's own services, so that standing
-still is as cheap there as on other phones.
+still is as cheap there as on other devices.
 
 Acceptance:
 - to be agreed.

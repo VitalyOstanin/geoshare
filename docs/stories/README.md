@@ -17,8 +17,8 @@ role; inside it, one section per story.
 |---|---------------|--------|--------------------------------------|------------------------------------------------------------------------------|
 | 1 | project owner | OWN    | [project-owner.md](project-owner.md) | Set up the group's Firebase project and holds it; outside the database       |
 | 2 | administrator | ADM    | [administrator.md](administrator.md) | A member listed in the group's `admins`; the founder is the first one        |
-| 3 | member        | MEM    | [member.md](member.md)               | A person on the group's roster, on a phone or on the page                    |
-| 4 | device        | DEV    | [device.md](device.md)               | A phone of a member, as the service on it acts without anybody at the screen |
+| 3 | member        | MEM    | [member.md](member.md)               | A person on the group's roster, on a device or on the page                   |
+| 4 | device        | DEV    | [device.md](device.md)               | A device of a member, as the service on it acts without anybody at the screen|
 | 5 | guest         | GST    | [guest.md](guest.md)                 | A person holding a link who is not on any roster yet                         |
 
 The words are those of [GLOSSARY.md](../../GLOSSARY.md).
@@ -50,12 +50,12 @@ Acceptance:
 - `Not covered` says which acceptance lines no automatic test holds — most
   often what only a device shows: a sound, a notification, a restart — so
   that they are checked by hand before a release.
-- Acceptance lines are what a test, or somebody with a phone in hand, can
+- Acceptance lines are what a test, or somebody with a device in hand, can
   check.
 
 ## Status
 
-- `done` — both the phone and, where the story names it, the page do it now.
+- `done` — both the device and, where the story names it, the page do it now.
 - `planned` — written down in [TODO.md](../../TODO.md) or decided, not built.
 - `partly` — built in one client only, or with a part left for later; the
   story says which.
@@ -99,6 +99,7 @@ Each story names its records in `ADR`; the same links the other way round:
 | 31 | [0031](../ADR/0031-a-refused-reader-asks-again.md)                   | A refused reader asks again when the granter says so                   | MEM-10, DEV-09                                                 |
 | 32 | [0032](../ADR/0032-scanning-an-invitation-with-camerax-and-zxing.md) | An invitation is scanned with CameraX and zxing                        | MEM-21                                                         |
 | 33 | [0033](../ADR/0033-a-setup-page-finishes-the-project.md)             | A setup page finishes the group's project                              | OWN-09                                                         |
+| 34 | [0034](../ADR/0034-the-published-key-is-listed-in-the-repository.md) | The published key's fingerprints are listed in the repository          | OWN-08, OWN-10                                                 |
 
 Stories that rest on no record: OWN-07, OWN-10, ADM-10, ADM-11, MEM-06, MEM-11,
 MEM-12, MEM-15, MEM-22, DEV-05, DEV-06, DEV-12, DEV-13, DEV-14.

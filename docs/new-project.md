@@ -29,7 +29,7 @@ A Firebase project on the free Spark plan with the Firestore database, the
 access rules, the web page at `https://<site>.web.app/`, and the application's
 settings at `https://<site>.web.app/geoshare.json`. The run ends with the
 project owner's connection link, `https://<site>.web.app/join`, and a QR code
-of it. The project owner opens it on their phone; the application takes the
+of it. The project owner opens it on their device; the application takes the
 project's settings from the site ([ADR-0001](ADR/0001-one-build-settings-at-runtime.md))
 and signs in with Google. Members are invited later from the application.
 
@@ -137,7 +137,7 @@ standard output gets one JSON object at the end:
   sign-in with Google is confirmed on. The redirect URI step is never read
   back by either command, so a `done` of `true` does not mean it was set —
   ask the project owner, or try signing in on the page: without it the page
-  answers `redirect_uri_mismatch`. The phones do not depend on this step.
+  answers `redirect_uri_mismatch`. The devices do not depend on this step.
 - A non-zero exit code means the run stopped; the reason is the last lines of
   standard error. With `--wait`, a project still off after 20 minutes of
   polling is one such stop.

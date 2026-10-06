@@ -1,7 +1,7 @@
 # The Firebase side
 
 Everything here is either a file the project deploys or a note about a setting
-that only exists in the console. There is no server code: the phones and the map
+that only exists in the console. There is no server code: the devices and the map
 page talk to Firestore directly, and the rules below are what stands between
 them.
 
@@ -24,7 +24,7 @@ Done once; the project this repository talks to already exists.
 1. Create a project. It is also a Google Cloud project, and the account that
    creates it owns both.
 2. Create the Firestore database in production mode. **The location cannot be
-   changed afterwards**, so pick the one closest to where the phones are.
+   changed afterwards**, so pick the one closest to where the devices are.
    One database per project is free.
 3. Under Authentication, enable Google as a sign-in provider.
 4. Enable Hosting. It hands out `<project-id>.web.app`, which is on the list of
@@ -38,7 +38,7 @@ Done once; the project this repository talks to already exists.
    firebase apps:create ANDROID <name> --package-name <package>
    firebase apps:sdkconfig ANDROID <app id> --out android/app/google-services.json
    ```
-6. Once both phones have signed in, create `groups/family` with a `members`
+6. Once both devices have signed in, create `groups/family` with a `members`
    array holding their account identifiers. The rules read that array, so until
    it exists nobody can read anything.
 

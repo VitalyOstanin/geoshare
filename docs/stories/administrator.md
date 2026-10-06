@@ -11,12 +11,12 @@ administrator does too; the stories here are what only an administrator does.
 - [ADM-03 Invite a person by their Google address](#adm-03-invite-a-person-by-their-google-address)
 - [ADM-04 Take a member off the roster](#adm-04-take-a-member-off-the-roster)
 - [ADM-05 Make a member an administrator, or stop being one](#adm-05-make-a-member-an-administrator-or-stop-being-one)
-- [ADM-06 See who is in the group and whether their phones are alive](#adm-06-see-who-is-in-the-group-and-whether-their-phones-are-alive)
+- [ADM-06 See who is in the group and whether their devices are alive](#adm-06-see-who-is-in-the-group-and-whether-their-devices-are-alive)
 - [ADM-07 Open a search for a lost device](#adm-07-open-a-search-for-a-lost-device)
-- [ADM-08 Make a lost phone sound](#adm-08-make-a-lost-phone-sound)
-- [ADM-09 Reset the place of a stuck phone](#adm-09-reset-the-place-of-a-stuck-phone)
+- [ADM-08 Make a lost device sound](#adm-08-make-a-lost-device-sound)
+- [ADM-09 Reset the place of a stuck device](#adm-09-reset-the-place-of-a-stuck-device)
 - [ADM-10 Record the places where receivers are lied to](#adm-10-record-the-places-where-receivers-are-lied-to)
-- [ADM-11 Start an update of the application on a member's phone](#adm-11-start-an-update-of-the-application-on-a-members-phone)
+- [ADM-11 Start an update of the application on a member's device](#adm-11-start-an-update-of-the-application-on-a-members-device)
 - [ADM-12 Not see a member's place without their permission](#adm-12-not-see-a-members-place-without-their-permission)
 
 ## ADM-01 Found the group
@@ -33,7 +33,7 @@ Acceptance:
   among the administrators;
 - without a name the group is shown as "Группа · <founder's name>" in Russian
   and "<founder's name>'s group" in English;
-- both the phone and the page can found it.
+- both the device and the page can found it.
 
 ## ADM-02 Rename the group
 
@@ -47,7 +47,7 @@ members tell it apart from their other groups.
 
 Acceptance:
 - only an administrator may change the name;
-- every phone and page of the group shows the new name without restarting.
+- every device and page of the group shows the new name without restarting.
 
 ## ADM-03 Invite a person by their Google address
 
@@ -68,7 +68,7 @@ Acceptance:
 - joining deletes the invitation in the same write, so it admits once;
 - an invitation lasts a day, and the rules refuse one set to last longer than
   25 hours;
-- on the phone the panel says when the invitation has been used or has run
+- on the device the panel says when the invitation has been used or has run
   out, and offers to make a new one.
 
 ## ADM-04 Take a member off the roster
@@ -103,24 +103,24 @@ Acceptance:
 - nobody but the founder can take the founder off the roster or off the
   administrators.
 
-## ADM-06 See who is in the group and whether their phones are alive
+## ADM-06 See who is in the group and whether their devices are alive
 
 - Status: done
 - ADR: 0027
 - Tests: rules `access.test.mjs` (devices); Android `GroupLineTest`, `PhoneStatusTest`; page `group-lines.test.mjs`, `phones.test.mjs`
 
-As an administrator I see the roster with each member's phones: their names,
+As an administrator I see the roster with each member's devices: their names,
 when each last wrote, in which mode and whether it is charging, so that I
-notice a phone that has gone quiet.
+notice a device that has gone quiet.
 
 Acceptance:
 - the panel lists every member, the administrators marked, me marked as me;
-- a phone is described by the time of its last write, its mode and its
+- a device is described by the time of its last write, its mode and its
   charge, or as "not in touch yet";
 - a member who shares with nobody is said to share with nobody, and the
   number of readers is said otherwise; who exactly they share with is not
   shown;
-- the same panel is on the phone and on the page.
+- the same panel is on the device and on the page.
 
 ## ADM-07 Open a search for a lost device
 
@@ -141,37 +141,37 @@ Acceptance:
   place closes at once;
 - a search can be renewed before it ends; several can run at once.
 
-## ADM-08 Make a lost phone sound
+## ADM-08 Make a lost device sound
 
-- Status: partly — a phone that is asleep hears the call only when it next
+- Status: partly — a device that is asleep hears the call only when it next
   wakes on its own; waking it needs a push
 - ADR: 0026, 0028
 - Tests: rules `sirens.test.mjs`; Android `SirensTest`; page `sirens.test.mjs`
 - Not covered: the sound itself and its length, on a device
 
-As an administrator, or as the phone's owner, I make the phone sound like an
+As an administrator, or as the device's owner, I make the device sound like an
 alarm, so that it is found under a cushion or in a bag.
 
 Acceptance:
-- the phone sounds loudly for 22 seconds, even with its sound off, and says
+- the device sounds loudly for 22 seconds, even with its sound off, and says
   on its screen who called; with the owner's leave it sounds through total
   silence too;
-- the caller sees whether the phone is waiting, sounding or stopped;
-- the owner can stop it on the phone, and the caller from outside.
+- the caller sees whether the device is waiting, sounding or stopped;
+- the owner can stop it on the device, and the caller from outside.
 
-## ADM-09 Reset the place of a stuck phone
+## ADM-09 Reset the place of a stuck device
 
-- Status: partly — as ADM-08, the phone acts when it next wakes
+- Status: partly — as ADM-08, the device acts when it next wakes
 - ADR: 0014, 0026, 0029
 - Tests: rules `resets.test.mjs`; Android `ResetsTest`; page `resets.test.mjs`
-- Not covered: that the phone forgets its place, on a device
+- Not covered: that the device forgets its place, on a device
 
-As an administrator, or as the phone's owner, I reset the place of a phone
+As an administrator, or as the device's owner, I reset the place of a device
 whose marker is stuck, so that it takes the next place however far it is from
 the old one.
 
 Acceptance:
-- the phone forgets its last place, takes the next one and says in a
+- the device forgets its last place, takes the next one and says in a
   notification who reset it;
 - the one who reset sees "waiting for the device", "the device took it", or
   that it did not answer.
@@ -185,23 +185,23 @@ Acceptance:
 
 As an administrator I record a place where receivers are known to be told a
 lie, with a centre, a radius and a name, and set the group's threshold for a
-track going round in circles, so that every phone of the group leaves out
+track going round in circles, so that every device of the group leaves out
 answers from there.
 
 Acceptance:
 - only an administrator writes false places and the threshold; every member
   reads them;
-- the phones and the page mark positions taken in a false place.
+- the devices and the page mark positions taken in a false place.
 
-## ADM-11 Start an update of the application on a member's phone
+## ADM-11 Start an update of the application on a member's device
 
 - Status: planned
 - ADR: —
 - Tests: —
 - Not covered: planned
 
-As an administrator I start, one phone at a time, the installation of the
-already published build, so that a household keeps its phones on one version
+As an administrator I start, one device at a time, the installation of the
+already published build, so that a household keeps its devices on one version
 without everybody doing it by hand.
 
 Acceptance:
@@ -212,7 +212,7 @@ Acceptance:
 
 - Status: done
 - ADR: 0008, 0011, 0027
-- Tests: rules `positions.test.mjs` (an administrator cannot read a position not shared with them), `access.test.mjs` (devices: the administrator reads the phones without a permission, and not the grant), `the-rest.test.mjs`
+- Tests: rules `positions.test.mjs` (an administrator cannot read a position not shared with them), `access.test.mjs` (devices: the administrator reads the devices without a permission, and not the grant), `the-rest.test.mjs`
 
 As an administrator I have no more right to a member's position than any other
 member, so that running the group is not watching it.

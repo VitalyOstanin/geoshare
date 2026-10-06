@@ -1,6 +1,6 @@
 # Member
 
-A person on the group's roster, on a phone with the application or on the
+A person on the group's roster, on a device with the application or on the
 page in a browser. Joining comes first; leaving and signing out come last.
 
 ## Contents
@@ -24,7 +24,7 @@ page in a browser. Joining comes first; leaving and signing out come last.
 - [Seeing the others](#seeing-the-others)
   - [MEM-14 See where the members are](#mem-14-see-where-the-members-are)
   - [MEM-15 Follow one member on the map](#mem-15-follow-one-member-on-the-map)
-  - [MEM-16 Name people and phones for myself](#mem-16-name-people-and-phones-for-myself)
+  - [MEM-16 Name people and devices for myself](#mem-16-name-people-and-devices-for-myself)
   - [MEM-17 Know where a place came from and why some were left out](#mem-17-know-where-a-place-came-from-and-why-some-were-left-out)
   - [MEM-18 Hear when a search, a siren or a reset concerns me](#mem-18-hear-when-a-search-a-siren-or-a-reset-concerns-me)
 - [The application itself](#the-application-itself)
@@ -42,7 +42,7 @@ page in a browser. Joining comes first; leaving and signing out come last.
 - Tests: rules `membership.test.mjs` (joining a group; a code is spent by joining); Android `ConnectFlowTest`, `ConnectLinkTest`, `SettingsFetchTest`, `ProjectSettingsTest`, `PendingInvitationTest`, `WayInPasteTest`; page `join.test.mjs`
 - Not covered: sign-in in the browser, by hand
 
-As a person given an invitation link I open it on my phone, sign in with the
+As a person given an invitation link I open it on my device, sign in with the
 Google account it was made for and land on the group's map, so that I join
 without typing anything.
 
@@ -77,8 +77,8 @@ Acceptance:
 - Tests: Android `ConnectionListTest`, `ConnectFlowTest` (a link to a project the device is not in yet joins it beside the others), `GroupSwitcherTest`
 - Not covered: writing the position into every group; notifications naming the group
 
-As a member of a family and of a trip I am in both groups on one phone with
-one Google account, so that I do not need a second phone or a second
+As a member of a family and of a trip I am in both groups on one device with
+one Google account, so that I do not need a second device or a second
 application.
 
 Acceptance:
@@ -116,7 +116,7 @@ Acceptance:
 - Not covered: signing out of one group or of all of them; taking the watch claim back first
 
 As a member I sign this device out of one group, or of all of them, so that a
-phone I give away stops showing my groups and sending my place.
+device I give away stops showing my groups and sending my place.
 
 Acceptance:
 - "here" signs this device out of the group on screen; the other groups stay
@@ -149,12 +149,12 @@ Acceptance:
 - Tests: page tests as a whole: `members.test.mjs`, `searches.test.mjs`, `sirens.test.mjs`, `group-lines.test.mjs`
 
 As a member at a computer I sign in on the group's page and see the same map,
-so that I need no phone to look.
+so that I need no device to look.
 
 Acceptance:
-- the page shows the members, their places, searches and sirens as the phone
+- the page shows the members, their places, searches and sirens as the device
   does;
-- the page does not publish a position, and grants are given from the phone.
+- the page does not publish a position, and grants are given from the device.
 
 ## My devices
 
@@ -162,9 +162,9 @@ Acceptance:
 
 - Status: done
 - ADR: 0007
-- Tests: rules `positions.test.mjs` (a member writes a position for each of their phones); Android `ShownNamesTest`; page `members.test.mjs`
+- Tests: rules `positions.test.mjs` (a member writes a position for each of their devices); Android `ShownNamesTest`; page `members.test.mjs`
 
-As a member with a second phone or a tablet I sign in on it with the same
+As a member with a second device or a tablet I sign in on it with the same
 account, so that it shows up as another device of mine rather than replacing
 the first.
 
@@ -180,11 +180,11 @@ Acceptance:
 - Not covered: forgetting a device, end to end
 
 As a member I see the list of my devices in the group and forget one I no
-longer have, so that the group stops seeing a phone I sold.
+longer have, so that the group stops seeing a device I sold.
 
 Acceptance:
 - "My devices" lists this group's devices, this one marked;
-- forgetting a device, from the phone or the page, removes its position and
+- forgetting a device, from the device or the page, removes its position and
   watch claim and takes it out of my grant and device list in that group.
 
 ## Sharing my place
@@ -202,7 +202,7 @@ Acceptance:
 - without a grant nobody reads my position;
 - a permission runs out by itself at the time chosen, and the rules refuse
   the read from then;
-- a new reader sees my place at once, not on my phone's next write.
+- a new reader sees my place at once, not on my device's next write.
 
 ### MEM-11 Stop sharing my place
 
@@ -211,8 +211,8 @@ Acceptance:
 - Tests: Android `StartConditionsTest` (the switch outranks the permissions)
 - Not covered: the switch kept over a restart and a new sign-in
 
-As a member I switch sharing off on the phone or from its notification, so
-that the phone stops writing my place.
+As a member I switch sharing off on the device or from its notification, so
+that the device stops writing my place.
 
 Acceptance:
 - the service stops and its notification goes;
@@ -261,7 +261,7 @@ each place is and how accurate, so that I know whether to trust it.
 Acceptance:
 - a marker per device, with an accuracy ring;
 - a marker goes grey when its place is older than half an hour;
-- opening the map makes the watched phones collect faster;
+- opening the map makes the watched devices collect faster;
 - a member who does not share with me is counted in a line under the map;
 - a member without a profile is shown as "Unnamed member · <4 characters>".
 
@@ -277,19 +277,19 @@ not have to pan by hand.
 Acceptance:
 - dragging the map holds the camera for 20 seconds, then following resumes.
 
-### MEM-16 Name people and phones for myself
+### MEM-16 Name people and devices for myself
 
 - Status: done
 - ADR: 0030
 - Tests: rules `access.test.mjs` (labels); Android `LabelsTest`; page `labels.test.mjs`
 
-As a member I call a phone "new phone" rather than its model, and a person
+As a member I call a device "new device" rather than its model, and a person
 "grandma" rather than the name on her account, for myself alone, so that the
 map speaks my words.
 
 Acceptance:
 - the names are kept in my own documents and nobody else sees them;
-- the phone and the page show them alike, cut to 40 characters.
+- the device and the page show them alike, cut to 40 characters.
 
 ### MEM-17 Know where a place came from and why some were left out
 
@@ -298,24 +298,24 @@ Acceptance:
 - Tests: rules `positions.test.mjs` (answers left out; how a position was arrived at); Android `FoundByTest`, `ModeExplainedTest`, `ReasonExplainedTest`, `LeftOutWordsTest`, `FalseMarksTest`; page `found.test.mjs`, `modes.test.mjs`, `reason-help.test.mjs`, `false-places.test.mjs`
 
 As a member I see on a card whether a place came from the satellites, the
-towers or Wi-Fi, and why the phone left some answers out, so that I can tell a
+towers or Wi-Fi, and why the device left some answers out, so that I can tell a
 true place from a spoofed one.
 
 Acceptance:
 - the card names the source and the collection mode;
 - a place taken in a recorded false place is marked;
-- the phone counts the answers it left out and says why.
+- the device counts the answers it left out and says why.
 
 ### MEM-18 Hear when a search, a siren or a reset concerns me
 
 - Status: done
 - ADR: 0011, 0028, 0029
-- Tests: rules `searches.test.mjs` (the member whose phone it is calls it off), `sirens.test.mjs`, `resets.test.mjs`
+- Tests: rules `searches.test.mjs` (the member whose device it is calls it off), `sirens.test.mjs`, `resets.test.mjs`
 - Not covered: the notifications themselves
 
-As a member I am told on the phone when somebody opens a search for one of my
+As a member I am told on the device when somebody opens a search for one of my
 devices, makes it sound or resets its place, so that nothing is done to my
-phone without my knowing.
+device without my knowing.
 
 Acceptance:
 - each comes as a notification naming who did it;
@@ -359,14 +359,14 @@ Acceptance:
 - Tests: Android `QrScanTest`, `ManifestTest`
 - Not covered: the camera, the vibration and the permission screens, by hand
 
-As a person shown an invitation QR code on another phone I scan it from the
+As a person shown an invitation QR code on another device I scan it from the
 connection screen, so that I do not need the link sent to me.
 
 Acceptance:
 - the camera scanner sits beside pasting a link, and in the settings'
   invitation field;
 - the camera is asked for only when the scanner is opened;
-- a read link opens the same confirmation a pasted one does; the phone
+- a read link opens the same confirmation a pasted one does; the device
   vibrates when it is read;
 - a code that is not a connection link is said to be one, and scanning goes
   on.

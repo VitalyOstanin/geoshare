@@ -8,7 +8,7 @@ but the stories here are about the project, not about the group.
 
 - [OWN-01 Make the group's project from one script](#own-01-make-the-groups-project-from-one-script)
 - [OWN-02 Turn on sign-in with Google in the console](#own-02-turn-on-sign-in-with-google-in-the-console)
-- [OWN-03 Hand the project to the phones as a link](#own-03-hand-the-project-to-the-phones-as-a-link)
+- [OWN-03 Hand the project to the devices as a link](#own-03-hand-the-project-to-the-devices-as-a-link)
 - [OWN-04 Keep the rules and the page up to date](#own-04-keep-the-rules-and-the-page-up-to-date)
 - [OWN-05 See what the project spends of the free tier](#own-05-see-what-the-project-spends-of-the-free-tier)
 - [OWN-06 Look after several projects from one machine](#own-06-look-after-several-projects-from-one-machine)
@@ -49,19 +49,19 @@ Acceptance:
 - `docs/console-steps.md` (and its Russian copy) names every click;
 - `tools/project.sh show --wait` waits until the provider is on and says so.
 
-## OWN-03 Hand the project to the phones as a link
+## OWN-03 Hand the project to the devices as a link
 
 - Status: done
 - ADR: 0001, 0003
 - Tests: Android `ConnectLinkTest` (the owner's link), `ConnectFlowTest`
 
 As a project owner I get my own connection link and its QR code at the end of
-the setup, so that my phone connects to the project without an invitation and
+the setup, so that my device connects to the project without an invitation and
 I can found the group.
 
 Acceptance:
 - the script ends with `https://<site>.web.app/join` and a QR code of it;
-- the phone that opens the link fetches the settings and asks to sign in;
+- the device that opens the link fetches the settings and asks to sign in;
 - the first signed-in person founds the group (ADM-01).
 
 ## OWN-04 Keep the rules and the page up to date
@@ -128,9 +128,8 @@ Acceptance:
 
 ## OWN-08 Set up the project without a prepared machine
 
-- Status: partly — the script runs in Cloud Shell, but there it cannot read
-  the fingerprint of the published build and only warns
-- ADR: 0003
+- Status: done
+- ADR: 0003, 0034
 - Tests: —
 - Not covered: not covered
 
@@ -152,7 +151,7 @@ Acceptance:
 
 As a project owner without a terminal I create the project in the Firebase
 console and let a setup page finish it, so that a browser on a computer or on
-the phone is all the setup needs.
+the device is all the setup needs.
 
 Acceptance:
 - "Create your own group" on the connection screen explains the three stages
@@ -169,8 +168,9 @@ Acceptance:
 
 ## OWN-10 Use the published build without building one
 
-- Status: planned
-- ADR: —
+- Status: partly — the release build is signed and every new project accepts
+  its key, but nothing is published yet
+- ADR: 0034
 - Tests: —
 - Not covered: planned
 
