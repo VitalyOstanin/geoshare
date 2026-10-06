@@ -1,69 +1,137 @@
 # geoshare
 
-Private location sharing between a small group of Android phones, with a map that
-also opens in a desktop browser.
+English · [Русский](README.ru.md)
 
-No backend of our own: phones write one document each to Cloud Firestore and
-subscribe to the documents of the other members. Freshness is demand driven — a
-phone only samples location often while somebody is actually looking at the map.
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="docs/images/hero-dark.webp">
+  <img alt="One group on two Android devices and in a browser" src="docs/images/hero-light.webp">
+</picture>
 
-## Status
+Location sharing within a group, such as a family, on Android devices and in
+a browser, run entirely on the free tier of Firebase.
 
-Under construction. The application builds and the collection modes are
-decided and tested; nothing sends a position yet.
+Every member's device reports where it is; everybody the member shares with
+sees it on a map — in the Android application or on a web page — with how old
+the position is, how wide the answer was and how much charge the device has
+left. There is no server of its own to run or pay for: the devices and the page
+talk to Cloud Firestore directly, and the security rules are the whole of the
+backend. Each group's data stays in a Firebase project of its own.
 
-## Layout
+## Contents
 
-| Directory    | Contents                                                     |
-|--------------|--------------------------------------------------------------|
-| `android/`   | Kotlin and Compose application, Gradle build                 |
-| `web/`       | Map page deployed to Firebase Hosting                        |
-| `extension/` | Browser extension, built on top of the web map (later)       |
-| `firebase/`  | Security rules, indexes, document model, rules tests          |
-| `tools/`     | Build and test entry points                                  |
+- [What it does](#what-it-does)
+- [Getting started](#getting-started)
+- [Privacy](#privacy)
+- [False positions](#false-positions)
+- [Development](#development)
+- [License](#license)
 
-Directories appear as the corresponding part is implemented. Setting the
-Firebase project up is described in [firebase/README.md](firebase/README.md).
-The words used throughout, and the documents the database holds with how they
-relate, are in [GLOSSARY.md](GLOSSARY.md).
+## What it does
 
-## How it works
+- **A map of the group.** One pin per device with the member's face and name;
+  members standing close together share one pin until the map is zoomed in.
+  A strip under the map lists everybody, and a card opens on a tap with the
+  age of the position, when the device was last in touch, its charge, the
+  collection mode and the distance from the viewer.
+- **Following.** The map can stay on one member, on everybody at once, or
+  stay where it is put; a menu over the map picks the mode and says how to
+  pick the member to follow.
+- **Sharing per person, with an end.** A member chooses whom they share with
+  and until when; a permission taken back stops at once, not when the device
+  next writes.
+- **Joining by a link.** An administrator makes an invitation for one Google
+  address and sends the connection link, or shows it as a QR code to scan.
+  The link points the device at the group's project and lets that one account
+  in, once, within a day.
+- **Running the group.** An administrator hands out invitations, removes
+  members, makes other administrators and sees whether each device is in
+  touch — without seeing whom anybody shares with or where they are.
+- **Searching for a member.** When somebody cannot be reached, an
+  administrator opens their place to the whole group for six hours, a day or
+  three days. Everybody's map rings them in red; their device says so in a
+  notification that ends the search with one tap.
+- **A siren on a lost device.** A member can make their own device sound, and
+  an administrator any device of the group: 22 seconds at full volume on the
+  alarm stream, through "Do Not Disturb".
+- **Several groups on one device.** A device can be in more than one group,
+  each in its own Firebase project; the map shows one group at a time and the
+  position goes to every group with that group's own list of who may see it.
+- **Names of one's own.** Each member can call the others' devices and people
+  whatever they like, for themselves alone.
+- **Both themes and two languages.** Light, dark or the system's, in English
+  or Russian, on the device and on the page alike.
 
-1. Each phone runs a foreground service holding an open Firestore subscription.
-2. A viewer (phone or laptop) writes a short-lived claim to `watch` and refreshes
-   it every minute while the map is in front of somebody.
-3. The transmitter sees the claim over the already open connection and switches to
-   high accuracy at a 15 second interval, writing what it finds on the same terms.
-4. When the claim expires, the transmitter falls back to its standby mode.
+## Getting started
 
-This removes any need for Cloud Functions, which are not available on the free
-Firebase plan.
+### Setting up a group
 
-## Battery
+The person setting the group up — the project owner — needs a Google account
+and a browser, no terminal:
 
-Standby uses balanced priority with batched updates: a position every fifteen
-minutes, with up to ten more before the batch is handed over. High accuracy is
-reserved for the minutes somebody is watching, and a claim to be watching is
-only made by a screen that is in front of somebody — a tab left open on a desk
-stops counting after a quarter of an hour.
+1. Create a Firebase project in the [Firebase console](https://console.firebase.google.com/);
+   the free Spark plan is enough.
+2. Open the setup page, [geoshare-setup.web.app](https://geoshare-setup.web.app/),
+   sign in and pick the project. The page makes the database, the rules, the
+   Android and web apps and the group's own site, and walks through the two
+   steps only the console can do ([docs/console-steps.md](docs/console-steps.md)).
+3. The page ends with the connection link and its QR code.
 
-Between 23:00 and 07:00, and whenever the battery drops below 15 percent, the
-interval stretches to twenty minutes at low power. No mode goes longer than the
-half hour after which a position is drawn as old, so a working phone never looks
-like a stopped one.
+The project owner sees every member's places and history from the Firebase
+console, past the rules; the application says so to everybody before they
+join.
 
-A geofence around the current position — which would let a phone that has not
-moved ask for nothing at all — is designed for and not implemented; the modes it
-would drive are in the code and unreachable until it is.
+[tools/project.sh](tools/project.sh) does the same from a terminal, for a
+developer or for Google Cloud Shell; [docs/new-project.md](docs/new-project.md)
+describes it.
+
+### Joining
+
+1. Download the application from the
+   [releases page](https://github.com/VitalyOstanin/geoshare/releases) and
+   install it. It needs Android 8 or later; Google Play services are not
+   required.
+2. Open the connection link from the invitation, or scan its QR code from the
+   application's connection screen.
+3. Sign in with Google, with the address the invitation was made for.
 
 ## Privacy
 
-The group is a fixed list of account identifiers. Security rules let a member
-write only their own position, so positions cannot be forged, and let them read
-another member's only while that member's profile says they may: the permission
-is read from where its owner writes it, so withdrawing it takes effect at once,
-whatever the phone it describes is doing.
+- The group's data lives in the project owner's Firebase project and nowhere
+  else; geoshare has no server and no analytics.
+- Being in the group tells a member who else is in it, not where they are:
+  each member names the people who may see them, one by one, each until a
+  moment of their choosing.
+- The rules read that permission from where its owner writes it, so taking
+  it back closes the position at once — even for a device that is switched
+  off.
+- A member writes only their own documents; nobody can forge another
+  member's position.
+- An invitation is unreadable to everybody, the administrator who made it
+  included; it lets in only the Google account it was made for, once, and
+  runs out within a day.
+- The project owner reads everything from the Firebase console, past the
+  rules: whoever sets the project up should be somebody the group trusts
+  with that.
+- The document model and the reasons behind every rule are in
+  [firebase/data-model.md](firebase/data-model.md), and the rules are held to
+  them by tests run against the Firestore emulator.
+
+## False positions
+
+A satellite receiver can be fed a false signal, and a device under one reports
+a place it is not at with full confidence. The application weighs every answer
+before writing it: jumps no traveller could make, answers that trace a circle
+round a transmitter, satellites whose time does not run along with the
+device's, a satellite fix far from what the cell towers and Wi-Fi say, and
+places the group has marked as known to be false. A position it does not
+trust is held back, and the card says why; a device under a transmitter still
+reports that it is in touch and how charged it is.
+
+## Development
+
+How it works inside, the collection modes, building, testing and the layout of
+the repository are in [docs/development.md](docs/development.md).
 
 ## License
 
-Private project, not for distribution.
+MIT, see [LICENSE](LICENSE).
