@@ -191,6 +191,8 @@ fun MemberMap(
     onDismiss: () -> Unit,
     /** Called with true when a hand pauses the following, and false when the pause ends. */
     onPausedChange: (Boolean) -> Unit = {},
+    /** How far down from its top the map is covered by what stands over it, in pixels. */
+    topCover: Int = 0,
     modifier: Modifier = Modifier,
 ) {
     val context = LocalContext.current
@@ -208,6 +210,7 @@ fun MemberMap(
     holder.onDismiss = onDismiss
     holder.onPausedChange = onPausedChange
     holder.groupLabel = groupLabel
+    holder.topCover = topCover
 
     val lifecycleOwner = LocalLifecycleOwner.current
 

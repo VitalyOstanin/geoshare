@@ -54,6 +54,12 @@ internal class MapHolder(val view: MapView) {
     /** The word a sought member's pin carries, read once from the resources. */
     var soughtMark: String = ""
 
+    /**
+     * How far down from the top of the view the map is covered, in pixels:
+     * the status bar and the row of buttons drawn over it.
+     */
+    var topCover: Int = 0
+
     /** Whose width is drawn as a circle, if anybody's card is open. */
     private var selected: String? = null
 
@@ -422,11 +428,12 @@ internal class MapHolder(val view: MapView) {
         // The rectangle is fitted by the points of the pins, and a pin hangs
         // above its point with the name over it and reaches half its width to
         // either side. The same padding on all four sides left the member at
-        // the top with the head of their pin past the edge of the screen.
+        // the top with the head of their pin past the edge of the screen, and
+        // the top edge itself is under the status bar and the buttons.
         val density = view.context.resources.displayMetrics.density
         val padding = (ALL_MODE_PADDING_DP * density).toInt()
         val gap = (ALL_MODE_MARKER_GAP_DP * density).toInt()
-        val top = maxOf(padding, tallestIcon + gap)
+        val top = maxOf(padding, topCover + tallestIcon + gap)
         val side = maxOf(padding, widestIcon / 2 + gap)
         // Left, top, right, bottom.
         val fitted =

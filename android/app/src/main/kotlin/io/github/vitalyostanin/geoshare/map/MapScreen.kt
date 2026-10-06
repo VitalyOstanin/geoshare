@@ -27,11 +27,13 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.saveable.listSaver
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.luminance
+import androidx.compose.ui.layout.boundsInParent
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.layout.positionInRoot
 import androidx.compose.ui.platform.LocalContext
@@ -87,6 +89,12 @@ private val TOP_BUTTONS_GAP = 12.dp
  */
 private data class FollowTarget(val positionId: String, val name: String)
 
+/** Keeps [FollowTarget] across a recreated screen, the way the mode is kept. */
+private val FollowTargetSaver = listSaver<FollowTarget?, String>(
+    save = { target -> target?.let { listOf(it.positionId, it.name) } ?: emptyList() },
+    restore = { saved -> if (saved.isEmpty()) null else FollowTarget(saved[0], saved[1]) },
+)
+
 /**
  * The screen a signed-in member sees: everyone on a map, and a row of buttons
  * to move the map onto one of them.
@@ -138,7 +146,9 @@ fun MapScreen(
     var naming by remember { mutableStateOf<Pair<LabelKind, String>?>(null) }
     val members = orderedForNavigation(positions, ownMemberId)
     var focus by remember { mutableStateOf<MapFocus?>(null) }
-    var followMode by remember { mutableStateOf(FollowMode.NONE) }
+    // Saveable, as is the target: a change of theme or of the screen's
+    // orientation recreates the screen, and the camera is to go on following.
+    var followMode by rememberSaveable { mutableStateOf(FollowMode.NONE) }
     var mapHelpOpen by remember { mutableStateOf(false) }
     var groupsOpen by remember { mutableStateOf(false) }
     var leaveAsk by remember { mutableStateOf<LeaveAsk?>(null) }
@@ -179,7 +189,9 @@ fun MapScreen(
     val noGroup = removed == null && outside && settings.rosterAnswered
     // Whether a hand is holding the following still; the button says so.
     var followPaused by remember { mutableStateOf(false) }
-    var followTarget by remember { mutableStateOf<FollowTarget?>(null) }
+    var followTarget by rememberSaveable(stateSaver = FollowTargetSaver) {
+        mutableStateOf<FollowTarget?>(null)
+    }
     // Bumped on every real change of the follow mode — from the menu, or from
     // a target finally being chosen for [awaitingTarget] — so the button's
     // label can unroll again each time rather than only on the first change:
@@ -215,6 +227,9 @@ fun MapScreen(
     // a card stands over the button of the member it is about.
     val stripCentres = remember { mutableStateMapOf<String, Float>() }
     var mapLeft by remember { mutableFloatStateOf(0f) }
+    // Where the row of buttons over the map ends, for following everybody
+    // to keep the top pin below it.
+    var topCover by remember { mutableStateOf(0) }
     var settingsOpen by remember { mutableStateOf(false) }
     // Opened from within the settings and drawn over them, so that closing it
     // puts the member back where they were rather than on the map.
@@ -366,6 +381,7 @@ fun MapScreen(
                 followMode = followMode,
                 followTarget = followTarget?.positionId,
                 onPausedChange = { followPaused = it },
+                topCover = topCover,
                 onSelect = { positionId ->
                     openedPositionId = positionId
                     openedGroup = emptyList()
@@ -403,6 +419,7 @@ fun MapScreen(
                 modifier =
                 Modifier
                     .align(Alignment.TopStart)
+                    .onGloballyPositioned { topCover = it.boundsInParent().bottom.roundToInt() }
                     .statusBarsPadding()
                     .padding(12.dp),
             ) {

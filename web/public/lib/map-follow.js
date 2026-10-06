@@ -122,11 +122,28 @@ function followAllPadding(view) {
     const side = Math.max(FOLLOW_ALL_PADDING, widest / 2 + FOLLOW_ALL_MARKER_GAP);
 
     return {
-        top: Math.max(FOLLOW_ALL_PADDING, tallest + FOLLOW_ALL_MARKER_GAP),
+        top: Math.max(FOLLOW_ALL_PADDING, topCover(view) + tallest + FOLLOW_ALL_MARKER_GAP),
         bottom: FOLLOW_ALL_PADDING,
         left: side,
         right: side,
     };
+}
+
+/**
+ * How far down from the top of the map the row of buttons over it reaches,
+ * in pixels: the top pin is kept below it rather than under it.
+ */
+function topCover(view) {
+    const buttons = globalThis.document?.getElementById('map-buttons');
+
+    if (!buttons || buttons.hidden) {
+        return 0;
+    }
+
+    const cover = buttons.getBoundingClientRect().bottom -
+        view.map.getContainer().getBoundingClientRect().top;
+
+    return Math.max(0, cover);
 }
 
 /**
