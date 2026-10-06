@@ -253,6 +253,7 @@
     <!-- The group's own name (ADR-0016): asked for when it is founded, shown
          and changed from the panel afterwards. -->
     <string name="group_name_label">Group name</string>
+    <string name="group_name_optional_label">Group name (optional)</string>
     <string name="group_name_rename">Rename</string>
     <string name="group_name_save">Save</string>
     <!-- What a group with no name of its own is called instead (ADR-0019);

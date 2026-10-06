@@ -177,7 +177,7 @@ private fun WayIn(
     OutlinedTextField(
         value = groupName,
         onValueChange = { groupName = it.take(GROUP_NAME_LIMIT) },
-        label = { Text(text = stringResource(R.string.group_name_label)) },
+        label = { Text(text = stringResource(R.string.group_name_optional_label)) },
         singleLine = true,
         modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 4.dp),
     )
