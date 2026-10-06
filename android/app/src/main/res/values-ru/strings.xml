@@ -24,7 +24,7 @@
     <string name="sign_out_here">Только в группе «%1$s»</string>
     <string name="sign_out_here_note">Устройство пропадёт из этой группы. В остальных группах всё останется как есть, место туда передаётся дальше.</string>
     <string name="sign_out_everywhere">Во всех группах</string>
-    <string name="sign_out_everywhere_note">Устройство пропадёт из всех групп, передача места выключится. Так делают перед тем, как отдать телефон другому человеку.</string>
+    <string name="sign_out_everywhere_note">Устройство пропадёт из всех групп, передача места выключится. Так делают перед тем, как отдать устройство другому человеку.</string>
     <string name="sign_out_confirm_title">Выйти из аккаунта?</string>
     <string name="sign_out_confirm_text">Устройство пропадёт из группы «%1$s», передача места выключится.</string>
 
@@ -203,7 +203,7 @@
     <string name="group_invite_screen_title">Приглашение для %1$s</string>
     <string name="group_invite_expires">Действует до %1$s. Покажите QR-код или отправьте ссылку участнику.</string>
     <string name="group_invite_qr">QR-код приглашения. Нажмите, чтобы показать во весь экран</string>
-    <string name="group_invite_qr_scan">Отсканируйте камерой телефона участника</string>
+    <string name="group_invite_qr_scan">Отсканируйте камерой устройства участника</string>
     <string name="group_invite_qr_close">Закрыть</string>
     <string name="group_invite_used">Использовано: участник вступил в группу по этому приглашению.</string>
     <string name="group_invite_expired">Срок истёк %1$s. Ссылка больше не впускает в группу.</string>
@@ -483,7 +483,7 @@
     <string name="connect_paste_link">Вставить ссылку</string>
     <string name="connect_scan_qr">Сканировать QR-код</string>
     <string name="qr_scan_title">Сканирование</string>
-    <string name="qr_scan_hint">Наведите камеру на QR-код приглашения на экране другого телефона.</string>
+    <string name="qr_scan_hint">Наведите камеру на QR-код приглашения на экране другого устройства.</string>
     <string name="qr_scan_found_group">Приглашение в «%1$s» распознано</string>
     <string name="qr_scan_found">Ссылка подключения распознана</string>
     <string name="qr_scan_foreign">Это не ссылка подключения geoshare. Наведите камеру на QR-код из панели группы.</string>

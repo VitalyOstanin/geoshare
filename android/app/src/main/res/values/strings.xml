@@ -24,7 +24,7 @@
     <string name="sign_out_here">Only in the group “%1$s”</string>
     <string name="sign_out_here_note">The device leaves this group. Your other groups stay as they are, and your location keeps going to them.</string>
     <string name="sign_out_everywhere">In every group</string>
-    <string name="sign_out_everywhere_note">The device leaves every group and location sharing turns off. Do this before handing the phone to someone else.</string>
+    <string name="sign_out_everywhere_note">The device leaves every group and location sharing turns off. Do this before handing the device to someone else.</string>
     <string name="sign_out_confirm_title">Sign out?</string>
     <string name="sign_out_confirm_text">The device leaves the group “%1$s” and location sharing turns off.</string>
 
@@ -225,7 +225,7 @@
     <string name="group_invite_screen_title">Invitation for %1$s</string>
     <string name="group_invite_expires">Valid until %1$s. Show the QR code or send the link to the member.</string>
     <string name="group_invite_qr">Invitation QR code. Tap to show it full screen</string>
-    <string name="group_invite_qr_scan">Scan it with the member\'s phone camera</string>
+    <string name="group_invite_qr_scan">Scan it with the member\'s device camera</string>
     <string name="group_invite_qr_close">Close</string>
     <string name="group_invite_used">Used: the member has joined the group with this invitation.</string>
     <string name="group_invite_expired">Expired on %1$s. The link no longer lets anyone into the group.</string>
@@ -282,7 +282,7 @@
     <string name="search_renew">Extend</string>
     <string name="search_open_title">Show the whole group where %1$s (%2$s) is?</string>
     <string name="search_renew_title">Extend the search for %1$s (%2$s)?</string>
-    <string name="search_note">Everybody in the group will see this phone on the map, even those its owner does not share with. The phone itself will say who opened the search and until when.</string>
+    <string name="search_note">Everybody in the group will see this device on the map, even those its owner does not share with. The device itself will say who opened the search and until when.</string>
     <string name="search_hours_6">6 hours</string>
     <string name="search_hours_24">A day</string>
     <string name="search_hours_72">3 days</string>
@@ -552,7 +552,7 @@
     <!-- QrScanDialog (project/QrScanDialog.kt): the camera with a square to aim
          with, opened from screen А or from the settings' invitation field. -->
     <string name="qr_scan_title">Scanning</string>
-    <string name="qr_scan_hint">Point the camera at the invitation\'s QR code on the other phone\'s screen.</string>
+    <string name="qr_scan_hint">Point the camera at the invitation\'s QR code on the other device\'s screen.</string>
     <string name="qr_scan_found_group">Invitation to “%1$s” recognised</string>
     <!-- The owner's own link, which names no group. -->
     <string name="qr_scan_found">Connection link recognised</string>
