@@ -471,7 +471,7 @@
     <string name="connect_own_group_step_1">В консоли Firebase создать проект — страница подскажет, что нажимать.</string>
     <string name="connect_own_group_step_2">Разрешить странице настроить этот проект: базу, правила и страницу группы.</string>
     <string name="connect_own_group_step_3">Сделать два шага в консоли, которые Google делает только сам владелец.</string>
-    <string name="connect_own_group_note">Понадобится аккаунт Google, которому будет принадлежать группа. С компьютера удобнее, но можно и с телефона.</string>
+    <string name="connect_own_group_note">Понадобится аккаунт Google, которому будет принадлежать группа. С компьютера удобнее, но можно и с этого устройства.</string>
     <string name="connect_own_group_open">Открыть страницу заведения</string>
     <string name="connect_own_group_open_hint">Откроется в браузере. В конце страница вернёт вас сюда по ссылке подключения.</string>
     <!-- Экран подключения (project/ConnectScreen.kt), рисуется по состояниям

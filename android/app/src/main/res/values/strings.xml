@@ -546,7 +546,7 @@
     <string name="connect_own_group_step_1">Create a project in the Firebase console — the page tells you what to press.</string>
     <string name="connect_own_group_step_2">Allow the page to set this project up: the database, the rules and the group page.</string>
     <string name="connect_own_group_step_3">Do two steps in the console that Google leaves to the owner alone.</string>
-    <string name="connect_own_group_note">You will need a Google account that will own the group. A computer is handier, but a phone works too.</string>
+    <string name="connect_own_group_note">You will need a Google account that will own the group. A computer is handier, but this device works too.</string>
     <string name="connect_own_group_open">Open the setup page</string>
     <string name="connect_own_group_open_hint">It opens in the browser. At the end the page brings you back here by a connection link.</string>
     <!-- QrScanDialog (project/QrScanDialog.kt): the camera with a square to aim
