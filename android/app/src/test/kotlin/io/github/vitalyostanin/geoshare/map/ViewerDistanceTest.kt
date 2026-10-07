@@ -34,7 +34,7 @@ class ViewerDistanceTest {
 
     @Test
     fun `a degree of latitude is a hundred and eleven kilometres`() {
-        val metres = metresBetween(at("a.1", 61.0, 4.0), at("b.1", 62.0, 4.0))
+        val metres = metresBetween(at("a.1", 60.0, 30.0), at("b.1", 61.0, 30.0))
 
         assertEquals(111_195.0, metres, 10.0)
     }
@@ -42,7 +42,7 @@ class ViewerDistanceTest {
     // Along a parallel a degree narrows with the cosine: half as wide at sixty.
     @Test
     fun `a degree of longitude at sixty north is half that`() {
-        val metres = metresBetween(at("a.1", 61.0, 4.0), at("b.1", 61.0, 5.0))
+        val metres = metresBetween(at("a.1", 60.0, 30.0), at("b.1", 60.0, 31.0))
 
         assertEquals(55_597.0, metres, 50.0)
     }

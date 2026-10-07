@@ -20,7 +20,7 @@ class AccuracyRingTest {
     @Test
     fun `a hundred metres is a hundred metres in both directions`() {
         val metres = 100.0
-        val latitude = 61.0
+        val latitude = 60.0
         val ring = accuracyRing(latitude, 30.0, metres, corners = 4)
 
         val north = ring[0]
@@ -34,7 +34,7 @@ class AccuracyRingTest {
     // in the first place: it has to be a claim about a district, not a dot.
     @Test
     fun `a tower's width draws a ring a kilometre and a half across`() {
-        val ring = accuracyRing(61.0, 4.0, 1_700.0, corners = 4)
+        val ring = accuracyRing(60.0, 30.0, 1_700.0, corners = 4)
 
         assertEquals(1_700.0, northwardsMetres(ring[0].second - 60.0), 5.0)
     }
