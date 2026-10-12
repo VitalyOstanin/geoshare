@@ -24,7 +24,7 @@ class TrailStore(private val context: Context) {
     private val file: File get() = File(context.filesDir, FILE_NAME)
 
     fun read(): Trail = try {
-        if (!file.exists()) Trail() else Trail(file.readLines().mapNotNull(::placeOf))
+        if (!file.exists()) Trail() else Trail(file.readLines().mapNotNull(::trailFixOf))
     } catch (error: Exception) {
         AppLog.w(TAG, "the trail could not be read", error)
 
@@ -33,37 +33,40 @@ class TrailStore(private val context: Context) {
 
     fun write(trail: Trail) {
         try {
-            file.writeText(trail.fixes.joinToString("\n", transform = ::lineOf))
+            file.writeText(trail.fixes.joinToString("\n", transform = ::trailLine))
         } catch (error: Exception) {
             AppLog.w(TAG, "the trail could not be written", error)
         }
     }
 
-    private fun lineOf(fix: Fix): String =
-        "${fix.latitude},${fix.longitude},${fix.takenAt.toEpochMilli()},${fix.accuracyMetres ?: ""}"
-
-    private fun placeOf(line: String): Fix? {
-        val parts = line.split(",")
-
-        if (parts.size < PARTS_IN_A_LINE) {
-            return null
-        }
-
-        val latitude = parts[0].toDoubleOrNull() ?: return null
-        val longitude = parts[1].toDoubleOrNull() ?: return null
-        val millis = parts[2].toLongOrNull() ?: return null
-
-        return Fix(
-            latitude = latitude,
-            longitude = longitude,
-            takenAt = Instant.ofEpochMilli(millis),
-            accuracyMetres = parts[3].toDoubleOrNull(),
-        )
-    }
-
     private companion object {
         const val FILE_NAME = "trail.csv"
-        const val PARTS_IN_A_LINE = 4
         const val TAG = "geoshare.trail"
     }
+}
+
+private const val TRAIL_PARTS_IN_A_LINE = 4
+
+/** A line of the trail's file: latitude, longitude, the time in milliseconds and the accuracy, if known. */
+internal fun trailLine(fix: Fix): String =
+    "${fix.latitude},${fix.longitude},${fix.takenAt.toEpochMilli()},${fix.accuracyMetres ?: ""}"
+
+/** The place a line of the trail's file stands for, or null for a line that is not one. */
+internal fun trailFixOf(line: String): Fix? {
+    val parts = line.split(",")
+
+    if (parts.size < TRAIL_PARTS_IN_A_LINE) {
+        return null
+    }
+
+    val latitude = parts[0].toDoubleOrNull() ?: return null
+    val longitude = parts[1].toDoubleOrNull() ?: return null
+    val millis = parts[2].toLongOrNull() ?: return null
+
+    return Fix(
+        latitude = latitude,
+        longitude = longitude,
+        takenAt = Instant.ofEpochMilli(millis),
+        accuracyMetres = parts[3].toDoubleOrNull(),
+    )
 }
