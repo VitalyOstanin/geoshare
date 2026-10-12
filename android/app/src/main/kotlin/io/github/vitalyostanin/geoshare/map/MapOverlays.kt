@@ -28,7 +28,7 @@ import java.time.Instant
 /** How often the siren banner decides whether the phone is still sounding. */
 private const val SIREN_BANNER_TICK_MS = 1_000L
 
-/** What the help button over the map explains: the follow modes and the sources. */
+/** What the help button over the map explains: the follow modes, the sources and the list. */
 @Composable
 internal fun MapHelpSheet(onClose: () -> Unit) {
     HelpSheet(
@@ -54,6 +54,11 @@ internal fun MapHelpSheet(onClose: () -> Unit) {
                 R.drawable.ic_sources,
                 HelpLook.Plain,
                 stringResource(R.string.help_sources),
+            ),
+            HelpEntry(
+                R.drawable.ic_members,
+                HelpLook.Plain,
+                stringResource(R.string.help_members),
             ),
         ),
         onClose = onClose,

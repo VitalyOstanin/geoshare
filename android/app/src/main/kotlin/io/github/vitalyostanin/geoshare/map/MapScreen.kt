@@ -235,6 +235,9 @@ fun MapScreen(
     // puts the member back where they were rather than on the map.
     var adminOpen by rememberSaveable { mutableStateOf(false) }
     var myPhonesOpen by rememberSaveable { mutableStateOf(false) }
+    // The list of every member, over the map and the strip; saveable like the
+    // panels, so that turning the phone does not drop the member back on the map.
+    var membersOpen by rememberSaveable { mutableStateOf(false) }
     // Held by id rather than by value: the position keeps arriving, and a card
     // showing the one from when it was opened would quietly go stale.
     val opened = positions.firstOrNull { it.positionId == openedPositionId }
@@ -321,6 +324,7 @@ fun MapScreen(
         openedPositionId = null
         openedGroup = emptyList()
     }
+    BackHandler(enabled = membersOpen && !settingsOpen) { membersOpen = false }
 
     Column(modifier = modifier.fillMaxSize()) {
         BoxWithConstraints(
@@ -460,6 +464,16 @@ fun MapScreen(
                     label = stringResource(R.string.help_open),
                     onClick = { mapHelpOpen = true },
                 )
+
+                // Only while there is a group to list: the device taken off it,
+                // or never in one, has no strip either.
+                if (removed == null && !noGroup) {
+                    MapRoundButton(
+                        icon = R.drawable.ic_members,
+                        label = stringResource(R.string.map_members),
+                        onClick = { membersOpen = true },
+                    )
+                }
             }
 
             if (mapHelpOpen) {
@@ -635,6 +649,25 @@ fun MapScreen(
                 onCentre = { positionId, x -> stripCentres[positionId] = x },
             )
         }
+    }
+
+    // Over the strip as well as the map: the strip's own few are in the list
+    // too, and a list that left them showing below would read as two lists.
+    if (membersOpen && removed == null && !noGroup) {
+        MembersScreen(
+            members = members,
+            positions = positions,
+            ownMemberId = ownMemberId,
+            names = names,
+            faces = faces,
+            now = now,
+            searches = searches,
+            onSelect = { positionId ->
+                membersOpen = false
+                lookAt(positionId)
+            },
+            onClose = { membersOpen = false },
+        )
     }
 
     if (settingsOpen) {

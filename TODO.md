@@ -88,34 +88,6 @@ Other rules worth weighing against pinning: most recently looked at, closest
 first, or whoever is moving. The pinned set is per phone, so it is a local
 setting rather than something the group shares.
 
-## Choosing a member's card on a phone
-
-Picking whose card to open is cramped on a phone. The strip under the map
-holds two members and a "more" button, each a third of the width, and the
-rest wait in a bottom sheet over the map — so with a larger group most of
-the choosing happens in a list that covers only part of the screen.
-
-The project owner's suggestion: when there are many members, the expanded
-list takes the whole screen. Worth settling before it is built:
-
-- **From how many members.** A full-screen list for three members is a
-  detour; a threshold, or the sheet opening fully expanded at once, may be
-  enough.
-- **What each row shows.** The full screen has room for what the strip
-  cannot: the age of the position, the distance, whether the member is being
-  looked for, so that the list itself answers "where is everybody" before a
-  card is opened.
-- **Getting back.** Choosing a member closes the list and opens the card, as
-  the sheet does now; the system back gesture closes it without a choice.
-- **A button of its own.** Another suggestion of the project owner's: a
-  separate button at the top of the map screen that opens the full-screen
-  list of members, so that reaching everybody does not depend on the "more"
-  button at the bottom. Its place has to be found among the round buttons
-  already over the map.
-- **The strip itself.** Larger buttons, or a strip that scrolls sideways,
-  are the alternative to a second screen; and pinning (see the section
-  above) decides who stays on the strip at all.
-
 ## Russian, alongside English
 
 Every string on screen is English. Both phones are used in Russian, so the

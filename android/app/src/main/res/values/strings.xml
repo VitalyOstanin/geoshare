@@ -395,6 +395,10 @@
 
     <string name="map_more">More</string>
     <string name="map_more_title">Other members</string>
+    <!-- The round button over the map and the title of the screen it opens:
+         every member of the group in one list, the strip's own few included. -->
+    <string name="map_members">Members</string>
+    <string name="map_members_close">Back to the map</string>
 
     <string name="map_follow_none">Not following</string>
     <!-- The member's name inside a phrase rather than on its own: a button
@@ -522,6 +526,7 @@
     <string name="help_follow_one">The map keeps the chosen member in the middle</string>
     <string name="help_follow_all">Everybody in view</string>
     <string name="help_sources">Position sources: which positions the device counts — satellites, Wi-Fi, towers</string>
+    <string name="help_members">Every member of the group in one list, with how far away each one is</string>
 
     <!-- ConnectScreen (project/ConnectScreen.kt), drawn from ConnectFlow's
          states. Screen А, before a link has been offered: the phone's own

@@ -350,6 +350,8 @@
 
     <string name="map_more">Ещё</string>
     <string name="map_more_title">Остальные участники</string>
+    <string name="map_members">Участники</string>
+    <string name="map_members_close">Назад к карте</string>
 
     <string name="map_follow_none">Не следовать</string>
     <string name="map_follow_one">Следовать за: %1$s</string>
@@ -461,6 +463,7 @@
     <string name="help_follow_one">Карта держит в центре выбранного участника</string>
     <string name="help_follow_all">Все участники в кадре</string>
     <string name="help_sources">Источники позиции: какие позиции устройство учитывает — спутники, Wi-Fi, вышки</string>
+    <string name="help_members">Все участники группы одним списком, с расстоянием до каждого</string>
 
     <!-- OwnGroupScreen (project/OwnGroupScreen.kt): «Создать свою группу» под
          кнопками подключения, для того, у кого нет приглашения. -->

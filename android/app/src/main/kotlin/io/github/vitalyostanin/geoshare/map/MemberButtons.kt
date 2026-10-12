@@ -373,6 +373,8 @@ internal fun MemberRow(
     /** The search standing for this phone, or null while nobody is looking for it. */
     sought: Search?,
     onSelect: (String) -> Unit,
+    /** How far the phone is from the viewer, in metres, or null where the card says nothing. */
+    away: Double? = null,
 ) {
     Row(
         modifier =
@@ -396,7 +398,25 @@ internal fun MemberRow(
                 style = MaterialTheme.typography.bodyLarge,
             )
 
-            AgeText(member = member, now = now)
+            // The age and the distance on one line, the way the card opens
+            // with them: the list is there to answer "where is everybody"
+            // before any card is opened.
+            Row(
+                horizontalArrangement = Arrangement.spacedBy(6.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                AgeText(member = member, now = now)
+
+                away?.let {
+                    Text(
+                        text =
+                        stringResource(R.string.map_detail_from_you, widthText(distanceUnits(it))),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        maxLines = 1,
+                    )
+                }
+            }
 
             if (sought != null) {
                 Text(
