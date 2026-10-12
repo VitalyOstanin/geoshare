@@ -108,7 +108,9 @@ tools/project.sh delete <project-id> --yes [--json]
   n quota days before today. The numbers come from Cloud Monitoring; only the
   project owner's account, or one they gave access, can read them.
 - `update` deploys this working copy's rules and page to the project, with a
-  fresh `geoshare.json`. Run it after pulling a change to either.
+  fresh `geoshare.json`. Run it after pulling a change to either; which
+  releases need it, in which order and how to go back is in
+  [Updating a group's project](../firebase/README.md#updating-a-groups-project).
 - `delete` shuts the project down: unusable at once, deleted for good after
   30 days, and restorable by its owner until then. Without `--yes` it only
   says what it would remove.

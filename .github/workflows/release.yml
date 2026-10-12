@@ -1,9 +1,13 @@
 name: Release
 
 # A v-tag builds the shrunk release package, signs it with the release key
-# (ADR-0034) and publishes it with its checksum on the releases page. A
-# dispatched run builds and signs without publishing: it proves the pipeline
-# before a tag is cut.
+# (ADR-0034) and publishes it with its checksum and its section of
+# CHANGELOG.md on the releases page. A dispatched run builds and signs without
+# publishing: it proves the pipeline before a tag is cut.
+#
+# The checks of ci.yml run first: a push of a tag starts no other workflow,
+# and a tag on a commit whose tests fail would otherwise be signed and
+# published like any other.
 
 on:
   push:
@@ -15,7 +19,11 @@ permissions:
   contents: read
 
 jobs:
+  checks:
+    uses: ./.github/workflows/ci.yml
+
   release:
+    needs: checks
     runs-on: ubuntu-24.04
     timeout-minutes: 30
     # The key lives in this environment's secrets, and the environment asks
@@ -47,6 +55,40 @@ jobs:
             exit 1
           fi
 
+      - name: The commit is on master
+        # A tag can be put on any commit, a branch nobody reviewed among them;
+        # only what master holds is published.
+        if: startsWith(github.ref, 'refs/tags/')
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          status=$(gh api "repos/${GITHUB_REPOSITORY}/compare/master...${GITHUB_SHA}" --jq .status)
+          if [[ "${status}" != identical && "${status}" != behind ]]; then
+            echo "::error::${GITHUB_SHA} is not on master (${status})"
+            exit 1
+          fi
+
+      - name: The release notes
+        # Before the build, so that unfinished notes stop the run in seconds.
+        if: startsWith(github.ref, 'refs/tags/')
+        run: tools/release-notes.sh "${GITHUB_REF_NAME#v}" > "${RUNNER_TEMP}/notes.md"
+
+      - name: The version code, from the version
+        # Android refuses to install a lower code over a higher one, so the
+        # code is worked out from the version rather than raised by hand:
+        # 0.1.0 is 100, 1.2.3 is 10203. Each part past the first stays below
+        # a hundred for that to hold.
+        run: |
+          version=$(sed -n 's/^appVersionName=//p' android/gradle.properties)
+          if ! [[ "${version}" =~ ^([0-9]+)\.([0-9]{1,2})\.([0-9]{1,2})$ ]]; then
+            echo "::error::appVersionName ${version} is not major.minor.patch with minor and patch below 100"
+            exit 1
+          fi
+          # Base ten throughout: a part written "08" is not read as octal.
+          code=$(( 10#${BASH_REMATCH[1]} * 10000 + 10#${BASH_REMATCH[2]} * 100 + 10#${BASH_REMATCH[3]} ))
+          echo "APP_VERSION_NAME=${version}" >> "$GITHUB_ENV"
+          echo "APP_VERSION_CODE=${code}" >> "$GITHUB_ENV"
+
       - name: Setup Java
         uses: actions/setup-java@de7274f081f381c8f8158605e0321c36c376e2e6 # v6.0.1
         with:
@@ -71,7 +113,7 @@ jobs:
 
       - name: Build the release package
         working-directory: android
-        run: ./gradlew --no-daemon assembleRelease
+        run: ./gradlew --no-daemon assembleRelease -PappVersionCode="${APP_VERSION_CODE}"
 
       - name: Sign it
         # tools/sign-release.sh refuses a key whose fingerprints differ from
@@ -86,6 +128,21 @@ jobs:
           tools/sign-release.sh
           rm -f "${GEOSHARE_RELEASE_KEYSTORE}"
 
+      - name: The package says what it should
+        # Read off the signed file itself: the application, the version and
+        # its code a device will see.
+        run: |
+          # The whole output first: cut short by head, aapt2 could die of a
+          # closed pipe, and the step runs with pipefail.
+          badging=$(aapt2 dump badging build/geoshare-*.apk)
+          badging="${badging%%$'\n'*}"
+          echo "${badging}"
+          expected="package: name='io.github.vitalyostanin.geoshare' versionCode='${APP_VERSION_CODE}' versionName='${APP_VERSION_NAME}'"
+          if [[ "${badging}" != "${expected}"* ]]; then
+            echo "::error::expected ${expected}"
+            exit 1
+          fi
+
       - name: Sum what was built
         run: |
           cd build
@@ -95,6 +152,7 @@ jobs:
       - uses: softprops/action-gh-release@efb35369e0ad2afab669f228072c1b0d510eae64 # v3.0.3
         if: startsWith(github.ref, 'refs/tags/')
         with:
+          body_path: ${{ runner.temp }}/notes.md
           files: |
             build/geoshare-*.apk
             build/SHA256SUMS

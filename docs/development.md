@@ -8,6 +8,7 @@ project is for and how to start using it is in the [README](../README.md).
 - [How it works](#how-it-works)
 - [Collection modes and battery](#collection-modes-and-battery)
 - [Building](#building)
+- [Releasing](#releasing)
 - [Layout](#layout)
 - [Further reading](#further-reading)
 
@@ -106,6 +107,20 @@ The names of the podman resources — `POD_NAME`, `SERVICES_NAME`,
 `CACHE_VOLUME`, `KEY_VOLUME`, `NPM_VOLUME` — can be changed too, which is only
 of use to keep two checkouts apart on one machine. The emulator ports are not
 variables: they are fixed in `firebase.json`.
+
+## Releasing
+
+1. Raise `appVersionName` in `android/gradle.properties`; the version code is
+   worked out from it, 0.1.0 being 100.
+2. Give the version's section of [CHANGELOG.md](../CHANGELOG.md) its date
+   and say under **Project owners** whether the release needs
+   `tools/project.sh update`, and in which order
+   ([Updating a group's project](../firebase/README.md#updating-a-groups-project)).
+   `tools/release-notes.sh <version>` prints what the release will say.
+3. Tag the commit on master `v<version>` and push the tag. `release.yml` runs
+   the checks of `ci.yml`, refuses a tag off master, a tag that differs from
+   `appVersionName` and notes without a date, then builds, signs, checks
+   what the package says about itself and publishes it with its checksum.
 
 ## Layout
 

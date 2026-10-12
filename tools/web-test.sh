@@ -7,9 +7,9 @@
 #   tools/web-test.sh --coverage    the same run, with a coverage table at the end
 set -euo pipefail
 
-script=test
+script="test"
 if [[ "${1:-}" == "--coverage" ]]; then
-    script=coverage
+    script="coverage"
 fi
 
 # shellcheck source=lib.sh

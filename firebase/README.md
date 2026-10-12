@@ -10,6 +10,7 @@ them.
 - [Files](#files)
 - [Setting the project up](#setting-the-project-up)
 - [Deploying the rules](#deploying-the-rules)
+- [Updating a group's project](#updating-a-groups-project)
 - [Checking the rules](#checking-the-rules)
 
 ## Files
@@ -52,6 +53,35 @@ a link and then exits; the code that link hands back goes into a second command,
 
 The project identifier is not committed: `.firebaserc` is ignored, so either the
 `--project` argument carries it or `firebase use --add` writes it locally.
+
+## Updating a group's project
+
+Every group's project is updated by its project owner, in their own time,
+while the members' devices take a new application whenever they do. For a
+while one set of rules serves several versions of the application, and the
+rules change with that in mind:
+
+- A change to the rules widens what is allowed and narrows nothing an
+  application still in use writes: a new field is accepted beside the old
+  one, a new collection is allowed before any application writes to it.
+  Refusing what an older application writes waits for a later release, once
+  that application is out of use, and its notes say so.
+- Every version's section of [CHANGELOG.md](../CHANGELOG.md) says under
+  **Project owners** whether the release needs `tools/project.sh update` and
+  in which order: the rules first when the new application writes something
+  the old rules refuse, the application first when the rules stop accepting
+  what the old one wrote.
+- The update deploys the working copy, so the release's tag is checked out
+  first:
+
+  ```
+  git checkout v0.2.0
+  tools/project.sh update <project-id>
+  ```
+
+- Going back is the same with the earlier tag. Rules taken back past a
+  widening refuse what the newer application writes, so the devices go back
+  to the earlier application before the rules do.
 
 ## Checking the rules
 
