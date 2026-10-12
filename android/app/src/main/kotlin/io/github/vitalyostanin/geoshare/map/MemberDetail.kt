@@ -46,6 +46,7 @@ import io.github.vitalyostanin.geoshare.R
 import io.github.vitalyostanin.geoshare.collection.foundByLabel
 import io.github.vitalyostanin.geoshare.collection.modeLabel
 import java.time.Instant
+import java.util.Locale
 
 /**
  * Who is standing under a marker that stands for several members.
@@ -301,11 +302,7 @@ private fun DetailBody(
             }
             DetailRow(
                 R.string.map_detail_position,
-                stringResource(
-                    R.string.map_detail_coordinates,
-                    member.latitude,
-                    member.longitude,
-                ),
+                coordinatesText(member.latitude, member.longitude),
             )
         }
     }
@@ -437,3 +434,11 @@ private fun DetailRow(name: Int, value: @Composable RowScope.() -> Unit) {
         value()
     }
 }
+
+/**
+ * The position line of the card: latitude, longitude, five decimals. Always
+ * with a point, whatever the language: a Russian locale would put a comma in
+ * the numbers too, and "55,75580, 37,61730" cannot be told apart as a pair.
+ */
+internal fun coordinatesText(latitude: Double, longitude: Double): String =
+    String.format(Locale.ROOT, "%.5f, %.5f", latitude, longitude)

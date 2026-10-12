@@ -104,7 +104,6 @@
     <string name="left_out_by_source">The source is switched off</string>
     <string name="left_out_by_source_named">Source switched off: %1$s</string>
     <string name="map_detail_position">Position</string>
-    <string name="map_detail_coordinates" translatable="false">%1$.5f, %2$.5f</string>
     <string name="map_detail_unknown">unknown</string>
     <string name="map_detail_close">Close</string>
     <string name="admin_phone_online">%1$s: in touch %2$s</string>
