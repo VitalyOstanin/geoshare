@@ -200,6 +200,12 @@ outside the group is also the one place where a member passes on where somebody
 else is, so it is worth deciding whether that is offered for everybody or only
 for oneself.
 
+The project owner's take on the shape (October 2026): a context menu on the
+position — a long press on the coordinates in the card or on the marker — with
+"Share" at its head, and next to it ready-made links that go out at once: one
+to Google Maps and one to Yandex Maps, each opening that very point, so that
+the person on the other end needs no app of ours and no typing.
+
 ## Naming the phones: what is left
 
 Both readings of "names people choose" are built: the owner names their own
