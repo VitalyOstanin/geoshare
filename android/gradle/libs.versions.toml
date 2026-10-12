@@ -37,6 +37,9 @@ zxing = "3.5.4"
 # scanner works on a phone without them like the rest of the application.
 camerax = "1.6.2"
 junit = "4.13.2"
+# Stand-ins for the platform classes the JVM tests cannot build for real:
+# a Location or a GnssStatus off the stub jar answers every call with 0.
+mockk = "1.14.11"
 # The real implementation of the classes org.json.* names, in place of the
 # Android stub jar the unit test classpath otherwise resolves them to: that
 # one is built with `unitTests.isReturnDefaultValues`, under which every
@@ -79,6 +82,7 @@ kotlinx-coroutines-android = { module = "org.jetbrains.kotlinx:kotlinx-coroutine
 # Awaits a Play Services Task from a coroutine; Firebase returns those.
 kotlinx-coroutines-play-services = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-play-services", version.ref = "coroutines" }
 junit = { module = "junit:junit", version.ref = "junit" }
+mockk = { module = "io.mockk:mockk-jvm", version.ref = "mockk" }
 org-json = { module = "org.json:json", version.ref = "orgJson" }
 
 [plugins]

@@ -122,6 +122,7 @@ dependencies {
     implementation(libs.camera.view)
 
     testImplementation(libs.junit)
+    testImplementation(libs.mockk)
     // Overrides the Android stub org.json.* on the unit test classpath, which
     // answers every call with a default rather than parsing anything.
     testImplementation(libs.org.json)
