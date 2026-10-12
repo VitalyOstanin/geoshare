@@ -26,6 +26,7 @@ val toolVersions: Map<String, String> =
 
 val appVersionName: String = providers.gradleProperty("appVersionName").get()
 val appVersionCode: Int = providers.gradleProperty("appVersionCode").get().toInt()
+val setupPageUrl: String = providers.gradleProperty("setupPageUrl").get()
 
 android {
     namespace = "io.github.vitalyostanin.geoshare"
@@ -41,6 +42,7 @@ android {
         targetSdk = 36
         versionCode = appVersionCode
         versionName = appVersionName
+        buildConfigField("String", "SETUP_PAGE_URL", "\"$setupPageUrl\"")
 
         ndk {
             // The map draws in native code, and the library ships that code

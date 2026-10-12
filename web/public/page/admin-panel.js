@@ -409,10 +409,13 @@ elements.adminShare.addEventListener('click', async () => {
 
     try {
         await navigator.share({ url: link });
-    } catch {
+    } catch (error) {
         // Closing the share sheet without choosing anybody throws
         // AbortError, which is not a failure the panel has anything to say
         // about — the link stays on screen, to copy instead.
+        if (error?.name !== 'AbortError') {
+            console.warn('sharing the invitation:', error);
+        }
     }
 });
 

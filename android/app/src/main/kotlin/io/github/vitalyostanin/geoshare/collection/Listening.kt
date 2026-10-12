@@ -1,6 +1,7 @@
 package io.github.vitalyostanin.geoshare.collection
 
 import java.time.Duration
+import kotlin.random.Random
 
 // Subscriptions that come back after they are refused.
 //
@@ -60,4 +61,21 @@ fun listenAgainAfter(
     val waited = first.multipliedBy(1L shl attempt.toInt().coerceAtLeast(0))
 
     return if (waited > atMost) atMost else waited
+}
+
+/** How far either way a wait is moved off the time [listenAgainAfter] names. */
+const val LISTEN_AGAIN_SPREAD: Double = 0.2
+
+/**
+ * [wait], moved by up to a fifth either way.
+ *
+ * A rule deployed or a member taken off the roster refuses every subscription
+ * of every device of the group in the same second, and waits of the same
+ * length would bring them all back in the same second too. Spread out, they
+ * arrive over a stretch instead.
+ */
+fun spread(wait: Duration, random: Random = Random.Default): Duration {
+    val factor = 1.0 + LISTEN_AGAIN_SPREAD * (random.nextDouble() * 2 - 1)
+
+    return Duration.ofMillis((wait.toMillis() * factor).toLong())
 }

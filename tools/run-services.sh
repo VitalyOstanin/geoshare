@@ -26,8 +26,11 @@ set -euo pipefail
 source "$(dirname "${BASH_SOURCE[0]}")/lib.sh"
 
 readonly READY_TIMEOUT="${READY_TIMEOUT:-120}"
-readonly FIRESTORE_PORT="${FIRESTORE_PORT:-8080}"
-readonly AUTH_PORT="${AUTH_PORT:-9099}"
+# Fixed rather than read from the environment: the emulators take theirs from
+# firebase.json, the debug build from StandInServices.kt, and the seeds from
+# their own constants, so a port changed here alone would only be waited on.
+readonly FIRESTORE_PORT=8080
+readonly AUTH_PORT=9099
 
 # In the pod as well, and for the same reason as the services themselves: the
 # addresses below are the pod's loopback, and from anywhere else they are

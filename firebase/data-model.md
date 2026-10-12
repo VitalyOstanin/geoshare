@@ -12,6 +12,7 @@ groups/{groupId}/falsePlaces/{placeId}      where a false signal is known to put
 groups/{groupId}/settings/{key}             what the group has settled about judging answers
 groups/{groupId}/searches/{uid}.{deviceId}  the group looking for a device, which opens its place to all of it
 groups/{groupId}/sirens/{uid}.{deviceId}    a device told to sound loud for a while, so it can be found
+groups/{groupId}/resets/{uid}.{deviceId}    a device told to forget its anchor and judge its place afresh
 groups/{groupId}/members/{uid}              what a member says about themselves
 groups/{groupId}/grants/{uid}               who may watch a member (and, for older builds, their devices)
 groups/{groupId}/devices/{uid}              a member's devices and what each last said about itself
@@ -34,6 +35,24 @@ marker, its entry in `devices` and its place in `grants.devices`.
 
 The group document is the roster. A member's own document under it is the
 opposite of the roster: they write it and nobody else does.
+
+## Contents
+
+- [groups/{groupId}](#groupsgroupid)
+- [invitations/{code}](#invitationscode)
+- [joins/{uid}](#joinsuid)
+- [falsePlaces/{placeId}](#falseplacesplaceid)
+- [settings/{key}](#settingskey)
+- [searches/{uid}.{deviceId}](#searchesuiddeviceid)
+- [sirens/{uid}.{deviceId}](#sirensuiddeviceid)
+- [resets/{uid}.{deviceId}](#resetsuiddeviceid)
+- [members/{uid}](#membersuid)
+- [grants/{uid}](#grantsuid)
+- [devices/{uid}](#devicesuid)
+- [labels/{uid}](#labelsuid)
+- [positions/{uid}.{deviceId}](#positionsuiddeviceid)
+- [watch/{uid}.{deviceId}](#watchuiddeviceid)
+- [Collection modes](#collection-modes)
 
 ## groups/{groupId}
 

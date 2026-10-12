@@ -5,6 +5,7 @@ import com.google.firebase.Timestamp
 import com.google.firebase.firestore.DocumentSnapshot
 import com.google.firebase.firestore.FieldValue
 import io.github.vitalyostanin.geoshare.collection.listenAgainAfter
+import io.github.vitalyostanin.geoshare.collection.spread
 import io.github.vitalyostanin.geoshare.log.AppLog
 import io.github.vitalyostanin.geoshare.map.PublishedProfile
 import io.github.vitalyostanin.geoshare.membership.INVITATION_LASTS
@@ -87,7 +88,7 @@ fun rosterReads(connection: GroupConnection): Flow<RosterRead> = callbackFlow<Ro
 
     awaitClose { subscription.remove() }
 }.retryWhen { cause, attempt ->
-    val waiting = listenAgainAfter(attempt)
+    val waiting = spread(listenAgainAfter(attempt))
 
     val failed = "could not read the roster of ${connection.projectId}"
 

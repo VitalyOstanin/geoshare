@@ -155,6 +155,11 @@ export const store = getFirestore(app);
 // field, and its project id must start with `demo-` so nothing here can be
 // mistaken for, or reach, a real one. Without the field nothing changes.
 const emulators = firebaseConfig.emulators;
+if (emulators && !firebaseConfig.projectId?.startsWith('demo-')) {
+    // A real project id with emulators named beside it is a configuration
+    // mixed up somewhere; refusing it is better than writing to either.
+    throw new Error(`emulators are only for a demo- project, not ${firebaseConfig.projectId}`);
+}
 if (emulators) {
     connectAuthEmulator(auth, emulators.auth, { disableWarnings: true });
     connectFirestoreEmulator(store, emulators.firestore.host, emulators.firestore.port);
@@ -270,6 +275,11 @@ export function watchWatchers(memberId, onWatchers) {
             .filter(Boolean);
 
         onWatchers(looking);
+    }, (error) => {
+        // A refused subscription answers nothing more; nobody is then shown
+        // as watching rather than whoever was before the refusal.
+        console.warn('watchers:', error);
+        onWatchers([]);
     });
 }
 
@@ -281,11 +291,12 @@ export const ATTENTION = ['pointerdown', 'pointermove', 'keydown', 'wheel', 'tou
  * place and is simply not fed, so a tab nobody looks at costs no reads.
  */
 export function pauseDatabase() {
-    return disableNetwork(store).catch(() => {});
+    return disableNetwork(store).catch((error) => console.warn('pausing the database:', error));
 }
 
+// A tab left paused hears nothing more, so the console at least says so.
 export function resumeDatabase() {
-    return enableNetwork(store).catch(() => {});
+    return enableNetwork(store).catch((error) => console.warn('resuming the database:', error));
 }
 
 /**

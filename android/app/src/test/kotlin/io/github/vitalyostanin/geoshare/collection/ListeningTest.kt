@@ -1,8 +1,11 @@
 package io.github.vitalyostanin.geoshare.collection
 
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertNotEquals
+import org.junit.Assert.assertTrue
 import org.junit.Test
 import java.time.Duration
+import kotlin.random.Random
 
 class ListeningTest {
     @Test
@@ -43,5 +46,17 @@ class ListeningTest {
             Duration.ofSeconds(30),
             listenAgainAfter(9, first = Duration.ofSeconds(1), atMost = Duration.ofSeconds(30)),
         )
+    }
+
+    // Every device of a group refused in the same second comes back over a
+    // stretch rather than in the same second again.
+    @Test
+    fun `a wait is spread by up to a fifth either way`() {
+        val wait = listenAgainAfter(3)
+        val random = Random(42)
+        val spreadOut = (1..20).map { spread(wait, random) }
+
+        assertTrue(spreadOut.all { it >= Duration.ofSeconds(32) && it <= Duration.ofSeconds(48) })
+        assertNotEquals(spreadOut[0], spreadOut[1])
     }
 }

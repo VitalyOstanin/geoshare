@@ -2,6 +2,7 @@ package io.github.vitalyostanin.geoshare.service
 
 import com.google.firebase.firestore.FirebaseFirestoreException
 import io.github.vitalyostanin.geoshare.collection.listenAgainAfter
+import io.github.vitalyostanin.geoshare.collection.spread
 import io.github.vitalyostanin.geoshare.log.AppLog
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
@@ -34,7 +35,7 @@ fun <T> Flow<T>.comingBack(
     /** What the subscription amounts to once this device is refused outright. */
     forgetting: (() -> T)? = null,
 ): Flow<T> = retryWhen { cause, attempt ->
-    val waiting = listenAgainAfter(attempt)
+    val waiting = spread(listenAgainAfter(attempt))
 
     AppLog.w(
         TAG,

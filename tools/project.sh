@@ -212,11 +212,17 @@ for entry in json.loads(raw[raw.index("{"):])["result"]:
     # The published key always, so the application from the releases page
     # signs in; the debug key besides when this machine can build, so does
     # what is built here. Cloud Shell has no container to build in, and gets
-    # the first alone.
+    # the first alone. Anywhere podman is, a failure to read the debug key
+    # stops here: otherwise the debug build cannot sign in, and nothing would
+    # say why.
     {
         grep -v '^#' "${REPO_ROOT}/${RELEASE_FINGERPRINTS}"
-        "${REPO_ROOT}/tools/signing.sh" 2>/dev/null |
-            awk '/^SHA1:|^SHA-256:/ { print $2 }' || true
+
+        if command -v podman >/dev/null; then
+            "${REPO_ROOT}/tools/signing.sh" | awk '/^SHA1:|^SHA-256:/ { print $2 }'
+        else
+            echo "no podman here: only the release key is registered" >&2
+        fi
     } | sort -u
 }
 

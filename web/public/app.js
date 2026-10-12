@@ -43,6 +43,14 @@ watchSignIn((member) => {
 });
 
 /**
+ * What a write nobody waits on does when it is refused: nothing on the page
+ * depends on it, so the console is the only place that hears.
+ */
+function warnOf(what) {
+    return (error) => console.warn(`${what}:`, error);
+}
+
+/**
  * Keeps whether this browser is signed in for boot-sign-in.js to read on the
  * next load, and ends the waiting it started: the answer is in either way.
  */
@@ -114,7 +122,7 @@ function followProfiles() {
             state.profiles = labelledProfiles(profiles, state.labels);
             state.reachable = true;
             state.outsideGroup = false;
-            publishProfile(state.member, profiles.get(state.member.memberId), () => {});
+            publishProfile(state.member, profiles.get(state.member.memberId), warnOf('profile'));
             followGrants(profiles);
             // The names in the menu and in the panel are read from the
             // profiles, so a member signing in for the first time changes both.
@@ -181,7 +189,7 @@ function followTheGroup() {
         render();
     });
 
-    state.stopWatching ??= keepWatching(state.member.memberId, () => {}, notePageLooking);
+    state.stopWatching ??= keepWatching(state.member.memberId, warnOf('watching'), notePageLooking);
 
     state.stopWatchers ??= watchWatchers(state.member.memberId, (watchers) => {
         state.watchers = watchers;
@@ -383,7 +391,7 @@ window.addEventListener('pagehide', () => {
 // sign-in listener stays quiet.
 window.addEventListener('pageshow', () => {
     if (state.member) {
-        state.stopWatching ??= keepWatching(state.member.memberId, () => {}, notePageLooking);
+        state.stopWatching ??= keepWatching(state.member.memberId, warnOf('watching'), notePageLooking);
         render();
     }
 });

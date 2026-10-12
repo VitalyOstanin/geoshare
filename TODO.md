@@ -1,5 +1,36 @@
 # Ideas not scheduled yet
 
+## Contents
+
+- [Home screen shortcuts to one member](#home-screen-shortcuts-to-one-member)
+- [A choice of map background](#a-choice-of-map-background)
+- [A way to exchange positions other than Firebase](#a-way-to-exchange-positions-other-than-firebase)
+- [Which members the panel keeps in reach](#which-members-the-panel-keeps-in-reach)
+- [Russian, alongside English](#russian-alongside-english)
+- [Light and dark, and a say in it](#light-and-dark-and-a-say-in-it)
+- [Zooming with one thumb](#zooming-with-one-thumb)
+- [A control that fits everybody on screen](#a-control-that-fits-everybody-on-screen)
+- [The battery level on the member buttons](#the-battery-level-on-the-member-buttons)
+- [Keeping the tiles](#keeping-the-tiles)
+- [Maps that work without a connection](#maps-that-work-without-a-connection)
+- [A say in where the position comes from](#a-say-in-where-the-position-comes-from)
+- [Sideways, and not only upright](#sideways-and-not-only-upright)
+- [Taking a position somewhere else](#taking-a-position-somewhere-else)
+- [Naming the phones: what is left](#naming-the-phones-what-is-left)
+- [What a stranger would have to do to use this](#what-a-stranger-would-have-to-do-to-use-this)
+- [An admin panel for the family](#an-admin-panel-for-the-family)
+- [The phones fetch their own updates](#the-phones-fetch-their-own-updates)
+- [The screen says the satellites are being spoofed](#the-screen-says-the-satellites-are-being-spoofed)
+- [Turning one member's position on for the rest, in an emergency](#turning-one-members-position-on-for-the-rest-in-an-emergency)
+- [The phone being looked for makes a sound](#the-phone-being-looked-for-makes-a-sound)
+- [Beyond a location: a shared list, reminders, and notes pinned to a place](#beyond-a-location-a-shared-list-reminders-and-notes-pinned-to-a-place)
+- [The service coming back after a restart, checked on the phones](#the-service-coming-back-after-a-restart-checked-on-the-phones)
+- [A choice of siren sound on the device](#a-choice-of-siren-sound-on-the-device)
+- [Watching a member of another family](#watching-a-member-of-another-family)
+- [Short messages between the members of a group](#short-messages-between-the-members-of-a-group)
+- [A browser extension over the page's code](#a-browser-extension-over-the-pages-code)
+- [Geofence and movement on Huawei devices without Google services](#geofence-and-movement-on-huawei-devices-without-google-services)
+
 ## Home screen shortcuts to one member
 
 A shortcut on the phone's home screen that opens the map straight on one

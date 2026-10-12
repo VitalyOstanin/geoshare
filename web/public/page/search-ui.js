@@ -161,9 +161,10 @@ elements.soughtFound.addEventListener('click', async () => {
 
     try {
         await Promise.all(own.map((search) => endSearch(search.phoneId)));
-    } catch {
+    } catch (error) {
         // The banner stays up, which says a search is still on; the next
         // press tries again.
+        console.warn('ending the search:', error);
     } finally {
         elements.soughtFound.disabled = false;
     }

@@ -5,6 +5,13 @@ that only exists in the console. There is no server code: the devices and the ma
 page talk to Firestore directly, and the rules below are what stands between
 them.
 
+## Contents
+
+- [Files](#files)
+- [Setting the project up](#setting-the-project-up)
+- [Deploying the rules](#deploying-the-rules)
+- [Checking the rules](#checking-the-rules)
+
 ## Files
 
 | File                     | What it is                                                  |
