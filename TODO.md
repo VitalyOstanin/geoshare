@@ -91,6 +91,11 @@ list takes the whole screen. Worth settling before it is built:
   card is opened.
 - **Getting back.** Choosing a member closes the list and opens the card, as
   the sheet does now; the system back gesture closes it without a choice.
+- **A button of its own.** Another suggestion of the project owner's: a
+  separate button at the top of the map screen that opens the full-screen
+  list of members, so that reaching everybody does not depend on the "more"
+  button at the bottom. Its place has to be found among the round buttons
+  already over the map.
 - **The strip itself.** Larger buttons, or a strip that scrolls sideways,
   are the alternative to a second screen; and pinning (see the section
   above) decides who stays on the strip at all.
