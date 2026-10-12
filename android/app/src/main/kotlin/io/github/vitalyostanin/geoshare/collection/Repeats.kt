@@ -1,6 +1,7 @@
 package io.github.vitalyostanin.geoshare.collection
 
 import java.time.Duration
+import kotlin.math.abs
 
 // Catching the transmitter by the route it goes round again.
 //
@@ -109,10 +110,14 @@ fun routeRepeated(lately: List<Fix>, limits: RepeatLimits = RepeatLimits()): Rep
         return null
     }
 
+    // The moments are worked out once for every period tried, and kept as
+    // plain nanoseconds: this runs on each answer, over up to two hundred
+    // of them and sixty-four periods.
+    val at = Moments(sinceFirst(lately).map { it.toNanos() }.toLongArray())
     var best: Repeated? = null
 
     for (period in periodsWorthTrying(lately, limits)) {
-        val lined = linedUpAcross(lately, period, limits) ?: continue
+        val lined = linedUpAcross(lately, at, period, limits) ?: continue
 
         if (best == null || lined.apartMetres < best.apartMetres) {
             best = lined
@@ -161,15 +166,21 @@ private fun periodsWorthTrying(lately: List<Fix>, limits: RepeatLimits): List<Du
  * How well the run lines up with itself one period back, or nothing where it
  * does not line up at all.
  */
-private fun linedUpAcross(lately: List<Fix>, period: Duration, limits: RepeatLimits): Repeated? {
-    val at = sinceFirst(lately)
+private fun linedUpAcross(
+    lately: List<Fix>,
+    at: Moments,
+    period: Duration,
+    limits: RepeatLimits,
+): Repeated? {
+    val periodNanos = period.toNanos()
+    val nearEnough = REPEAT_NEAR_ENOUGH.toNanos()
     val apart = mutableListOf<Double>()
 
     for (answer in lately.indices) {
-        val then = at[answer].minus(period)
-        val before = nearestTo(at, then) ?: continue
+        val then = at.nanos[answer] - periodNanos
+        val before = at.nearestTo(then) ?: continue
 
-        if (at[before].minus(then).abs() > REPEAT_NEAR_ENOUGH) {
+        if (abs(at.nanos[before] - then) > nearEnough) {
             continue
         }
 
@@ -186,7 +197,7 @@ private fun linedUpAcross(lately: List<Fix>, period: Duration, limits: RepeatLim
         return null
     }
 
-    val reach = reachOfTheRound(lately, period)
+    val reach = reachOfTheRound(lately, at, periodNanos)
 
     if (reach < limits.reachMetres) {
         return null
@@ -200,9 +211,54 @@ private fun linedUpAcross(lately: List<Fix>, period: Duration, limits: RepeatLim
     )
 }
 
-/** Which of the moments [at] is closest to [moment], or nothing where there are none. */
-private fun nearestTo(at: List<Duration>, moment: Duration): Int? =
-    at.indices.minByOrNull { at[it].minus(moment).abs() }
+/**
+ * The moments of a run, in nanoseconds since its first answer.
+ *
+ * The answers arrive newest last, so the moments normally only grow, and the
+ * nearest one is then found by halving rather than by walking all of them. A
+ * run that goes back somewhere — a clock set mid-run with no boot time to go
+ * by — is walked the slow way, which gives the same answer.
+ */
+private class Moments(val nanos: LongArray) {
+    private val ordered = (1 until nanos.size).all { nanos[it - 1] <= nanos[it] }
+
+    /** Which moment is closest to [moment], the earliest on a tie, or nothing where there are none. */
+    fun nearestTo(moment: Long): Int? {
+        if (nanos.isEmpty()) {
+            return null
+        }
+
+        if (!ordered) {
+            return nanos.indices.minBy { abs(nanos[it] - moment) }
+        }
+
+        val found = nanos.binarySearch(moment)
+
+        if (found >= 0) {
+            return firstOf(found)
+        }
+
+        val after = -found - 1
+
+        return when {
+            after == 0 -> 0
+            after == nanos.size -> firstOf(nanos.size - 1)
+            moment - nanos[after - 1] <= nanos[after] - moment -> firstOf(after - 1)
+            else -> after
+        }
+    }
+
+    /** The earliest index holding the same moment as [index]. */
+    private fun firstOf(index: Int): Int {
+        var first = index
+
+        while (first > 0 && nanos[first - 1] == nanos[index]) {
+            first -= 1
+        }
+
+        return first
+    }
+}
 
 /**
  * How far across the last round reaches: the distance between its two
@@ -211,10 +267,9 @@ private fun nearestTo(at: List<Duration>, moment: Duration): Int? =
  * Not the road covered, which a standing device produces by jittering, and not
  * the radius, which asks the route to be a circle.
  */
-private fun reachOfTheRound(lately: List<Fix>, period: Duration): Double {
-    val at = sinceFirst(lately)
-    val since = at.last().minus(period)
-    val round = lately.filterIndexed { index, _ -> at[index] >= since }
+private fun reachOfTheRound(lately: List<Fix>, at: Moments, periodNanos: Long): Double {
+    val since = at.nanos.last() - periodNanos
+    val round = lately.filterIndexed { index, _ -> at.nanos[index] >= since }
     var furthest = 0.0
 
     for (one in round.indices) {

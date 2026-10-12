@@ -1,11 +1,13 @@
 package io.github.vitalyostanin.geoshare.map
 
+import kotlinx.coroutines.TimeoutCancellationException
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.runBlocking
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
+import org.junit.Assert.fail
 import org.junit.Test
 import java.time.Duration
 import java.time.Instant
@@ -54,9 +56,15 @@ class DatabaseLinkTest {
         assertEquals("done", withinAnswerWait(Duration.ofSeconds(1)) { "done" })
     }
 
-    @Test(expected = UnansweredException::class)
+    @Test
     fun aWriteLeftUnansweredIsRefusedAsUnanswered() = runBlocking {
-        withinAnswerWait(Duration.ofMillis(10)) { delay(1_000) }
+        try {
+            withinAnswerWait(Duration.ofMillis(10)) { delay(1_000) }
+            fail("the write should have been left unanswered")
+        } catch (unanswered: UnansweredException) {
+            // The wait that ran out stays with it, for the log.
+            assertTrue(unanswered.cause is TimeoutCancellationException)
+        }
     }
 
     @Test(expected = IllegalStateException::class)

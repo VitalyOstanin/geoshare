@@ -63,7 +63,8 @@ data class LinkState(val since: Instant? = null, val knownAt: Instant? = null) {
 val LocalLink = compositionLocalOf { LinkState() }
 
 /** A write the database did not answer within [ANSWER_WAIT]; Firestore still holds it and sends it later. */
-class UnansweredException : Exception("the database did not answer")
+class UnansweredException(cause: Throwable? = null) :
+    Exception("the database did not answer", cause)
 
 /** How a write asked for from a window came out. */
 enum class WriteOutcome { DONE, REFUSED, UNANSWERED }
@@ -77,5 +78,5 @@ enum class WriteOutcome { DONE, REFUSED, UNANSWERED }
 suspend fun <T> withinAnswerWait(wait: Duration = ANSWER_WAIT, write: suspend () -> T): T = try {
     withTimeout(wait.toMillis()) { write() }
 } catch (late: TimeoutCancellationException) {
-    throw UnansweredException()
+    throw UnansweredException(late)
 }

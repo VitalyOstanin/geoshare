@@ -6,6 +6,8 @@ import io.github.vitalyostanin.geoshare.collection.Trail
 import io.github.vitalyostanin.geoshare.log.AppLog
 import java.io.File
 import java.time.Instant
+import java.util.concurrent.Executor
+import java.util.concurrent.Executors
 
 /**
  * The trail as it survives the process being killed.
@@ -19,8 +21,18 @@ import java.time.Instant
  * Losing it costs a few hours of the device treating familiar places as new,
  * which is exactly what the device does on a fresh install anyway — so every
  * failure here is logged and swallowed.
+ *
+ * Written on a thread of its own, like the application's log: the write
+ * follows every position written, and the service hands it over from the main
+ * thread. One thread, so that the writes land in the order they were made and
+ * the last trail is the one left on disk.
  */
-class TrailStore(private val context: Context) {
+class TrailStore(
+    private val context: Context,
+    private val writer: Executor = Executors.newSingleThreadExecutor { work ->
+        Thread(work, "geoshare-trail").apply { isDaemon = true }
+    },
+) {
     private val file: File get() = File(context.filesDir, FILE_NAME)
 
     fun read(): Trail = try {
@@ -32,10 +44,14 @@ class TrailStore(private val context: Context) {
     }
 
     fun write(trail: Trail) {
-        try {
-            file.writeText(trail.fixes.joinToString("\n", transform = ::trailLine))
-        } catch (error: Exception) {
-            AppLog.w(TAG, "the trail could not be written", error)
+        val text = trail.fixes.joinToString("\n", transform = ::trailLine)
+
+        writer.execute {
+            try {
+                file.writeText(text)
+            } catch (error: Exception) {
+                AppLog.w(TAG, "the trail could not be written", error)
+            }
         }
     }
 

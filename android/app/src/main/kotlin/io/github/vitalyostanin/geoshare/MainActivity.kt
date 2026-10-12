@@ -41,10 +41,12 @@ import io.github.vitalyostanin.geoshare.auth.SignInFailure
 import io.github.vitalyostanin.geoshare.auth.SignInScreen
 import io.github.vitalyostanin.geoshare.auth.UnfinishedSignIn
 import io.github.vitalyostanin.geoshare.log.AppLog
+import io.github.vitalyostanin.geoshare.map.Failure
 import io.github.vitalyostanin.geoshare.map.GroupSwitch
 import io.github.vitalyostanin.geoshare.map.GroupSwitcher
 import io.github.vitalyostanin.geoshare.map.UnansweredException
 import io.github.vitalyostanin.geoshare.map.WriteOutcome
+import io.github.vitalyostanin.geoshare.map.failureOf
 import io.github.vitalyostanin.geoshare.map.rememberGroupChoices
 import io.github.vitalyostanin.geoshare.map.withinAnswerWait
 import io.github.vitalyostanin.geoshare.permission.PermissionStep
@@ -836,7 +838,12 @@ class MainActivity : AppCompatActivity() {
             AppLog.w(TAG, "$failure: the database did not answer", late)
             WriteOutcome.UNANSWERED
         } catch (refusal: Exception) {
-            AppLog.w(TAG, failure, refusal)
+            if (failureOf(refusal) == Failure.UNEXPECTED) {
+                AppLog.e(TAG, "$failure: not the database's answer but a fault here", refusal)
+            } else {
+                AppLog.w(TAG, failure, refusal)
+            }
+
             WriteOutcome.REFUSED
         }
 

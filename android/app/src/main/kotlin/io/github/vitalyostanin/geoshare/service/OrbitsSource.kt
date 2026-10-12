@@ -120,7 +120,7 @@ private suspend fun fetchIfDue(context: Context, directory: File): Orbits? {
         try {
             withContext(Dispatchers.IO) { download(url, target) }
         } catch (failed: IOException) {
-            AppLog.w(TAG, "orbits: $name for $day not fetched: ${failed.message}")
+            AppLog.w(TAG, "orbits: $name for $day not fetched", failed)
             continue
         }
 
@@ -182,7 +182,7 @@ private suspend fun read(file: File): Orbits? = withContext(Dispatchers.Default)
     try {
         GZIPInputStream(file.inputStream()).bufferedReader().useLines { orbitsOf(it) }
     } catch (broken: IOException) {
-        AppLog.w(TAG, "orbits: ${file.name} unreadable: ${broken.message}")
+        AppLog.w(TAG, "orbits: ${file.name} unreadable", broken)
         null
     }
 }

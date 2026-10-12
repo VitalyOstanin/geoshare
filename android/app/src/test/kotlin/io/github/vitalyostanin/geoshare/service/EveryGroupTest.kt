@@ -30,14 +30,17 @@ class EveryGroupTest {
 
     @Test
     fun `when no group takes the write the last refusal is what fails`() = runBlocking {
+        val first = IllegalStateException("denied")
         val last = IllegalStateException("unavailable")
-        val links = listOf(link("first", IllegalStateException("denied")), link("second", last))
+        val links = listOf(link("first", first), link("second", last))
 
         try {
             EveryGroup { links }.tellStatus(MODE, 80, false)
             fail("the write should have failed")
         } catch (refusal: IllegalStateException) {
             assertSame(last, refusal)
+            // And the other group's answer travels with it.
+            assertEquals(listOf(first), refusal.suppressed.toList())
         }
     }
 

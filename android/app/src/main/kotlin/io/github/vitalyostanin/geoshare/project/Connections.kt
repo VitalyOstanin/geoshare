@@ -9,6 +9,14 @@ import kotlinx.coroutines.flow.asStateFlow
 
 private const val FILE = "connections"
 private const val KEY_LIST = "list"
+
+/**
+ * A kept list that could not be read, set aside before anything overwrites
+ * it: joining a group writes the list anew, and the groups in the old one
+ * would otherwise be gone for good rather than waiting for a build that reads
+ * them.
+ */
+internal const val KEY_UNREADABLE_LIST = "list_unreadable"
 private const val KEY_DEFAULT_PROJECT = "default_project"
 private const val TAG = "geoshare.connections"
 
@@ -85,7 +93,7 @@ object Connections {
         val list =
             if (stored != null) {
                 ConnectionList.parse(stored).also {
-                    if (it == null) AppLog.w(TAG, "the groups kept on the device could not be read")
+                    if (it == null) setAside(context, stored)
                 }
             } else {
                 migrated(context)
@@ -156,8 +164,27 @@ object Connections {
     /** The file the kept list lives in, beside which [PendingInvitationStore] keeps its own key. */
     internal fun files(context: Context) = context.getSharedPreferences(FILE, Context.MODE_PRIVATE)
 
+    private fun setAside(context: Context, stored: String) {
+        AppLog.w(TAG, "the groups kept on the device could not be read; setting them aside")
+
+        // The first unreadable list is the one worth keeping: a later one is
+        // only what was written over it.
+        if (files(context).contains(KEY_UNREADABLE_LIST)) {
+            return
+        }
+
+        if (!files(context).edit().putString(KEY_UNREADABLE_LIST, stored).commit()) {
+            AppLog.e(TAG, "the unreadable groups could not be set aside")
+        }
+    }
+
     private fun publish(context: Context, list: ConnectionList) {
-        files(context).edit().putString(KEY_LIST, list.toJson()).commit()
+        if (!files(context).edit().putString(KEY_LIST, list.toJson()).commit()) {
+            // The device goes on with the list it has in memory; the next start
+            // reads whatever the file still holds.
+            AppLog.e(TAG, "the groups could not be written down")
+        }
+
         kept = list
 
         val connections = list.connections.map { started(context, it) }

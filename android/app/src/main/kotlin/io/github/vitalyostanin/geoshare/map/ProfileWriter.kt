@@ -128,7 +128,7 @@ private suspend fun announceSharing(memberId: String, connection: GroupConnectio
     } catch (cancellation: CancellationException) {
         throw cancellation
     } catch (error: Exception) {
-        AppLog.i(TAG, "could not say that the permissions changed: $error")
+        AppLog.w(TAG, "could not say that the permissions changed", error)
     }
 }
 
