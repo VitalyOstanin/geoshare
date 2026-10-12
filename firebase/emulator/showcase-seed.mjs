@@ -39,7 +39,10 @@ const minutesAgo = (minutes) => new Date(NOW - minutes * MINUTE).toISOString();
 const MEMBERS = [
     {
         localId: 'showanna2',
-        email: 'anna@geoshare.test',
+        // The debug build offers buttons only for the addresses seed.mjs
+        // writes (STAND_IN_ACCOUNTS), and the screenshots are taken signed in
+        // as Anna, so she borrows the first of them.
+        email: 'parent@geoshare.test',
         name: 'Anna',
         device: 'pixel-8',
         model: 'Pixel 8',
@@ -84,7 +87,7 @@ const MEMBERS = [
 ];
 
 // Anna runs the group.
-const ADMIN = 'anna@geoshare.test';
+const ADMIN = 'parent@geoshare.test';
 
 // Everyone opens their place to everyone else for good, except that Mia lets
 // Leo see hers only until three hours after the run: the one grant on the
@@ -177,6 +180,20 @@ const sharedWith = (readers) => ({
         fields: Object.fromEntries(readers.map(({ uid, until }) => [uid, timeValue(until)])),
     },
 });
+
+// Everything the emulators hold goes first. seed.mjs runs when they start and
+// has already made parent@ under an id of its own choosing, which would give
+// Anna the wrong colour; and its household would otherwise share the map.
+async function clear(url) {
+    const response = await fetch(url, { method: 'DELETE', headers: { Authorization: 'Bearer owner' } });
+
+    if (!response.ok) {
+        throw new Error(`${url}: ${response.status} ${await response.text()}`);
+    }
+}
+
+await clear(`http://${AUTH}/emulator/v1/projects/${PROJECT}/accounts`);
+await clear(`http://${FIRESTORE}/emulator/v1/projects/${PROJECT}/databases/(default)/documents`);
 
 const uids = new Map();
 
