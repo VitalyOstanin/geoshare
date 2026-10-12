@@ -190,7 +190,7 @@ export function shortenedAddress(email) {
 export function invitationUntilText(millis, locale) {
     const when = new Date(millis);
     const day = when.toLocaleDateString(locale, { day: 'numeric', month: 'long' });
-    const time = when.toLocaleTimeString(locale, { hour: '2-digit', minute: '2-digit', hourCycle: 'h23' });
+    const time = when.toLocaleTimeString(locale, { hour: '2-digit', minute: '2-digit' });
 
     return `${day}, ${time}`;
 }

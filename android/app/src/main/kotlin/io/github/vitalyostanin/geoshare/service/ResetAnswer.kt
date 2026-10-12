@@ -11,6 +11,7 @@ import androidx.core.content.getSystemService
 import io.github.vitalyostanin.geoshare.MainActivity
 import io.github.vitalyostanin.geoshare.R
 import io.github.vitalyostanin.geoshare.log.AppLog
+import io.github.vitalyostanin.geoshare.map.clockFormat
 import io.github.vitalyostanin.geoshare.map.shouldForget
 import io.github.vitalyostanin.geoshare.permission.devicePermissions
 import io.github.vitalyostanin.geoshare.project.GroupConnection
@@ -19,7 +20,6 @@ import kotlinx.coroutines.withTimeoutOrNull
 import java.time.Duration
 import java.time.Instant
 import java.time.ZoneId
-import java.time.format.DateTimeFormatter
 
 private const val TAG = "geoshare.service"
 
@@ -34,8 +34,6 @@ private const val CHANNEL_ID = "reset"
 
 /** How long the notification waits for the asker's name before a short id. */
 private val RESET_NAME_WAIT: Duration = Duration.ofSeconds(3)
-
-private val RESET_AT: DateTimeFormatter = DateTimeFormatter.ofPattern("HH:mm")
 
 /**
  * The last request this device carried out: its server stamp in each group, to
@@ -82,9 +80,14 @@ fun doneResetLine(context: Context): String? {
     return context.getString(
         R.string.reset_done_line,
         by,
-        RESET_AT.format(at.atZone(ZoneId.systemDefault())),
+        resetClock(context, at),
     )
 }
+
+/** When a request was carried out: the time alone, in the language the device is set to. */
+private fun resetClock(context: Context, at: Instant): String = clockFormat(
+    context.resources.configuration.locales[0],
+).format(at.atZone(ZoneId.systemDefault()))
 
 /**
  * This device's side of a request to forget its place: the same flag the
@@ -166,7 +169,7 @@ private fun resetNotification(context: Context, name: String, at: Instant): Noti
         .setContentText(
             context.getString(
                 R.string.reset_notification_text,
-                RESET_AT.format(at.atZone(ZoneId.systemDefault())),
+                resetClock(context, at),
             ),
         )
         .setContentIntent(open)

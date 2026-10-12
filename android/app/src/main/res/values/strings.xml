@@ -138,8 +138,6 @@
     <string name="aiding_wasted">Heard for nothing: %1$s. The device does not know where those satellites move, which is what resetting the satellite data puts right.</string>
     <string name="reason_help_title">Why a position is rejected</string>
     <string name="reason_help_intro">The device holds every position against several rules and rejects it as soon as the first one speaks. A rejection is not a fault: where the signal is spoofed there are more rejected answers than accepted ones, and that is the work being done properly.</string>
-    <string name="reason_help_sign">What was seen</string>
-    <string name="reason_help_means">What it means</string>
 
     <string name="reason_help_sign_width">The device named the radius it is somewhere inside, and the radius is over half a kilometre.</string>
     <string name="reason_help_means_width">Such an answer names a district rather than a place. It is what the towers give while the device is indoors.</string>
@@ -373,8 +371,6 @@
          says the same. -->
     <string name="mode_help_title">How a device collects its position</string>
     <string name="mode_help_intro">The device chooses one of these five by itself. Somebody with the map open outranks everything else; the rest of the time it spends as little as it can and still be found.</string>
-    <string name="mode_help_when">When</string>
-    <string name="mode_help_asks">What the device does</string>
     <string name="mode_help_when_viewing">Somebody has the map open.</string>
     <string name="mode_help_asks_viewing">Asks for the most exact position every 30 seconds, and writes it as soon as the marker would move.</string>
     <string name="mode_help_when_moving">The device noticed walking, running, cycling or riding.</string>

@@ -2,6 +2,7 @@ package io.github.vitalyostanin.geoshare.map
 
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotEquals
+import org.junit.Assert.assertTrue
 import org.junit.Test
 import java.time.ZoneId
 import java.time.ZonedDateTime
@@ -12,13 +13,22 @@ class DateTextsTest {
 
     @Test
     fun `a month is written in the language asked for after another was used first`() {
-        val english = endsAtText(moment, Locale.ENGLISH)
+        val english = endsAtText(moment, Locale.US)
         val russian = endsAtText(moment, Locale.forLanguageTag("ru"))
 
-        assertEquals("12 Oct 14:30", english)
+        assertTrue(english.startsWith("12 Oct 2:30"))
         assertNotEquals(english, russian)
-        assertEquals(true, russian.startsWith("12 окт"))
-        assertEquals(true, russian.endsWith("14:30"))
+        assertTrue(russian.startsWith("12 окт"))
+        assertTrue(russian.endsWith("14:30"))
+    }
+
+    // A screen that wrote some times in the language's own way and others
+    // always on a 24-hour clock showed "2:30 PM" and "14:30" side by side.
+    @Test
+    fun `the clock follows the language, twelve hours or twenty-four`() {
+        assertTrue(clockFormat(Locale.US).format(moment).endsWith("PM"))
+        assertEquals("14:30", clockFormat(Locale.forLanguageTag("ru")).format(moment))
+        assertTrue(endsAtText(moment, Locale.US).endsWith("PM"))
     }
 
     @Test
@@ -26,6 +36,6 @@ class DateTextsTest {
         val russian = invitationEndsText(moment, Locale.forLanguageTag("ru"))
 
         assertEquals("12 октября, 14:30", russian)
-        assertEquals("12 October, 14:30", invitationEndsText(moment, Locale.ENGLISH))
+        assertTrue(invitationEndsText(moment, Locale.US).startsWith("12 October, 2:30"))
     }
 }

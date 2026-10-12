@@ -4,6 +4,7 @@
     "type": "module",
     "description": "The map page: the same positions the phones write, in a browser",
     "scripts": {
-        "test": "node --test --test-timeout=30000 tests/*.test.mjs"
+        "test": "node --test --test-concurrency=4 --test-timeout=30000 tests/*.test.mjs",
+        "coverage": "node --test --test-concurrency=4 --test-timeout=30000 --experimental-test-coverage --test-coverage-include='public/**' --test-coverage-exclude='public/lib/vendor/**' tests/*.test.mjs"
     }
 }

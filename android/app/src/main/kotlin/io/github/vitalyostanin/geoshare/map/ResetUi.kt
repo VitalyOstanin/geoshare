@@ -15,7 +15,6 @@ import androidx.compose.ui.unit.dp
 import io.github.vitalyostanin.geoshare.R
 import java.time.Instant
 import java.time.ZoneId
-import java.time.format.DateTimeFormatter
 
 /**
  * The round button that asks a device to forget its place. Plain rather than
@@ -43,15 +42,17 @@ fun resetText(reset: Reset, now: Instant): String? {
         return null
     }
 
+    val clock = clockFormat(appLocale())
+
     return when (val state = resetState(reset, now)) {
         ResetState.Waiting -> stringResource(
             R.string.reset_waiting,
-            RESET_TIME.format(reset.askedAt.local()),
+            clock.format(reset.askedAt.local()),
         )
 
         is ResetState.Done -> stringResource(
             R.string.reset_done,
-            RESET_TIME.format(state.at.local()),
+            clock.format(state.at.local()),
         )
 
         ResetState.NoAnswer -> stringResource(R.string.reset_no_answer)
@@ -94,6 +95,3 @@ fun ResetDialog(
 }
 
 private fun Instant.local() = atZone(ZoneId.systemDefault())
-
-/** When a request was made or carried out: the time alone, since a row tells of one only for a day. */
-private val RESET_TIME: DateTimeFormatter = DateTimeFormatter.ofPattern("HH:mm")

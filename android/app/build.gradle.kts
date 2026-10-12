@@ -28,6 +28,11 @@ val appVersionName: String = providers.gradleProperty("appVersionName").get()
 val appVersionCode: Int = providers.gradleProperty("appVersionCode").get().toInt()
 val setupPageUrl: String = providers.gradleProperty("setupPageUrl").get()
 
+// Coverage is counted only when asked for, with -Pcoverage: the agent that
+// counts it slows every test run, and an ordinary run has no use for the
+// numbers. tools/coverage.sh is what passes it.
+val measureCoverage: Boolean = providers.gradleProperty("coverage").isPresent
+
 android {
     namespace = "io.github.vitalyostanin.geoshare"
     compileSdk = toolVersions.getValue("ANDROID_COMPILE_SDK").toInt()
@@ -55,6 +60,9 @@ android {
     }
 
     buildTypes {
+        debug {
+            enableUnitTestCoverage = measureCoverage
+        }
         release {
             isMinifyEnabled = true
             proguardFiles(
@@ -70,6 +78,12 @@ android {
         // Only for DEBUG, which is what keeps the stand-in services out of a
         // published build.
         buildConfig = true
+    }
+
+    lint {
+        // A string no screen shows is still one every translation has to keep
+        // up, and nothing else notices it has gone unread.
+        error += "UnusedResources"
     }
 
     testOptions {

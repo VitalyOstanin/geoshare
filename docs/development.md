@@ -65,6 +65,7 @@ publishing run the Firebase command line on the machine itself, and need
 | 8  | `tools/check.sh`        | the checks a change needs, `--all` for every one; CI runs it                |
 | 9  | `tools/run-services.sh` | stand-in Firestore and sign-in, filled with stand-in data                   |
 | 10 | `tools/run-emulator.sh` | a headless Android emulator; with the line above, a stand without a project |
+| 11 | `tools/coverage.sh`     | how much of the code the Android and the page's tests reach                 |
 
 The rest of `tools/` — `project.sh`, `web-config.sh`, `setup-site.sh`,
 `read-cost.sh`, `device-log.sh`, `device-sky.sh`, `siren-sound.sh` — says

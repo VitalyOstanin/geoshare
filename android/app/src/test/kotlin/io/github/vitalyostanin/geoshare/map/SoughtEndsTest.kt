@@ -15,7 +15,12 @@ class SoughtEndsTest {
     fun `a search ending today shows the time alone`() {
         assertEquals(
             "22:33",
-            soughtEndsShort(Instant.parse("2026-10-12T22:33:00Z"), now, Locale.ENGLISH, zone),
+            soughtEndsShort(
+                Instant.parse("2026-10-12T22:33:00Z"),
+                now,
+                Locale.forLanguageTag("ru"),
+                zone,
+            ),
         )
     }
 

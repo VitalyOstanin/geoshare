@@ -4,7 +4,13 @@
 # covered by the rules tests instead.
 #
 #   tools/web-test.sh
+#   tools/web-test.sh --coverage    the same run, with a coverage table at the end
 set -euo pipefail
+
+script=test
+if [[ "${1:-}" == "--coverage" ]]; then
+    script=coverage
+fi
 
 # shellcheck source=lib.sh
 source "$(dirname "${BASH_SOURCE[0]}")/lib.sh"
@@ -18,4 +24,4 @@ ensure_firebase_image
 exec timeout 10m podman run --rm "${limit_args[@]}" \
     -v "${REPO_ROOT}:/src:z" -w /src/web \
     "${FIREBASE_IMAGE}" \
-    npm test
+    npm run "${script}"

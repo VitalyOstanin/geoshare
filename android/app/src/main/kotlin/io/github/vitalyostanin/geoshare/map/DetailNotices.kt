@@ -32,10 +32,7 @@ import io.github.vitalyostanin.geoshare.soughtWords
 import kotlinx.coroutines.launch
 import java.time.Instant
 import java.time.ZoneId
-import java.time.format.DateTimeFormatter
 import java.util.Locale
-
-private val SOUGHT_ENDS_TIME: DateTimeFormatter = DateTimeFormatter.ofPattern("HH:mm")
 
 /**
  * When a search ends, short enough for a narrow card of the strip: the time
@@ -51,7 +48,7 @@ internal fun soughtEndsShort(
     val ends = endsAt.atZone(zone)
 
     return if (ends.toLocalDate() == now.atZone(zone).toLocalDate()) {
-        SOUGHT_ENDS_TIME.format(ends)
+        clockFormat(locale).format(ends)
     } else {
         endsAtText(ends, locale)
     }

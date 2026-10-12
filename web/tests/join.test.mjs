@@ -177,7 +177,9 @@ test('when an invitation stops working is said as a day and a time', () => {
     const millis = Date.parse('2026-10-01T15:40:00');
 
     assert.equal(invitationUntilText(millis, 'ru'), '1 октября, 15:40');
-    assert.equal(invitationUntilText(millis, 'en'), 'October 1, 15:40');
+    // The hour the way the language writes one, as everywhere else on the
+    // page: twelve hours in English, not a 24-hour clock forced on it.
+    assert.match(invitationUntilText(millis, 'en'), /^October 1, 03:40\sPM$/u);
 });
 
 // invitationTyped reads back whatever was pasted into the join field: a

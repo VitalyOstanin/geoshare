@@ -5,6 +5,7 @@
 // even read geoshare.json.
 
 import { JOIN_WORDS } from './lib/join-words.js';
+import { spokenLanguage } from './lib/language.js';
 import {
     RELEASES_URL,
     buildIntentUrl,
@@ -13,6 +14,10 @@ import {
     parseInvitation,
     siteFromHost,
 } from './lib/join.js';
+
+// Said for the reader as well as the eye: a screen reader takes the voice,
+// and the browser its hyphenation and its offer to translate, from this.
+document.documentElement.lang = spokenLanguage();
 
 const invitation = parseInvitation(window.location.hash);
 const { title, invitedFor } = joinCaption(JOIN_WORDS, invitation);

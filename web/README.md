@@ -75,3 +75,4 @@ Nothing here talks to Firebase: the rules the clients run into are covered by
 | 14 | `public/setup-privacy.html`   | The privacy policy the setup page links to                      |
 | 15 | `public/lib/setup-*.js`       | Creating the project and its Hosting site                       |
 | 16 | `public/styles/*.css`         | One file per part; the map takes what the panel leaves          |
+| 17 | `public/lib/vendor/`          | MapLibre GL JS and the QR encoder, each with its licence text   |
