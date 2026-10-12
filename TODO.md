@@ -875,3 +875,35 @@ Worth settling before it is built:
 - **Relation to the shared list and notes** (see "Beyond a location"): both
   are short text shared within a group, and may be better as one feature than
   two.
+
+## A browser extension over the page's code
+
+The group's map in a browser without opening the page: an icon in the
+toolbar, the map in its popup, built from the same code as the page. Whether
+it is needed at all is an open question; what has been found so far:
+
+- **Signing in.** Firebase signs an extension in through a page it opens in an
+  offscreen document, and the extension's origin has to be an authorised
+  domain of the project. Every group has its own project, so that is one more
+  step for every project owner, unless the setup page can add it.
+- **Where the subscription lives.** A popup subscribes each time it opens and
+  starts cold; an offscreen document keeps the subscription warm but then the
+  devices of the group would be told someone is watching all the time, and
+  spend their battery on it; a side panel stays open beside any tab and keeps
+  a clear lifetime.
+- **Several groups.** The page already handles more than one group; the
+  extension would have to as well.
+
+## Geofence and movement on Huawei devices without Google services
+
+Without Google Play services the `Idle` collection mode is out of reach: the
+geofence and the movement recognition both come from Play services, and the
+platform's own proximity alert checks the position only every half hour, too
+rarely to tell when someone has left. Huawei's Location Kit offers both pieces
+on Huawei devices with HMS Core.
+
+Worth doing if a Huawei device without Google services joins a group and its
+battery matters. The price: an application registered in AppGallery Connect,
+its configuration file and signing fingerprint, and a closed-source library in
+the build — which sits poorly with a project anyone is meant to build and
+check from source, so it would have to stay optional.
