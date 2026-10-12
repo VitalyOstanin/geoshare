@@ -313,18 +313,7 @@ class MainActivity : AppCompatActivity() {
                 // neither has anything of its own to show above the map.
                 val connectState by connectFlow.state.collectAsStateWithLifecycle()
 
-                if (connectState !is ConnectState.NotConnected &&
-                    connectState !is ConnectState.Done
-                ) {
-                    Dialog(
-                        onDismissRequest = connectFlow::cancel,
-                        properties = DialogProperties(usePlatformDefaultWidth = false),
-                    ) {
-                        Surface(modifier = Modifier.fillMaxSize()) {
-                            ConnectFlowScreen(connectFlow, connectState)
-                        }
-                    }
-                }
+                ConnectFlowDialog(connectState)
 
                 val connection = shown
 
@@ -347,18 +336,21 @@ class MainActivity : AppCompatActivity() {
                             activity = this,
                             connection = connection,
                             current = current,
-                            theme = theme,
-                            onTheme = { wanted -> theme = wanted },
-                            language = language,
-                            sharingOn = sharingOn,
-                            onSharingOn = { wanted -> sharingOn = wanted },
-                            startupSet = startupSet,
-                            onStartupSet = { set -> startupSet = set },
-                            jumpsFiltered = jumpsFiltered,
-                            onJumpsFiltered = { wanted -> jumpsFiltered = wanted },
-                            sourcesLeftOut = sourcesLeftOut,
-                            onSourcesLeftOut = { left -> sourcesLeftOut = left },
-                            aidingDoubted = aidingDoubted,
+                            kept =
+                            KeptChoices(
+                                theme = theme,
+                                onTheme = { wanted -> theme = wanted },
+                                language = language,
+                                sharingOn = sharingOn,
+                                onSharingOn = { wanted -> sharingOn = wanted },
+                                startupSet = startupSet,
+                                onStartupSet = { set -> startupSet = set },
+                                jumpsFiltered = jumpsFiltered,
+                                onJumpsFiltered = { wanted -> jumpsFiltered = wanted },
+                                sourcesLeftOut = sourcesLeftOut,
+                                onSourcesLeftOut = { left -> sourcesLeftOut = left },
+                                aidingDoubted = aidingDoubted,
+                            ),
                         )
 
                     else ->
@@ -375,6 +367,27 @@ class MainActivity : AppCompatActivity() {
                             onShown = { unfinished = null },
                         )
                     }
+                }
+            }
+        }
+    }
+
+    /**
+     * The link that arrived on a device already in a group, offering an
+     * invitation or naming another project, over the map. NotConnected and
+     * Done have nothing of their own to show there.
+     */
+    @Composable
+    private fun ConnectFlowDialog(connectState: ConnectState) {
+        if (connectState !is ConnectState.NotConnected &&
+            connectState !is ConnectState.Done
+        ) {
+            Dialog(
+                onDismissRequest = connectFlow::cancel,
+                properties = DialogProperties(usePlatformDefaultWidth = false),
+            ) {
+                Surface(modifier = Modifier.fillMaxSize()) {
+                    ConnectFlowScreen(connectFlow, connectState)
                 }
             }
         }

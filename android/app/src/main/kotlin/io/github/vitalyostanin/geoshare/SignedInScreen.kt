@@ -13,15 +13,19 @@ import androidx.lifecycle.lifecycleScope
 import io.github.vitalyostanin.geoshare.auth.AuthState
 import io.github.vitalyostanin.geoshare.collection.Constellation
 import io.github.vitalyostanin.geoshare.download.DownloadSetting
+import io.github.vitalyostanin.geoshare.download.DownloadState
 import io.github.vitalyostanin.geoshare.log.AppLog
 import io.github.vitalyostanin.geoshare.map.FirstShareQuestion
 import io.github.vitalyostanin.geoshare.map.GroupChoice
 import io.github.vitalyostanin.geoshare.map.GroupSwitch
 import io.github.vitalyostanin.geoshare.map.KeepWatching
+import io.github.vitalyostanin.geoshare.map.LabelKind
 import io.github.vitalyostanin.geoshare.map.LocalLink
 import io.github.vitalyostanin.geoshare.map.MapScreen
+import io.github.vitalyostanin.geoshare.map.MemberGrant
 import io.github.vitalyostanin.geoshare.map.MemberProfile
 import io.github.vitalyostanin.geoshare.map.PublishProfile
+import io.github.vitalyostanin.geoshare.map.Search
 import io.github.vitalyostanin.geoshare.map.SettingsActions
 import io.github.vitalyostanin.geoshare.map.SettingsState
 import io.github.vitalyostanin.geoshare.map.labelledPositions
@@ -41,6 +45,7 @@ import io.github.vitalyostanin.geoshare.map.withShare
 import io.github.vitalyostanin.geoshare.map.withinAnswerWait
 import io.github.vitalyostanin.geoshare.map.writeLabel
 import io.github.vitalyostanin.geoshare.map.writePhoneName
+import io.github.vitalyostanin.geoshare.membership.RosterSeen
 import io.github.vitalyostanin.geoshare.project.ConnectLink
 import io.github.vitalyostanin.geoshare.project.Connections
 import io.github.vitalyostanin.geoshare.project.GroupConnection
@@ -91,18 +96,7 @@ internal fun SignedInScreen(
     activity: MainActivity,
     connection: GroupConnection,
     current: AuthState.SignedIn,
-    theme: ThemeChoice,
-    onTheme: (ThemeChoice) -> Unit,
-    language: LanguageChoice,
-    sharingOn: Boolean,
-    onSharingOn: (Boolean) -> Unit,
-    startupSet: Boolean,
-    onStartupSet: (Boolean) -> Unit,
-    jumpsFiltered: Boolean,
-    onJumpsFiltered: (Boolean) -> Unit,
-    sourcesLeftOut: Set<String>,
-    onSourcesLeftOut: (Set<String>) -> Unit,
-    aidingDoubted: Set<Constellation>,
+    kept: KeptChoices,
 ) {
     val profiles by rememberMemberProfiles()
     val searches by rememberSearches()
@@ -116,7 +110,6 @@ internal fun SignedInScreen(
     val sharedWith by rememberOwnSharedWith(current.memberId)
     val rosterSeen by rememberRosterSeen()
     val roster = rosterSeen.roster
-    val rosterAnswered = rosterSeen.answered
     // A project with no group of this account's own in it yet refuses the
     // profile, the claim to be looking and the first share alike; they wait
     // for the group rather than be written and refused on every return.
@@ -124,39 +117,11 @@ internal fun SignedInScreen(
     val link by rememberDatabaseLink()
     val answers = rememberSaveable(saver = GroupAnswers.Saver) { GroupAnswers() }
 
-    // The service does the same; whichever starts
-    // first takes the old documents back.
-    LaunchedEffect(connection, current.memberId) {
-        leavePreviousId(current.memberId, activity.device, connection = connection)
-    }
-
-    PendingInvitationAnswer(activity, connection, current, answers)
-
-    // A service left without a session stops after a
-    // minute, and the account signed in after that —
-    // the device handed to somebody else — would share
-    // nothing until the screen was next opened.
-    LaunchedEffect(current.memberId) {
-        activity.continueSharingSetup()
-    }
-
-    if (!outside) {
-        KeepWatching(current.memberId, activity.device.id)
-    }
+    SignedInEffects(activity, connection, current, answers, outside)
 
     // The other half of the same collection: this
     // device says it is looking, and reads who else is.
     val watching by rememberWatchers(current.memberId, activity.device.id)
-
-    if (!outside) {
-        PublishProfile(
-            memberId = current.memberId,
-            displayName = current.displayName,
-            email = current.email,
-            pictureUrl = current.pictureUrl,
-            deviceId = activity.device.id,
-        )
-    }
 
     // Watched rather than read once: the answer to the roaming question is
     // written by a receiver while this screen may be open.
@@ -187,29 +152,16 @@ internal fun SignedInScreen(
             ownPictureUrl = current.pictureUrl,
             searches = searches,
             settings =
-            SettingsState(
-                sharing = sharingOn,
-                permissionNotice = activity.permissionNotice,
-                theme = theme,
-                language = language,
+            settingsStateOf(
+                activity = activity,
+                connection = connection,
+                memberId = current.memberId,
+                kept = kept,
+                answers = answers,
                 sharedWith = sharedWith,
-                batteryUnrestricted = activity.batteryFree,
-                sirenThroughSilence = activity.sirenLoud,
-                startupScreen = activity.startupAvailable,
-                startupSet = startupSet,
-                jumpsFiltered = jumpsFiltered,
-                sourcesLeftOut = sourcesLeftOut,
-                aidingDoubted = aidingDoubted,
                 downloads = downloads,
-                roster = roster,
-                rosterAnswered = rosterAnswered,
+                rosterSeen = rosterSeen,
                 grants = grants,
-                invitation = answers.invitation,
-                site = connection.settings.site,
-                groupTrouble = answers.groupTrouble,
-                refusedJoin = answers.refusedJoin,
-                phoneName =
-                grants[current.memberId]?.phones?.get(activity.device.id)?.name,
                 searches = searches,
             ),
             actions =
@@ -221,18 +173,14 @@ internal fun SignedInScreen(
                 sharedWith = { sharedWith },
                 roster = { roster },
                 downloadSetting = downloadSetting,
-                onSharingOn = onSharingOn,
-                onJumpsFiltered = onJumpsFiltered,
-                onSourcesLeftOut = onSourcesLeftOut,
-                onTheme = onTheme,
-                onStartupSet = onStartupSet,
+                onSharingOn = kept.onSharingOn,
+                onJumpsFiltered = kept.onJumpsFiltered,
+                onSourcesLeftOut = kept.onSourcesLeftOut,
+                onTheme = kept.onTheme,
+                onStartupSet = kept.onStartupSet,
             ),
             labels = labels,
-            onLabel = { kind, key, name ->
-                activity.lifecycleScope.launch {
-                    writeLabel(current.memberId, kind, key, name, connection = connection)
-                }
-            },
+            onLabel = labelWriter(activity, current.memberId, connection),
             groups = groupSwitch(activity, connection, groupChoices),
         )
 
@@ -241,6 +189,120 @@ internal fun SignedInScreen(
         if (!outside) {
             AskFirstShare(activity, connection, current.memberId, profiles, sharedWith)
         }
+    }
+}
+
+/** Keeps a name this member gives a person or a device, in the activity's scope so a closed dialog does not drop it. */
+private fun labelWriter(
+    activity: MainActivity,
+    memberId: String,
+    connection: GroupConnection,
+): (LabelKind, String, String?) -> Unit = { kind, key, name ->
+    activity.lifecycleScope.launch {
+        writeLabel(memberId, kind, key, name, connection = connection)
+    }
+}
+
+/** What the settings screen shows of this group, this account and this device. */
+private fun settingsStateOf(
+    activity: MainActivity,
+    connection: GroupConnection,
+    memberId: String,
+    kept: KeptChoices,
+    answers: GroupAnswers,
+    sharedWith: Map<String, Instant>,
+    downloads: DownloadState,
+    rosterSeen: RosterSeen,
+    grants: Map<String, MemberGrant>,
+    searches: Map<String, Search>,
+): SettingsState = SettingsState(
+    sharing = kept.sharingOn,
+    permissionNotice = activity.permissionNotice,
+    theme = kept.theme,
+    language = kept.language,
+    sharedWith = sharedWith,
+    batteryUnrestricted = activity.batteryFree,
+    sirenThroughSilence = activity.sirenLoud,
+    startupScreen = activity.startupAvailable,
+    startupSet = kept.startupSet,
+    jumpsFiltered = kept.jumpsFiltered,
+    sourcesLeftOut = kept.sourcesLeftOut,
+    aidingDoubted = kept.aidingDoubted,
+    downloads = downloads,
+    roster = rosterSeen.roster,
+    rosterAnswered = rosterSeen.answered,
+    grants = grants,
+    invitation = answers.invitation,
+    site = connection.settings.site,
+    groupTrouble = answers.groupTrouble,
+    refusedJoin = answers.refusedJoin,
+    phoneName =
+    grants[memberId]?.phones?.get(activity.device.id)?.name,
+    searches = searches,
+)
+
+/**
+ * The settings a member expects to survive a sign-out — sharing, the theme,
+ * the filters — with the ways to change them, kept above the screen of one
+ * group: a [remember] made inside [SignedInScreen] would reset with it.
+ */
+internal class KeptChoices(
+    val theme: ThemeChoice,
+    val onTheme: (ThemeChoice) -> Unit,
+    val language: LanguageChoice,
+    val sharingOn: Boolean,
+    val onSharingOn: (Boolean) -> Unit,
+    val startupSet: Boolean,
+    val onStartupSet: (Boolean) -> Unit,
+    val jumpsFiltered: Boolean,
+    val onJumpsFiltered: (Boolean) -> Unit,
+    val sourcesLeftOut: Set<String>,
+    val onSourcesLeftOut: (Set<String>) -> Unit,
+    val aidingDoubted: Set<Constellation>,
+)
+
+/**
+ * What the signed-in screen sets going in the background: the old documents
+ * taken back, a pending invitation answered, sharing carried on, and — once
+ * the account has a group of its own here — the claim to be looking and the
+ * profile.
+ */
+@Composable
+private fun SignedInEffects(
+    activity: MainActivity,
+    connection: GroupConnection,
+    current: AuthState.SignedIn,
+    answers: GroupAnswers,
+    outside: Boolean,
+) {
+    // The service does the same; whichever starts
+    // first takes the old documents back.
+    LaunchedEffect(connection, current.memberId) {
+        leavePreviousId(current.memberId, activity.device, connection = connection)
+    }
+
+    PendingInvitationAnswer(activity, connection, current, answers)
+
+    // A service left without a session stops after a
+    // minute, and the account signed in after that —
+    // the device handed to somebody else — would share
+    // nothing until the screen was next opened.
+    LaunchedEffect(current.memberId) {
+        activity.continueSharingSetup()
+    }
+
+    if (!outside) {
+        KeepWatching(current.memberId, activity.device.id)
+    }
+
+    if (!outside) {
+        PublishProfile(
+            memberId = current.memberId,
+            displayName = current.displayName,
+            email = current.email,
+            pictureUrl = current.pictureUrl,
+            deviceId = activity.device.id,
+        )
     }
 }
 
