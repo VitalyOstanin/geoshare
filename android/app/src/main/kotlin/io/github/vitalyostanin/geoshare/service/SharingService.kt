@@ -25,15 +25,16 @@ import io.github.vitalyostanin.geoshare.collection.Counted
 import io.github.vitalyostanin.geoshare.collection.FalsePlace
 import io.github.vitalyostanin.geoshare.collection.Fix
 import io.github.vitalyostanin.geoshare.collection.FoundBy
+import io.github.vitalyostanin.geoshare.collection.Grounds
 import io.github.vitalyostanin.geoshare.collection.IDLE_REPEAT
+import io.github.vitalyostanin.geoshare.collection.Judgement
 import io.github.vitalyostanin.geoshare.collection.JumpReason
 import io.github.vitalyostanin.geoshare.collection.LEFT_OUT_BY_SOURCE
-import io.github.vitalyostanin.geoshare.collection.Moving
 import io.github.vitalyostanin.geoshare.collection.PutDown
 import io.github.vitalyostanin.geoshare.collection.STIRS_KEPT
+import io.github.vitalyostanin.geoshare.collection.SkySays
 import io.github.vitalyostanin.geoshare.collection.Stir
 import io.github.vitalyostanin.geoshare.collection.Trail
-import io.github.vitalyostanin.geoshare.collection.agreementStands
 import io.github.vitalyostanin.geoshare.collection.anchorFrom
 import io.github.vitalyostanin.geoshare.collection.andThen
 import io.github.vitalyostanin.geoshare.collection.answeredBy
@@ -41,12 +42,12 @@ import io.github.vitalyostanin.geoshare.collection.carryingSince
 import io.github.vitalyostanin.geoshare.collection.choiceFor
 import io.github.vitalyostanin.geoshare.collection.chooseMode
 import io.github.vitalyostanin.geoshare.collection.clockDisagrees
-import io.github.vitalyostanin.geoshare.collection.comingHome
 import io.github.vitalyostanin.geoshare.collection.distanceMetres
 import io.github.vitalyostanin.geoshare.collection.driftedWhilePutDown
 import io.github.vitalyostanin.geoshare.collection.fenceMoves
 import io.github.vitalyostanin.geoshare.collection.foundBy
 import io.github.vitalyostanin.geoshare.collection.impliedSpeedMps
+import io.github.vitalyostanin.geoshare.collection.judge
 import io.github.vitalyostanin.geoshare.collection.knows
 import io.github.vitalyostanin.geoshare.collection.networkAnswerStands
 import io.github.vitalyostanin.geoshare.collection.noteOf
@@ -64,13 +65,10 @@ import io.github.vitalyostanin.geoshare.collection.secondOpinionDue
 import io.github.vitalyostanin.geoshare.collection.secondOpinionEvery
 import io.github.vitalyostanin.geoshare.collection.secondOpinionWithEachFix
 import io.github.vitalyostanin.geoshare.collection.shouldWrite
-import io.github.vitalyostanin.geoshare.collection.stillSettling
 import io.github.vitalyostanin.geoshare.collection.walkNote
 import io.github.vitalyostanin.geoshare.collection.walkingNow
-import io.github.vitalyostanin.geoshare.collection.watchedInAnyGroup
 import io.github.vitalyostanin.geoshare.collection.watchedUntil
 import io.github.vitalyostanin.geoshare.collection.whomToAsk
-import io.github.vitalyostanin.geoshare.collection.whyAJump
 import io.github.vitalyostanin.geoshare.collection.word
 import io.github.vitalyostanin.geoshare.log.AppLog
 import io.github.vitalyostanin.geoshare.map.PublishedProfile
@@ -87,21 +85,16 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.awaitCancellation
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.delay
-import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.channelFlow
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.combine
-import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.emptyFlow
 import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.flow.flatMapLatest
-import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.onStart
-import kotlinx.coroutines.flow.shareIn
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withTimeoutOrNull
 import java.time.Duration
@@ -110,15 +103,6 @@ import java.time.LocalTime
 import java.util.Locale
 
 private const val TAG = "geoshare.service"
-
-/** What [SharingService] made of a fix before deciding whether to write it. */
-private class Judgement(
-    val whence: FoundBy,
-    val settling: Boolean,
-    val jump: JumpReason?,
-    val agreed: Boolean,
-    val home: Boolean,
-)
 
 /**
  * How often the device says how it is when nothing else has made it say so.
@@ -206,7 +190,7 @@ class SharingService : LifecycleService() {
     private val sirens by lazy { SirenAnswer(this, lifecycleScope) }
 
     /** What the satellites themselves are saying, apart from the written fix. */
-    private val skyNotes by lazy { SkyNotes(this, { radio }, { lastFix }, { heardAt }) }
+    private val skyNotes by lazy { SkyNotes(this, { radio }, { lastFix }, { silence.heardAt }) }
 
     private var lastFix: Fix? = null
 
@@ -335,24 +319,8 @@ class SharingService : LifecycleService() {
      */
     private var lastWritten: Written? = null
 
-    /**
-     * When the provider last said anything at all.
-     *
-     * Kept apart from [lastFix], which is the last position written down: a fix
-     * the filter dropped is still the provider answering, and what the rescue
-     * below watches for is silence rather than stillness.
-     */
-    private var heardAt: Instant = Instant.now()
-
-    /**
-     * When the last write actually reached the database.
-     *
-     * Not the same thing as the moment of the fix in it: the quiet mode writes
-     * a position taken half an hour ago on purpose, and what keeps the card
-     * from going grey is when the document was written rather than when the
-     * device was there.
-     */
-    private var wroteAt: Instant? = null
+    /** How long the provider and the writes have been quiet. */
+    private val silence = Silence()
 
     /**
      * The place the fence is drawn around: the last position written that was
@@ -364,6 +332,14 @@ class SharingService : LifecycleService() {
      * until the first position is written there is nothing to stand still in.
      */
     private val fenceCentre = MutableStateFlow<Fix?>(null)
+
+    /** The mode collected in, and again whenever it changes. */
+    private val modeReview by lazy {
+        ModeReview(this, lifecycleScope, links, fenceCentre) { untils, moving, standing, ownMap ->
+            carried.hear(moving, Instant.now())
+            currentMode(untils, moving.going, standing, ownMap)
+        }
+    }
 
     /**
      * The cable going in or coming out, said at once.
@@ -754,7 +730,7 @@ class SharingService : LifecycleService() {
         // one source the spoofer cannot reach.
         trusted: Boolean = false,
     ): Boolean {
-        val judged = judge(fix, trusted)
+        val judged = whatToMakeOf(fix, trusted)
 
         // Every fix that arrives is written down, whether or not it is written
         // out: what the provider answers where it is being jammed is the thing
@@ -764,11 +740,11 @@ class SharingService : LifecycleService() {
 
         carried.noticeAnAnswerThatWillNotFollow(fix, judged.whence)
 
-        if (judged.jump != null && jumps.enabled && !judged.agreed && !judged.home) {
+        if (judged.leftOutAsJump(jumps.enabled)) {
             candidate = fix
             jumpsInARow += 1
 
-            tellThemAnswersAreBeingLeftOut(writer, judged.jump.name)
+            tellThemAnswersAreBeingLeftOut(writer, judged.jump?.name.orEmpty())
 
             askTheOtherRadios(writer, mode)
 
@@ -804,11 +780,11 @@ class SharingService : LifecycleService() {
     }
 
     /**
-     * What is made of a fix before it is written or left out: where it came
-     * from, whether the receiver is still settling, and whether it is a jump
-     * and, if so, whether one of the ways out of a jump applies.
+     * What is made of a fix before it is written or left out: the service's
+     * own memory brought up to date with it, then read once into the
+     * [Grounds] the decision is taken on.
      */
-    private fun judge(fix: Fix, trusted: Boolean): Judgement {
+    private fun whatToMakeOf(fix: Fix, trusted: Boolean): Judgement {
         if (jumps.takeForgetRequest()) {
             forgetThePlace()
         }
@@ -821,59 +797,25 @@ class SharingService : LifecycleService() {
         // be a different epoch from the one the fix came out of.
         restsOn = if (trusted) emptyMap() else radio.restingOn()
 
-        // How the device arrived at this answer, worked out before anything is
-        // decided: it settles both whether this is a source the member allows
-        // and what the written document says about itself. The receiver's own
-        // last answer is what makes it possible at all — the fused answer
-        // being weighed carries no note of its own on these devices.
-        val whence = foundBy(fix, lastSatellitePosition(this))
+        val grounds =
+            Grounds(
+                lastFix = lastFix,
+                candidate = candidate,
+                satellites = lastSatellitePosition(this),
+                networkSays = opinion.said,
+                now = Instant.now(),
+                lately = lately,
+                falsePlaces = falsePlaces,
+                circleLimits = circleLimits,
+                restsOn = restsOn,
+                skySays = if (trusted) SkySays() else radio.skySays(),
+                standingSince = carried.standingSince,
+                putDown = carried.putDown,
+                carrying = carried.carrying(),
+                trail = trail,
+            )
 
-        // Whether the receiver has had time to settle since the device was
-        // switched on, read off the same epoch as the rules below. Never asked
-        // of an answer from the towers: it is a statement about the satellites,
-        // and such an answer rests on none.
-        val settling = !trusted && stillSettling(fix.sinceBoot, restsOn)
-
-        val jump =
-            if (trusted) {
-                null
-            } else {
-                whyAJump(
-                    lastFix,
-                    fix,
-                    carried.standingSince,
-                    opinion.said,
-                    Instant.now(),
-                    lately,
-                    falsePlaces,
-                    circleLimits,
-                    restsOn = restsOn,
-                    skySays = radio.skySays(),
-                    putDown = carried.putDown,
-                    carrying = carried.carrying(),
-                    settling = settling,
-                )
-            }
-        // A fix left out does not move the last position, and that is how the
-        // marker can be left standing somewhere the device has long left: a
-        // wrong last position turns every true fix that follows into a jump.
-        // A second fix that agrees with the one before it is the way out of a
-        // width nothing can outlive, and of the rules that measure against
-        // that last position. Never on the word of the two answers alone,
-        // because a spoofed signal draws a road whose fixes all agree: the
-        // towers or the Wi-Fi around the device have to name the same place,
-        // and past the width only an answer as narrow as the Wi-Fi's will do.
-        val agreed =
-            jump != null && agreementStands(jump, candidate, fix, opinion.said, Instant.now())
-
-        // The other way out of an anchor that has gone wrong, and the only one
-        // that works against a width or a false place: the device answering
-        // from somewhere it has been three times over an hour. Those visits
-        // are positions that were written, and while a spoofer runs, nothing
-        // is — so this cannot be arranged by feeding the device a signal.
-        val home = jump != null && !agreed && comingHome(trail, lastFix, fix)
-
-        return Judgement(whence, settling, jump, agreed, home)
+        return judge(fix, trusted, grounds)
     }
 
     /**
@@ -907,7 +849,7 @@ class SharingService : LifecycleService() {
 
         lastFix = fix
         lastWritten = written
-        wroteAt = Instant.now()
+        silence.wroteAt = Instant.now()
         leftOut.forget()
         rememberThePlace(fix)
         carried.anchorWhereItLies(fix, Instant.now())
@@ -943,7 +885,7 @@ class SharingService : LifecycleService() {
         }
 
         lastWritten = written
-        wroteAt = Instant.now()
+        silence.wroteAt = Instant.now()
 
         return true
     }
@@ -976,7 +918,7 @@ class SharingService : LifecycleService() {
 
                 // A flipped source switch restarts the round like a new mode
                 // does: the request itself has to change, not only the reading.
-                modes().combine(sources.changes()) { mode, _ ->
+                modeReview.modes().combine(sources.changes()) { mode, _ ->
                     mode
                 }.collectLatest { mode -> collectIn(mode) }
             }
@@ -999,7 +941,7 @@ class SharingService : LifecycleService() {
             // Nothing to ask for, so nothing would be written either; the
             // position already known is repeated instead, and the next mode
             // arrives on its own.
-            keepSaying(writer, mode)
+            silence.keepSaying { sayAgain(writer, mode) }
 
             return
         }
@@ -1026,14 +968,14 @@ class SharingService : LifecycleService() {
         }
 
         coroutineScope {
-            heardAt = Instant.now()
+            silence.heardAt = Instant.now()
             launch { rescueWhileSilent(writer, mode) }
             launch { skyNotes.watchTheSatellites(mode) }
             launch { skyNotes.noteTheSkyWhileSilent(mode) }
             launch { opinion.keep(mode) }
 
             positionUpdates(this@SharingService, spec, asked).collect { fix ->
-                heardAt = Instant.now()
+                silence.heardAt = Instant.now()
 
                 if (sameAnswer(first, fix)) {
                     return@collect
@@ -1057,66 +999,6 @@ class SharingService : LifecycleService() {
             // Only the system sends these, and nothing else may reach in.
             ContextCompat.RECEIVER_NOT_EXPORTED,
         )
-    }
-
-    /**
-     * The mode as it stands, and again whenever it changes.
-     *
-     * Two things move it: the viewers, which arrive through the subscription
-     * within about a second of somebody opening a map, and the clock and the
-     * battery, which are looked at on a timer. Repeats are dropped, so a review
-     * that finds the same mode does not interrupt the collection.
-     */
-    @OptIn(ExperimentalCoroutinesApi::class)
-    private fun modes(): Flow<CollectionMode> {
-        val reviews =
-            flow {
-                while (true) {
-                    emit(Unit)
-                    delay(MODE_REVIEW.toMillis())
-                }
-            }
-
-        // Every group the device is linked to, each saying when its watching
-        // runs out; a group joined or left while the service runs is followed
-        // from then on. A group already followed keeps its answer across that:
-        // listened to afresh it would begin by saying nobody looks, and every
-        // group joined would drop the device out of its mode for an instant —
-        // a cancelled request, a new one and a status written for nothing.
-        val followed = HashMap<GroupLink, Flow<List<Instant>>>()
-        val looking =
-            links.flatMapLatest { linked ->
-                followed.keys.retainAll(linked.toSet())
-
-                if (linked.isEmpty()) {
-                    flowOf(emptyList())
-                } else {
-                    combine(
-                        linked.map { link ->
-                            followed.getOrPut(link) {
-                                link.watching().shareIn(
-                                    lifecycleScope,
-                                    SharingStarted.WhileSubscribed(
-                                        WATCHING_OUTLIVES_A_RELINK.toMillis(),
-                                    ),
-                                    replay = 1,
-                                )
-                            }
-                        },
-                    ) { perGroup -> watchedInAnyGroup(perGroup.toList()) }
-                }
-            }
-
-        return combine(
-            looking,
-            movement(this),
-            standingStill(this, fenceCentre),
-            MapOnScreen.state,
-            reviews,
-        ) { untils, moving, standing, ownMap, _ ->
-            carried.hear(moving, Instant.now())
-            currentMode(untils, moving.going, standing, ownMap)
-        }.distinctUntilChanged()
     }
 
     /**
@@ -1194,81 +1076,19 @@ class SharingService : LifecycleService() {
         return positionNow(priority, asked)
     }
 
-    /**
-     * Repeats the last position while the mode asks for nothing.
-     *
-     * The quiet mode is the one the device reaches by staying at home, and it
-     * collects nothing at all: without this the household would go grey on
-     * each other's maps every evening, which is the opposite of what standing
-     * still means. Counted from the last write rather than from entering the
-     * mode, because the device arrives here with a write already behind it.
-     */
-    private suspend fun keepSaying(writer: EveryGroup, mode: CollectionMode) {
-        while (true) {
-            val wrote = wroteAt
-            val quiet = if (wrote == null) IDLE_REPEAT else Duration.between(wrote, Instant.now())
-
-            if (quiet < IDLE_REPEAT) {
-                delay((IDLE_REPEAT - quiet).toMillis())
-
-                continue
-            }
-
-            if (!sayAgain(writer, mode)) {
-                // Nothing written yet to repeat, or the write did not reach
-                // the database. Either way the next round tries again.
-                delay(IDLE_REPEAT.toMillis())
-            }
-        }
-    }
-
-    /**
-     * Asks another way while the provider says nothing.
-     *
-     * The subscription is the only thing that normally writes anything, and it
-     * can go quiet for reasons the service has no way of hearing about: the
-     * fast mode asks the satellites alone, and a device on a desk indoors gets
-     * no answer from them at all. The card then goes grey on everybody else's
-     * map while this service is running perfectly well, which is the one
-     * failure that looks exactly like the application being broken.
-     *
-     * So the silence is measured, and past [rescueAfter] the device asks once
-     * with a coarser accuracy — the network answer, a hundred metres wide, is
-     * worth more than an exact one nobody ever hears. The write goes through
-     * whatever the filter would have said: what is being reported is not a new
-     * place but the fact that the device is still there to report it.
-     */
+    /** Asks another way while the provider says nothing; see [Silence.rescue]. */
     private suspend fun rescueWhileSilent(writer: EveryGroup, mode: CollectionMode) {
-        val silence = rescueAfter(mode) ?: return
+        val silent = rescueAfter(mode) ?: return
         val priority = rescuePriority(mode) ?: return
         val asked = asking(rescueAccuracy(mode)) ?: return
 
-        while (true) {
-            val quiet = Duration.between(heardAt, Instant.now())
-
-            if (quiet < silence) {
-                delay((silence - quiet).toMillis())
-
-                continue
-            }
-
-            AppLog.w(TAG, "nothing heard for $quiet in mode $mode; asking a cheaper way")
-
-            // Counted from the asking rather than from an answer, so that a
-            // rescue which finds nothing either waits its turn like the rest
-            // instead of turning into a loop.
-            heardAt = Instant.now()
-
-            val fix = positionNow(priority, asked)
-
-            if (fix != null) {
-                writeIfWorth(writer, fix, mode, always = true)
-
-                continue
-            }
-
-            opinion.noteWhatItKnows()
-        }
+        silence.rescue(
+            silent,
+            mode,
+            ask = { positionNow(priority, asked) },
+            write = { fix -> writeIfWorth(writer, fix, mode, always = true) },
+            foundNothing = { opinion.noteWhatItKnows() },
+        )
     }
 
     /**
@@ -1680,26 +1500,6 @@ class SharingService : LifecycleService() {
     }
 
     companion object {
-        /**
-         * How often the mode is reconsidered while the service runs.
-         *
-         * A viewer who leaves quietly — a closed lid, a flat battery — writes
-         * nothing more, so the subscription brings no change and the claim
-         * simply ages; the device learns it has run out only on a review. Once
-         * a minute, rather than once a claim, keeps the fifteen-second mode
-         * from outliving the last watcher by as long again as the claim
-         * itself. A review reads nothing: it only asks the same question of
-         * the clock.
-         */
-        private val MODE_REVIEW: Duration = Duration.ofMinutes(1)
-
-        /**
-         * How long a group's watching is kept listened to with nothing
-         * reading it: the moment between the list of groups changing and the
-         * new list being followed, with room to spare.
-         */
-        private val WATCHING_OUTLIVES_A_RELINK: Duration = Duration.ofSeconds(5)
-
         /** How long the cable has to stay in or out before it is said. */
         private val POWER_SETTLES: Duration = Duration.ofSeconds(2)
 
