@@ -6,6 +6,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.lifecycleScope
@@ -119,7 +120,7 @@ internal fun SignedInScreen(
     // for the group rather than be written and refused on every return.
     val outside = rosterSeen.outside(current.memberId)
     val link by rememberDatabaseLink()
-    val answers = remember { GroupAnswers() }
+    val answers = rememberSaveable(saver = GroupAnswers.Saver) { GroupAnswers() }
 
     // The service does the same; whichever starts
     // first takes the old documents back.

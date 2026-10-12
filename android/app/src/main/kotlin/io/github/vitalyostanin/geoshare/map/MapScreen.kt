@@ -230,11 +230,11 @@ fun MapScreen(
     // Where the row of buttons over the map ends, for following everybody
     // to keep the top pin below it.
     var topCover by remember { mutableStateOf(0) }
-    var settingsOpen by remember { mutableStateOf(false) }
+    var settingsOpen by rememberSaveable { mutableStateOf(false) }
     // Opened from within the settings and drawn over them, so that closing it
     // puts the member back where they were rather than on the map.
-    var adminOpen by remember { mutableStateOf(false) }
-    var myPhonesOpen by remember { mutableStateOf(false) }
+    var adminOpen by rememberSaveable { mutableStateOf(false) }
+    var myPhonesOpen by rememberSaveable { mutableStateOf(false) }
     // Held by id rather than by value: the position keeps arriving, and a card
     // showing the one from when it was opened would quietly go stale.
     val opened = positions.firstOrNull { it.positionId == openedPositionId }

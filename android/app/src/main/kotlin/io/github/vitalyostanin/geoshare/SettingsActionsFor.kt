@@ -2,6 +2,7 @@ package io.github.vitalyostanin.geoshare
 
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.saveable.listSaver
 import androidx.compose.runtime.setValue
 import androidx.lifecycle.lifecycleScope
 import io.github.vitalyostanin.geoshare.auth.AuthState
@@ -61,6 +62,36 @@ internal class GroupAnswers {
      * said on the map in place of an empty group, not as [groupTrouble].
      */
     var refusedJoin by mutableStateOf<RefusedJoin?>(null)
+
+    companion object {
+        /**
+         * Keeps the invitation across a recreated screen (a change of theme or
+         * of orientation). Nothing in the database can give it back, so the
+         * copy held here is the only one; the refusal and the trouble are
+         * answers to a write and are left to be asked for again.
+         */
+        val Saver =
+            listSaver<GroupAnswers, String>(
+                save = { answers ->
+                    answers.invitation?.let {
+                        listOf(it.groupId, it.code, it.expiresAt.toString(), it.email)
+                    } ?: emptyList()
+                },
+                restore = { saved ->
+                    GroupAnswers().also { answers ->
+                        if (saved.size == 4) {
+                            answers.invitation =
+                                MadeInvitation(
+                                    groupId = saved[0],
+                                    code = saved[1],
+                                    expiresAt = Instant.parse(saved[2]),
+                                    email = saved[3],
+                                )
+                        }
+                    }
+                },
+            )
+    }
 }
 
 /**
