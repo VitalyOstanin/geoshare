@@ -121,7 +121,7 @@ const WATCH_AHEAD_MS = 7 * 60 * 1000;
  * How long a tab nobody touches goes on claiming to be looking.
  *
  * A tab left open on a laptop its owner walked away from holds every phone of
- * the group in the fifteen-second mode, which is the most expensive thing the
+ * the group in the thirty-second mode, which is the most expensive thing the
  * group does. Five minutes, the same as the page takes to stop listening
  * altogether (see `page/pause.js`): whoever watches somebody drive home
  * moves the mouse now and then, and a forgotten tab stops costing at once.

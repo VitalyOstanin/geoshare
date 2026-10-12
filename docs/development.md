@@ -19,7 +19,7 @@ project is for and how to start using it is in the [README](../README.md).
    writes a short-lived claim that it is looking, and refreshes it while it
    is being looked at.
 3. The devices see the claim over the connection they already have open and
-   switch to high accuracy at a fifteen-second interval for as long as it
+   switch to high accuracy at a thirty-second interval for as long as it
    stands.
 4. When the claim runs out, each device falls back to the mode it was in.
 
@@ -29,14 +29,19 @@ enough time passed, so a device lying still costs almost nothing.
 
 ## Collection modes and battery
 
-| # | Mode      | When                              | Location request | Interval |
-|---|-----------|-----------------------------------|------------------|----------|
-| 1 | `Standby` | nobody looking                    | balanced power   | 15 min   |
-| 2 | `Viewing` | somebody has the map open         | high accuracy    | 30 s     |
-| 3 | `Night`   | 23:00–07:00, or battery under 15% | low power        | 20 min   |
+| # | Mode      | When                                    | Location request | Interval |
+|---|-----------|-----------------------------------------|------------------|----------|
+| 1 | `Idle`    | nobody looking, inside the geofence     | none             | none     |
+| 2 | `Standby` | nobody looking                          | balanced power   | 15 min   |
+| 3 | `Moving`  | nobody looking, the device is moving    | balanced power   | 5 min    |
+| 4 | `Viewing` | somebody has the map open               | high accuracy    | 30 s     |
+| 5 | `Night`   | 23:00–07:00, or battery under 15%       | low power        | 20 min   |
+
+The first that applies wins, in the order `Viewing`, `Idle`, `Night`,
+`Moving`, `Standby`: a device inside its geofence stays idle at night too.
 
 High accuracy is reserved for the minutes somebody is actually watching, and a
-browser tab left open on a desk stops counting after a quarter of an hour. No
+browser tab left open on a desk stops counting after five minutes. No
 mode waits longer than the half hour after which a position is drawn as old,
 so a working device never looks like a stopped one.
 
