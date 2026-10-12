@@ -8,7 +8,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -16,6 +15,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import io.github.vitalyostanin.geoshare.R
 import io.github.vitalyostanin.geoshare.membership.Leave
 import io.github.vitalyostanin.geoshare.membership.Roster
@@ -130,7 +130,7 @@ internal fun OwnSirenBanner(
         remember(ownPhoneId) {
             ownPhoneId?.let(actions.sirenOf) ?: flowOf(null)
         }
-    val ownSiren by ownSirenFlow.collectAsState(initial = null)
+    val ownSiren by ownSirenFlow.collectAsStateWithLifecycle(initialValue = null)
     // Ticks while there is a siren of one's own, to decide whether it still sounds.
     val sirenNow by sirenTicks(ownSiren) { ownSiren != null }
     val sirenScope = rememberCoroutineScope()

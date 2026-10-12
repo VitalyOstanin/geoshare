@@ -339,31 +339,33 @@ data class Walk(val since: Instant, val steps: Long)
  * silent once it stops, so the rest shows only as the time since.
  */
 fun walkingNow(stirs: List<Stir>, now: Instant): Walk? {
-    val counted = stirs.filter { it.steps != null }.sortedBy { it.at }
+    // The moment of each reading that carries a count, with the count.
+    val counted = stirs.mapNotNull { stir ->
+        stir.steps?.let { stir.at to it }
+    }.sortedBy { it.first }
 
-    if (counted.size < 2 || Duration.between(counted.last().at, now) > WALKING_BREAK) {
+    if (counted.size < 2 || Duration.between(counted.last().first, now) > WALKING_BREAK) {
         return null
     }
 
-    var base = counted.first().steps!!
-    var since = counted.first().at
+    var (since, base) = counted.first()
 
     for (index in 1 until counted.size) {
-        val before = counted[index - 1]
-        val now = counted[index]
-        val walked = now.steps!! > before.steps!!
-        val rested = Duration.between(before.at, now.at) > WALKING_BREAK
+        val (beforeAt, beforeSteps) = counted[index - 1]
+        val (nextAt, nextSteps) = counted[index]
+        val walked = nextSteps > beforeSteps
+        val rested = Duration.between(beforeAt, nextAt) > WALKING_BREAK
 
-        if (now.steps < before.steps) {
-            base = now.steps
-            since = now.at
+        if (nextSteps < beforeSteps) {
+            base = nextSteps
+            since = nextAt
         } else if (!walked || rested) {
-            base = before.steps!!
-            since = now.at
+            base = beforeSteps
+            since = nextAt
         }
     }
 
-    return Walk(since = since, steps = counted.last().steps!! - base)
+    return Walk(since = since, steps = counted.last().second - base)
 }
 
 /**

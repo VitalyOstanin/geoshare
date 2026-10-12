@@ -112,10 +112,10 @@ data class ConnectLink(val site: String, val invitation: Invitation?) {
                 "by" to inviter?.trim()?.take(CAPTION_MAX_LENGTH),
                 "n" to groupName?.trim()?.take(CAPTION_MAX_LENGTH),
                 "to" to shortenedAddress(email),
-            ).filter { (_, value) -> !value.isNullOrEmpty() }
+            ).mapNotNull { (key, value) -> value?.takeIf { it.isNotEmpty() }?.let { key to it } }
 
             return "https://$site.web.app/join#" +
-                fields.joinToString("&") { (key, value) -> "$key=${encode(value!!)}" }
+                fields.joinToString("&") { (key, value) -> "$key=${encode(value)}" }
         }
 
         /**

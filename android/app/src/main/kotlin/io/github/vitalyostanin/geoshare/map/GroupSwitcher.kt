@@ -23,7 +23,6 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.State
-import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -42,6 +41,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import io.github.vitalyostanin.geoshare.R
 import io.github.vitalyostanin.geoshare.membership.Leave
 import io.github.vitalyostanin.geoshare.membership.Presence
@@ -261,7 +261,7 @@ fun rememberGroupChoices(
             if (perGroup.isEmpty()) flowOf(emptyList()) else combine(perGroup) { it.toList() }
         }
 
-    return choices.collectAsState(initial = emptyList())
+    return choices.collectAsStateWithLifecycle(initialValue = emptyList())
 }
 
 /** Who the device is in one group, and what that account hears there. */

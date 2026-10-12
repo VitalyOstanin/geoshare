@@ -8,6 +8,7 @@
 
 import { compareIds } from './order.js';
 import { deviceIdOf } from './phones.js';
+import { keep, readKept } from './kept.js';
 
 /** As much of a name as fits on a card. The application cuts it to the same. */
 export const LABEL_LIMIT = 40;
@@ -64,24 +65,21 @@ export function labelsFrom(data) {
  * that keeps nothing starts without names and waits for the database.
  */
 export function readKeptLabels(memberId, store = globalThis.localStorage) {
-    try {
-        const kept = store.getItem(LABELS_KEY + memberId);
+    const kept = readKept(LABELS_KEY + memberId, store);
 
+    try {
         return kept ? labelsFrom(JSON.parse(kept)) : NO_LABELS;
     } catch {
+        // A copy that no longer parses is no copy at all.
         return NO_LABELS;
     }
 }
 
 export function keepLabels(memberId, labels, store = globalThis.localStorage) {
-    try {
-        store.setItem(LABELS_KEY + memberId, JSON.stringify({
-            devices: Object.fromEntries(labels.phones),
-            members: Object.fromEntries(labels.members),
-        }));
-    } catch {
-        // Only the next visit is worse off: it waits for the database.
-    }
+    keep(LABELS_KEY + memberId, JSON.stringify({
+        devices: Object.fromEntries(labels.phones),
+        members: Object.fromEntries(labels.members),
+    }), store);
 }
 
 /** The profiles with the names this member gave the people put in place of their own. */

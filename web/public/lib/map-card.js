@@ -20,6 +20,7 @@ import { distanceFromViewer, distanceText } from './distance.js';
 import { SPEAKING, WORDS } from './words.js';
 import { redrawSelection } from './map.js';
 import { bringTheRingIntoSight, setFollowTarget } from './map-follow.js';
+import { keep, readKept } from './kept.js';
 
 /** Closes whatever card is open, and says whether there was one. */
 export function closeCards(view) {
@@ -459,19 +460,11 @@ function detailTable(position) {
 const DETAILS_KEY = 'geoshare.cardDetails';
 
 function readDetailsOpen() {
-    try {
-        return localStorage.getItem(DETAILS_KEY) === 'open';
-    } catch {
-        return false;
-    }
+    return readKept(DETAILS_KEY) === 'open';
 }
 
 function writeDetailsOpen(open) {
-    try {
-        localStorage.setItem(DETAILS_KEY, open ? 'open' : 'closed');
-    } catch {
-        // A browser that keeps nothing forgets the choice with the tab.
-    }
+    keep(DETAILS_KEY, open ? 'open' : 'closed');
 }
 
 /**

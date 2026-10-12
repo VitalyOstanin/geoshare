@@ -28,6 +28,7 @@ import { drawSirenAsk } from './page/siren-ui.js';
 import { followLink, knownNote, unfollowLink } from './page/link-ui.js';
 import { followAttention, unfollowAttention } from './page/pause.js';
 import { notePageLooking, personName, render, showAccount } from './page/strip.js';
+import { keep } from './lib/kept.js';
 
 watchSignIn((member) => {
     state.member = member;
@@ -55,15 +56,9 @@ function warnOf(what) {
  * next load, and ends the waiting it started: the answer is in either way.
  */
 function rememberSignIn(signedIn) {
-    try {
-        if (signedIn) {
-            localStorage.setItem(SIGNED_IN_KEY, 'yes');
-        } else {
-            localStorage.removeItem(SIGNED_IN_KEY);
-        }
-    } catch {
-        // Only the next load is worse off: it shows the button while waiting.
-    }
+    // Only the next load is worse off where the browser keeps nothing: it
+    // shows the button while waiting.
+    keep(SIGNED_IN_KEY, signedIn ? 'yes' : null);
 
     delete document.documentElement.dataset.signIn;
 }

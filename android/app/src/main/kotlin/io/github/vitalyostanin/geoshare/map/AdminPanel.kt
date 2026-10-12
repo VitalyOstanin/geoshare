@@ -19,7 +19,6 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableStateOf
@@ -31,6 +30,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import io.github.vitalyostanin.geoshare.R
 import io.github.vitalyostanin.geoshare.membership.ADDRESS_LIMIT
 import io.github.vitalyostanin.geoshare.membership.Roster
@@ -149,14 +149,14 @@ fun AdminPanel(
             lines.flatMap { it.phones }.map { it.phoneId }.filter { it != ownPhoneId }.toSet()
         }
     val sirens by remember(ringable) { sirensOf(ringable, sirenOf) }
-        .collectAsState(initial = emptyMap())
+        .collectAsStateWithLifecycle(initialValue = emptyMap())
     val ringing = rememberAskedWrite<SirenAsk>()
     val sirenNow by sirenClock(sirens)
 
     // The requests to forget a place on the same devices, followed the same
     // way, so a reset asked from anywhere shows on its row too.
     val resets by remember(ringable) { resetsOf(ringable, resetOf) }
-        .collectAsState(initial = emptyMap())
+        .collectAsStateWithLifecycle(initialValue = emptyMap())
     val resetting = rememberAskedWrite<PhoneLine>()
 
     fun writeRename() {
@@ -295,13 +295,13 @@ fun AdminPanel(
 
             HorizontalDivider()
 
-            // Keyed as a whole: collectAsState keeps the last value across a
+            // Keyed as a whole: collectAsStateWithLifecycle keeps the last value across a
             // new flow, and a fresh code would go on reading as the spent one.
             val invitationLeft by
                 key(invitation?.code) {
                     remember {
                         invitation?.let { invitationStanding(it.code) } ?: flowOf(null)
-                    }.collectAsState(initial = null)
+                    }.collectAsStateWithLifecycle(initialValue = null)
                 }
 
             AdminInvitation(

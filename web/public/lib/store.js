@@ -29,6 +29,7 @@ import {
 } from 'https://www.gstatic.com/firebasejs/12.19.0/firebase-firestore.js';
 import { firebaseConfig } from '../firebase-config.js';
 import { createRefusals } from './refusals.js';
+import { keep, readKept } from './kept.js';
 
 /**
  * Where this browser keeps the group it looks at.
@@ -62,22 +63,13 @@ const INHERITED_GROUP = 'family';
  * answering with nothing, and a page that cannot remember a group should still
  * show the one it started with.
  */
-export function currentGroup(storage = window.localStorage) {
-    try {
-        return storage.getItem(GROUP_KEY) ?? INHERITED_GROUP;
-    } catch {
-        return INHERITED_GROUP;
-    }
+export function currentGroup(store = globalThis.localStorage) {
+    return readKept(GROUP_KEY, store) ?? INHERITED_GROUP;
 }
 
 /** Remembers which group this browser is in, or carries on without remembering. */
-export function rememberGroup(group, storage = window.localStorage) {
-    try {
-        storage.setItem(GROUP_KEY, group);
-    } catch {
-        // Nothing to say to the viewer: what they are looking at is the group
-        // they just joined, it is only the next visit that starts elsewhere.
-    }
+export function rememberGroup(group, store = globalThis.localStorage) {
+    keep(GROUP_KEY, group, store);
 }
 
 /**
@@ -226,23 +218,19 @@ export function watchLink(onSnapshotFrom) {
  * marker it left expires on its own within minutes.
  */
 function deviceName() {
-    try {
-        const kept = window.localStorage.getItem(DEVICE_KEY);
+    const kept = readKept(DEVICE_KEY);
 
-        if (kept) {
-            return kept;
-        }
-
-        const made = crypto.randomUUID();
-
-        window.localStorage.setItem(DEVICE_KEY, made);
-
-        return made;
-    } catch {
-        // Storage can be refused outright — a private window, a browser set to
-        // block it — and a claim under a fresh name every time still works.
-        return crypto.randomUUID();
+    if (kept) {
+        return kept;
     }
+
+    // Storage can be refused outright — a private window, a browser set to
+    // block it — and a claim under a fresh name every time still works.
+    const made = crypto.randomUUID();
+
+    keep(DEVICE_KEY, made);
+
+    return made;
 }
 
 /**

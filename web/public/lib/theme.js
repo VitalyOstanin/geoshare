@@ -5,6 +5,8 @@
 // member reads the map on a device in the evening and on a laptop by day, and
 // those two screens do not want the same thing.
 
+import { keep, readKept } from './kept.js';
+
 /** The answers, in the order their buttons stand in. */
 export const THEMES = ['light', 'dark', 'system'];
 
@@ -27,24 +29,15 @@ export const THEME_KEY = 'geoshare.theme';
  * answering with nothing, and a page that cannot remember a theme should
  * still draw one.
  */
-export function readTheme(store = window.localStorage) {
-    try {
-        const stored = store.getItem(THEME_KEY);
+export function readTheme(store = globalThis.localStorage) {
+    const stored = readKept(THEME_KEY, store);
 
-        return THEMES.includes(stored) ? stored : DEFAULT_THEME;
-    } catch {
-        return DEFAULT_THEME;
-    }
+    return THEMES.includes(stored) ? stored : DEFAULT_THEME;
 }
 
 /** Remembers the answer, or carries on without remembering it. */
-export function writeTheme(theme, store = window.localStorage) {
-    try {
-        store.setItem(THEME_KEY, theme);
-    } catch {
-        // Nothing to say to the viewer: the page they are looking at is the
-        // one they asked for, it is only the next visit that forgets.
-    }
+export function writeTheme(theme, store = globalThis.localStorage) {
+    keep(THEME_KEY, theme, store);
 }
 
 /**

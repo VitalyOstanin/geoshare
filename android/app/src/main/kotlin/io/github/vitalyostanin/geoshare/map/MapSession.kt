@@ -3,7 +3,6 @@ package io.github.vitalyostanin.geoshare.map
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.State
-import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.key
@@ -316,11 +315,13 @@ fun PublishProfile(
             deviceId = deviceId,
         )
 
-    // Keyed as a whole: collectAsState keeps the last value across a new
+    // Keyed as a whole: collectAsStateWithLifecycle keeps the last value across a new
     // flow, and one group's missing profile would read as another's.
     val gone by
         key(connection, memberId) {
-            remember { ownProfileGone(connection, memberId) }.collectAsState(initial = false)
+            remember {
+                ownProfileGone(connection, memberId)
+            }.collectAsStateWithLifecycle(initialValue = false)
         }
 
     LaunchedEffect(connection, telling, owner, gone) {

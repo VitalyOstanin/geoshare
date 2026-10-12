@@ -23,7 +23,6 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -36,6 +35,7 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import io.github.vitalyostanin.geoshare.R
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.launch
@@ -102,7 +102,7 @@ fun MyPhonesScreen(
             phones.map { it.phoneId }.filter { it != ownPhoneId }.toSet()
         }
     val sirens by remember(ringable) { sirensOf(ringable, sirenOf) }
-        .collectAsState(initial = emptyMap())
+        .collectAsStateWithLifecycle(initialValue = emptyMap())
     val ringing = rememberAskedWrite<PhoneLine>()
     val searching = rememberAskedWrite<PhoneLine>()
     var searchHours by remember { mutableStateOf(DEFAULT_SEARCH_HOURS) }
@@ -116,7 +116,7 @@ fun MyPhonesScreen(
     // The requests to forget a place on the same devices: this one forgets
     // its own from the settings, where the button has always been.
     val resets by remember(ringable) { resetsOf(ringable, resetOf) }
-        .collectAsState(initial = emptyMap())
+        .collectAsStateWithLifecycle(initialValue = emptyMap())
     val resetting = rememberAskedWrite<PhoneLine>()
 
     fun writeRemoval() {

@@ -5,6 +5,8 @@
 // the theme does: one member reads the map on a device and on a laptop, and
 // those two are not always set up in the same language.
 
+import { keep, readKept } from './kept.js';
+
 /** The answers, in the order their buttons stand in. */
 export const LANGUAGES = ['ru', 'en', 'system'];
 
@@ -26,23 +28,14 @@ export const LANGUAGE_KEY = 'geoshare.language';
  * still be written in one.
  */
 export function readLanguage(store = globalThis.localStorage) {
-    try {
-        const stored = store.getItem(LANGUAGE_KEY);
+    const stored = readKept(LANGUAGE_KEY, store);
 
-        return LANGUAGES.includes(stored) ? stored : DEFAULT_LANGUAGE;
-    } catch {
-        return DEFAULT_LANGUAGE;
-    }
+    return LANGUAGES.includes(stored) ? stored : DEFAULT_LANGUAGE;
 }
 
 /** Remembers the answer, or carries on without remembering it. */
 export function writeLanguage(language, store = globalThis.localStorage) {
-    try {
-        store.setItem(LANGUAGE_KEY, language);
-    } catch {
-        // Nothing to say to the viewer: the page they asked for is the one
-        // they get, it is only the next visit that forgets.
-    }
+    keep(LANGUAGE_KEY, language, store);
 }
 
 /**
