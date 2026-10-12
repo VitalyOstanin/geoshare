@@ -1,4 +1,5 @@
-// The numbers the phone and the page have to agree on, read out of both.
+// The numbers and the field names the phone and the page have to agree on,
+// read out of both.
 //
 // Each client keeps its own copy of the rules the other one keeps — how long a
 // position stays fresh, how wide a pin is, which colour a member is drawn in —
@@ -207,4 +208,87 @@ test('a permission without an end ends on the same day everywhere', () => {
 
     assert.equal(quotedDate(javascript('firebase/emulator/seed.mjs', 'FOREVER')), forever);
     assert.equal(quotedDate(javascript('firebase/tests/rules/helpers.mjs', 'FOREVER')), forever);
+});
+
+/** The string values of a Kotlin `object Name { const val … = "…" }`. */
+function kotlinFields(file, object) {
+    const text = source(KOTLIN + file);
+    const start = text.search(new RegExp(String.raw`\bobject\s+${object}\s*\{`));
+
+    assert.ok(start >= 0, `${object} is declared in ${file}`);
+
+    const body = text.slice(start, text.indexOf('\n}', start));
+
+    return [...body.matchAll(/const\s+val\s+\w+\s*=\s*"(\w+)"/gu)].map((found) => found[1]);
+}
+
+/** The rules of one collection: from its `match` up to the next one. */
+function rulesOf(collection) {
+    const text = source('firebase/firestore.rules');
+    const start = text.search(new RegExp(String.raw`match /${collection}/\{`));
+
+    assert.ok(start >= 0, `the rules have a match for ${collection}`);
+
+    const next = text.indexOf('match /', start + 1);
+
+    return text.slice(start, next < 0 ? text.length : next);
+}
+
+/** The fields a page module reads off a document, `data.name` or `data?.name`. */
+function pageReads(file) {
+    return new Set([...source(file).matchAll(/\bdata\??\.(\w+)/gu)].map((found) => found[1]));
+}
+
+const FIELDS = 'service/StorePaths.kt';
+
+/** Each object of field names, and the collection whose rules name them again. */
+const COLLECTIONS = {
+    GroupField: 'groups',
+    InvitationField: 'invitations',
+    JoinField: 'joins',
+    PositionField: 'positions',
+    ProfileField: 'members',
+    GrantField: 'grants',
+    PhoneField: 'devices',
+    LabelField: 'labels',
+    FalsePlaceField: 'falsePlaces',
+    CirclingField: 'settings',
+    WatchField: 'watch',
+    SearchField: 'searches',
+    ResetField: 'resets',
+    SirenField: 'sirens',
+};
+
+test('the rules know every field the phone writes, under the same name', () => {
+    for (const [object, collection] of Object.entries(COLLECTIONS)) {
+        const rules = rulesOf(collection);
+
+        for (const field of kotlinFields(FIELDS, object)) {
+            assert.match(
+                rules,
+                new RegExp(String.raw`'${field}'|\.${field}\b`, 'u'),
+                `${object} names ${field}, and the rules for ${collection} do not`,
+            );
+        }
+    }
+});
+
+test('the page reads only fields the phone writes', () => {
+    const readers = {
+        'web/public/lib/store-positions.js': ['PositionField'],
+        'web/public/lib/store-group.js': ['GroupField', 'ProfileField', 'PhoneField', 'GrantField'],
+        'web/public/lib/store-search.js': ['SearchField', 'ResetField', 'SirenField'],
+        'web/public/lib/labels.js': ['LabelField'],
+        'web/public/lib/resets.js': ['ResetField'],
+        'web/public/lib/searches.js': ['SearchField'],
+        'web/public/lib/sirens.js': ['SirenField'],
+    };
+
+    for (const [file, objects] of Object.entries(readers)) {
+        const written = new Set(objects.flatMap((object) => kotlinFields(FIELDS, object)));
+
+        for (const field of pageReads(file)) {
+            assert.ok(written.has(field), `${file} reads ${field}, which ${objects.join(', ')} do not name`);
+        }
+    }
 });
