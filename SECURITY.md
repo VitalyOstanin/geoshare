@@ -1,0 +1,61 @@
+# Security policy
+
+## Contents
+
+- [Supported versions](#supported-versions)
+- [Reporting a vulnerability](#reporting-a-vulnerability)
+- [What to include](#what-to-include)
+- [What not to send](#what-not-to-send)
+- [What happens next](#what-happens-next)
+- [What counts as a vulnerability](#what-counts-as-a-vulnerability)
+
+## Supported versions
+
+Fixes go into the latest release of the Android application and the current
+page and rules in `master`. Earlier releases are not updated: install the
+latest one.
+
+## Reporting a vulnerability
+
+Do not open a public issue. A group's positions are where its members are
+right now, and a description of a hole published before the fix is a ready
+way to find them.
+
+Report it privately through GitHub instead:
+[Report a vulnerability](https://github.com/VitalyOstanin/geoshare/security/advisories/new).
+Only the maintainer sees the report.
+
+## What to include
+
+1. The application version, or the commit of the page and the rules.
+2. Steps to reproduce, on a project of your own.
+3. What an attacker gets: whose positions, names or devices, and with what
+   access to begin with.
+4. A suggested fix, if you have one.
+
+## What not to send
+
+Real positions, real Google accounts, Firebase project identifiers and
+configuration, invitation links and codes. Reproduce on a project you set up
+for the purpose, with made-up members; the structure is enough.
+
+## What happens next
+
+A report is answered within a week. A confirmed vulnerability is fixed in a
+separate release, and the description is published after it, as a GitHub
+Security Advisory crediting the reporter if they agree.
+
+## What counts as a vulnerability
+
+For example: the Firestore rules letting someone read a position they were
+not given, or keep reading after the grant has ended; joining a group without
+a valid invitation, or on an invitation made for another account; a member
+changing another member's devices, names or grants; the page or the
+application running code or loading data from a link that is not the
+group's own project; a position or a name leaving the device anywhere other
+than the group's Firebase project.
+
+Not a vulnerability: anything that needs the project owner's own Google
+account or the Firebase console, since the owner holds the whole project by
+design; and failures that only stop the application or the page from working
+— open an ordinary issue for those.

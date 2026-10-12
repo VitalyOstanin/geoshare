@@ -1,0 +1,36 @@
+# Dependabot opens one weekly pull request per ecosystem, with every bump of
+# that ecosystem grouped into it. The toolchain pins in tools/versions.env
+# (SDK, build tools, JDK, Node, ESLint, firebase-tools) sit outside every
+# ecosystem and are refreshed by hand. GRADLE_VERSION and GRADLE_SHA256 there
+# repeat the wrapper's distribution: a pull request that bumps the wrapper
+# changes them in the same commit, or the SDK image keeps the old Gradle.
+version: 2
+updates:
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    groups:
+      github-actions:
+        patterns:
+          - "*"
+
+  - package-ecosystem: "gradle"
+    directory: "/android"
+    schedule:
+      interval: "weekly"
+    groups:
+      gradle:
+        patterns:
+          - "*"
+
+  - package-ecosystem: "npm"
+    directories:
+      - "/web"
+      - "/firebase/tests"
+    schedule:
+      interval: "weekly"
+    groups:
+      npm:
+        patterns:
+          - "*"
