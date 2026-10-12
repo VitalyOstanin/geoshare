@@ -96,9 +96,9 @@ export async function foundGroup(memberId, name = '') {
 /**
  * Makes an invitation and returns the whole of what is handed over: the
  * group and code the link is built from, when it stops working, and the
- * address it was made out to (ADR-0015, ADR-0019) — everything the admin
- * panel needs to build the link and say when it runs out, without reading
- * anything back.
+ * address it was made out to (ADR-0015, ADR-0019) — everything the
+ * administrator's panel needs to build the link and say when it runs out,
+ * without reading anything back.
  *
  * Nothing is read back. The code is the name of the document, and nobody may
  * read that collection at all — a reader could collect the codes of a group

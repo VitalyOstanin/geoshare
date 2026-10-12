@@ -87,13 +87,13 @@ test('the news is dated by the stamp and the position by the fix', () => {
 
 // The moment between the device writing and the server stamping, where the
 // local copy carries no stamp at all.
-test('a position not yet stamped is dated by the phone that took it', () => {
+test('a position not yet stamped is dated by the device that took it', () => {
     const takenAt = NOW - MINUTE;
 
     assert.deepEqual(positionMoments(takenAt, null), { knownAt: takenAt, positionAt: takenAt });
 });
 
-test('a phone online with a position as old as the grey is stuck', () => {
+test('a device in touch with a position as old as the grey is stuck', () => {
     assert.equal(isStuck(NOW - STALE_AFTER_MS, NOW, NOW), true);
     assert.equal(isStuck(NOW - STALE_AFTER_MS + MINUTE, NOW, NOW), false);
 });

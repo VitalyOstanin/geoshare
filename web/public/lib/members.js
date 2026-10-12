@@ -69,8 +69,8 @@ export function shortName(memberId) {
 
 /**
  * The name a member goes by in the group: the account's own, or, for an
- * account without one, its shortened address — the same the admin saw on the
- * invitation, and more use to them than the start of an id.
+ * account without one, its shortened address — the same the administrator
+ * saw on the invitation, and more use to them than the start of an id.
  */
 export function profileName(name, email) {
     const own = name?.trim();

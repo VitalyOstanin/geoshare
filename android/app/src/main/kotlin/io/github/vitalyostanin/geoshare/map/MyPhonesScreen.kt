@@ -143,9 +143,9 @@ fun MyPhonesScreen(
     }
 
     Surface(modifier = modifier.fillMaxSize()) {
-        // Scrolled and inset the way the admin panel is, and for the same
-        // reasons: one row per device runs off a device, and the title has to
-        // clear the clock.
+        // Scrolled and inset the way the administrator's panel is, and for the
+        // same reasons: one row per device runs off a device, and the title
+        // has to clear the clock.
         Column(
             modifier =
             Modifier
@@ -252,7 +252,7 @@ fun MyPhonesScreen(
                     // Both buttons are outlined in the same red, and a row
                     // this narrow does not always fit them side by side.
                     FlowRow(verticalArrangement = Arrangement.Center) {
-                        // Plain and before the siren, as on the admin panel.
+                        // Plain and before the siren, as on the administrator's panel.
                         if (phone.phoneId != ownPhoneId) {
                             ResetButton(onClick = { resetting.ask(phone) })
                         }

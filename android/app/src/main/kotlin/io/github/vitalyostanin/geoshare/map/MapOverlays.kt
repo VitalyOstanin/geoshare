@@ -235,9 +235,9 @@ internal fun BelowTheMap(
 }
 
 /**
- * The device list and the admin panel, each drawn over the settings it was
- * opened from, so that the way back out is the screen it was opened from,
- * whichever of the two ways back is used.
+ * The device list and the administrator's panel, each drawn over the
+ * settings it was opened from, so that the way back out is the screen it was
+ * opened from, whichever of the two ways back is used.
  *
  * [runsTheGroup] is weighed again on every draw rather than only when the
  * panel was opened: an administrator can stop being one while it is up —

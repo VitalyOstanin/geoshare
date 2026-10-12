@@ -112,7 +112,10 @@ fun MapScreen(
     /** Who else has the map open, as they themselves claim. */
     watchers: List<Watcher>,
     ownMemberId: String,
-    /** This device's own `{uid}.{deviceId}`: the admin panel rings every device but this one. */
+    /**
+     * This device's own `{uid}.{deviceId}`: the administrator's panel rings
+     * every device but this one.
+     */
     ownPhoneId: String?,
     ownDisplayName: String?,
     ownPictureUrl: String?,
@@ -135,10 +138,10 @@ fun MapScreen(
     // same clock the ages tick by: nothing arrives from the database at the
     // moment a search runs out, so this is read afresh whenever [now] moves.
     val soughtPhones = remember(searches, now) { standingSearches(searches, now).keys }
-    // Read here rather than only where the admin panel is opened, because the
-    // card of a member being looked for offers "Found" on this same
-    // condition, and a device that stops running the group should lose the
-    // button on both at once.
+    // Read here rather than only where the administrator's panel is opened,
+    // because the card of a member being looked for offers "Found" on this
+    // same condition, and a device that stops running the group should lose
+    // the button on both at once.
     val runsTheGroup = standingIn(settings.roster, ownMemberId) == Standing.Administrator
     // The name being asked for, held by what it names rather than by the card:
     // the card may be closed and the dialog still up.

@@ -56,8 +56,8 @@ test('a place of the viewer gone grey is not measured from', () => {
     assert.equal(distanceFromViewer(positions[1], positions, 'me', NOW), null);
 });
 
-// A device online every minute, the marker in the lake since 20:22.
-test('a marker the viewer\'s phone has left behind is not measured from', () => {
+// A device in touch every minute, the marker in the lake since 20:22.
+test('a marker the viewer\'s device has left behind is not measured from', () => {
     const stuck = {
         ...at('me.one', 'me', 61.14561, 5.4036),
         positionAt: NOW - 90 * MINUTE,

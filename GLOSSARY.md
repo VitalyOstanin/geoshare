@@ -47,7 +47,7 @@ right and this file is out of date.
 |---|---------------|---------------------------------------|-----|
 | 1 | member        | user, contact, friend                 | The person is in a group; "user" says nothing about which one. The field naming a person is `memberId`, and every document about one is named after their account |
 | 2 | roster        | member list, participants             | The roster is the `members` array of the group document. "Member list" would also collide with the strip of members the page draws under its map |
-| 3 | administrator | moderator, admin                      | The array is `admins` and the word written out is administrator; on screen the same thing is said as "runs the group" |
+| 3 | administrator | moderator, admin                      | The array is `admins` and the word written out is administrator; on screen the same thing is said as "runs the group". Names in code may shorten it to `admin` as the array does — `AdminPanel`, `adminOpen`, `#admin-*` and `.admin-*` on the page — but text on screen, comments and documents write it out |
 | 4 | invitation    | invite                                | The noun is `invitation`; the eight characters inside it are the code |
 | 5 | grant         | permission document, sharing settings | One document per member holding both halves of what they give out: their devices and their readers |
 | 6 | watch claim   | heartbeat, online status              | It says somebody had the map open a moment ago, not that they are online |

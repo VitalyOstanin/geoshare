@@ -173,7 +173,7 @@ async function measure(name, action) {
 const M1 = 'm1';
 const M2 = 'm2';
 const M3 = 'm3';
-const PHONES = { [M1]: ['a1'], [M2]: ['b1', 'b2', 'b3'], [M3]: ['c1'] };
+const DEVICES = { [M1]: ['a1'], [M2]: ['b1', 'b2', 'b3'], [M3]: ['c1'] };
 const GRANTS = { [M1]: [M2, M3], [M2]: [M1], [M3]: [M1] };
 
 const position = (uid, lat) => ({
@@ -198,37 +198,37 @@ await env.withSecurityRulesDisabled(async (context) => {
         });
         await setDoc(doc(db, `groups/${G}/grants/${uid}`), {
             sharedWith: Object.fromEntries(GRANTS[uid].map((r) => [r, FOREVER])),
-            devices: PHONES[uid],
+            devices: DEVICES[uid],
         });
         await setDoc(
             doc(db, `groups/${G}/devices/${uid}`),
-            Object.fromEntries(PHONES[uid].map((p) => [p, { model: 'x', mode: 'Standby' }])),
+            Object.fromEntries(DEVICES[uid].map((p) => [p, { model: 'x', mode: 'Standby' }])),
         );
-        for (const phone of PHONES[uid]) {
-            await setDoc(doc(db, `groups/${G}/positions/${uid}.${phone}`), position(uid, 60));
+        for (const device of DEVICES[uid]) {
+            await setDoc(doc(db, `groups/${G}/positions/${uid}.${device}`), position(uid, 60));
         }
     }
 });
 
 // One client per device, as on the devices.
 const clients = {};
-for (const [uid, phones] of Object.entries(PHONES)) {
-    for (const phone of phones) {
-        clients[phone] = { uid, db: env.authenticatedContext(uid).firestore() };
+for (const [uid, devices] of Object.entries(DEVICES)) {
+    for (const device of devices) {
+        clients[device] = { uid, db: env.authenticatedContext(uid).firestore() };
     }
 }
 
 // What the service of every device keeps open (service/*Source.kt).
-function serviceOf(phone) {
-    const { uid, db } = clients[phone];
-    const p = `svc ${phone}`;
+function serviceOf(device) {
+    const { uid, db } = clients[device];
+    const p = `svc ${device}`;
     follow(`${p} group`, doc(db, `groups/${G}`));
     follow(`${p} watch*`, collection(db, `groups/${G}/watch`), true);
     follow(`${p} searches*`, collection(db, `groups/${G}/searches`), true);
     follow(`${p} falsePlaces*`, collection(db, `groups/${G}/falsePlaces`), true);
-    follow(`${p} own search`, doc(db, `groups/${G}/searches/${uid}.${phone}`));
-    follow(`${p} own siren`, doc(db, `groups/${G}/sirens/${uid}.${phone}`));
-    follow(`${p} own reset`, doc(db, `groups/${G}/resets/${uid}.${phone}`));
+    follow(`${p} own search`, doc(db, `groups/${G}/searches/${uid}.${device}`));
+    follow(`${p} own siren`, doc(db, `groups/${G}/sirens/${uid}.${device}`));
+    follow(`${p} own reset`, doc(db, `groups/${G}/resets/${uid}.${device}`));
     // The own grant also tells the service that this device was taken out of
     // "My devices" (service/OwnLine.kt); the member's devices document, which
     // every device of theirs rewrites with its status, is not listened to.
@@ -240,9 +240,9 @@ function serviceOf(phone) {
 // profiles, the grant and the devices of every other member, and a position
 // for every device a readable grant names.
 const mapStops = [];
-function mapOf(phone) {
-    const { uid, db } = clients[phone];
-    const p = `map ${phone}`;
+function mapOf(device) {
+    const { uid, db } = clients[device];
+    const p = `map ${device}`;
     mapStops.push(follow(`${p} members*`, collection(db, `groups/${G}/members`), true));
     mapStops.push(follow(`${p} labels`, doc(db, `groups/${G}/labels/${uid}`)));
     for (const other of [M1, M2, M3]) {
@@ -252,24 +252,24 @@ function mapOf(phone) {
         mapStops.push(follow(`${p} grant ${other}`, doc(db, `groups/${G}/grants/${other}`)));
         mapStops.push(follow(`${p} devices ${other}`, doc(db, `groups/${G}/devices/${other}`)));
         if (GRANTS[other].includes(uid)) {
-            for (const ph of PHONES[other]) {
-                const position = doc(db, `groups/${G}/positions/${other}.${ph}`);
+            for (const id of DEVICES[other]) {
+                const position = doc(db, `groups/${G}/positions/${other}.${id}`);
 
-                mapStops.push(follow(`${p} pos ${other}.${ph}`, position));
+                mapStops.push(follow(`${p} pos ${other}.${id}`, position));
             }
         }
     }
-    for (const ph of PHONES[uid]) {
-        mapStops.push(follow(`${p} pos own ${ph}`, doc(db, `groups/${G}/positions/${uid}.${ph}`)));
+    for (const id of DEVICES[uid]) {
+        mapStops.push(follow(`${p} pos own ${id}`, doc(db, `groups/${G}/positions/${uid}.${id}`)));
     }
 }
 
-const write = (phone, path, data, options) =>
-    setDoc(doc(clients[phone].db, `groups/${G}/${path}`), data, options ?? {});
+const write = (device, path, data, options) =>
+    setDoc(doc(clients[device].db, `groups/${G}/${path}`), data, options ?? {});
 
 console.log('CALL_SITES', JSON.stringify([...CALL_SITES.values()]));
 
-await measure('services start, 5 phones', async () => {
+await measure('services start, 5 devices', async () => {
     Object.keys(clients).forEach(serviceOf);
     return 5 * 10;
 });
@@ -338,8 +338,8 @@ for (const viewer of ['a1', 'c1']) {
         for (const other of [M2, M3]) {
             follow(`web grant ${other}`, doc(db, `groups/${G}/grants/${other}`));
             follow(`web devices ${other}`, doc(db, `groups/${G}/devices/${other}`));
-            for (const ph of PHONES[other]) {
-                follow(`web pos ${other}.${ph}`, doc(db, `groups/${G}/positions/${other}.${ph}`));
+            for (const id of DEVICES[other]) {
+                follow(`web pos ${other}.${id}`, doc(db, `groups/${G}/positions/${other}.${id}`));
             }
         }
     });
