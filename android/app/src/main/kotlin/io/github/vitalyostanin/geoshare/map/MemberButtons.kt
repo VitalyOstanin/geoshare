@@ -47,6 +47,7 @@ import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import io.github.vitalyostanin.geoshare.R
+import io.github.vitalyostanin.geoshare.soughtWords
 import java.time.Instant
 import java.time.ZoneId
 
@@ -333,7 +334,7 @@ private fun MemberButton(
                         soughtEndsShort(sought.endsAt, now, appLocale()),
                     ),
                     style = MaterialTheme.typography.bodySmall,
-                    color = Color(SOUGHT_COLOUR),
+                    color = soughtWords(),
                     maxLines = 1,
                 )
             }
@@ -426,7 +427,7 @@ internal fun MemberRow(
                         endsAtText(sought.endsAt.atZone(ZoneId.systemDefault())),
                     ),
                     style = MaterialTheme.typography.bodySmall,
-                    color = Color(SOUGHT_COLOUR),
+                    color = soughtWords(),
                 )
             }
         }

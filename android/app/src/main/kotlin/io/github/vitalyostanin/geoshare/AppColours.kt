@@ -1,9 +1,13 @@
 package io.github.vitalyostanin.geoshare
 
 import androidx.compose.material3.ColorScheme
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.darkColorScheme
 import androidx.compose.material3.lightColorScheme
+import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.luminance
+import io.github.vitalyostanin.geoshare.map.SOUGHT_COLOUR
 
 /**
  * The application's colours: Material 3 with the page's accent and alarm.
@@ -43,3 +47,14 @@ fun appColours(dark: Boolean): ColorScheme = if (dark) {
         onErrorContainer = Color(0xFF410E0B),
     )
 }
+
+/**
+ * The red a search is written in, as words rather than a fill. By day it is
+ * the pin's red; at night that red is too dark to read on a dark surface, so
+ * the words take a lighter one while the fills behind white words keep theirs.
+ */
+fun soughtWords(dark: Boolean): Color = if (dark) Color(0xFFEF5350) else Color(SOUGHT_COLOUR)
+
+/** [soughtWords] for the theme the screen is drawn in. */
+@Composable
+fun soughtWords(): Color = soughtWords(dark = MaterialTheme.colorScheme.surface.luminance() < 0.5f)

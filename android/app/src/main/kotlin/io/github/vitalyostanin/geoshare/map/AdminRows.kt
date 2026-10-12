@@ -22,6 +22,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import io.github.vitalyostanin.geoshare.R
 import io.github.vitalyostanin.geoshare.membership.runsTheGroup
+import io.github.vitalyostanin.geoshare.soughtWords
 import java.time.Instant
 import java.time.ZoneId
 
@@ -163,7 +164,7 @@ private fun AdminPhoneRow(
                         endsAtText(search.endsAt.atZone(ZoneId.systemDefault())),
                     ),
                     style = MaterialTheme.typography.bodySmall,
-                    color = Color(SOUGHT_COLOUR),
+                    color = soughtWords(),
                 )
             }
 
@@ -175,7 +176,7 @@ private fun AdminPhoneRow(
                         text = it,
                         style = MaterialTheme.typography.bodySmall,
                         fontWeight = FontWeight.SemiBold,
-                        color = Color(SOUGHT_COLOUR),
+                        color = soughtWords(),
                     )
                 }
             }
@@ -247,7 +248,7 @@ internal fun AdminSearchSummary(
                 endsAtText(search.endsAt.atZone(ZoneId.systemDefault())),
             ),
             style = MaterialTheme.typography.bodyMedium,
-            color = Color(SOUGHT_COLOUR),
+            color = soughtWords(),
         )
         Text(
             text =

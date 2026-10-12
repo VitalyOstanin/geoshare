@@ -13,7 +13,6 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
@@ -29,6 +28,7 @@ import io.github.vitalyostanin.geoshare.collection.JumpReason
 import io.github.vitalyostanin.geoshare.collection.leftOutReasonLabel
 import io.github.vitalyostanin.geoshare.collection.sourceChoiceLabel
 import io.github.vitalyostanin.geoshare.collection.sourceLeftOut
+import io.github.vitalyostanin.geoshare.soughtWords
 import kotlinx.coroutines.launch
 import java.time.Instant
 import java.time.ZoneId
@@ -88,7 +88,7 @@ internal fun DetailSought(
                 endsAtText(search.endsAt.atZone(ZoneId.systemDefault())),
             ) + " · " + stringResource(R.string.search_opened_by, openedByName),
             style = MaterialTheme.typography.bodySmall,
-            color = Color(SOUGHT_COLOUR),
+            color = soughtWords(),
             modifier = Modifier.weight(1f),
         )
 
@@ -106,7 +106,7 @@ internal fun DetailSought(
                 },
                 enabled = !busy,
             ) {
-                Text(text = stringResource(R.string.search_found), color = Color(SOUGHT_COLOUR))
+                Text(text = stringResource(R.string.search_found), color = soughtWords())
             }
         }
     }
