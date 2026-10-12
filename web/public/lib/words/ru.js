@@ -119,7 +119,7 @@ export const RU = {
     falsePlaceAndAfter: (count) => `Эта позиция и ещё ${count} после неё — в`,
     falsePlaceWhere: 'известной области подмены',
     stuckSentence: (age) => `В сети ${age}, но новое место не принято.`,
-    leftOutLead: (answers) => `Отказ ${answers}:`,
+    leftOutLead: (answers) => `Отброшено: ${answers}, причина:`,
     settlingSentence: 'Приёмник не устоялся после включения устройства.',
 
     // Остальное — по кнопке: времена, режим, источник, точность, координаты.
