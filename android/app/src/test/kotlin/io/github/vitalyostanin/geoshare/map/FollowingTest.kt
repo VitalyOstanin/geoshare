@@ -110,7 +110,7 @@ class FollowingTest {
         assertEquals("b", targetPosition(positions, "b")?.positionId)
     }
 
-    // The phone stopped sending, or the position it last wrote was rejected —
+    // The device stopped sending, or the position it last wrote was rejected —
     // either way, nothing to follow.
     @Test
     fun `a target that has gone quiet is not found`() {

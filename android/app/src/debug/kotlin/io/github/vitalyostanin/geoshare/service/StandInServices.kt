@@ -15,7 +15,7 @@ private const val HOST = "10.0.2.2"
 private const val FIRESTORE_PORT = 8080
 private const val AUTH_PORT = 9099
 
-/** What qemu calls the boards it emulates; no phone answers either name. */
+/** What qemu calls the boards it emulates; no device answers either name. */
 private val EMULATED_BOARDS = setOf("goldfish", "ranchu")
 
 /**
@@ -40,14 +40,14 @@ private val DEMO_SETTINGS = ProjectSettings(
  * The stand-in database and sign-in an emulator talks to instead of the real
  * project.
  *
- * For working on the exchange without phones: the group, the accounts and the
+ * For working on the exchange without devices: the group, the accounts and the
  * positions all live in Firebase emulators on the machine running the Android
  * emulator, so both sides of a change can be watched at once and nothing
  * reaches what the household actually uses.
  *
  * Decided by the device rather than by a setting: an emulator has no Google
  * account to sign in with and no household to belong to, so there is nothing
- * it could usefully do against the real project. A debug build on a phone is
+ * it could usefully do against the real project. A debug build on a device is
  * untouched.
  *
  * This file belongs to the debug build alone; the release build has a version
@@ -97,7 +97,7 @@ object StandInServices {
  * The accounts the stand-in sign-in is filled with, as the seed writes them.
  *
  * Offered as buttons on the sign-in screen: there is no Google account behind
- * an emulator, and typing an address on a phone keyboard to try a change is
+ * an emulator, and typing an address on a device keyboard to try a change is
  * time spent on nothing.
  *
  * The last two are on no roster: one founds a group, the other joins it on an

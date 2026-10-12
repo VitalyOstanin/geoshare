@@ -14,14 +14,14 @@ private const val FILE = "collection"
 private const val KEY_LEFT_OUT = "sourcesLeftOut"
 
 /**
- * Which sources of a position this phone takes into account.
+ * Which sources of a position this device takes into account.
  *
  * Kept in the same store as the jump filter, and for the same reason: the
  * settings screen and the collecting service are two parts of one application
  * that never speak directly, and the service reads this store for every answer
  * anyway.
  *
- * Every source is used unless the member says otherwise. A phone that quietly
+ * Every source is used unless the member says otherwise. A device that quietly
  * refused half of what the platform tells it, out of the box, would look
  * broken rather than careful.
  */

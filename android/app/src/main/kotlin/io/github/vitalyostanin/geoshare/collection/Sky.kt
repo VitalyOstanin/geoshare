@@ -44,7 +44,7 @@ data class Counted(val heard: Int, val usedInFix: Int)
 /**
  * A gain of this or below is the receiver saying it has nothing for that band.
  *
- * The phones report -327.67 for a band they are not listening to, which is the
+ * The devices report -327.67 for a band they are not listening to, which is the
  * smallest number the field can carry rather than a measurement. Averaged in
  * with the real ones it drags the mean down by tens of decibels and every
  * epoch reads as interference; it is the first thing that has to go.
@@ -133,7 +133,7 @@ fun inOrder(systems: Set<Constellation>): List<Constellation> = listOf(
  * A receiver takes its time from the satellites, so a transmitter that hands
  * out a false sky hands out a false time with it, and the receiver's clock
  * steps to meet it. The step shows here before it shows anywhere else: in the
- * bias against the phone's own clock, in the drift, and in the count of
+ * bias against the device's own clock, in the drift, and in the count of
  * discontinuities, which the receiver raises whenever its own time stopped
  * running forward.
  */
@@ -148,12 +148,12 @@ data class Clock(
     val driftUncertaintyNanosPerSecond: Double?,
     val discontinuities: Int,
     /**
-     * The phone's own clock since it was switched on, at the moment of the
+     * The device's own clock since it was switched on, at the moment of the
      * epoch.
      *
      * The one clock in the epoch a false sky cannot touch. Everything else
      * here is taken from the satellites and steps when they say to step; this
-     * runs off the phone's own oscillator, so the pair of them is what shows a
+     * runs off the device's own oscillator, so the pair of them is what shows a
      * step happening at all.
      */
     val sinceBootNanos: Long?,

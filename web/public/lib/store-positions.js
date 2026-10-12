@@ -111,9 +111,9 @@ export function positionOf(snapshot) {
     }
 
     return {
-        // One document per phone: the id is the account and the phone joined
+        // One document per device: the id is the account and the device joined
         // by a dot, and the owner is repeated inside. A document from before
-        // positions were kept per phone has no owner field, and there the
+        // positions were kept per device has no owner field, and there the
         // whole id is the account.
         positionId: snapshot.id,
         memberId: typeof data.memberId === 'string' ? data.memberId : snapshot.id.split('.')[0],
@@ -126,23 +126,23 @@ export function positionOf(snapshot) {
         ...positionMoments(data.takenAt.toMillis(), data.writtenAt?.toMillis() ?? null),
         mode: data.mode ?? null,
         batteryPercent: typeof data.batteryPercent === 'number' ? data.batteryPercent : null,
-        // Absent in what the older builds wrote, which is a phone not known to
-        // be charging rather than a phone known not to be.
+        // Absent in what the older builds wrote, which is a device not known to
+        // be charging rather than a device known not to be.
         charging: data.charging === true,
         accuracyMetres: widthOf(data.accuracyMetres),
-        // How the phone says it arrived at the answer, in the word it wrote.
+        // How the device says it arrived at the answer, in the word it wrote.
         // Absent in what the older builds wrote, which is a source not known
         // rather than a position arrived at by no means at all.
         foundBy: typeof data.foundBy === 'string' ? data.foundBy : null,
-        // How many answers this phone has thrown away since it wrote this
-        // position, and why the last of them went. A phone under a
+        // How many answers this device has thrown away since it wrote this
+        // position, and why the last of them went. A device under a
         // transmitter writes nothing at all, and without these its marker
-        // simply gets older — which is what a phone in a drawer does too.
+        // simply gets older — which is what a device in a drawer does too.
         leftOutCount: typeof data.leftOutCount === 'number' ? data.leftOutCount : null,
         leftOutReason: typeof data.leftOutReason === 'string' ? data.leftOutReason : null,
-        // Whether the phone said its receiver had not settled since it was
+        // Whether the device said its receiver had not settled since it was
         // switched on. Absent in what the older builds wrote and in every
-        // position of a phone that has been up a while, which are one thing
+        // position of a device that has been up a while, which are one thing
         // to a reader: nothing to say beyond what the other fields say.
         settling: data.settling === true,
     };
@@ -153,7 +153,7 @@ export function positionOf(snapshot) {
  *
  * A width is a radius, so nought and less are not widths at all; and one wider
  * than a hundred kilometres is a circle covering everything the map can show,
- * which says less about where the phone is than the marker alone does. The
+ * which says less about where the device is than the marker alone does. The
  * rules refuse both, and this is what happens to a document written before
  * they did.
  */
@@ -168,7 +168,7 @@ export function widthOf(metres) {
 /**
  * Whether a coordinate is a number the globe has a place for.
  *
- * Written by another member's phone, so it is worth as much as that phone: a
+ * Written by another member's device, so it is worth as much as that device: a
  * field of the wrong type, an infinity, or a degree count far outside the
  * globe all reach the clients, and the rules do not stop them.
  */

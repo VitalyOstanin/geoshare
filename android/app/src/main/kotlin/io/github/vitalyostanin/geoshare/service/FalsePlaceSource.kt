@@ -17,14 +17,14 @@ private const val TAG = "geoshare.falseplaces"
  *
  * A subscription rather than a read, and it costs almost nothing: the
  * collection holds a handful of documents that change a few times a year, so
- * after the first read the phone is charged only when somebody adds a place.
- * What it buys is a phone that starts refusing a new false place within
+ * after the first read the device is charged only when somebody adds a place.
+ * What it buys is a device that starts refusing a new false place within
  * seconds of it being named, rather than at the next release of the
  * application.
  *
  * Whatever cannot be read as a place is dropped rather than thrown: a document
  * somebody typed wrong in the console must not stop the rest of the list from
- * reaching the phones.
+ * reaching the devices.
  */
 fun namedFalsePlaces(connection: GroupConnection): Flow<List<FalsePlace>> = callbackFlow {
     val subscription =

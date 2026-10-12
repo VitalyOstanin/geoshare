@@ -27,28 +27,28 @@ import java.time.ZoneId
 
 /**
  * One member, with what the household knows about them from here, each of
- * their phones its own line and its own pair of round buttons.
+ * their devices its own line and its own pair of round buttons.
  */
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
 internal fun AdminMemberRow(
     line: GroupLine,
     now: Instant,
-    /** The group's searches, by the phone each stands for. */
+    /** The group's searches, by the device each stands for. */
     searches: Map<String, Search>,
-    /** This phone's own `{uid}.{deviceId}`: the one phone nobody here rings. */
+    /** This device's own `{uid}.{deviceId}`: the one device nobody here rings. */
     ownPhoneId: String?,
     onMakeAdmin: () -> Unit,
     onStopRunning: () -> Unit,
     onRemove: () -> Unit,
     onSearch: (PhoneLine) -> Unit,
     onEndSearch: (phoneId: String) -> Unit,
-    /** The calls standing on the group's phones, by phone. */
+    /** The calls standing on the group's devices, by device. */
     sirens: Map<String, Siren>,
     sirenNow: Instant,
     onSiren: (PhoneLine) -> Unit,
     onStopSiren: (phoneId: String) -> Unit,
-    /** The requests to forget a place standing on the group's phones, by phone. */
+    /** The requests to forget a place standing on the group's devices, by device. */
     resets: Map<String, Reset>,
     onReset: (PhoneLine) -> Unit,
 ) {
@@ -64,16 +64,16 @@ internal fun AdminMemberRow(
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
 
-        // Each phone is its own row: whether it is in touch is the question
+        // Each device is its own row: whether it is in touch is the question
         // the panel is opened with, and the two round buttons that reach into
-        // it — the siren and the search — belong to that one phone and no
+        // it — the siren and the search — belong to that one device and no
         // other.
         for (phone in line.phones) {
             AdminPhoneRow(
                 phone = phone,
                 now = now,
                 search = searches[phone.phoneId],
-                // A phone does not ring itself, the same rule as elsewhere in
+                // A device does not ring itself, the same rule as elsewhere in
                 // the application. Anybody but oneself may be looked for,
                 // administrators included: the one who is lost is not always
                 // the one who does not run the group.
@@ -90,8 +90,8 @@ internal fun AdminMemberRow(
             )
         }
 
-        // Under the phones rather than beside them, so that "Remove from the
-        // group" fits whole on a phone.
+        // Under the devices rather than beside them, so that "Remove from the
+        // group" fits whole on a device.
         FlowRow(verticalArrangement = Arrangement.Center) {
             if (line.mayBeMadeAdmin) {
                 TextButton(onClick = onMakeAdmin) {
@@ -115,7 +115,7 @@ internal fun AdminMemberRow(
 }
 
 /**
- * One phone of a member: what it says about itself on the left, and the round
+ * One device of a member: what it says about itself on the left, and the round
  * buttons that reach into it on the right, in one line — ringing it, or
  * opening a search that puts its place, and only its place, in front of the
  * whole group.
@@ -124,9 +124,9 @@ internal fun AdminMemberRow(
 private fun AdminPhoneRow(
     phone: PhoneLine,
     now: Instant,
-    /** The search standing for this phone, or null while nobody is looking for it. */
+    /** The search standing for this device, or null while nobody is looking for it. */
     search: Search?,
-    /** Whether it is the phone the panel is open on: in touch now, and never rung from itself. */
+    /** Whether it is the device the panel is open on: in touch now, and never rung from itself. */
     own: Boolean,
     mayLookFor: Boolean,
     siren: Siren?,
@@ -135,7 +135,7 @@ private fun AdminPhoneRow(
     onEndSearch: () -> Unit,
     onSiren: () -> Unit,
     onStopSiren: () -> Unit,
-    /** The last request that this phone forget its place, or null if none was made. */
+    /** The last request that this device forget its place, or null if none was made. */
     reset: Reset?,
     onReset: () -> Unit,
 ) {
@@ -191,8 +191,8 @@ private fun AdminPhoneRow(
 
         Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
             // Before the siren and plain, as on the page: the quiet one of
-            // the buttons that reach into this phone. Offered where the siren
-            // is, since this phone's own place is reset from its settings.
+            // the buttons that reach into this device. Offered where the siren
+            // is, since this device's own place is reset from its settings.
             if (!own) {
                 ResetButton(onClick = onReset)
             }
@@ -201,7 +201,7 @@ private fun AdminPhoneRow(
             val sounding = sirenState is SirenState.Waiting || sirenState is SirenState.Sounding
 
             // Round and red, as on the page: the one button in the row that
-            // makes this phone sound loud. A call already going is stopped
+            // makes this device sound loud. A call already going is stopped
             // from here even on a row that could not have rung it.
             if (sounding || !own) {
                 SirenButton(sounding = sounding, onCall = onSiren, onStop = onStopSiren)
@@ -276,7 +276,7 @@ internal fun AdminSearchSummary(
 }
 
 /**
- * A phone, when it was last in touch, and its charge: after its name where the
+ * A device, when it was last in touch, and its charge: after its name where the
  * line stands for the member, and without it where the name is the line above.
  */
 @Composable
@@ -309,7 +309,7 @@ internal fun phoneText(phone: PhoneLine, now: Instant, named: Boolean = true): S
 }
 
 /**
- * The line under the name: who they are to this group, and what this phone may
+ * The line under the name: who they are to this group, and what this device may
  * see of them.
  *
  * Said in one line rather than in marks beside the name, because a mark has to

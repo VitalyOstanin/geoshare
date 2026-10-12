@@ -16,7 +16,7 @@ class SubscriptionsTest {
         assertTrue(refusedOutright(refusal()))
     }
 
-    // A phone in a lift and a phone taken off a roster both stop hearing
+    // A device in a lift and a device taken off a roster both stop hearing
     // answers, and only one of them is left showing something untrue.
     @Test
     fun `a connection that dropped is not one`() {

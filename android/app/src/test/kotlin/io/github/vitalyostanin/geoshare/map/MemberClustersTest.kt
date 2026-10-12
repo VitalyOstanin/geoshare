@@ -6,7 +6,7 @@ import org.junit.Test
 class MemberClustersTest {
     // The same expectations the web page checks: the two clients group the
     // same members the same way, or a family standing together would be one
-    // marker on the phone and two on the page.
+    // marker on the device and two on the page.
     @Test
     fun `members far apart each keep their own marker`() {
         val clusters =

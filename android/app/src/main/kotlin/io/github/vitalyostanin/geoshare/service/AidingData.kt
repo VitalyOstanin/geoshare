@@ -42,7 +42,7 @@ enum class AidingErasure {
  * has no way of telling data that has gone wrong from data that is merely old:
  * a constellation whose aiding data is corrupt is heard satellite by satellite
  * and still left out of every answer, for days, until something erases it.
- * This is that something, and it is the one lever the phone has over it —
+ * This is that something, and it is the one lever the device has over it —
  * every constellation loses its aiding data together, since the command takes
  * no argument saying which.
  *

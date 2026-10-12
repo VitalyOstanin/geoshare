@@ -18,8 +18,8 @@ val ANSWER_WAIT: Duration = Duration.ofSeconds(15)
  * makes.
  *
  * Firestore says nothing of a lost connection: a listener goes on being
- * called, only with what the phone held before, marked as coming from the
- * cache. A network that is up is no answer either, since a phone behind a
+ * called, only with what the device held before, marked as coming from the
+ * cache. A network that is up is no answer either, since a device behind a
  * tunnel can reach the network and not the database. So the link is judged
  * by the snapshots themselves: the server confirming one is the database
  * answering, and [LINK_GRACE] of nothing but the cache is its silence.
@@ -43,7 +43,7 @@ data class DatabaseLink(val confirmedAt: Instant?, val cachedSince: Instant?) {
 
     companion object {
         /**
-         * The link before any snapshot: the phone has asked and heard
+         * The link before any snapshot: the device has asked and heard
          * nothing, so the waiting starts at once and a database that never
          * answers is told of too.
          */

@@ -9,14 +9,14 @@ import kotlin.math.roundToLong
 import kotlin.math.sin
 import kotlin.math.sqrt
 
-// The satellites the phone hears, held against where their published orbits
+// The satellites the device hears, held against where their published orbits
 // put them as seen from a place no false sky can move.
 //
-// A transmitter that moves a phone has to make every satellite it imitates
-// agree with the place it is moving the phone to: each signal arrives as late
+// A transmitter that moves a device has to make every satellite it imitates
+// agree with the place it is moving the device to: each signal arrives as late
 // as the distance from that satellite to that place. From anywhere else the
 // same delays do not fit. So the check asks two things of an epoch, from the
-// place the towers and the Wi-Fi put the phone:
+// place the towers and the Wi-Fi put the device:
 //
 // whether any satellite heard is below the horizon there, where no real
 // signal comes from;
@@ -25,7 +25,7 @@ import kotlin.math.sqrt
 // distances the signals measured differ from the distances to the published
 // positions by more than any honest error does.
 //
-// Measured on the phones' own records: under the transmitter the distances
+// Measured on the devices' own records: under the transmitter the distances
 // were off by a thousand kilometres and more, in two epochs of three or more; on
 // clean records nothing was off by more than seventy.
 
@@ -41,7 +41,7 @@ private const val WGS84_F = 1 / 298.257223563
 /** The receiver has the time only within a millisecond, not the whole of it. */
 private const val MSEC_AMBIGUOUS = 1 shl 4
 
-/** The band GPS L1 and Galileo E1 share, which is the one every phone hears. */
+/** The band GPS L1 and Galileo E1 share, which is the one every device hears. */
 private const val L1_HZ = 1_575.42e6
 private const val BAND_HALF_WIDTH_HZ = 1e6
 
@@ -53,7 +53,7 @@ private const val GLONASS_L1_HZ = 1_602e6
 private const val GLONASS_CHANNEL_HZ = 562.5e3
 private val GLONASS_CHANNELS = -7..6
 
-/** A phone that does not know a GLONASS satellite's number gives its channel plus this. */
+/** A device that does not know a GLONASS satellite's number gives its channel plus this. */
 private const val GLONASS_CHANNEL_ID_OFFSET = 100
 
 /** GLONASS keeps Moscow time: UTC and three hours. */
@@ -80,7 +80,7 @@ const val BELOW_THE_HORIZON_DEGREES: Double = -3.0
  * How far a satellite's distance may be off before it is not an honest error.
  *
  * Two hundred kilometres. On clean records the worst was sixty-eight, with
- * the phone indoors; under the transmitter the middle of the epochs was a
+ * the device indoors; under the transmitter the middle of the epochs was a
  * thousand four hundred. Thirty fired on clean records.
  */
 const val DISTANCE_OFF_METRES: Double = 200_000.0
@@ -89,9 +89,9 @@ const val DISTANCE_OFF_METRES: Double = 200_000.0
  * A whole millisecond of light, and how near to a whole number of them an
  * error has to be to count as one.
  *
- * The phones get the millisecond wrong now and then — the time they decode is
+ * The devices get the millisecond wrong now and then — the time they decode is
  * ambiguous by one — and that error is a whole number of these to within a
- * few kilometres. It is the phone's, not the sky's, and is not counted.
+ * few kilometres. It is the device's, not the sky's, and is not counted.
  */
 private const val MILLISECOND_METRES = LIGHT_MPS / 1_000.0
 private const val WHOLE_MILLISECOND_SLACK_METRES = 3_000.0
@@ -109,7 +109,7 @@ const val ORBIT_EPOCHS_IN_A_ROW: Int = 2
  * How old the last checked epoch may be and still say anything.
  *
  * The receiver reports once a second; an answer older than this is about a
- * sky the phone has stopped reporting.
+ * sky the device has stopped reporting.
  */
 val ORBIT_CHECK_STILL_CURRENT: Duration = Duration.ofSeconds(10)
 
@@ -216,7 +216,7 @@ private fun onL1(carrier: Double, glonass: Boolean): Boolean = if (glonass) {
 /**
  * The orbits a signal may be from.
  *
- * GLONASS satellites are numbered 1 to 24; a phone that has not yet decoded
+ * GLONASS satellites are numbered 1 to 24; a device that has not yet decoded
  * the number gives the channel plus a hundred instead, which two satellites
  * share — the caller takes the one above the horizon.
  */

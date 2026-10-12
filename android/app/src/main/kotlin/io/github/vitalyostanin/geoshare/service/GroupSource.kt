@@ -153,8 +153,8 @@ private fun Any?.asIds(): List<String> = (this as? List<*>).orEmpty().filterIsIn
  * from making them without end; [name] is a caption on top of that, given if
  * the founder typed one (ADR-0016).
  *
- * The phone is moved into the new group only once the write has been allowed.
- * Moving it first would leave a phone whose founding was refused writing into
+ * The device is moved into the new group only once the write has been allowed.
+ * Moving it first would leave a device whose founding was refused writing into
  * a group that does not exist, with every refusal afterwards saying nothing
  * about why.
  */
@@ -283,8 +283,8 @@ suspend fun makeInvitation(
  * if the code the claim names is gone afterwards, and the code goes only if
  * the roster grows. That is what makes a code admit one person once.
  *
- * Which group is not this phone's to assume: the invitation says so, and every
- * write is addressed by that name rather than by the group the phone is in
+ * Which group is not this device's to assume: the invitation says so, and every
+ * write is addressed by that name rather than by the group the device is in
  * — which, until this succeeds, is a different one.
  *
  * The roster is not read, and cannot be: the group document is closed to
@@ -297,11 +297,11 @@ suspend fun makeInvitation(
  * coming back would hand it out again unasked. Leaving on their own deletes
  * it already; this is the other way out. In the batch rather than when the
  * removal is noticed, which happens a moment before a join just as well and
- * would then delete what the join wrote. The profile and the phones are left:
- * they are written again as soon as the phone is back, and the names the
- * member gave their phones are kept with them.
+ * would then delete what the join wrote. The profile and the devices are left:
+ * they are written again as soon as the device is back, and the names the
+ * member gave their devices are kept with them.
  *
- * The grant also held the list of this member's phones, so what this phone
+ * The grant also held the list of this member's devices, so what this device
  * remembers having published is forgotten, and it puts itself on the list
  * again.
  */

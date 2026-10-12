@@ -18,8 +18,8 @@ import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 
 /**
- * The round button that asks a phone to forget its place. Plain rather than
- * red: unlike the siren, nothing on the phone sounds, and the member holding
+ * The round button that asks a device to forget its place. Plain rather than
+ * red: unlike the siren, nothing on the device sounds, and the member holding
  * it is only told once it is done.
  */
 @Composable
@@ -36,7 +36,7 @@ fun ResetButton(onClick: () -> Unit) {
     }
 }
 
-/** What the row says of a request: waiting for the phone, done, or never answered; nothing once it is old. */
+/** What the row says of a request: waiting for the device, done, or never answered; nothing once it is old. */
 @Composable
 fun resetText(reset: Reset, now: Instant): String? {
     if (!resetTold(reset, now)) {

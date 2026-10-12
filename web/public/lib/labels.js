@@ -1,9 +1,9 @@
-// What this member calls the phones and the people of the group, for
-// themselves alone: "new phone" rather than a model number, "grandma" rather
+// What this member calls the devices and the people of the group, for
+// themselves alone: "new device" rather than a model number, "grandma" rather
 // than the name on her account.
 //
-// A phone is named by its full address, account and phone joined by a dot, so
-// that two phones of one model are two names. The application keeps the same
+// A device is named by its full address, account and device joined by a dot, so
+// that two devices of one model are two names. The application keeps the same
 // document and takes the names in the same order.
 
 import { compareIds } from './order.js';
@@ -97,15 +97,15 @@ export function labelledProfiles(profiles, labels) {
 }
 
 /**
- * A member's phones, each called what this member called it, else what its
- * owner called it, else its model; null for a phone that has none of them.
+ * A member's devices, each called what this member called it, else what its
+ * owner called it, else its model; null for a device that has none of them.
  *
- * Phones left with one name between them — two of one model nobody named —
+ * Devices left with one name between them — two of one model nobody named —
  * are told apart by a number after it, counted in the order of their ids, so
  * that the map, the panel and the application all number them alike.
  *
- * `phones` is what the member's phones say about themselves, by device id;
- * `seen` is a last name for a phone known only from its position, or null.
+ * `phones` is what the member's devices say about themselves, by device id;
+ * `seen` is a last name for a device known only from its position, or null.
  */
 export function phoneNames(memberId, phones, labels, seen = new Map()) {
     const names = new Map();
@@ -151,10 +151,10 @@ export function phoneNames(memberId, phones, labels, seen = new Map()) {
 }
 
 /**
- * The positions with each phone called what phoneNames calls it.
+ * The positions with each device called what phoneNames calls it.
  *
- * A position carries no name of its own: the model lives in the phone's own
- * document, and a phone that has not written one yet stays unnamed.
+ * A position carries no name of its own: the model lives in the device's own
+ * document, and a device that has not written one yet stays unnamed.
  */
 export function labelledPositions(positions, labels, grants) {
     const seen = new Map();

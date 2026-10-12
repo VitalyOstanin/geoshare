@@ -8,7 +8,7 @@ import java.time.Instant
 /**
  * That a card tells the age of the position apart from the age of the news.
  *
- * The two part whenever a phone says a position again, which is what a phone
+ * The two part whenever a device says a position again, which is what a device
  * does while its satellites are being spoofed: the stamp moves every few
  * seconds and the position stays where it was hours ago. A reader counting the
  * age from the stamp is told the member is standing where the marker is.
@@ -44,7 +44,7 @@ class PositionMomentsTest {
         assertEquals(taken.plusSeconds(1), fresh.knownAt)
     }
 
-    // A phone whose clock runs ahead would otherwise date its position in the
+    // A device whose clock runs ahead would otherwise date its position in the
     // future, and the card would count the age backwards from a moment that
     // has not arrived.
     @Test
@@ -55,7 +55,7 @@ class PositionMomentsTest {
         assertEquals(taken, ahead.knownAt)
     }
 
-    // The moment between the phone writing and the server stamping, where the
+    // The moment between the device writing and the server stamping, where the
     // local copy carries no stamp at all.
     @Test
     fun `a position not yet stamped is dated by the phone that took it`() {

@@ -132,7 +132,7 @@ internal suspend fun MainActivity.signOutEverywhere() {
  * The service keeps writing into the other groups; it stops only when none
  * of them has a session left, since there is then nowhere to write.
  *
- * What the phone told the group is forgotten as well: the device's
+ * What the device told the group is forgotten as well: the device's
  * documents are gone, and signing in again has to write them anew rather
  * than take them for already there.
  */

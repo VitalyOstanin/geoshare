@@ -11,7 +11,7 @@ import java.io.File
  * The group's false places as they survive the process being killed.
  *
  * The list lives in the database, and the database is reached over a network
- * the phone may not have: a phone started in a cellar, or one whose data has
+ * the device may not have: a device started in a cellar, or one whose data has
  * run out, would otherwise begin with no places at all — and the first fix of
  * a session is exactly the one the false places exist to catch, because it has
  * nothing earlier to be compared with.

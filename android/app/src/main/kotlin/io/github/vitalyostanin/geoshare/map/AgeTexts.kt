@@ -40,7 +40,7 @@ internal fun ageText(age: PositionAge): String = when (age) {
  * The same age in as few characters as it can be said in.
  *
  * A card of the panel holds a face, a name and an age across a third of a
- * phone; written out in full the age lost its last word to the edge of the
+ * device; written out in full the age lost its last word to the edge of the
  * card, which reads as a broken card rather than as a short one.
  */
 @Composable

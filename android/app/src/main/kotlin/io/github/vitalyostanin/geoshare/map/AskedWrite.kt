@@ -21,7 +21,7 @@ private const val SIREN_TICK_MS = 1_000L
  * A write a dialog asks for: what it is about, how the last attempt came out,
  * and whether one is on its way.
  *
- * Held apart from each other so that a refusal on one phone does not linger
+ * Held apart from each other so that a refusal on one device does not linger
  * once the dialog is opened on another, and a dialog stays open on anything
  * but a write that went through.
  */

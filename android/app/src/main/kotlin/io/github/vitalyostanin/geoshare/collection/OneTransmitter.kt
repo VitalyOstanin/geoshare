@@ -4,7 +4,7 @@ package io.github.vitalyostanin.geoshare.collection
 //
 // Constellations.kt asks of a single epoch whether the fix rests on the band a
 // false signal is transmitted in while the other band was there to rest on.
-// That rule wants GLONASS heard, and the phone this was written against, under
+// That rule wants GLONASS heard, and the device this was written against, under
 // the transmitter, hears almost none: over the logs the receiver listed its
 // GLONASS satellites and heard not one of them for six hours on end, while
 // the 1575 MHz band carried a dozen at a steady thirty decibels.
@@ -13,7 +13,7 @@ package io.github.vitalyostanin.geoshare.collection
 // reached from the ground is not quiet because the sky is thin — the receiver
 // holds the orbits of those satellites and expects them — it is quiet because
 // something nearer is louder. On its own that still fires on an honest
-// morning, where a phone indoors hears one band for a while; what settles it
+// morning, where a device indoors hears one band for a while; what settles it
 // is the shape of the sky, which under a real sky is never flat. See Slant.kt.
 //
 // The time the signals take to arrive was measured against this and dropped.
@@ -57,7 +57,7 @@ fun presenceOf(sky: List<Satellite>): Map<Constellation, Presence> = sky
  * Read off the logs rather than chosen. Under the transmitter the receiver
  * held orbits for eight to twelve GLONASS satellites and heard none of them,
  * while ten to nineteen of the 1575 MHz band were in the fix; on the same
- * phone the same morning, and on the phone across the city, GLONASS was both
+ * device the same morning, and on the device across the city, GLONASS was both
  * heard and used every epoch.
  */
 data class SilentBandLimits(
@@ -109,7 +109,7 @@ data class SkySays(
     /** Whether the other band has been silent for the whole of the run. */
     val otherBandSilent: Boolean = false,
     /**
-     * Whether the time the satellites carry left the phone's own clock during
+     * Whether the time the satellites carry left the device's own clock during
      * the run — see [satelliteTimeParted].
      *
      * Kept here beside the rest of what the sky says, and read on its own
@@ -137,14 +137,14 @@ data class SkySays(
  *
  * The measurements are why it is built that way. Neither of the second pair
  * fires on its own without cost — the silence of the other band alone fires on
- * a tenth to a quarter of the honest morning's windows, because a phone
+ * a tenth to a quarter of the honest morning's windows, because a device
  * indoors loses a band for minutes at a time — and the flat sky alone says
  * nothing about where the false signal comes from. Held against the flat sky,
  * the silence fired on two fifths of the windows of the worst hours under the
  * transmitter; the block moving together fires on half to nine tenths of them,
  * which is why it is worth having as the second way in. Neither pair fires on
- * any honest record: the hours when the same phone still took GLONASS into
- * the fix give none in 1366 windows, and the phone in another part of the
+ * any honest record: the hours when the same device still took GLONASS into
+ * the fix give none in 1366 windows, and the device in another part of the
  * city none in 146.
  */
 fun fromOneTransmitter(says: SkySays): Boolean = says.shape == SkyShape.Flat &&

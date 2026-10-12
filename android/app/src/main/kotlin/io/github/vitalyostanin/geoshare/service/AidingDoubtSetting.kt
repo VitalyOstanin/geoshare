@@ -18,7 +18,7 @@ private const val KEY_DOUBTED = "aidingDoubted"
  *
  * Kept by name rather than by ordinal: a build that adds a constellation must
  * not turn a stored answer into a different one. A name this build does not
- * know is dropped, which is what a phone downgraded to an older build should
+ * know is dropped, which is what a device downgraded to an older build should
  * do with a word it has never heard.
  */
 class AidingDoubtSetting(context: Context) {

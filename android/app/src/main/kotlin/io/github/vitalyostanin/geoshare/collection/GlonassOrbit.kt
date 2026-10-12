@@ -10,7 +10,7 @@ import kotlin.math.sqrt
 // from there, step by step, as the interface document of the system describes.
 //
 // Followed for a day, which is what yesterday's file asks for, the position
-// stays within a few kilometres of the truth: measured on the phones' own
+// stays within a few kilometres of the truth: measured on the devices' own
 // records, against the two hundred the check allows.
 
 /** PZ-90: Earth's gravitational constant, its radius, its flattening term and turn. */

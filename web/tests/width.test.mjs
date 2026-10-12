@@ -10,7 +10,7 @@ const northwardsMetres = (degrees) => (degrees / 180) * Math.PI * EARTH;
 const eastwardsMetres = (degrees, latitude) =>
     northwardsMetres(degrees) * Math.cos((latitude / 180) * Math.PI);
 
-// The four kinds of answer seen in the logs of the phones: the satellites
+// The four kinds of answer seen in the logs of the devices: the satellites
 // under open sky, the Wi-Fi in a flat, the assistance service, and a tower.
 test('an answer under a kilometre is said in whole metres', () => {
     assert.equal(widthText(11.7), '12 m');
@@ -30,7 +30,7 @@ test('an answer that rounds up to a kilometre is written as one', () => {
 });
 
 // A receiver that calls its answer a fraction of a metre wide is not claiming
-// the phone is at a point, and "0 m" would say it is.
+// the device is at a point, and "0 m" would say it is.
 test('an answer narrower than a metre is still a metre', () => {
     assert.equal(widthText(0.2), '1 m');
 });

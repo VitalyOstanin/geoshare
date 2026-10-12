@@ -25,9 +25,10 @@ import io.github.vitalyostanin.geoshare.R
 import java.time.Instant
 
 /**
- * Choosing a target phone and confirming a siren, the way [SearchDialog] chooses
- * a search length: one dialog for both, since a member with a single phone
- * needs no chip row at all and one already selected before the dialog opens.
+ * Choosing a target device and confirming a siren, the way [SearchDialog]
+ * chooses a search length: one dialog for both, since a member with a single
+ * device needs no chip row at all and one already selected before the dialog
+ * opens.
  */
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
@@ -92,7 +93,7 @@ fun SirenDialog(
     )
 }
 
-/** A chip's label: the phone's name, plus how long ago it was last in touch. */
+/** A chip's label: the device's name, plus how long ago it was last in touch. */
 @Composable
 private fun sirenPhoneChipLabel(phone: PhoneLine, now: Instant): String {
     val onlineAt = phone.onlineAt ?: return phone.name
@@ -102,8 +103,8 @@ private fun sirenPhoneChipLabel(phone: PhoneLine, now: Instant): String {
 }
 
 /**
- * A phone's siren button on a row: round and red while it would ring the
- * phone, as on the page, and a filled stop button while a call is waiting or
+ * A device's siren button on a row: round and red while it would ring the
+ * device, as on the page, and a filled stop button while a call is waiting or
  * sounding.
  */
 @Composable

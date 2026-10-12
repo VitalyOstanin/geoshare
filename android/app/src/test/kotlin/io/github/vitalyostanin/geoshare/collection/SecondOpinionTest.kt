@@ -25,7 +25,7 @@ class SecondOpinionTest {
         reported = Reported(alongside = alongside),
     )
 
-    // The pair of lines that this rule exists for, as the phone wrote them
+    // The pair of lines that this rule exists for, as the device wrote them
     // down: one second apart, fifty-five kilometres apart.
     private val spoofed =
         fix(61.11817, 5.38151, 22.7, alongside = "SourceType=0|maxCn0=39|meanCn0=32|satellites=24")
@@ -46,7 +46,7 @@ class SecondOpinionTest {
     }
 
     // The circle drawn in the forest: every fix of it agrees with the one
-    // before it, and the phone was eight kilometres away the whole time.
+    // before it, and the device was eight kilometres away the whole time.
     @Test
     fun `a slowly drawn false road is caught by the radios and by nothing else`() {
         val onTheCircle = fix(61.03740, 4.55470, 24.0)
@@ -70,7 +70,7 @@ class SecondOpinionTest {
 
     // The gap between the questions is paid for rather than ignored: four
     // minutes at the fastest anybody is believed to travel is thirteen
-    // kilometres, and a phone that really did travel is not called a liar.
+    // kilometres, and a device that really did travel is not called a liar.
     @Test
     fun `whatever the phone could have travelled between the questions is allowed`() {
         val arrived = fix(61.03268, 4.58300, 20.0)
@@ -91,7 +91,7 @@ class SecondOpinionTest {
         assertNull(whyAJump(null, spoofed, null, old, at))
     }
 
-    // A tower answer that places the phone in a region says nothing about a
+    // A tower answer that places the device in a region says nothing about a
     // doorway, and would accuse the satellites on the strength of nothing.
     @Test
     fun `an answer that wide places the phone nowhere and is not asked`() {
@@ -110,9 +110,9 @@ class SecondOpinionTest {
         assertNull(secondOpinion(spoofed, sameAnswerAgain, at))
     }
 
-    // A phone with no SIM has no towers to ask, and this is the only second
+    // A device with no SIM has no towers to ask, and this is the only second
     // opinion it ever gets: the assistance service answers over the network,
-    // from the Wi-Fi around the phone, under the name of the satellites.
+    // from the Wi-Fi around the device, under the name of the satellites.
     @Test
     fun `an assistance answer counts as a second opinion though it is named gps`() {
         val assisted =
@@ -139,7 +139,7 @@ class SecondOpinionTest {
 
     // Backing an answer up is a stricter question than failing to contradict
     // it: the answer fifty-five kilometres away is not contradicted by a wide
-    // enough doubt, and it is never where the towers say the phone is.
+    // enough doubt, and it is never where the towers say the device is.
     @Test
     fun `an answer is backed up only where the other radios name its place`() {
         val nearby = fix(61.11800, 5.38200, 120.0)

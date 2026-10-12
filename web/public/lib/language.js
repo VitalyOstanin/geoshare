@@ -2,7 +2,7 @@
 // asks for when they have not given one.
 //
 // The answer belongs to the browser rather than to the account, the same way
-// the theme does: one member reads the map on a phone and on a laptop, and
+// the theme does: one member reads the map on a device and on a laptop, and
 // those two are not always set up in the same language.
 
 /** The answers, in the order their buttons stand in. */

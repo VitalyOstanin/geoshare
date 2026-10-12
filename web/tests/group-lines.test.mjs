@@ -52,7 +52,7 @@ test('the one running the group is marked', () => {
 });
 
 // What the panel counts is what this viewer may watch, not what the member
-// owns: a grant nobody may read says nothing about how many phones there are.
+// owns: a grant nobody may read says nothing about how many devices there are.
 test('the phones counted are the ones this viewer was given', () => {
     const grants = new Map([[CHILD, { memberId: CHILD, devices: ['one', 'two'] }]]);
     const lines = groupOverview(roster, profiles, grants, PARENT);
@@ -99,8 +99,8 @@ test('a panel drawn before the profiles arrive still lists everybody', () => {
     assert.deepEqual(lines.map((line) => line.displayName), [null, null, null]);
 });
 
-// An administrator reads the phones without the grant, which is the case the
-// panel lists them for: whether a phone is in touch is not a secret of whom
+// An administrator reads the devices without the grant, which is the case the
+// panel lists them for: whether a device is in touch is not a secret of whom
 // its owner shares with.
 test('the phones are listed by the names the map gives them', () => {
     const phones = phonesOf({
@@ -117,8 +117,8 @@ test('the phones are listed by the names the map gives them', () => {
     assert.equal(listed[1].onlineAt, 5);
 });
 
-// The map shows the later of the phone's state and its position; the panel
-// has to say the same, or the two disagree about one phone.
+// The map shows the later of the device's state and its position; the panel
+// has to say the same, or the two disagree about one device.
 test('a position newer than the phone state sets the moment in touch', () => {
     const phones = new Map([['dev-one', { onlineAt: 1000, batteryPercent: 50, charging: false }]]);
     const [line] = phoneLines(CHILD, phones, undefined, new Map([[`${CHILD}.dev-one`, 5000]]));

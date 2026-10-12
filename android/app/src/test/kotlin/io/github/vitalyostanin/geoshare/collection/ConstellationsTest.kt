@@ -127,7 +127,7 @@ class ConstellationsTest {
         )
     }
 
-    // The HONOR phones, which hear no GLONASS at all: there is no denominator
+    // The HONOR devices, which hear no GLONASS at all: there is no denominator
     // to compare against and the rule has to stay silent rather than call
     // every fix a lie.
     @Test

@@ -6,7 +6,7 @@ import org.junit.Assert.assertSame
 import org.junit.Test
 import java.time.Instant
 
-/** The names a member gives the phones and the people, and the order the names are taken in. */
+/** The names a member gives the devices and the people, and the order the names are taken in. */
 class LabelsTest {
     private val position =
         MemberPosition(
@@ -91,7 +91,7 @@ class LabelsTest {
         assertEquals(LABEL_LIMIT, labelText("x".repeat(LABEL_LIMIT + 10))?.length)
     }
 
-    // Two phones of one model that nobody named read the same everywhere; a
+    // Two devices of one model that nobody named read the same everywhere; a
     // number after the name tells them apart, in the order of their ids so
     // that every screen numbers them alike.
     @Test

@@ -9,18 +9,18 @@ import kotlin.math.sin
 import kotlin.math.sqrt
 
 // Where the satellites are, as their operators publish it rather than as the
-// sky over the phone says.
+// sky over the device says.
 //
 // Every satellite broadcasts its own orbit, and a receiver handed a false sky
-// is handed false orbits with it: whatever the phone decodes itself is the
+// is handed false orbits with it: whatever the device decodes itself is the
 // transmitter's to choose. The same orbits are collected by stations all over
-// the world and published as a file a day, which no transmitter near the phone
-// can reach. Held against that file, a satellite the phone claims to hear has
+// the world and published as a file a day, which no transmitter near the device
+// can reach. Held against that file, a satellite the device claims to hear has
 // to be above the horizon and at the distance its signal says.
 //
 // GPS and Galileo describe an orbit the same way, as an ellipse with
 // corrections; GLONASS gives a position and a velocity to be followed forward,
-// see GlonassOrbit.kt. GLONASS is read too because the phones hear it where
+// see GlonassOrbit.kt. GLONASS is read too because the devices hear it where
 // they hear only two or three GPS satellites, and because a transmitter that
 // imitates one system leaves the other honest to compare against.
 
@@ -38,7 +38,7 @@ const val SECONDS_IN_A_WEEK: Long = 604_800L
 /**
  * How far from the moment an orbit describes it is still used.
  *
- * Three days. Measured on the phones' own records: a day-old orbit puts the
+ * Three days. Measured on the devices' own records: a day-old orbit puts the
  * satellite within a kilometre and a half of where a fresh one does, three
  * days within six, and a week puts it thousands of kilometres off — while the
  * check that reads it allows two hundred.

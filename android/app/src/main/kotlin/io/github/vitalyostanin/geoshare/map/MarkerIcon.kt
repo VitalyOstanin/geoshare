@@ -69,7 +69,7 @@ private const val FACE_STEP_DP = 28f
  * How many circles a pin ever has in it.
  *
  * Three at 28dp apart is a head of 104dp, about a third of the width of a
- * narrow phone; a group of any size stops there and counts the rest instead.
+ * narrow device; a group of any size stops there and counts the rest instead.
  */
 const val PIN_MAX_CIRCLES = 3
 

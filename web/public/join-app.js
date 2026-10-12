@@ -42,7 +42,7 @@ if (isAndroid(navigator.userAgent)) {
     openButton.href = buildIntentUrl(window.location.host, invitation, RELEASES_URL);
 } else {
     // Nothing to launch on a browser that is not Android's, so the link
-    // goes to the clipboard instead, to be carried to a phone that has one.
+    // goes to the clipboard instead, to be carried to a device that has one.
     openButton.addEventListener('click', async (event) => {
         event.preventDefault();
 

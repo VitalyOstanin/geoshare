@@ -8,7 +8,7 @@ import java.time.Instant
  * wrote it down.
  *
  * Longer than the refresh below, so that one write lost to a bad connection
- * does not drop the other phones out of their fast mode; short enough that a
+ * does not drop the other devices out of their fast mode; short enough that a
  * viewer who disappears without a word stops being one within minutes.
  *
  * The claim itself carries no end of its own. A viewer saying when their claim
@@ -22,8 +22,8 @@ val WATCH_AHEAD: Duration = Duration.ofMinutes(7)
 /**
  * How often the claim is pushed forward while the map is on screen.
  *
- * Every phone of the group listens to the whole collection, so each push is
- * read once per phone: in a group of twenty a push a minute is over a
+ * Every device of the group listens to the whole collection, so each push is
+ * read once per device: in a group of twenty a push a minute is over a
  * thousand reads an hour for one open map. A viewer who leaves properly
  * withdraws the claim at once, so the length only matters for one who
  * vanished, and those few minutes cost less than the reads did.
@@ -35,7 +35,7 @@ val WATCH_REFRESH: Duration = Duration.ofMinutes(5)
  *
  * Well inside the two minutes [WATCH_AHEAD] leaves over [WATCH_REFRESH]: at
  * this spacing a claim whose push was lost would otherwise run out before the
- * next one, and the phones would drop out of their fast mode while the map is
+ * next one, and the devices would drop out of their fast mode while the map is
  * still open.
  */
 val WATCH_RETRY: Duration = Duration.ofSeconds(30)
@@ -46,7 +46,7 @@ data class Watcher(val memberId: String, val until: Instant)
 /**
  * Who is looking, each of them named once.
  *
- * A member watching from two places — a phone in one hand and the page on a
+ * A member watching from two places — a device in one hand and the page on a
  * laptop — leaves two claims behind, and the screen has one person to name for
  * them. Claims that have run out are dropped here rather than on the way in,
  * because nothing arrives at the moment one expires: the list is re-read as
@@ -59,22 +59,22 @@ fun watchingMembers(watchers: List<Watcher>, now: Instant): List<String> = watch
     .sorted()
 
 /**
- * The moments until which somebody who may see this phone is looking at it.
+ * The moments until which somebody who may see this device is looking at it.
  *
- * One open map used to put every phone of the group into the fast mode,
+ * One open map used to put every device of the group into the fast mode,
  * whether the person looking could see it or not; in a group of twenty that
- * is twenty phones writing for a map that shows three of them. A claim counts
- * here only when it is the owner's own — another phone of the same account —
+ * is twenty devices writing for a map that shows three of them. A claim counts
+ * here only when it is the owner's own — another device of the same account —
  * or when the owner's grant names the viewer, and then no longer than the
  * permission lasts.
  *
- * [sharedWith] is null until the grant has been read: a phone that does not
+ * [sharedWith] is null until the grant has been read: a device that does not
  * know yet whom it shares with answers everybody, as it did before, rather
  * than nobody for the second or so the subscription takes.
  *
- * [sought] is whether the group is looking for this very phone right now:
- * while a search stands the rules open this phone's position to everybody in
- * the group, whatever the grant says, and a viewer this phone would otherwise
+ * [sought] is whether the group is looking for this very device right now:
+ * while a search stands the rules open this device's position to everybody in
+ * the group, whatever the grant says, and a viewer this device would otherwise
  * leave out of the fast mode is exactly the one the search is for.
  */
 fun watchedUntil(

@@ -11,7 +11,7 @@ import java.time.Instant
 class StillnessTest {
     // The gap the other rules leave open: a road drawn slowly enough implies a
     // walking pace, carries a narrow width and contradicts nothing, so only
-    // the phone's own sensors are left to say that nobody carried it anywhere.
+    // the device's own sensors are left to say that nobody carried it anywhere.
     @Test
     fun `a kilometre travelled by a phone that never moved is a jump`() {
         assertTrue(movedWhileStanding(at(0), fixAt(61.03268, 4.40300, 10), farAway()))
@@ -55,7 +55,7 @@ class StillnessTest {
 
     // Half an hour at a walking pace, so that neither the speed nor the width
     // has anything to say about it; a kilometre and a half from the last
-    // position, which is more than a phone drifts while lying on a table.
+    // position, which is more than a device drifts while lying on a table.
     private fun farAway(accuracy: Double? = null) =
         fixAt(61.03268, 4.40300 + 0.027, 40, accuracy = accuracy)
 

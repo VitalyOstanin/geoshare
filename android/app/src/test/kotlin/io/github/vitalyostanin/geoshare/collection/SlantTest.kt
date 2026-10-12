@@ -11,9 +11,9 @@ import kotlin.math.abs
  * the logs hold are told apart by it.
  *
  * The numbers in the two epochs below are not invented: the flat one is the
- * GPS band of the phone under a false signal, every satellite between 32,8 and
+ * GPS band of the device under a false signal, every satellite between 32,8 and
  * 34,3 dB-Hz whether it sat at seven degrees or at seventy-six; the sloped one
- * is the other phone the same evening, where the low satellites are ten
+ * is the other device the same evening, where the low satellites are ten
  * decibels down on the high ones.
  */
 class SlantTest {
@@ -127,7 +127,7 @@ class SlantTest {
         assertEquals(6, slantOf(epoch).getValue(Constellation.Gps).satellites)
     }
 
-    // GLONASS arrives some decibels quieter than GPS on these phones, and the
+    // GLONASS arrives some decibels quieter than GPS on these devices, and the
     // two averaged together would show the difference between the systems
     // rather than the shape of the sky.
     @Test

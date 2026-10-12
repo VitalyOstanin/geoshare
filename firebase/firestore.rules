@@ -34,7 +34,7 @@ service cloud.firestore {
              data.longitude <= 180;
     }
 
-    // How long a name may be wherever one is written: a person's, a phone's,
+    // How long a name may be wherever one is written: a person's, a device's,
     // a place's.
     function longestName() {
       return 100;
@@ -80,17 +80,17 @@ service cloud.firestore {
         return data.get('owner', groupId);
       }
 
-      // Whether the group is looking for this phone right now: the account
-      // and the phone joined by a dot, the id its position has. A search opens
-      // that one phone's place to everybody in the group, over whatever the
-      // grant says, for as long as it stands; the member's other phones stay
+      // Whether the group is looking for this device right now: the account
+      // and the device joined by a dot, the id its position has. A search opens
+      // that one device's place to everybody in the group, over whatever the
+      // grant says, for as long as it stands; the member's other devices stay
       // as their grant has them. The rule that opens the place reads it here,
-      // so ending the search closes the place at once and not when the phone
+      // so ending the search closes the place at once and not when the device
       // next writes.
       //
       // The end is counted from the server's clock, as with a viewing claim:
-      // an end the administrator's phone chose would be worth whatever that
-      // phone's clock said. A member who has left the roster is not searched
+      // an end the administrator's device chose would be worth whatever that
+      // device's clock said. A member who has left the roster is not searched
       // for by the group they left.
       function searchStands(phoneId) {
         let path = /databases/$(database)/documents/groups/$(groupId)/searches/$(phoneId);
@@ -305,7 +305,7 @@ service cloud.firestore {
         // invitation cannot be found except by knowing it.
         //
         // It lasts a day, as the application makes them, with an hour's grace
-        // for a phone whose clock runs ahead of the server's. Without a limit
+        // for a device whose clock runs ahead of the server's. Without a limit
         // an administrator's code, once forwarded, would admit for good.
         function invitationShape() {
           return request.resource.data.keys().hasOnly(['createdBy', 'expiresAt', 'email']) &&
@@ -363,23 +363,23 @@ service cloud.firestore {
       }
 
       match /falsePlaces/{placeId} {
-        // Where a false signal is known to put the phones of this group.
+        // Where a false signal is known to put the devices of this group.
         //
         // In the database rather than in the build, because which places those
         // are is a fact about one household's surroundings: a build carrying
         // them hands them to everybody who downloads it, and a list of places
         // where receivers are being lied to says as much about the
-        // neighbourhood as about the phones.
+        // neighbourhood as about the devices.
         //
         // Everybody in the group reads it, including somebody who joined an
-        // hour ago on a code: a phone that does not know the places takes the
+        // hour ago on a code: a device that does not know the places takes the
         // lie as its anchor, which is the one failure this list exists to
         // prevent. Only an administrator writes it, for the same reason they
         // are the ones who edit the roster — a place added wrongly is ground
-        // the group's phones can no longer be placed on.
+        // the group's devices can no longer be placed on.
         //
         // The coordinates are held to the globe and the radius to fifty
-        // kilometres; what those numbers mean is weighed again on the phone,
+        // kilometres; what those numbers mean is weighed again on the device,
         // since a rule can hold the shape of a document and not its sense.
         function falsePlaceShape() {
           return request.resource.data.keys()
@@ -401,21 +401,21 @@ service cloud.firestore {
       }
 
       match /settings/{key} {
-        // What the group has settled about how its phones judge an answer.
+        // What the group has settled about how its devices judge an answer.
         //
         // Today one document: what counts as going round in circles, which is
         // the shape of the transmitter over this neighbourhood rather than
         // anything about the application. Held here so that narrowing the
         // rule does not mean publishing the numbers in a build.
         //
-        // Everybody in the group reads it, because every phone weighs its own
+        // Everybody in the group reads it, because every device weighs its own
         // answers against it; only an administrator writes it, because limits
         // set wrongly either catch nothing or refuse honest positions.
         //
         // The shape is held to numbers of the right kind and nothing else.
         // What those numbers mean together — that the widest is wider than
         // the tightest, that a run is long enough to disagree with a circle —
-        // is weighed on the phone, which is where such a judgement belongs.
+        // is weighed on the device, which is where such a judgement belongs.
         function settingNumbers() {
           return request.resource.data.keys().hasOnly(['answers', 'withinSeconds',
                    'roundness', 'widestMetres', 'tightestMetres', 'steadiness',
@@ -453,26 +453,26 @@ service cloud.firestore {
       }
 
       match /searches/{phoneId} {
-        // The group is looking for one phone of a member: its place is open
+        // The group is looking for one device of a member: its place is open
         // to everybody in the group until the search is called off or runs
-        // out. The id is the account and the phone joined by a dot, the id of
-        // the position it opens; a member with two phones lost has two
-        // searches, and the family may look for several phones at once.
+        // out. The id is the account and the device joined by a dot, the id of
+        // the position it opens; a member with two devices lost has two
+        // searches, and the family may look for several devices at once.
         //
         // Everybody in the group reads the collection, because everybody's
-        // map marks the phone being looked for, and it names nobody's place.
+        // map marks the device being looked for, and it names nobody's place.
         // An administrator opens a search, renews it or opens it again once
         // it has run out; any administrator ends it, and so does the member
-        // whose phone it is, who has been found the moment they say so.
+        // whose device it is, who has been found the moment they say so.
         //
         // The length is a number of hours from the last renewal, both by the
         // server's clock. Three days at most: a search forgotten on the
         // administrator's screen would otherwise leave the place open to the
         // whole group for good.
         //
-        // The phone's name comes along, as the administrator saw it: the
+        // The device's name comes along, as the administrator saw it: the
         // search opens the position and nothing else, so a member not given
-        // the owner's phones would otherwise have nothing to call it by.
+        // the owner's devices would otherwise have nothing to call it by.
         function searchOwner() {
           return phoneId.split('\\.')[0];
         }
@@ -509,15 +509,15 @@ service cloud.firestore {
       }
 
       match /sirens/{sirenId} {
-        // A phone told to sound loud for a while, so that it can be found:
-        // one document per phone, its id the account and the phone joined by
-        // a dot, the same as a position's. The phone listens to its own
+        // A device told to sound loud for a while, so that it can be found:
+        // one document per device, its id the account and the device joined by
+        // a dot, the same as a position's. The device listens to its own
         // document over the subscription its service already holds.
         //
-        // An administrator may call any phone in the group, and a member their
-        // own phones: the one looked for is often the member's other phone,
+        // An administrator may call any device in the group, and a member their
+        // own devices: the one looked for is often the member's other device,
         // lost at home, and that needs nobody's permission but theirs. No one
-        // else reads it: which of the family's phones went missing when is
+        // else reads it: which of the family's devices went missing when is
         // nobody else's business.
         function sirenOwner() {
           return sirenId.split('\\.')[0];
@@ -529,7 +529,7 @@ service cloud.firestore {
         }
 
         // A call is written whole, and so replaces whatever the last one left:
-        // who called and when, by the server's clock, so that a phone
+        // who called and when, by the server's clock, so that a device
         // switched back on an hour later can tell a stale call from a new one.
         function calledNow() {
           let data = request.resource.data;
@@ -542,8 +542,8 @@ service cloud.firestore {
           return request.resource.data.diff(resource.data).affectedKeys().hasOnly(keys);
         }
 
-        // The phone says it has started sounding: the caller's screen tells a
-        // phone that answered from one that is switched off. Only the phone's
+        // The device says it has started sounding: the caller's screen tells a
+        // device that answered from one that is switched off. Only the device's
         // own account says so.
         function heardNow() {
           return request.auth.uid == sirenOwner() &&
@@ -551,7 +551,7 @@ service cloud.firestore {
                  request.resource.data.heardAt == request.time;
         }
 
-        // Stopped early, on the phone itself or from a caller's screen.
+        // Stopped early, on the device itself or from a caller's screen.
         function stoppedNow() {
           return onlyChanged(['stoppedBy', 'stoppedAt']) &&
                  request.resource.data.stoppedBy == request.auth.uid &&
@@ -564,14 +564,14 @@ service cloud.firestore {
       }
 
       match /resets/{resetId} {
-        // A phone told to forget where it thinks it is: the jump filter holds
+        // A device told to forget where it thinks it is: the jump filter holds
         // on to the last place it believed, and a wrong one makes it refuse
-        // every honest answer after. The phone's own button settles that, but
-        // the phone is not always in reach of the one who sees the marker
-        // stuck. One document per phone, its id made as a siren's, read by
-        // the phone over the subscription its service already holds.
+        // every honest answer after. The device's own button settles that, but
+        // the device is not always in reach of the one who sees the marker
+        // stuck. One document per device, its id made as a siren's, read by
+        // the device over the subscription its service already holds.
         //
-        // The same people as for a siren: an administrator for any phone in
+        // The same people as for a siren: an administrator for any device in
         // the group, a member for their own.
         function resetOwner() {
           return resetId.split('\\.')[0];
@@ -583,7 +583,7 @@ service cloud.firestore {
         }
 
         // A request is written whole, and so replaces what the last one left:
-        // who asked and when, by the server's clock, so that the phone can
+        // who asked and when, by the server's clock, so that the device can
         // tell a request it has already carried out from a new one.
         function askedNow() {
           let data = request.resource.data;
@@ -592,7 +592,7 @@ service cloud.firestore {
                  data.askedAt == request.time;
         }
 
-        // The phone says it has forgotten: the asking screen tells a phone
+        // The device says it has forgotten: the asking screen tells a device
         // that did from one that has not been heard from since.
         function doneNow() {
           return request.auth.uid == resetOwner() &&
@@ -613,12 +613,12 @@ service cloud.firestore {
         // writing one's own profile grants nothing.
         //
         // Nothing else lives here, because everyone in the group reads this
-        // document: which phones a member carries, and whom they let watch,
+        // document: which devices a member carries, and whom they let watch,
         // are in the grant below, where only the people concerned can see
         // them.
         //
         // The picture is held to the host the sign-in provider keeps account
-        // pictures on. Every member's phone fetches it, and an address of the
+        // pictures on. Every member's device fetches it, and an address of the
         // member's choosing would have each of them call on that server.
         function profileShape() {
           return request.resource.data.keys()
@@ -647,16 +647,16 @@ service cloud.firestore {
       }
 
       match /grants/{uid} {
-        // Whom this member lets watch, and which phones they carry. Both are
+        // Whom this member lets watch, and which devices they carry. Both are
         // answers to "where is this person", so both are kept away from the
         // members who were not given one: being in the household tells you
-        // that somebody is in it, not how many phones they own or who else
+        // that somebody is in it, not how many devices they own or who else
         // they share with.
         //
-        // The phones have moved to `devices` above, where an administrator
+        // The devices have moved to `devices` above, where an administrator
         // can see them without seeing whom they are shared with. The field
-        // stays allowed here while phones of an older build still write it,
-        // and readers fall back on it for a member none of whose phones has
+        // stays allowed here while devices of an older build still write it,
+        // and readers fall back on it for a member none of whose devices has
         // written the new document yet.
         //
         // The sizes are there because a reader acts on this document: one
@@ -679,7 +679,7 @@ service cloud.firestore {
         }
 
         // The permission is in the document being read, so weighing it costs
-        // nothing: a reader who has been given one sees the phones to
+        // nothing: a reader who has been given one sees the devices to
         // subscribe to, and the same withdrawal that stops the positions stops
         // this as well.
         function mayReadGrant() {
@@ -690,7 +690,7 @@ service cloud.firestore {
         }
 
         // One document at a time: listing the collection would hand every
-        // member the whole household's phones, which is the leak this
+        // member the whole household's devices, which is the leak this
         // collection exists to close.
         allow get: if isMember() && (isOwner() || mayReadGrant());
         allow create, update: if isOwner() && grantShape();
@@ -698,19 +698,19 @@ service cloud.firestore {
       }
 
       match /devices/{uid} {
-        // The phones this member carries, one entry per phone under its id:
+        // The devices this member carries, one entry per device under its id:
         // the model, the name its owner gave it, and when it was last in touch
         // with the mode and the charge it had then. No place: an administrator
-        // reads this to tell a phone that went quiet from one whose marker is
-        // stuck, and neither needs to know where the phone is.
+        // reads this to tell a device that went quiet from one whose marker is
+        // stuck, and neither needs to know where the device is.
         //
         // Kept apart from the grant so that an administrator can be shown the
-        // phones without being shown whom their owner shares with.
+        // devices without being shown whom their owner shares with.
         //
-        // A rule cannot walk a map, but there are at most ten phones, so each
-        // of the ten places is looked at in turn: a place past the last phone
+        // A rule cannot walk a map, but there are at most ten devices, so each
+        // of the ten places is looked at in turn: a place past the last device
         // has nothing in it to weigh. Only the entries this write changes are
-        // weighed — a phone writes its own entry and no other, and weighing
+        // weighed — a device writes its own entry and no other, and weighing
         // all ten would run past what a rule may evaluate in one request. The
         // readers still weigh every entry as they take it; the rule is what
         // keeps one from being a megabyte of something else.
@@ -731,7 +731,7 @@ service cloud.firestore {
           return ids.size() <= n || !(ids[n] in changed) || phoneFits(phones[ids[n]]);
         }
 
-        // What a phone writes about itself, and the name its owner gives it.
+        // What a device writes about itself, and the name its owner gives it.
         // Every field is optional: the status and the name are written apart.
         function phoneFits(phone) {
           return phone is map &&
@@ -756,7 +756,7 @@ service cloud.firestore {
         }
 
         // The same permission that opens the positions: a reader who may watch
-        // the member learns which phones there are to watch.
+        // the member learns which devices there are to watch.
         function mayWatch() {
           return uid in groupMembers() &&
                  exists(/databases/$(database)/documents/groups/$(groupId)/grants/$(uid)) &&
@@ -767,20 +767,20 @@ service cloud.firestore {
         }
 
         // One document at a time, as with the grants: a listing would hand a
-        // member the phones of everybody they were not given.
+        // member the devices of everybody they were not given.
         allow get: if isMember() && (isOwner() || isGroupAdmin() || mayWatch());
         allow create, update: if isOwner() && devicesShape();
         allow delete: if request.auth.uid == uid;
       }
 
       match /labels/{uid} {
-        // What a member calls the phones and the people of the group, for
-        // themselves alone: "new phone" rather than a model number, "grandma"
+        // What a member calls the devices and the people of the group, for
+        // themselves alone: "new device" rather than a model number, "grandma"
         // rather than the name on her account. Nobody else reads it, the
         // person named included.
         //
-        // A phone is named by its full address, account and phone joined by a
-        // dot, so that two phones of one model are two names.
+        // A device is named by its full address, account and device joined by a
+        // dot, so that two devices of one model are two names.
         function labelsShape() {
           return request.resource.data.keys().hasOnly(['devices', 'members']) &&
                  (!('devices' in request.resource.data) ||
@@ -801,12 +801,12 @@ service cloud.firestore {
       }
 
       match /positions/{positionId} {
-        // One document per phone rather than per member: a member with two
-        // phones had them overwriting each other's position, and which of the
+        // One document per device rather than per member: a member with two
+        // devices had them overwriting each other's position, and which of the
         // two the marker showed depended on which wrote last.
         //
-        // The id is the account and the phone joined by a dot, so a member
-        // reaches only their own documents whatever their phones are called.
+        // The id is the account and the device joined by a dot, so a member
+        // reaches only their own documents whatever their devices are called.
         // The owner is repeated inside the document, because that is what the
         // readers group the markers by.
         function ownsPosition() {
@@ -820,10 +820,10 @@ service cloud.firestore {
         // The permission is read from the owner's grant, which is where they
         // write it, and not from a copy inside this document. A copy would be
         // cheaper — a rule that reads another document pays for a read — but a
-        // copy only changes when the phone writes its next position, so
-        // withdrawing it would take effect at the phone's convenience: ten
-        // minutes for a phone standing still, an hour and a half at night, and
-        // never at all for a phone that is switched off, lost or no longer has
+        // copy only changes when the device writes its next position, so
+        // withdrawing it would take effect at the device's convenience: ten
+        // minutes for a device standing still, an hour and a half at night, and
+        // never at all for a device that is switched off, lost or no longer has
         // the application. A permission has to stop when it is withdrawn.
         //
         // Read through the defaults rather than by indexing: an owner without
@@ -864,7 +864,7 @@ service cloud.firestore {
                  onTheGlobe(request.resource.data) &&
                  request.resource.data.takenAt is timestamp &&
                  // The moment the server stamped, which is the one clock the
-                 // readers can trust: a phone cannot claim a position is newer
+                 // readers can trust: a device cannot claim a position is newer
                  // than it is.
                  (!('writtenAt' in request.resource.data) ||
                   request.resource.data.writtenAt == request.time) &&
@@ -880,12 +880,12 @@ service cloud.firestore {
                  // How wide the provider said its answer is, which the readers
                  // draw as a circle. Held to a hundred kilometres: past that a
                  // circle stops describing a place, and a number of any size
-                 // would let one phone paint over the whole map.
+                 // would let one device paint over the whole map.
                  (!('accuracyMetres' in request.resource.data) ||
                   (request.resource.data.accuracyMetres is number &&
                    request.resource.data.accuracyMetres >= 0 &&
                    request.resource.data.accuracyMetres <= 100000)) &&
-                 // How the phone says it arrived at the answer: one of the
+                 // How the device says it arrived at the answer: one of the
                  // words the clients know, and a word from a build newer than
                  // a reader is shown as it came. Held to the length of a word
                  // for the same reason as the mode — a reader shows it, and a
@@ -894,10 +894,10 @@ service cloud.firestore {
                  (!('foundBy' in request.resource.data) ||
                   (request.resource.data.foundBy is string &&
                    request.resource.data.foundBy.size() <= 20)) &&
-                 // Whether the receiver had not settled since the phone was
+                 // Whether the receiver had not settled since the device was
                  // switched on. A flag rather than the count of satellites or
                  // the seconds since the boot: the readers show a sentence,
-                 // and what the limits of that window are is the phone's
+                 // and what the limits of that window are is the device's
                  // business and changes between builds.
                  (!('settling' in request.resource.data) ||
                   request.resource.data.settling is bool);
@@ -909,9 +909,9 @@ service cloud.firestore {
         // client sends. So a reader walks the roster instead: the grant of a
         // member names their devices, and each of those is a document read by
         // name.
-        // What a phone says while its answers are being thrown away, and it is
-        // therefore writing no positions at all. Without it a phone under a
-        // transmitter is indistinguishable from a phone in a drawer: both stop
+        // What a device says while its answers are being thrown away, and it is
+        // therefore writing no positions at all. Without it a device under a
+        // transmitter is indistinguishable from a device in a drawer: both stop
         // writing, and the marker of each quietly gets older.
         //
         // The count is held to a number a run of answers can reach — seven
@@ -939,9 +939,9 @@ service cloud.firestore {
         // the moment they were taken and the moment the server stamped all
         // stay as they were. The whole-document shape cannot allow that: it
         // holds `writtenAt` to the server's clock of this very request, so a
-        // phone saying this much through it would have to renew the moment of
+        // device saying this much through it would have to renew the moment of
         // a position it did not take. A marker whose `writtenAt` moved on
-        // while the phone wrote nothing would stop ageing under a
+        // while the device wrote nothing would stop ageing under a
         // transmitter, and the age of a marker is what a reader decides by.
         //
         // An owner writing their own document whole is a different matter and
@@ -958,24 +958,24 @@ service cloud.firestore {
                                  ((positionShape() && leftOutShape()) ||
                                   (onlyTheLeftOutChanged() && leftOutShape()));
         // Stated apart from the write: a deletion carries no document whose
-        // owner could be checked. Without membership, so that a phone taken
+        // owner could be checked. Without membership, so that a device taken
         // off the roster can still take its last place away.
         allow delete: if positionId.split('\\.')[0] == request.auth.uid;
       }
 
       match /watch/{watchId} {
-        // Also per phone: a member looking at the map on one phone should not
-        // clear the marker their other phone had just written, and a phone
+        // Also per device: a member looking at the map on one device should not
+        // clear the marker their other device had just written, and a device
         // ignores only its own marker rather than every marker of its account.
         function ownsWatch() {
           return isMember() && watchId.split('\\.')[0] == request.auth.uid;
         }
 
         // The claim says when it was made, by the clock of the server, and the
-        // phones add the minutes it is worth. Written the other way round
+        // devices add the minutes it is worth. Written the other way round
         // — an expiry chosen by the viewer — it would be worth whatever that
         // viewer's clock says: a clock running slow would never start the fast
-        // mode at all, and a claim dated years ahead would hold every phone of
+        // mode at all, and a claim dated years ahead would hold every device of
         // the group in it for good.
         function watchShape() {
           return request.resource.data.keys().hasOnly(['memberId', 'since']) &&

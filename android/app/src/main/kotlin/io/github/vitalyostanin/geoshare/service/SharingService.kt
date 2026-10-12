@@ -112,18 +112,18 @@ import java.util.Locale
 private const val TAG = "geoshare.service"
 
 /**
- * How often the phone says how it is when nothing else has made it say so.
+ * How often the device says how it is when nothing else has made it say so.
  *
- * On the beat a phone at rest writes its position again, for the same reason:
+ * On the beat a device at rest writes its position again, for the same reason:
  * under a transmitter no position is written at all, and this is the only
  * news that keeps the marker out of the grey. An hour let it go grey for half
- * of every hour, and the card then read a phone that is working and being
- * lied to as a phone that has gone quiet.
+ * of every hour, and the card then read a device that is working and being
+ * lied to as a device that has gone quiet.
  */
 private val STATUS_EVERY: Duration = IDLE_REPEAT
 
 /**
- * A position as it goes into the document: where the phone was, and whether
+ * A position as it goes into the document: where the device was, and whether
  * the cable was in it at the moment that was decided.
  *
  * The pair rather than the fix alone, because the same place written with the
@@ -139,7 +139,7 @@ private data class Written(
      * Carried beside the fix rather than worked out again at the write: the
      * count of satellites it rests on belongs to the epoch the fix came out
      * of, and by the time the document is put together the receiver has moved
-     * on. It is part of what makes two writes the same write, so a phone whose
+     * on. It is part of what makes two writes the same write, so a device whose
      * receiver settles while it stands still says so once.
      */
     val settling: Boolean = false,
@@ -171,7 +171,7 @@ class SharingService : LifecycleService() {
      *
      * A service started at boot can be quicker than the restoring of the
      * signed-in account, and refusing to work because of a second's difference
-     * would mean a phone that shares nothing until somebody opens the
+     * would mean a device that shares nothing until somebody opens the
      * application.
      */
     private var sessionWait: Job? = null
@@ -193,7 +193,7 @@ class SharingService : LifecycleService() {
     /** Every write outside the screens, carried into each linked group. */
     private val writer = EveryGroup { links.value }
 
-    /** The alarm stream at full volume while a call to this phone sounds. */
+    /** The alarm stream at full volume while a call to this device sounds. */
     private val sirens by lazy { SirenAnswer(this, lifecycleScope) }
 
     /** What the satellites themselves are saying, apart from the written fix. */
@@ -210,8 +210,8 @@ class SharingService : LifecycleService() {
     /**
      * How many answers in a row the filter has left out.
      *
-     * A phone being fed a false signal is answered promptly and wrongly, so
-     * this counts up while the phone looks perfectly healthy and says nothing.
+     * A device being fed a false signal is answered promptly and wrongly, so
+     * this counts up while the device looks perfectly healthy and says nothing.
      */
     private var jumpsInARow: Int = 0
 
@@ -236,12 +236,12 @@ class SharingService : LifecycleService() {
      * Every one of them, whether or not it was written out: what the shape of
      * the run gives away is exactly what a pair of answers hides, and the
      * answers a rule has already refused are the ones that draw the shape
-     * while the anchor still stands where the phone really is.
+     * while the anchor still stands where the device really is.
      */
     private var lately: List<Fix> = emptyList()
 
     /**
-     * What the phone's own sensors say about it being carried.
+     * What the device's own sensors say about it being carried.
      *
      * Whether there are sensors to ask is read once: sensors do not come and
      * go, and the permission is asked for before the service starts
@@ -252,7 +252,7 @@ class SharingService : LifecycleService() {
     /** The run of answers left out since the last position was written. */
     private val leftOut = LeftOutRun()
 
-    /** Where this phone keeps being, kept across restarts of the process. */
+    /** Where this device keeps being, kept across restarts of the process. */
     private val trailStore by lazy { TrailStore(this) }
     private var trail: Trail = Trail()
 
@@ -261,7 +261,7 @@ class SharingService : LifecycleService() {
      * that survives the process being killed.
      *
      * Read from the file first and from the database after, because the fix
-     * these places are there to catch is the first one of the session: a phone
+     * these places are there to catch is the first one of the session: a device
      * waiting for its subscription has nothing to catch it with.
      */
     private val falsePlaceStore by lazy { FalsePlaceStore(this) }
@@ -277,7 +277,7 @@ class SharingService : LifecycleService() {
     private var circleLimits: CircleLimits = CircleLimits()
 
     /**
-     * The last position this phone was ever sure of, however long ago.
+     * The last position this device was ever sure of, however long ago.
      *
      * Apart from [lastFix], which the rules measure against and which an old
      * position has no business being: what this one is for is having something
@@ -290,7 +290,7 @@ class SharingService : LifecycleService() {
     /** Whether the member has asked for the impossible positions to be left out. */
     private val jumps by lazy { JumpFilterSetting(this) }
 
-    /** Which sources of a position this phone takes into account, as asked on the screen. */
+    /** Which sources of a position this device takes into account, as asked on the screen. */
     private val sources by lazy { SourcesSetting(this) }
 
     private val playServices by lazy {
@@ -341,7 +341,7 @@ class SharingService : LifecycleService() {
      * Not the same thing as the moment of the fix in it: the quiet mode writes
      * a position taken half an hour ago on purpose, and what keeps the card
      * from going grey is when the document was written rather than when the
-     * phone was there.
+     * device was there.
      */
     private var wroteAt: Instant? = null
 
@@ -359,7 +359,7 @@ class SharingService : LifecycleService() {
     /**
      * The cable going in or coming out, said at once.
      *
-     * Waiting for the next fix would leave a phone reading "12%" for the
+     * Waiting for the next fix would leave a device reading "12%" for the
      * fifteen minutes it is already filling up, which is the case the reader
      * most wants told — and under a transmitter there is no next fix at all.
      */
@@ -430,7 +430,7 @@ class SharingService : LifecycleService() {
             // The notification and the switch on the settings screen are the
             // same statement, and stopping through one of them has to turn the
             // other off: otherwise the switch goes on saying we are sharing,
-            // and the next time the application is opened — or the phone is
+            // and the next time the application is opened — or the device is
             // restarted — the service starts itself again.
             SharingSetting(this).enabled = false
             stopSelf()
@@ -463,7 +463,7 @@ class SharingService : LifecycleService() {
     private fun endTheSearchEverywhere() {
         AppLog.i(TAG, "this phone says it has been found")
 
-        // Not a reason to stop sharing: only the search on this phone is
+        // Not a reason to stop sharing: only the search on this device is
         // over, and the service goes on exactly as it was. The
         // notification comes down on its own, once [keepSearchNotification]
         // hears the document is gone. Ended in every group: a device found
@@ -678,17 +678,17 @@ class SharingService : LifecycleService() {
         collection = null
         runCatching { unregisterReceiver(power) }
         // [keepSearchNotification] is cancelled along with [collection] and
-        // leaves nothing to take its own notification down; the phone may
+        // leaves nothing to take its own notification down; the device may
         // still be being looked for when the collection stops.
         cancelSearchNotification(this)
         sirens.stop()
     }
 
     /**
-     * Says how the phone is, apart from where it is: in touch now, in this
+     * Says how the device is, apart from where it is: in touch now, in this
      * mode, this charged, on a cable or off it.
      *
-     * Not through the position, and not past the filter: a phone whose
+     * Not through the position, and not past the filter: a device whose
      * answers are all being thrown away is still in touch and still on its
      * cable, and a reader deciding whether it has gone quiet or run flat needs
      * to hear that. A failure costs nothing but the news, which the next mode,
@@ -715,9 +715,9 @@ class SharingService : LifecycleService() {
     }
 
     /**
-     * Says how the phone is every [STATUS_EVERY], whatever else it is or is not
-     * writing: the moment it was last in touch is what tells a working phone
-     * whose position is held back from one that has gone quiet.
+     * Says how the device is every [STATUS_EVERY], whatever else it is or is
+     * not writing: the moment it was last in touch is what tells a working
+     * device whose position is held back from one that has gone quiet.
      */
     private suspend fun keepTellingHowThePhoneIs() {
         while (true) {
@@ -757,14 +757,14 @@ class SharingService : LifecycleService() {
         // be a different epoch from the one the fix came out of.
         restsOn = if (trusted) emptyMap() else radio.restingOn()
 
-        // How the phone arrived at this answer, worked out before anything is
+        // How the device arrived at this answer, worked out before anything is
         // decided: it settles both whether this is a source the member allows
         // and what the written document says about itself. The receiver's own
         // last answer is what makes it possible at all — the fused answer
-        // being weighed carries no note of its own on these phones.
+        // being weighed carries no note of its own on these devices.
         val whence = foundBy(fix, lastSatellitePosition(this))
 
-        // Whether the receiver has had time to settle since the phone was
+        // Whether the receiver has had time to settle since the device was
         // switched on, read off the same epoch as the rules below. Never asked
         // of an answer from the towers: it is a statement about the satellites,
         // and such an answer rests on none.
@@ -791,22 +791,22 @@ class SharingService : LifecycleService() {
                 )
             }
         // A fix left out does not move the last position, and that is how the
-        // marker can be left standing somewhere the phone has long left: a
+        // marker can be left standing somewhere the device has long left: a
         // wrong last position turns every true fix that follows into a jump.
         // A second fix that agrees with the one before it is the way out of a
         // width nothing can outlive, and of the rules that measure against
         // that last position. Never on the word of the two answers alone,
         // because a spoofed signal draws a road whose fixes all agree: the
-        // towers or the Wi-Fi around the phone have to name the same place,
+        // towers or the Wi-Fi around the device have to name the same place,
         // and past the width only an answer as narrow as the Wi-Fi's will do.
         val agreed =
             jump != null && agreementStands(jump, candidate, fix, opinion.said, Instant.now())
 
         // The other way out of an anchor that has gone wrong, and the only one
-        // that works against a width or a false place: the phone answering
+        // that works against a width or a false place: the device answering
         // from somewhere it has been three times over an hour. Those visits
         // are positions that were written, and while a spoofer runs, nothing
-        // is — so this cannot be arranged by feeding the phone a signal.
+        // is — so this cannot be arranged by feeding the device a signal.
         val home = jump != null && !agreed && comingHome(trail, lastFix, fix)
 
         // Every fix that arrives is written down, whether or not it is written
@@ -890,7 +890,7 @@ class SharingService : LifecycleService() {
      *
      * Past the filter and past the check for a repeat, both of which exist to
      * keep the same document from being written twice — which is precisely
-     * what is wanted here. The phone is standing where it was and asking the
+     * what is wanted here. The device is standing where it was and asking the
      * provider for nothing; the news is that it is still there to say so.
      */
     private suspend fun sayAgain(writer: EveryGroup, mode: CollectionMode): Boolean {
@@ -903,7 +903,7 @@ class SharingService : LifecycleService() {
 
         // Not weighed against what the member shares: this is the position
         // they have already shared, said again so that the marker does not go
-        // grey while the phone sits quietly at home.
+        // grey while the device sits quietly at home.
         if (!writeQuietly(writer, written, mode, foundBy(known, lastSatellitePosition(this)))) {
             return false
         }
@@ -955,7 +955,7 @@ class SharingService : LifecycleService() {
     private suspend fun collectIn(mode: CollectionMode) {
         AppLog.i(TAG, "collecting in mode $mode")
         lastMode = mode
-        // A mode beginning is news about the phone as well as a reason to ask
+        // A mode beginning is news about the device as well as a reason to ask
         // for a position, and the first of them is the service starting.
         tellHowThePhoneIs()
 
@@ -972,13 +972,13 @@ class SharingService : LifecycleService() {
 
         // Entering a mode is news: somebody started looking, or the night
         // ended. Neither should wait for the next threshold, and a watcher who
-        // has just opened the map should see where the phone is rather than
+        // has just opened the map should see where the device is rather than
         // where it was ten minutes ago — which is what the filter would have
-        // answered for a phone standing still.
+        // answered for a device standing still.
         val asked = asking(mode.accuracy)
 
         if (asked == null) {
-            // Every source the member left on is one this phone does not have:
+            // Every source the member left on is one this device does not have:
             // an answer could only be left out.
             AppLog.w(TAG, "nothing to ask in mode $mode with the sources left on")
             awaitCancellation()
@@ -1047,7 +1047,7 @@ class SharingService : LifecycleService() {
         // runs out; a group joined or left while the service runs is followed
         // from then on. A group already followed keeps its answer across that:
         // listened to afresh it would begin by saying nobody looks, and every
-        // group joined would drop the phone out of its mode for an instant —
+        // group joined would drop the device out of its mode for an instant —
         // a cancelled request, a new one and a status written for nothing.
         val followed = HashMap<GroupLink, Flow<List<Instant>>>()
         val looking =
@@ -1086,12 +1086,12 @@ class SharingService : LifecycleService() {
     }
 
     /**
-     * Listens to the phone's own motion sensors for as long as the service
+     * Listens to the device's own motion sensors for as long as the service
      * runs.
      *
      * Apart from the activity recogniser feeding the modes, and deliberately:
      * that one answers what the person is doing, in its own time and only when
-     * it is sure, and this one answers whether the phone was moved at all. The
+     * it is sure, and this one answers whether the device was moved at all. The
      * second question is the one a transmitter cannot answer for us.
      */
     private suspend fun noticeBeingCarried() {
@@ -1101,8 +1101,8 @@ class SharingService : LifecycleService() {
     /**
      * Tells the group that answers are arriving and being thrown away.
      *
-     * The count and the reason go into the phone's own position document, so
-     * that a reader sees a phone being lied to rather than a phone that has
+     * The count and the reason go into the device's own position document, so
+     * that a reader sees a device being lied to rather than a device that has
      * gone quiet. Nothing else in the document is touched: the coordinates
      * stay as old as they are.
      *
@@ -1112,7 +1112,7 @@ class SharingService : LifecycleService() {
      * database in an afternoon — while saying nothing a minute's worth of
      * counting does not say just as well.
      *
-     * A failure is nothing happening: a phone whose answers were being thrown
+     * A failure is nothing happening: a device whose answers were being thrown
      * out before it ever wrote a position has no document to add this to, and
      * that is the one case the write fails in.
      */
@@ -1163,11 +1163,11 @@ class SharingService : LifecycleService() {
     /**
      * Repeats the last position while the mode asks for nothing.
      *
-     * The quiet mode is the one the phone reaches by staying at home, and it
+     * The quiet mode is the one the device reaches by staying at home, and it
      * collects nothing at all: without this the household would go grey on
      * each other's maps every evening, which is the opposite of what standing
      * still means. Counted from the last write rather than from entering the
-     * mode, because the phone arrives here with a write already behind it.
+     * mode, because the device arrives here with a write already behind it.
      */
     private suspend fun keepSaying(writer: EveryGroup, mode: CollectionMode) {
         while (true) {
@@ -1193,16 +1193,16 @@ class SharingService : LifecycleService() {
      *
      * The subscription is the only thing that normally writes anything, and it
      * can go quiet for reasons the service has no way of hearing about: the
-     * fast mode asks the satellites alone, and a phone on a desk indoors gets
+     * fast mode asks the satellites alone, and a device on a desk indoors gets
      * no answer from them at all. The card then goes grey on everybody else's
      * map while this service is running perfectly well, which is the one
      * failure that looks exactly like the application being broken.
      *
-     * So the silence is measured, and past [rescueAfter] the phone asks once
+     * So the silence is measured, and past [rescueAfter] the device asks once
      * with a coarser accuracy — the network answer, a hundred metres wide, is
      * worth more than an exact one nobody ever hears. The write goes through
      * whatever the filter would have said: what is being reported is not a new
-     * place but the fact that the phone is still there to report it.
+     * place but the fact that the device is still there to report it.
      */
     private suspend fun rescueWhileSilent(writer: EveryGroup, mode: CollectionMode) {
         val silence = rescueAfter(mode) ?: return
@@ -1242,12 +1242,12 @@ class SharingService : LifecycleService() {
      *
      * The subscription runs for as long as the service does, whatever mode it
      * is in: the list is read by the rules on every fix, and a list that
-     * stopped arriving while the phone was quiet would be a list that is wrong
-     * exactly when the phone starts answering again.
+     * stopped arriving while the device was quiet would be a list that is wrong
+     * exactly when the device starts answering again.
      */
     @OptIn(ExperimentalCoroutinesApi::class)
     private suspend fun keepTheFalsePlaces() {
-        // Every group's list at once: a place that puts phones somewhere false
+        // Every group's list at once: a place that puts devices somewhere false
         // does so whichever group the position is going to.
         links.flatMapLatest { linked ->
             if (linked.isEmpty()) {
@@ -1266,7 +1266,7 @@ class SharingService : LifecycleService() {
     /**
      * Keeps this group's idea of going round in circles up to date.
      *
-     * Nothing is kept on disk for it: a phone that has not reached the
+     * Nothing is kept on disk for it: a device that has not reached the
      * settings weighs answers against the limits in the build, which catch a
      * transmitter of any shape and only take a few more answers to do it.
      */
@@ -1284,7 +1284,7 @@ class SharingService : LifecycleService() {
      *
      * Only what the satellites answered goes in. An answer the towers gave,
      * and one an assistance service worked out from the Wi-Fi around the
-     * phone, are answers from outside the transmitter's reach: mixing them
+     * device, are answers from outside the transmitter's reach: mixing them
      * into the run would break the very shape the run is kept for.
      */
     private fun rememberTheShapeOfIt(fix: Fix, trusted: Boolean) {
@@ -1302,7 +1302,7 @@ class SharingService : LifecycleService() {
     /**
      * Puts the satellites aside and asks the towers and the Wi-Fi instead.
      *
-     * Called from the one place a spoofed phone reaches: the branch where an
+     * Called from the one place a spoofed device reaches: the branch where an
      * answer has just been left out. Three left out in a row is the satellites
      * having stopped being a source of positions, however promptly they keep
      * answering, and the other radios are the only ones the spoofer cannot
@@ -1351,7 +1351,7 @@ class SharingService : LifecycleService() {
         }
 
         // The one rule that is asked of this answer too, and the reason is
-        // what a field measurement showed: a phone lying at home was offered
+        // what a field measurement showed: a device lying at home was offered
         // a place four kilometres away, and the answer that came back from
         // the other radios stood within two metres of the false one just
         // rejected.
@@ -1373,7 +1373,7 @@ class SharingService : LifecycleService() {
         writeIfWorth(writer, fix, mode, always = true, trusted = true)
     }
 
-    /** Who to ask with this accuracy, given the phone and the switches. */
+    /** Who to ask with this accuracy, given the device and the switches. */
     private fun asking(accuracy: Accuracy): Asked? =
         whomToAsk(accuracy, playServices, sources.leftOut, providers)
 
@@ -1476,11 +1476,11 @@ class SharingService : LifecycleService() {
     }
 
     /**
-     * Adds a written position to what the phone remembers about itself.
+     * Adds a written position to what the device remembers about itself.
      *
      * Written positions only. An answer left out never becomes part of what
      * counts as familiar, which is what stops an hour of a false signal from
-     * teaching the phone that a false place is where it lives.
+     * teaching the device that a false place is where it lives.
      */
     private fun rememberThePlace(fix: Fix) {
         val before = trail.knows(fix)
@@ -1500,7 +1500,7 @@ class SharingService : LifecycleService() {
      *
      * A receiver takes its time from the satellites, so a false signal can
      * carry a false clock, and that shows before the coordinates do. It cannot
-     * stand alone as a verdict — a phone setting its own clock from the same
+     * stand alone as a verdict — a device setting its own clock from the same
      * satellites moves with the lie — but it costs nothing to write down.
      */
     private fun aClockApart(takenAt: Instant): String {
@@ -1514,7 +1514,7 @@ class SharingService : LifecycleService() {
     }
 
     /**
-     * Drops what the phone believes about where it is.
+     * Drops what the device believes about where it is.
      *
      * Asked for from the settings screen, for the case the filter cannot get
      * out of on its own: a last position far enough from the truth that
@@ -1552,8 +1552,8 @@ class SharingService : LifecycleService() {
         writer: EveryGroup,
         written: Written,
         mode: CollectionMode,
-        // How the phone arrived at this, worked out by the caller: on these
-        // phones the fused answer being written carries no note of its own,
+        // How the device arrived at this, worked out by the caller: on these
+        // devices the fused answer being written carries no note of its own,
         // and what says whether it is the satellites' measurement under
         // another name is the receiver's own last answer, read from the store.
         whence: FoundBy,
@@ -1574,7 +1574,7 @@ class SharingService : LifecycleService() {
             "wrote a position in ${into.joinToString()} taken at ${written.fix.takenAt}, " +
                 "found by ${whence.said}" +
                 // Said in the line about the write rather than left to the
-                // document: what a phone wrote is the one thing a log of a
+                // document: what a device wrote is the one thing a log of a
                 // boot cannot be read back from, and the first minutes after
                 // a boot are exactly when somebody is reading it.
                 if (written.settling) ", with the receiver still settling" else "",
@@ -1611,11 +1611,11 @@ class SharingService : LifecycleService() {
         ?: FULL_BATTERY
 
     /**
-     * Whether the phone is on a charger, which is what tells a low percentage
+     * Whether the device is on a charger, which is what tells a low percentage
      * that is about to grow from one that is about to run out.
      *
      * Read as "plugged into something" rather than through `isCharging`: a
-     * phone that has reached a hundred percent stops charging while the cable
+     * device that has reached a hundred percent stops charging while the cable
      * is still in it, and the reader is asking about the cable.
      */
     private fun charging(): Boolean {
@@ -1651,7 +1651,7 @@ class SharingService : LifecycleService() {
          *
          * A viewer who leaves quietly — a closed lid, a flat battery — writes
          * nothing more, so the subscription brings no change and the claim
-         * simply ages; the phone learns it has run out only on a review. Once
+         * simply ages; the device learns it has run out only on a review. Once
          * a minute, rather than once a claim, keeps the fifteen-second mode
          * from outliving the last watcher by as long again as the claim
          * itself. A review reads nothing: it only asks the same question of
@@ -1672,7 +1672,7 @@ class SharingService : LifecycleService() {
         /** How long a freshly started service waits for the account to be restored. */
         private val SESSION_WAIT: Duration = Duration.ofMinutes(1)
 
-        /** What a phone that will not say counts as, so it is not treated as flat. */
+        /** What a device that will not say counts as, so it is not treated as flat. */
         private const val FULL_BATTERY = 100
 
         const val ACTION_STOP = "io.github.vitalyostanin.geoshare.STOP"
@@ -1680,7 +1680,7 @@ class SharingService : LifecycleService() {
         /** The member being looked for says they have been found. */
         const val ACTION_FOUND = "io.github.vitalyostanin.geoshare.FOUND"
 
-        /** Whoever holds this phone stops its siren before its twenty seconds are up. */
+        /** Whoever holds this device stops its siren before its twenty seconds are up. */
         const val ACTION_SIREN_OFF = "io.github.vitalyostanin.geoshare.SIREN_OFF"
 
         fun start(context: Context) = ContextCompat.startForegroundService(

@@ -28,7 +28,7 @@ class UnknownAfterTest {
         assertEquals(mapOf("alice" to 1), first)
     }
 
-    // A grant that never comes leaves the phone counting every claim, as it
+    // A grant that never comes leaves the device counting every claim, as it
     // did before the wait.
     @Test
     fun `silence past the wait is said as not known`() = runBlocking {

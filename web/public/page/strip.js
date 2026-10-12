@@ -126,7 +126,7 @@ function sameIds(a, b) {
  * has gone quiet.
  *
  * The map only remembers a target by position id, which stops resolving to
- * anything the moment that member's phone drops out of the set. The name is
+ * anything the moment that member's device drops out of the set. The name is
  * kept here instead, refreshed whenever the id still resolves and held onto
  * once it does not, so a viewer following somebody out of the strip keeps
  * reading their name rather than watching the button go blank.
@@ -209,7 +209,7 @@ function followCaption(mode) {
  *
  * The order is by how much it matters: a group out of reach explains every
  * other emptiness, a refusal explains a missing face, and an empty strip on a
- * reachable group is the honest "nobody yet" the phone shows in the middle of
+ * reachable group is the honest "nobody yet" the device shows in the middle of
  * its map. Waiting is told apart from empty by the profiles never having
  * arrived.
  */
@@ -224,7 +224,7 @@ function showNote() {
  * Who else has the map open, under the strip.
  *
  * Said of the household rather than of a member, because one open map puts
- * every phone of the group into the same way of collecting; and said by name,
+ * every device of the group into the same way of collecting; and said by name,
  * because "somebody is looking" leaves the reader wondering which of the
  * household it was.
  */
@@ -284,9 +284,9 @@ function noteText() {
  * account button already, and the page exists to answer where everybody else
  * is.
  *
- * A member carrying two phones gets two markers, and a pair of markers with
- * the same name says nothing about which phone is where; the name of the
- * phone is added only then, because most members have one.
+ * A member carrying two devices gets two markers, and a pair of markers with
+ * the same name says nothing about which device is where; the name of the
+ * device is added only then, because most members have one.
  */
 function names() {
     const carried = new Map();
@@ -318,7 +318,7 @@ function accountName(position) {
     return state.profiles?.get(position.memberId)?.displayName ?? personName(position);
 }
 
-/** Who carries the phone, without the phone: the head of a card says it apart. */
+/** Who carries the device, without the device: the head of a card says it apart. */
 export function personName(position) {
     return memberName(
         state.profiles?.get(position.memberId),
@@ -424,7 +424,7 @@ function newMemberEntry(positionId) {
     sought.className = 'sought-until';
 
     // The name over the age and the charge, so that two entries fit side by
-    // side on a phone: on one line the name alone took most of its width.
+    // side on a device: on one line the name alone took most of its width.
     const details = document.createElement('span');
     details.className = 'member-details';
     details.append(age, battery);

@@ -8,7 +8,7 @@ import io.github.vitalyostanin.geoshare.collection.rescueAccuracy
 /**
  * What to ask the position provider for, in its own terms.
  *
- * The mode says how hard the phone should be working; this turns that into the
+ * The mode says how hard the device should be working; this turns that into the
  * three numbers the provider takes. Kept apart from the provider itself so the
  * translation can be checked without a device.
  */

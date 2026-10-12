@@ -11,7 +11,7 @@ import java.time.Duration
 // cannot do is tell aiding data that has gone wrong from aiding data that is
 // merely old, and it will sit on the wrong kind for as long as it is left to.
 //
-// A phone under observation spent a whole day in exactly that state: GLONASS
+// A device under observation spent a whole day in exactly that state: GLONASS
 // was heard in three hundred and forty-two epochs out of six hundred and
 // eighteen and not one of those satellites had an ephemeris or entered a
 // single fix, and BeiDou was heard in three hundred and nine with six. Eleven
@@ -39,15 +39,15 @@ val AIDING_DOUBT_AFTER: Duration = Duration.ofMinutes(30)
  *
  * Sixty. The clock alone is not enough, because a constellation low on the
  * horizon is heard in a handful of epochs an hour and would pass the half hour
- * without the receiver ever having had a chance at it: a phone heard BeiDou in
+ * without the receiver ever having had a chance at it: a device heard BeiDou in
  * fourteen epochs out of five hundred and eleven over two and a half hours,
- * which is a sky and not a fault. On the phone that did have the fault the
+ * which is a sky and not a fault. On the device that did have the fault the
  * count was three hundred and forty-two, so the two are nowhere near each
  * other.
  *
  * Counted in epochs rather than in minutes of hearing because the receiver
  * reports about once a second while it is running and not at all while the
- * phone sleeps, and a span in minutes would mean one thing in Viewing and
+ * device sleeps, and a span in minutes would mean one thing in Viewing and
  * another in Idle.
  */
 const val AIDING_DOUBT_EPOCHS: Int = 60
@@ -81,8 +81,8 @@ fun useOf(sky: List<Satellite>): Map<Constellation, ConstellationUse> =
  * Read off the orbits alone, and deliberately not off the fix. An orbit held
  * is the receiver saying it has decoded that satellite's own broadcast, which
  * is precisely what the stuck aiding data prevents; a fix is the receiver's
- * own bookkeeping, and these phones put a satellite in a fix while saying they
- * hold no orbit for it — a phone under observation did so in a hundred and
+ * own bookkeeping, and these devices put a satellite in a fix while saying they
+ * hold no orbit for it — a device under observation did so in a hundred and
  * thirty epochs of one night, every one of them a single GLONASS satellite
  * with no ephemeris. Counting those as the constellation having come good
  * would have cleared the count twice an hour throughout the fault.
@@ -101,7 +101,7 @@ fun heardForNothing(use: ConstellationUse): Boolean = use.heard > 0 && use.withE
  * since. Both are needed — see [AIDING_DOUBT_EPOCHS] for the sky that passes
  * one of them without the fault.
  *
- * The clock is the phone's own count since it was switched on, for the reason
+ * The clock is the device's own count since it was switched on, for the reason
  * every other span in the collecting is measured by it: the wall clock steps
  * when the satellites say it should, and these satellites are the ones being
  * doubted.
@@ -120,7 +120,7 @@ class AidingDoubt(
     /**
      * Read one epoch and say which constellations stand doubted.
      *
-     * [sinceBoot] is the phone's own count since it was switched on, taken at
+     * [sinceBoot] is the device's own count since it was switched on, taken at
      * the epoch.
      */
     fun read(use: Map<Constellation, ConstellationUse>, sinceBoot: Duration): Set<Constellation> {
@@ -160,7 +160,7 @@ class AidingDoubt(
          * The four systems whose waste is worth a word.
          *
          * QZSS, SBAS and India's system are left out for the reason they are
-         * left out of [SHARE_THE_GPS_BAND]: on these phones they are heard a
+         * left out of [SHARE_THE_GPS_BAND]: on these devices they are heard a
          * satellite or two at a time or not at all, and a member told that
          * QZSS was being wasted would be told about a system that was never
          * going to carry an answer here.

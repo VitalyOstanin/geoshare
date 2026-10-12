@@ -17,7 +17,7 @@ class NavigationTest {
         assertEquals(Constellation.Irnss, navConstellation(0x0701))
     }
 
-    // A phone newer than this code will name signals it does not know, and the
+    // A device newer than this code will name signals it does not know, and the
     // system is still worth having from such a type rather than thrown away.
     @Test
     fun `a system this does not know is named as such`() {

@@ -9,7 +9,7 @@ package io.github.vitalyostanin.geoshare.collection
 // transmitter drawing a false road is a transmitter on one band, so everything
 // sharing the GPS band moves together while GLONASS carries on as it was.
 //
-// A phone is not told what frequency it is listening on, but it is told which
+// A device is not told what frequency it is listening on, but it is told which
 // system each satellite belongs to, and for the civil signals those are the
 // same fact said differently.
 
@@ -38,7 +38,7 @@ enum class Constellation {
  *
  * QZSS and SBAS transmit in that band too and are deliberately left out. What
  * this set is for is an average that a false signal moves, and both of those
- * are heard on these phones a few satellites at a time or not at all: letting
+ * are heard on these devices a few satellites at a time or not at all: letting
  * them in would make the band's average jump about as they come and go,
  * without adding anything a false signal would show up in. They are told apart
  * in the log, which is where the question of what was heard is asked.
@@ -70,8 +70,8 @@ fun acrossTheBand(parts: Collection<Epochs>): Epochs {
 /**
  * What it means that the two bands are not saying the same thing.
  *
- * The sky is one sky: a phone taken out of a pocket hears every system get
- * louder, and a phone put on a car floor hears every system fade. When one
+ * The sky is one sky: a device taken out of a pocket hears every system get
+ * louder, and a device put on a car floor hears every system fade. When one
  * band moves and the other does not, the cause is not the sky but something
  * transmitting on that band.
  *
@@ -80,8 +80,8 @@ fun acrossTheBand(parts: Collection<Epochs>): Epochs {
  * close, and a band gone quiet is being buried.
  *
  * Nothing is said unless both bands have a history to compare, because the
- * whole statement is a comparison — a phone that hears no GLONASS at all is a
- * phone with one band, and one band cannot disagree with anything.
+ * whole statement is a comparison — a device that hears no GLONASS at all is a
+ * device with one band, and one band cannot disagree with anything.
  */
 fun whatTheBandsSay(sharedBand: Epochs, glonass: Epochs): Interference? {
     val shared = sharedBand.moved ?: return null
@@ -101,7 +101,7 @@ fun whatTheBandsSay(sharedBand: Epochs, glonass: Epochs): Interference? {
 /**
  * How much has to be true before a fix is called one band's work.
  *
- * Both numbers are read off one phone's own logs rather than chosen: on the
+ * Both numbers are read off one device's own logs rather than chosen: on the
  * Huawei, over two hundred and twenty-two fixes, the true ones rested on four
  * and a half GLONASS satellites on average and almost never on GPS, and the
  * false ones on nine GPS satellites and almost never on GLONASS. What the
@@ -114,7 +114,7 @@ data class OneBandLimits(
      *
      * Three. Fewer than that is a receiver that could not have built on them
      * anyway, and a rule that fired there would be reading the sky rather than
-     * the fix. It is also what keeps the rule silent on the HONOR phones,
+     * the fix. It is also what keeps the rule silent on the HONOR devices,
      * which hear no GLONASS at all.
      */
     val glonassHeard: Int = 3,
@@ -152,7 +152,7 @@ fun makeupOf(counts: Map<Constellation, Counted>): FixMakeup {
  * Whether the receiver's status says the answer beside it was built without a
  * single satellite.
  *
- * The fused provider names no source, and on these phones it answers from the
+ * The fused provider names no source, and on these devices it answers from the
  * Wi-Fi and the towers while the receiver goes on listening: the status then
  * counts satellites heard and none used. Such an answer is the one a false sky
  * cannot reach, and the rules about the sky have nothing to say about it.
@@ -175,8 +175,8 @@ fun restsOnNoSatellite(counts: Map<Constellation, Counted>): Boolean =
  * What it rests on is that the two bands are twenty-five megahertz apart: a
  * transmitter drawing a false road transmits in one of them, and the receiver
  * has to prefer whichever satellites agree with each other. On the Huawei the
- * separation was total — while the fix rested on GLONASS the phone was at
- * home, and the moment it rested on GPS alone the phone was fifty-six
+ * separation was total — while the fix rested on GLONASS the device was at
+ * home, and the moment it rested on GPS alone the device was fifty-six
  * kilometres away — and the rule would have caught a hundred and eighteen of
  * the hundred and eighty-nine false fixes without touching a true one.
  *

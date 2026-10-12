@@ -11,13 +11,13 @@ import java.time.Instant
 import java.util.Date
 
 /**
- * Where this phone says it is.
+ * Where this device says it is.
  *
- * One document per phone, overwritten in place: the history is not kept, so
+ * One document per device, overwritten in place: the history is not kept, so
  * the space a member takes does not grow, and a reader always gets the latest
  * position with a single read.
  *
- * Per phone rather than per member, because a member can carry two: they used
+ * Per device rather than per member, because a member can carry two: they used
  * to write into one document, and the marker showed whichever of them wrote
  * last. The owner is written into the document as well, since that is what the
  * readers group the markers by.
@@ -25,7 +25,7 @@ import java.util.Date
  * Who may read it is not written here. The permissions live in the owner's
  * profile, where the owner writes them, and that is where the rules read them
  * from: a copy kept here would go on granting what has been taken back until
- * the phone happened to write again — and a phone that is off, lost or no
+ * the device happened to write again — and a device that is off, lost or no
  * longer has the application never writes again at all.
  */
 class PositionWriter(
@@ -39,7 +39,7 @@ class PositionWriter(
         batteryPercent: Int,
         charging: Boolean,
         foundBy: FoundBy,
-        // Whether the receiver had not settled since the phone was switched
+        // Whether the receiver had not settled since the device was switched
         // on. Worked out by the caller, where the epoch this fix came out of
         // is to hand; see Settling.kt for what the minutes after a boot look
         // like.
@@ -57,7 +57,7 @@ class PositionWriter(
     /**
      * Says that answers are arriving and being left out.
      *
-     * Written into the phone's own position document, beside a position that
+     * Written into the device's own position document, beside a position that
      * is by then out of date: the point of it is precisely that the position
      * is not being renewed. Nothing else in the document is touched — the
      * coordinates, the moment they were taken at and the moment the server
@@ -65,7 +65,7 @@ class PositionWriter(
      * while the card explains why.
      *
      * An update rather than a write of the whole document, and one that fails
-     * where there is nothing to update: a phone whose answers were being
+     * where there is nothing to update: a device whose answers were being
      * thrown out before it ever wrote a position has nowhere to say so, and
      * inventing a document without coordinates would put a marker nowhere on
      * everybody's map. The caller treats a failure as nothing happening.
@@ -104,16 +104,16 @@ internal fun positionDocument(
     PositionField.LONGITUDE to fix.longitude,
     PositionField.TAKEN_AT to Timestamp(Date.from(fix.takenAt)),
     // The reader compares this against its own clock to age the
-    // marker, and phone clocks disagree.
+    // marker, and device clocks disagree.
     PositionField.WRITTEN_AT to FieldValue.serverTimestamp(),
     PositionField.MODE to mode.name,
     PositionField.BATTERY_PERCENT to batteryPercent,
     // A percentage on its own says nothing about which way it is
-    // going: fifteen percent on a charger is a phone about to be
-    // fine, and fifteen percent off one is a phone about to go
+    // going: fifteen percent on a charger is a device about to be
+    // fine, and fifteen percent off one is a device about to go
     // quiet.
     PositionField.CHARGING to charging,
-    // How the phone arrived at this, in its own words rather than
+    // How the device arrived at this, in its own words rather than
     // the provider's: the same answer reads as `gps` whether the
     // receiver measured it or an assistance service sent it over,
     // and those are worth opposite amounts to whoever is looking.
@@ -138,7 +138,7 @@ private fun width(fix: Fix): Map<String, Any> =
  *
  * Left out of the document rather than written as false, for the same
  * reason as the width above: the readers say something about a position
- * whose phone had just been switched on and leave every other one alone,
+ * whose device had just been switched on and leave every other one alone,
  * and an absent field says that without a reader having to know that false
  * and absent mean the same thing.
  */

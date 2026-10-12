@@ -32,7 +32,7 @@ private val DISAGREEMENT_SAID_EVERY: Duration = Duration.ofMinutes(1)
  * How long the receiver may answer nothing before the sky it is hearing is put
  * down without a position, and how often it is put down after that.
  *
- * A minute, twice the thirty seconds a watched phone asks at: a receiver that
+ * A minute, twice the thirty seconds a watched device asks at: a receiver that
  * is working never reaches it, so nothing is written while there is nothing
  * to explain. A receiver being talked over reaches it at once and keeps
  * reaching it, which is when the rows are worth their room.
@@ -72,8 +72,8 @@ internal class SkyNotes(
      *
      * Read from the store rather than asked for, so it costs nothing and works
      * in the modes where the receiver is asleep — which is where the question
-     * matters most, since a phone nobody is watching is a phone whose position
-     * nobody is checking either.
+     * matters most, since a device nobody is watching is a device whose
+     * position nobody is checking either.
      *
      * The same answer is not written twice: the store keeps handing over the
      * same fix until the receiver works out another one, and a file full of
@@ -121,13 +121,13 @@ internal class SkyNotes(
      *
      * Only where the receiver is being asked often enough for silence to mean
      * something: in the slow modes a minute without an answer is the ordinary
-     * state of a phone in a pocket, and rows about it would fill the file with
-     * a phone behaving exactly as intended.
+     * state of a device in a pocket, and rows about it would fill the file with
+     * a device behaving exactly as intended.
      *
-     * The phone this was written for hears twenty-one satellites and produces
-     * no position at all, and until this ran, that phone wrote nothing into the
-     * sky file — the one case where the sky is the entire evidence was the one
-     * case with no evidence kept.
+     * The device this was written for hears twenty-one satellites and produces
+     * no position at all, and until this ran, that device wrote nothing into
+     * the sky file — the one case where the sky is the entire evidence was the
+     * one case with no evidence kept.
      */
     suspend fun noteTheSkyWhileSilent(mode: CollectionMode) {
         if (mode.accuracy != Accuracy.High) {
@@ -146,8 +146,8 @@ internal class SkyNotes(
             radio().noteSkyWithoutFix(Instant.now(), mode.name, quiet)
 
             // The satellites go on talking while the receiver works out
-            // nothing from them, and a phone that is being talked over is
-            // exactly the phone whose fixes have stopped: without this, the
+            // nothing from them, and a device that is being talked over is
+            // exactly the device whose fixes have stopped: without this, the
             // count of what they said would only be written while things were
             // going well.
             radio().navigationSaying()?.let { AppLog.i(TAG, it) }
@@ -158,7 +158,7 @@ internal class SkyNotes(
      * Says so when the satellites and the written position are not in the same
      * place, and not more often than a reader can use.
      *
-     * The distance is the finding. Two answers about one phone that differ by
+     * The distance is the finding. Two answers about one device that differ by
      * more than either of them claims to be wide cannot both be right, and
      * which of the two is wrong is not decided here — only that they disagree,
      * with the numbers to show it.

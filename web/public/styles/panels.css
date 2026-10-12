@@ -33,7 +33,7 @@
     font-size: var(--text-body);
 }
 
-/* One member of "Мои устройства": one phone's own line, what is known
+/* One member of "Мои устройства": one device's own line, what is known
    about it on the left, and the one act that can be taken against it at the
    far end of the row. */
 .admin-member {
@@ -80,7 +80,7 @@
     flex-direction: column;
 }
 
-/* One phone's own line inside the group: its text on the left, its own
+/* One device's own line inside the group: its text on the left, its own
    siren and search on the right — the same shape a phone's row has in "Мои
    устройства", nested here under its member's name instead of standing on
    its own. */

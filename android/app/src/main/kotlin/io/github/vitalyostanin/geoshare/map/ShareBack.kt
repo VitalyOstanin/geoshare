@@ -29,7 +29,7 @@ import java.time.Instant
  * Whether a member's card offers to show them this member's place: they are
  * on this member's map, and this member is not on theirs.
  *
- * Not for oneself — one's own phones see each other without a permission —
+ * Not for oneself — one's own devices see each other without a permission —
  * and not once a permission stands, whatever its span.
  */
 fun offersShareBack(

@@ -18,14 +18,14 @@ private const val FIELD_SITE = "site"
 private val SITE_PATTERN = Regex("[a-z0-9-]+")
 
 /**
- * What a group's site hands the phone in `geoshare.json`, written by
+ * What a group's site hands the device in `geoshare.json`, written by
  * `tools/project.sh`'s `app_settings`: enough to start Firebase with,
  * without a project baked into the build. One build serves every group, so
  * it carries none of its own, and this is the document a connection link
  * downloads in its place.
  *
  * The site it was fetched from rides along too: a connection link built
- * later needs it, and nothing else on the phone learns it any other way.
+ * later needs it, and nothing else on the device learns it any other way.
  */
 data class ProjectSettings(
     val version: Int,
@@ -63,7 +63,7 @@ data class ProjectSettings(
          * simply handed would fail somewhere inside the library instead of
          * here, where the reason is still in reach. Only version 1 is
          * accepted — a group's site is written once and rarely touched
-         * again, and a phone running an older build has no way of being told
+         * again, and a device running an older build has no way of being told
          * the document has moved past what it understands.
          */
         fun parse(json: String): ProjectSettings? {

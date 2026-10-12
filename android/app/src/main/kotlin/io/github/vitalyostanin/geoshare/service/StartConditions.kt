@@ -2,7 +2,7 @@ package io.github.vitalyostanin.geoshare.service
 
 /** Everything the decision to run the service depends on, gathered by the caller. */
 data class StartConditions(
-    /** Whether this phone has a family's project to sign in and write into at all. */
+    /** Whether this device has a family's project to sign in and write into at all. */
     val connected: Boolean,
     val signedIn: Boolean,
     /** Whether the member asked for their position to be shared at all. */

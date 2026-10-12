@@ -23,7 +23,7 @@ private const val CHANNEL_ID = "search"
  * is required to show, for as long as the search stands.
  *
  * A channel of its own, and a high one: sharing quietly is not news, but the
- * whole group watching for this phone is, and a member who has put the phone
+ * whole group watching for this device is, and a member who has put the device
  * down should be woken by it the way they would be by a call.
  */
 fun searchNotification(

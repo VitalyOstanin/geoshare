@@ -11,7 +11,7 @@ import { WORDS } from './words.js';
  * Not the order the rules happen to be written in. A member opening this has
  * just read one reason on a card, and what places it among the others is what
  * it rests on — the answer alone, then the answer against the one before it,
- * then the phone's own sensors, then the other radios, then the shape of a
+ * then the device's own sensors, then the other radios, then the shape of a
  * whole track, then the sky itself. The switched-off source comes last
  * because it is not a fault at all. The Android client keeps the same order.
  */

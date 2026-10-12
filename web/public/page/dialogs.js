@@ -1,4 +1,4 @@
-// The small windows: help, confirming a write, naming a member or a phone.
+// The small windows: help, confirming a write, naming a member or a device.
 
 import { ageText, positionAge } from '../lib/age.js';
 import { outsideTheBox } from '../lib/outside-the-box.js';
@@ -127,7 +127,7 @@ elements.confirm.addEventListener('close', () => {
 });
 
 /**
- * A phone, when it was last in touch, and its charge: after its name where the
+ * A device, when it was last in touch, and its charge: after its name where the
  * line stands for the member, and without it where the name is the line above.
  */
 export function phoneText(phone, now, named = true) {
@@ -179,10 +179,10 @@ export function aboutThem(line) {
 }
 
 /**
- * Asks for a name for a phone or a person, for this viewer alone.
+ * Asks for a name for a device or a person, for this viewer alone.
  *
  * `kind` is the map the name goes into — `devices` or `members` — and `key`
- * what it is filed under there: the phone's full address, or the account.
+ * what it is filed under there: the device's full address, or the account.
  */
 export function askName(kind, key) {
     const current = (kind === 'devices' ? state.labels.phones : state.labels.members).get(key);
@@ -209,7 +209,7 @@ export function closeNaming() {
 /**
  * Writes the name, or takes it away for null, and leaves the answer to the
  * subscription: the name shows up once the database has it, the same way it
- * does when it was given on a phone.
+ * does when it was given on a device.
  *
  * The window stays until the database has answered. Closed at once, a refused
  * write left nothing on the screen: the page showed the new name for as long

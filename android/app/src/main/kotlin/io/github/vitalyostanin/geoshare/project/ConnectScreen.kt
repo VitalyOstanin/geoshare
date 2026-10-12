@@ -41,13 +41,13 @@ import androidx.compose.ui.unit.dp
 import io.github.vitalyostanin.geoshare.R
 
 /**
- * The screens ADR-0018 describes for [ConnectState]: A phone offering a link
+ * The screens ADR-0018 describes for [ConnectState]: A device offering a link
  * to paste, what the site answered before it is accepted, and a failed
  * download. What [ConnectState.Done] leads to — keeping the settings and the
  * invitation, and signing in to the project they name — is done by
  * `MainActivity` rather than here, and drawn as nothing.
  *
- * The caller decides where this goes: the whole of the window for a phone
+ * The caller decides where this goes: the whole of the window for a device
  * without a project yet (MainActivity's own placeholder), or an overlay
  * above the map for one that already has a project and is offered another
  * link.
@@ -94,7 +94,7 @@ fun ConnectScreen(
                 Confirm(
                     settings = state.settings,
                     invitation = state.link.invitation,
-                    // An invitation pasted on a phone already in this
+                    // An invitation pasted on a device already in this
                     // project: nobody is signed out, so there is no
                     // browser to send them to.
                     alreadyConnected = Connections.of(state.settings.projectId) != null,
@@ -259,7 +259,7 @@ private fun Confirm(
         style = MaterialTheme.typography.headlineSmall,
     )
 
-    // The owner's own link to a phone with nothing connected yet carries no
+    // The owner's own link to a device with nothing connected yet carries no
     // invitation, so only the project row is left; see ConnectFlow.settle.
     InvitationFields(invitation)
     ConnectField(R.string.connect_field_project, settings.projectId)

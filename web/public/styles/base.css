@@ -130,7 +130,7 @@ body {
     margin: 0;
     display: flex;
     flex-direction: column;
-    /* Two heights, the second of which wins where it is understood: on a phone
+    /* Two heights, the second of which wins where it is understood: on a device
        100vh is the window with the address bar gone, so the column stands
        taller than what is on screen and the panel — the way between members —
        ends up below the bottom edge with no way to scroll to it. */
@@ -199,7 +199,7 @@ body {
     align-items: stretch;
     gap: 0.5rem;
     padding: 0.5rem;
-    /* Clear of the bar a phone draws its gestures on. */
+    /* Clear of the bar a device draws its gestures on. */
     padding-bottom: calc(0.5rem + env(safe-area-inset-bottom, 0px));
     border-top: 1px solid var(--edge);
     /* The card is positioned from the panel rather than from the page: it

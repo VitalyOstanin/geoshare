@@ -10,14 +10,14 @@ import kotlin.math.sqrt
 // Catching the jammer by the shape of the road it draws.
 //
 // Every other rule here asks whether one answer can be reconciled with
-// another: how far apart they are, how fast the phone would have had to
+// another: how far apart they are, how fast the device would have had to
 // travel, what the other radios say. A transmitter that moves its false
 // position slowly enough satisfies all of them — two hundred and fifty metres
 // every seven seconds is a car on a motorway, and nothing in a pair of fixes
 // says otherwise.
 //
 // What says otherwise is the whole set of them at once: a run of answers that
-// sits on one circle, holds one speed and turns one way. A phone carried by a
+// sits on one circle, holds one speed and turns one way. A device carried by a
 // person does not draw that — a car on a roundabout leaves it within a lap, a
 // ring road is wider than any circle worth fitting, and a walk holds neither
 // the radius nor the speed for ten answers running.
@@ -40,7 +40,7 @@ const val CIRCLE_ANSWERS: Int = 10
  * How long those answers may be spread over before they stop being a road.
  *
  * Answers minutes apart say nothing about the shape between them: any ten
- * places can be strung onto a circle if the phone had a quarter of an hour
+ * places can be strung onto a circle if the device had a quarter of an hour
  * between each of them to get there.
  */
 val CIRCLE_WITHIN: Duration = Duration.ofMinutes(5)
@@ -59,7 +59,7 @@ const val CIRCLE_ROUNDNESS: Double = 0.03
  *
  * A straight line is a circle of infinite radius, and a motorway fitted with
  * one comes out at tens of kilometres. Five is past any roundabout and short
- * of every ring road, so what is left inside it is a phone going round
+ * of every ring road, so what is left inside it is a device going round
  * something small enough to be gone round.
  */
 const val CIRCLE_WIDEST_METRES: Double = 5_000.0
@@ -69,7 +69,7 @@ const val CIRCLE_WIDEST_METRES: Double = 5_000.0
  *
  * A hundred metres, which a roundabout is inside of: a car on one draws a
  * circle of twenty to fifty metres and is off it within a lap, and answers
- * jittering around a standing phone fit a tiny circle by accident.
+ * jittering around a standing device fit a tiny circle by accident.
  */
 const val CIRCLE_TIGHTEST_METRES: Double = 100.0
 
@@ -93,7 +93,7 @@ const val CIRCLE_TURNED_DEGREES: Double = 60.0
 /**
  * The slowest the answers may move and still be a road at all.
  *
- * Three metres a second is a run. Below it the phone is standing or walking,
+ * Three metres a second is a run. Below it the device is standing or walking,
  * the movement between answers is mostly the doubt in them, and a circle
  * fitted to that is a circle fitted to noise.
  */
@@ -143,7 +143,7 @@ fun circleLimitsStand(limits: CircleLimits): Boolean =
  *
  * Four: three points lie on a circle exactly, so nothing is left over to
  * disagree with it, and a rule that cannot be disagreed with catches every
- * corner a phone is carried round.
+ * corner a device is carried round.
  */
 const val FEWEST_ANSWERS_WORTH_FITTING: Int = 4
 
@@ -166,7 +166,7 @@ data class Circle(
  * was written out. That it is not filtered by the other rules is the point:
  * while the speed rule is still refusing the false road, the answers it
  * refuses are the ones that show the shape, and a filtered run would show the
- * phone the shape only once the anchor had already been lost to it.
+ * device the shape only once the anchor had already been lost to it.
  */
 fun circleDrawn(lately: List<Fix>, limits: CircleLimits = CircleLimits()): Circle? {
     if (lately.size < limits.answers) {
@@ -229,7 +229,7 @@ val ANSWERS_REMEMBERED: Duration = Duration.ofMinutes(20)
 /**
  * How many answers are kept whatever their age.
  *
- * A phone answering every second — which is what the fastest mode does while
+ * A device answering every second — which is what the fastest mode does while
  * somebody is watching — would otherwise keep twelve hundred of them, and
  * every rule that reads the run walks it.
  */

@@ -84,7 +84,7 @@ internal fun MemberButtons(
     /** The positions whose card is open, marked in the strip. */
     openCards: Set<String>,
     now: Instant,
-    /** The group's searches, so a phone being looked for is marked in the strip too. */
+    /** The group's searches, so a device being looked for is marked in the strip too. */
     searches: Map<String, Search>,
     /** Whether the sheet listing the members the strip has no room for is open. */
     showAll: Boolean,
@@ -249,7 +249,7 @@ private fun MemberButton(
     /** How bright the ring waiting for ONE's target is, or null while nobody is waiting. */
     ringAlpha: Float?,
     now: Instant,
-    /** The search standing for this phone, or null while nobody is looking for it. */
+    /** The search standing for this device, or null while nobody is looking for it. */
     sought: Search?,
     onSelect: (String) -> Unit,
     modifier: Modifier = Modifier,
@@ -370,10 +370,10 @@ internal fun MemberRow(
     name: String,
     face: Bitmap?,
     now: Instant,
-    /** The search standing for this phone, or null while nobody is looking for it. */
+    /** The search standing for this device, or null while nobody is looking for it. */
     sought: Search?,
     onSelect: (String) -> Unit,
-    /** How far the phone is from the viewer, in metres, or null where the card says nothing. */
+    /** How far the device is from the viewer, in metres, or null where the card says nothing. */
     away: Double? = null,
 ) {
     Row(
@@ -436,10 +436,10 @@ internal fun MemberRow(
 }
 
 /**
- * What is left in the phone, and whether it is filling or emptying.
+ * What is left in the device, and whether it is filling or emptying.
  *
  * Shown on every card rather than only in the one that opens: a marker an hour
- * old is explained by a phone at five percent, and that is the question asked
+ * old is explained by a device at five percent, and that is the question asked
  * while looking at the panel, not after tapping into it.
  */
 @Composable
@@ -472,9 +472,9 @@ internal fun widthColour(wide: Boolean): Color = when {
  * wears.
  *
  * Ochre rather than red for the same reason as there — what these rows report
- * is not a fault of the phone, and nothing about them is to be acted on in the
+ * is not a fault of the device, and nothing about them is to be acted on in the
  * next minute. What they are for is to stop an old marker being read as a
- * phone that has gone quiet.
+ * device that has gone quiet.
  */
 @Composable
 internal fun leftOutColour(): Color = when {
@@ -483,7 +483,7 @@ internal fun leftOutColour(): Color = when {
 }
 
 /**
- * The colour a charge is written in: green while the phone is on a charger.
+ * The colour a charge is written in: green while the device is on a charger.
  *
  * The colour rather than a mark next to the number: a percentage that is
  * growing is the reassuring case, and saying so in the number itself costs the
@@ -545,9 +545,9 @@ internal fun MemberFace(memberId: String, name: String, picture: Bitmap?, stale:
 
 @Composable
 private fun AgeText(member: MemberPosition, now: Instant, short: Boolean = false) {
-    // How old the position is, not how long ago the phone spoke: a phone under
-    // a transmitter goes on saying the same position, and an age counted from
-    // the stamp would read as a member who is where the marker stands.
+    // How old the position is, not how long ago the device spoke: a device
+    // under a transmitter goes on saying the same position, and an age counted
+    // from the stamp would read as a member who is where the marker stands.
     val age = positionAge(member.positionAt, now)
 
     Text(

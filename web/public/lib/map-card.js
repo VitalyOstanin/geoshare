@@ -193,7 +193,7 @@ export function nameOf(member, names) {
  * What the bubble says once the viewer asks.
  *
  * Everything the position document carries beyond the two coordinates: when it
- * was taken, how the phone was collecting at the time and how much battery it
+ * was taken, how the device was collecting at the time and how much battery it
  * had left, which together answer "why is this old" without a second question.
  *
  * Built as elements rather than as text, so that a member id — written by
@@ -225,7 +225,7 @@ function detail(view, position, name, faces, now) {
     const device = document.createElement('span');
     const own = position.memberId === view.ownMemberId;
 
-    // The person and the phone on lines of their own, whatever the markers
+    // The person and the device on lines of their own, whatever the markers
     // say, because each of the two is what is pressed to rename it: a row of
     // its own for renaming took a line of a card that is short of them.
     // Oneself is named on the account, not here.
@@ -288,7 +288,7 @@ function detail(view, position, name, faces, now) {
 
 /**
  * The line under the name: how far, how old the position, how long since the
- * phone was online, and the charge.
+ * device was online, and the charge.
  *
  * The two ages side by side because under a spoof they are hours apart, and a
  * card naming only one of them is read as naming the other.
@@ -331,7 +331,7 @@ function summary(view, position, now) {
 /**
  * What is wrong with the position, as one paragraph, or null when nothing is.
  *
- * Each sentence only while it is true: a marker left behind by a phone that is
+ * Each sentence only while it is true: a marker left behind by a device that is
  * still online, answers being rejected, a receiver that has not settled. Put
  * together rather than as rows, because they are read as one account of why
  * the marker should not be trusted.
@@ -494,7 +494,7 @@ function widthValue(metres) {
 /**
  * The mode as a thing to press, because a name alone answers nothing.
  *
- * "Standby" says what the phone was doing only to somebody who already knows
+ * "Standby" says what the device was doing only to somebody who already knows
  * the five; the help behind it is where they are read against each other, and
  * a card is the one place a member meets a mode at all.
  */
@@ -512,7 +512,7 @@ function modeButton(mode) {
 /**
  * The reason as a thing to press, for the same reason the mode is one.
  *
- * "Two positions at one time" names what the phone saw without saying what it
+ * "Two positions at one time" names what the device saw without saying what it
  * means, and a card is the one place a member meets a reason at all. The word
  * shown is the one the card would have shown anyway, the switched-off source
  * named among it.
@@ -529,7 +529,7 @@ function reasonButton(reason) {
 }
 
 /**
- * What is left in the phone, written green while it is filling: a low
+ * What is left in the device, written green while it is filling: a low
  * percentage on a charger and the same one off it mean opposite things, and
  * the colour says which without taking any room on the card.
  */

@@ -8,14 +8,14 @@ import android.os.PowerManager
 import android.provider.Settings
 
 /**
- * The screens a phone keeps its own list of applications allowed to start on.
+ * The screens a device keeps its own list of applications allowed to start on.
  *
  * Every large manufacturer has one, none of them is part of Android, and none
  * of them can be read: there is no permission that answers "am I on that list".
  * The most that can be done is to open the screen, which is why the settings
  * row beside it is a reminder rather than a state.
  *
- * Only the first of these has been seen working here, on a HONOR phone; the
+ * Only the first of these has been seen working here, on a HONOR device; the
  * rest are the addresses their manufacturers are known to use, and one that
  * turns out to be wrong simply resolves to nothing.
  */
@@ -43,7 +43,7 @@ private val STARTUP_SCREENS =
         ),
     )
 
-/** Whether the phone leaves this application out of its battery saving. */
+/** Whether the device leaves this application out of its battery saving. */
 fun batteryUnrestricted(context: Context): Boolean = context
     .getSystemService(PowerManager::class.java)
     .isIgnoringBatteryOptimizations(context.packageName)
@@ -60,9 +60,9 @@ fun batteryExemptionRequest(context: Context): Intent = Intent(
 )
 
 /**
- * The manufacturer's startup list, if this phone has one.
+ * The manufacturer's startup list, if this device has one.
  *
- * Null on a phone whose manufacturer keeps no such list, and on one whose
+ * Null on a device whose manufacturer keeps no such list, and on one whose
  * screen is at an address not known here; the settings row asks for this and
  * leaves itself out when the answer is null.
  */

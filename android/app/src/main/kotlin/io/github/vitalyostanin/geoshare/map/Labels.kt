@@ -5,17 +5,17 @@ import io.github.vitalyostanin.geoshare.service.positionId
 /** As much of a name as fits on a card. The page cuts it to the same. */
 const val LABEL_LIMIT = 40
 
-/** How many names of each kind this phone keeps. The rules say the same. */
+/** How many names of each kind this device keeps. The rules say the same. */
 private const val PHONE_LABELS = 500
 private const val MEMBER_LABELS = 50
 
 /**
- * What this member calls the phones and the people of the group, for
- * themselves alone: "new phone" rather than a model number, "grandma" rather
+ * What this member calls the devices and the people of the group, for
+ * themselves alone: "new device" rather than a model number, "grandma" rather
  * than the name on her account.
  *
- * A phone is named by its full address, account and phone joined by a dot, so
- * that two phones of one model are two names.
+ * A device is named by its full address, account and device joined by a dot, so
+ * that two devices of one model are two names.
  */
 data class Labels(
     val phones: Map<String, String> = emptyMap(),
@@ -54,15 +54,15 @@ fun labelledProfiles(
 }
 
 /**
- * A member's phones, each called what this member called it, else what its
- * owner called it, else its model; null for a phone that has none of them.
+ * A member's devices, each called what this member called it, else what its
+ * owner called it, else its model; null for a device that has none of them.
  *
- * Phones left with one name between them — two of one model nobody named —
+ * Devices left with one name between them — two of one model nobody named —
  * are told apart by a number after it, counted in the order of their ids, so
  * that the map, the panel and the application all number them alike.
  *
- * `phones` is what the member's phones say about themselves, by device id;
- * `seen` is a last name for a phone known only from its position, or null.
+ * `phones` is what the member's devices say about themselves, by device id;
+ * `seen` is a last name for a device known only from its position, or null.
  */
 fun phoneNames(
     memberId: String,
@@ -111,12 +111,12 @@ fun phoneNames(
 }
 
 /**
- * The positions with each phone called what phoneNames calls it.
+ * The positions with each device called what phoneNames calls it.
  *
- * A position carries no name of its own: the model lives in the phone's own
- * document, and a phone that has not written one yet stays unnamed.
+ * A position carries no name of its own: the model lives in the device's own
+ * document, and a device that has not written one yet stays unnamed.
  *
- * [searches] carries a further fallback, below the grant: a phone under a
+ * [searches] carries a further fallback, below the grant: a device under a
  * standing search may be read by somebody its owner never shared with, who has
  * neither a label of their own for it nor the grant that would say what its
  * owner called it — the search is all such a reader has, and

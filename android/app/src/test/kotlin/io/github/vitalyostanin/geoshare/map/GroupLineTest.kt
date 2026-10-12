@@ -22,7 +22,7 @@ class GroupLineTest {
         )
 
     // The panel is read by somebody checking on the others, and the first
-    // question a list of names raises is which of them is this phone.
+    // question a list of names raises is which of them is this device.
     @Test
     fun `the person looking is first`() {
         val lines = groupOverview(roster, profiles, emptyMap(), ownMemberId = child)
@@ -56,8 +56,8 @@ class GroupLineTest {
         assertFalse(lines.single { it.memberId == spouse }.runsTheGroup)
     }
 
-    // What the panel counts is what this phone may watch, not what the member
-    // owns: a grant nobody may read says nothing about how many phones there
+    // What the panel counts is what this device may watch, not what the member
+    // owns: a grant nobody may read says nothing about how many devices there
     // are.
     @Test
     fun `the phones counted are the ones this phone was given`() {
@@ -97,8 +97,8 @@ class GroupLineTest {
         assertFalse(lines.single { it.memberId == parent }.removable)
     }
 
-    // An administrator reads the phones without the grant, which is the case
-    // the panel lists them for: whether a phone is in touch is not a secret
+    // An administrator reads the devices without the grant, which is the case
+    // the panel lists them for: whether a device is in touch is not a secret
     // of whom its owner shares with.
     @Test
     fun `the panel offers the role to a member and takes it from an administrator`() {

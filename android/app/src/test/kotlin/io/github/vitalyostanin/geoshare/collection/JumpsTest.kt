@@ -76,7 +76,7 @@ class JumpsTest {
         assertEquals(10.0, speed!!, 0.5)
     }
 
-    // The phone stood still for a minute and the wall clock was stepped a
+    // The device stood still for a minute and the wall clock was stepped a
     // minute back in the middle of it. Counted on the wall clock the second
     // fix arrives before the first; counted since boot, a minute passed.
     @Test
@@ -127,7 +127,7 @@ class JumpsTest {
 
     // What lets the marker out of a last position that has gone wrong: two
     // answers from the same place agree with each other even when neither of
-    // them agrees with where the phone was last believed to be.
+    // them agrees with where the device was last believed to be.
     @Test
     fun `two fixes from the same place agree`() {
         val one = fixAt(60.94, 4.31, 0, accuracy = 20.0)
@@ -145,8 +145,8 @@ class JumpsTest {
     }
 
     // Width is what the provider says about its own answer, not about where
-    // the phone is. Two wide answers from one place still agree, and refusing
-    // them is what leaves a jammed phone standing on the map for good.
+    // the device is. Two wide answers from one place still agree, and refusing
+    // them is what leaves a jammed device standing on the map for good.
     @Test
     fun `a pair of wide answers from one place still agree`() {
         val one = fixAt(60.94, 4.31, 0, accuracy = 700.0)
@@ -198,8 +198,8 @@ class JumpsTest {
     }
 
     // The marker left standing: the last position written is five kilometres
-    // from where the phone is, and every true answer after it is too far to
-    // have been reached. The Wi-Fi around the phone names the place the
+    // from where the device is, and every true answer after it is too far to
+    // have been reached. The Wi-Fi around the device names the place the
     // answers do, and that is what the anchor was missing.
     @Test
     fun `a last position gone wrong gives way where the wi-fi names the new place`() {
@@ -212,7 +212,7 @@ class JumpsTest {
         assertTrue(agreementStands(JumpReason.Speed, first, second, wifi, second.takenAt))
     }
 
-    // The pair that took a phone lying on a table two hundred metres west:
+    // The pair that took a device lying on a table two hundred metres west:
     // both answers from the Wi-Fi, and the second of them, remembered as the
     // network's word, was all that stood behind it.
     @Test
@@ -237,7 +237,7 @@ class JumpsTest {
     }
 
     // A tower names a district, and a district agrees with an answer a
-    // kilometre from the phone: enough to overrule a width, whose answer is
+    // kilometre from the device: enough to overrule a width, whose answer is
     // that vague already, and not enough to overrule a speed.
     @Test
     fun `a tower answer is too wide to overrule the speed`() {
@@ -249,7 +249,7 @@ class JumpsTest {
         assertTrue(agreementStands(JumpReason.Width, first, second, tower, second.takenAt))
     }
 
-    // The pair that carried the second phone out of its own city: answers
+    // The pair that carried the second device out of its own city: answers
     // twenty-one and nineteen kilometres wide, forty kilometres from the flat,
     // agreeing with each other for no better reason than that answers that
     // wide agree with anything within a region.
@@ -264,7 +264,7 @@ class JumpsTest {
         assertFalse(agreementStands(JumpReason.Width, first, second))
     }
 
-    // What agreement was meant for: an answer too wide to place the phone, a
+    // What agreement was meant for: an answer too wide to place the device, a
     // second one agreeing with it, and something the transmitter cannot reach
     // naming the same place.
     @Test
@@ -282,7 +282,7 @@ class JumpsTest {
 
     // The towers answering about somewhere else while the two wide answers
     // vouch for each other. The width they carry is granted, and they are
-    // still not where the phone is.
+    // still not where the device is.
     @Test
     fun `a width is not confirmed where the other radios name another place`() {
         val first = fixAt(61.10000, 4.50000, 0, accuracy = 600.0)
@@ -309,7 +309,7 @@ class JumpsTest {
         )
     }
 
-    // The phone that hears the far band not at all rather than hears it and
+    // The device that hears the far band not at all rather than hears it and
     // leaves it out: the other rule stays silent there, because it asks for
     // GLONASS to have been heard. See OneTransmitter.kt for the measurements.
     @Test
@@ -326,7 +326,7 @@ class JumpsTest {
     }
 
     // The clock rule needs neither a flat sky nor a silent band: it rests on
-    // the count of seconds since the phone was switched on, which no signal
+    // the count of seconds since the device was switched on, which no signal
     // reaches. See SatelliteClock.kt.
     @Test
     fun `a fix built while the satellites' time stepped is left out`() {
@@ -433,7 +433,7 @@ class JumpsTest {
 
     // The creep this whole rule exists for: every pair of answers is a few
     // metres apart, so the speed says nothing and the width says nothing,
-    // while the place they have walked to is a kilometre from where the phone
+    // while the place they have walked to is a kilometre from where the device
     // is lying.
     @Test
     fun `answers creeping away from a phone nobody touched are a jump`() {
@@ -452,7 +452,7 @@ class JumpsTest {
         )
     }
 
-    // The same pair with the phone having been carried: the sensors say it
+    // The same pair with the device having been carried: the sensors say it
     // went somewhere, and the rule has nothing to say about where.
     @Test
     fun `answers that moved with the phone are left alone`() {
@@ -470,7 +470,7 @@ class JumpsTest {
         )
     }
 
-    // The answer stands where the phone is lying, so nothing has walked away
+    // The answer stands where the device is lying, so nothing has walked away
     // and nothing is out of reach; what gives it away is the speed it was
     // handed with, which is a car's.
     @Test

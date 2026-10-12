@@ -105,7 +105,7 @@ test('a browser that refuses storage starts without names', () => {
     assert.equal(readKeptLabels(HER, refusing), NO_LABELS);
 });
 
-// Two phones of one model that nobody named read the same everywhere; a number
+// Two devices of one model that nobody named read the same everywhere; a number
 // after the name tells them apart, in the order of their ids so that every
 // screen numbers them alike.
 test('phones sharing a name are numbered in the order of their ids', () => {

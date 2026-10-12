@@ -51,7 +51,7 @@ class MemberOrderTest {
     }
 
     // The same four cases the web page checks, so that a member is called the
-    // same thing on the phone and on the laptop.
+    // same thing on the device and on the laptop.
     @Test
     fun `a member is called what their profile says`() {
         val profile =
@@ -77,7 +77,7 @@ class MemberOrderTest {
         assertEquals("You", memberName(null, "me", own = true, ownName = "You"))
     }
 
-    // The same rule the web page follows: a member carrying two phones has
+    // The same rule the web page follows: a member carrying two devices has
     // them next to each other, in the same places at every glance.
     @Test
     fun `the phones of one member keep their places`() {

@@ -23,7 +23,7 @@ describe('positions', () => {
         await assertSucceeds(setDoc(positionOf(db, ALICE), positionFrom(ALICE)));
     });
 
-    // The case the whole change is for: one account on two phones, each
+    // The case the whole change is for: one account on two devices, each
     // writing where it is without touching the other's document.
     it('a member writes a position for each of their phones', async () => {
         const db = testEnv.authenticatedContext(ALICE).firestore();
@@ -34,14 +34,14 @@ describe('positions', () => {
 
     // A document whose whole id is the account, naming no owner, is what the
     // builds before the change wrote. Such a document would be a second marker
-    // for a member whose phones already write one each, so it is refused.
+    // for a member whose devices already write one each, so it is refused.
     it('a position in the shape of the older builds is refused', async () => {
         const db = testEnv.authenticatedContext(ALICE).firestore();
 
         await assertFails(setDoc(doc(db, `groups/${GROUP}/positions/${ALICE}`), somePosition));
     });
 
-    // The whole point of the three fields: a phone under a transmitter writes
+    // The whole point of the three fields: a device under a transmitter writes
     // no positions at all, and its card has to say that rather than let the
     // marker quietly get older.
     it('a member says their answers are being left out', async () => {
@@ -57,7 +57,7 @@ describe('positions', () => {
     });
 
     // What such a write leaves alone: the position and the moment the server
-    // stamped it. A marker whose writtenAt moved on while the phone wrote no
+    // stamped it. A marker whose writtenAt moved on while the device wrote no
     // position would stop ageing under a transmitter, and the age of a marker
     // is what a reader decides by. The rules cannot forbid an owner to write
     // their own document whole — nor should they — so what is checked here is
@@ -81,7 +81,7 @@ describe('positions', () => {
         assert.equal(after.data().latitude, before.data().latitude);
     });
 
-    // Nor may it move the phone: the coordinates of a position are written
+    // Nor may it move the device: the coordinates of a position are written
     // whole or not at all.
     it('saying so does not move the position', async () => {
         const db = testEnv.authenticatedContext(ALICE).firestore();
@@ -132,7 +132,7 @@ describe('positions', () => {
         await assertFails(updateDoc(positionOf(db, BOB), { leftOutCount: 3 }));
     });
 
-    // A phone whose answers were being thrown out before it ever wrote a
+    // A device whose answers were being thrown out before it ever wrote a
     // position has nowhere to say so: a document of these fields alone would
     // be a marker with no coordinates on everybody's map.
     it('there is nowhere to say it before a position has been written', async () => {
@@ -185,7 +185,7 @@ describe('positions', () => {
     });
 
     // The point of reading the permission from the profile: the owner takes it
-    // back, and it is gone from that moment, whatever their phone is doing —
+    // back, and it is gone from that moment, whatever their device is doing —
     // standing still with nothing to write, asleep for the night, switched
     // off, lost, or without the application on it at all. The position
     // document here is the one the owner wrote while sharing, and it is not
@@ -215,7 +215,7 @@ describe('positions', () => {
     });
 
     // The owner needs no permission of their own, and a build that has not
-    // written one yet still shows its own phone on the map.
+    // written one yet still shows its own device on the map.
     it('a member reads their own position without a permission', async () => {
         const db = testEnv.authenticatedContext(ALICE).firestore();
 
@@ -269,7 +269,7 @@ describe('positions', () => {
         );
     });
 
-    // The model lives in the phone's devices document; a copy in the position
+    // The model lives in the member's devices document; a copy in the position
     // had no reader left, and is not to come back.
     it('a position naming its phone is refused', async () => {
         const db = testEnv.authenticatedContext(ALICE).firestore();
@@ -279,7 +279,7 @@ describe('positions', () => {
         );
     });
 
-    // A degree count far outside the globe is what hung the map on the phone,
+    // A degree count far outside the globe is what hung the map on the device,
     // and the rule is what keeps it from being written in the first place.
     it('a coordinate off the globe is refused', async () => {
         const db = testEnv.authenticatedContext(ALICE).firestore();
@@ -293,7 +293,7 @@ describe('positions', () => {
     });
 
     // The age of a position is the whole of what the readers judge it by, so
-    // the moment on it has to be the server's and not a phone's.
+    // the moment on it has to be the server's and not a device's.
     it("a position stamped by the phone's own clock is refused", async () => {
         const db = testEnv.authenticatedContext(ALICE).firestore();
 
@@ -323,7 +323,7 @@ describe('positions', () => {
 
     // A radius is a distance and cannot be negative; and past a hundred
     // kilometres a circle stops describing a place, while a number of any size
-    // would let one phone paint over the whole map.
+    // would let one device paint over the whole map.
     it('a width no answer has is refused', async () => {
         const db = testEnv.authenticatedContext(ALICE).firestore();
 
@@ -338,7 +338,7 @@ describe('positions', () => {
         );
     });
 
-    // How the phone says it arrived at the answer. The word is the phone's
+    // How the device says it arrived at the answer. The word is the device's
     // own — the satellites, an assistance service, the towers and the Wi-Fi —
     // and a reader shows it in its own language.
     it('a position says how it was arrived at', async () => {
@@ -349,7 +349,7 @@ describe('positions', () => {
         );
     });
 
-    // A reader puts this on a card, so a phone must not be able to write a
+    // A reader puts this on a card, so a device must not be able to write a
     // sentence of its own choosing into everybody's panel.
     it('a source that is not one word is refused', async () => {
         const db = testEnv.authenticatedContext(ALICE).firestore();
@@ -365,7 +365,7 @@ describe('positions', () => {
         );
     });
 
-    // Whether the receiver had settled when the fix was taken. A phone that
+    // Whether the receiver had settled when the fix was taken. A device that
     // has just been switched on answers narrowly and wrongly, and this is what
     // lets a card say so.
     it('a position says its receiver had not settled', async () => {
@@ -377,7 +377,7 @@ describe('positions', () => {
     });
 
     // A flag and nothing else: the readers show a sentence for it, and a
-    // number or a word here would be a phone writing into everybody's card.
+    // number or a word here would be a device writing into everybody's card.
     it('a receiver note that is not a flag is refused', async () => {
         const db = testEnv.authenticatedContext(ALICE).firestore();
 

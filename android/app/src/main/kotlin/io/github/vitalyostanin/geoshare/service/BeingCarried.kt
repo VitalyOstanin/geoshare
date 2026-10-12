@@ -21,14 +21,14 @@ import java.util.Locale
 private const val TAG = "geoshare.service"
 
 /**
- * What the phone's own sensors say about it being carried, kept for the rules
+ * What the device's own sensors say about it being carried, kept for the rules
  * that weigh each answer against it.
  *
- * @param sensorsTell whether this phone has sensors to ask at all
+ * @param sensorsTell whether this device has sensors to ask at all
  */
 class BeingCarried(private val sensorsTell: Boolean) {
     /**
-     * Since when the phone's own sensors say it has not been carried anywhere,
+     * Since when the device's own sensors say it has not been carried anywhere,
      * or nothing while it is moving and while they have said nothing yet.
      *
      * Kept as the moment the stillness began rather than as a flag, because
@@ -39,10 +39,10 @@ class BeingCarried(private val sensorsTell: Boolean) {
         private set
 
     /**
-     * Where the phone was standing when it was last put down.
+     * Where the device was standing when it was last put down.
      *
      * The place the answers are weighed against while nothing touches the
-     * phone, which is the one comparison a slow creep cannot walk away from
+     * device, which is the one comparison a slow creep cannot walk away from
      * unnoticed: the position written before each answer creeps along with the
      * lie, and this does not.
      */
@@ -50,7 +50,7 @@ class BeingCarried(private val sensorsTell: Boolean) {
         private set
 
     /**
-     * What the phone's own motion sensors have reported lately, oldest first.
+     * What the device's own motion sensors have reported lately, oldest first.
      *
      * Kept as moments rather than as a flag because they arrive late: the step
      * counter is read in batches, and a batch landing a minute after the fact
@@ -63,11 +63,11 @@ class BeingCarried(private val sensorsTell: Boolean) {
     private var lastStir: Instant? = null
 
     /**
-     * When the stretch of walking the phone is in the middle of began, and
+     * When the stretch of walking the device is in the middle of began, and
      * where it said it was at the time.
      *
      * The pair is the other rule's anchor turned around: there a place is kept
-     * while the phone lies still, here a place is kept while the phone is
+     * while the device lies still, here a place is kept while the device is
      * carried, so that an answer refusing to follow the walking can be seen.
      * Only a narrow answer measured off the sky is kept — see
      * [pinnedWhileWalking] for why the others say nothing.
@@ -76,7 +76,7 @@ class BeingCarried(private val sensorsTell: Boolean) {
 
     private var walkedFrom: Fix? = null
 
-    /** What has stirred the phone since it was put down. */
+    /** What has stirred the device since it was put down. */
     fun carrying(): Carrying = carryingSince(putDown, stirsHeard, sensorsTell)
 
     /**
@@ -94,7 +94,7 @@ class BeingCarried(private val sensorsTell: Boolean) {
     }
 
     /**
-     * Keeps the moment the phone was last carried anywhere.
+     * Keeps the moment the device was last carried anywhere.
      *
      * The stillness is dated from the first report of it and left alone by
      * every report that repeats it: the timer is reviewed on a clock, so the
@@ -112,14 +112,14 @@ class BeingCarried(private val sensorsTell: Boolean) {
     }
 
     /**
-     * Moves the anchor to where the phone has just said it is, where the
-     * anchor it had is no longer about a phone lying untouched.
+     * Moves the anchor to where the device has just said it is, where the
+     * anchor it had is no longer about a device lying untouched.
      *
      * An anchor is left where it is for as long as nothing has stirred: that
      * is the whole of its value, since an anchor that followed the answers
      * would follow a creep as readily as the last position does. It is moved
      * once something has been carried somewhere and then put down again, and
-     * [putDownAt] is what decides that the phone has settled.
+     * [putDownAt] is what decides that the device has settled.
      */
     fun anchorWhereItLies(believed: Fix, now: Instant) {
         val carrying = carrying()
@@ -131,7 +131,7 @@ class BeingCarried(private val sensorsTell: Boolean) {
         val settled = putDownAt(believed, lastStir, sensorsTell, now, stepsNow)
 
         // Said once per anchor rather than per fix: what this line answers is
-        // whether the rule is awake at all on a given phone, and a phone
+        // whether the rule is awake at all on a given device, and a device
         // standing still would otherwise repeat it every few minutes.
         if (settled?.at != putDown?.at) {
             AppLog.i(
@@ -145,7 +145,7 @@ class BeingCarried(private val sensorsTell: Boolean) {
     }
 
     /**
-     * Says so when the phone has been carried somewhere and the answer has
+     * Says so when the device has been carried somewhere and the answer has
      * stayed behind.
      *
      * Nothing is decided by it yet: the line goes in the log, the position is
@@ -158,7 +158,7 @@ class BeingCarried(private val sensorsTell: Boolean) {
      *
      * The place a walk is measured from is taken from a narrow satellite
      * answer and no other, because only such an answer claims to know where
-     * the phone is closely enough for standing still to mean anything.
+     * the device is closely enough for standing still to mean anything.
      */
     fun noticeAnAnswerThatWillNotFollow(fix: Fix, whence: FoundBy) {
         val walk = walkingNow(stirsHeard) ?: return
@@ -198,7 +198,7 @@ class BeingCarried(private val sensorsTell: Boolean) {
                 fix.longitude,
             )
 
-        // Kept apart: PINNED_STEPS is waiting on a day of the phone being
+        // Kept apart: PINNED_STEPS is waiting on a day of the device being
         // carried, and the ordinary log does not hold a day.
         AppLog.keep(TAG, "carried ${walk.steps} steps and the answer has not followed: $away")
     }

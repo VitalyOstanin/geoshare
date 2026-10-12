@@ -87,8 +87,8 @@ fun doneResetLine(context: Context): String? {
 }
 
 /**
- * This phone's side of a request to forget its place: the same flag the
- * settings' own button raises, so the next fix is weighed as if the phone had
+ * This device's side of a request to forget its place: the same flag the
+ * settings' own button raises, so the next fix is weighed as if the device had
  * just been switched on, then a word back to the asking screen and a quiet
  * notification saying who asked.
  */

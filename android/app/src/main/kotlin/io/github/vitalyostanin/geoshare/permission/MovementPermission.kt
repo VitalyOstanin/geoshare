@@ -1,7 +1,7 @@
 package io.github.vitalyostanin.geoshare.permission
 
 /**
- * Whether to ask the member, now, to let the phone tell us when it is moving.
+ * Whether to ask the member, now, to let the device tell us when it is moving.
  *
  * Asked the way the battery exemption is asked: once, while sharing is on, and
  * never again. A member who said no has said no, and the request is worth
@@ -13,7 +13,7 @@ package io.github.vitalyostanin.geoshare.permission
  */
 fun movementPermissionWanted(
     sharing: Boolean,
-    /** Whether the phone already lets us hear about movement. */
+    /** Whether the device already lets us hear about movement. */
     granted: Boolean,
     /** Whether the member has been shown the request before. */
     askedBefore: Boolean,

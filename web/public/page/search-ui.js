@@ -1,4 +1,4 @@
-// Looking for a phone: the window that opens one, the line for the one sought, the list.
+// Looking for a device: the window that opens one, the line for the one sought, the list.
 
 import { memberName } from '../lib/members.js';
 import {
@@ -18,10 +18,10 @@ import { drawGroup, tryGroupWrite } from './group-panel.js';
 import { render } from './strip.js';
 
 /**
- * What a change to the searches changes: which phones this viewer may read,
+ * What a change to the searches changes: which devices this viewer may read,
  * so the positions are followed again; who is marked on the map and in the
  * strip; what the panel offers; and what this viewer is told about their own
- * phones.
+ * devices.
  *
  * Also run when the next standing search runs out, since nothing arrives from
  * the database at that moment.
@@ -62,8 +62,8 @@ function searchName(memberId) {
 }
 
 /**
- * The best name known for a search's phone: this viewer's own label and the
- * phone's own report both already won over the search's, inside the position
+ * The best name known for a search's device: this viewer's own label and the
+ * device's own report both already won over the search's, inside the position
  * that being searched has just opened; failing that, what the search itself
  * remembers, and failing that, nothing to call it but "device".
  */
@@ -125,9 +125,9 @@ export function soughtLine(position) {
 }
 
 /**
- * Told to the member whose phone or phones are being looked for: which of
+ * Told to the member whose device or devices are being looked for: which of
  * them, until when, and a way to end every one of them at once — more than
- * one may stand together, the family looking for two phones lost side by
+ * one may stand together, the family looking for two devices lost side by
  * side, and "found" answers for both.
  */
 export function drawSought() {
@@ -210,7 +210,7 @@ export function adminSearch(search) {
 }
 
 /**
- * Opens the window that opens a search for one phone, or renews one: what
+ * Opens the window that opens a search for one device, or renews one: what
  * happens, for how long, and the end the length picked comes to.
  */
 export function askSearch(phoneId, memberId, phoneName, renew) {

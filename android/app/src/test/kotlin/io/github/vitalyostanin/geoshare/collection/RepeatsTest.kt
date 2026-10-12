@@ -53,7 +53,7 @@ class RepeatsTest {
         return road(flat.toDoubleArray())
     }
 
-    // Thirteen minutes of a transmitter at work, as the phone's own logger
+    // Thirteen minutes of a transmitter at work, as the device's own logger
     // wrote them down: thinned to one answer every seven seconds, and moved
     // off the longitudes the family lives at. The route closes and is traced
     // again, and no circle fits it.
@@ -174,7 +174,7 @@ class RepeatsTest {
         )
 
     /**
-     * [run] as a phone whose wall clock was set a minute and a half forwards
+     * [run] as a device whose wall clock was set a minute and a half forwards
      * halfway through it would carry it, with the count since boot running on.
      */
     private fun clockSetHalfway(run: List<Fix>): List<Fix> = run.mapIndexed { index, fix ->
@@ -222,7 +222,7 @@ class RepeatsTest {
         )
     }
 
-    // Answers jittering around a standing phone line up across every period
+    // Answers jittering around a standing device line up across every period
     // that fits, and their wandering adds up to a kilometre of apparent road.
     // What tells them from a route is that they go nowhere.
     @Test

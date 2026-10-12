@@ -4,7 +4,7 @@ import java.time.Duration
 import java.time.Instant
 
 /**
- * How often the group is told that this phone's answers are being left out.
+ * How often the group is told that this device's answers are being left out.
  *
  * Once a minute. Under a transmitter an answer arrives every seven seconds,
  * and telling the database about each of them would spend its free daily
@@ -21,7 +21,7 @@ data class LeftOutNews(val count: Int, val reason: String, val since: Instant)
  * why the last one was, when the run began and when the group was last told
  * about it.
  *
- * Kept so that the card of a phone under a transmitter can say what is
+ * Kept so that the card of a device under a transmitter can say what is
  * happening to it. Everything here is cleared by a position being written,
  * because a written position is the run ending.
  */

@@ -6,9 +6,9 @@ import io.github.vitalyostanin.geoshare.R
 /**
  * What each way of arriving at a position is called on a card.
  *
- * The document carries the word the phone wrote — `Satellites`, `Assistance` —
+ * The document carries the word the device wrote — `Satellites`, `Assistance` —
  * and the card names it in the language of whoever is reading. The name goes
- * through the resources for that reason, and the key stays the entry the phone
+ * through the resources for that reason, and the key stays the entry the device
  * wrote; the page keeps the same names, so one card reads the same on both.
  *
  * A word this build has never heard of is named as unknown rather than shown
@@ -47,8 +47,8 @@ fun sourceChoiceLabel(choice: SourceChoice): Int = when (choice) {
  * What each reason for leaving an answer out is called on a card.
  *
  * The same arrangement as [foundByLabel]: the document carries the word the
- * phone wrote — an entry of [JumpReason], or `Source` for an answer the member
- * has told their phone not to count — and each reader says it in its own
+ * device wrote — an entry of [JumpReason], or `Source` for an answer the member
+ * has told their device not to count — and each reader says it in its own
  * language. A word this build has never heard of is named as unknown rather
  * than shown as it came.
  */
@@ -93,9 +93,9 @@ private fun switchedOffLabel(reason: String?): Int =
  *
  * A source the member switched off is written as `Source:Satellites` rather
  * than as `Source` alone: which of the five it was is the whole of what the
- * member wants back from such a row, and the phone knows it at the moment it
+ * member wants back from such a row, and the device knows it at the moment it
  * leaves the answer out. The older form without a switch is still understood,
- * because a build that wrote it may be the one a phone in the household is
+ * because a build that wrote it may be the one a device in the household is
  * running.
  *
  * A switch this build has never heard of comes out as nothing, and the row
@@ -113,7 +113,7 @@ fun sourceLeftOut(reason: String?): SourceChoice? {
  * switched its source off.
  *
  * Not an entry of [JumpReason], because nothing is wrong with such an answer:
- * the phone was told not to count that source. Named here rather than in the
+ * the device was told not to count that source. Named here rather than in the
  * service, so that the writer and the reader spell it once.
  */
 const val LEFT_OUT_BY_SOURCE = "Source"

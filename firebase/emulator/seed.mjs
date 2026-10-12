@@ -2,7 +2,7 @@
 //
 // Run by tools/run-services.sh once the emulators answer. Three accounts, a
 // group with the three of them on the roster, a profile each, and a position
-// for the two the phone under test is meant to be looking at.
+// for the two the device under test is meant to be looking at.
 //
 // Written against the emulators' own REST interfaces rather than against a
 // library: no credentials exist here, an owner token is whatever the emulator
@@ -163,7 +163,7 @@ for (const member of MEMBERS) {
     });
 
     // Apart from the profile, which everybody in the group reads: who may
-    // watch and which phones they would be watching are for the member and
+    // watch and which devices they would be watching are for the member and
     // their readers alone.
     await write(`groups/${GROUP}/grants/${uid}`, {
         // Everyone else in the household, so that a build pointed at the
@@ -174,8 +174,8 @@ for (const member of MEMBERS) {
         devices: { arrayValue: { values: [stringValue(member.device)] } },
     });
 
-    // How each phone last said it is, which the admin panel lists and the
-    // siren is called on: without it a member shows no phones to ring.
+    // How each device last said it is, which the admin panel lists and the
+    // siren is called on: without it a member shows no devices to ring.
     await write(`groups/${GROUP}/devices/${uid}`, {
         [member.device]: {
             mapValue: {

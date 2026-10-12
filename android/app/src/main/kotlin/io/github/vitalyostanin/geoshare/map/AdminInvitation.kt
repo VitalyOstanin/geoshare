@@ -31,12 +31,12 @@ import java.time.ZoneId
 
 /**
  * The invitation link [AdminInvitation] shows and hands over, built from what
- * making one returned and what the screen already knows: this phone's own
+ * making one returned and what the screen already knows: this device's own
  * site, the name it publishes for this member, and the group's own name.
  *
  * A function of its own so what goes into the link can be checked without a
  * screen to draw it on. Null before the site is known — [AdminPanel] is not
- * reached before it is, since a phone gets there only through a group, and a
+ * reached before it is, since a device gets there only through a group, and a
  * group only once a project's settings, site included, have been read.
  */
 internal fun invitationLinkText(

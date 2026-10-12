@@ -8,7 +8,7 @@ import java.io.File
  *
  * Every message goes to both the system log and a file of our own: the system
  * log is the one that also carries what the platform says back, and the file is
- * the one that can be read on a phone whose system log is closed.
+ * the one that can be read on a device whose system log is closed.
  */
 object AppLog {
     @Volatile
@@ -34,7 +34,7 @@ object AppLog {
      * be rolled away within the hour.
      *
      * For the few observations a threshold is waiting to be measured on: the
-     * ordinary log holds an hour of a phone under a false signal, and the
+     * ordinary log holds an hour of a device under a false signal, and the
      * question is asked of a day.
      */
     fun keep(tag: String, message: String) {

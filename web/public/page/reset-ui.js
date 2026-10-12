@@ -1,4 +1,4 @@
-// Asking a phone to forget its place: its button, the line it leaves on the
+// Asking a device to forget its place: its button, the line it leaves on the
 // row, and the requests followed while shown.
 
 import { resetState, resetTold } from '../lib/resets.js';
@@ -38,8 +38,8 @@ export function resetText(reset, now) {
 }
 
 /**
- * The line a request to [phone] leaves on [about], and the round button that
- * makes one. Plain rather than red: nothing on the phone sounds, and whoever
+ * The line a request to [device] leaves on [about], and the round button that
+ * makes one. Plain rather than red: nothing on the device sounds, and whoever
  * holds it is only told once it is done.
  */
 export function resetButtonFor(phone, now, about) {
@@ -71,7 +71,7 @@ export function resetButtonFor(phone, now, about) {
     return button;
 }
 
-/** Follows the request of every phone drawn with a reset button and lets go of the rest. */
+/** Follows the request of every device drawn with a reset button and lets go of the rest. */
 export function followResets() {
     for (const [phoneId, stop] of state.resetWatches) {
         if (!state.sirensShown.has(phoneId)) {

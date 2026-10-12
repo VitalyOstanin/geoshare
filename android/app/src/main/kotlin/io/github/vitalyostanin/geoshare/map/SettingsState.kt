@@ -24,7 +24,7 @@ import java.time.Instant
  * Three lists to keep in step, none of which the map itself reads.
  */
 data class SettingsState(
-    /** Whether this phone is sharing its position at all. */
+    /** Whether this device is sharing its position at all. */
     val sharing: Boolean,
     /** The permission the member has to grant on the settings screen, if any. */
     val permissionNotice: PermissionStep?,
@@ -34,13 +34,13 @@ data class SettingsState(
     val language: LanguageChoice,
     /** The permissions this member has given, by the member each was given to. */
     val sharedWith: Map<String, Instant>,
-    /** Whether the phone leaves out the positions it cannot have reached. */
+    /** Whether the device leaves out the positions it cannot have reached. */
     val jumpsFiltered: Boolean,
     /**
-     * The sources this phone does not take into account, by the name each is
+     * The sources this device does not take into account, by the name each is
      * stored under.
      *
-     * Empty for a phone counting every answer it gets, which is how one
+     * Empty for a device counting every answer it gets, which is how one
      * starts.
      */
     val sourcesLeftOut: Set<String>,
@@ -48,18 +48,18 @@ data class SettingsState(
      * The constellations the receiver has been hearing for nothing, as the
      * collecting service last left them.
      *
-     * Empty on a phone whose receiver is making use of everything it hears,
+     * Empty on a device whose receiver is making use of everything it hears,
      * which is how one should stand: a name here is the receiver sitting on
      * aiding data it believes and cannot use.
      */
     val aidingDoubted: Set<Constellation>,
     /** Over which networks the device downloads on its own, and whether a download waits in roaming. */
     val downloads: DownloadState,
-    /** Whether the phone leaves the application out of its battery saving. */
+    /** Whether the device leaves the application out of its battery saving. */
     val batteryUnrestricted: Boolean,
     /** Whether the siren may loosen "Do Not Disturb" set to total silence. */
     val sirenThroughSilence: Boolean,
-    /** Whether this phone has a startup list of its own to open. */
+    /** Whether this device has a startup list of its own to open. */
     val startupScreen: Boolean,
     /** Whether the member says that list is already set. */
     val startupSet: Boolean,
@@ -71,10 +71,10 @@ data class SettingsState(
      */
     val rosterAnswered: Boolean,
     /**
-     * What each member gives out, as far as this phone has been let see it.
+     * What each member gives out, as far as this device has been let see it.
      *
      * Carried for the panel where the group is seen whole: a member who shares
-     * with this phone is counted there by the phones they list, and one who
+     * with this device is counted there by the devices they list, and one who
      * does not is simply missing from this map.
      */
     val grants: Map<String, MemberGrant>,
@@ -97,10 +97,10 @@ data class SettingsState(
     val groupTrouble: Boolean,
     /** The invitation this device came with, when the rules refused it. */
     val refusedJoin: RefusedJoin? = null,
-    /** What this phone's owner named it for everybody, if they did. */
+    /** What this device's owner named it for everybody, if they did. */
     val phoneName: String?,
     /**
-     * The group's searches, by the phone each one is looking for.
+     * The group's searches, by the device each one is looking for.
      *
      * Carried whole rather than narrowed to what still stands: the panel lists
      * a search until it is called off, and what still stands is worked out
@@ -148,7 +148,7 @@ data class SettingsActions(
     /** Signs out of the group shown, or of every group when [everywhere] says so. */
     val onSignOut: (everywhere: Boolean) -> Unit,
     /**
-     * Opens a search for one phone, or renews one already standing; answers
+     * Opens a search for one device, or renews one already standing; answers
      * whether the database allowed it, refused it or left it unanswered.
      *
      * A suspend function returning the answer rather than a fire-and-forget
@@ -162,19 +162,19 @@ data class SettingsActions(
         renew: Boolean,
         hours: Int,
     ) -> WriteOutcome,
-    /** Ends a search: the phone has been found, or its owner has said so themselves. */
+    /** Ends a search: the device has been found, or its owner has said so themselves. */
     val onEndSearch: suspend (phoneId: String) -> Unit,
-    /** A phone's siren as the database has it, for the screen that rang it. */
+    /** A device's siren as the database has it, for the screen that rang it. */
     val sirenOf: (phoneId: String) -> Flow<Siren?>,
-    /** Rings a phone; answers how the write came out, as [onSearch] does. */
+    /** Rings a device; answers how the write came out, as [onSearch] does. */
     val onCallSiren: suspend (phoneId: String) -> WriteOutcome,
-    /** Stops a phone's siren before its twenty seconds are up. */
+    /** Stops a device's siren before its twenty seconds are up. */
     val onStopSiren: suspend (phoneId: String) -> Unit,
-    /** A phone's request to forget its place as the database has it, for the screen that asked. */
+    /** A device's request to forget its place as the database has it, for the screen that asked. */
     val resetOf: (phoneId: String) -> Flow<Reset?>,
-    /** Asks a phone to forget its place; answers how the write came out, as [onCallSiren] does. */
+    /** Asks a device to forget its place; answers how the write came out, as [onCallSiren] does. */
     val onAskReset: suspend (phoneId: String) -> WriteOutcome,
-    /** Takes one of the member's own phones out of the group; answers whether it went. */
+    /** Takes one of the member's own devices out of the group; answers whether it went. */
     val onForgetPhone: suspend (phoneId: String) -> Boolean,
     /** Whether an invitation made here still stands, as the database has it; null while unknown. */
     val invitationStanding: (code: String) -> Flow<Boolean?>,

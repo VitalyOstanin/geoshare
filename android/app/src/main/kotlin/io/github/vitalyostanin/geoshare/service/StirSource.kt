@@ -31,9 +31,9 @@ private const val TAG = "geoshare.stirs"
 private const val STEP_DELIVERY_MICROS = 60_000_000
 
 /**
- * The moments the phone was picked up, pocketed or walked with.
+ * The moments the device was picked up, pocketed or walked with.
  *
- * Read from the phone's own motion sensors rather than from Play Services'
+ * Read from the device's own motion sensors rather than from Play Services'
  * reading of them: the activity recogniser answers a bigger question — what is
  * this person doing — and answers it in its own time, tens of seconds after
  * the fact and only when it is confident. What the rule in [io.github
@@ -41,11 +41,11 @@ private const val STEP_DELIVERY_MICROS = 60_000_000
  * harder: was this thing moved at all, ever, since it was put down.
  *
  * Two sensors, and both of them free. The significant-motion trigger is
- * hardware: it wakes the processor once, when the phone starts being carried,
+ * hardware: it wakes the processor once, when the device starts being carried,
  * and has to be asked again after each firing. The step counter runs in the
  * same chip and is read in batches.
  *
- * A phone with neither, or an application without the permission for the step
+ * A device with neither, or an application without the permission for the step
  * counter, produces an empty flow — see [sensorsNoticeMovement] for the
  * difference between "nothing has stirred" and "nothing can be asked".
  */
@@ -114,7 +114,7 @@ fun stirs(context: Context): Flow<Stir> = callbackFlow {
 }
 
 /**
- * Whether this phone can be asked whether it was carried at all.
+ * Whether this device can be asked whether it was carried at all.
  *
  * What separates a sensor saying nothing happened from there being no sensor:
  * the first is evidence and the second is silence, and the rule that weighs

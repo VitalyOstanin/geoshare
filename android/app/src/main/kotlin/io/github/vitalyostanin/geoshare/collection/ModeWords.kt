@@ -6,13 +6,13 @@ import io.github.vitalyostanin.geoshare.R
 /**
  * What each way of collecting is called on a card.
  *
- * The document carries the entry the phone was in — `Standby`, `Viewing` — and
+ * The document carries the entry the device was in — `Standby`, `Viewing` — and
  * the card gives that mode its name rather than a sentence about it. The five
  * differ by what they ask the receiver for and how often they send, which is a
  * table to be read once against itself in the help rather than a phrase to be
  * read again on every card. The name goes through the resources, so that a
  * translation names the modes in its own language while the key stays the
- * entry the phone wrote. The page keeps the same names, so one card reads the
+ * entry the device wrote. The page keeps the same names, so one card reads the
  * same on both.
  */
 @StringRes

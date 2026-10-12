@@ -36,7 +36,7 @@ test('a phone entry keeps what a phone writes and drops the rest', () => {
 });
 
 // The case this exists for: the answers are being thrown away, the position
-// is an hour old, and the phone has since been put on a cable.
+// is an hour old, and the device has since been put on a cable.
 test('what the phone said after the position was written is laid over it', () => {
     const grants = combinedGrants(
         new Map([[HER, ['phone']]]),
@@ -63,8 +63,8 @@ test('what the phone said before the position was written is not', () => {
     assert.deepEqual(withPhones([position], grants), [position]);
 });
 
-// An administrator reads the phones of everybody and the grant of nobody: the
-// phones are shown to them, and no position is followed.
+// An administrator reads the devices of everybody and the grant of nobody: the
+// devices are shown to them, and no position is followed.
 test('phones read without the grant lead to no positions', () => {
     const grants = combinedGrants(
         new Map(),
@@ -75,7 +75,7 @@ test('phones read without the grant lead to no positions', () => {
     assert.equal(grants.get(HER).phones.size, 1);
 });
 
-// A phone of an older build names itself in the grant and nowhere else, and a
+// A device of an older build names itself in the grant and nowhere else, and a
 // newer one names itself in both.
 test('the phones to follow are those of the grant and of the phones together', () => {
     const grants = combinedGrants(

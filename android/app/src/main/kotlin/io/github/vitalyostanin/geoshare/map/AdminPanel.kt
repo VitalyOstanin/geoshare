@@ -47,35 +47,35 @@ import java.time.Instant
  * The group seen whole, by the member who runs it.
  *
  * A screen of its own rather than more of the settings: what it answers is not
- * "how does this phone behave" but "what does the household look like from
+ * "how does this device behave" but "what does the household look like from
  * here", and the two questions are asked months apart by different people.
  *
  * Everything on it is read from what the group already writes — the roster,
- * the profiles, the grants this phone was given — so nothing new has to travel
- * towards anybody's phone for it to be drawn. The commands that do reach into
- * another phone belong here too, and they wait on being able to wake a phone
+ * the profiles, the grants this device was given — so nothing new has to travel
+ * towards anybody's device for it to be drawn. The commands that do reach into
+ * another device belong here too, and they wait on being able to wake a device
  * that is not listening.
  */
 @Composable
 fun AdminPanel(
     roster: Roster,
     profiles: Map<String, MemberProfile>,
-    /** What each member gives out, as far as this phone has been let see. */
+    /** What each member gives out, as far as this device has been let see. */
     grants: Map<String, MemberGrant>,
     ownMemberId: String,
-    /** What this member calls the phones, for themselves. */
+    /** What this member calls the devices, for themselves. */
     labels: Labels,
     /** The clock the ages on the panel are read against. */
     now: Instant,
     /** The invitation just made, held until the screen is left. */
     invitation: MadeInvitation?,
-    /** This phone's Hosting site, which the invitation link is built against. */
+    /** This device's Hosting site, which the invitation link is built against. */
     site: String?,
     /** Whether the last write to the group was refused. */
     trouble: Boolean,
-    /** The group's searches, by the phone each is looking for. */
+    /** The group's searches, by the device each is looking for. */
     searches: Map<String, Search>,
-    /** When each phone's shown position was last known, so a phone's age agrees with the map. */
+    /** When each device's shown position was last known, so a device's age agrees with the map. */
     seenAt: Map<String, Instant>,
     /** Makes an invitation good for the address typed into the dialog that asks for one. */
     onMakeInvitation: (String) -> Unit,
@@ -84,7 +84,7 @@ fun AdminPanel(
     /** Gives the group a name, or changes the one it has; answers how the write came out. */
     onRenameGroup: suspend (String) -> WriteOutcome,
     /**
-     * Opens a search for one phone, or renews one already standing; answers
+     * Opens a search for one device, or renews one already standing; answers
      * how the write came out.
      */
     onSearch: suspend (
@@ -93,18 +93,18 @@ fun AdminPanel(
         renew: Boolean,
         hours: Int,
     ) -> WriteOutcome,
-    /** Ends a search: the phone has been found. */
+    /** Ends a search: the device has been found. */
     onEndSearch: suspend (phoneId: String) -> Unit,
-    /** This phone's own `{uid}.{deviceId}`: the one phone nobody here rings. */
+    /** This device's own `{uid}.{deviceId}`: the one device nobody here rings. */
     ownPhoneId: String?,
-    /** A phone's siren as the database has it, followed for as long as asked. */
+    /** A device's siren as the database has it, followed for as long as asked. */
     sirenOf: (phoneId: String) -> Flow<Siren?>,
-    /** Rings a phone; answers how the write came out: done, refused or unanswered. */
+    /** Rings a device; answers how the write came out: done, refused or unanswered. */
     onCallSiren: suspend (phoneId: String) -> WriteOutcome,
     onStopSiren: suspend (phoneId: String) -> Unit,
-    /** A phone's request to forget its place as the database has it, followed for as long as asked. */
+    /** A device's request to forget its place as the database has it, followed for as long as asked. */
     resetOf: (phoneId: String) -> Flow<Reset?>,
-    /** Asks a phone to forget its place; answers how the write came out. */
+    /** Asks a device to forget its place; answers how the write came out. */
     onAskReset: suspend (phoneId: String) -> WriteOutcome,
     /** Whether an invitation made here still stands, followed for as long as asked. */
     invitationStanding: (code: String) -> Flow<Boolean?>,
@@ -133,15 +133,15 @@ fun AdminPanel(
     var inviteEmail by remember { mutableStateOf("") }
     // The member about to be removed and the name the dialog calls them by.
     var removing by remember { mutableStateOf<Pair<String, String>?>(null) }
-    // Which phone is being asked about, in which of the two ways, and the
+    // Which device is being asked about, in which of the two ways, and the
     // length picked so far -- held apart from whether the write is refused,
-    // so a refusal on one phone's search does not linger once a different one
+    // so a refusal on one device's search does not linger once a different one
     // is opened.
     val searching = rememberAskedWrite<SearchAsk>()
     var searchHours by remember { mutableStateOf(DEFAULT_SEARCH_HOURS) }
     val scope = rememberCoroutineScope()
 
-    // The siren of every phone this panel offers to ring, followed while it
+    // The siren of every device this panel offers to ring, followed while it
     // is open: a call rung from anywhere else shows on its row as well.
     val ringable =
         remember(lines, ownPhoneId) {
@@ -152,7 +152,7 @@ fun AdminPanel(
     val ringing = rememberAskedWrite<SirenAsk>()
     val sirenNow by sirenClock(now, sirens)
 
-    // The requests to forget a place on the same phones, followed the same
+    // The requests to forget a place on the same devices, followed the same
     // way, so a reset asked from anywhere shows on its row too.
     val resets by remember(ringable) { resetsOf(ringable, resetOf) }
         .collectAsState(initial = emptyMap())
@@ -183,7 +183,7 @@ fun AdminPanel(
 
     Surface(modifier = modifier.fillMaxSize()) {
         // Scrolled and inset the way the settings screen is, and for the same
-        // reasons: one row per member runs off a phone, and the title has to
+        // reasons: one row per member runs off a device, and the title has to
         // clear the clock.
         Column(
             modifier =
@@ -265,7 +265,7 @@ fun AdminPanel(
             }
 
             // Every search standing now, under the rows rather than in them,
-            // with the one thing the phone's own row does not offer: renewing
+            // with the one thing the device's own row does not offer: renewing
             // it without ending it first.
             for (search in standing.values) {
                 val phone = phoneLine(search, lines)
@@ -425,7 +425,7 @@ fun AdminPanel(
 }
 
 /**
- * What the row says of the call this screen made: which phone, the seconds
+ * What the row says of the call this screen made: which device, the seconds
  * left while it sounds, or that it never answered or was stopped. Nothing
  * once it sounded out, nor [SIREN_TOLD] after it ended any other way.
  */
@@ -458,16 +458,16 @@ internal fun sirenText(siren: Siren, state: SirenState, phones: List<PhoneLine>)
     }
 }
 
-/** Which phone is being asked about, whose member it is, and in which of the two ways. */
+/** Which device is being asked about, whose member it is, and in which of the two ways. */
 private data class SearchAsk(val phone: PhoneLine, val memberName: String, val renew: Boolean)
 
-/** Whose phone is about to be rung, and which of their phones is picked. */
+/** Whose device is about to be rung, and which of their devices is picked. */
 private data class SirenAsk(val name: String, val phones: List<PhoneLine>, val selected: String)
 
 /**
- * The phone a standing search is about, out of what this screen already knows
- * of the member's phones — or, failing that, out of the search document
- * itself, for a phone whose own status has not reached this screen.
+ * The device a standing search is about, out of what this screen already knows
+ * of the member's devices — or, failing that, out of the search document
+ * itself, for a device whose own status has not reached this screen.
  */
 private fun phoneLine(search: Search, lines: List<GroupLine>): PhoneLine = lines
     .firstOrNull { it.memberId == search.memberId }

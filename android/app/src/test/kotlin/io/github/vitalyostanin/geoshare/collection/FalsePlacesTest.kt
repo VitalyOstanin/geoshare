@@ -9,9 +9,9 @@ import org.junit.Test
 import java.time.Instant
 
 class FalsePlacesTest {
-    // A group that has named two places: the one its phones are handed while
+    // A group that has named two places: the one its devices are handed while
     // the transmitter runs, and a second one thirteen kilometres away that a
-    // phone without a mobile network was held at. Two entries rather than one
+    // device without a mobile network was held at. Two entries rather than one
     // wide one, because the ground between them is ground a family stands on.
     private val named =
         listOf(
@@ -32,7 +32,7 @@ class FalsePlacesTest {
     }
 
     // What two entries buy over one wide one: the ground between them is not
-    // called false, and a phone answering from there is still placed. Six and
+    // called false, and a device answering from there is still placed. Six and
     // a half kilometres from each.
     @Test
     fun `the ground between two places is not false`() {
@@ -55,7 +55,7 @@ class FalsePlacesTest {
     /**
      * Nothing is known until the group says so.
      *
-     * The build carries no places at all, and a phone that has not reached the
+     * The build carries no places at all, and a device that has not reached the
      * database yet has none either: the rule then says nothing, which is what
      * it did before any place was ever named.
      */
@@ -65,7 +65,7 @@ class FalsePlacesTest {
         assertNull(whyAJump(null, fixAt(61.42565, 5.40377)))
     }
 
-    // The rule that needs no anchor: a phone switched on inside the spoofed
+    // The rule that needs no anchor: a device switched on inside the spoofed
     // area has no last position to compare its first answer with, and that
     // first answer is what every fix after it is believed against.
     @Test
@@ -106,9 +106,9 @@ class FalsePlacesTest {
         assertFalse(falsePlaceStands(named.first().copy(longitude = -181.0)))
     }
 
-    // A position written before the place was named or widened: the phone
+    // A position written before the place was named or widened: the device
     // answering from home a minute later is fifty kilometres off it, and that
-    // speed is the lie being measured against, not the phone.
+    // speed is the lie being measured against, not the device.
     @Test
     fun `a last position inside a false place measures nothing`() {
         val lake = fixAt(61.42565, 5.40377)
@@ -118,7 +118,7 @@ class FalsePlacesTest {
         assertNull(whyAJump(lake, home, falsePlaces = named))
     }
 
-    // The trap the stuck marker sat in: the phone lies still, its anchor was
+    // The trap the stuck marker sat in: the device lies still, its anchor was
     // set where the lie put it, and the first true answer is a drift from it.
     @Test
     fun `an anchor inside a false place holds nothing to it`() {

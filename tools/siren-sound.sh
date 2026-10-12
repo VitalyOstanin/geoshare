@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Rebuilds the SOS siren sound from tools/siren-sound/*.py: a mechanical-siren
 # piece in Morse SOS, with a channel-vocoded voice singing "I lost my
-# phone... come back to me" over it. See the docstrings of song.py and
+# device... come back to me" over it. See the docstrings of song.py and
 # vocal.py for how each layer works and why.
 #
 #   tools/siren-sound.sh

@@ -13,8 +13,8 @@ import java.util.Locale
 //
 // Whether a receiver hands them over at all is a property of the chipset, and
 // not one every chipset has. That is the first question here, and the answer
-// is worth writing down whichever way it goes: a phone that never had them is
-// a phone none of this can be asked of.
+// is worth writing down whichever way it goes: a device that never had them is
+// a device none of this can be asked of.
 
 /** How the top byte of a message type carries the system it belongs to. */
 private const val SYSTEM_BYTE = 8

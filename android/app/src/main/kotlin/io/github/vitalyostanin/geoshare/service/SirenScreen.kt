@@ -6,7 +6,7 @@ import androidx.core.content.getSystemService
 import java.time.Duration
 
 /**
- * Lights the screen for as long as the siren sounds: the phone found in a
+ * Lights the screen for as long as the siren sounds: the device found in a
  * drawer shows what is making the noise and the button that stops it, without
  * anybody having to press the power button first.
  *

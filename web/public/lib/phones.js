@@ -1,19 +1,19 @@
-// What the phones of a member say about themselves, apart from where they are.
+// What the devices of a member say about themselves, apart from where they are.
 //
-// A phone writes these into a document of its member's own, beside the
+// A device writes these into a document of its member's own, beside the
 // position rather than inside it: whether it is in touch, how charged it is
 // and whether it is on a cable are not a place, and the filter that holds a
 // position back when the answers look forged has nothing to say about them.
 
-/** How many phones of one member this page will follow. The rules say the same. */
+/** How many devices of one member this page will follow. The rules say the same. */
 const PHONES_PER_MEMBER = 10;
 
-/** As much of a name as fits on a card. The phones cut it to the same. */
+/** As much of a name as fits on a card. The devices cut it to the same. */
 const NAME_LIMIT = 40;
 
 /**
- * The phones in one document, by the id of each, with whatever in an entry is
- * not what a phone writes left out: the rules hold the number of phones and
+ * The devices in one document, by the id of each, with whatever in an entry is
+ * not what a device writes left out: the rules hold the number of devices and
  * not their fields.
  */
 export function phonesOf(data) {
@@ -46,14 +46,14 @@ function percent(value) {
 }
 
 /**
- * The grants as the rest of the page reads them: which phones of a member this
- * viewer may follow, and what those phones said about themselves.
+ * The grants as the rest of the page reads them: which devices of a member this
+ * viewer may follow, and what those devices said about themselves.
  *
- * The phones to follow are the ones the grant names together with the ones
+ * The devices to follow are the ones the grant names together with the ones
  * the member's own document names, and only where the grant could be read:
  * the grant is what says this viewer may watch, and an administrator reads the
- * phones of everybody without being allowed to see where any of them is. A
- * grant is still read for its list because a phone of an older build names
+ * devices of everybody without being allowed to see where any of them is. A
+ * grant is still read for its list because a device of an older build names
  * itself there and nowhere else.
  */
 export function combinedGrants(named, phones) {
@@ -71,13 +71,13 @@ export function combinedGrants(named, phones) {
 }
 
 /**
- * A position with what its phone said about itself laid over it, where the
- * phone said so after the position was written.
+ * A position with what its device said about itself laid over it, where the
+ * device said so after the position was written.
  *
  * The later of the two wins: a position carries the charge it was written
  * with, and while the answers are being thrown away that is the charge of an
- * hour ago. The moment the phone was last in touch moves on with it, which is
- * what keeps the marker of a phone that is working from going grey merely
+ * hour ago. The moment the device was last in touch moves on with it, which is
+ * what keeps the marker of a device that is working from going grey merely
  * because its position is being held back.
  */
 export function withPhones(positions, grants) {

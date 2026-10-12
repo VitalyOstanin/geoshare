@@ -25,18 +25,18 @@ import kotlinx.coroutines.launch
 import java.time.ZoneId
 
 /**
- * Told to the member whose phone is being looked for, over the map: its place
+ * Told to the member whose device is being looked for, over the map: its place
  * is open to the whole group until the search ends, and they may end it
  * themselves.
  *
- * Drawn once for every one of the viewer's own phones a search stands for,
- * and nowhere else: a member carrying two phones may have both looked for at
+ * Drawn once for every one of the viewer's own devices a search stands for,
+ * and nowhere else: a member carrying two devices may have both looked for at
  * once, and each is a fact of its own about being found.
  */
 @Composable
 fun SoughtBanner(
     search: Search,
-    /** The phone this search stands for, named however the viewer knows it. */
+    /** The device this search stands for, named however the viewer knows it. */
     phoneName: String,
     openedByName: String,
     onFound: suspend () -> Unit,

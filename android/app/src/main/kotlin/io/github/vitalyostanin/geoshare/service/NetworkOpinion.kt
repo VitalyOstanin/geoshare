@@ -21,14 +21,14 @@ private const val TAG = "geoshare.service"
 /**
  * How long the network is given to answer when Play Services will not.
  *
- * A tower answers in seconds and a scan of the Wi-Fi around the phone takes a
+ * A tower answers in seconds and a scan of the Wi-Fi around the device takes a
  * few more; half a minute is long enough for both and short enough to be over
  * before the next round of asking.
  */
 private val NETWORK_ANSWER_WAIT: Duration = Duration.ofSeconds(30)
 
 /**
- * What the towers and the Wi-Fi say about where the phone is, kept beside the
+ * What the towers and the Wi-Fi say about where the device is, kept beside the
  * satellites' own answer.
  */
 class NetworkOpinion(private val context: Context) {
@@ -46,16 +46,16 @@ class NetworkOpinion(private val context: Context) {
     private var askedAt: Instant? = null
 
     /**
-     * Keeps an answer the phone did not measure, for the rule that weighs the
+     * Keeps an answer the device did not measure, for the rule that weighs the
      * satellites against something they cannot reach.
      *
      * An assistance service answers over the network, from a list of the Wi-Fi
-     * around the phone rather than from the sky, and arrives under the name of
+     * around the device rather than from the sky, and arrives under the name of
      * the satellites like everything else the provider hands over. The name is
      * therefore not what it is taken by — the note is, and a note admitting
      * that nothing was measured is a note from beyond the transmitter's reach.
      *
-     * It matters most where there is no second opinion otherwise: a phone with
+     * It matters most where there is no second opinion otherwise: a device with
      * no SIM has no towers to ask, and these answers are the only ones it ever
      * gets that the spoofer did not write.
      */
@@ -73,7 +73,7 @@ class NetworkOpinion(private val context: Context) {
      *
      * The only rule here that has to run while everything looks right. A
      * transmitter drawing a false road slowly breaks no other rule — not the
-     * speed, not the width, not the sensors of a phone in a moving car — and
+     * speed, not the width, not the sensors of a device in a moving car — and
      * the first moment anything is visibly wrong is the moment the road ends,
      * hours later. So the second opinion is fetched on a clock rather than on
      * suspicion, and the cost of that is one scan every [secondOpinionEvery].
@@ -138,7 +138,7 @@ class NetworkOpinion(private val context: Context) {
      * What the towers and the Wi-Fi have to say when Play Services has nothing.
      *
      * Written down rather than used: the question being answered here is
-     * whether a phone whose satellites are jammed could be placed by its other
+     * whether a device whose satellites are jammed could be placed by its other
      * radios at all, and that has to be known before the collection is moved
      * onto them.
      */

@@ -6,12 +6,12 @@ import org.junit.Test
 import java.io.File
 
 /**
- * What the application asks the phone for, held to a list written down here.
+ * What the application asks the device for, held to a list written down here.
  *
  * Every permission below is used, and the manifest is read on every review to
  * check that it still is. What this test is for is the other direction: a
  * permission added later — by a library's manifest merged into ours, or by a
- * change that seemed to need it — arrives silently, and a phone that asks for
+ * change that seemed to need it — arrives silently, and a device that asks for
  * the microphone to share a position is the kind of thing nobody notices until
  * somebody else does. Changing the set here is a deliberate act.
  */
@@ -33,7 +33,7 @@ class ManifestTest {
         assertEquals(WANTED_QUERIES, namesOf("package"))
     }
 
-    // Anything exported can be started by any other application on the phone.
+    // Anything exported can be started by any other application on the device.
     // The launcher screen is meant to be; the service that holds the position
     // and the receiver that starts it after a restart are not.
     @Test

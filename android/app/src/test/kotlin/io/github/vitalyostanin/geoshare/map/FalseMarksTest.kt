@@ -11,7 +11,7 @@ import java.time.Instant
 class FalseMarksTest {
     private val now = Instant.parse("2026-09-27T12:00:00Z")
 
-    // The place two phones were put at during testing, drawn six kilometres
+    // The place two devices were put at during testing, drawn six kilometres
     // wide.
     private val lake = FalsePlace(61.11758, 5.38558, 6_000.0, "lake")
 
@@ -31,7 +31,7 @@ class FalseMarksTest {
         )
     }
 
-    // A phone under observation: written at 20:22, 3.3 km from the centre,
+    // A device under observation: written at 20:22, 3.3 km from the centre,
     // inside once the place was widened to six.
     @Test
     fun `the marker in the lake is marked once the place is wide enough`() {

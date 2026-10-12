@@ -28,7 +28,7 @@ elements.signInButton.addEventListener('click', async () => {
 /**
  * What to say when signing in did not happen.
  *
- * The answers the phone gives, less the one for a viewer who changed their
+ * The answers the device gives, less the one for a viewer who changed their
  * mind: leaving Google's page brings them back with no error at all. What is
  * left is the network not being there, this build pointed at a project that
  * does not want it, and something else.
@@ -242,7 +242,7 @@ elements.settingsClose.addEventListener('click', () => elements.settings.close()
 
 /**
  * The map on the whole screen, and back. Offered only where the browser has a
- * full screen to give: a phone's browser that has none would leave a button
+ * full screen to give: a device's browser that has none would leave a button
  * that does nothing. The mark follows the browser rather than the press, since
  * the browser leaves full screen on its own gestures too.
  */

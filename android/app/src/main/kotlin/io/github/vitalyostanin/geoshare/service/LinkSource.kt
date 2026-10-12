@@ -18,7 +18,7 @@ import java.time.Instant
  * Whether the database is answering, judged by the snapshots of the group
  * document (see [DatabaseLink]) and told again whenever that changes.
  *
- * The group document is the one every signed-in phone is on. A refusal is
+ * The group document is the one every signed-in device is on. A refusal is
  * the server answering, so it is read as a confirmation; the listener is
  * dropped by the client after one, and a link judged answering stays so.
  */

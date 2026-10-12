@@ -4,9 +4,9 @@ import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class CollectionModeTest {
-    // The grey on the map means "this phone has stopped saying where it is",
+    // The grey on the map means "this device has stopped saying where it is",
     // so no mode may take longer than that to say it again. A mode whose round
-    // of asking and waiting outlasts the half hour paints a working phone as a
+    // of asking and waiting outlasts the half hour paints a working device as a
     // broken one, and the person looking has no way to tell which it is.
     @Test
     fun `every mode that asks for a position writes one again before it goes grey`() {
@@ -29,9 +29,9 @@ class CollectionModeTest {
         assertTrue(CollectionMode.Viewing.writeDistance < CollectionMode.Standby.writeDistance)
     }
 
-    // A still phone keeps quiet longer than it collects, because every phone of
-    // the group is in this mode while anybody looks; but not longer than one
-    // claim lasts, or a watcher could look at a still phone and never see it
+    // A still device keeps quiet longer than it collects, because every device
+    // of the group is in this mode while anybody looks; but not longer than one
+    // claim lasts, or a watcher could look at a still device and never see it
     // say anything.
     @Test
     fun `a still phone somebody is watching speaks within one claim`() {

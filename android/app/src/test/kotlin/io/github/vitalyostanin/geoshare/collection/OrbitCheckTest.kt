@@ -14,7 +14,7 @@ import kotlin.math.sin
 /**
  * The measurements are made up from the published orbits of 15.09.2026: each
  * signal is given the flight it would have from a place, plus a receiver
- * clock error common to all of them. Made up from the place the phone is at,
+ * clock error common to all of them. Made up from the place the device is at,
  * they are an honest sky; made up from another place, they are a false one.
  */
 class OrbitCheckTest {

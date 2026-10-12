@@ -3,7 +3,7 @@
 /**
  * The members still looking, each of them named once.
  *
- * A member watching from two places — a phone in one hand and this page on a
+ * A member watching from two places — a device in one hand and this page on a
  * laptop — leaves two claims behind, and the strip has one person to name for
  * them. Claims that have run out are dropped here rather than as they arrive,
  * because nothing arrives at the moment one expires: the list is worked out
@@ -21,11 +21,11 @@ export function watchingMembers(watchers, now) {
 /**
  * The members to name besides this page, when this page is looking itself.
  *
- * The page holding the phones in the viewing mode used to go unnamed, and a
- * viewer who saw every phone of the group viewing with nobody listed could not
+ * The page holding the devices in the viewing mode used to go unnamed, and a
+ * viewer who saw every device of the group viewing with nobody listed could not
  * tell what was holding them. Named first and on its own; the viewer's own
  * account watching from somewhere else as well is folded into it, because
- * either claim holds the phones and one "you" says so.
+ * either claim holds the devices and one "you" says so.
  */
 export function watchingBesides(members, ownMemberId, pageLooking) {
     return pageLooking ? members.filter((memberId) => memberId !== ownMemberId) : members;

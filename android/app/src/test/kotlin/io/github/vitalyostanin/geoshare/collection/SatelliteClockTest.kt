@@ -7,7 +7,7 @@ import org.junit.Assert.assertTrue
 import org.junit.Test
 
 /**
- * The numbers are a phone's own raw measurements, one pair of epochs ten
+ * The numbers are a device's own raw measurements, one pair of epochs ten
  * seconds apart: GPS 11 and GPS 20 as the receiver reported them, satellite
  * time, receiver clock and clock since boot alike.
  */
@@ -34,7 +34,7 @@ class SatelliteClockTest {
     }
 
     // What the real pair actually came to: twenty-two microseconds against
-    // the receiver's clock and four milliseconds against the phone's, which
+    // the receiver's clock and four milliseconds against the device's, which
     // is the epoch's stamp rather than the radio.
     @Test
     fun `the real pair is microseconds from the receiver and milliseconds from the phone`() {
@@ -212,7 +212,7 @@ class SatelliteClockTest {
         assertEquals(2, said.size)
         assertEquals(listOf(20), parted(said).map { it.signal.id })
 
-        // Two milliseconds is the receiver's clock, not the phone's: only a
+        // Two milliseconds is the receiver's clock, not the device's: only a
         // signal past a tenth of a second is held against the count since the
         // boot, and only that one leaves a fix out.
         assertFalse(leftThePhonesClock(said))

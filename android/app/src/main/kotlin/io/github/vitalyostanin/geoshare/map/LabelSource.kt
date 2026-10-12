@@ -22,12 +22,12 @@ import org.json.JSONObject
 private const val TAG = "geoshare.labels"
 
 /**
- * The copy of this member's names kept on the phone.
+ * The copy of this member's names kept on the device.
  *
  * The names are in the database, and the database answers a second or a
  * minute after the screen is up, or not at all without a network: without the
  * copy the markers would be called by their models until it did. The same
- * reason the false places are kept on the phone, and the same terms: a failure
+ * reason the false places are kept on the device, and the same terms: a failure
  * is logged and costs one subscription's worth of waiting.
  */
 class LabelCache(context: Context) {
@@ -69,8 +69,8 @@ class LabelCache(context: Context) {
 }
 
 /**
- * This member's names for the others: first the copy on the phone, then the
- * document, and the document again whenever it changes — on this phone or on
+ * This member's names for the others: first the copy on the device, then the
+ * document, and the document again whenever it changes — on this device or on
  * the member's other one, or on the page.
  */
 fun ownLabels(memberId: String, cache: LabelCache, connection: GroupConnection): Flow<Labels> =
@@ -93,7 +93,7 @@ fun ownLabels(memberId: String, cache: LabelCache, connection: GroupConnection):
 
         awaitClose { subscription.remove() }
     }.onEach { cache.write(memberId, it) }
-        // Refused outright, the phone is out of the group, and the names it gave
+        // Refused outright, the device is out of the group, and the names it gave
         // people there have no one left to name.
         .comingBack("labels", forgetting = { Labels() })
         .onStart { emit(cache.read(memberId)) }
@@ -105,11 +105,11 @@ enum class LabelKind(val field: String) {
 }
 
 /**
- * Gives a phone or a person a name for this member alone, or takes it away
+ * Gives a device or a person a name for this member alone, or takes it away
  * when [name] is null.
  *
  * Merged into the one map, so that the other names stay as they were. The
- * address of a phone has a dot in it, which a merge takes as it is: only a
+ * address of a device has a dot in it, which a merge takes as it is: only a
  * field path written as a string splits on dots.
  */
 suspend fun writeLabel(
@@ -126,10 +126,10 @@ suspend fun writeLabel(
 }
 
 /**
- * Gives this phone a name everybody who sees it sees, or takes it away when
+ * Gives this device a name everybody who sees it sees, or takes it away when
  * [name] is null.
  *
- * Into the phone's own entry of its member's document, beside what it says
+ * Into the device's own entry of its member's document, beside what it says
  * about itself: that writer merges its fields without this one, so neither
  * undoes the other.
  */

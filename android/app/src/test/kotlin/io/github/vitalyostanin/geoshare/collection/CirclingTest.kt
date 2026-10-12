@@ -26,7 +26,7 @@ class CirclingTest {
             )
         }
 
-    // Ten answers of the false road, as a phone wrote them down: a lap of one
+    // Ten answers of the false road, as a device wrote them down: a lap of one
     // thousand two hundred metres every three and a half minutes, held for the
     // better part of an hour. Every pair of them passes the speed rule.
     private val falseRoad =
@@ -80,7 +80,7 @@ class CirclingTest {
     }
 
     /**
-     * [run] as a phone whose wall clock was set a minute and a half forwards
+     * [run] as a device whose wall clock was set a minute and a half forwards
      * halfway through it would carry it, with the count since boot running on.
      */
     private fun clockSetHalfway(run: List<Fix>): List<Fix> = run.mapIndexed { index, fix ->

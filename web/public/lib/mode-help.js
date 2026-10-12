@@ -9,7 +9,7 @@ import { WORDS } from './words.js';
  *
  * Not the order of the enumeration, which is the order they happen to be
  * written in. A member opening this has just seen one name on a card and wants
- * to know where it stands among the others, and "how much is this phone doing"
+ * to know where it stands among the others, and "how much is this device doing"
  * is the axis that answers it.
  */
 const HELP_ORDER = ['Viewing', 'Moving', 'Standby', 'Night', 'Idle'];

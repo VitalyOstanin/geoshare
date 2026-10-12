@@ -1,10 +1,10 @@
-// The group looking for a phone, out of the searches lying in the database.
+// The group looking for a device, out of the searches lying in the database.
 //
-// While a search stands, the rules open that one phone's place to everybody
+// While a search stands, the rules open that one device's place to everybody
 // in the group; these are the pieces of the page that say so. A search is
 // addressed the same way a position is, `{uid}.{deviceId}`, so a member with
-// two phones lost has two searches, and the family may look for several
-// phones of several members at once. The end is counted from the last
+// two devices lost has two searches, and the family may look for several
+// devices of several members at once. The end is counted from the last
 // renewal by the server's clock, which is what the rules count from too, so
 // the page and the rules agree on when the place closes.
 
@@ -19,7 +19,7 @@ const HOUR_MS = 60 * 60 * 1000;
 /**
  * One search as the page holds it, out of what the document says, or null
  * for a document that is not one: an id without a dot is an older, per-member
- * search, no longer written, and is ignored rather than misread as a phone's.
+ * search, no longer written, and is ignored rather than misread as a device's.
  *
  * The times are read the way the store hands them over, in milliseconds; a
  * renewal written a moment ago carries the server's estimate until the server
@@ -43,7 +43,7 @@ export function searchOf(phoneId, data) {
     return {
         phoneId,
         memberId: phoneId.slice(0, phoneId.indexOf('.')),
-        // As the administrator saw the phone when they opened or renewed the
+        // As the administrator saw the device when they opened or renewed the
         // search: what a viewer with nothing else to call it by is told.
         phoneName: typeof data.phoneName === 'string' ? data.phoneName : null,
         openedBy: data.openedBy,
@@ -54,7 +54,7 @@ export function searchOf(phoneId, data) {
 }
 
 /**
- * The searches still standing, by phone.
+ * The searches still standing, by device.
  *
  * One that has run out is dropped here rather than when it is deleted:
  * nothing deletes it, and nothing arrives at the moment it runs out, so the
@@ -65,11 +65,11 @@ export function standingSearches(searches, now) {
 }
 
 /**
- * The positions with the search for their own phone laid on them, as
- * `sought`, so that the pin, the strip and the card mark exactly the phone
+ * The positions with the search for their own device laid on them, as
+ * `sought`, so that the pin, the strip and the card mark exactly the device
  * looked for and none of its owner's others.
  *
- * A phone open only because of a search is often one this viewer has no
+ * A device open only because of a search is often one this viewer has no
  * grant for at all, so its name falls back to what the search remembers —
  * the same way a position's own name already wins over it, and a label of
  * this viewer's own wins over both.

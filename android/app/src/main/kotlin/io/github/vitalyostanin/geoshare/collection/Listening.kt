@@ -6,13 +6,13 @@ import java.time.Duration
 //
 // A subscription to the database is a standing question, and a refused one
 // stops being asked: the client drops the listener and answers nothing more,
-// however long the phone runs. That is what happened when the rules of the
-// project did not yet know the collection of false places — all three phones
-// were refused, the rules were deployed an hour later, and not one phone
+// however long the device runs. That is what happened when the rules of the
+// project did not yet know the collection of false places — all three devices
+// were refused, the rules were deployed an hour later, and not one device
 // noticed until its application was started again by hand.
 //
 // So a refusal is treated as a pause rather than as an end. What has to be
-// chosen is how long the pause is: too short and a phone whose permission is
+// chosen is how long the pause is: too short and a device whose permission is
 // genuinely gone asks all day, too long and a permission handed back sits
 // unused. The answer here is both — quick at first, and slower every time,
 // up to a ceiling it keeps.
@@ -33,7 +33,7 @@ val LISTEN_AGAIN_AT_MOST: Duration = Duration.ofMinutes(5)
  * How many doublings are worth counting.
  *
  * Past the ceiling the arithmetic says the same thing every time, and the
- * doubling itself would overflow long before the phone had been running that
+ * doubling itself would overflow long before the device had been running that
  * long.
  */
 private const val DOUBLINGS_COUNTED = 16

@@ -10,7 +10,7 @@ class BootReceiverTest {
         assertEquals("boot", whatStoppedIt("android.intent.action.BOOT_COMPLETED"))
     }
 
-    // The case that cost two phones several hours of silence: installing a
+    // The case that cost two devices several hours of silence: installing a
     // build stops every process of the package, and nothing was listening.
     @Test
     fun `an application that has just been updated brings the service back`() {

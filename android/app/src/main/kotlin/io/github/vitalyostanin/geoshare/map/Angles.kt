@@ -9,7 +9,7 @@ private const val FULL_TURN = 360.0
  * The same angle, written as the turn of at most half a circle either way.
  *
  * Arithmetic rather than a loop that takes the turn off step by step: the
- * number comes from another member's document, and a phone that writes a
+ * number comes from another member's document, and a device that writes a
  * degree count in the quadrillions would have the drawing thread here for the
  * rest of the afternoon. The page does the same thing the same way.
  */
@@ -24,7 +24,7 @@ fun wrapDegrees(degrees: Double): Double {
 /**
  * Whether a pair of coordinates is a place on the globe.
  *
- * Written by another member's phone, so it is worth as much as that phone: a
+ * Written by another member's device, so it is worth as much as that device: a
  * missing field, a number no globe has room for and a value that is not a
  * number at all all arrive the same way, and a member left off the map is a
  * better answer than a map that cannot be drawn.

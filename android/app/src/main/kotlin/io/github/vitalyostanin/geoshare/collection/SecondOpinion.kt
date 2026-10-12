@@ -8,11 +8,11 @@ import java.time.Instant
 // Every other rule here compares a position with an earlier position, and a
 // transmitter drawing a road defeats all of them at once by drawing it slowly:
 // a circle a kilometre across, walked at the speed of a car, passes the speed
-// rule, passes the width, passes the sensors of a phone in a moving car, and
+// rule, passes the width, passes the sensors of a device in a moving car, and
 // never leaves the false place it was drawn in.
 //
 // What it cannot do is reach the towers. They are laid out by an operator and
-// answered from a database; the Wi-Fi around the phone is a list of names the
+// answered from a database; the Wi-Fi around the device is a list of names the
 // spoofer did not put there. So the two radios can be asked the same question
 // at the same moment, and the answer that matters is not either position but
 // the distance between them: one of the two is wrong, and it is not the one
@@ -20,7 +20,7 @@ import java.time.Instant
 //
 // Twice on the same day this was the only rule that would have spoken. At
 // 16:29 the satellites drew a circle of 1.2 km, eight kilometres from where
-// the phone was; at 17:53 they placed it fifty-five kilometres away, while the
+// the device was; at 17:53 they placed it fifty-five kilometres away, while the
 // network named the flat it was standing in.
 
 /**
@@ -41,7 +41,7 @@ const val SECOND_OPINION_MARGIN: Double = 3.0
  *
  * A kilometre. A tower answer that says fifty metres is not accurate to fifty
  * metres — the width of a network fix describes the database entry rather than
- * the phone — and without a floor an optimistic width of that kind would
+ * the device — and without a floor an optimistic width of that kind would
  * accuse the satellites of lying about a street corner.
  */
 const val SECOND_OPINION_FLOOR_METRES: Double = 1_000.0
@@ -52,7 +52,7 @@ const val SECOND_OPINION_FLOOR_METRES: Double = 1_000.0
  *
  * Five minutes, the same as an answer from the towers is allowed to be old
  * elsewhere. The gap does not have to be small because it is paid for rather
- * than ignored: whatever a phone could have travelled in it is added to what
+ * than ignored: whatever a device could have travelled in it is added to what
  * the two answers are allowed to differ by, so a wide gap does not accuse the
  * satellites, it merely stops proving anything.
  */
@@ -62,7 +62,7 @@ val SECOND_OPINION_TOGETHER: Duration = NETWORK_ANSWER_STALE
  * How often the other radios are asked while the satellites are answering
  * normally.
  *
- * Five minutes. Asking costs a scan of the Wi-Fi around the phone, and this is
+ * Five minutes. Asking costs a scan of the Wi-Fi around the device, and this is
  * the one rule that has to run while nothing at all looks wrong — a false road
  * drawn slowly breaks no other rule, so waiting for another rule to fire would
  * mean never asking. Paired with [SECOND_OPINION_TOGETHER] so that an answer
@@ -75,7 +75,7 @@ val SECOND_OPINION_ASKED_EVERY: Duration = Duration.ofMinutes(5)
  *
  * Never more often than the mode itself asks. A scan of the Wi-Fi every five
  * minutes beside a position every twenty spends four times what the night
- * mode was chosen to spend, and most of what this application costs a phone
+ * mode was chosen to spend, and most of what this application costs a device
  * lying on a table is exactly those scans.
  */
 fun secondOpinionEvery(mode: CollectionMode): Duration =
@@ -113,19 +113,19 @@ fun secondOpinionDue(
 }
 
 /**
- * Whether something the phone did not measure contradicts the satellites about
+ * Whether something the device did not measure contradicts the satellites about
  * where it is.
  *
  * What counts as that something is decided by the note rather than by the name
  * of the provider: an answer from the towers and an answer an assistance
- * service worked out from the Wi-Fi around the phone are both computed
+ * service worked out from the Wi-Fi around the device are both computed
  * somewhere the transmitter cannot reach, and the second of them arrives under
  * the name of the satellites. The one thing refused here is an answer that was
  * measured off the sky after all.
  *
  * Null rather than false wherever the question cannot be asked: nothing to
  * compare against, an answer too old to be about this moment, an answer so
- * wide it places the phone in a region rather than a place, or an answer that
+ * wide it places the device in a region rather than a place, or an answer that
  * turns out to be the satellites' own under another name. The distinction
  * matters because the caller reports what was asked as well as what was
  * answered, and a rule that has nothing to compare is not a rule that found
@@ -142,7 +142,7 @@ fun secondOpinion(
     }
 
     // The satellites again, wearing the name of the network. The store of last
-    // known places is shared, and on these phones it answers for the network
+    // known places is shared, and on these devices it answers for the network
     // with whatever was last put there — which, under a false signal, is the
     // false position itself. Agreement with it would mean nothing and
     // disagreement even less.
@@ -167,10 +167,10 @@ fun secondOpinion(
     val apart = distanceMetres(satellites, network)
     val doubt = (satellites.accuracyMetres ?: 0.0) + (network.accuracyMetres ?: 0.0)
 
-    // What the phone could honestly have done between the two questions, at
+    // What the device could honestly have done between the two questions, at
     // the fastest the rules here believe anybody travels. Paid rather than
     // assumed away: it is what lets the two answers be minutes apart without
-    // a phone that really did travel being called a liar for it.
+    // a device that really did travel being called a liar for it.
     val travelled = PLAUSIBLE_SPEED_MPS * between.toMillis() / MILLIS_IN_A_SECOND
     val allowed = doubt * SECOND_OPINION_MARGIN + travelled
     val tooFar = apart > SECOND_OPINION_FLOOR_METRES && apart > allowed
@@ -183,7 +183,7 @@ fun secondOpinion(
 }
 
 /**
- * Whether something the phone did not measure puts it where the satellites say
+ * Whether something the device did not measure puts it where the satellites say
  * it is.
  *
  * Not the opposite of [secondOpinion] disagreeing. That one looks for an
@@ -221,7 +221,7 @@ data class SecondOpinion(
     val apartMetres: Double,
     /**
      * How far apart they were allowed to be: the doubt in the two of them
-     * together, with a margin, plus whatever the phone could have travelled
+     * together, with a margin, plus whatever the device could have travelled
      * between the questions.
      */
     val allowedMetres: Double,

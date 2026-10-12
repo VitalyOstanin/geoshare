@@ -7,10 +7,10 @@ private const val KEY_JUMPS = "filterJumps"
 private const val KEY_FORGET = "forgetPlace"
 
 /**
- * Whether this phone leaves out the positions it cannot have reached.
+ * Whether this device leaves out the positions it cannot have reached.
  *
  * Off unless the member says otherwise: the filter throws answers away, and a
- * phone that quietly threw away a real position would be worse than one that
+ * device that quietly threw away a real position would be worse than one that
  * showed a wrong one. Where the satellites are jammed the answer is different,
  * and that is the member's call rather than this file's.
  */
@@ -22,7 +22,7 @@ class JumpFilterSetting(context: Context) {
         set(value) = store.edit().putBoolean(KEY_JUMPS, value).apply()
 
     /**
-     * Asks the collecting service to forget where it thinks the phone is.
+     * Asks the collecting service to forget where it thinks the device is.
      *
      * A flag rather than a call: the settings screen and the service are two
      * processes of the same application that never speak directly, and the

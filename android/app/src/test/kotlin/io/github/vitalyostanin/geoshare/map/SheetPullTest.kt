@@ -22,7 +22,7 @@ class SheetPullTest {
         )
 
     // A card that fits scrolls nothing of its own, so the whole drag is left
-    // over for the sheet, the way it reaches it on the phone.
+    // over for the sheet, the way it reaches it on the device.
     private fun pullBody(vararg deltas: Float) = runBlocking {
         deltas.forEach {
             pull.connection.onPostScroll(Offset.Zero, Offset(0f, it), NestedScrollSource.UserInput)

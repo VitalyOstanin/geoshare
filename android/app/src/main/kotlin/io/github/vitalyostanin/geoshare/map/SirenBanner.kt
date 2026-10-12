@@ -26,7 +26,7 @@ import java.time.Instant
 
 /**
  * Told to everyone in the group, over the map: a caller has just switched on
- * their phone's siren, and it is theirs to switch off again before the
+ * their device's siren, and it is theirs to switch off again before the
  * twenty-second window the server tracks runs out.
  */
 @Composable

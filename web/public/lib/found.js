@@ -1,11 +1,11 @@
-// How a phone arrived at its position, said in words a member can read.
+// How a device arrived at its position, said in words a member can read.
 
 import { WORDS } from './words.js';
 
 /**
  * What each way of arriving at a position is called on a card.
  *
- * The document carries the word the phone wrote — `Satellites`, `Assistance` —
+ * The document carries the word the device wrote — `Satellites`, `Assistance` —
  * and the card names it in the language the page is speaking. The name of the
  * provider is not what is written there and not what is shown: an answer
  * arrives under the name of the satellites having been sent over the network
@@ -41,7 +41,7 @@ export function foundText(found) {
  * What each reason for leaving an answer out is called on a card.
  *
  * The same arrangement as the sources above: the document carries the word the
- * phone wrote — an entry of `JumpReason`, or `Source` for an answer whose
+ * device wrote — an entry of `JumpReason`, or `Source` for an answer whose
  * source the member switched off — and each client says it in its own
  * language. The Android client keeps the same names.
  */

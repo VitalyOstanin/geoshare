@@ -10,9 +10,9 @@ import kotlin.math.abs
  * the two skies the logs hold are told apart by it.
  *
  * The numbers are not invented. The block that moves together is the GPS band
- * of the phone under a false signal in the night, twenty-one seconds apart:
+ * of the device under a false signal in the night, twenty-one seconds apart:
  * nine satellites, none of them moving more than three tenths of a decibel
- * and all of them the same way. The one that moves apart is the phone in
+ * and all of them the same way. The one that moves apart is the device in
  * another part of the city, the same twenty-one seconds: eleven satellites,
  * one of them gaining seven decibels while another loses two.
  */

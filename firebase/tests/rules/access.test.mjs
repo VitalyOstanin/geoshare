@@ -16,8 +16,8 @@ describe('watch', () => {
         await assertSucceeds(setDoc(watchOf(db, ALICE), watchFrom(ALICE)));
     });
 
-    // A member looking at the map on one phone must not clear the marker the
-    // other phone of the same account had just written.
+    // A member looking at the map on one device must not clear the marker the
+    // other device of the same account had just written.
     it('each phone of a member marks itself', async () => {
         const db = testEnv.authenticatedContext(ALICE).firestore();
 
@@ -49,7 +49,7 @@ describe('watch', () => {
 
     // The claim is worth three minutes from the moment the server wrote it.
     // Dated by the viewer instead, it would be worth whatever their clock
-    // says: years, if they cared to, and every phone of the group would spend
+    // says: years, if they cared to, and every device of the group would spend
     // its battery in the fifteen-second mode for as long.
     it("a claim dated by the viewer's own clock is refused", async () => {
         const db = testEnv.authenticatedContext(ALICE).firestore();
@@ -94,7 +94,7 @@ describe('profiles', () => {
     });
 
     // The shape the builds before the split wrote: everybody in the group read
-    // this document, so a member's phones and the people they shared with were
+    // this document, so a member's devices and the people they shared with were
     // on show to members who had been given nothing. Both now live in the
     // grant, and the profile refuses them.
     it('a profile carrying who the member shares with is refused', async () => {
@@ -147,7 +147,7 @@ describe('profiles', () => {
         );
     });
 
-    // The page and the phone read these fields and show them; a document that
+    // The page and the device read these fields and show them; a document that
     // carries anything else is a document neither client asked for.
     it('a profile with a field of its own is refused', async () => {
         const db = testEnv.authenticatedContext(ALICE).firestore();
@@ -175,7 +175,7 @@ describe('profiles', () => {
         );
     });
 
-    // Every member's phone fetches it: a picture on a server the member
+    // Every member's device fetches it: a picture on a server the member
     // chose would tell that server where each of them is online from.
     it('a picture kept anywhere but the account host is refused', async () => {
         const db = testEnv.authenticatedContext(ALICE).firestore();
@@ -227,7 +227,7 @@ describe('grants', () => {
     });
 
     // What a permission is worth beyond the positions themselves: the reader
-    // learns which phones to subscribe to, because the collection of positions
+    // learns which devices to subscribe to, because the collection of positions
     // cannot be listed.
     it('a reader with a permission reads the grant', async () => {
         const db = testEnv.authenticatedContext(ALICE).firestore();
@@ -236,7 +236,7 @@ describe('grants', () => {
     });
 
     // The leak this collection closes: a member of the household who has been
-    // given nothing learns nothing — not how many phones the other carries,
+    // given nothing learns nothing — not how many devices the other carries,
     // and not who else they share with.
     it('a member without a permission reads nothing of the grant', async () => {
         const db = testEnv.authenticatedContext(ALICE).firestore();
@@ -258,7 +258,7 @@ describe('grants', () => {
         await assertFails(getDoc(grantOf(db, BOB)));
     });
 
-    // Listing would hand every member the whole household's phones in one
+    // Listing would hand every member the whole household's devices in one
     // read, which is exactly what the split was made to prevent.
     it('a member cannot list the grants', async () => {
         const db = testEnv.authenticatedContext(ALICE).firestore();
@@ -317,8 +317,8 @@ describe('grants', () => {
     });
 });
 
-// The phones a member carries, apart from whom they share with. The
-// administrator sees the phones; only the people given a permission see them
+// The devices a member carries, apart from whom they share with. The
+// administrator sees the devices; only the people given a permission see them
 // and the positions too.
 describe('devices', () => {
     const devicesOf = (db, uid) => doc(db, `groups/${GROUP}/devices/${uid}`);
@@ -355,7 +355,7 @@ describe('devices', () => {
         await assertFails(getDoc(devicesOf(db, BOB)));
     });
 
-    // What the administrator is shown in place of the grant: the phones and
+    // What the administrator is shown in place of the grant: the devices and
     // whether they are in touch, not whom they are shared with.
     it('the administrator reads the phones without a permission', async () => {
         await plantAnAdministrator();
@@ -390,8 +390,8 @@ describe('devices', () => {
         await assertFails(setDoc(devicesOf(db, ALICE), many));
     });
 
-    // Nine phones written before, the tenth writing itself in: the write a
-    // member with ten phones makes.
+    // Nine devices written before, the tenth writing itself in: the write a
+    // member with ten devices makes.
     it('the tenth phone, written as a phone writes itself, is taken', async () => {
         const nine = Object.fromEntries(
             Array.from({ length: 9 }, (unused, index) => [`phone-${index}`, { model: 'x' }]),
@@ -454,7 +454,7 @@ describe('devices', () => {
     });
 });
 
-// What a member calls the phones and the people of the group, for themselves.
+// What a member calls the devices and the people of the group, for themselves.
 describe('labels', () => {
     const labelsOf = (db, uid) => doc(db, `groups/${GROUP}/labels/${uid}`);
     const someLabels = {

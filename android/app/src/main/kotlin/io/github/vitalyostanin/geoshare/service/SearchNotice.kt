@@ -19,7 +19,7 @@ import java.time.Instant
 private val SEARCH_NOTICE_REFRESH: Duration = Duration.ofMinutes(1)
 
 /**
- * Shows the notification that says this very phone is being looked for,
+ * Shows the notification that says this very device is being looked for,
  * for as long as the search stands, and takes it down once it does not.
  *
  * A search ending is nothing arriving from the database: nothing deletes

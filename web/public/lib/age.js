@@ -17,7 +17,7 @@ const DAY_MS = 24 * HOUR_MS;
  * Returns the unit and the whole count in it.
  *
  * A clock running ahead of ours gives a negative age; that is somebody else's
- * phone being wrong, and saying "just now" is closer to the truth than saying
+ * device being wrong, and saying "just now" is closer to the truth than saying
  * anything about the future.
  */
 export function positionAge(knownAt, now) {
@@ -43,12 +43,12 @@ export function isStale(knownAt, now) {
 }
 
 /**
- * Whether the phone is still reaching the server but has had no position it
+ * Whether the device is still reaching the server but has had no position it
  * believed for as long as it takes a marker to go grey.
  *
  * That is a marker stuck where it last was: every answer since has been left
  * out, and the card should say so rather than leave the viewer to compare two
- * clock times. A phone gone quiet is not stuck, only old, and the grey already
+ * clock times. A device gone quiet is not stuck, only old, and the grey already
  * says that. The same mark as the grey on purpose, so that the two clients
  * need no second number to agree on.
  */
@@ -57,13 +57,13 @@ export function isStuck(positionAt, knownAt, now) {
 }
 
 /**
- * The two moments a position carries: when the phone last reached the server,
+ * The two moments a position carries: when the device last reached the server,
  * and when it last had a position it believed.
  *
- * They part whenever a phone says a position again — which is what a phone
+ * They part whenever a device says a position again — which is what a device
  * does while its satellites are being spoofed and it has nothing new it
  * believes. The stamp is the one clock every member shares, so it is what the
- * news is dated by, and the position is capped at it: the rest of a phone
+ * news is dated by, and the position is capped at it: the rest of a device
  * clock running ahead would be somebody's watch rather than the age of
  * anything.
  *

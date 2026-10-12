@@ -140,15 +140,15 @@ export const state = {
     accountProfiles: null,
     // The latest touch of any profile seen so far, to tell a later one from a repeat.
     profileChange: null,
-    // What this viewer calls the phones and the people, for themselves.
+    // What this viewer calls the devices and the people, for themselves.
     labels: NO_LABELS,
     stopLabels: null,
     // The name being asked for: which of the two maps, and under what key.
     naming: null,
-    // What the members give out, by member: the phones to subscribe to, and
+    // What the members give out, by member: the devices to subscribe to, and
     // nothing at all for a member who shares with somebody else.
     grants: new Map(),
-    // The positions as the database holds them, before what their phones said
+    // The positions as the database holds them, before what their devices said
     // about themselves since is laid over them.
     written: [],
     view: null,
@@ -169,7 +169,7 @@ export const state = {
     // the clock rather than with an answer from the database.
     watchers: [],
     // Whether this page itself is claiming to look, and so holding the
-    // phones of the group in the viewing mode.
+    // devices of the group in the viewing mode.
     pageLooking: false,
     stopWatchers: null,
     // How many of the documents the profiles name are being refused to us. A
@@ -220,7 +220,7 @@ export const state = {
     // read.
     roster: null,
     stopRoster: null,
-    // Where a false signal is known to put phones: a position there is drawn
+    // Where a false signal is known to put devices: a position there is drawn
     // grey and measured from by nobody.
     falsePlaces: [],
     stopFalsePlaces: null,
@@ -233,33 +233,33 @@ export const state = {
     // What went right and is worth one line: the invitation reaching the
     // clipboard, which leaves nothing on screen to show for itself.
     groupSaid: null,
-    // The group's searches by phone, as the database holds them, standing or
+    // The group's searches by device, as the database holds them, standing or
     // run out: which of them still stand is worked out against the clock.
     searches: new Map(),
     stopSearches: null,
     // The moment the next standing search runs out, when nothing arrives to
     // say so.
     searchEnds: null,
-    // The search being opened or renewed in the window: which phone, whose,
+    // The search being opened or renewed in the window: which device, whose,
     // the name it goes by, whether this renews a standing one, and the
     // length picked.
     searchAsk: null,
-    // What the siren of every phone shown with a siren button says, followed
+    // What the siren of every device shown with a siren button says, followed
     // while the panel showing it is open: a call rung from another screen, or
     // before this page was loaded, is sounding all the same, and whoever may
-    // ring it has to see so. The phones drawn with a button this time round,
+    // ring it has to see so. The devices drawn with a button this time round,
     // the siren of each and the subscription that brings it.
     sirensShown: new Set(),
     sirens: new Map(),
     sirenWatches: new Map(),
     sirenTick: null,
-    // The request to forget its place of every phone shown with a siren
+    // The request to forget its place of every device shown with a siren
     // button, which has a reset button beside it, and the subscription that
     // brings it: followed for the same reason, a request made from another
     // screen shows on the row all the same.
     resets: new Map(),
     resetWatches: new Map(),
-    // The call being asked about in the window: whose, their phones, the one
+    // The call being asked about in the window: whose, their devices, the one
     // picked.
     sirenAsk: null,
 };

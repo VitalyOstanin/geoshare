@@ -2,7 +2,7 @@
 //
 // The same two rules the application holds, written again here rather than
 // fetched from it: the two clients share a database and nothing else, and a
-// width that read one way on a phone and another in a browser would be read as
+// width that read one way on a device and another in a browser would be read as
 // two different answers.
 
 import { WORDS, SPEAKING } from './words.js';

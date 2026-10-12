@@ -1,4 +1,4 @@
-// Searches, sirens, forgetting a phone and the private names a member gives
+// Searches, sirens, forgetting a device and the private names a member gives
 // the others. Split out of `store.js`, whose `store` and `currentGroup` this
 // imports rather than keeping its own copies.
 
@@ -23,7 +23,7 @@ import { sirenOf } from './sirens.js';
 import { currentGroup, store } from './store.js';
 
 /**
- * The places this group says a false signal puts phones at, and again
+ * The places this group says a false signal puts devices at, and again
  * whenever an administrator names or moves one.
  *
  * A refusal is read as no places at all: the list only greys markers, and a
@@ -38,8 +38,8 @@ export function watchFalsePlaces(onPlaces) {
 }
 
 /**
- * The searches of this group, by phone, and again whenever an administrator
- * opens, renews or ends one, or the member whose phone it is says they were
+ * The searches of this group, by device, and again whenever an administrator
+ * opens, renews or ends one, or the member whose device it is says they were
  * found.
  *
  * The server's times come as its estimate while a write is on its way, so the
@@ -73,10 +73,10 @@ export function watchSearches(onSearches) {
 }
 
 /**
- * Opens a search for one phone: its place is open to the whole group for the
+ * Opens a search for one device: its place is open to the whole group for the
  * hours chosen. Written whole, so that one opened again after an earlier one
  * ran out starts from now and names whoever opened it this time. [phoneName]
- * is the phone's name as this administrator sees it, left out where there is
+ * is the device's name as this administrator sees it, left out where there is
  * none, since the rules refuse anything but a string for a field they hold.
  */
 export function openSearch(phoneId, adminId, hours, phoneName) {
@@ -94,7 +94,7 @@ export function openSearch(phoneId, adminId, hours, phoneName) {
 
 /**
  * Moves the end of a standing search on to the hours chosen from now, keeping
- * who opened it and when, and refreshing the phone's name to what this
+ * who opened it and when, and refreshing the device's name to what this
  * administrator sees now.
  */
 export function renewSearch(phoneId, adminId, hours, phoneName) {
@@ -108,7 +108,7 @@ export function renewSearch(phoneId, adminId, hours, phoneName) {
     );
 }
 
-/** Ends a search: the phone was found, and its place closes to all but whom it is shared with. */
+/** Ends a search: the device was found, and its place closes to all but whom it is shared with. */
 export function endSearch(phoneId) {
     return withinAnswerWait(
         deleteDoc(doc(store, 'groups', currentGroup(), 'searches', phoneId)),
@@ -116,8 +116,8 @@ export function endSearch(phoneId) {
 }
 
 /**
- * A phone's siren, and again whenever it changes. There is one document per
- * phone, so a refusal — or a phone that was never called — is read as no
+ * A device's siren, and again whenever it changes. There is one document per
+ * device, so a refusal — or a device that was never called — is read as no
  * siren, not as an error to show.
  */
 export function watchSiren(phoneId, onSiren) {
@@ -146,7 +146,7 @@ export function watchSiren(phoneId, onSiren) {
 }
 
 /**
- * Calls a phone's siren. Written whole rather than merged, since the rule
+ * Calls a device's siren. Written whole rather than merged, since the rule
  * allows only these two fields on a call: a document left over from an
  * earlier one wipes its `heardAt` and `stopped*` along with it, so this call
  * starts from a clean one, as ringing again should.
@@ -160,7 +160,7 @@ export function callSiren(phoneId, callerId) {
     );
 }
 
-/** Follows a phone's request to forget its place; null while nobody has asked. */
+/** Follows a device's request to forget its place; null while nobody has asked. */
 export function watchReset(phoneId, onReset) {
     return onSnapshot(
         doc(store, 'groups', currentGroup(), 'resets', phoneId),
@@ -186,7 +186,7 @@ export function watchReset(phoneId, onReset) {
 }
 
 /**
- * Asks a phone to forget its place. Written whole, as a call is: the rule
+ * Asks a device to forget its place. Written whole, as a call is: the rule
  * allows only these two fields on a request, and a `doneAt` left over from
  * the last one goes with it.
  */
@@ -199,7 +199,7 @@ export function askReset(phoneId, askerId) {
     );
 }
 
-/** Stops a phone's siren, naming whoever stopped it. */
+/** Stops a device's siren, naming whoever stopped it. */
 export function stopSiren(phoneId, stopperId) {
     return withinAnswerWait(
         updateDoc(doc(store, 'groups', currentGroup(), 'sirens', phoneId), {
@@ -210,11 +210,11 @@ export function stopSiren(phoneId, stopperId) {
 }
 
 /**
- * Removes one of the member's phones from the group: its position, its claim
- * to be looking, its place among the phones the member gives out and its line
+ * Removes one of the member's devices from the group: its position, its claim
+ * to be looking, its place among the devices the member gives out and its line
  * in the member's list, with the name the member gave it. The marker and the
  * line go for everybody. One batch, so the four go together or not at all;
- * the phone comes back if it is ever in touch under this account again.
+ * the device comes back if it is ever in touch under this account again.
  */
 export function forgetPhone(phoneId) {
     const [memberId, deviceId] = phoneId.split('.');
@@ -239,7 +239,7 @@ export function forgetPhone(phoneId) {
 
 /**
  * What this member calls the others, and again whenever that changes — here,
- * on one of their phones or in another tab.
+ * on one of their devices or in another tab.
  *
  * A refusal means the browser is out of the group, and there is nobody left
  * for the names to name; a document not made yet is a member with no names.
@@ -253,11 +253,11 @@ export function watchLabels(memberId, onLabels) {
 }
 
 /**
- * Gives a phone or a person a name for this member alone, or takes it away
+ * Gives a device or a person a name for this member alone, or takes it away
  * when the name is null. `kind` is `devices` or `members`.
  *
  * Merged into the one map, so the other names stay as they were. The address
- * of a phone has a dot in it, which a merge takes as it is: only a field path
+ * of a device has a dot in it, which a merge takes as it is: only a field path
  * written as a string splits on dots.
  */
 export async function writeLabel(memberId, kind, key, name) {

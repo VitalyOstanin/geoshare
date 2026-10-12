@@ -5,7 +5,7 @@ import { leftOutText } from '../public/lib/found.js';
 import { reasonHelpRows } from '../public/lib/reason-help.js';
 import { WORDS } from '../public/lib/words.js';
 
-// The entries a phone writes into the document. Kept here in full rather than
+// The entries a device writes into the document. Kept here in full rather than
 // read off the help itself, so that a reason dropped from the help fails the
 // test instead of quietly agreeing with it.
 const WRITTEN = [

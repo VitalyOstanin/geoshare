@@ -8,7 +8,7 @@ import org.junit.Test
 
 /**
  * What the erasing row says, which is the whole of what can be checked off a
- * phone: the command itself is answered by the receiver, and no receiver runs
+ * device: the command itself is answered by the receiver, and no receiver runs
  * in these tests.
  */
 class AidingDataTest {
@@ -25,7 +25,7 @@ class AidingDataTest {
         assertEquals(R.string.aiding_erased, aidingErasureNote(AidingErasure.Erased))
     }
 
-    // Refusal is the answer on a phone whose receiver does not know the
+    // Refusal is the answer on a device whose receiver does not know the
     // command at all, and it has to read as a refusal rather than as a
     // silence that looks exactly like success.
     @Test

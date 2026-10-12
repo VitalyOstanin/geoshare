@@ -76,14 +76,14 @@ private fun constellationOf(type: Int): Constellation = when (type) {
     else -> Constellation.Other
 }
 
-/** A move in decibels, or a word for a band the phone has nothing on. */
+/** A move in decibels, or a word for a band the device has nothing on. */
 internal fun moved(epochs: Epochs): String =
     epochs.moved?.let { String.format(Locale.ROOT, "%+.1f dB", it) } ?: "not heard"
 
 /**
  * The gain the receiver is running at, one entry per band it reports.
  *
- * Reported per constellation and frequency, so a phone hearing several gives
+ * Reported per constellation and frequency, so a device hearing several gives
  * several numbers — and gives one for every band it knows of rather than every
  * band it is listening to, the idle ones carrying a number no receiver could
  * measure. Averaging the lot was the defect this replaces: see [reported],
@@ -282,7 +282,7 @@ internal fun navMessageOf(message: GnssNavigationMessage): NavMessage = NavMessa
  * Android 12 and later. Below that the question has no answer at all, which is
  * not the same as a negative one, and the subscriptions are made either way:
  * what arrives is the answer that counts. Worth writing at every start because
- * it is the one line that says whether a phone with nothing in its navigation
+ * it is the one line that says whether a device with nothing in its navigation
  * rows was ever going to have anything there.
  */
 internal fun whatTheChipsetSays(manager: LocationManager): String {

@@ -6,7 +6,7 @@ import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class PositionWidthTest {
-    // The four kinds of answer seen in the logs of the phones: the satellites
+    // The four kinds of answer seen in the logs of the devices: the satellites
     // under open sky, the Wi-Fi in a flat, the assistance service, and a tower.
     @Test
     fun `an answer under a kilometre is said in whole metres`() {
@@ -29,7 +29,7 @@ class PositionWidthTest {
     }
 
     // A receiver that calls its answer a fraction of a metre wide is not
-    // claiming the phone is at a point, and "0 m" would say it is.
+    // claiming the device is at a point, and "0 m" would say it is.
     @Test
     fun `an answer narrower than a metre is still a metre`() {
         assertEquals(PositionWidth.Metres(1), positionWidth(0.2))

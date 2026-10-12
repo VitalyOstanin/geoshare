@@ -47,7 +47,7 @@ fun fixOf(location: Location): Fix = Fix(
 )
 
 /**
- * How long the phone has been awake, as of now.
+ * How long the device has been awake, as of now.
  *
  * The moment to hold a fix's own count since boot against. Both come off the
  * same clock, the one the platform never sets back, so the pair says how old
@@ -61,7 +61,7 @@ fun awakeFor(): Duration = Duration.ofNanos(SystemClock.elapsedRealtimeNanos())
  * Whether a position was put there by another application.
  *
  * A different thing from the false signal the filters are about: this is the
- * phone being told where it is by software on it, which anybody can turn on in
+ * device being told where it is by software on it, which anybody can turn on in
  * the developer settings and which no radio can do. It costs one field to
  * check and it is the only kind of pretence the platform will admit to.
  */
@@ -75,7 +75,7 @@ fun pretended(location: Location): Boolean = if (Build.VERSION.SDK_INT >= Build.
 /**
  * Whatever the provider attached beyond the fields, written as it stands.
  *
- * On these phones the fused provider puts the satellite count and the loudness
+ * On these devices the fused provider puts the satellite count and the loudness
  * it worked from in here, which is the one place the platform admits how a
  * fused answer was arrived at — and the answer to whether a fix rests on the
  * satellites at all.

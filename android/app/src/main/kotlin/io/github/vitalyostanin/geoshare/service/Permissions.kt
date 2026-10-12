@@ -11,10 +11,10 @@ import java.time.Instant
 /**
  * The permissions this member has given, as they stand.
  *
- * The grant is where they are kept, so that every phone of the member writes
- * the same ones and a phone picked up tomorrow inherits them rather than
+ * The grant is where they are kept, so that every device of the member writes
+ * the same ones and a device picked up tomorrow inherits them rather than
  * starting from nothing. The rules read them from the same document, so
- * withdrawing one takes effect without any phone having to write again.
+ * withdrawing one takes effect without any device having to write again.
  */
 fun ownSharedWith(memberId: String, connection: GroupConnection): Flow<Map<String, Instant>> =
     callbackFlow {
@@ -32,7 +32,7 @@ fun ownSharedWith(memberId: String, connection: GroupConnection): Flow<Map<Strin
                 }
 
         awaitClose { subscription.remove() }
-        // The permissions shown are the ones this phone may still read; refused,
+        // The permissions shown are the ones this device may still read; refused,
         // it knows of none, and the screen should not offer to withdraw what it
         // cannot see.
     }.comingBack("permissions", forgetting = { emptyMap() })

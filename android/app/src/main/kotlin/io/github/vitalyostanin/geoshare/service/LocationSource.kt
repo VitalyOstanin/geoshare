@@ -199,7 +199,7 @@ private suspend fun oneAnswer(
 }
 
 /**
- * The providers the platform has on this phone, whether switched on or not:
+ * The providers the platform has on this device, whether switched on or not:
  * a provider switched off now may be switched on later, and asking it costs
  * nothing until then.
  */
@@ -207,7 +207,7 @@ fun presentProviders(context: Context): Set<String> {
     val manager = context.getSystemService(LocationManager::class.java) ?: return emptySet()
 
     // The fused name is spelled out because the platform constant arrives only
-    // with Android 12, while a blend under that name exists on older phones.
+    // with Android 12, while a blend under that name exists on older devices.
     return setOf(FUSED_PROVIDER, GPS_PROVIDER, NETWORK_PROVIDER)
         .filter { LocationManagerCompat.hasProvider(manager, it) }
         .toSet()
@@ -217,13 +217,13 @@ fun presentProviders(context: Context): Set<String> {
  * Says so when a position was put there by another application.
  *
  * A different thing from the false signal the filters are about: this is the
- * phone being told where it is by software on it, which anybody can turn on in
+ * device being told where it is by software on it, which anybody can turn on in
  * the developer settings and which no radio can do. It costs one field to
  * check and it is the only kind of pretence the platform will admit to.
  *
  * Written down rather than acted on. A member who has a mock provider running
  * knows they have one, and a marker that quietly stopped moving would be worse
- * than a marker that says where the phone claims to be.
+ * than a marker that says where the device claims to be.
  */
 private fun noteIfPretended(location: Location) {
     if (pretended(location)) {

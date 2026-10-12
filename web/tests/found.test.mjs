@@ -4,7 +4,7 @@ import { test } from 'node:test';
 import { foundText, leftOutText } from '../public/lib/found.js';
 import { WORDS } from '../public/lib/words.js';
 
-// The English name of a source is close to the entry the phone writes, so
+// The English name of a source is close to the entry the device writes, so
 // comparing the two would pass whether the dictionary holds it or not: what is
 // checked is that the name came from the dictionary, which is where a
 // translation of it would be.
@@ -37,7 +37,7 @@ test('a source this build has never heard of is shown as unknown', () => {
     assert.equal(foundText('Lighthouse'), WORDS.unknown);
 });
 
-// The same check for the other list of words a phone writes: why an answer was
+// The same check for the other list of words a device writes: why an answer was
 // left out. A reason missing from the dictionary would be shown as unknown on
 // every card, and nothing else would go wrong to say so.
 test('every reason a phone writes is named by the dictionary', () => {
@@ -78,7 +78,7 @@ test('a reason this build has never heard of is shown as unknown', () => {
 });
 
 // Which of the five was switched off is the whole of what the row is opened
-// for, so the phone writes the switch beside the fact.
+// for, so the device writes the switch beside the fact.
 test('a reason names the switch that was turned off', () => {
     assert.equal(leftOutText('Source:Satellites'), WORDS.leftOutBySourceNamed(WORDS.foundSatellites));
     assert.equal(leftOutText('Source:OtherRadios'), WORDS.leftOutBySourceNamed(WORDS.foundOtherRadios));

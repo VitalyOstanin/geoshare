@@ -44,7 +44,7 @@ const GROUP_KEY = 'geoshare.group';
 /**
  * The group of the household that started before groups had names of their own.
  *
- * What a browser that has joined nothing assumes, because those phones and
+ * What a browser that has joined nothing assumes, because those devices and
  * this page are already reading it: its document was made before the rule that
  * names a founder, and a change that moved the page elsewhere would take the
  * household off its own map.
@@ -84,11 +84,11 @@ export function rememberGroup(group, storage = window.localStorage) {
  * How often the claim to be looking is pushed forward.
  *
  * How long each one is worth is not said here and not said by this page: the
- * claim carries the moment the server wrote it, and the phone reading it adds
+ * claim carries the moment the server wrote it, and the device reading it adds
  * the seven minutes both clients agree on. A viewer whose clock is wrong can
  * then neither hold the group longer nor fail to hold it at all.
  *
- * Every phone of the group reads each push, so in a group of twenty a push a
+ * Every device of the group reads each push, so in a group of twenty a push a
  * minute is over a thousand reads an hour for one open page; leaving the page
  * properly withdraws the claim at once, so the length only matters for a
  * viewer who vanished.
@@ -100,7 +100,7 @@ const WATCH_REFRESH_MS = 5 * 60 * 1000;
  * tries again a push that failed.
  *
  * Apart from the refresh above: a tab left alone is noticed by this, not by
- * an event, and waiting five minutes to notice would keep the phones in their
+ * an event, and waiting five minutes to notice would keep the devices in their
  * fast mode that much longer; and a lost push waited for five minutes would
  * let the claim run out before the next one.
  */
@@ -110,7 +110,7 @@ const WATCH_CHECK_MS = 60 * 1000;
  * How long a claim to be looking is worth, counted from the moment the server
  * wrote it down.
  *
- * The same seven minutes the phones add, and for the same reason: the claim
+ * The same seven minutes the devices add, and for the same reason: the claim
  * carries when it was made rather than when it ends, so whoever reads it
  * decides how long to believe it. Longer than the refresh above, so that one
  * write lost to a bad connection does not drop a viewer off the line.
@@ -120,7 +120,7 @@ const WATCH_AHEAD_MS = 7 * 60 * 1000;
 /**
  * How long a tab nobody touches goes on claiming to be looking.
  *
- * A tab left open on a laptop its owner walked away from holds every phone of
+ * A tab left open on a laptop its owner walked away from holds every device of
  * the group in the thirty-second mode, which is the most expensive thing the
  * group does. Five minutes, the same as the page takes to stop listening
  * altogether (see `page/pause.js`): whoever watches somebody drive home
@@ -185,7 +185,7 @@ export function signInReturned() {
 }
 
 export function signIn() {
-    // A trip to Google and back rather than a popup: phone browsers ask
+    // A trip to Google and back rather than a popup: device browsers ask
     // before opening a window, open it as a tab, and block it outright when
     // it comes too long after the tap. The page is loaded afresh on the way
     // back, and nothing on the sign-in screen is lost with it.
@@ -243,10 +243,10 @@ function deviceName() {
 /**
  * Who else has the map open, as they themselves claim.
  *
- * The other half of the collection this page writes into: the phones read it
+ * The other half of the collection this page writes into: the devices read it
  * to decide how hard to work, and the page reads it to say who is looking.
  * This browser's own marker is dropped — it is the one looking — while another
- * marker of the same member is kept, because a member watching from a phone as
+ * marker of the same member is kept, because a member watching from a device as
  * well is somebody to name.
  */
 export function watchWatchers(memberId, onWatchers) {
@@ -296,21 +296,21 @@ export function resumeDatabase() {
  * covers a tab closed by a crash or a laptop lid.
  *
  * Looking means a visible tab with somebody in front of it. A tab in the
- * background is not looking — the phones of the group would go on spending
+ * background is not looking — the devices of the group would go on spending
  * their battery for a window nobody can see — and neither is a tab left open
  * on a desk for a quarter of an hour, nor a window left showing while its
  * viewer works in another one. The Android client says the same thing
  * by tying its claim to the screen being on and the map being in front.
  *
  * The claim carries the moment it was written by the server's clock rather
- * than the moment it runs out by this browser's: the phone that reads it adds
+ * than the moment it runs out by this browser's: the device that reads it adds
  * the same seven minutes, so a viewer whose clock is wrong cannot hold the
  * group longer, and cannot fail to hold it at all.
  */
 export function keepWatching(memberId, onError, onClaim = () => {}) {
-    // Per browser rather than per account, the way the phones claim per phone:
-    // closing the page here must not withdraw the claim a phone of the same
-    // account had just made.
+    // Per browser rather than per account, the way the devices claim per
+    // device: closing the page here must not withdraw the claim a device of the
+    // same account had just made.
     const marker = doc(store, 'groups', currentGroup(), 'watch', `${memberId}.${deviceName()}`);
 
     let timer = null;

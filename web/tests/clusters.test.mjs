@@ -7,7 +7,7 @@ const at = (id, x, y) => ({ id, x, y });
 
 // The same expectations the Android client checks: the two clients group the
 // same members the same way, or a family standing together would be one marker
-// on the phone and two on the page.
+// on the device and two on the page.
 test('members far apart each keep their own marker', () => {
     const clusters = clusterMembers([at('a', 0, 0), at('b', 300, 0)], 40);
 

@@ -42,7 +42,7 @@ import io.github.vitalyostanin.geoshare.project.QrScanDialog
  *
  * Running the group is not done here. Handing out a code and taking somebody
  * off the roster are acts of a different kind from the switches around them —
- * they change what the household is rather than how this phone behaves — and
+ * they change what the household is rather than how this device behaves — and
  * they are on a screen of their own, reached from the line below.
  */
 @Composable
@@ -58,7 +58,7 @@ fun GroupSection(
     /** Hands pasted text carrying an invitation link to the same path a messenger's link takes. */
     onPasteLink: (String) -> Unit,
     onOpenAdmin: () -> Unit,
-    /** The way to this member's own phones, to ring one of them. */
+    /** The way to this member's own devices, to ring one of them. */
     onOpenMyPhones: () -> Unit,
     /** Leaving the group, or null when it is offered elsewhere. */
     onLeaveGroup: (() -> Unit)?,
@@ -150,7 +150,7 @@ internal fun wayInPaste(typed: String): WayInPaste {
 /**
  * The two ways into a group, offered together.
  *
- * Together because the phone cannot tell which of them applies: a group that
+ * Together because the device cannot tell which of them applies: a group that
  * has not been made and a group this account is not on both read as no roster
  * at all. Founding one when a group already exists is refused by the rules,
  * which is the answer to the question the screen could not ask.
@@ -282,8 +282,8 @@ private fun TheGroup(
         else -> Unit
     }
 
-    // Everybody in the group, not only whoever runs it: the phone lost at
-    // home is most often one's own other phone.
+    // Everybody in the group, not only whoever runs it: the device lost at
+    // home is most often one's own other device.
     TextButton(
         onClick = onOpenMyPhones,
         modifier = Modifier.padding(start = 8.dp),

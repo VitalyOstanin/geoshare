@@ -2,17 +2,17 @@ package io.github.vitalyostanin.geoshare.collection
 
 import kotlin.math.abs
 
-// Whether a satellite's own time runs along with the phone's.
+// Whether a satellite's own time runs along with the device's.
 //
 // Every raw measurement carries the moment the satellite sent the signal, read
 // off the signal itself. Between two epochs that moment has to advance by
 // exactly as much as the epochs are apart: the satellite's clock and the
-// phone's are both running through the same seconds, and the only thing that
+// device's are both running through the same seconds, and the only thing that
 // can make them differ is the flight of the signal, which changes by a few
 // microseconds a second at the very most.
 //
 // This is the first of the three checks SPREE's navigation inspector makes,
-// and the only one of them a phone can make at all: the other two want the
+// and the only one of them a device can make at all: the other two want the
 // ephemerides and the almanac, which Android does not hand out. What it
 // catches is a false sky that is not synchronised with the real one — a replay
 // of a recording, a relay holding the signal for a moment before sending it on
@@ -24,10 +24,10 @@ import kotlin.math.abs
 // so a false sky that moves the two together moves this one with them: a
 // disagreement here is worth something, an agreement is worth nothing.
 //
-// The phone's clock since it was switched on is the opposite. It runs off the
-// phone's own oscillator and no signal can touch it, so an agreement here is
+// The device's clock since it was switched on is the opposite. It runs off the
+// device's own oscillator and no signal can touch it, so an agreement here is
 // worth something — but the epoch's stamp of it is put on by the layer that
-// assembles the epoch rather than by the radio, and on the phones measured it
+// assembles the epoch rather than by the radio, and on the devices measured it
 // jitters by milliseconds. It says whether the receiver's whole scale has been
 // walked, not by how many microseconds anything is off.
 
@@ -52,7 +52,7 @@ data class SatelliteTick(
     val sentNanos: Long,
     /** The receiver's clock at the epoch, on the satellites' scale. */
     val receiverNanos: Long,
-    /** The phone's own clock since it was switched on, at the same epoch. */
+    /** The device's own clock since it was switched on, at the same epoch. */
     val sinceBootNanos: Long,
 )
 
@@ -60,7 +60,7 @@ data class SatelliteTick(
 data class ClocksApart(
     /** Against the receiver's clock, in nanoseconds. */
     val receiverNanos: Long,
-    /** Against the phone's clock since boot, in nanoseconds. */
+    /** Against the device's clock since boot, in nanoseconds. */
     val sinceBootNanos: Long,
 )
 
@@ -79,10 +79,10 @@ enum class SatelliteClockVerdict {
     ReceiverApart,
 
     /**
-     * The phone's clock since boot did not advance with the satellite.
+     * The device's clock since boot did not advance with the satellite.
      *
      * The heavier of the two: the one clock a false sky cannot reach says the
-     * satellite's time went somewhere the phone's did not.
+     * satellite's time went somewhere the device's did not.
      */
     PhoneApart,
 
@@ -100,7 +100,7 @@ const val DAY_NANOS: Long = 86_400L * 1_000_000_000L
  * How far the satellite may run from the receiver's clock before it is read as
  * a disagreement.
  *
- * A millisecond. Measured rather than chosen: over two logs of these phones,
+ * A millisecond. Measured rather than chosen: over two logs of these devices,
  * 1896 pairs of epochs, the halves of a pair disagreed by 13 and 24
  * microseconds in the middle, by 42 and 130 at the nineteenth part in twenty,
  * and at their very worst by 649. A millisecond leaves that whole spread well
@@ -110,7 +110,7 @@ const val DAY_NANOS: Long = 86_400L * 1_000_000_000L
 const val RECEIVER_APART_NANOS: Long = 1_000_000L
 
 /**
- * The same against the phone's own clock since it was switched on.
+ * The same against the device's own clock since it was switched on.
  *
  * A hundred milliseconds, and the hundredfold difference is the epoch's stamp
  * rather than the radio: on the same 1896 pairs this one disagreed by 5
@@ -166,7 +166,7 @@ fun clocksApart(before: SatelliteTick, after: SatelliteTick): ClocksApart? {
 /**
  * What a pair of epochs says about one signal.
  *
- * The phone's clock is read first and answered first. It is the coarser of the
+ * The device's clock is read first and answered first. It is the coarser of the
  * two by a hundredfold, so anything it does catch is past arguing about,
  * whereas the receiver's clock catching something on its own leaves open that
  * the receiver merely re-solved its own time.
@@ -291,25 +291,25 @@ fun parted(said: List<SignalApart>): List<SignalApart> = said.filter {
         it.verdict == SatelliteClockVerdict.PhoneApart
 }
 
-/** Whether a reading holds a signal whose time left the phone's own clock. */
+/** Whether a reading holds a signal whose time left the device's own clock. */
 fun leftThePhonesClock(said: List<SignalApart>): Boolean = said.any {
     it.verdict == SatelliteClockVerdict.PhoneApart
 }
 
 /**
  * Whether the last run of epochs says the satellites' time has left the
- * phone's.
+ * device's.
  *
  * One epoch is enough to raise it, and that is the difference from the other
  * readings of the sky. The loudness, the shape and the silence of a band are
  * states — they hold for as long as the transmitter does, and reading one
  * epoch of them says little. A clock that steps is an event: a signal built to
- * put the phone somewhere else has to move the time it carries once, and after
- * that it runs along with the phone again, honestly, from the wrong place.
+ * put the device somewhere else has to move the time it carries once, and after
+ * that it runs along with the device again, honestly, from the wrong place.
  *
  * What the window is for is the other direction. The answer stays raised for
  * as long as the window holds the epoch that stepped — about a minute at the
- * rate these phones report — so the fixes built during the step are left out
+ * rate these devices report — so the fixes built during the step are left out
  * rather than only the one that happened to arrive with it. And it says
  * nothing at all until the window is full, which keeps a receiver that has
  * just been switched on from calling its first seconds an attack.

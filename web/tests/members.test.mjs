@@ -12,7 +12,8 @@ import {
     shortName,
 } from '../public/lib/members.js';
 
-// One position per phone: the id is the account and the phone joined by a dot.
+// One position per device: the id is the account and the device joined by a
+// dot.
 const positionOf = (memberId, device = 'phone') => ({
     positionId: `${memberId}.${device}`,
     memberId,
@@ -69,7 +70,7 @@ test('a name is the first characters of the id', () => {
 });
 
 // The same four cases the Android client checks, so that a member is called
-// the same thing on the phone and on the laptop.
+// the same thing on the device and on the laptop.
 test('a member is called what their profile says', () => {
     assert.equal(memberName({ displayName: 'Ann', photoUrl: null }, 'her', false), 'Ann');
 });
@@ -83,7 +84,7 @@ test('our own entry says "you", profile or not', () => {
     assert.equal(memberName(undefined, 'me', true), 'You');
 });
 
-// The initial is what a member without a picture is drawn as, and the phone
+// The initial is what a member without a picture is drawn as, and the device
 // takes it the same way; these are the cases where the two could drift apart.
 test('the initial is the first letter of the name, in capitals', () => {
     assert.equal(memberInitial('Ann'), 'A');
@@ -120,7 +121,7 @@ test('a picture anywhere but the account host draws no picture', () => {
     assert.equal(pictureAddress('https://x@example.com/.googleusercontent.com/a'), null);
 });
 
-// The same rule the Android panel follows: a member carrying two phones has
+// The same rule the Android panel follows: a member carrying two devices has
 // them next to each other, in the same places at every glance.
 test('the phones of one member keep their places', () => {
     const members = [positionOf('a', 'two'), positionOf('b'), positionOf('a', 'one')];

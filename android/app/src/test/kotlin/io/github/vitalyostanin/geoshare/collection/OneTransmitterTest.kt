@@ -11,7 +11,7 @@ import org.junit.Test
  * The epochs below are the shape of the logs: under the transmitter the
  * receiver held orbits for nine GLONASS satellites and heard none of them
  * while a dozen of the 1575 MHz band carried the fix; on the honest morning
- * the same phone heard GLONASS and built on it.
+ * the same device heard GLONASS and built on it.
  */
 class OneTransmitterTest {
     private fun satellite(
@@ -71,7 +71,7 @@ class OneTransmitterTest {
     }
 
     // A receiver that holds no GLONASS orbits has nothing to expect, so its
-    // silence says nothing about what is transmitting: that is a phone that
+    // silence says nothing about what is transmitting: that is a device that
     // has just been switched on, or one that has never seen the system.
     @Test
     fun `a receiver holding no orbits of the far band says nothing`() {

@@ -5,7 +5,7 @@
  *
  * `localeCompare` answers a different question — how a reader of some language
  * would file two words — and for account ids, which mix case and digits, it
- * gives a different order than the phone. The panel, the pins and the list of
+ * gives a different order than the device. The panel, the pins and the list of
  * documents all pass through here so that one family sees one order.
  */
 export function compareIds(one, other) {

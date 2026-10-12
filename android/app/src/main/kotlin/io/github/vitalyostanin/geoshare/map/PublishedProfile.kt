@@ -10,7 +10,7 @@ private const val KEY_PICTURE = "picture"
 private const val KEY_DEVICE = "device"
 
 /**
- * What a phone tells its group about the member signed in on it.
+ * What a device tells its group about the member signed in on it.
  *
  * The group is part of it, not context around it: a profile document lives
  * inside a group, so the same account in another group has told that one
@@ -25,7 +25,7 @@ data class ProfileTold(
 )
 
 /**
- * What this phone has already told the group about its member.
+ * What this device has already told the group about its member.
  *
  * Kept here rather than read back out of the database, because what the
  * database hands a client includes writes it has not accepted yet: a write
@@ -35,7 +35,7 @@ data class ProfileTold(
 class PublishedProfile(context: Context) {
     private val store = context.getSharedPreferences(FILE, Context.MODE_PRIVATE)
 
-    /** What was last accepted, or nothing on a phone that has told nobody anything. */
+    /** What was last accepted, or nothing on a device that has told nobody anything. */
     fun told(): ProfileTold? {
         val group = store.getString(KEY_GROUP, null) ?: return null
         val memberId = store.getString(KEY_MEMBER, null) ?: return null
@@ -56,8 +56,8 @@ class PublishedProfile(context: Context) {
     /**
      * Forgets what was told, so the next chance writes it all again.
      *
-     * For a phone coming back to a group it was taken off, or signing in
-     * again after signing out: either way the documents that held this phone
+     * For a device coming back to a group it was taken off, or signing in
+     * again after signing out: either way the documents that held this device
      * in the group's lists are gone, and what was remembered would otherwise
      * say there is nothing to write.
      */
@@ -79,9 +79,9 @@ class PublishedProfile(context: Context) {
 }
 
 /**
- * Whether what this phone remembers telling the group still stands.
+ * Whether what this device remembers telling the group still stands.
  *
- * Remembered on the phone, so it cannot see the profile taken away behind its
+ * Remembered on the device, so it cannot see the profile taken away behind its
  * back — by an administrator tidying the group, or by a removal and a return.
  * The server saying the document is gone is the one thing that overrules it.
  */

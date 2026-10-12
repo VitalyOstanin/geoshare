@@ -120,7 +120,7 @@ class SkyLogTest {
         SkyLog.start(directory, "geoshare 1.0 Platform: 10 Model: test")
         note(AT, SKY)
         // Each start writes on a thread of its own; the first has to be done
-        // before the second looks at the file, as it is on a phone.
+        // before the second looks at the file, as it is on a device.
         SkyLog.read()
         SkyLog.start(directory, "geoshare 1.0 Platform: 10 Model: test")
         note(AT.plusSeconds(1), SKY)
@@ -137,7 +137,7 @@ class SkyLogTest {
         assertEquals(2, rowsOf(written).count { it.startsWith("Fix,") })
     }
 
-    // The phones carry a file begun under the layout before this one; rows
+    // The devices carry a file begun under the layout before this one; rows
     // appended to it would sit under a head that names other columns.
     @Test
     fun `a file begun under the older layout is put aside`() {

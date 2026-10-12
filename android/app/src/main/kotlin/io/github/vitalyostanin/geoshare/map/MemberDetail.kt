@@ -113,7 +113,7 @@ internal fun GroupDetail(
  * What the card says once a marker is tapped.
  *
  * Everything the position document carries beyond the two coordinates: when it
- * was taken, how the phone was collecting at the time and how much battery it
+ * was taken, how the device was collecting at the time and how much battery it
  * had left, which together answer "why is this old" without a second question.
  */
 @Composable
@@ -123,7 +123,7 @@ internal fun MemberDetail(
     face: Bitmap?,
     now: Instant,
     away: Double?,
-    /** The search standing for this phone, or null while nobody is looking for it. */
+    /** The search standing for this device, or null while nobody is looking for it. */
     search: Search?,
     /** Who opened [search], said the way the card says who is looking at the map. */
     openedByName: String?,
@@ -265,7 +265,7 @@ private fun DetailBody(
                 var helpOpen by remember { mutableStateOf(false) }
 
                 // A name alone answers nothing: "Standby" says what the
-                // phone was doing only to somebody who already knows the
+                // device was doing only to somebody who already knows the
                 // five, and a card is the one place a member meets a mode.
                 Text(
                     text = stringResource(modeLabel(member.mode)),
@@ -310,7 +310,7 @@ private fun DetailBody(
 
 /**
  * The line under the name: how far, how old the position, how long since the
- * phone was online, and the charge.
+ * device was online, and the charge.
  *
  * The two ages side by side because under a spoof they are hours apart, and a
  * card naming only one of them is read as naming the other. The page draws
@@ -335,7 +335,7 @@ private fun DetailSummary(member: MemberPosition, away: Double?, now: Instant) {
                 ageText(positionAge(member.positionAt, now)),
             ),
         )
-        // This phone's own position before it has left: there has been no
+        // This device's own position before it has left: there has been no
         // moment of being online to count from, and what the reader needs to
         // know is that nobody else sees it yet.
         Fact(

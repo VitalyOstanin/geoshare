@@ -46,8 +46,8 @@ describe('searches', () => {
         });
     });
 
-    // The search opens the one phone's position and nothing else of Bob's:
-    // not his other phones, whom he shares with, or what phones he has.
+    // The search opens the one device's position and nothing else of Bob's:
+    // not his other devices, whom he shares with, or what devices he has.
     const carolReadsBob = async (expect) => {
         const db = testEnv.authenticatedContext(CAROL).firestore();
 
@@ -148,7 +148,7 @@ describe('searches', () => {
     });
 
     // The end is counted from the server's clock: a renewal dated by the
-    // administrator's phone would be worth whatever that phone's clock says.
+    // administrator's device would be worth whatever that device's clock says.
     it("the moments come from the server's clock", async () => {
         const db = testEnv.authenticatedContext(ALICE).firestore();
 

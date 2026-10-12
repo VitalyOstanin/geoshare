@@ -36,20 +36,20 @@ import java.time.Instant
 /**
  * The positions, collected only while a screen of ours is up.
  *
- * A subscription costs the other phones nothing, but it does hold a connection
+ * A subscription costs the other devices nothing, but it does hold a connection
  * open, and there is no one to show a moved marker to behind a dark screen.
  *
  * Driven by the grants, because they are what names the documents to read: a
- * member who picks up a second phone adds it to their grant, and the
+ * member who picks up a second device adds it to their grant, and the
  * subscriptions are rebuilt around the new list. Also driven by the standing
- * searches, whose phones open without a grant at all: see [soughtPhoneIds].
+ * searches, whose devices open without a grant at all: see [soughtPhoneIds].
  */
 @Composable
 fun rememberMemberPositions(
     grants: Map<String, MemberGrant>,
-    /** This phone's own position document, followed whatever the grants say. */
+    /** This device's own position document, followed whatever the grants say. */
     own: String,
-    /** The group's searches, whose standing phones this phone may read regardless of a grant. */
+    /** The group's searches, whose standing devices this device may read regardless of a grant. */
     searches: Map<String, Search> = emptyMap(),
     /** The profiles, whose changes say that a refused place may be open now. */
     profiles: Map<String, MemberProfile>? = null,
@@ -64,10 +64,10 @@ fun rememberMemberPositions(
     val falsePlaces = remember(connection) { namedFalsePlaces(connection) }
     val places = falsePlaces.collectAsStateWithLifecycle(initialValue = emptyList())
 
-    // What the phones said about themselves since their positions were
+    // What the devices said about themselves since their positions were
     // written is laid over them here, so that every screen reading a position
     // reads the charge, the cable and the moment of contact as they are now;
-    // and so is whether the position lies where the lie puts phones.
+    // and so is whether the position lies where the lie puts devices.
     return remember(written, places, grants) {
         derivedStateOf {
             written.value.let { seen ->
@@ -83,9 +83,9 @@ fun rememberMemberPositions(
  * The group the screens show, as something a subscription can be rebuilt on.
  *
  * Every path below is built around the name, and founding a group or joining
- * one changes where this phone writes while the screen is open. Without this
+ * one changes where this device writes while the screen is open. Without this
  * the subscriptions would go on asking a question the rules refuse — either
- * about the group the phone has left, or about the one it had not yet been let
+ * about the group the device has left, or about the one it had not yet been let
  * into — and a refused subscription is only taken out again after a wait that
  * doubles, so somebody who had just joined would watch an empty screen for
  * minutes.
@@ -115,17 +115,17 @@ fun rememberSearches(): State<Map<String, Search>> {
  * How often [rememberMemberPositions] checks the searches against the clock,
  * to notice one running out without anything else changing.
  *
- * Half a minute, the same age the map's own clock ticks at: a phone dropping
+ * Half a minute, the same age the map's own clock ticks at: a device dropping
  * out of a standing search is worth being current about, and nothing this
  * short costs a subscription that only reads a moment already held in memory.
  */
 private const val SOUGHT_CHECK_MILLIS = 30_000L
 
 /**
- * The phones the group is looking for right now, freshly worked out against
+ * The devices the group is looking for right now, freshly worked out against
  * the clock rather than only when [searches] itself changes.
  *
- * A search starting or ending changes which positions this phone may read
+ * A search starting or ending changes which positions this device may read
  * without a grant: see [positionDocuments]. This is what
  * [rememberMemberPositions] rebuilds its subscriptions on, rather than on
  * every renewal — a search kept open for hours would otherwise tear a
@@ -158,7 +158,7 @@ fun rememberMemberGrants(
     ownId: String,
 ): State<Map<String, MemberGrant>> {
     val connection = groupNow()
-    // Our own entry as well, named or not: the name given to this phone is
+    // Our own entry as well, named or not: the name given to this device is
     // read back from it, and a member whose profile has not been written yet
     // would otherwise see the name they typed vanish.
     val memberIds = remember(profiles, ownId) { (profiles.orEmpty().keys + ownId).sorted() }
@@ -173,7 +173,7 @@ fun rememberMemberGrants(
  *
  * The same claims the service reads to decide how hard to work; read here a
  * second time because the screen wants the members behind them rather than the
- * moments they run out. Own marker aside — a phone showing this screen is the
+ * moments they run out. Own marker aside — a device showing this screen is the
  * one looking — the list is what the strip under the map names.
  */
 @Composable
@@ -244,8 +244,8 @@ fun rememberDatabaseLink(): State<LinkState> {
 /**
  * The permissions this member has given, collected while a screen is up.
  *
- * Read back out of the database rather than held on this phone: they are set
- * on whichever phone the member has to hand, and the screen has to show what
+ * Read back out of the database rather than held on this device: they are set
+ * on whichever device the member has to hand, and the screen has to show what
  * the other one wrote.
  */
 @Composable
@@ -259,7 +259,7 @@ fun rememberOwnSharedWith(memberId: String): State<Map<String, Instant>> {
 /**
  * What this member calls the others, collected while a screen is up.
  *
- * Starts from the copy kept on the phone, so the names are there from the
+ * Starts from the copy kept on the device, so the names are there from the
  * first frame rather than from the first answer of the database.
  */
 @Composable
@@ -276,9 +276,9 @@ fun rememberOwnLabels(memberId: String): State<Labels> {
 
 /**
  * Tells the group who this member is, when the account says something this
- * phone has not had accepted yet.
+ * device has not had accepted yet.
  *
- * What was accepted is remembered on the phone rather than read back out of
+ * What was accepted is remembered on the device rather than read back out of
  * the subscription: a write shows up there before the server has taken it and
  * disappears again if the server refuses, and a client that answered the
  * disappearance with another write would keep doing so for as long as the
@@ -305,7 +305,7 @@ fun PublishProfile(
     // A profile belongs to a group, so moving to another one is as good as
     // never having published: the new group has been told nothing. Written
     // again on being let into a group as well, because the attempt made before
-    // this phone was on the roster was refused.
+    // this device was on the roster was refused.
     val connection = groupNow()
     val telling =
         ProfileTold(
@@ -330,9 +330,9 @@ fun PublishProfile(
             }
 
             // Two documents, because the two are read by different people:
-            // the name and the picture by the whole group, the phone by the
+            // the name and the picture by the whole group, the device by the
             // readers this member named. Remembered only when both were taken,
-            // so a phone missing from the list is written again next time.
+            // so a device missing from the list is written again next time.
             val named =
                 publishProfile(
                     memberId = memberId,
@@ -352,11 +352,11 @@ fun PublishProfile(
 
 /**
  * Tells everybody that somebody is looking, while somebody is — the other
- * members through the database, and this phone's own collection directly.
+ * members through the database, and this device's own collection directly.
  *
  * Tied to the resumed state rather than to the composition: a map left behind
  * a lock screen is not somebody looking, and keeping the claim alive there
- * would hold every other phone in its fifteen-second mode for nothing.
+ * would hold every other device in its fifteen-second mode for nothing.
  */
 @Composable
 fun KeepWatching(memberId: String, deviceId: String) {
@@ -368,8 +368,8 @@ fun KeepWatching(memberId: String, deviceId: String) {
 
         owner.repeatOnLifecycle(Lifecycle.State.RESUMED) {
             // Said twice on purpose: once to the other members through the
-            // database, and once to this phone's own collection, which never
-            // hears the first because a phone ignores its own claim.
+            // database, and once to this device's own collection, which never
+            // hears the first because a device ignores its own claim.
             MapOnScreen.opened()
 
             try {

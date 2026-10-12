@@ -35,7 +35,7 @@ fun backgroundLocationGranted(context: Context): Boolean =
         granted(context, Manifest.permission.ACCESS_BACKGROUND_LOCATION)
 
 /**
- * Whether the phone may tell us that it is moving.
+ * Whether the device may tell us that it is moving.
  *
  * Apart from the three above because nothing stops without it: the Moving mode
  * is an improvement on the ordinary one, so a member who refused shares their

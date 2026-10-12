@@ -9,28 +9,28 @@ import java.util.UUID
 private const val FILE = "device"
 private const val KEY_ID = "id"
 
-/** As much of a phone's name as fits above a marker without pushing it off screen. */
+/** As much of a device's name as fits above a marker without pushing it off screen. */
 private const val NAME_LIMIT = 40
 
-/** What the system's id of a phone looks like: sixteen hexadecimal digits, give or take. */
+/** What the system's id of a device looks like: sixteen hexadecimal digits, give or take. */
 private val SYSTEM_ID = Regex("[0-9A-Za-z]{1,64}")
 
 /**
- * Which phone this is.
+ * Which device this is.
  *
- * A member can carry more than one phone, and each of them has a position of
+ * A member can carry more than one device, and each of them has a position of
  * its own: without this they wrote into one document and the marker showed
  * whichever of them wrote last.
  *
- * The system's id of the phone for this application, which outlives a
- * reinstall: the names the other members give a phone are kept under its id,
+ * The system's id of the device for this application, which outlives a
+ * reinstall: the names the other members give a device are kept under its id,
  * and a random value made on first use was lost with every reinstall, taking
  * the names with it and leaving a second marker behind. The id is one per
- * phone, account on the phone and signing key, so it says nothing another
+ * device, account on the device and signing key, so it says nothing another
  * application could join up with.
  *
  * A random value kept by the application is still made where the system has
- * no id to give, and a phone that had one before this read the system's id is
+ * no id to give, and a device that had one before this read the system's id is
  * told what it was, so the documents written under it can be taken back.
  */
 class DeviceIdentity(context: Context) {
@@ -42,7 +42,7 @@ class DeviceIdentity(context: Context) {
         get() = systemIdFrom(readSystemId()) ?: madeId()
 
     /**
-     * The random id this phone went by before it went by the system's, where
+     * The random id this device went by before it went by the system's, where
      * it did and the documents under it have not yet been taken back.
      */
     val previousId: String?
@@ -57,7 +57,7 @@ class DeviceIdentity(context: Context) {
 
     // Lint warns that a hardware id can follow a person across applications.
     // This one cannot: since Android 8 it differs for every signing key, and
-    // what it is used for — telling the phones of one member apart and keeping
+    // what it is used for — telling the devices of one member apart and keeping
     // the names given to them — is what it is for.
     @SuppressLint("HardwareIds")
     private fun readSystemId(): String? =
@@ -69,17 +69,17 @@ class DeviceIdentity(context: Context) {
         }
 
     /**
-     * What the phone is called on the other screens.
+     * What the device is called on the other screens.
      *
      * The model as the manufacturer writes it: not a name anybody chose, but
-     * enough to tell two phones of one member apart until naming them is worth
+     * enough to tell two devices of one member apart until naming them is worth
      * a screen of its own.
      */
     val name: String get() = Build.MODEL.orEmpty().take(NAME_LIMIT)
 }
 
 /**
- * The id of the document one phone writes, which is the account and the phone
+ * The id of the document one device writes, which is the account and the device
  * joined by a dot.
  *
  * The rules read the part before the dot, so a member reaches their own
@@ -91,6 +91,6 @@ fun positionId(memberId: String, deviceId: String): String = "$memberId.$deviceI
 /**
  * The system's id as this application uses it, or nothing where it is missing
  * or does not look like one: an id with a dot in it would split the documents
- * of one phone between two owners.
+ * of one device between two owners.
  */
 fun systemIdFrom(value: String?): String? = value?.takeIf { SYSTEM_ID.matches(it) }

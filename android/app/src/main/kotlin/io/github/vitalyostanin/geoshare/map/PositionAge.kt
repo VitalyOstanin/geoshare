@@ -12,7 +12,7 @@ import java.time.Instant
  * be tested without them.
  */
 sealed interface PositionAge {
-    /** Younger than a minute, or taken by a phone whose clock runs ahead. */
+    /** Younger than a minute, or taken by a device whose clock runs ahead. */
     data object JustNow : PositionAge
 
     data class Minutes(val count: Long) : PositionAge
@@ -36,12 +36,12 @@ fun positionAge(knownAt: Instant, now: Instant): PositionAge {
 fun isStale(knownAt: Instant, now: Instant): Boolean = Duration.between(knownAt, now) >= STALE_AFTER
 
 /**
- * Whether the phone is still reaching the server but has had no position it
+ * Whether the device is still reaching the server but has had no position it
  * believed for as long as it takes a marker to go grey.
  *
  * That is a marker stuck where it last was: every answer since has been left
  * out, and the card should say so rather than leave the viewer to compare two
- * clock times. A phone gone quiet is not stuck, only old, and the grey already
+ * clock times. A device gone quiet is not stuck, only old, and the grey already
  * says that. The same mark as the grey on purpose, so that the page and this
  * screen need no second number to agree on.
  */

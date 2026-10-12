@@ -18,7 +18,7 @@ class OtherRadiosTest {
         assertTrue(otherRadiosAreDue(JUMPS_BEFORE_THE_OTHER_RADIOS, null, NOW))
     }
 
-    // The spoofing lasts hours; without a floor the phone would scan the
+    // The spoofing lasts hours; without a floor the device would scan the
     // Wi-Fi around it on every fix for all of them.
     @Test
     fun `the towers are not asked again straight away`() {
@@ -72,7 +72,7 @@ class OtherRadiosTest {
         assertFalse(networkAnswerStands(old, NOW))
     }
 
-    // What was watched happening on a phone standing in its own flat: an
+    // What was watched happening on a device standing in its own flat: an
     // answer from the Wi-Fi sixty metres wide, then a tower answering about
     // the same district one thousand six hundred and sixty metres wide, and
     // the marker walking four hundred metres to meet it.
@@ -92,7 +92,7 @@ class OtherRadiosTest {
         assertTrue(saysMoreThan(fromTheWiFi, fromATower, NOW))
     }
 
-    // A phone really carried across the city: the answer is wider than the one
+    // A device really carried across the city: the answer is wider than the one
     // written and names a place the written one does not reach.
     @Test
     fun `a wider answer about another place is worth writing`() {
@@ -112,7 +112,7 @@ class OtherRadiosTest {
     }
 
     // Six minutes is long enough for an answer from the towers to be called
-    // old, and nothing like long enough for a phone standing in its own flat
+    // old, and nothing like long enough for a device standing in its own flat
     // to have gone anywhere. The first version of this rule counted the two
     // the same way, and the marker walked four hundred and thirty metres.
     @Test
@@ -124,7 +124,7 @@ class OtherRadiosTest {
         assertFalse(saysMoreThan(fromATower, fromTheWiFi, NOW))
     }
 
-    // The flat again, and the answer that moved the phone out of it: a tower
+    // The flat again, and the answer that moved the device out of it: a tower
     // one thousand seven hundred metres wide whose circle fell one hundred and
     // fifty-six metres short of reaching the position already written. Outside
     // the doubt by arithmetic, and inside it by any honest reading of what a

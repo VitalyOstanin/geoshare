@@ -50,7 +50,7 @@ describe('false places', () => {
         await assertSucceeds(setDoc(falsePlaceOf(db), somePlace));
     });
 
-    // A place added wrongly is ground the group's phones can no longer be
+    // A place added wrongly is ground the group's devices can no longer be
     // placed on, so naming one is an administrator's business.
     it('a member who does not run the group names none', async () => {
         await plantAnAdministrator();
@@ -100,7 +100,7 @@ describe('false places', () => {
     });
 });
 
-// What the group has settled about how its phones judge an answer: today the
+// What the group has settled about how its devices judge an answer: today the
 // limits of the rule that reads the shape of a run of answers.
 describe('settings', () => {
     const settingOf = (db, key = 'circling') => doc(db, `groups/${GROUP}/settings/${key}`);
@@ -193,8 +193,8 @@ describe('settings', () => {
 // is a quiet one — a `match` written one level further out, or carrying
 // `{document=**}`, hands every other collection in the project to whoever is
 // in the household, and every test above would still pass.
-// The group looking for one phone of a member: an administrator opens a
+// The group looking for one device of a member: an administrator opens a
 // search, and until it is called off or runs out, everybody in the group sees
-// where that phone is, whatever the member's own permissions say. Alice runs
-// the group, Bob's phone is looked for, and Carol is in the group without a
+// where that device is, whatever the member's own permissions say. Alice runs
+// the group, Bob's device is looked for, and Carol is in the group without a
 // permission from Bob.

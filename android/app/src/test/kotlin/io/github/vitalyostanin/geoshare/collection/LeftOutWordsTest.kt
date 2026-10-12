@@ -6,12 +6,12 @@ import org.junit.Assert.assertNotEquals
 import org.junit.Test
 
 /**
- * That every reason a phone can write has a name on a card.
+ * That every reason a device can write has a name on a card.
  *
  * A reason left out of the words is shown as unknown, and nothing else goes
  * wrong to say so: the build compiles, the tests pass and the card quietly
  * says "неизвестно" about the one thing a member opened it for. The entries
- * are what the phone writes into the document, so the check is over the whole
+ * are what the device writes into the document, so the check is over the whole
  * of [JumpReason] rather than over a list kept beside it.
  */
 class LeftOutWordsTest {
@@ -27,14 +27,14 @@ class LeftOutWordsTest {
     }
 
     // Not an entry of the list above, because nothing is wrong with such an
-    // answer: the member told the phone not to count that source.
+    // answer: the member told the device not to count that source.
     @Test
     fun `a source the member switched off is named as well`() {
         assertEquals(R.string.left_out_by_source, leftOutReasonLabel(LEFT_OUT_BY_SOURCE))
     }
 
     // Which of the five was switched off is what a member opens the card for,
-    // so the phone writes the switch beside the fact.
+    // so the device writes the switch beside the fact.
     @Test
     fun `a reason names the switch that was turned off`() {
         assertEquals(SourceChoice.Satellites, sourceLeftOut("Source:Satellites"))

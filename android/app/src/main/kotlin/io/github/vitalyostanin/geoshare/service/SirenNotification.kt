@@ -20,7 +20,7 @@ const val SIREN_NOTIFICATION_ID = 4
 private const val CHANNEL_ID = "siren"
 
 /**
- * Told to the member whose phone was made to sound, on top of the alarm
+ * Told to the member whose device was made to sound, on top of the alarm
  * itself. The alarm is what carries the noise, so the notification's own
  * sound is turned off in the channel; otherwise the two would fight over the
  * same moment. Full-screen intent is left out on purpose: on a locked
@@ -28,7 +28,7 @@ private const val CHANNEL_ID = "siren"
  *
  * Laid out by hand rather than by the system: a locked screen shows a
  * notification folded, and the buttons of an ordinary one appear only once it
- * is unfolded. Somebody who has found the phone should not have to know that
+ * is unfolded. Somebody who has found the device should not have to know that
  * to stop the noise, so the folded one carries its own button.
  */
 fun sirenNotification(

@@ -12,7 +12,7 @@ import java.time.Duration
 // again.
 //
 // That is the thing worth catching, because it is the thing a person cannot
-// do. A phone carried by somebody may go round a block twice; it does not
+// do. A device carried by somebody may go round a block twice; it does not
 // retrace six kilometres of road to within a hundred metres on a fixed
 // period, and it does not do it for an hour.
 //
@@ -25,7 +25,7 @@ val REPEAT_SHORTEST: Duration = Duration.ofSeconds(60)
 /**
  * The longest period looked for.
  *
- * Bounded by what the phone remembers rather than by anything about
+ * Bounded by what the device remembers rather than by anything about
  * transmitters: two rounds have to fit inside the run of answers for a
  * repeat to be visible at all.
  */
@@ -57,13 +57,13 @@ const val REPEAT_CLOSE_METRES: Double = 100.0
  * How far across the route has to reach, in metres: the distance between its
  * two furthest answers.
  *
- * Five hundred, and it is what keeps a standing phone and a running track out
+ * Five hundred, and it is what keeps a standing device and a running track out
  * of this. Both were tried against the rule and both were caught by it
  * without this: answers jittering around one place line up across every
  * period that fits, and their wandering adds up to a kilometre of apparent
  * road, while four hundred metres of running track is a lap somebody really
  * is going round. What tells those from a false route is not how much road
- * was covered but how far the route goes — a phone jittering reaches sixty
+ * was covered but how far the route goes — a device jittering reaches sixty
  * metres, the track a hundred and twenty-seven, the false route two and a
  * half kilometres.
  */
@@ -102,7 +102,7 @@ data class RepeatLimits(
  * [lately] is every answer the satellites gave, newest last, whether or not it
  * was written out — the answers a rule has already refused are the ones that
  * draw the route, and they are refused for as long as the anchor still stands
- * where the phone really is.
+ * where the device really is.
  */
 fun routeRepeated(lately: List<Fix>, limits: RepeatLimits = RepeatLimits()): Repeated? {
     if (lately.size < limits.pairsNeeded * 2) {
@@ -208,7 +208,7 @@ private fun nearestTo(at: List<Duration>, moment: Duration): Int? =
  * How far across the last round reaches: the distance between its two
  * furthest answers.
  *
- * Not the road covered, which a standing phone produces by jittering, and not
+ * Not the road covered, which a standing device produces by jittering, and not
  * the radius, which asks the route to be a circle.
  */
 private fun reachOfTheRound(lately: List<Fix>, period: Duration): Double {

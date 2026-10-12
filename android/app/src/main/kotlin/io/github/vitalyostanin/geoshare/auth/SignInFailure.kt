@@ -18,7 +18,7 @@ enum class SignInFailure {
 
     Offline,
 
-    /** The group's Firebase project itself refuses Google sign-in, not this phone. */
+    /** The group's Firebase project itself refuses Google sign-in, not this device. */
     Misconfigured,
 
     Unknown,

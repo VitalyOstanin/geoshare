@@ -26,9 +26,9 @@ private const val TAG = "geoshare.service"
 private val SIREN_NAME_WAIT: Duration = Duration.ofSeconds(3)
 
 /**
- * This phone's side of a siren: sounds it when somebody calls, for twenty
+ * This device's side of a siren: sounds it when somebody calls, for twenty
  * seconds, and stops early when the call is stopped — from a caller's screen
- * or from the notification on the phone itself.
+ * or from the notification on the device itself.
  *
  * Kept by the sharing service for as long as it collects, and launched into
  * the service's own scope, so the sound outlives nothing the service does not.
@@ -40,12 +40,12 @@ class SirenAnswer(private val context: Context, private val scope: CoroutineScop
     private var sounding: Job? = null
 
     /**
-     * Sounds the phone when somebody calls its siren, and stops it when
+     * Sounds the device when somebody calls its siren, and stops it when
      * somebody stops the call.
      *
-     * Each call sounds once: the call answered is kept on the phone, so the
+     * Each call sounds once: the call answered is kept on the device, so the
      * same document heard again after a restart stays quiet, and a call more
-     * than a minute old is left alone — the phone switched back on later
+     * than a minute old is left alone — the device switched back on later
      * rings for nobody.
      */
     suspend fun answer(memberId: String, phoneId: String, connection: GroupConnection) {
@@ -68,7 +68,7 @@ class SirenAnswer(private val context: Context, private val scope: CoroutineScop
 
             answered.keep(connection.projectId, called.calledAt)
             sounding?.cancel()
-            // Apart from the subscription: the phone's own "heard" write
+            // Apart from the subscription: the device's own "heard" write
             // comes back through it, and must not cut the sound short.
             sounding = scope.launch { sound(memberId, phoneId, called, connection) }
         }
@@ -90,7 +90,7 @@ class SirenAnswer(private val context: Context, private val scope: CoroutineScop
         try {
             player.start()
 
-            // On its own: a write waits for the server, and a phone without a
+            // On its own: a write waits for the server, and a device without a
             // network still sounds.
             scope.launch {
                 try {

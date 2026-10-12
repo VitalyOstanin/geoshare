@@ -3,7 +3,7 @@
 //
 // Firestore says nothing of a lost connection: a listener goes on being
 // called, only with what the page held before, marked as coming from the
-// cache. A network that is up is no answer either, since a phone behind a
+// cache. A network that is up is no answer either, since a device behind a
 // tunnel can reach the network and not the database. So the link is judged by
 // the snapshots themselves: the server confirming one is the database
 // answering, and LINK_GRACE_MS of nothing but the cache is its silence.

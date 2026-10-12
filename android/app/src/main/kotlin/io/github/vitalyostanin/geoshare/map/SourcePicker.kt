@@ -27,7 +27,7 @@ import io.github.vitalyostanin.geoshare.collection.SourceChoice
 import io.github.vitalyostanin.geoshare.collection.sourceChoiceLabel
 
 /**
- * Which sources of a position this phone counts, reached from the map.
+ * Which sources of a position this device counts, reached from the map.
  *
  * The same setting as the one on the settings screen, over the same store, and
  * on the map because this is what changes hour to hour while a transmitter is
@@ -58,7 +58,7 @@ fun SourcePicker(
     Box(modifier = modifier) {
         MapRoundButton(icon = R.drawable.ic_sources, label = label, onClick = { open = true })
 
-        // The count stays on the button: a phone counting fewer than all of
+        // The count stays on the button: a device counting fewer than all of
         // them is leaving answers out, and that is worth seeing without
         // opening anything. Red only then; a mark that is always loud is a
         // mark nobody reads.

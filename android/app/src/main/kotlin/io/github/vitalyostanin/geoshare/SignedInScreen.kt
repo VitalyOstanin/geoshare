@@ -195,7 +195,7 @@ internal fun SignedInScreen(
 
     // A service left without a session stops after a
     // minute, and the account signed in after that —
-    // the phone handed to somebody else — would share
+    // the device handed to somebody else — would share
     // nothing until the screen was next opened.
     LaunchedEffect(current.memberId) {
         activity.continueSharingSetup()
@@ -206,7 +206,7 @@ internal fun SignedInScreen(
     }
 
     // The other half of the same collection: this
-    // phone says it is looking, and reads who else is.
+    // device says it is looking, and reads who else is.
     val watching by rememberWatchers(current.memberId, activity.device.id)
 
     if (!outside) {
@@ -236,7 +236,7 @@ internal fun SignedInScreen(
             // needs to know which name is whose.
             positions =
             labelledPositions(onTheMap.positions, labels, grants, searches),
-            // Those whose position this phone is refused:
+            // Those whose position this device is refused:
             // an empty map with a reason is not the same
             // thing as an empty map without one.
             outOfReach = onTheMap.outOfReach,

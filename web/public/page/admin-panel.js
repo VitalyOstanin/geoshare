@@ -155,8 +155,8 @@ function adminRow(line) {
     head.append(name, said);
     row.append(head);
 
-    // One row per phone, each with its own round buttons: the family may be
-    // looking for one of two phones lost, or ringing the other, and neither
+    // One row per device, each with its own round buttons: the family may be
+    // looking for one of two devices lost, or ringing the other, and neither
     // act is on the member as a whole.
     const now = Date.now();
 
@@ -206,12 +206,12 @@ function adminRow(line) {
 }
 
 /**
- * One phone of a member, in the panel that runs the group: what it last
+ * One device of a member, in the panel that runs the group: what it last
  * said on the left, its own siren and, for anybody but its owner's own row,
- * its own search on the right. Every phone of the member may be rung, one's
- * own included — this page is not a phone, and the phone looked for is most
+ * its own search on the right. Every device of the member may be rung, one's
+ * own included — this page is not a device, and the device looked for is most
  * often one's other one — but the search is offered only for somebody else's:
- * one's own phones are searched from "Мои устройства".
+ * one's own devices are searched from "Мои устройства".
  */
 function adminPhoneRow(phone, line, now) {
     const row = document.createElement('div');
@@ -231,7 +231,7 @@ function adminPhoneRow(phone, line, now) {
     const actions = document.createElement('div');
 
     actions.className = 'admin-actions';
-    // Plain and before the siren, for every phone the siren is offered for.
+    // Plain and before the siren, for every device the siren is offered for.
     actions.append(resetButtonFor(phone, now, about));
     actions.append(sirenButtonFor(phone, line.memberId, now, about));
 
@@ -380,7 +380,7 @@ closeOnClickOutside(elements.invite, () => elements.invite.close());
 
 // The escape key closes a dialog on its own, so only the dark behind the
 // window is left to answer for: a click there closes it the way a tap beside a
-// sheet does on a phone. Such a click arrives at the dialog itself, as does a
+// sheet does on a device. Such a click arrives at the dialog itself, as does a
 // click on its own padding, so the point is compared with the box to tell the
 // two apart.
 elements.admin.addEventListener('click', (event) => {

@@ -8,13 +8,13 @@ private const val KEY_STARTUP = "startup-set"
 private const val KEY_MOVEMENT = "movement-asked"
 
 /**
- * What the phone has been asked about letting the application keep running.
+ * What the device has been asked about letting the application keep running.
  *
  * Three answers live here. The first is whether the battery request has been
  * shown at all: it is shown once, because a request the member has already
  * refused is not made better by arriving again. The second is the member's own
  * word that the manufacturer's startup list is set, which is the only way that
- * list can be known — nothing on the phone will say. The third is the same
+ * list can be known — nothing on the device will say. The third is the same
  * once-only record for the request to be told about movement.
  */
 class BackgroundWorkSetting(context: Context) {

@@ -2,7 +2,7 @@
 // have not given one.
 //
 // The answer belongs to the browser rather than to the account: the same
-// member reads the map on a phone in the evening and on a laptop by day, and
+// member reads the map on a device in the evening and on a laptop by day, and
 // those two screens do not want the same thing.
 
 /** The answers, in the order their buttons stand in. */

@@ -2,7 +2,7 @@
 //
 // The same rules the application holds, written again here for the reason the
 // width is: the two clients share a database and nothing else, and a distance
-// that read one way on a phone and another in a browser would be read as two
+// that read one way on a device and another in a browser would be read as two
 // different answers.
 
 import { isStale, isStuck } from './age.js';
@@ -26,17 +26,17 @@ const TENTHS = new Intl.NumberFormat(SPEAKING, {
 });
 
 /**
- * Where the viewer is: the freshest place any of their own phones has written.
+ * Where the viewer is: the freshest place any of their own devices has written.
  *
- * Their own phones rather than the browser, because asking the browser is a
+ * Their own devices rather than the browser, because asking the browser is a
  * question the page would have to put to the viewer on every visit, and a
- * member reading the map carries a phone that has already answered it.
+ * member reading the map carries a device that has already answered it.
  *
  * A place that has gone grey is no place to measure from: the viewer has had
  * half an hour to walk off, and a distance from where they were is read as a
- * distance from where they are. A marker left behind by a phone that is still
+ * distance from where they are. A marker left behind by a device that is still
  * online is the same place gone grey, only without the colour, and so is one
- * inside a place a false signal is known to put phones at.
+ * inside a place a false signal is known to put devices at.
  */
 export function ownPlace(positions, ownMemberId, now) {
     const standing = positions.filter(
@@ -90,7 +90,7 @@ export function distanceFromViewer(position, positions, ownMemberId, now) {
  * The distance as the card writes it: whole metres up to a kilometre and
  * kilometres to one place above it, the units the width is written in.
  *
- * Unlike a width, nought metres is an answer: two phones on one table.
+ * Unlike a width, nought metres is an answer: two devices on one table.
  */
 export function distanceText(metres) {
     const whole = Math.round(metres);

@@ -400,8 +400,8 @@ export const EN = {
     phoneOnline: (age) => `In touch ${age}`,
     phoneSilent: 'Not in touch yet',
 
-    // The group looking for a phone: an administrator opens a search on it,
-    // and while it stands everybody in the group sees where that phone is.
+    // The group looking for a device: an administrator opens a search on it,
+    // and while it stands everybody in the group sees where that device is.
     searchMark: 'Searching',
     searchStart: 'Search',
     searchFound: 'Found',

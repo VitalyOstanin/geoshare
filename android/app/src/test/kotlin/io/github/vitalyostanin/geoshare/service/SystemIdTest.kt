@@ -4,7 +4,7 @@ import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
 import org.junit.Test
 
-/** Which of the system's answers are taken as the id of the phone. */
+/** Which of the system's answers are taken as the id of the device. */
 class SystemIdTest {
     @Test
     fun `the id the system gives is taken as it is`() {

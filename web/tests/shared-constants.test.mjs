@@ -1,4 +1,4 @@
-// The numbers and the field names the phone and the page have to agree on,
+// The numbers and the field names the device and the page have to agree on,
 // read out of both.
 //
 // Each client keeps its own copy of the rules the other one keeps — how long a
@@ -160,7 +160,7 @@ test('a pin is drawn to the same measurements', () => {
         kotlinNumber(kotlin('map/MarkerIcon.kt', 'FACE_STEP_DP')),
         javascriptNumber(javascript('web/public/lib/map.js', 'FACE_STEP')),
     );
-    // The phone centres a face in the head; the page writes the margin out.
+    // The device centres a face in the head; the page writes the margin out.
     assert.equal(
         (head - face) / 2,
         javascriptNumber(javascript('web/public/lib/map.js', 'FACE_INSET')),

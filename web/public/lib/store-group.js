@@ -225,20 +225,20 @@ export function profileOf(document) {
 
 /**
  * What each member gives out, as far as this viewer is allowed to know, and
- * what their phones last said about themselves.
+ * what their devices last said about themselves.
  *
  * One subscription per member and document rather than one over a collection:
- * neither the grants nor the phones can be listed, because listing them would
- * hand the phones of the whole household to a member who was given nothing. A
- * member who shares with this viewer answers with their phones; one who does
+ * neither the grants nor the devices can be listed, because listing them would
+ * hand the devices of the whole household to a member who was given nothing. A
+ * member who shares with this viewer answers with their devices; one who does
  * not answers with a refusal, which is simply an absence here — the same member
  * is already missing from the map. The subscriptions are made again on a
  * timer (and at once when a profile changes), so a permission
  * handed back arrives without a reload.
  *
- * The phones are followed apart from the positions: whether a phone is in
+ * The devices are followed apart from the positions: whether a device is in
  * touch, how charged it is and whether it is on a cable are not a place, and
- * a phone whose answers are all being thrown away still says them. An
+ * a device whose answers are all being thrown away still says them. An
  * administrator reads them without being given a permission, which is why the
  * list of documents to follow still comes from the grant alone.
  */
@@ -324,7 +324,7 @@ export function followEach(memberIds, collectionName, onDocument) {
     };
 }
 
-/** The phones a grant names: the positions cannot be listed, so this is the list to read. */
+/** The devices a grant names: the positions cannot be listed, so this is the list to read. */
 export function devicesOf(snapshot) {
     const data = snapshot.data();
 

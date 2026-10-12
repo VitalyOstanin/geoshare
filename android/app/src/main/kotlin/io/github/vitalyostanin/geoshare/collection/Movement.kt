@@ -1,10 +1,10 @@
 package io.github.vitalyostanin.geoshare.collection
 
 /**
- * A change the phone noticed in what its owner is doing.
+ * A change the device noticed in what its owner is doing.
  *
  * Two plain facts rather than the platform's pair of numbers: the choice of
- * mode cares only whether the activity carries the phone somewhere, and
+ * mode cares only whether the activity carries the device somewhere, and
  * whether it has begun or ended. The service turns the platform's constants
  * into these on the way in, so that everything decided in this package still
  * runs on a plain JVM.
@@ -17,7 +17,7 @@ data class ActivityChange(
 )
 
 /**
- * What the phone's own sensors say about whether it is going anywhere.
+ * What the device's own sensors say about whether it is going anywhere.
  *
  * The answer is carried with a note of whether it is an answer at all: before
  * the first transition arrives, and where the permission was refused, standing
@@ -26,22 +26,22 @@ data class ActivityChange(
  * the same and have to be told apart by whoever asks.
  */
 data class Moving(
-    /** Whether the phone is being carried somewhere. */
+    /** Whether the device is being carried somewhere. */
     val going: Boolean,
     /** Whether the sensors have said so, rather than this being the answer given until they do. */
     val told: Boolean,
 )
 
 /**
- * Whether the phone counts as moving once these changes have arrived.
+ * Whether the device counts as moving once these changes have arrived.
  *
  * The end of standing still is not the beginning of going somewhere: the
  * platform can report leaving one activity before it says which one was
- * entered, and answering that first half alone would put every phone picked up
+ * entered, and answering that first half alone would put every device picked up
  * off a table into the faster mode.
  *
  * Changes arrive in order and the last one wins, because that is what the
- * phone is doing now; several of them can come in a single message after a
+ * device is doing now; several of them can come in a single message after a
  * spell with the screen off.
  */
 fun movingAfter(changes: List<ActivityChange>, before: Boolean = false): Boolean =

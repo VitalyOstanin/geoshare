@@ -13,7 +13,7 @@ import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlin.coroutines.resume
 
 /**
- * One position from the towers and the Wi-Fi around the phone.
+ * One position from the towers and the Wi-Fi around the device.
  *
  * Asked of the platform rather than of Play Services, which is the whole
  * point: Play Services picks the source itself and, where the satellites are
@@ -44,7 +44,7 @@ suspend fun networkPosition(context: Context): Fix? = suspendCancellableCoroutin
             }
 
             // Abstract until Android 11, and a provider that goes away while
-            // the phone is waiting is an answer of its own kind: none.
+            // the device is waiting is an answer of its own kind: none.
             override fun onProviderDisabled(provider: String) {
                 manager.removeUpdates(this)
 
@@ -75,7 +75,7 @@ suspend fun networkPosition(context: Context): Fix? = suspendCancellableCoroutin
  * knows did not come from the towers after all.
  *
  * The store is asked for the network provider and answers with whatever it
- * last put there, which on at least one of these phones is the satellite
+ * last put there, which on at least one of these devices is the satellite
  * answer itself: a position nineteen metres wide, no seconds old, sitting on
  * the very place the spoofer had been handing out. Such an answer is not a
  * second opinion, it is the first one again — and the caller writes what comes

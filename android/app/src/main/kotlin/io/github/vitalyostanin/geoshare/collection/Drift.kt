@@ -50,9 +50,9 @@ enum class SkyDrift {
  * before either verdict is given.
  *
  * Read off the logs, at the twenty seconds apart the pairs are read at. Over
- * the phone being spoofed the GPS band drifts apart by 0,2—0,3 dB; over the
- * hours when the same phone still took GLONASS into the fix, by 0,9—1,0 dB;
- * over the phone in another part of the city, by 1,2—1,5 dB. The hours when
+ * the device being spoofed the GPS band drifts apart by 0,2—0,3 dB; over the
+ * hours when the same device still took GLONASS into the fix, by 0,9—1,0 dB;
+ * over the device in another part of the city, by 1,2—1,5 dB. The hours when
  * about half the epochs read flat sit at 0,3—0,5 dB, which is why the limit
  * for a real sky is set above them rather than between: an hour half spoofed
  * is not an hour to call honest.
@@ -64,11 +64,11 @@ const val APART_DRIFT_DB: Double = 0.9
  * How many satellites of one system have to be heard in both epochs.
  *
  * Eight rather than the five the shape of the sky is read from, and the logs
- * are why. Over the phone in another part of the city, indoors with five
+ * are why. Over the device in another part of the city, indoors with five
  * satellites in hand, a run of epochs reads as moving together six times in
  * ten — with so few of them the middle of their changes is one satellite's
- * change. Raised to eight, that phone gives no such reading at all on either
- * of its honest recordings, while the two phones under the transmitter, which
+ * change. Raised to eight, that device gives no such reading at all on either
+ * of its honest recordings, while the two devices under the transmitter, which
  * hear ten to fourteen, keep giving it seven to nine windows in ten.
  */
 const val DRIFT_MIN_SATELLITES: Int = 8
@@ -92,7 +92,7 @@ const val DRIFT_MOST_APART_MS: Long = 60_000L
  * Only the satellites heard in both: one that appears or disappears between
  * them says something about the sky, but not about how loudly the ones that
  * stayed are speaking. Apart by system for the same reason the slant is —
- * GLONASS arrives quieter than GPS on these phones, and the two together would
+ * GLONASS arrives quieter than GPS on these devices, and the two together would
  * measure the difference between the systems.
  */
 fun driftOf(before: List<Satellite>, now: List<Satellite>): Map<Constellation, Drift> {

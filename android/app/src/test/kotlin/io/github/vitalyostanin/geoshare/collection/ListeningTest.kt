@@ -25,7 +25,7 @@ class ListeningTest {
         assertEquals(LISTEN_AGAIN_AT_MOST, listenAgainAfter(8))
     }
 
-    // A phone left running for days keeps asking on the same schedule rather
+    // A device left running for days keeps asking on the same schedule rather
     // than arriving at a wait no arithmetic can hold.
     @Test
     fun `a subscription refused all day is still asked about every five minutes`() {

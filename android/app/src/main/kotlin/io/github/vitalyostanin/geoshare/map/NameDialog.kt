@@ -18,8 +18,8 @@ import io.github.vitalyostanin.geoshare.R
 /**
  * Asks for a name, with what it is called now to start from.
  *
- * One dialog for the three names there are — a phone and a person for this
- * member alone, and this phone for everybody — so they read and behave alike.
+ * One dialog for the three names there are — a device and a person for this
+ * member alone, and this device for everybody — so they read and behave alike.
  * [onSave] gets null for an empty name, which puts back whatever the thing is
  * called without one; the reset button says so in a word.
  */

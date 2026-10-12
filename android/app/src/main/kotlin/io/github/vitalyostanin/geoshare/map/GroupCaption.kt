@@ -9,7 +9,7 @@ const val GROUP_NAME_LIMIT = 60
  * What is written for a group's name: trimmed, held to the length the rules
  * check, and null once that leaves nothing.
  *
- * The same shape [labelText] gives a phone or a person's name, so a field
+ * The same shape [labelText] gives a device or a person's name, so a field
  * left blank founds a group with none of its own rather than one named the
  * empty string, which the rules would refuse anyway (`nameFits`).
  */

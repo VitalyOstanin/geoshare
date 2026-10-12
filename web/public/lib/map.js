@@ -108,7 +108,7 @@ const FACE_INSET = 6;
  *
  * A tile is a picture drawn on the server, so its colours cannot be changed
  * here: a dark map is a different set of tiles rather than a setting. The
- * light ones are the ones the phones draw; the dark ones are Carto's rendering
+ * light ones are the ones the devices draw; the dark ones are Carto's rendering
  * of the same OpenStreetMap data, which is what makes the page at night as
  * readable as the rest of it.
  */
@@ -229,7 +229,7 @@ function newView(map, onCardChange, cardElement) {
         // The rectangle "follow everybody" last fitted the map to, so that a
         // rectangle barely different from it does not nudge the view again.
         followedBounds: null,
-        // Asked to name a phone or a person, from the card: `(kind, key)`,
+        // Asked to name a device or a person, from the card: `(kind, key)`,
         // where kind is `devices` or `members`. Set by the page; a card with
         // nobody to ask offers no names.
         onName: null,
@@ -305,7 +305,7 @@ function listenToTheMap(view) {
 /** The two ways of putting the card away that are not its own cross. */
 function closeOnATapOrEscape(view) {
     // A tap away from everybody means the card is no longer being looked at,
-    // which is how the phone reads the same tap. A tap on a marker is caught
+    // which is how the device reads the same tap. A tap on a marker is caught
     // first, in addMarker, and stopped there from bubbling — without that,
     // this handler would close the card the very tap that opened it was meant
     // to leave open.
@@ -671,7 +671,7 @@ function buildPin(count) {
 
     // A pin rather than a dot, and a face inside it: the point at the bottom
     // is the position, so the face can be this large without covering the
-    // place the member actually is. The same shape the phone draws.
+    // place the member actually is. The same shape the device draws.
     const pin = document.createElement('span');
     pin.className = 'member-pin';
 
@@ -933,10 +933,10 @@ export function lookAt(view, position) {
  * How close the map has to come for the circle of doubt to be worth drawing.
  *
  * The circle is drawn in metres, and a browser window is three times as wide
- * as a phone: at the zoom both clients start at, a hundred and sixty metres of
+ * as a device: at the zoom both clients start at, a hundred and sixty metres of
  * doubt comes out thirty-three pixels across on a laptop, which is the size of
  * the pin standing on top of it — the ring is there and cannot be seen. On a
- * phone the same ring covers a good part of a narrow screen, which is why the
+ * device the same ring covers a good part of a narrow screen, which is why the
  * Android map needs nothing of the sort.
  *
  * The answer is the zoom at which the circle spans [RING_SHARE_OF_THE_VIEW] of

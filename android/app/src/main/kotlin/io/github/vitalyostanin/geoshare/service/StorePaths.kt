@@ -24,7 +24,7 @@ import io.github.vitalyostanin.geoshare.project.GroupConnection
 /**
  * The document of a group by name, for a group this device is not in yet.
  *
- * Founding one and joining one are the two writes made before the phone has
+ * Founding one and joining one are the two writes made before the device has
  * moved: both have to reach a group by name, and the name is only worth
  * remembering once the write has been allowed. Everything else goes through
  * the [GroupConnection] of a group the device is in.
@@ -42,7 +42,7 @@ fun watchOf(connection: GroupConnection): CollectionReference =
     connection.groupDocument.collection("watch")
 
 /**
- * What a member gives out: the phones they carry and whom they let watch.
+ * What a member gives out: the devices they carry and whom they let watch.
  *
  * Apart from the profile because the profile is read by everybody in the
  * group, and neither of these is the group's business: only the member and the
@@ -50,14 +50,14 @@ fun watchOf(connection: GroupConnection): CollectionReference =
  */
 fun grantsOf(connection: GroupConnection): CollectionReference = grantsIn(connection.groupDocument)
 
-/** The same collection under a group this phone is joining. */
+/** The same collection under a group this device is joining. */
 fun grantsIn(group: DocumentReference): CollectionReference = group.collection("grants")
 
 /**
- * The phones of each member and what each last said about itself: when it was
+ * The devices of each member and what each last said about itself: when it was
  * in touch, in which mode, how charged and whether on a cable.
  *
- * Apart from the positions because none of it is a place, and a phone whose
+ * Apart from the positions because none of it is a place, and a device whose
  * answers are all being held back as forged is still in touch and still on its
  * cable. Apart from the grants because an administrator reads it, and whom a
  * member shares with is not theirs to see.
@@ -66,7 +66,7 @@ fun phonesOf(connection: GroupConnection): CollectionReference =
     connection.groupDocument.collection("devices")
 
 /**
- * What each member calls the phones and the people of the group, for
+ * What each member calls the devices and the people of the group, for
  * themselves: one document per member, read and written by that member alone.
  */
 fun labelsOf(connection: GroupConnection): CollectionReference =
@@ -82,17 +82,17 @@ fun labelsOf(connection: GroupConnection): CollectionReference =
 fun invitationsOf(connection: GroupConnection): CollectionReference =
     invitationsIn(connection.groupDocument)
 
-/** The same collection under a group this phone is joining, where joining spends the code. */
+/** The same collection under a group this device is joining, where joining spends the code. */
 fun invitationsIn(group: DocumentReference): CollectionReference = group.collection("invitations")
 
 /**
- * The same collection under a group this phone has not joined yet, which is
+ * The same collection under a group this device has not joined yet, which is
  * the only group a claim to hold a code is ever written into.
  */
 fun joinsIn(group: DocumentReference): CollectionReference = group.collection("joins")
 
 /**
- * The places a false signal is known to put phones at, as this group knows
+ * The places a false signal is known to put devices at, as this group knows
  * them.
  *
  * In the database rather than in the build: which places those are is a fact
@@ -104,30 +104,30 @@ fun falsePlacesOf(connection: GroupConnection): CollectionReference =
     connection.groupDocument.collection("falsePlaces")
 
 /**
- * The group's searches: one document per phone the group is looking for,
+ * The group's searches: one document per device the group is looking for,
  * addressed by `{uid}.{deviceId}` the same as a position or a siren.
  *
  * Everybody in the group reads the collection, because everybody's map marks
- * the phone being looked for; only an administrator writes it, and the member
- * whose phone it is may delete it themselves, once they are found.
+ * the device being looked for; only an administrator writes it, and the member
+ * whose device it is may delete it themselves, once they are found.
  */
 fun searchesOf(connection: GroupConnection): CollectionReference =
     connection.groupDocument.collection("searches")
 
 /**
- * The group's sirens: one document per phone, addressed by `{uid}.{deviceId}`
+ * The group's sirens: one document per device, addressed by `{uid}.{deviceId}`
  * the same as a position.
  *
- * An administrator may call a siren on any phone in the group; a member may
+ * An administrator may call a siren on any device in the group; a member may
  * call one only on their own. Reading a document is likewise limited to
  * whoever may call it, so the collection as a whole is never listened to —
- * only the one document a phone or a caller's screen cares about.
+ * only the one document a device or a caller's screen cares about.
  */
 fun sirensOf(connection: GroupConnection): CollectionReference =
     connection.groupDocument.collection("sirens")
 
 /**
- * The group's requests that a phone forget its place: one document per phone,
+ * The group's requests that a device forget its place: one document per device,
  * addressed by `{uid}.{deviceId}` the same as a siren, and readable by the same
  * people — so, like a siren, only ever listened to one document at a time.
  */
@@ -135,7 +135,7 @@ fun resetsOf(connection: GroupConnection): CollectionReference =
     connection.groupDocument.collection("resets")
 
 /**
- * What the group has settled about how its phones judge an answer.
+ * What the group has settled about how its devices judge an answer.
  *
  * One document per subject rather than fields on the group document: the
  * roster is written by a rule that allows two named shapes and nothing else,
@@ -195,12 +195,12 @@ object PositionField {
     const val ACCURACY_METRES = "accuracyMetres"
 
     /**
-     * How the phone arrived at the answer, as one of the words of `FoundBy`.
+     * How the device arrived at the answer, as one of the words of `FoundBy`.
      *
-     * The phone's own reading of it rather than the name of the provider: what
+     * The device's own reading of it rather than the name of the provider: what
      * arrives under the name of the satellites is half the time an assistance
      * service answering over the network, and a reader shown the provider's
-     * name would be told the opposite of what happened. The entry the phone
+     * name would be told the opposite of what happened. The entry the device
      * wrote is the key, and each client says it in its own language.
      */
     const val FOUND_BY = "foundBy"
@@ -209,7 +209,7 @@ object PositionField {
      * Whether the receiver had not settled when this answer was taken.
      *
      * Written only where it is true, the way the width is written only where
-     * there is one: a phone whose receiver has settled says nothing, and a
+     * there is one: a device whose receiver has settled says nothing, and a
      * reader that finds nothing shows nothing. The field is what keeps the
      * tighter rules of those minutes from being the whole of the answer — an
      * answer of a receiver coming up that passes them is still an answer of a
@@ -221,11 +221,11 @@ object PositionField {
     /**
      * How many answers have been left out since the last position was written.
      *
-     * The field that tells a phone being lied to from a phone that is off. A
-     * phone under a transmitter writes nothing — every answer it gets is
+     * The field that tells a device being lied to from a device that is off. A
+     * device under a transmitter writes nothing — every answer it gets is
      * thrown out by one rule or another — and from the outside that is exactly
-     * what a phone in a drawer looks like: a marker quietly getting older. The
-     * count says the phone is there, working, and being talked over.
+     * what a device in a drawer looks like: a marker quietly getting older. The
+     * count says the device is there, working, and being talked over.
      */
     const val LEFT_OUT_COUNT = "leftOutCount"
 
@@ -256,7 +256,7 @@ object GrantField {
     const val SHARED_WITH = "sharedWith"
 }
 
-/** The fields of one phone's entry in its member's document of phones. */
+/** The fields of one device's entry in its member's document of devices. */
 object PhoneField {
     const val MODEL = "model"
     const val NAME = "name"
@@ -302,7 +302,7 @@ object WatchField {
     const val SINCE = "since"
 }
 
-/** The fields of a search: the group looking for one phone of a member. */
+/** The fields of a search: the group looking for one device of a member. */
 object SearchField {
     const val OPENED_BY = "openedBy"
     const val STARTED_AT = "startedAt"
@@ -310,11 +310,11 @@ object SearchField {
     const val RENEWED_AT = "renewedAt"
     const val HOURS = "hours"
 
-    /** The phone's name as the administrator saw it when they opened or renewed the search. */
+    /** The device's name as the administrator saw it when they opened or renewed the search. */
     const val PHONE_NAME = "phoneName"
 }
 
-/** The fields of a siren: a call that rings one phone in the group. */
+/** The fields of a siren: a call that rings one device in the group. */
 object ResetField {
     const val ASKED_BY = "askedBy"
     const val ASKED_AT = "askedAt"

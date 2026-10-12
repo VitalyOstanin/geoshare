@@ -12,7 +12,7 @@ import java.time.Duration
 import java.time.Instant
 
 /**
- * The phone and the asking screen read the same document: the phone has to
+ * The device and the asking screen read the same document: the device has to
  * know whether a request is still worth carrying out, and both screens, the
  * page's `resets.test.mjs` among them, whether it is waiting, done or
  * unanswered.

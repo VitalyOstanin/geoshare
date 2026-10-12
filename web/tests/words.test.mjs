@@ -42,7 +42,7 @@ test('a counted member takes the ending the count asks for', () => {
     assert.equal(RU.members(11), '11 участников');
 });
 
-// The same three forms for the answers a phone threw away, which is a count
+// The same three forms for the answers a device threw away, which is a count
 // shown on a card while a spoof is running.
 test('a count of left-out answers takes the ending the count asks for', () => {
     assert.equal(RU.leftOutAnswers(1), '1 позиция');

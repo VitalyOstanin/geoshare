@@ -30,7 +30,7 @@ private const val TRANSITIONS = "io.github.vitalyostanin.geoshare.ACTIVITY_TRANS
 /**
  * The ways of moving worth telling apart from standing still.
  *
- * Walking, running, cycling and riding are all "the phone is going somewhere",
+ * Walking, running, cycling and riding are all "the device is going somewhere",
  * which is the only distinction the modes make. Standing still is asked for as
  * well, because it is what ends the others.
  */
@@ -43,7 +43,7 @@ private val TRAVELLING =
     )
 
 /**
- * Whether the phone is going somewhere, as its own sensors see it.
+ * Whether the device is going somewhere, as its own sensors see it.
  *
  * Counted by the platform rather than by us: the step counter and the
  * accelerometer are read by a chip that is awake anyway, so the answer costs

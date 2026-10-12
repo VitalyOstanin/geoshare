@@ -3,7 +3,7 @@ package io.github.vitalyostanin.geoshare.collection
 import androidx.annotation.StringRes
 import io.github.vitalyostanin.geoshare.R
 
-/** One line of the help: a mode, when it happens and what the phone does in it. */
+/** One line of the help: a mode, when it happens and what the device does in it. */
 data class ModeExplained(
     val mode: CollectionMode,
     @param:StringRes val name: Int,
@@ -17,7 +17,7 @@ data class ModeExplained(
  *
  * Not the order of the enumeration, which is the order the entries happened to
  * be written in. A member opening this has just seen one name on a card and
- * wants to know where it stands among the others, and "how much is this phone
+ * wants to know where it stands among the others, and "how much is this device
  * doing" is the axis that answers that.
  */
 fun modesExplained(): List<ModeExplained> = listOf(

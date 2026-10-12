@@ -20,7 +20,7 @@ fun membersOnTheStrip(count: Int): Int = if (count <= MEMBERS_SHOWN + 1) count e
  * by id rather than by distance or freshness: the panel is a set of buttons,
  * and buttons that swap places between two glances get pressed by mistake.
  *
- * The phones of one member follow each other, because the account is the first
+ * The devices of one member follow each other, because the account is the first
  * part of the id they are sorted by.
  */
 fun orderedForNavigation(

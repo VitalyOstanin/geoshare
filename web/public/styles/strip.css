@@ -1,4 +1,4 @@
-/* Stands over the bottom of the map rather than beside it, the way the phone
+/* Stands over the bottom of the map rather than beside it, the way the device
    screen draws the same card. Anchored to the panel's own top edge instead of
    to a marker: a card pinned to whichever pin it is about would cover the
    very place on the map a viewer opened it to look at, and would have to

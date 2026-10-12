@@ -18,16 +18,16 @@ private const val METRES_IN_A_TENTH = 100.0
 private const val TENTHS_IN_A_KILOMETRE = 10.0
 
 /**
- * Where the viewer is: the freshest place any of their own phones has written.
+ * Where the viewer is: the freshest place any of their own devices has written.
  *
- * All of their phones rather than this one alone, so that a member reading the
- * map on a second phone left at home is measured from the one in their pocket.
+ * All of their devices rather than this one alone, so that a member reading the
+ * map on a second device left at home is measured from the one in their pocket.
  *
  * A place that has gone grey is no place to measure from: the viewer has had
  * half an hour to walk off, and a distance from where they were is read as a
- * distance from where they are. A marker left behind by a phone that is still
+ * distance from where they are. A marker left behind by a device that is still
  * online is the same place gone grey, only without the colour, and so is one
- * inside a place a false signal is known to put phones at.
+ * inside a place a false signal is known to put devices at.
  */
 fun ownPlace(positions: List<MemberPosition>, ownMemberId: String, now: Instant): MemberPosition? =
     positions
@@ -78,7 +78,7 @@ fun distanceFromViewer(
  * The distance in the units the width is written in: whole metres up to a
  * kilometre and kilometres to one place above it.
  *
- * Unlike a width, nought metres is an answer: two phones on one table.
+ * Unlike a width, nought metres is an answer: two devices on one table.
  */
 fun distanceUnits(metres: Double): PositionWidth {
     val whole = metres.roundToLong()

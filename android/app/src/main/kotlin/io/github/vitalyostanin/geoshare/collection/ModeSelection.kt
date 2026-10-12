@@ -13,17 +13,17 @@ data class CollectionState(
     val moving: Boolean,
     val batteryPercent: Int,
     /**
-     * Whether this phone's own map is open in front of somebody.
+     * Whether this device's own map is open in front of somebody.
      *
      * Separate from [watchersUntil] because it never travels: the claim this
-     * phone writes for the others comes back to it filtered out, so without
-     * this the one viewer the phone can be certain of would be the only one it
+     * device writes for the others comes back to it filtered out, so without
+     * this the one viewer the device can be certain of would be the only one it
      * never counted.
      */
     val ownMapOpen: Boolean,
 )
 
-/** Below this the phone stops trying to be useful and starts trying to last. */
+/** Below this the device stops trying to be useful and starts trying to last. */
 const val LOW_BATTERY_PERCENT: Int = 15
 
 private val NIGHT_START: LocalTime = LocalTime.of(23, 0)
@@ -41,7 +41,7 @@ fun chooseMode(state: CollectionState): CollectionMode {
     return when {
         // A viewer outranks everything, including a flat battery: the point of
         // the application is to answer "where are you" while somebody asks.
-        // The person holding this phone is a viewer like any other, and the
+        // The person holding this device is a viewer like any other, and the
         // question they are asking of their own map is the same question.
         watched || state.ownMapOpen -> CollectionMode.Viewing
 

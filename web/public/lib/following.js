@@ -67,7 +67,7 @@ export function boundsOf(positions) {
 /**
  * How close two bounding rectangles are allowed to be treated as the same.
  *
- * About twenty metres of latitude: a phone sitting on a table drifts by that
+ * About twenty metres of latitude: a device sitting on a table drifts by that
  * much between fixes on its own, and refitting the view for drift that small
  * would make the map visibly breathe while nobody has actually moved.
  */
@@ -94,7 +94,7 @@ export function boundsAreClose(one, other, tolerance = BOUNDS_TOLERANCE_DEGREES)
 /**
  * The position a followed member is at, or `null` if they are not in the set.
  *
- * A member drops out of the set when their phone has gone quiet for too long
+ * A member drops out of the set when their device has gone quiet for too long
  * or their claimed position was rejected; the map has nothing to centre on
  * until they reappear, rather than freezing on a stale point.
  */

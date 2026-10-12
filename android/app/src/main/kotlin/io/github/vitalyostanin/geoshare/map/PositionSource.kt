@@ -17,7 +17,7 @@ import java.time.Duration
 
 private const val TAG = "geoshare.positions"
 
-/** How many phones of one member this screen will follow. The rules say the same. */
+/** How many devices of one member this screen will follow. The rules say the same. */
 private const val DEVICES_PER_MEMBER = 10
 
 /**
@@ -37,8 +37,8 @@ internal val RETRY_AFTER: Duration = Duration.ofMinutes(15)
 internal const val WIDEST_CIRCLE_METRES = 100_000.0
 
 /**
- * Which documents hold the positions of the members who let this phone watch,
- * together with any this phone may read regardless: its own, and every phone
+ * Which documents hold the positions of the members who let this device watch,
+ * together with any this device may read regardless: its own, and every device
  * a search stands for right now.
  *
  * Named one by one rather than asked for as a collection: a permission that
@@ -48,27 +48,27 @@ internal const val WIDEST_CIRCLE_METRES = 100_000.0
 fun positionDocuments(
     grants: Map<String, MemberGrant>,
     own: String? = null,
-    /** The phones the group is looking for right now: their places open without a grant. */
+    /** The devices the group is looking for right now: their places open without a grant. */
     sought: Collection<String> = emptyList(),
 ): List<String> = grants.values
     .flatMap { grant ->
         grant.devices
             // A subscription each, and the grant is written by somebody
-            // else: a grant naming more phones than a person can carry
+            // else: a grant naming more devices than a person can carry
             // would put this screen out of action. The rules hold the list
             // to the same number; this is what happens to one written
             // before they did.
             .take(DEVICES_PER_MEMBER)
             .map { positionId(grant.memberId, it) }
     }
-    // This phone's own document is followed whether or not its grant says
+    // This device's own document is followed whether or not its grant says
     // so yet: the grant is written after the first position, and until it
-    // reaches the server the phone would show nobody at all, itself
+    // reaches the server the device would show nobody at all, itself
     // included. The database hands a subscriber its own write before the
-    // server has it, so the marker is there as soon as the phone has a
+    // server has it, so the marker is there as soon as the device has a
     // position, with the network or without it.
     .plus(listOfNotNull(own))
-    // A standing search opens its one phone's place over whatever the
+    // A standing search opens its one device's place over whatever the
     // grant says, and to readers the grant never named at all: the rules
     // read the search where they used to read the grant, so the reader
     // has to ask for the document the same way, grant or none.
@@ -91,7 +91,7 @@ data class MembersInView(
  * Where the members are, as they say so.
  *
  * A subscription rather than a read on a timer: a member who moves writes a
- * new position, and the marker follows within a second without this phone
+ * new position, and the marker follows within a second without this device
  * asking for anything.
  *
  * One subscription per document, because that is the only shape the
@@ -122,9 +122,9 @@ fun memberPositions(
         val document = positions.document(id)
 
         subscriptions[id] =
-            // With the metadata changes as well: whether this phone's own write
-            // is still waiting is not part of the document, and a listener told
-            // only of the data would hear of it only as a side effect.
+            // With the metadata changes as well: whether this device's own
+            // write is still waiting is not part of the document, and a listener
+            // told only of the data would hear of it only as a side effect.
             document.addSnapshotListener(MetadataChanges.INCLUDE) { snapshot, error ->
                 if (error != null) {
                     AppLog.i(TAG, "$id is out of reach: ${error.code}")
@@ -143,7 +143,7 @@ fun memberPositions(
                 refused.remove(id)
 
                 // A document that is not there is not a complaint: a member
-                // whose grant names a phone they have since reinstalled has
+                // whose grant names a device they have since reinstalled has
                 // one, and so does every device before its first write.
                 val position = if (snapshot?.exists() == true) positionOf(snapshot) else null
 
@@ -165,7 +165,7 @@ fun memberPositions(
 
     // Said once at the start, so that a screen with nothing to draw shows an
     // empty map rather than waiting for an answer that never comes: a member
-    // whose grant this phone may not read has no document to subscribe to at
+    // whose grant this device may not read has no document to subscribe to at
     // all.
     publish()
 
@@ -195,8 +195,8 @@ private fun positionOf(document: DocumentSnapshot): MemberPosition? {
 
     return MemberPosition(
         positionId = document.id,
-        // Written into the document by the phone that wrote the position. A
-        // document from before positions were kept per phone has no such
+        // Written into the document by the device that wrote the position. A
+        // document from before positions were kept per device has no such
         // field, and there the whole id is the account.
         memberId = document.getString(PositionField.MEMBER_ID) ?: document.id.substringBefore('.'),
         deviceName = null,
@@ -228,7 +228,7 @@ private fun positionOf(document: DocumentSnapshot): MemberPosition? {
  *
  * A width is a radius, so nought and less are not widths at all; and one wider
  * than a hundred kilometres is a circle covering everything the map can show,
- * which says less about where the phone is than the marker alone does. The
+ * which says less about where the device is than the marker alone does. The
  * rules refuse both, and this is what happens to a document written before
  * they did.
  */

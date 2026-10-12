@@ -82,7 +82,7 @@ export function openHelpTable({ title, intro, headings, rows }, document_ = docu
     dialog.addEventListener('cancel', dismiss);
 
     // A click on the dark behind the window closes it, the way a tap beside a
-    // sheet does on a phone. The dark is not an element of its own -- it is
+    // sheet does on a device. The dark is not an element of its own -- it is
     // the dialog's own backdrop -- so such a click arrives at the dialog
     // itself, as does a click on the dialog's padding; the point is compared
     // with the box to tell the two apart.

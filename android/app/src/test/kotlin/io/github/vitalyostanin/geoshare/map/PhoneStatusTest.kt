@@ -7,10 +7,10 @@ import org.junit.Test
 import java.time.Instant
 
 /**
- * What a phone says about itself apart from where it is, and how that reaches
+ * What a device says about itself apart from where it is, and how that reaches
  * the card.
  *
- * The case this exists for: a phone whose answers are all being thrown away
+ * The case this exists for: a device whose answers are all being thrown away
  * writes no position, and its charge, its cable and the moment it was last in
  * touch have to arrive anyway.
  */
@@ -56,7 +56,7 @@ class PhoneStatusTest {
         assertEquals("Viewing", shown.mode)
     }
 
-    // The phone's own summary may have reached the database while the position
+    // The device's own summary may have reached the database while the position
     // has not; the later moment from it must not pass for the position leaving.
     @Test
     fun `a position still waiting to leave stays waiting under what the phone said`() {
@@ -74,8 +74,8 @@ class PhoneStatusTest {
         assertSame(position, withPhones(listOf(position), grants).single())
     }
 
-    // An administrator reads everybody's phones and nobody's grant: the phones
-    // are there to show, and no position is followed.
+    // An administrator reads everybody's devices and nobody's grant: the
+    // devices are there to show, and no position is followed.
     @Test
     fun `phones read without the grant lead to no positions`() {
         val grants = combinedGrants(emptyMap(), mapOf("her" to mapOf("phone" to PhoneStatus())))
@@ -84,7 +84,7 @@ class PhoneStatusTest {
         assertEquals(1, grants.getValue("her").phones.size)
     }
 
-    // A phone of an older build names itself in the grant and nowhere else.
+    // A device of an older build names itself in the grant and nowhere else.
     @Test
     fun `the phones to follow are those of the grant and of the phones together`() {
         val named = mapOf("her" to MemberGrant(memberId = "her", devices = listOf("old", "new")))

@@ -148,7 +148,7 @@ fun MemberMap(
     faces: Map<String, Bitmap>,
     ownMemberId: String,
     now: Instant,
-    /** The phones the group is looking for right now, by their `{uid}.{deviceId}`. */
+    /** The devices the group is looking for right now, by their `{uid}.{deviceId}`. */
     soughtPhones: Set<String> = emptySet(),
     /** Whether the screen around the map is dark, which the tiles follow. */
     dark: Boolean,
@@ -240,8 +240,8 @@ fun MemberMap(
         }
     }
 
-    // What the markers show is what the phone last heard while the database
-    // is silent: grey, the way a phone long out of touch is drawn.
+    // What the markers show is what the device last heard while the database
+    // is silent: grey, the way a device long out of touch is drawn.
     val linkLost = LocalLink.current.lost
 
     AndroidView(factory = { holder.view }, modifier = modifier) { _ ->

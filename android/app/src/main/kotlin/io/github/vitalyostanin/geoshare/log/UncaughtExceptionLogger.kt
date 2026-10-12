@@ -4,7 +4,7 @@ package io.github.vitalyostanin.geoshare.log
  * Puts an exception nobody caught into the application's own log before the
  * process goes.
  *
- * The system log would carry it too, but on a phone that keeps its buffers to
+ * The system log would carry it too, but on a device that keeps its buffers to
  * itself that is nowhere anyone can read, and the crash would leave no trace at
  * all. The previous handler is still called, once, so the process dies the way
  * it would have and the platform's own report is not lost.

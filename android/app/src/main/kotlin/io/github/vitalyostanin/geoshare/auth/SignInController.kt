@@ -145,7 +145,7 @@ class SignInController(
                     .newBuilder("google.com", auth)
                     // Otherwise the page silently reuses the browser's last
                     // Google session, and a member with more than one account
-                    // never gets to choose which of them this phone shares as.
+                    // never gets to choose which of them this device shares as.
                     .addCustomParameter("prompt", "select_account")
                     .build()
 

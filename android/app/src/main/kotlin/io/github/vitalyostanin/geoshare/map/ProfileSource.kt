@@ -23,9 +23,9 @@ private const val TAG = "geoshare.profiles"
  * Whether the server says this member's own profile is gone from the group.
  *
  * Only an answer from the server counts, and only one with no write of this
- * phone still on its way: a write the server refuses shows up in the cache
+ * device still on its way: a write the server refuses shows up in the cache
  * first and vanishes afterwards, and that is not the profile being taken away.
- * Nothing is said where the document cannot be read — a phone not yet let into
+ * Nothing is said where the document cannot be read — a device not yet let into
  * the group has no profile there to lose.
  */
 fun ownProfileGone(connection: GroupConnection, memberId: String): Flow<Boolean> = callbackFlow {
@@ -78,7 +78,7 @@ fun memberProfiles(connection: GroupConnection): Flow<Map<String, MemberProfile>
             }
 
     awaitClose { subscription.remove() }
-    // Nobody to name once the collection is closed to this phone: the names it
+    // Nobody to name once the collection is closed to this device: the names it
     // holds are the members of a group it has been taken out of.
 }.comingBack("profiles", forgetting = { emptyMap() })
 
@@ -101,13 +101,13 @@ private fun profileOf(document: DocumentSnapshot): MemberProfile? {
 }
 
 /**
- * What each member gives out, as far as this phone is allowed to know.
+ * What each member gives out, as far as this device is allowed to know.
  *
  * One subscription per member rather than one over the collection: the grants
  * cannot be listed, because listing them would hand the whole household's
- * phones to a member who was given nothing.
+ * devices to a member who was given nothing.
  *
- * A member who shares with this phone answers with their phones; one who does
+ * A member who shares with this device answers with their devices; one who does
  * not answers with a refusal, and a refusal is simply an absence here — there
  * is no marker to drop and nothing to report, since the same member is already
  * missing from the map. The subscription is made again on a timer, so a
@@ -144,7 +144,7 @@ fun memberGrants(
                     return@addSnapshotListener
                 }
 
-                // A member who has not written a grant yet — a phone that has
+                // A member who has not written a grant yet — a device that has
                 // not been opened since the split — has no document, and that
                 // is not a complaint either.
                 if (snapshot?.exists() != true) {
@@ -157,8 +157,8 @@ fun memberGrants(
             }
     }
 
-    // What the phones say about themselves, followed apart from the grant: an
-    // administrator reads these without a permission, and a phone of an
+    // What the devices say about themselves, followed apart from the grant: an
+    // administrator reads these without a permission, and a device of an
     // older build has not written them at all.
     fun followPhones(memberId: String) {
         val key = "phones:$memberId"

@@ -86,7 +86,7 @@ private val SILENCE_REPORTED_EVERY: Duration = Duration.ofMinutes(5)
  * How often the log says how much the satellites have said.
  *
  * Said on its own schedule rather than beside a fix: the messages arrive
- * whether or not a position comes out of them, and on the phones this was
+ * whether or not a position comes out of them, and on the devices this was
  * written for the fixes are the rare part.
  */
 private val NAVIGATION_REPORTED_EVERY: Duration = Duration.ofMinutes(5)
@@ -105,7 +105,7 @@ private val SKY_STILL_CURRENT: Duration = Duration.ofSeconds(5)
 /**
  * What the radio is being subjected to, as the receiver's own measures say.
  *
- * Subscriptions the phone already has the permission for, none of which asks
+ * Subscriptions the device already has the permission for, none of which asks
  * for a position: the satellites it can hear and how loud, the gain its
  * amplifier is running at, and the messages the satellites themselves are
  * broadcasting. The first pair is what separates a jammed receiver from a
@@ -120,7 +120,7 @@ private val SKY_STILL_CURRENT: Duration = Duration.ofSeconds(5)
  * loudness, and the two are read the same way.
  *
  * The measurements arrive whether or not a position comes out of them, which
- * is the case this exists for: a phone that has gone silent is a phone with
+ * is the case this exists for: a device that has gone silent is a device with
  * nothing to write down, and this is what can still be written.
  */
 class RadioWatch(
@@ -186,13 +186,13 @@ class RadioWatch(
     // read off them is a pair of epochs rather than a single one.
     private val satelliteClock = SatelliteClockWatch()
 
-    // Whether that reading found the satellites' time away from the phone's,
+    // Whether that reading found the satellites' time away from the device's,
     // epoch by epoch. A window rather than the last answer because the step it
     // catches is an event and the fixes around it are the ones worth leaving
     // out — see satelliteTimeParted.
     private val partings = ArrayDeque<Boolean>()
 
-    // The last signal whose time left the phone's clock, kept whole for the
+    // The last signal whose time left the device's clock, kept whole for the
     // line the log writes when a fix is left out: the window says that
     // something stepped, and this says what and by how much.
     @Volatile
@@ -208,7 +208,7 @@ class RadioWatch(
     @Volatile
     private var sky: List<Satellite> = emptyList()
 
-    // When that epoch arrived, by the phone's own clock. Kept because the
+    // When that epoch arrived, by the device's own clock. Kept because the
     // epoch is read as a statement about a fix, and a statement about a fix
     // has to have been made at about the same time as the fix.
     @Volatile
@@ -237,10 +237,10 @@ class RadioWatch(
     /**
      * What the last minute of measurements adds up to.
      *
-     * The bands are asked first. They answer less often — a phone hearing one
+     * The bands are asked first. They answer less often — a device hearing one
      * system has nothing to compare — but when they do answer they name the
      * band whatever is going on is going on in, and they answer without the
-     * gain, which some phones never report at all.
+     * gain, which some devices never report at all.
      */
     fun verdict(): Interference {
         val bands = windows(heard)
@@ -284,7 +284,7 @@ class RadioWatch(
     }
 
     /**
-     * The last signal whose time stepped away from the phone's clock, or null
+     * The last signal whose time stepped away from the device's clock, or null
      * where none has since the receiver started.
      *
      * Kept for the log rather than for a verdict: the verdict is [skySays],
@@ -300,7 +300,7 @@ class RadioWatch(
      * Handed over as one value rather than as the windows themselves: the
      * filter is a pure function over an answer and the windows belong to the
      * subscriptions. Both are silent until the window is full, which is what
-     * keeps a phone that has just started collecting from calling its first
+     * keeps a device that has just started collecting from calling its first
      * minute an attack.
      */
     fun skySays(): SkySays = SkySays(
@@ -370,7 +370,7 @@ class RadioWatch(
      * could be a sky at all — see [io.github.vitalyostanin.geoshare.collection.SkyShape].
      *
      * The numbers go out beside the verdict rather than instead of it, because
-     * the limits behind the verdict were read off two phones' logs and will
+     * the limits behind the verdict were read off two devices' logs and will
      * have to be corrected against more.
      */
     fun skySaying(): String? {
@@ -411,7 +411,7 @@ class RadioWatch(
      * different questions about the same band: that one is the shape of one
      * epoch, this one is what a run of them did. Both go out with their
      * numbers, because the limits behind the verdicts were read off three
-     * phones' logs and will have to be corrected against more.
+     * devices' logs and will have to be corrected against more.
      */
     fun driftSaying(): String? {
         val read =
@@ -485,7 +485,7 @@ class RadioWatch(
     }
 
     /**
-     * Whether the satellites' own time still runs along with the phone's.
+     * Whether the satellites' own time still runs along with the device's.
      *
      * Read on every epoch rather than where the sky is written down, because
      * what it reads is a pair of epochs and the sky file is written once per
@@ -581,7 +581,7 @@ class RadioWatch(
     /**
      * Subscribes to all three, on the handler rather than on an executor.
      *
-     * The executor overloads arrive with Android 11, and the phone this was
+     * The executor overloads arrive with Android 11, and the device this was
      * written for — the one that goes silent for hours at a time — runs
      * Android 10. The handler overloads are older than anything the
      * application supports, and the callbacks do nothing but average a list.
@@ -673,7 +673,7 @@ class RadioWatch(
      * The averages the verdict is read from.
      *
      * Nothing is reported until both halves are full: a comparison against
-     * three epochs of history would call every phone leaving a building an
+     * three epochs of history would call every device leaving a building an
      * attack.
      */
     private fun window(of: ArrayDeque<Double>): Epochs {
@@ -774,7 +774,7 @@ class RadioWatch(
      *
      * The kept epoch is replaced by this one whenever a reading is taken off
      * the pair, and also whenever the gap has grown past what the measure is
-     * for: a phone that stopped collecting and started again has an old epoch
+     * for: a device that stopped collecting and started again has an old epoch
      * in hand, and the difference against it would be about the hour between
      * them rather than about the sky.
      */

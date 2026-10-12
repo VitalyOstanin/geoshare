@@ -4,16 +4,16 @@ import java.time.Duration
 import java.time.Instant
 import java.util.Locale
 
-// Whether the phone was carried anywhere, asked of the one part of it a false
+// Whether the device was carried anywhere, asked of the one part of it a false
 // signal cannot reach.
 //
 // Every rule that compares one answer with another is arguing with a
 // transmitter about geometry, and a transmitter that draws its road slowly
 // enough wins that argument: a field measurement showed the answers creeping
-// about thirty metres apiece while the phone lay indoors, and no speed, width
+// about thirty metres apiece while the device lay indoors, and no speed, width
 // or shape catches a creep. The accelerometer is not on that signal. It
 // answers a smaller question than the receiver does — was this thing picked
-// up and taken somewhere — and answers it about the phone rather than about
+// up and taken somewhere — and answers it about the device rather than about
 // the sky.
 //
 // The other half of the same idea is already here in [movedWhileStanding],
@@ -21,38 +21,38 @@ import java.util.Locale
 // leap and lets a creep through, because the position written before it crept
 // along with the lie: every pair of answers is a metre or two apart, and the
 // place they walk away from is nowhere in the comparison. So the place is kept
-// instead — where the phone was standing when it was last put down — and the
+// instead — where the device was standing when it was last put down — and the
 // answers are weighed against that, for as long as nothing has touched it.
 
 /**
- * How many steps a phone may count while still standing where it was put.
+ * How many steps a device may count while still standing where it was put.
  *
- * Twenty, which is fifteen metres of walking. Some are counted by a phone
+ * Twenty, which is fifteen metres of walking. Some are counted by a device
  * being picked up off a table and put back; a person going anywhere at all
  * takes more than this before they reach the door.
  */
 const val CARRIED_STEPS: Int = 20
 
 /**
- * How far an answer may wander from where a put-down phone is lying.
+ * How far an answer may wander from where a put-down device is lying.
  *
  * A hundred and fifty metres. Measured rather than chosen: of 477 answers this
- * phone gave over an hour and a half of lying indoors, nine in ten stood
+ * device gave over an hour and a half of lying indoors, nine in ten stood
  * within twenty metres of the middle of them, and the ones that did not stood
- * at 115, 313, 885 and 1025 metres — every one of them a place the phone was
+ * at 115, 313, 885 and 1025 metres — every one of them a place the device was
  * not. The threshold sits above the honest spread with room to spare and
  * below the nearest of the lies.
  *
  * The width of the two answers is added to it where they are wider than that,
- * so a phone answering from a courtyard with a hundred metres of doubt on each
+ * so a device answering from a courtyard with a hundred metres of doubt on each
  * side is not accused of anything.
  */
 const val PUT_DOWN_DRIFT_METRES: Double = 150.0
 
 /**
- * How long the sensors have to stay quiet before the phone counts as put down.
+ * How long the sensors have to stay quiet before the device counts as put down.
  *
- * Two minutes. A phone set on a table is still being knocked about for a few
+ * Two minutes. A device set on a table is still being knocked about for a few
  * seconds after; waiting that out costs nothing, because what the wait delays
  * is the moment this rule starts speaking, and a creep takes longer than two
  * minutes to go anywhere interesting.
@@ -60,16 +60,16 @@ const val PUT_DOWN_DRIFT_METRES: Double = 150.0
 val PUT_DOWN_AFTER: Duration = Duration.ofMinutes(2)
 
 /**
- * What speed a put-down phone may be told it is travelling at.
+ * What speed a put-down device may be told it is travelling at.
  *
  * Three metres a second. The receiver reports a speed of its own alongside
- * every position, and on a phone lying still that number is not noisy — it is
- * zero. Of 6,405 answers the three phones gave from within two hundred metres
+ * every position, and on a device lying still that number is not noisy — it is
+ * zero. Of 6,405 answers the three devices gave from within two hundred metres
  * of home, the median was 0.00 m/s and so was the ninetieth percentile; of the
- * 5,381 answers given while the same phones, still lying where they were,
+ * 5,381 answers given while the same devices, still lying where they were,
  * were being told they stood a kilometre or more away, the median was 33.00
  * m/s and four in five were above 20. The threshold sits an order of
- * magnitude below the lie and above anything a phone on a table has ever been
+ * magnitude below the lie and above anything a device on a table has ever been
  * seen to claim.
  *
  * What the rule it belongs to has over the ordinary speed rule is that it
@@ -82,18 +82,18 @@ const val PUT_DOWN_SPEED_MPS: Double = 3.0
  * How long a stir is worth keeping after it arrives.
  *
  * Half an hour. What the stirs are asked is whether anything has touched the
- * phone since the anchor was set, and an anchor older than this has been
+ * device since the anchor was set, and an anchor older than this has been
  * replaced by a later one long since — a position is written every few minutes
- * even from a phone standing still.
+ * even from a device standing still.
  */
 val STIRS_KEPT: Duration = Duration.ofMinutes(30)
 
 /**
- * A moment the phone's own sensors noticed it being moved.
+ * A moment the device's own sensors noticed it being moved.
  *
  * One kind of event rather than two, because the difference between the
  * accelerometer's significant motion and a step being counted does not matter
- * to anything asked here: both of them mean the phone is in somebody's hand or
+ * to anything asked here: both of them mean the device is in somebody's hand or
  * pocket, and neither can be produced by a transmitter.
  */
 data class Stir(
@@ -104,15 +104,15 @@ data class Stir(
 )
 
 /**
- * Where the phone was standing when it was last put down.
+ * Where the device was standing when it was last put down.
  *
- * The position is one this phone wrote down and believed at the time. A lie
- * can become an anchor — a phone put down inside a spoofed area anchors on
+ * The position is one this device wrote down and believed at the time. A lie
+ * can become an anchor — a device put down inside a spoofed area anchors on
  * whatever it was told — and the rule is still worth having then: it catches
  * the answers walking away from that spot, which is what they do.
  */
 data class PutDown(
-    /** The position believed at the moment the phone settled. */
+    /** The position believed at the moment the device settled. */
     val at: Fix,
     /** When the sensors fell quiet. */
     val since: Instant,
@@ -120,7 +120,7 @@ data class PutDown(
      * What the step counter stood at then, where there is one.
      *
      * The counter counts from the last boot and never restarts, so the steps
-     * taken since the phone was put down are the difference from here. Kept
+     * taken since the device was put down are the difference from here. Kept
      * with the anchor rather than worked out from the stirs, because a batch
      * of steps arrives as one reading and a difference taken inside it would
      * be zero.
@@ -129,14 +129,14 @@ data class PutDown(
 )
 
 /**
- * What the sensors have to say about the time since the phone was put down.
+ * What the sensors have to say about the time since the device was put down.
  *
  * [told] separates "the sensors say nothing happened" from "there are no
  * sensors, or the permission was refused": the two read the same and mean
  * opposite things, and only the first of them is evidence.
  */
 data class Carrying(
-    /** Whether the phone has been stirred since it was put down. */
+    /** Whether the device has been stirred since it was put down. */
     val stirred: Boolean,
     /** Steps counted since then, where the counter answers. */
     val steps: Int? = null,
@@ -145,11 +145,11 @@ data class Carrying(
 )
 
 /**
- * Whether the phone counts as put down, given the last stir and the position
+ * Whether the device counts as put down, given the last stir and the position
  * it is standing at.
  *
  * Null wherever it does not: the sensors have not spoken, something touched
- * the phone within the last [PUT_DOWN_AFTER], or there is no position to
+ * the device within the last [PUT_DOWN_AFTER], or there is no position to
  * anchor on. A null anchor is the rule saying nothing, which is what it should
  * say wherever it does not know.
  */
@@ -174,12 +174,12 @@ fun putDownAt(
 }
 
 /**
- * Whether an answer has walked away from a phone nobody has touched.
+ * Whether an answer has walked away from a device nobody has touched.
  *
  * The anchor holds only while the sensors go on saying nothing: a stir, or
  * enough steps to have gone anywhere, and the rule falls silent rather than
- * accusing the first honest fix after somebody picked the phone up. It falls
- * silent as well for a fix taken before the phone settled — that answer is
+ * accusing the first honest fix after somebody picked the device up. It falls
+ * silent as well for a fix taken before the device settled — that answer is
  * about a different part of the day.
  */
 fun driftedWhilePutDown(putDown: PutDown?, next: Fix, carrying: Carrying): Boolean {
@@ -201,17 +201,17 @@ fun driftedWhilePutDown(putDown: PutDown?, next: Fix, carrying: Carrying): Boole
 }
 
 /**
- * Whether an answer says the phone is moving while nobody has touched it.
+ * Whether an answer says the device is moving while nobody has touched it.
  *
  * The other way of reading the same anchor as [driftedWhilePutDown]: there the
- * question is where the answer puts the phone, here it is what the answer says
- * the phone is doing. A receiver drawing a false road has to draw a speed
+ * question is where the answer puts the device, here it is what the answer says
+ * the device is doing. A receiver drawing a false road has to draw a speed
  * along it, and it draws one whether or not the place it draws happens to be
- * near where the phone is lying — so this speaks on a lie that has not yet
+ * near where the device is lying — so this speaks on a lie that has not yet
  * gone anywhere, which the distance rule cannot.
  *
  * It falls silent on the same terms as the distance rule, and for the same
- * reason: a stir, or enough steps to have gone anywhere, and the phone is one
+ * reason: a stir, or enough steps to have gone anywhere, and the device is one
  * that may honestly be travelling. Where the provider said nothing about a
  * speed there is nothing to judge.
  */
@@ -232,7 +232,7 @@ fun hurriedWhilePutDown(putDown: PutDown?, next: Fix, carrying: Carrying): Boole
 }
 
 /**
- * What the sensors say about the time since the phone was put down, worked out
+ * What the sensors say about the time since the device was put down, worked out
  * from the stirs that have arrived.
  *
  * Stirs arrive late: the step counter is read in batches so that the chip can
@@ -300,7 +300,7 @@ const val PINNED_MOVE_METRES: Double = 60.0
  * has not moved. So the rule speaks only where the receiver claims to have
  * measured the position off the sky and claims to know it to within a few
  * tens of metres: an answer that narrow, standing still through three hundred
- * metres of walking, is an answer about somewhere the phone is not.
+ * metres of walking, is an answer about somewhere the device is not.
  */
 const val PINNED_WIDTH_METRES: Double = 50.0
 
@@ -315,7 +315,7 @@ const val PINNED_WIDTH_METRES: Double = 50.0
 data class Walk(val since: Instant, val steps: Long)
 
 /**
- * The stretch of walking the phone is in the middle of, or nothing where it is
+ * The stretch of walking the device is in the middle of, or nothing where it is
  * not walking.
  *
  * Every reading of the counter that added nothing, and every gap longer than
@@ -363,16 +363,16 @@ fun walkingNow(stirs: List<Stir>): Walk? {
 }
 
 /**
- * Whether the position has stayed put while the phone was carried somewhere.
+ * Whether the position has stayed put while the device was carried somewhere.
  *
  * The other half of [driftedWhilePutDown], and the harder half: there the
- * phone was still and the answer moved, here the phone moved and the answer
+ * device was still and the answer moved, here the device moved and the answer
  * is still. A receiver held on a false position reports it steadily however
  * far its owner walks, and nothing about the run of answers gives that away —
  * they agree with one another perfectly. What disagrees is the step counter,
  * which no transmitter reaches.
  *
- * [from] is the position the phone gave when this stretch of walking began.
+ * [from] is the position the device gave when this stretch of walking began.
  * Both it and [next] have to be narrow claims measured off the sky, for which
  * see [PINNED_WIDTH_METRES]; where the caller cannot say that much about them,
  * it should not call.
@@ -400,7 +400,7 @@ fun pinnedWhileWalking(walk: Walk?, from: Fix?, next: Fix, told: Boolean = true)
 }
 
 /**
- * One line about an answer that arrived while the phone was being walked
+ * One line about an answer that arrived while the device was being walked
  * somewhere, for the log kept apart.
  *
  * Written for every such answer and not only for the ones [pinnedWhileWalking]

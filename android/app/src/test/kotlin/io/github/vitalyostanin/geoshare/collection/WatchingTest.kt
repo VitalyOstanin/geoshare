@@ -48,8 +48,8 @@ class WatchingTest {
         assertEquals(listOf("anna", "clara"), watchingMembers(watchers, now))
     }
 
-    // A group of twenty with one map open used to hold all twenty phones in
-    // the fast mode; a phone the viewer cannot see has nothing to be fast for.
+    // A group of twenty with one map open used to hold all twenty devices in
+    // the fast mode; a device the viewer cannot see has nothing to be fast for.
     @Test
     fun `a viewer the owner shares nothing with does not count`() {
         val watchers = listOf(Watcher("boris", now.plusSeconds(300)))
@@ -77,8 +77,8 @@ class WatchingTest {
         )
     }
 
-    // The owner looking from another phone of theirs names nobody in the
-    // grant, and is somebody the phone should be fresh for all the same.
+    // The owner looking from another device of theirs names nobody in the
+    // grant, and is somebody the device should be fresh for all the same.
     @Test
     fun `the owner's own other phone always counts`() {
         val claim = now.plusSeconds(300)

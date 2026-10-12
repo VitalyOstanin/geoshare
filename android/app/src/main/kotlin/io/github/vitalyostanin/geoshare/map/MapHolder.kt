@@ -47,7 +47,7 @@ internal class MapHolder(val view: MapView) {
     private var ownMemberId: String = ""
     private var now: Instant = Instant.EPOCH
 
-    /** The phones the group is looking for right now, by their `{uid}.{deviceId}`. */
+    /** The devices the group is looking for right now, by their `{uid}.{deviceId}`. */
     private var soughtPhones: Set<String> = emptySet()
     private var linkLost = false
 
@@ -385,7 +385,7 @@ internal class MapHolder(val view: MapView) {
      * Keeps the camera centred on [followTarget], the zoom left as it is.
      *
      * Left alone once the target's position has dropped out of [members] --
-     * a phone that stopped sending is not a place to snap the camera to --
+     * a device that stopped sending is not a place to snap the camera to --
      * and left alone once the camera is already there, so that a batch of
      * positions that did not move this member does not restart the
      * animation.
@@ -514,9 +514,9 @@ internal class MapHolder(val view: MapView) {
 
     private fun drawing(group: List<MemberPosition>): Bitmap {
         val single = group.singleOrNull()
-        // A marker holding a phone looked for is ringed whoever else stands
+        // A marker holding a device looked for is ringed whoever else stands
         // under it: the ring is what the rest of the group is scanning the
-        // map for, not a fact about one phone of a crowded pin.
+        // map for, not a fact about one device of a crowded pin.
         val sought =
             group.any { it.positionId in soughtPhones }.let { if (it) soughtMark else null }
 
@@ -566,7 +566,7 @@ internal class MapHolder(val view: MapView) {
      */
     private fun iconName(group: List<MemberPosition>): String = group.joinToString(
         separator = MEMBERS_SEPARATOR,
-        // Whether any phone under this marker is being looked for changes the
+        // Whether any device under this marker is being looked for changes the
         // whole drawing -- the ring and the word above it -- so it goes in
         // the prefix rather than beside one member's own id.
         prefix =
@@ -581,7 +581,7 @@ internal class MapHolder(val view: MapView) {
     }
 
     /**
-     * Grey for a phone long out of touch or in a false place, and for all of
+     * Grey for a device long out of touch or in a false place, and for all of
      * them while the database is silent.
      */
     private fun greyed(position: MemberPosition): Boolean = linkLost || isGrey(position, now)

@@ -7,11 +7,12 @@
  * The moments a refused subscription is made again.
  *
  * A refusal is mostly the member saying they no longer share, and a permission
- * handed back is written to their profile as well (the same touch the phones
+ * handed back is written to their profile as well (the same touch the devices
  * make when sharing starts), so the page asks again when a profile changes
  * rather than polling for it. The timer is the backstop for the cases that
  * touch no profile — a permission that expires, or one granted before the
- * member's phone could write it — and is slow because every ask is a paid read.
+ * member's device could write it — and is slow because every ask is a paid
+ * read.
  *
  * @param {number} after - the backstop wait, in milliseconds
  * @param {{ schedule?: Function, cancel?: Function }} [timers] - replaceable in tests

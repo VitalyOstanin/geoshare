@@ -17,7 +17,7 @@ private const val TAG = "geoshare.watching"
 /**
  * Says that somebody is looking, for as long as somebody is.
  *
- * This is the request half of "fresh on demand": the other phones watch this
+ * This is the request half of "fresh on demand": the other devices watch this
  * collection, and seeing a live marker here is what makes them collect every
  * thirty seconds instead of every fifteen minutes.
  */
@@ -26,8 +26,8 @@ class WatchWriter(
     deviceId: String,
     private val connection: GroupConnection,
 ) {
-    // Per phone rather than per member: leaving the map on one phone must not
-    // withdraw the claim the same member's other phone had just made.
+    // Per device rather than per member: leaving the map on one device must not
+    // withdraw the claim the same member's other device had just made.
     private val document = watchOf(connection).document(positionId(memberId, deviceId))
 
     /**
@@ -35,7 +35,7 @@ class WatchWriter(
      *
      * Never returns on its own: it is cancelled with the screen, and the
      * marker it leaves behind expires by itself a few minutes later, which is
-     * what covers a phone that is switched off mid-look.
+     * what covers a device that is switched off mid-look.
      */
     suspend fun keepLooking(): Nothing {
         while (true) {
@@ -43,8 +43,8 @@ class WatchWriter(
 
             try {
                 // The moment of the claim by the server's clock, not an end by
-                // this phone's: whoever reads it adds the same few minutes, so
-                // a phone whose clock is wrong cannot hold the group longer,
+                // this device's: whoever reads it adds the same few minutes, so
+                // a device whose clock is wrong cannot hold the group longer,
                 // and cannot fail to hold it at all.
                 document
                     .set(
@@ -72,7 +72,7 @@ class WatchWriter(
      * Withdraws the claim as the screen goes away.
      *
      * Nothing depends on this arriving — the marker expires anyway — but
-     * arriving is what lets the other phones go back to their slow mode in
+     * arriving is what lets the other devices go back to their slow mode in
      * seconds rather than minutes.
      *
      * Nothing is written once the group no longer has this member signed in:

@@ -24,8 +24,8 @@ private fun resetFrom(document: DocumentSnapshot): Reset? = resetOf(
 )
 
 /**
- * The request standing for one phone, or null while nobody has asked: followed
- * by the phone itself, to forget, and by the asking screen, to see it done.
+ * The request standing for one device, or null while nobody has asked: followed
+ * by the device itself, to forget, and by the asking screen, to see it done.
  */
 fun phoneReset(phoneId: String, connection: GroupConnection): Flow<Reset?> = callbackFlow {
     val subscription =
@@ -42,7 +42,7 @@ fun phoneReset(phoneId: String, connection: GroupConnection): Flow<Reset?> = cal
     awaitClose { subscription.remove() }
 }.comingBack("reset", forgetting = { null })
 
-/** Asks one phone to forget its place; written whole, as a siren's call is. */
+/** Asks one device to forget its place; written whole, as a siren's call is. */
 suspend fun askReset(phoneId: String, askerId: String, connection: GroupConnection) {
     resetsOf(connection)
         .document(phoneId)
@@ -56,7 +56,7 @@ suspend fun askReset(phoneId: String, askerId: String, connection: GroupConnecti
     AppLog.i(TAG, "a phone has been asked to forget its place")
 }
 
-/** Marks that the phone named by [phoneId] forgot its place. Written only by that phone. */
+/** Marks that the device named by [phoneId] forgot its place. Written only by that device. */
 suspend fun resetDone(phoneId: String, connection: GroupConnection) {
     resetsOf(connection)
         .document(phoneId)

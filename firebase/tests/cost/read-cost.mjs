@@ -1,8 +1,8 @@
 // What each thing the clients do costs in reads, counted against the emulator.
 //
 // Run through tools/read-cost.sh. The household is the shape of the family the
-// production project serves: three members, one of them with three phones, the
-// other two sharing with the first only. Every phone runs the subscriptions of
+// production project serves: three members, one of them with three devices, the
+// other two sharing with the first only. Every device runs the subscriptions of
 // the service; a map adds those of the screen.
 //
 // Two kinds of read are counted for every event:
@@ -210,7 +210,7 @@ await env.withSecurityRulesDisabled(async (context) => {
     }
 });
 
-// One client per phone, as on the devices.
+// One client per device, as on the devices.
 const clients = {};
 for (const [uid, phones] of Object.entries(PHONES)) {
     for (const phone of phones) {
@@ -218,7 +218,7 @@ for (const [uid, phones] of Object.entries(PHONES)) {
     }
 }
 
-// What the service of every phone keeps open (service/*Source.kt).
+// What the service of every device keeps open (service/*Source.kt).
 function serviceOf(phone) {
     const { uid, db } = clients[phone];
     const p = `svc ${phone}`;
@@ -229,16 +229,16 @@ function serviceOf(phone) {
     follow(`${p} own search`, doc(db, `groups/${G}/searches/${uid}.${phone}`));
     follow(`${p} own siren`, doc(db, `groups/${G}/sirens/${uid}.${phone}`));
     follow(`${p} own reset`, doc(db, `groups/${G}/resets/${uid}.${phone}`));
-    // The own grant also tells the service that this phone was taken out of
+    // The own grant also tells the service that this device was taken out of
     // "My devices" (service/OwnLine.kt); the member's devices document, which
-    // every phone of theirs rewrites with its status, is not listened to.
+    // every device of theirs rewrites with its status, is not listened to.
     follow(`${p} own grant`, doc(db, `groups/${G}/grants/${uid}`));
     follow(`${p} circling`, doc(db, `groups/${G}/settings/circling`));
 }
 
 // What an open map adds (map/*Source.kt, web/public/lib/store-*.js): the
-// profiles, the grant and the phones of every other member, and a position
-// for every phone a readable grant names.
+// profiles, the grant and the devices of every other member, and a position
+// for every device a readable grant names.
 const mapStops = [];
 function mapOf(phone) {
     const { uid, db } = clients[phone];
@@ -324,7 +324,7 @@ for (const viewer of ['a1', 'c1']) {
 }
 
 // The page in a browser, signed in as m1: a client of its own, apart from any
-// phone (web/public/lib/store*.js).
+// device (web/public/lib/store*.js).
 {
     const db = env.authenticatedContext(M1).firestore();
     clients.web = { uid: M1, db };

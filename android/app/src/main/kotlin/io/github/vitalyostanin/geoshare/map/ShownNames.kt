@@ -2,13 +2,13 @@ package io.github.vitalyostanin.geoshare.map
 
 /**
  * What the markers and the cards call each position: the person on a card, and
- * on a marker the person with the phone beside them where it matters.
+ * on a marker the person with the device beside them where it matters.
  *
  * Worked out apart from the map: the fallbacks come from the resources, and
  * the map draws pictures, not strings from a resource file. A member carrying
- * two phones gets two markers, and a pair of markers with the same name on them
- * says nothing about which phone is where; the name of the phone is added only
- * then, because most members have one.
+ * two devices gets two markers, and a pair of markers with the same name on
+ * them says nothing about which device is where; the name of the device is
+ * added only then, because most members have one.
  */
 internal data class ShownNames(
     /** The person each position belongs to, by position id. */

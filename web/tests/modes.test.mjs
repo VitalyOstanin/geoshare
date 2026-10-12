@@ -4,7 +4,7 @@ import { test } from 'node:test';
 import { modeText } from '../public/lib/modes.js';
 import { WORDS } from '../public/lib/words.js';
 
-// The English name of a mode is the entry the phone writes, so comparing the
+// The English name of a mode is the entry the device writes, so comparing the
 // two would pass whether the dictionary holds the mode or not: what is checked
 // is that the name came from the dictionary, which is where a translation of
 // it would be.

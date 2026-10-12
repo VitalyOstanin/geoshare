@@ -7,23 +7,23 @@ import kotlinx.coroutines.flow.map
 import java.time.Duration
 import java.time.Instant
 
-// A call that rings one phone in the group, out of the sirens lying in the
+// A call that rings one device in the group, out of the sirens lying in the
 // database.
 //
-// A phone answers a call that is newer than the last one it answered and no
+// A device answers a call that is newer than the last one it answered and no
 // older than SIREN_FRESH, sounding for SIREN_SECONDS through the alarm
 // stream; the caller's own screen watches the same document to tell an
-// answered phone from one switched off, and gives up waiting after the same
+// answered device from one switched off, and gives up waiting after the same
 // SIREN_FRESH.
 
-/** How long a phone sounds once it starts, in seconds. */
+/** How long a device sounds once it starts, in seconds. */
 const val SIREN_SECONDS: Long = 22
 
-/** How long a call waits for its phone, and how long the caller's screen waits for an answer. */
+/** How long a call waits for its device, and how long the caller's screen waits for an answer. */
 val SIREN_FRESH: Duration = Duration.ofSeconds(60)
 
 /**
- * One call as the phone or the caller's screen holds it, out of what the
+ * One call as the device or the caller's screen holds it, out of what the
  * document says.
  *
  * [memberId] is read out of [phoneId] the way a position's is, since a siren
@@ -43,7 +43,7 @@ data class Siren(
 /**
  * A document turns into a siren, or into nothing: without [calledBy] or
  * [calledAt] there is no call to answer, and a [phoneId] without a dot names
- * no phone.
+ * no device.
  */
 fun sirenOf(
     phoneId: String,
@@ -68,10 +68,10 @@ fun sirenOf(
 }
 
 /**
- * Whether the phone should sound for [siren] at [now]: not stopped, newer
+ * Whether the device should sound for [siren] at [now]: not stopped, newer
  * than [lastAnswered], and still within [SIREN_FRESH] of [calledAt] — a call
  * whose own clock ran a little ahead counts too, since [calledAt] is the
- * server's own stamp and the phone reads it no faster than the server wrote
+ * server's own stamp and the device reads it no faster than the server wrote
  * it.
  */
 fun shouldSound(siren: Siren, lastAnswered: Instant?, now: Instant): Boolean =
@@ -81,16 +81,16 @@ fun shouldSound(siren: Siren, lastAnswered: Instant?, now: Instant): Boolean =
 
 /** What a call is doing right now, for the caller's own screen to show. */
 sealed interface SirenState {
-    /** Called, and not yet heard, but still within [SIREN_FRESH]: the phone may still answer. */
+    /** Called, and not yet heard, but still within [SIREN_FRESH]: the device may still answer. */
     data object Waiting : SirenState
 
-    /** Sounding until [until], which is when the phone heard it plus [SIREN_SECONDS]. */
+    /** Sounding until [until], which is when the device heard it plus [SIREN_SECONDS]. */
     data class Sounding(val until: Instant) : SirenState
 
-    /** Nobody heard it within [SIREN_FRESH]: most often a phone switched off. */
+    /** Nobody heard it within [SIREN_FRESH]: most often a device switched off. */
     data object NoAnswer : SirenState
 
-    /** Stopped early, by [by] — the phone's own owner or another caller. */
+    /** Stopped early, by [by] — the device's own owner or another caller. */
     data class Stopped(val by: String) : SirenState
 
     /** Heard, and its [SIREN_SECONDS] have already run out. */
@@ -117,9 +117,9 @@ fun sirenState(siren: Siren, now: Instant): SirenState = when {
 }
 
 /**
- * The sirens of [phoneIds], each followed through [sirenOf], by phone: a
- * screen that offers to ring a phone shows whatever call stands on it, rung
- * from here or from anywhere else. A phone never called is left out.
+ * The sirens of [phoneIds], each followed through [sirenOf], by device: a
+ * screen that offers to ring a device shows whatever call stands on it, rung
+ * from here or from anywhere else. A device never called is left out.
  */
 fun sirensOf(
     phoneIds: Set<String>,

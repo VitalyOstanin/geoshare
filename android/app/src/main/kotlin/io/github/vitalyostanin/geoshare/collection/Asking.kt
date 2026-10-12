@@ -1,17 +1,17 @@
 package io.github.vitalyostanin.geoshare.collection
 
-// Who the phone asks for its position.
+// Who the device asks for its position.
 //
 // Play Services' fused provider is the default wherever it exists: it batches,
 // it blends the satellites with the Wi-Fi and it spends the least. What it
 // will not do is be told where to look. It picks its sources itself, so a
 // member who switched the towers off still had the towers asked, and their
-// answers were only thrown away on arrival. A phone without Play Services
+// answers were only thrown away on arrival. A device without Play Services
 // has no fused provider of that kind at all, and until this asked nothing.
 //
 // The platform's own providers are asked by name instead, and only the ones
 // the member left on. Names are the platform's: "fused" is its own blend,
-// present on the newer releases and on some phones without Play Services.
+// present on the newer releases and on some devices without Play Services.
 
 /** The platform's blend of every source it has. */
 const val FUSED_PROVIDER: String = "fused"
@@ -32,7 +32,7 @@ sealed interface Asked {
  * Who to ask for a position with this accuracy, or nobody.
  *
  * Nobody when the accuracy asks for nothing, and when everything the member
- * left on is something this phone does not have: an answer from a source that
+ * left on is something this device does not have: an answer from a source that
  * is switched off would be left out anyway, so asking for it only spends the
  * battery.
  *

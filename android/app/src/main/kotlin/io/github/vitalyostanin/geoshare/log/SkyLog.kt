@@ -57,7 +57,7 @@ object SkyLog {
      * Called once, from the application object.
      *
      * [device] is what the head of every file says the file came from: the
-     * application's version, Android's, the phone and its receiver, in the
+     * application's version, Android's, the device and its receiver, in the
      * words Google's logger uses for them.
      */
     fun start(directory: File, device: String = "") {
@@ -106,11 +106,11 @@ object SkyLog {
      * The case worth recording most. A receiver that hears twenty satellites
      * and works out nothing from them is a receiver being talked over, and
      * until this existed such an epoch left no trace whatever: the block was
-     * written beside a fix, so the phones with the most to say were the ones
+     * written beside a fix, so the devices with the most to say were the ones
      * that said nothing.
      *
      * The head row carries how long the silence has lasted and which mode the
-     * phone was collecting in, because a minute without an answer means one
+     * device was collecting in, because a minute without an answer means one
      * thing at four fixes a minute and another at one an hour.
      */
     fun note(
@@ -157,7 +157,7 @@ object SkyLog {
     fun note(message: NavMessage) = note(buildString { nav(message) })
 
     /**
-     * The signals whose own time parted from one of the phone's clocks.
+     * The signals whose own time parted from one of the device's clocks.
      *
      * Only the ones that parted: writing a row per signal per epoch would say
      * the same "nothing happened" thirty times a second and push the rest of
@@ -280,7 +280,7 @@ object SkyLog {
      * Worked out here rather than left to whoever reads the file, although
      * every number behind it is in the rows below: what it is for is to be
      * read beside the gain and the loudness without the reader having to
-     * group the epoch first, and to be the same arithmetic the phone itself
+     * group the epoch first, and to be the same arithmetic the device itself
      * acted on. Only the systems with satellites enough to mean anything —
      * see [SLANT_MIN_SATELLITES].
      */
@@ -401,7 +401,7 @@ object SkyLog {
         append(measured.fullTracking?.let { if (it) "1" else "0" }.orEmpty())
         // Where the satellite is, how fast it moves, its clock and the
         // ionosphere's coefficients: what the receiver worked out for itself,
-        // which the platform hands over on few phones and is not asked for
+        // which the platform hands over on few devices and is not asked for
         // here.
         append(",".repeat(SATELLITE_FIELDS)).append('\n')
     }

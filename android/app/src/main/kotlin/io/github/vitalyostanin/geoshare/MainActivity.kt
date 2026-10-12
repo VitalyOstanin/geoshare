@@ -91,7 +91,7 @@ import kotlinx.coroutines.launch
 
 /**
  * An AppCompat activity for one reason: the language a member picks inside the
- * application is applied through AppCompatDelegate, and on a phone before
+ * application is applied through AppCompatDelegate, and on a device before
  * Android 13 that only reaches the screens from an activity of this kind.
  */
 class MainActivity : AppCompatActivity() {
@@ -111,9 +111,9 @@ class MainActivity : AppCompatActivity() {
     private lateinit var sharing: SharingSetting
 
     /**
-     * What a connection link is doing, whether or not this phone already
+     * What a connection link is doing, whether or not this device already
      * has a project — a link can arrive either way. Created before the
-     * placeholder below is decided, since it is what would move this phone
+     * placeholder below is decided, since it is what would move this device
      * past it. [ConnectState.Done] is acted on by [acceptConnection], which
      * is set watching for it as soon as this is created.
      */
@@ -122,10 +122,10 @@ class MainActivity : AppCompatActivity() {
     /** What the member asked the application to be painted in. */
     internal lateinit var appearance: ThemeSetting
 
-    /** Which phone this is, so that a member carrying two is two markers rather than one. */
+    /** Which device this is, so that a member carrying two is two markers rather than one. */
     internal lateinit var device: DeviceIdentity
 
-    /** Whether the member asked for the positions the phone cannot have reached to be left out. */
+    /** Whether the member asked for the positions the device cannot have reached to be left out. */
     internal lateinit var jumps: JumpFilterSetting
     internal lateinit var sources: SourcesSetting
     private lateinit var aidingDoubt: AidingDoubtSetting
@@ -133,11 +133,11 @@ class MainActivity : AppCompatActivity() {
     /** What the member has answered about letting the application keep running. */
     internal lateinit var backgroundWork: BackgroundWorkSetting
 
-    /** How the phone stands on restricting us, read again every time the screen comes up. */
+    /** How the device stands on restricting us, read again every time the screen comes up. */
     internal var batteryFree by mutableStateOf(false)
     internal var sirenLoud by mutableStateOf(false)
 
-    /** Whether this phone has a startup list of its own, asked once at the start. */
+    /** Whether this device has a startup list of its own, asked once at the start. */
     internal var startupAvailable = false
 
     /** The step the member has to finish on the settings screen, if any. */
@@ -196,7 +196,7 @@ class MainActivity : AppCompatActivity() {
         // Nothing below may touch Firebase without a family's project behind
         // it: SignInController alone would reach for FirebaseAuth.getInstance
         // as a default argument, and it would throw rather than answer. A
-        // link is what moves the phone past this, so the screens that paint
+        // link is what moves the device past this, so the screens that paint
         // ConnectFlow's states are all there is to build here.
         if (!Connections.connected) {
             setContent { ConnectOnly() }
@@ -217,7 +217,7 @@ class MainActivity : AppCompatActivity() {
     /** Follows the links this activity is handed, the first one included. */
     private fun listenForLinks(savedInstanceState: Bundle?) {
         // Independent of the project check in onCreate: a link is worth
-        // acting on whether or not this phone already has one, and singleTask
+        // acting on whether or not this device already has one, and singleTask
         // means this is the only place onCreate ever sees one — a later
         // arrival comes through onNewIntent instead.
         connectFlow = ConnectFlow(
@@ -232,7 +232,7 @@ class MainActivity : AppCompatActivity() {
         }
 
         // Reacts to Done wherever it is reached — the placeholder screen for
-        // a phone with no project yet, or the dialog offered over the map
+        // a device with no project yet, or the dialog offered over the map
         // for one switching to another — since accepting a link always ends
         // the same way.
         lifecycleScope.launch {
@@ -259,7 +259,7 @@ class MainActivity : AppCompatActivity() {
     /** The settings the screens read, each from where it is kept. */
     private fun readSettings() {
         // Asked once: the answer is the set of applications installed by the
-        // maker of the phone, which does not change while the screen is open,
+        // maker of the device, which does not change while the screen is open,
         // and asking inside the drawing put five questions to the package
         // manager on every position that arrived.
         startupAvailable = startupScreen(this) != null
@@ -281,7 +281,7 @@ class MainActivity : AppCompatActivity() {
     private fun GroupsScreen() {
         var theme by remember { mutableStateOf(appearance.choice) }
         // Read from the platform rather than kept here: the same answer is
-        // given in the phone's own settings from Android 13, and whichever
+        // given in the device's own settings from Android 13, and whichever
         // place it was given in, this is where it is read back from.
         val language = languageChosen(spokenLanguages().toLanguageTags())
         val dark = darkWanted(theme, isSystemInDarkTheme())
@@ -306,7 +306,7 @@ class MainActivity : AppCompatActivity() {
                 // by this.
                 val aidingDoubted = remember { aidingDoubt.doubted }
 
-                // A link can still arrive on a phone that already has a
+                // A link can still arrive on a device that already has a
                 // project, to offer an invitation or to name a different one;
                 // ConnectState.NotConnected and Done are left out since
                 // neither has anything of its own to show above the map.
@@ -616,13 +616,13 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    /** The languages the application was told to speak, empty while it follows the phone. */
+    /** The languages the application was told to speak, empty while it follows the device. */
     private fun spokenLanguages(): LocaleListCompat = AppCompatDelegate.getApplicationLocales()
 
     /**
      * Says which language to read the application in.
      *
-     * An empty list is what "follow the phone" is made of, and handing it over
+     * An empty list is what "follow the device" is made of, and handing it over
      * is what takes a member back to the language of their system.
      */
     internal fun speak(choice: LanguageChoice) {
@@ -643,7 +643,7 @@ class MainActivity : AppCompatActivity() {
             Configuration.UI_MODE_NIGHT_YES
 
     /**
-     * Asks once for the phone to say when its owner is on the move.
+     * Asks once for the device to say when its owner is on the move.
      *
      * Refusing costs the Moving mode and nothing else, so a member who says no
      * is not asked again and is not told anything is wrong. When there is
@@ -669,7 +669,7 @@ class MainActivity : AppCompatActivity() {
     }
 
     /**
-     * Asks once, and only once, for the phone to stop restricting us.
+     * Asks once, and only once, for the device to stop restricting us.
      *
      * Made where the permissions end rather than at startup: a member who has
      * just allowed the position is being asked about the same thing, and a
@@ -703,13 +703,13 @@ class MainActivity : AppCompatActivity() {
      * Opens the manufacturer's own startup list.
      *
      * The row that calls this is shown only when such a screen was found, so
-     * the absent case is a phone whose screen went away between the two, and
+     * the absent case is a device whose screen went away between the two, and
      * the application settings are the nearest thing left.
      */
     // A write to the group, and what happens when the rules refuse it. They
     // refuse for reasons the screen could not have ruled out: founding a group
     // that already exists, a code that has run out, a member somebody else
-    // removed a moment ago. None of them is a fault of this phone, so the
+    // removed a moment ago. None of them is a fault of this device, so the
     // refusal is written down and the screen goes on showing what the roster
     // actually says.
     //

@@ -60,7 +60,7 @@ sleep 2
 echo "==> waiting for boot (up to ${BOOT_TIMEOUT}s)"
 deadline=$((SECONDS + BOOT_TIMEOUT))
 # -e addresses the emulator explicitly. Plain `adb shell` picks whatever is
-# ready, and while the emulator is still offline that is a phone plugged in.
+# ready, and while the emulator is still offline that is a device plugged in.
 while (( SECONDS < deadline )); do
     if [[ "$(adb_cmd -e shell getprop sys.boot_completed 2>/dev/null | tr -d '\r')" == "1" ]]; then
         echo "==> booted after $((SECONDS))s"

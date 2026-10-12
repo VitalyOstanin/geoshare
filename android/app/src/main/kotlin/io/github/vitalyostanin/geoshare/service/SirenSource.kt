@@ -19,7 +19,7 @@ private const val TAG = "geoshare.sirens"
  *
  * Read with the server's estimate rather than its confirmed answer: a caller
  * who has just called sees its own write at once, with `calledAt` guessed at
- * this phone's clock until the server answers, rather than with no call at
+ * this device's clock until the server answers, rather than with no call at
  * all for the second or so that takes.
  */
 private fun sirenFrom(document: DocumentSnapshot): Siren? = sirenOf(
@@ -34,11 +34,11 @@ private fun sirenFrom(document: DocumentSnapshot): Siren? = sirenOf(
 private val ESTIMATE = DocumentSnapshot.ServerTimestampBehavior.ESTIMATE
 
 /**
- * The siren standing for one phone, or null while nobody has called it.
+ * The siren standing for one device, or null while nobody has called it.
  *
- * Followed by two readers at once: the phone named by [phoneId], to know it
+ * Followed by two readers at once: the device named by [phoneId], to know it
  * is being called and to mark when it heard, and the caller's screen, to see
- * whether the phone heard or gave it up as switched off.
+ * whether the device heard or gave it up as switched off.
  */
 fun phoneSiren(phoneId: String, connection: GroupConnection): Flow<Siren?> = callbackFlow {
     val subscription =
@@ -56,11 +56,11 @@ fun phoneSiren(phoneId: String, connection: GroupConnection): Flow<Siren?> = cal
 }.comingBack("siren", forgetting = { null })
 
 /**
- * Calls a siren on one phone.
+ * Calls a siren on one device.
  *
  * Written whole with exactly the two fields the rules allow on a call, rather
  * than merged in: a `set` this narrow also wipes any `heardAt` or `stopped*`
- * left over from a call this phone already answered, so the new call starts
+ * left over from a call this device already answered, so the new call starts
  * from nothing.
  */
 suspend fun callSiren(phoneId: String, callerId: String, connection: GroupConnection) {
@@ -76,7 +76,7 @@ suspend fun callSiren(phoneId: String, callerId: String, connection: GroupConnec
     AppLog.i(TAG, "a siren has been called")
 }
 
-/** Marks that the phone named by [phoneId] heard its own call. Written only by that phone. */
+/** Marks that the device named by [phoneId] heard its own call. Written only by that device. */
 suspend fun heardSiren(phoneId: String, connection: GroupConnection) {
     sirensOf(connection)
         .document(phoneId)
@@ -86,7 +86,7 @@ suspend fun heardSiren(phoneId: String, connection: GroupConnection) {
     AppLog.i(TAG, "a siren has been heard")
 }
 
-/** Stops a standing call before its phone answers or its freshness runs out. */
+/** Stops a standing call before its device answers or its freshness runs out. */
 suspend fun stopSiren(phoneId: String, stopperId: String, connection: GroupConnection) {
     sirensOf(connection)
         .document(phoneId)

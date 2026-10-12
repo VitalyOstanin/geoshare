@@ -52,9 +52,9 @@ test('one of a unit is spelled without the plural', () => {
     assert.equal(ageText({ unit: 'justNow', count: 0 }), 'just now');
 });
 
-// A phone whose satellites are being spoofed says its last true position
+// A device whose satellites are being spoofed says its last true position
 // again rather than a new false one, so the writing is fresh while the
-// position is not. The card is for the phone being in touch; the age is for
+// position is not. The card is for the device being in touch; the age is for
 // the position, and the two must not be taken from the same stamp.
 // The moments as the page works them out of a document, rather than as a copy
 // of the same arithmetic written beside the test.
@@ -85,7 +85,7 @@ test('the news is dated by the stamp and the position by the fix', () => {
     assert.deepEqual(positionMoments(takenAt, NOW), { knownAt: NOW, positionAt: takenAt });
 });
 
-// The moment between the phone writing and the server stamping, where the
+// The moment between the device writing and the server stamping, where the
 // local copy carries no stamp at all.
 test('a position not yet stamped is dated by the phone that took it', () => {
     const takenAt = NOW - MINUTE;

@@ -10,7 +10,7 @@ import java.io.File
  * things.
  *
  * A string added to the English file and forgotten in the Russian one is not
- * an error anywhere: the phone falls back to English for that one line, and
+ * an error anywhere: the device falls back to English for that one line, and
  * the screen ends up half translated. This test is what turns that into a
  * failure at the time the string is added.
  */

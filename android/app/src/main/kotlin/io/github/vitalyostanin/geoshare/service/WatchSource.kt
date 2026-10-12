@@ -12,15 +12,15 @@ import java.time.Instant
  * Who the other members looking are, and when each of them stops counting.
  *
  * Each viewer writes down the moment it last said it was looking, by the
- * server's clock, and keeps saying so while the map is open. A phone that goes
+ * server's clock, and keeps saying so while the map is open. A device that goes
  * silent — a dead battery, a closed lid — therefore stops being a viewer on
  * its own, with no message needed to say so.
  *
  * This is the subscription that makes the whole arrangement work without push
- * messages: the write lands on this phone in about a second.
+ * messages: the write lands on this device in about a second.
  */
 fun watchers(
-    /** The document this phone writes its own marker into, which is the one to ignore. */
+    /** The document this device writes its own marker into, which is the one to ignore. */
     ownWatchId: String,
     connection: GroupConnection,
 ): Flow<List<Watcher>> = callbackFlow {
@@ -38,9 +38,9 @@ fun watchers(
                         ?.documents
                         .orEmpty()
                         // Our own marker says nothing about who is looking
-                        // at us; answering it would keep the phone awake
-                        // for its own map. Only this phone's marker is
-                        // dropped: the member's other phone looking at the
+                        // at us; answering it would keep the device awake
+                        // for its own map. Only this device's marker is
+                        // dropped: the member's other device looking at the
                         // map is somebody to be fresh for, and somebody the
                         // screen names.
                         .filter { it.id != ownWatchId }
@@ -55,8 +55,8 @@ fun watchers(
                             Watcher(
                                 memberId = member,
                                 // The claim says when it was made; how long it
-                                // is good for is this phone's to decide, from a
-                                // clock both sides share.
+                                // is good for is this device's to decide, from
+                                // a clock both sides share.
                                 until =
                                 Instant
                                     .ofEpochSecond(since.seconds, since.nanoseconds.toLong())
@@ -68,6 +68,6 @@ fun watchers(
             }
 
     awaitClose { subscription.remove() }
-    // Nobody is looking as far as a refused phone can tell, and the strip
+    // Nobody is looking as far as a refused device can tell, and the strip
     // under the map should say so rather than name the watchers it last saw.
 }.comingBack("watch", forgetting = { emptyList() })

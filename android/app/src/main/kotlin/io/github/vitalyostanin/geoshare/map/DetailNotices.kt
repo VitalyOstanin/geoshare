@@ -115,11 +115,11 @@ internal fun DetailSought(
 /**
  * What is wrong with the position, as one paragraph, or nothing when nothing is.
  *
- * Each sentence only while it is true: a marker left behind by a phone that is
+ * Each sentence only while it is true: a marker left behind by a device that is
  * still online, answers being rejected, a receiver that has not settled. Put
  * together rather than as rows, because they are read as one account of why
  * the marker should not be trusted. The reason is underlined and pressed like
- * the mode: it names what the phone saw without saying what it means.
+ * the mode: it names what the device saw without saying what it means.
  */
 @Composable
 internal fun DetailWarnings(member: MemberPosition, now: Instant) {

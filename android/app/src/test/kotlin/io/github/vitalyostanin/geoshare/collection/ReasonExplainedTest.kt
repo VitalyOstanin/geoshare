@@ -6,13 +6,13 @@ import org.junit.Assert.assertNotEquals
 import org.junit.Test
 
 /**
- * That the help covers every reason a phone can actually write.
+ * That the help covers every reason a device can actually write.
  *
  * A reason missing from the help is a member reading a name on a card,
  * pressing it and not finding the one line they opened it for — and nothing
  * else goes wrong to say so. The list is checked against [JumpReason] itself
  * rather than against a list kept beside it, because the entries are what the
- * phone writes into the document.
+ * device writes into the document.
  */
 class ReasonExplainedTest {
     @Test
@@ -23,7 +23,7 @@ class ReasonExplainedTest {
     }
 
     // Not an entry of the list above, because nothing is wrong with such an
-    // answer: the member told the phone not to count that source. It is in
+    // answer: the member told the device not to count that source. It is in
     // the help all the same, since it is what a card shows.
     @Test
     fun `a source the member switched off is explained as well`() {

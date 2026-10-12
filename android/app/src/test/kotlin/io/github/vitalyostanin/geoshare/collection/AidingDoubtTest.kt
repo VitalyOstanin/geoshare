@@ -7,7 +7,7 @@ import org.junit.Test
 import java.time.Duration
 
 /**
- * The counts are those of one phone's own sky files, cut down to what each
+ * The counts are those of one device's own sky files, cut down to what each
  * question needs: GLONASS heard in about half the epochs of an hour with no
  * ephemeris among them and nothing in a fix, which is the state the aiding
  * data had left it in, against the same constellation eleven minutes after
@@ -28,7 +28,7 @@ class AidingDoubtTest {
         assertEquals(false, heardForNothing(working))
     }
 
-    // A phone under observation reported single GLONASS satellites in a fix
+    // A device under observation reported single GLONASS satellites in a fix
     // while saying it held no orbit for them, a hundred and thirty times in
     // one night. Read as the constellation having come good, that would have
     // cleared the count twice an hour for as long as the fault lasted.
@@ -52,7 +52,7 @@ class AidingDoubtTest {
     }
 
     // Half an hour is the window, and the epochs are what tells a fault from
-    // a constellation that is merely low: a phone heard BeiDou in fourteen
+    // a constellation that is merely low: a device heard BeiDou in fourteen
     // epochs over two and a half hours, which is a sky.
     @Test
     fun `an hour of hearing it in a handful of epochs is not`() {
@@ -89,7 +89,7 @@ class AidingDoubtTest {
         assertEquals(emptySet<Constellation>(), doubt.doubted(Duration.ofHours(2)))
     }
 
-    // The constellations are watched apart from one another: on one phone GPS
+    // The constellations are watched apart from one another: on one device GPS
     // was in every fix while GLONASS and BeiDou were being wasted.
     @Test
     fun `one constellation being wasted says nothing about the others`() {
@@ -109,7 +109,7 @@ class AidingDoubtTest {
         assertEquals(setOf(Constellation.Glonass), doubt.doubted(hour))
     }
 
-    // QZSS is heard a satellite or two at a time on these phones and was
+    // QZSS is heard a satellite or two at a time on these devices and was
     // never going to carry an answer, so a member is not told about it.
     @Test
     fun `the systems that were never going to carry an answer are left out`() {

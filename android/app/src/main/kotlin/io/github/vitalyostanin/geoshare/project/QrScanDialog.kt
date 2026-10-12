@@ -96,7 +96,7 @@ private val FOREIGN = Color(0xFFFFB4AB)
  * The invitation scanner, over the whole window: the camera with a square to
  * aim with, until a connection link is read.
  *
- * A link is handed to [onFound] as its text, half a second after the phone
+ * A link is handed to [onFound] as its text, half a second after the device
  * buzzed and the square turned green, so the person sees what happened
  * before the screen changes. Any other code — a web address, a Wi-Fi network
  * — is said to be one for three seconds and scanning goes on. [onDismiss]

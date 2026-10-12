@@ -38,17 +38,17 @@ private const val CROSSINGS = "io.github.vitalyostanin.geoshare.GEOFENCE_CROSSIN
 private const val FENCE = "last-written-position"
 
 /**
- * Whether the phone is still settled where it last said it was.
+ * Whether the device is still settled where it last said it was.
  *
  * A fence around the last written position, watched by the platform rather
  * than by us: the system knows where it is anyway, for its own reasons and for
  * every other application at once, and hears the crossing without this
  * application asking for a single fix. That is the whole point of the quiet
- * mode — a phone at home stops collecting altogether and still notices when it
+ * mode — a device at home stops collecting altogether and still notices when it
  * leaves.
  *
  * The fence follows the positions this service writes, which is why the
- * centres arrive as a flow. Moving it starts the settling over: a phone that
+ * centres arrive as a flow. Moving it starts the settling over: a device that
  * has just written somewhere new is somewhere new, whatever the old fence had
  * decided about it.
  */
@@ -56,8 +56,8 @@ private const val FENCE = "last-written-position"
 fun standingStill(context: Context, centres: Flow<Fix?>): Flow<Boolean> = callbackFlow {
     if (!playServicesPresent(context)) {
         // The platform's own proximity alert looks only every half hour, and
-        // a phone resting on it would be shown at home that long after
-        // leaving; without Play Services the phone stays in the ordinary
+        // a device resting on it would be shown at home that long after
+        // leaving; without Play Services the device stays in the ordinary
         // modes, which ask more often.
         AppLog.i(TAG, "no Play Services to watch a fence; the quiet mode stays out of reach")
         send(false)
@@ -113,7 +113,7 @@ fun standingStill(context: Context, centres: Flow<Fix?>): Flow<Boolean> = callba
     launch {
         centres.filterNotNull().collect { centre ->
             // The old fence's verdict does not carry over to the new one, and
-            // a phone that has just moved its fence has by definition gone
+            // a device that has just moved its fence has by definition gone
             // somewhere: it starts outside until the platform says otherwise.
             dwelling = false
             trySend(false)
@@ -121,7 +121,7 @@ fun standingStill(context: Context, centres: Flow<Fix?>): Flow<Boolean> = callba
             client
                 .addGeofences(fenceAround(centre), delivery)
                 // Said out loud because nothing else marks it: a fence that
-                // was never put up and one the phone has simply not crossed
+                // was never put up and one the device has simply not crossed
                 // yet look exactly alike in the log otherwise.
                 .addOnSuccessListener {
                     AppLog.i(TAG, "a fence now stands around the last position")
@@ -161,7 +161,7 @@ private fun fenceAround(centre: Fix): GeofencingRequest {
                 GEOFENCE_RADIUS_METRES.toFloat(),
             )
             // The fence lives as long as the service watches it, and the
-            // service takes it down itself; an expiry would leave a phone
+            // service takes it down itself; an expiry would leave a device
             // silently collecting as if it had never been at home.
             .setExpirationDuration(Geofence.NEVER_EXPIRE)
             .setLoiteringDelay(GEOFENCE_SETTLING.toMillis().toInt())
@@ -173,9 +173,9 @@ private fun fenceAround(centre: Fix): GeofencingRequest {
 
     return GeofencingRequest
         .Builder()
-        // The phone is inside the fence at the moment it goes up, since it was
+        // The device is inside the fence at the moment it goes up, since it was
         // drawn around the position just written. Without this nothing would
-        // arrive until the phone had left and come back, and the quiet mode
+        // arrive until the device had left and come back, and the quiet mode
         // would be reachable only by going out.
         .setInitialTrigger(GeofencingRequest.INITIAL_TRIGGER_DWELL)
         .addGeofence(fence)

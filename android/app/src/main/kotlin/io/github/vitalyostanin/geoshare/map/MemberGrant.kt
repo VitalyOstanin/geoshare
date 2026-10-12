@@ -3,10 +3,10 @@ package io.github.vitalyostanin.geoshare.map
 import java.time.Instant
 
 /**
- * What a member gives out: which phones they carry, and who may watch them.
+ * What a member gives out: which devices they carry, and who may watch them.
  *
  * Kept apart from the profile, which everybody in the group reads. Both of
- * these answer "where is this person" — the phone list is what a reader
+ * these answer "where is this person" — the device list is what a reader
  * subscribes to, and the permissions say who may — so a member of the
  * household who has been given nothing sees neither.
  *
@@ -16,7 +16,7 @@ import java.time.Instant
 data class MemberGrant(
     val memberId: String,
     /**
-     * The phones this member carries, by the identity each of them made for
+     * The devices this member carries, by the identity each of them made for
      * itself. This is how a reader knows which position documents to read:
      * the collection of positions cannot be listed, because a permission with
      * an expiry is not something a query can prove.
@@ -24,15 +24,15 @@ data class MemberGrant(
     val devices: List<String> = emptyList(),
     /**
      * Who this member lets read their position, and until when. Kept here
-     * rather than only in the positions, so that every phone of the member
-     * writes the same permissions and a new phone inherits them.
+     * rather than only in the positions, so that every device of the member
+     * writes the same permissions and a new device inherits them.
      */
     val sharedWith: Map<String, Instant> = emptyMap(),
     /**
-     * What each of the member's phones last said about itself, by the id of
-     * the phone. Read from a document of its own, which an administrator may
-     * read too; a grant made up of nothing else is one this phone could not
-     * read, and names no phones to follow.
+     * What each of the member's devices last said about itself, by the id of
+     * the device. Read from a document of its own, which an administrator may
+     * read too; a grant made up of nothing else is one this device could not
+     * read, and names no devices to follow.
      */
     val phones: Map<String, PhoneStatus> = emptyMap(),
 )

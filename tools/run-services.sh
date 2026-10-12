@@ -11,7 +11,7 @@
 # and a run must not fail because something else on the machine already holds
 # it.
 #
-# The database inside them is keyed by the project the phone asks about, which
+# The database inside them is keyed by the project the device asks about, which
 # is demo-geoshare on both sides: redirecting the library to the emulators
 # changes the host it calls, not the project, so the debug build's stand-in
 # settings and this project id have to name the same thing, and the seed

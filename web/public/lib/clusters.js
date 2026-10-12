@@ -10,7 +10,7 @@ import { compareIds } from './order.js';
  * How many circles a pin ever has in it.
  *
  * Three at 28 pixels apart is a head of 104 pixels, about a third of the width
- * of a narrow phone; a group of any size stops there and counts the rest
+ * of a narrow device; a group of any size stops there and counts the rest
  * instead.
  */
 export const PIN_MAX_CIRCLES = 3;

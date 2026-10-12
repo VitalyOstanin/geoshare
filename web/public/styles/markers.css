@@ -139,7 +139,7 @@
 
 .group-name {
     flex: 1;
-    /* Folded rather than run out of the bubble: a member carrying two phones
+    /* Folded rather than run out of the bubble: a member carrying two devices
        has the name of the phone in their label, which is long. */
     overflow-wrap: anywhere;
 }

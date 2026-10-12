@@ -14,9 +14,9 @@ const val LOG_FILE_LIMIT_BYTES: Long = 256L * 1024
  * What one file of the kept log may reach.
  *
  * Half the ordinary log, and it holds far longer: only the rare lines go
- * there. The ordinary log on a phone under a false signal fills in about an
+ * there. The ordinary log on a device under a false signal fills in about an
  * hour, and what the kept one is for is a question asked over a day of the
- * phone being carried about.
+ * device being carried about.
  */
 const val KEPT_FILE_LIMIT_BYTES: Long = 128L * 1024
 
@@ -25,10 +25,10 @@ private val STAMP = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss.SSS")
 /**
  * The application's own log, written to a file it owns.
  *
- * The system log is not readable on every phone: MagicOS keeps the buffers to
+ * The system log is not readable on every device: MagicOS keeps the buffers to
  * itself, and `adb logcat` there returns nothing at all. A file inside the
  * application's private directory is readable with `run-as` regardless, which
- * is what makes a check on such a phone possible.
+ * is what makes a check on such a device possible.
  *
  * The file itself — two of them, bounded, written off the main thread — is
  * [RollingFiles]; this is the part that decides what a line looks like.

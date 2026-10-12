@@ -72,7 +72,7 @@ internal fun caughtBy(jump: JumpReason, fix: Fix, evidence: LeftOutEvidence): St
 
 /**
  * What speed the provider claimed, for the line that says a fix was left
- * out because a phone nobody touched was said to be travelling.
+ * out because a device nobody touched was said to be travelling.
  */
 private fun theSpeedClaimed(fix: Fix): String {
     val speed = fix.reported?.speedMps ?: return "no speed given"
@@ -81,7 +81,7 @@ private fun theSpeedClaimed(fix: Fix): String {
 }
 
 /**
- * Which signal's time left the phone's clock and by how much, for the line
+ * Which signal's time left the device's clock and by how much, for the line
  * that says a fix was left out.
  *
  * Both differences are written, against the receiver's clock and against
@@ -103,14 +103,14 @@ private fun theClockThatStepped(evidence: LeftOutEvidence): String {
 }
 
 /**
- * How long the phone had been awake and how much of the sky its answer
+ * How long the device had been awake and how much of the sky its answer
  * rests on, for the line that says an answer of the first minutes was left
  * out.
  *
  * Both numbers, because either alone reads as the wrong complaint: the
- * seconds on their own say a phone was restarted, which is not a fault,
+ * seconds on their own say a device was restarted, which is not a fault,
  * and the count on its own says a receiver hears nothing, which is what a
- * phone indoors does all day.
+ * device indoors does all day.
  */
 private fun theReceiverSettling(fix: Fix, evidence: LeftOutEvidence): String = String.format(
     Locale.ROOT,
@@ -192,7 +192,7 @@ private fun theFalsePlace(fix: Fix, evidence: LeftOutEvidence): String =
     falsePlaceFor(fix, evidence.falsePlaces)?.named ?: "a place a false signal uses"
 
 /**
- * How far the towers and the Wi-Fi put the phone from where the satellites
+ * How far the towers and the Wi-Fi put the device from where the satellites
  * just put it, for the line that says a fix was left out.
  */
 private fun apartFromTheRadios(fix: Fix, evidence: LeftOutEvidence): String {

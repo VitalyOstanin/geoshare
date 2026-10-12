@@ -22,7 +22,7 @@ private const val ALPHABET = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"
  * How long a code is.
  *
  * Thirty-two characters to choose from and eight of them is about forty bits:
- * guessing one before it runs out would take more attempts than a phone can
+ * guessing one before it runs out would take more attempts than a device can
  * make, and typing one takes a moment.
  */
 const val CODE_LENGTH: Int = 8

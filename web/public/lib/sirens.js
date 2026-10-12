@@ -1,23 +1,23 @@
-// A call that rings one phone in the group, out of the sirens lying in the
+// A call that rings one device in the group, out of the sirens lying in the
 // database.
 //
-// A phone answers a call that is newer than the last one it answered and no
+// A device answers a call that is newer than the last one it answered and no
 // older than SIREN_FRESH_MS, sounding for SIREN_SECONDS through the alarm
 // stream; the caller's own screen watches the same document to tell an
-// answered phone from one switched off, and gives up waiting after the same
+// answered device from one switched off, and gives up waiting after the same
 // SIREN_FRESH_MS.
 
-/** How long a phone sounds once it starts, in seconds. */
+/** How long a device sounds once it starts, in seconds. */
 export const SIREN_SECONDS = 22;
 
-/** How long a call waits for its phone, and how long the caller's screen waits for an answer. */
+/** How long a call waits for its device, and how long the caller's screen waits for an answer. */
 export const SIREN_FRESH_MS = 60_000;
 
 /** How long a call that is over — stopped, unanswered or sounded out — is told of on a row. */
 export const SIREN_TOLD_MS = 5 * 60_000;
 
 /**
- * One call as the phone or the caller's screen holds it, out of what the
+ * One call as the device or the caller's screen holds it, out of what the
  * document says, or null for a document that is not one.
  *
  * The times are read the way the store hands them over, in milliseconds; the
@@ -45,10 +45,10 @@ export function sirenOf(phoneId, data) {
 }
 
 /**
- * Whether the phone should sound for `siren` at `now`: not stopped, newer
+ * Whether the device should sound for `siren` at `now`: not stopped, newer
  * than `lastAnswered`, and still within `SIREN_FRESH_MS` of `calledAt` — a
  * call whose own clock ran a little ahead counts too, since `calledAt` is
- * the server's own stamp and the phone reads it no faster than the server
+ * the server's own stamp and the device reads it no faster than the server
  * wrote it.
  */
 export function shouldSound(siren, lastAnswered, now) {

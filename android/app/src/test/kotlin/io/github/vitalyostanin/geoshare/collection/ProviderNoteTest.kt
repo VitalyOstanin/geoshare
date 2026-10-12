@@ -7,12 +7,12 @@ import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class ProviderNoteTest {
-    // The note a fix carried while the phone was being handed a false road:
+    // The note a fix carried while the device was being handed a false road:
     // the receiver was hearing satellites, loudly, and the position it worked
     // out of them was a kilometre-wide circle in a forest.
     private val spoofed = "HDACC=0.0|SourceType=0|maxCn0=27|meanCn0=24|satellites=8"
 
-    // The same phone, minutes earlier, answering with the place it was really
+    // The same device, minutes earlier, answering with the place it was really
     // at: an assistance service said so, and nothing was heard at the time.
     private val assisted = "QUICKGPS=true|SourceType=128|maxCn0=0|meanCn0=0|satellites=4"
 
@@ -53,7 +53,7 @@ class ProviderNoteTest {
     }
 
     // A label with no measurement behind it is a label. The case is real: the
-    // phone that wrote the assistance note above wrote `SourceType=0` on it.
+    // device that wrote the assistance note above wrote `SourceType=0` on it.
     @Test
     fun `a note without a loudness says nothing either way`() {
         assertEquals(Answered.Unsaid, answeredBy(noteOf("SourceType=0|satellites=6")))

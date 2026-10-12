@@ -74,7 +74,7 @@ fun LinkBanner(link: LinkState) {
 
 /**
  * What a row adds to an age while the database is silent: the ages are of
- * what the phone last heard, not of now. Null while the link holds.
+ * what the device last heard, not of now. Null while the link holds.
  */
 @Composable
 fun knownNote(): String? {

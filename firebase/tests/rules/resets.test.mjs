@@ -1,4 +1,5 @@
-// What the security rules let each side do: asking a phone to forget its place.
+// What the security rules let each side do: asking a device to forget its
+// place.
 
 import { describe, it, beforeEach } from 'node:test';
 
@@ -16,7 +17,7 @@ describe('resets', () => {
     const resetOf = (db, id) => doc(db, `groups/${GROUP}/resets/${id}`);
     const minutesAgo = (minutes) => new Date(Date.now() - minutes * 60 * 1000);
 
-    // What an asking screen writes when it asks a phone now.
+    // What an asking screen writes when it asks a device now.
     const askedBy = (uid) => ({ askedBy: uid, askedAt: serverTimestamp() });
 
     // A request as it stands in the database, made some minutes ago.

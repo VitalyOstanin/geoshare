@@ -20,9 +20,9 @@ private fun told(group: String, displayName: String = "Alice") = ProfileTold(
 )
 
 class ProfileToldTest {
-    // The phone writes a profile only when what it holds differs from what the
+    // The device writes a profile only when what it holds differs from what the
     // account says, so the group has to be part of what it holds: a member who
-    // joined another group would otherwise stay nameless there, the phone
+    // joined another group would otherwise stay nameless there, the device
     // believing it had already introduced them.
     @Test
     fun `what one group was told is not what another was told`() {
@@ -39,7 +39,7 @@ class ProfileToldTest {
         assertNotEquals(told(FAMILY), told(FAMILY, displayName = "Alice B"))
     }
 
-    // The profile deleted on the server while the phone went on remembering it
+    // The profile deleted on the server while the device went on remembering it
     // as accepted: the member stayed nameless until something else changed.
     @Test
     fun `a profile the server says is gone has to be told again`() {

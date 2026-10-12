@@ -16,8 +16,8 @@ enum class ThemeChoice {
  * The member's answer about the theme.
  *
  * Kept beside the application rather than with the account: the answer
- * belongs to the phone it is read on, and the member reading the map in bed
- * on one phone may well want the other one light.
+ * belongs to the device it is read on, and the member reading the map in bed
+ * on one device may well want the other one light.
  */
 class ThemeSetting(context: Context) {
     private val store = context.getSharedPreferences(FILE, Context.MODE_PRIVATE)
@@ -31,7 +31,7 @@ class ThemeSetting(context: Context) {
  * The answer a stored name stands for.
  *
  * Anything that is not one of the names means the member has not answered:
- * a build that drops a choice should leave the phone following the system
+ * a build that drops a choice should leave the device following the system
  * rather than refusing to start.
  */
 internal fun themeNamed(stored: String?): ThemeChoice =

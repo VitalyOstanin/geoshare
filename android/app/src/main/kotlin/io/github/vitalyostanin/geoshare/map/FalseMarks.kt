@@ -5,11 +5,11 @@ import io.github.vitalyostanin.geoshare.collection.Fix
 import io.github.vitalyostanin.geoshare.collection.falsePlaceFor
 import java.time.Instant
 
-// Positions that lie where a false signal is known to put phones.
+// Positions that lie where a false signal is known to put devices.
 //
-// The phones refuse an answer that lands in such a place, but a position
+// The devices refuse an answer that lands in such a place, but a position
 // written before the place was named — or before it was drawn wide enough —
-// stays in the database until the phone has something true to write over it.
+// stays in the database until the device has something true to write over it.
 // Under a spoofer that can be hours, and a marker standing in the lake all
 // that time is read as where the member is. The screen cannot take the
 // position back and does not try: it greys the marker the way it greys one
@@ -39,7 +39,7 @@ fun withFalsePlaces(
 
 /**
  * Whether a marker is drawn grey: gone quiet, or standing where the lie puts
- * phones. Both say the same to the viewer — the member is not to be looked for
+ * devices. Both say the same to the viewer — the member is not to be looked for
  * here — and one colour for both is one fewer to learn.
  */
 fun isGrey(position: MemberPosition, now: Instant): Boolean =

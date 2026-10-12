@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Prints the application's own log off a connected device.
 #
-# The system log is unreadable on some phones — MagicOS keeps its buffers to
+# The system log is unreadable on some devices — MagicOS keeps its buffers to
 # itself and `adb logcat` returns nothing — so the application writes its own
 # file, and a debuggable build lets adb read it.
 #

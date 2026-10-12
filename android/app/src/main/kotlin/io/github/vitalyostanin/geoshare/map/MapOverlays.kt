@@ -25,7 +25,7 @@ import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.launch
 import java.time.Instant
 
-/** How often the siren banner decides whether the phone is still sounding. */
+/** How often the siren banner decides whether the device is still sounding. */
 private const val SIREN_BANNER_TICK_MS = 1_000L
 
 /** What the help button over the map explains: the follow modes, the sources and the list. */
@@ -66,10 +66,10 @@ internal fun MapHelpSheet(onClose: () -> Unit) {
 }
 
 /**
- * Told to the member over the map whenever one of their own phones is being
+ * Told to the member over the map whenever one of their own devices is being
  * looked for, and whenever the database has gone silent.
  *
- * A member carrying two phones may have both looked for at once, so this is a
+ * A member carrying two devices may have both looked for at once, so this is a
  * list rather than one banner.
  */
 @Composable
@@ -118,8 +118,8 @@ internal fun OwnBanners(
 }
 
 /**
- * The siren sounding on this very phone, with the one button that matters
- * while it does; the notification carries the same one for a phone that is
+ * The siren sounding on this very device, with the one button that matters
+ * while it does; the notification carries the same one for a device that is
  * locked or showing something else.
  */
 @Composable
@@ -226,7 +226,7 @@ internal fun BelowTheMap(
             )
 
             // A member whose position is refused simply has no marker, which
-            // reads as a member who is not sharing — and so does a phone that
+            // reads as a member who is not sharing — and so does a device that
             // cannot reach the group at all. One line is the difference.
             if (outOfReach > 0) {
                 Text(
@@ -250,7 +250,7 @@ internal fun BelowTheMap(
  *
  * [runsTheGroup] is weighed again on every draw rather than only when the
  * panel was opened: an administrator can stop being one while it is up —
- * somebody else takes the role away, or this phone is taken off the roster and
+ * somebody else takes the role away, or this device is taken off the roster and
  * the refused subscription empties it — and a panel left standing would go on
  * offering writes that are now refused.
  */
@@ -272,7 +272,7 @@ internal fun OverTheSettings(
     onCloseMyPhones: () -> Unit,
     onCloseAdmin: () -> Unit,
 ) {
-    // The phones are read from this member's own grant, which the member
+    // The devices are read from this member's own grant, which the member
     // always may read.
     if (myPhonesOpen) {
         MyPhonesScreen(

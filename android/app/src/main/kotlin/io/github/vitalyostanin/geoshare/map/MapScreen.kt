@@ -83,7 +83,7 @@ private val TOP_BUTTONS_GAP = 12.dp
  *
  * The name is captured at the moment the member's card is opened rather than
  * looked up again from [MemberPosition] each time the button is drawn: once
- * the member's position drops out of the positions this phone is being shown,
+ * the member's position drops out of the positions this device is being shown,
  * there is nowhere left to look the name up from, and the button still has to
  * say whose card it was.
  */
@@ -106,39 +106,39 @@ private val FollowTargetSaver = listSaver<FollowTarget?, String>(
 @Composable
 fun MapScreen(
     positions: List<MemberPosition>,
-    /** How many members' positions this phone is being refused, if any. */
+    /** How many members' positions this device is being refused, if any. */
     outOfReach: Int,
     /** What each member calls themselves, by member id; absent until they sign in. */
     profiles: Map<String, MemberProfile>,
     /** Who else has the map open, as they themselves claim. */
     watchers: List<Watcher>,
     ownMemberId: String,
-    /** This phone's own `{uid}.{deviceId}`: the admin panel rings every phone but this one. */
+    /** This device's own `{uid}.{deviceId}`: the admin panel rings every device but this one. */
     ownPhoneId: String?,
     ownDisplayName: String?,
     ownPictureUrl: String?,
-    /** The group's searches, by the phone each is looking for. */
+    /** The group's searches, by the device each is looking for. */
     searches: Map<String, Search>,
     /** Everything the settings screen shows, which the map only carries through. */
     settings: SettingsState,
     /** What the settings screen can ask for, likewise. */
     actions: SettingsActions,
-    /** What this member calls the phones and the people, for themselves. */
+    /** What this member calls the devices and the people, for themselves. */
     labels: Labels,
-    /** Gives a phone or a person a name for this member alone, or takes it away. */
+    /** Gives a device or a person a name for this member alone, or takes it away. */
     onLabel: (LabelKind, String, String?) -> Unit,
     /** The groups this device is in, for the chip that switches between them. */
     groups: GroupSwitch,
     modifier: Modifier = Modifier,
 ) {
     val now by currentTime()
-    // The phones the group is looking for right now, worked out against the
+    // The devices the group is looking for right now, worked out against the
     // same clock the ages tick by: nothing arrives from the database at the
     // moment a search runs out, so this is read afresh whenever [now] moves.
     val soughtPhones = remember(searches, now) { standingSearches(searches, now).keys }
     // Read here rather than only where the admin panel is opened, because the
     // card of a member being looked for offers "Found" on this same
-    // condition, and a phone that stops running the group should lose the
+    // condition, and a device that stops running the group should lose the
     // button on both at once.
     val runsTheGroup = standingIn(settings.roster, ownMemberId) == Standing.Administrator
     // The name being asked for, held by what it names rather than by the card:
@@ -236,7 +236,7 @@ fun MapScreen(
     var adminOpen by rememberSaveable { mutableStateOf(false) }
     var myPhonesOpen by rememberSaveable { mutableStateOf(false) }
     // The list of every member, over the map and the strip; saveable like the
-    // panels, so that turning the phone does not drop the member back on the map.
+    // panels, so that turning the device does not drop the member back on the map.
     var membersOpen by rememberSaveable { mutableStateOf(false) }
     // Held by id rather than by value: the position keeps arriving, and a card
     // showing the one from when it was opened would quietly go stale.
@@ -250,7 +250,7 @@ fun MapScreen(
     // carry this as the reason for the mode it was in — "somebody is looking" —
     // which said that the household was being watched without saying by whom,
     // and said it on every card at once, because a single open map puts every
-    // phone of the group into the same mode.
+    // device of the group into the same mode.
     val lookingNames =
         watchingMembers(watchers, now).map { member ->
             memberName(

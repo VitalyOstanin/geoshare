@@ -184,7 +184,7 @@ app_id() {
 # it — or, with --sha-from, the ones an existing project already accepts. The
 # second is the one to use when the builds are signed on another machine than
 # this: the debug key lives in the build container's volume, and this
-# machine's may not be the one that signed the application on the phones.
+# machine's may not be the one that signed the application on the devices.
 #
 # --sha names them outright, once per fingerprint, for a project made under
 # another account than the one that can read the project they are known in.
@@ -373,7 +373,7 @@ enable_api() {
 # Whether the Google provider is already on in the project, read from the
 # Identity Toolkit admin API the same way enable_api() above reads Service
 # Usage: the firebase command line has no command for this either, and a
-# phone would otherwise only find out by trying to sign in. A project where
+# device would otherwise only find out by trying to sign in. A project where
 # the provider was never touched in the console answers with an error rather
 # than a plain "enabled": false, so only a 404 — no configuration yet — is
 # kept quiet; anything else is worth a line on standard error, since it might
@@ -482,9 +482,9 @@ print(json.dumps({
 '
 }
 
-# The link the project owner opens on their own phone to connect the
+# The link the project owner opens on their own device to connect the
 # application, plus a QR code of it when qrencode is on PATH — scanning one
-# beats typing a *.web.app address on a phone's keyboard. ANSIUTF8 sets its
+# beats typing a *.web.app address on a device's keyboard. ANSIUTF8 sets its
 # black and white with its own escape codes rather than the terminal's, so
 # the code reads the same on a light or a dark terminal; plain UTF8 borrows
 # the terminal's own colours and comes out inverted on a dark one.
@@ -617,7 +617,7 @@ create() {
     site_id="$(hosting_site "${project}" "$(app_id "${project}" WEB)")"
 
     # Sign-in with Google checks the application against these; without them
-    # the first sign-in on a phone fails with a developer error.
+    # the first sign-in on a device fails with a developer error.
     echo "==> signing key fingerprints"
     local hash
     local hashes

@@ -17,7 +17,8 @@ export const STRANGER = 'stranger-uid';
 
 export let testEnv;
 
-// One document per phone: the id is the account and the phone joined by a dot.
+// One document per device: the id is the account and the device joined by a
+// dot.
 export const positionOf = (db, uid, device = 'phone') =>
     doc(db, `groups/${GROUP}/positions/${uid}.${device}`);
 export const watchOf = (db, uid, device = 'phone') => doc(db, `groups/${GROUP}/watch/${uid}.${device}`);
@@ -36,12 +37,12 @@ export const someProfile = (name) => ({
 export const FOREVER = new Date('9999-12-31T00:00:00Z');
 export const LONG_OVER = new Date('2020-01-01T00:00:00Z');
 
-// Who this member lets read their position, and until when, beside the phones
+// Who this member lets read their position, and until when, beside the devices
 // they carry. Kept apart from the profile, which everybody in the group reads:
 // these two answer "where is this person", and only the people given a
 // permission see them. The rules read the permission from here rather than
 // from a copy inside a position document, which would go on granting what has
-// been withdrawn until the phone writes again.
+// been withdrawn until the device writes again.
 export const someGrant = (readers, devices = ['phone']) => ({ sharedWith: readers, devices });
 
 // The fields both clients actually write, with the names they actually use.

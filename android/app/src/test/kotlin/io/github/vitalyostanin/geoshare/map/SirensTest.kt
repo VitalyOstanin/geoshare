@@ -12,7 +12,7 @@ import java.time.Duration
 import java.time.Instant
 
 /**
- * The same expectations the page's own `sirens.test.mjs` checks: the phone and
+ * The same expectations the page's own `sirens.test.mjs` checks: the device and
  * the caller's screen read the same document, and have to agree on whether a
  * call is still worth answering.
  */

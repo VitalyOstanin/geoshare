@@ -46,7 +46,7 @@ import java.time.Instant
 internal class GroupAnswers {
     /**
      * The invitation just made. Kept on the screen rather than in the
-     * database: the code is written where nobody may read it back, this phone
+     * database: the code is written where nobody may read it back, this device
      * included, so the only copy to show is the one just made.
      */
     var invitation by mutableStateOf<MadeInvitation?>(null)
@@ -126,7 +126,7 @@ internal fun settingsActions(
         activity.jumps.enabled = wanted
     },
     // Left in the same store for the service to pick up and spend: the
-    // request has to outlive this screen, since the phone may not have a
+    // request has to outlive this screen, since the device may not have a
     // fix to answer it with until minutes from now. The service reads the
     // same store on every answer it gets, so the choice takes effect at the
     // next fix rather than at the next restart.
@@ -151,7 +151,7 @@ internal fun settingsActions(
     // the system settings about it and builds the screens again in the new
     // language.
     onLanguageChange = { wanted -> activity.speak(wanted) },
-    // Written into the grant, and left to be read back: the phones of a
+    // Written into the grant, and left to be read back: the devices of a
     // member share the same permissions, so the answer has to come from
     // where all of them look.
     onShare = { readerId, span ->
@@ -169,7 +169,7 @@ internal fun settingsActions(
             )
         }
     },
-    // Read back through the phones of this member, like every other phone
+    // Read back through the devices of this member, like every other device
     // reads it.
     onPhoneNameChange = { name ->
         activity.lifecycleScope.launch {
@@ -191,7 +191,7 @@ internal fun settingsActions(
         activity.backgroundWork.startupSet = set
     },
     // Refused when a group already exists, which is the answer to the
-    // question the screen cannot ask: a phone outside a group cannot read
+    // question the screen cannot ask: a device outside a group cannot read
     // the roster, so it cannot tell an empty household from one it is not
     // in.
     onFoundGroup = { name ->

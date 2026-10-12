@@ -7,7 +7,7 @@ import java.time.Instant
 //
 // The jump filter asks whether a position can be true. These ask something
 // else: whether the radio is being interfered with at all, and in which of the
-// two ways. The answer does not place the phone anywhere — it says how much
+// two ways. The answer does not place the device anywhere — it says how much
 // the provider's own answer is worth.
 //
 // The two signatures are the ones Android's own guidance names. A receiver
@@ -36,7 +36,7 @@ enum class Interference {
  * Two averages of one measure: the recent epochs against the ones before them.
  *
  * Averages rather than single readings because a single epoch moves on its own
- * — a hand over the phone, a bus going past — and because what is being looked
+ * — a hand over the device, a bus going past — and because what is being looked
  * for is a change rather than a level: there is no absolute gain that means
  * interference, only a gain lower than this receiver's own was a minute ago.
  */
@@ -50,7 +50,7 @@ data class Epochs(val recent: Double?, val earlier: Double?) {
  *
  * Two decibels. Chosen rather than measured: Android's guidance says which way
  * the measures move and not by how much, so this is a first setting to be
- * corrected against the logs of phones that are actually being jammed.
+ * corrected against the logs of devices that are actually being jammed.
  */
 const val GAIN_FALL_DB: Double = 2.0
 
@@ -84,11 +84,11 @@ fun interferenceFrom(gain: Epochs, noise: Epochs): Interference {
 }
 
 /**
- * Whether the clock of the fix and the clock of the phone disagree.
+ * Whether the clock of the fix and the clock of the device disagree.
  *
  * A receiver takes its time from the satellites, so a false signal can carry a
  * false clock, and the disagreement shows before anything else does. What it
- * cannot do is stand alone: a phone whose own clock is set from the same
+ * cannot do is stand alone: a device whose own clock is set from the same
  * satellites moves with the lie, and one without a network has no other clock
  * to be right by.
  */

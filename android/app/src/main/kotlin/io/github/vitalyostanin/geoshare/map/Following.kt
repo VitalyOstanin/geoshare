@@ -73,7 +73,7 @@ fun boundsOf(positions: List<MemberPosition>): MapBounds? {
  * map a fresh, slightly different rectangle with every batch of
  * positions — the last few metres a receiver's estimate wanders by — and
  * moving the camera for that is a jitter nobody asked for. Twenty metres is
- * well inside what a phone lying on a table wanders between two positions,
+ * well inside what a device lying on a table wanders between two positions,
  * and well outside a step actually worth re-centring for.
  */
 const val BOUNDS_TOLERANCE_DEGREES: Double = 0.0002
@@ -100,7 +100,7 @@ fun boundsAreClose(
  * The position of [target] among [positions], or null where it is not there.
  *
  * A chosen member's [MemberPosition.positionId] can go missing between
- * batches — the phone stopped sending, or the position it last wrote was
+ * batches — the device stopped sending, or the position it last wrote was
  * rejected — and this is how a caller finds out rather than following a
  * marker that no longer exists.
  */

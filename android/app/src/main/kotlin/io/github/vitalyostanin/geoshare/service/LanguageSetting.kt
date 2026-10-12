@@ -12,7 +12,7 @@ enum class LanguageChoice {
  *
  * "Follow the system" is the absence of a language rather than a language of
  * its own: the platform keeps the answer, and an empty answer is what makes it
- * read the phone's setting instead.
+ * read the device's setting instead.
  */
 fun languageTag(choice: LanguageChoice): String? = when (choice) {
     LanguageChoice.Russian -> "ru"
@@ -24,7 +24,7 @@ fun languageTag(choice: LanguageChoice): String? = when (choice) {
  * The answer a stored tag stands for.
  *
  * A tag carries a region the answer does not — the platform hands back "ru-RU"
- * for a phone set up in Russia — and a tag from a build that spoke a language
+ * for a device set up in Russia — and a tag from a build that spoke a language
  * this one does not means the member is back to following the system.
  */
 fun languageChosen(tag: String?): LanguageChoice {

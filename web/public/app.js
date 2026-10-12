@@ -195,7 +195,7 @@ function followTheGroup() {
  *
  * The grants cannot be listed, so who to ask about comes from the profiles,
  * which every member may read. A member who shares with this viewer answers
- * with their phones; one who does not is simply absent, and the positions
+ * with their devices; one who does not is simply absent, and the positions
  * subscription is built from what is left.
  */
 function followGrants(profiles) {
@@ -212,7 +212,7 @@ function followGrants(profiles) {
         state.grants = grants;
         showPositions();
         followPositions(grants);
-        // What the panel counts beside each member is how many of their phones
+        // What the panel counts beside each member is how many of their devices
         // this viewer may watch, which is exactly what has just changed.
         drawGroup();
         render();
@@ -225,8 +225,8 @@ function followGrants(profiles) {
  * points somewhere else.
  *
  * The positions are read a document at a time, so the list of documents is
- * what a subscription is made of: a member who picks up a second phone adds it
- * to their grant, a search starting or ending adds or drops its own phone,
+ * what a subscription is made of: a member who picks up a second device adds it
+ * to their grant, a search starting or ending adds or drops its own device,
  * and this is what notices both.
  */
 export function followPositions(grants) {
@@ -260,8 +260,8 @@ export function followPositions(grants) {
 }
 
 /**
- * The positions as the strip and the map show them: what the phones said about
- * themselves since laid over what they wrote, and each phone called what this
+ * The positions as the strip and the map show them: what the devices said about
+ * themselves since laid over what they wrote, and each device called what this
  * viewer or its owner called it.
  */
 export function showPositions() {
@@ -353,7 +353,7 @@ export function stop() {
 setInterval(() => {
     render();
 
-    // The panel names how long ago each phone was in touch, and those ages
+    // The panel names how long ago each device was in touch, and those ages
     // move on with the clock as the strip's do.
     if (elements.admin.open) {
         drawGroup();
@@ -368,7 +368,7 @@ document.addEventListener('visibilitychange', () => {
     }
 });
 
-// Leaving the claim behind would hold every phone in its fifteen-second mode
+// Leaving the claim behind would hold every device in its fifteen-second mode
 // for a tab nobody has open any more. The field is cleared with it: a page put
 // aside and taken back out again is restored rather than loaded, and the claim
 // has to be made anew — a field still holding the stopped one would keep the
@@ -379,7 +379,7 @@ window.addEventListener('pagehide', () => {
 });
 
 // Restored from the back-forward cache, which is what going back to the page
-// does on a phone. Nothing else runs then: the account has not changed, so the
+// does on a device. Nothing else runs then: the account has not changed, so the
 // sign-in listener stays quiet.
 window.addEventListener('pageshow', () => {
     if (state.member) {

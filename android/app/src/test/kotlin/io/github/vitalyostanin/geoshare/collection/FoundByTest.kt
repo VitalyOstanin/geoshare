@@ -9,7 +9,7 @@ class FoundByTest {
     // satellites heard, and loudly.
     private val measured = "HDACC=0.0|SourceType=0|maxCn0=27|meanCn0=24|satellites=8"
 
-    // The same phone answering from an assistance service, under the name of
+    // The same device answering from an assistance service, under the name of
     // the satellites, with nothing heard at the time.
     private val assisted = "QUICKGPS=true|SourceType=128|maxCn0=0|meanCn0=0|satellites=4"
 
@@ -34,7 +34,7 @@ class FoundByTest {
         assertEquals(FoundBy.Unheard, foundBy(fix(from = "gps", alongside = unheard)))
     }
 
-    // Checked on the phone rather than assumed: an answer from the network
+    // Checked on the device rather than assumed: an answer from the network
     // there is `Location[network … hAcc=699.999]` and carries no note at all,
     // so there is nothing in it to tell the Wi-Fi from a tower. Both are named
     // as the two radios together.
@@ -69,9 +69,9 @@ class FoundByTest {
     }
 
     // The case nearly every written position falls into. The fused provider
-    // hands over no note at all on these phones — checked in the sky file —
+    // hands over no note at all on these devices — checked in the sky file —
     // while the satellites are asked for directly and answer with one. Both
-    // place the phone at the same spot at the same moment, which is the two
+    // place the device at the same spot at the same moment, which is the two
     // names of one answer rather than two answers agreeing.
     @Test
     fun `a fused answer standing on the satellites' own is the satellites`() {
@@ -109,7 +109,7 @@ class FoundByTest {
         )
     }
 
-    // What the phone this was written for does most of the day: the receiver's
+    // What the device this was written for does most of the day: the receiver's
     // own answer says outright that an assistance service produced it, and the
     // fused answer standing on the same spot is that answer. Saying "the
     // satellites" there would be saying the one thing that is not true of it.

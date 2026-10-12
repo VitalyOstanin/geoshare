@@ -10,7 +10,7 @@ import java.time.Instant
 class CarriedTest {
     private val noon: Instant = Instant.parse("2026-09-15T12:00:00Z")
 
-    // Where the phone actually is, with the width an honest answer indoors
+    // Where the device actually is, with the width an honest answer indoors
     // carries.
     private val home = fix(61.03268, 4.40300, noon, width = 20.0)
 
@@ -20,7 +20,7 @@ class CarriedTest {
 
     @Test
     fun `an answer a kilometre from a phone nobody touched has walked away`() {
-        // The one this phone actually gave at 11:00 that morning: four
+        // The one this device actually gave at 11:00 that morning: four
         // satellites, a quarter of a kilometre of doubt, and a place a
         // kilometre from the flat it was lying in.
         val elsewhere = fix(61.04170, 4.40300, noon.plusSeconds(60), width = 246.0)
@@ -28,7 +28,7 @@ class CarriedTest {
         assertTrue(driftedWhilePutDown(putDown, elsewhere, untouched))
     }
 
-    // The answer the towers and the Wi-Fi handed a phone at 13:35, while it
+    // The answer the towers and the Wi-Fi handed a device at 13:35, while it
     // lay at home: five metres of claimed doubt, and within two metres of the
     // false satellite answer rejected a second earlier. The rescue branch
     // writes such an answer past the rest of the filter, so this rule is the
@@ -49,7 +49,7 @@ class CarriedTest {
     }
 
     // Two answers wide enough to cover the distance between them are not a
-    // contradiction: a phone in a courtyard says where it is with several
+    // contradiction: a device in a courtyard says where it is with several
     // hundred metres of doubt, and both answers hold the same flat.
     @Test
     fun `two wide answers that overlap are not a wandering`() {
@@ -75,7 +75,7 @@ class CarriedTest {
         )
     }
 
-    // A few steps are a phone picked up off a table and put back, or a knock
+    // A few steps are a device picked up off a table and put back, or a knock
     // against the table it is lying on.
     @Test
     fun `a handful of steps leaves the answer to explain itself`() {
@@ -120,7 +120,7 @@ class CarriedTest {
         assertEquals(1_000L, anchor?.steps)
     }
 
-    // Nothing has stirred since the phone was switched on, which is a phone
+    // Nothing has stirred since the device was switched on, which is a device
     // that has been lying there the whole time.
     @Test
     fun `a phone that never stirred is anchored from now`() {
@@ -149,7 +149,7 @@ class CarriedTest {
     }
 
     // The counter runs from the last boot, so what matters is the distance
-    // from where it stood when the phone was put down — not the difference
+    // from where it stood when the device was put down — not the difference
     // inside one batch of readings, which is nothing.
     @Test
     fun `steps are counted from where the counter stood at the anchor`() {
@@ -171,7 +171,7 @@ class CarriedTest {
         assertNull(carrying.steps)
     }
 
-    // The walk this rule is about: a person carrying the phone three hundred
+    // The walk this rule is about: a person carrying the device three hundred
     // metres down a street while the receiver goes on reporting the same
     // doorway to within ten metres.
     @Test
@@ -288,7 +288,7 @@ class CarriedTest {
 
     private fun walk(steps: Long) = Walk(since = noon.minusSeconds(60), steps = steps)
 
-    // On a phone left on a table overnight, when the answers it was handed
+    // On a device left on a table overnight, when the answers it was handed
     // stood fifty-five kilometres away, the speed it was given was
     // thirty-three metres a second, which is a hundred and twenty kilometres
     // an hour.
@@ -310,7 +310,7 @@ class CarriedTest {
         assertTrue(hurriedWhilePutDown(putDown, nearby, untouched))
     }
 
-    // Of 6,405 answers the phones gave from home over three days, nine in
+    // Of 6,405 answers the devices gave from home over three days, nine in
     // ten claimed exactly this.
     @Test
     fun `a phone lying still is told it is going nowhere`() {

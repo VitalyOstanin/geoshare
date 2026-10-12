@@ -48,7 +48,7 @@ test('a document that is not a search is none', () => {
 
 // An id without a dot is a search of the old, per-member shape, which the
 // rules no longer accept from a client: it is ignored rather than read as a
-// phone's, the way a document of the wrong shape always is.
+// device's, the way a document of the wrong shape always is.
 test('a search document without a dot in its id is ignored', () => {
     assert.equal(searchOf('grandma', written(1, 6)), null);
 });
@@ -68,8 +68,8 @@ test('only the searches still standing are kept', () => {
     assert.deepEqual([...standingSearches(searches, NOW).keys()], ['grandma.a']);
 });
 
-// Several phones may be looked for at once, of one member or of several: the
-// family may have lost two of grandma's phones together, and be looking for
+// Several devices may be looked for at once, of one member or of several: the
+// family may have lost two of grandma's devices together, and be looking for
 // uncle's at the same time.
 test('two phones of one member stand as two searches', () => {
     const searches = new Map([

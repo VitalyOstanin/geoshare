@@ -9,10 +9,10 @@ import java.time.Duration
 import java.time.Instant
 
 /**
- * The numbers here are the run of a phone left on a table overnight: a boot at
+ * The numbers here are the run of a device left on a table overnight: a boot at
  * 22:11:55, an answer twenty-three seconds later a hundred and twenty-two
  * metres wide with no GPS satellite in it, and two moves of sixty-six and two
- * hundred and twenty-three metres in the four minutes after, while the phone
+ * hundred and twenty-three metres in the four minutes after, while the device
  * lay untouched on a table.
  */
 class SettlingTest {
@@ -26,7 +26,7 @@ class SettlingTest {
         assertFalse(stillSettling(Duration.ofSeconds(40), heard(gps = 2, glonass = 1, beidou = 1)))
     }
 
-    // The clock is the end of the window and not the start of it: a phone
+    // The clock is the end of the window and not the start of it: a device
     // indoors reports no satellites for as long as it stays there, and a
     // window waiting for four of them would never close.
     @Test
@@ -88,7 +88,7 @@ class SettlingTest {
         assertEquals(JumpReason.Settling, whyAJump(first, second, settling = true))
     }
 
-    // A person walking away from a phone's last position is not what the
+    // A person walking away from a device's last position is not what the
     // window is for: it would be caught by nothing outside it either.
     @Test
     fun `a walk is a move even while the receiver settles`() {

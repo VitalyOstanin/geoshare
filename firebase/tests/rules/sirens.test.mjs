@@ -16,7 +16,7 @@ describe('sirens', () => {
     const sirenOf = (db, id) => doc(db, `groups/${GROUP}/sirens/${id}`);
     const minutesAgo = (minutes) => new Date(Date.now() - minutes * 60 * 1000);
 
-    // What a caller's screen writes when it rings a phone now.
+    // What a caller's screen writes when it rings a device now.
     const calledBy = (uid) => ({ calledBy: uid, calledAt: serverTimestamp() });
 
     // A call as it stands in the database, made some minutes ago.

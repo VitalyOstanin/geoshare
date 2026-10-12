@@ -183,6 +183,6 @@ describe('running a group whose owner is named in it', () => {
     });
 });
 
-// Where a false signal is known to put the phones of this group. The list is
+// Where a false signal is known to put the devices of this group. The list is
 // in the database rather than in the build, because which places those are is
 // a fact about one household's surroundings.

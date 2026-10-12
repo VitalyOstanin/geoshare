@@ -19,7 +19,7 @@ sealed interface ConnectState {
     /**
      * Nothing in hand: no link has been offered since the flow was created,
      * or the previous attempt was cancelled, finished or dismissed as a
-     * no-op. This says nothing about whether the phone itself already has a
+     * no-op. This says nothing about whether the device itself already has a
      * project — a link can still arrive here to join another.
      */
     data object NotConnected : ConnectState
@@ -49,7 +49,7 @@ sealed interface ConnectState {
      * keeping [invitation] until the sign-in they lead to, and spending it
      * once signed in are all done by whoever collects
      * [state] rather than by this class, since every one of them touches
-     * Firebase or the phone's own storage, neither of which [ConnectFlow] is
+     * Firebase or the device's own storage, neither of which [ConnectFlow] is
      * given a way to reach.
      */
     data class Done(val settings: ProjectSettings, val invitation: Invitation?) : ConnectState
@@ -148,7 +148,7 @@ class ConnectFlow(
     /**
      * Starts a fetch for [link], unless one of the projects the device is
      * [connected] to already answers to [link]'s site — a settings file pasted back at the
-     * phone that already has it (an invitation re-pasted on the owner's own
+     * device that already has it (an invitation re-pasted on the owner's own
      * device, or the owner's link pasted a second time) needs no download,
      * and skipping it is what keeps that paste working offline or against
      * an emulator with no site to reach.
@@ -174,7 +174,7 @@ class ConnectFlow(
     }
 
     /**
-     * What [settings] — fetched, or already the phone's own — turn into
+     * What [settings] — fetched, or already the device's own — turn into
      * once the project they name is known: [ConnectState.Confirm] for a
      * project the device is not in yet — joined beside the groups it is
      * already in, none of which it leaves — and for a link back to one it is

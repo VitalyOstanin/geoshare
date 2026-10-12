@@ -3,9 +3,9 @@ package io.github.vitalyostanin.geoshare.collection
 import androidx.annotation.StringRes
 import io.github.vitalyostanin.geoshare.R
 
-/** One line of the help: a reason, what the phone saw and what that means. */
+/** One line of the help: a reason, what the device saw and what that means. */
 data class ReasonExplained(
-    /** The word the phone writes into the document, as [leftOutReasonLabel] reads it. */
+    /** The word the device writes into the document, as [leftOutReasonLabel] reads it. */
     val reason: String,
     @param:StringRes val name: Int,
     @param:StringRes val sign: Int,
@@ -19,7 +19,7 @@ data class ReasonExplained(
  * Not the order of [JumpReason], which is the order the rules happened to be
  * written in. A member opening this has just read one reason on a card, and
  * what places it among the others is what it rests on — the answer alone, then
- * the answer against the one before it, then the phone's own sensors, then the
+ * the answer against the one before it, then the device's own sensors, then the
  * other radios, then the shape of a whole track, then the sky itself. The
  * switched-off source comes last because it is not a fault at all.
  *

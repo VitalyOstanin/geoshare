@@ -69,7 +69,7 @@ class ViewerDistanceTest {
         assertNull(distanceFromViewer(anna, positions, "me", now))
     }
 
-    // A phone under observation: online every minute, the marker stuck in a
+    // A device under observation: online every minute, the marker stuck in a
     // lake since a fix went wrong.
     @Test
     fun `a marker the viewer's phone has left behind is not measured from`() {

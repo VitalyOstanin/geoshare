@@ -26,7 +26,7 @@ readonly SDK_IMAGE="${SDK_IMAGE:-localhost/geoshare-sdk:${ANDROID_COMPILE_SDK}-j
 readonly FIREBASE_IMAGE="${FIREBASE_IMAGE:-localhost/geoshare-firebase:${FIREBASE_TOOLS_VERSION}-jre${FIREBASE_JRE_VERSION}}"
 
 # Which system image the emulator runs: google_apis carries Play services,
-# default does not, and is what shows how the application behaves on a phone
+# default does not, and is what shows how the application behaves on a device
 # sold without them.
 #
 #   EMULATOR_VARIANT=default tools/run-emulator.sh
@@ -56,7 +56,7 @@ readonly POD_NAME="${POD_NAME:-geoshare}"
 # The one port the pod does publish: the adb server inside the emulator
 # container, for a host adb and for an instrumented run in the SDK container.
 # 5038 rather than 5037, because the machine's own adb server usually holds
-# 5037 and the phones plugged into it have to keep working.
+# 5037 and the devices plugged into it have to keep working.
 readonly ADB_HOST_PORT="${ADB_HOST_PORT:-5038}"
 readonly ADB_SERVER_SOCKET="${ADB_SERVER_SOCKET:-tcp:127.0.0.1:${ADB_HOST_PORT}}"
 

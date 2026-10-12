@@ -30,7 +30,7 @@ fi
 # The try-out emulator runs in a pod of its own, where nothing outside can see
 # it; the adb server it publishes is how an instrumented run reaches it. Passed
 # only while that container is up, so an ordinary build is unaffected and a
-# phone plugged into the machine keeps being the device a run installs on.
+# device plugged into the machine keeps being the device a run installs on.
 if podman container exists "${EMULATOR_NAME}"; then
     env_args+=(-e "ADB_SERVER_SOCKET=${ADB_SERVER_SOCKET}")
 fi

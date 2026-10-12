@@ -4,7 +4,7 @@ import com.google.firebase.Timestamp
 import io.github.vitalyostanin.geoshare.service.PhoneField
 import java.time.Instant
 
-/** How many phones of one member this phone will follow. The rules say the same. */
+/** How many devices of one member this device will follow. The rules say the same. */
 private const val PHONES_PER_MEMBER = 10
 
 /** As much of a name as fits on a card. The writers cut it to the same. */
@@ -13,16 +13,16 @@ private const val NAME_LIMIT = 40
 private const val FULL_PERCENT = 100
 
 /**
- * What one phone last said about itself, apart from where it is.
+ * What one device last said about itself, apart from where it is.
  *
  * Kept beside the position rather than inside it: none of it is a place, and
  * the filter that holds a position back when the answers look forged has
- * nothing to say about whether the phone is in touch or on a cable.
+ * nothing to say about whether the device is in touch or on a cable.
  */
 data class PhoneStatus(
     val model: String? = null,
     val name: String? = null,
-    /** When the phone was last in touch, by the server's clock. */
+    /** When the device was last in touch, by the server's clock. */
     val onlineAt: Instant? = null,
     val mode: String? = null,
     val batteryPercent: Int? = null,
@@ -30,9 +30,9 @@ data class PhoneStatus(
 )
 
 /**
- * The phones in one member's document, by the id of each, with whatever in an
- * entry is not what a phone writes left out: the rules hold the number of
- * phones and not their fields.
+ * The devices in one member's document, by the id of each, with whatever in an
+ * entry is not what a device writes left out: the rules hold the number of
+ * devices and not their fields.
  */
 fun phonesFrom(data: Map<String, Any?>?): Map<String, PhoneStatus> = data.orEmpty()
     .entries
@@ -57,13 +57,13 @@ private fun shortText(value: Any?): String? =
     (value as? String)?.takeIf { it.isNotEmpty() }?.take(NAME_LIMIT)
 
 /**
- * The positions with what their phones said about themselves laid over them,
- * where a phone said so after its position was written.
+ * The positions with what their devices said about themselves laid over them,
+ * where a device said so after its position was written.
  *
  * The later of the two wins: a position carries the charge it was written
  * with, and while the answers are being thrown away that is the charge of an
- * hour ago. The moment the phone was last in touch moves on with it, which is
- * what keeps the marker of a working phone from going grey merely because its
+ * hour ago. The moment the device was last in touch moves on with it, which is
+ * what keeps the marker of a working device from going grey merely because its
  * position is being held back.
  */
 fun withPhones(
@@ -87,12 +87,12 @@ fun withPhones(
 }
 
 /**
- * What the rest of the application reads as a member's grant: the phones to
+ * What the rest of the application reads as a member's grant: the devices to
  * follow are those the grant names together with those the member's own
  * document names, and only where the grant could be read. The grant is what
- * says this phone may watch; an administrator reads everybody's phones without
- * being allowed to see where any of them is. A grant is still read for its list
- * because a phone of an older build names itself there and nowhere else.
+ * says this device may watch; an administrator reads everybody's devices
+ * without being allowed to see where any of them is. A grant is still read for its
+ * list because a device of an older build names itself there and nowhere else.
  */
 fun combinedGrants(
     named: Map<String, MemberGrant>,

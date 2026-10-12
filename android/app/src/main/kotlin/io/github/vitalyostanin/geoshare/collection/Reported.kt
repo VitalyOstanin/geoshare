@@ -24,7 +24,7 @@ data class Reported(
     /**
      * Whatever the provider attached beyond the fields, as it wrote it.
      *
-     * On these phones the fused provider puts the satellite count and the
+     * On these devices the fused provider puts the satellite count and the
      * loudness it worked from in here, which is the one place the platform
      * admits how a fused answer was arrived at.
      */

@@ -73,7 +73,7 @@ const val LOW_DEGREES: Double = 20.0
  * How many satellites of one system have to be heard before the epoch is read.
  *
  * Five. Fewer than that and one reflection off a window decides both the
- * spread and the line, and the phones here hear eight to twelve of the GPS
+ * spread and the line, and the devices here hear eight to twelve of the GPS
  * band at a time, so the limit costs nothing where the question is being
  * asked.
  */
@@ -83,11 +83,11 @@ const val SLANT_MIN_SATELLITES: Int = 5
  * How flat the loudness has to be, and how flat the line through it, before
  * the sky is called flat.
  *
- * Read off the logs rather than chosen. Over the phone being spoofed the
+ * Read off the logs rather than chosen. Over the device being spoofed the
  * spread of the GPS band sits at 0,7—1,2 dB an epoch and the line within a
- * decibel of level; over the phone in another part of the city the spread is
+ * decibel of level; over the device in another part of the city the spread is
  * 4,5—7,6 dB and the line runs to several. The hours when GLONASS was still
- * being taken into the fix read the same way as the other phone: spread
+ * being taken into the fix read the same way as the other device: spread
  * 2,8—3,9 dB. Nothing between the two pairs of limits is called anything.
  */
 const val FLAT_SPREAD_DB: Double = 1.5
@@ -109,7 +109,7 @@ private const val HEIGHTS_APART_ENOUGH: Double = 0.05
  * One epoch read system by system.
  *
  * Apart by system for the same reason the averages in [loudnessPerBand] are:
- * GLONASS arrives some decibels quieter than GPS on these phones, and the two
+ * GLONASS arrives some decibels quieter than GPS on these devices, and the two
  * mixed together would show a spread of the difference between the systems
  * rather than of the sky.
  *
@@ -127,7 +127,7 @@ fun slantOf(sky: List<Satellite>): Map<Constellation, Slant> =
  * What a run of epochs says, or [SkyShape.Unclear] where they do not agree.
  *
  * Read over several rather than one because a single epoch moves on its own:
- * over the phone being spoofed one epoch in three still reads as sloped, and
+ * over the device being spoofed one epoch in three still reads as sloped, and
  * over the honest one every tenth epoch reads flat. The middle of ten epochs
  * separates the two sets of logs without either being read as the other.
  *

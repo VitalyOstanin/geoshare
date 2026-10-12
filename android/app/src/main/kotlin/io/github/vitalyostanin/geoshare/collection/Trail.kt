@@ -3,19 +3,19 @@ package io.github.vitalyostanin.geoshare.collection
 import java.time.Duration
 import java.time.Instant
 
-// The places the phone has actually been, as far as it was ever believed.
+// The places the device has actually been, as far as it was ever believed.
 //
 // The rules that catch a jump look at two fixes: the last one written and the
 // one that just arrived. A spoofed signal is indistinguishable from the truth
 // at that scale — it draws a plausible road — and differs only in not fitting
-// with the rest of what the phone knows. This is that rest.
+// with the rest of what the device knows. This is that rest.
 //
 // What goes in is positions that were written, never answers that arrived. The
 // distinction is the whole safety of it: an answer left out as a jump never
-// becomes part of what the phone considers familiar, so an hour of spoofing
-// does not teach the phone that the false place is home.
+// becomes part of what the device considers familiar, so an hour of spoofing
+// does not teach the device that the false place is home.
 
-/** The places the phone has been, oldest first. */
+/** The places the device has been, oldest first. */
 data class Trail(val fixes: List<Fix> = emptyList())
 
 /**
@@ -37,8 +37,8 @@ const val FAMILIAR_METRES: Double = 300.0
  * How many remembered visits make a place familiar.
  *
  * Three, and they have to be spread over [FAMILIAR_SPREAD]: one written
- * position proves only that the phone once believed something, while three
- * across an hour is a place the phone keeps coming back to.
+ * position proves only that the device once believed something, while three
+ * across an hour is a place the device keeps coming back to.
  */
 const val FAMILIAR_ENOUGH: Int = 3
 
@@ -56,7 +56,7 @@ fun Trail.remembering(fix: Fix): Trail {
 }
 
 /**
- * Whether the phone has been at this place often enough, and over long enough,
+ * Whether the device has been at this place often enough, and over long enough,
  * for the place to be one of its own.
  */
 fun Trail.knows(place: Fix): Boolean {
@@ -70,16 +70,16 @@ fun Trail.knows(place: Fix): Boolean {
 }
 
 /**
- * Whether a fix the rules would drop is in fact the phone coming home.
+ * Whether a fix the rules would drop is in fact the device coming home.
  *
- * The case this answers is the anchor left standing somewhere the phone has
+ * The case this answers is the anchor left standing somewhere the device has
  * long left — the failure the jump filter causes by its own logic, since a fix
  * left out does not move the anchor, and a wrong anchor turns every true fix
  * that follows into a jump. Waiting it out works only where the rule that
  * caught the fix is the speed, which falls as the clock runs; a width does not
  * fall, and neither does an anchor sitting inside a false place.
  *
- * Coming back to a place the phone has been to three times over an hour is not
+ * Coming back to a place the device has been to three times over an hour is not
  * something a spoofer can arrange, because those three times are positions
  * that were written — and while the spoofing runs, nothing is.
  */
@@ -100,26 +100,26 @@ fun comingHome(trail: Trail, last: Fix?, next: Fix): Boolean {
  *
  * The anchor is what the speed rule measures against, and an old one weakens
  * it by arithmetic: seventy kilometres in a day is a walk. An hour keeps the
- * rule sharp — a phone that really moved in that hour is believed as soon as
+ * rule sharp — a device that really moved in that hour is believed as soon as
  * the journey has had time to happen — while covering the case this is for, a
  * process killed and restarted inside a spoofing episode.
  */
 val ANCHOR_KEEPS: Duration = Duration.ofHours(1)
 
 /**
- * How long an anchor may stand when it sits in a place the phone keeps coming
+ * How long an anchor may stand when it sits in a place the device keeps coming
  * back to.
  *
  * Half a day, against the hour a single position is worth. A lone written
- * position says where the phone was once; three of them spread over an hour
- * say where the phone lives, and a phone that was at home last night is
+ * position says where the device was once; three of them spread over an hour
+ * say where the device lives, and a device that was at home last night is
  * overwhelmingly at home this morning.
  *
  * What an anchor this old is worth is worth being plain about: the speed rule
  * divides by the age, so half a day of it forgives any journey on earth, and
  * this buys nothing there. What it does buy is the rules that do not divide by
  * anything — the width of the answer, the two places at one time, and the
- * sensors saying the phone was never carried — which have nothing to measure
+ * sensors saying the device was never carried — which have nothing to measure
  * against at all until some anchor stands.
  */
 val FAMILIAR_ANCHOR_KEEPS: Duration = Duration.ofHours(12)
@@ -129,8 +129,8 @@ val FAMILIAR_ANCHOR_KEEPS: Duration = Duration.ofHours(12)
  * trust.
  *
  * A position of the last hour stands on its own. Older than that it has to be
- * in a place the phone counts as its own, and it stands then because the trail
- * says the phone belongs there rather than because the position is fresh.
+ * in a place the device counts as its own, and it stands then because the trail
+ * says the device belongs there rather than because the position is fresh.
  */
 fun anchorFrom(trail: Trail, now: Instant): Fix? {
     val last = trail.fixes.lastOrNull() ?: return null

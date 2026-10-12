@@ -4,7 +4,7 @@ package io.github.vitalyostanin.geoshare.auth
  * What the application knows about who is using it.
  *
  * The member id is the Firebase account id: the same string the security rules
- * compare against, and the name of the document this phone writes its position
+ * compare against, and the name of the document this device writes its position
  * into.
  */
 sealed interface AuthState {

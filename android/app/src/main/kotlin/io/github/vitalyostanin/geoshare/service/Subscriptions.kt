@@ -13,7 +13,7 @@ private const val TAG = "geoshare.listening"
  * The same subscription, taken out again every time it is refused.
  *
  * The database client treats a refusal as the end of the question: it drops
- * the listener and nothing arrives again, so a phone refused once goes on
+ * the listener and nothing arrives again, so a device refused once goes on
  * knowing nothing until the application is started afresh. What the flows
  * below do instead is fail — the refusal closes them — and this is what
  * subscribes again afterwards.
@@ -26,12 +26,12 @@ private const val TAG = "geoshare.listening"
  * outright that it is no longer to be told. Without that, the last answer
  * stands: a member taken off a roster goes on seeing who was in the group,
  * because nothing arrives to replace what they were shown before the refusal
- * — and a phone started afresh is shown it again out of the client's own
+ * — and a device started afresh is shown it again out of the client's own
  * store, which answers from what it last held before the server refuses.
  */
 fun <T> Flow<T>.comingBack(
     named: String,
-    /** What the subscription amounts to once this phone is refused outright. */
+    /** What the subscription amounts to once this device is refused outright. */
     forgetting: (() -> T)? = null,
 ): Flow<T> = retryWhen { cause, attempt ->
     val waiting = listenAgainAfter(attempt)
@@ -54,13 +54,13 @@ fun <T> Flow<T>.comingBack(
 }
 
 /**
- * Whether the answer was "this phone is not to be told" rather than "not just
+ * Whether the answer was "this device is not to be told" rather than "not just
  * now".
  *
  * The two are worth telling apart, because only one of them says anything
- * about what this phone knows. A connection that dropped leaves the last
+ * about what this device knows. A connection that dropped leaves the last
  * answer as true as it was a second ago; a refusal says the question is no
- * longer this phone's to ask, and the answer it is still showing belongs to a
+ * longer this device's to ask, and the answer it is still showing belongs to a
  * group it has been taken out of.
  */
 fun refusedOutright(cause: Throwable): Boolean {

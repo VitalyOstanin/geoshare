@@ -82,7 +82,7 @@ private fun SwitchRow(
 /**
  * The way out of a last position that has gone wrong.
  *
- * The filter measures every fix against where the phone was last believed to
+ * The filter measures every fix against where the device was last believed to
  * be, so a last position far enough from the truth turns every true fix into a
  * jump and the marker stops moving. A second fix agreeing with the one before
  * it undoes that on its own, but only while fixes keep arriving; this is for
@@ -120,10 +120,10 @@ private fun ForgetPlaceRow(onForgetPlace: () -> Unit) {
 }
 
 /**
- * What this phone is called by everybody who sees it, where its owner named
+ * What this device is called by everybody who sees it, where its owner named
  * it; the model otherwise.
  *
- * Here rather than on the card: the card is about somebody else's phone, and
+ * Here rather than on the card: the card is about somebody else's device, and
  * the name given there is for the viewer alone.
  */
 @Composable
@@ -201,8 +201,8 @@ fun SettingsScreen(
     Surface(modifier = modifier.fillMaxSize()) {
         // Scrolled rather than fitted: the permissions are one row per member,
         // and a group large enough to need them is large enough to run off a
-        // phone screen. The insets are taken outside the scrolling, so that the
-        // content stops at the clock and the gesture bar instead of passing
+        // device screen. The insets are taken outside the scrolling, so that
+        // the content stops at the clock and the gesture bar instead of passing
         // under them.
         Column(
             modifier =
@@ -367,7 +367,7 @@ fun SettingsScreen(
 }
 
 /**
- * The one lever the phone has over a constellation it hears and never counts.
+ * The one lever the device has over a constellation it hears and never counts.
  *
  * On the settings screen rather than on the card that shows the trouble: the
  * card is read on the map, where a receiver restarting itself in the middle of
@@ -465,17 +465,17 @@ private fun AidingSection(doubted: Set<Constellation>, onForgetAiding: () -> Aid
 }
 
 /**
- * Which sources of a position this phone takes into account.
+ * Which sources of a position this device takes into account.
  *
  * One switch per source rather than a single "only trust the satellites",
  * because the sources are not a scale: an answer from the towers is a wide
  * honest guess, one from an assistance service is a guess built on whatever
- * the towers around the phone were told, and one another application put there
+ * the towers around the device were told, and one another application put there
  * is not a guess at all. Which of them are worth counting is a fact about the
- * neighbourhood the phone is in, and the member is the one who knows it.
+ * neighbourhood the device is in, and the member is the one who knows it.
  *
  * Answers from a source switched off are still collected, weighed and logged;
- * what stops is their counting towards where the phone is — see
+ * what stops is their counting towards where the device is — see
  * [io.github.vitalyostanin.geoshare.collection.SourceChoice] for what each
  * switch covers and why the satellites have none.
  */
@@ -576,7 +576,7 @@ private fun downloadNetworkNote(network: DownloadNetwork, allowed: Boolean): Int
 }
 
 /**
- * What stands between the service and the phone that would rather it stopped.
+ * What stands between the service and the device that would rather it stopped.
  *
  * Two rows that are not the same kind of thing. The battery restriction is a
  * state the system will answer for, so the row says how it stands and offers
@@ -655,7 +655,7 @@ private fun BackgroundWorkSection(
     }
 
     // The title on a line of its own: beside a button, a word and a tick it
-    // was left a few letters' width on a phone and broke inside words.
+    // was left a few letters' width on a device and broke inside words.
     Text(
         text = stringResource(R.string.background_startup),
         modifier = Modifier.padding(start = 16.dp, end = 16.dp, top = 4.dp),
@@ -673,7 +673,7 @@ private fun BackgroundWorkSection(
         Spacer(modifier = Modifier.weight(1f))
 
         // A tick rather than a switch, and a word beside it: the switches on
-        // this screen change what the phone does, and this one only records
+        // this screen change what the device does, and this one only records
         // that the member has been to a screen nothing here can read. The
         // word ticks it too.
         Row(
@@ -746,7 +746,7 @@ private fun AppearanceRow(theme: ThemeChoice, onThemeChange: (ThemeChoice) -> Un
  * The language the application is read in.
  *
  * Beside the theme rather than on a screen of its own: both are answers about
- * this phone rather than about the member, and both are given once. A phone
+ * this device rather than about the member, and both are given once. A device
  * running Android 13 or later offers the same choice in its own settings, and
  * either place changes the other.
  */

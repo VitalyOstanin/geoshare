@@ -4,8 +4,8 @@ import java.time.Duration
 
 // How a position was arrived at, in words of this application's own.
 //
-// The name of the provider is not the answer. It says which of the phone's
-// ways of knowing handed the answer over, and on these phones the two come
+// The name of the provider is not the answer. It says which of the device's
+// ways of knowing handed the answer over, and on these devices the two come
 // apart at exactly the moment the difference matters: a position arrives under
 // the name `gps`, having been read off a list an assistance service sent over
 // the network, with not one satellite heard at the time. A member looking at a
@@ -16,11 +16,11 @@ import java.time.Duration
 // the same order every rule here reads them in — see [answeredBy] — and the
 // reason is the same: the loudness is a measurement and the name is a label.
 //
-// What the phones actually hand over was checked rather than assumed. The
+// What the devices actually hand over was checked rather than assumed. The
 // satellite and fused answers carry a note; an answer from the network carries
 // no note at all — `Location[network … hAcc=699.999]` and nothing else — so
 // there is nothing in it to tell an answer worked out from the Wi-Fi around
-// the phone from one worked out from a tower. Both are named as what they are,
+// the device from one worked out from a tower. Both are named as what they are,
 // the two radios together, and the width beside the word is what separates a
 // flat from a district.
 
@@ -37,14 +37,14 @@ const val NETWORK_PROVIDER = "network"
  */
 val SAME_ANSWER_WITHIN: Duration = Duration.ofSeconds(30)
 
-/** How a position was arrived at, as far as the phone that wrote it could tell. */
+/** How a position was arrived at, as far as the device that wrote it could tell. */
 enum class FoundBy {
     /** Worked out from satellites the receiver was hearing at the time. */
     Satellites,
 
     /**
      * Handed over by an assistance service: computed somewhere else, from the
-     * towers and the Wi-Fi around the phone, and sent over the network.
+     * towers and the Wi-Fi around the device, and sent over the network.
      */
     Assistance,
 
@@ -57,10 +57,10 @@ enum class FoundBy {
      */
     Unheard,
 
-    /** From the towers and the Wi-Fi around the phone, asked as one radio. */
+    /** From the towers and the Wi-Fi around the device, asked as one radio. */
     OtherRadios,
 
-    /** Put there by another application on the phone rather than measured. */
+    /** Put there by another application on the device rather than measured. */
     Pretended,
 
     /** The provider said nothing that separates the others. */
@@ -74,12 +74,12 @@ enum class FoundBy {
  * note where there is one. The order is what makes it honest: another
  * application pretending settles it outright, the note decides what it can,
  * and the provider's own name is read only where the note was silent — where
- * an answer from the network, which carries no note on these phones, is what
+ * an answer from the network, which carries no note on these devices, is what
  * the name is naming.
  *
  * [satellites] is the receiver's own last answer, which is what settles the
  * case the positions actually get written from. The fused provider hands over
- * no note at all on these phones — checked in the sky file: every `fused` row
+ * no note at all on these devices — checked in the sky file: every `fused` row
  * has an empty note beside `gps` rows carrying `SourceType`, `maxCn0` and a
  * satellite count — so without it the answer would be "not said" for nearly
  * every position this application writes. Where the two turn out to be one
@@ -110,7 +110,7 @@ fun foundBy(fix: Fix, satellites: Fix? = null): FoundBy {
  * The note of the receiver's own answer, where that answer is this one.
  *
  * The fused provider says nothing about how it arrived at a position, and the
- * receiver, asked directly, says a great deal: on the phone this was written
+ * receiver, asked directly, says a great deal: on the device this was written
  * for the two stand a second apart on the same spot, and the receiver's note
  * reads `QUICKGPS=true|SourceType=128` — an assistance service answering over
  * the network under the name of the satellites. That is precisely what a

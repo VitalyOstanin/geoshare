@@ -10,14 +10,14 @@ import java.time.Instant
 /**
  * The trail as it survives the process being killed.
  *
- * On disk rather than in the database: what the trail is for is the phone's
+ * On disk rather than in the database: what the trail is for is the device's
  * own judgement about its own answers, nobody else reads it, and the free
  * quota is counted in writes. A plain file of one line per place, because the
  * whole of it is four numbers and a file needs no schema, no migration and no
  * library.
  *
- * Losing it costs a few hours of the phone treating familiar places as new,
- * which is exactly what the phone does on a fresh install anyway — so every
+ * Losing it costs a few hours of the device treating familiar places as new,
+ * which is exactly what the device does on a fresh install anyway — so every
  * failure here is logged and swallowed.
  */
 class TrailStore(private val context: Context) {

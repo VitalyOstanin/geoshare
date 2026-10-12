@@ -30,7 +30,7 @@ class TrailTest {
     }
 
     // Three visits inside a minute are one visit that happened to be written
-    // three times: what makes a place the phone's own is coming back to it.
+    // three times: what makes a place the device's own is coming back to it.
     @Test
     fun `three visits in a minute do not make a place familiar`() {
         val trail = Trail(listOf(home(0), home(1), home(2)))
@@ -61,7 +61,7 @@ class TrailTest {
         assertFalse(trail.knows(faraway(61)))
     }
 
-    // The anchor left standing far off, and the phone answering from home:
+    // The anchor left standing far off, and the device answering from home:
     // every true fix reads as a jump, and the width rule has no clock to run
     // out. Being home is what says which of the two is the lie.
     @Test
@@ -94,7 +94,7 @@ class TrailTest {
 
     // While the spoofing runs, nothing is written, so nothing about the false place
     // reaches the trail — which is what keeps an hour of it from teaching the
-    // phone that the false place is home.
+    // device that the false place is home.
     @Test
     fun `a trail of false fixes would make the false place familiar, and is never gathered`() {
         val spoofed = Trail(listOf(faraway(0), faraway(30), faraway(60)))
@@ -104,7 +104,7 @@ class TrailTest {
 
     // A process killed inside a spoofing episode comes back with no anchor at
     // all, and the first false answer then becomes one. The last place the
-    // phone was sure of is a better start, as long as it is recent enough for
+    // device was sure of is a better start, as long as it is recent enough for
     // the speed rule to still mean something.
     @Test
     fun `a place from half an hour ago is where to measure from`() {
@@ -127,9 +127,9 @@ class TrailTest {
         assertEquals(null, anchorFrom(Trail(), at(0)))
     }
 
-    // A phone switched on in the morning where it spent the night: the last
+    // A device switched on in the morning where it spent the night: the last
     // position is hours old, and what makes it worth measuring from is not its
-    // freshness but the trail saying the phone belongs there.
+    // freshness but the trail saying the device belongs there.
     @Test
     fun `a place of its own is still where to measure from hours later`() {
         val trail = Trail(listOf(home(0), home(60), home(120)))
@@ -137,7 +137,7 @@ class TrailTest {
         assertEquals(home(120), anchorFrom(trail, at(360)))
     }
 
-    // One written position is a place the phone passed through, and a phone
+    // One written position is a place the device passed through, and a device
     // that passed through somewhere four hours ago is anywhere by now.
     @Test
     fun `a place passed through once does not stand as an anchor past the hour`() {

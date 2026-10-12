@@ -111,7 +111,7 @@ button.alarm-fill {
     font-weight: 600;
 }
 
-/* A round red loudspeaker ahead of "Look for": the siren on a phone. The bin
+/* A round red loudspeaker ahead of "Look for": the siren on a device. The bin
    after it, last in the row, removes the phone: as red, since it is as final. */
 .admin-actions button.siren-ring,
 .admin-actions button.search-mark,
@@ -128,7 +128,7 @@ button.alarm-fill {
     cursor: pointer;
 }
 
-/* Before them, plain: asking a phone to forget its place sounds nothing on it. */
+/* Before them, plain: asking a device to forget its place sounds nothing on it. */
 .admin-actions button.place-reset {
     display: inline-grid;
     place-items: center;
@@ -318,7 +318,7 @@ button.alarm-fill {
 
 /* The three lengths share one row, the way the theme's three do. */
 #search-hours button,
-#siren-phones button {
+#siren-devices button {
     flex: 1;
     padding: 0.35rem 0.2rem;
     border: 0;
@@ -330,12 +330,12 @@ button.alarm-fill {
 }
 
 #search-hours button + button,
-#siren-phones button + button {
+#siren-devices button + button {
     border-left: 1px solid var(--edge);
 }
 
 #search-hours button[aria-pressed="true"],
-#siren-phones button[aria-pressed="true"] {
+#siren-devices button[aria-pressed="true"] {
     background: var(--link);
     color: var(--on-link);
     font-weight: 600;
@@ -373,7 +373,7 @@ button.alarm-fill {
     top: 8rem;
 }
 
-/* What the markers show is what the page last heard: grey, the way a phone
+/* What the markers show is what the page last heard: grey, the way a device
    long out of touch is drawn. */
 .link-lost .member-pin {
     opacity: 0.85;

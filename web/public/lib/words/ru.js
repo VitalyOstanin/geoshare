@@ -54,7 +54,7 @@ export const RU = {
         + `${counted(count, 'участник', 'участника', 'участников')} сейчас не `
         + `${counted(count, 'делится', 'делятся', 'делятся')} с вами.`,
 
-    // The names of the five ways a phone collects its position. Names rather
+    // The names of the five ways a device collects its position. Names rather
     // than sentences describing them: what each one asks for and how often it
     // sends belongs in the help the card opens.
     modeIdle: 'На месте',
@@ -222,7 +222,7 @@ export const RU = {
     reasonMeansSource: 'С точкой всё в порядке: она собрана и записана в журнал, но метку не '
         + 'двигает и никому не уходит. Так и было задумано.',
 
-    // How wide the phone said its answer is. The sign is what turns a distance
+    // How wide the device said its answer is. The sign is what turns a distance
     // into a claim about where the marker might really be.
     widthMetres: (count) => `${count} м`,
     widthKilometres: (count) => `${count} км`,
@@ -381,7 +381,7 @@ export const RU = {
     // What a refused write says.
     groupRefused: 'База отказала. Возможно, приглашение истекло или группа уже создана.',
 
-    // Naming a phone or a person for oneself, from the card.
+    // Naming a device or a person for oneself, from the card.
     namePhone: 'Переименовать устройство',
     namePerson: 'Переименовать человека',
     nameForYou: 'Это имя видите только вы.',
@@ -392,7 +392,7 @@ export const RU = {
     nameFailed: (reason) => `Имя не сохранено: ${reason}`,
     unnamedDevice: 'Устройство',
 
-    // A phone in the panel that runs the group, and whether it is in touch.
+    // A device in the panel that runs the group, and whether it is in touch.
     adminPhoneOnline: (name, age) => `${name}: на связи ${age}`,
     adminPhoneSilent: (name) => `${name}: ещё не выходил на связь`,
     adminPhoneCharging: 'на зарядке',

@@ -38,7 +38,7 @@ class InterferenceTest {
         assertEquals(Interference.Spoofing, interferenceFrom(gain, noise))
     }
 
-    // A spoofer matching the true signal's strength, and a phone put on a car
+    // A spoofer matching the true signal's strength, and a device put on a car
     // roof, look the same from here. Saying nothing is the honest answer.
     @Test
     fun `the gain alone is not enough to name the kind`() {

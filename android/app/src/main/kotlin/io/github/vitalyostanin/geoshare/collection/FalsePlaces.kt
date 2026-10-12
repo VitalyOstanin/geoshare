@@ -1,6 +1,6 @@
 package io.github.vitalyostanin.geoshare.collection
 
-// Places a false signal is known to put phones at.
+// Places a false signal is known to put devices at.
 //
 // A spoofer over a city does not scatter its victims: it hands every receiver
 // within reach the same coordinates, and those coordinates are chosen once and
@@ -8,15 +8,15 @@ package io.github.vitalyostanin.geoshare.collection
 // the same empty field. That makes the place itself evidence, and evidence the
 // speed and width rules cannot reach: they compare a fix with the one before
 // it, and the first fix after the service starts has nothing to be compared
-// with. A phone switched on inside the affected area therefore takes the false
+// with. A device switched on inside the affected area therefore takes the false
 // place as its anchor and believes every step of the road drawn away from it.
 //
 // Which places those are is a question about one household's surroundings
 // rather than about the application, so the list lives in the group's own
-// settings in the database and reaches the phone from there. Nothing is built
+// settings in the database and reaches the device from there. Nothing is built
 // in: a build carrying somebody's coordinates hands them to everybody who
 // downloads it, and a list of places where receivers are being lied to says
-// as much about the neighbourhood as about the phones.
+// as much about the neighbourhood as about the devices.
 
 /**
  * A place a false signal lands on, and how far around it to distrust.
@@ -38,7 +38,7 @@ data class FalsePlace(
  * How many places one group may keep.
  *
  * Every one of them is weighed against every fix, and the list is read by a
- * phone that has to hold it in memory while it does nothing else. Fifty is far
+ * device that has to hold it in memory while it does nothing else. Fifty is far
  * past what a neighbourhood produces and short of anything that costs.
  */
 const val FALSE_PLACES_KEPT: Int = 50
@@ -46,8 +46,8 @@ const val FALSE_PLACES_KEPT: Int = 50
 /**
  * The widest a place may be.
  *
- * What a place costs is the ground inside its radius: a phone genuinely there
- * is a phone that cannot be placed at all. Fifty kilometres is the whole
+ * What a place costs is the ground inside its radius: a device genuinely there
+ * is a device that cannot be placed at all. Fifty kilometres is the whole
  * surroundings of a city, and past it a place stops being a place.
  */
 const val FALSE_PLACE_WIDEST_METRES: Double = 50_000.0
@@ -66,10 +66,10 @@ fun falsePlaceStands(place: FalsePlace): Boolean = place.latitude in -90.0..90.0
 
 /**
  * The false place a fix has landed on, or nothing where it has landed
- * somewhere phones are actually taken.
+ * somewhere devices are actually taken.
  *
- * [places] is empty wherever the group has named none, and a phone that has
- * never reached the database is a phone with none: the rule then says nothing,
+ * [places] is empty wherever the group has named none, and a device that has
+ * never reached the database is a device with none: the rule then says nothing,
  * which is what it did before any place was ever listed.
  */
 fun falsePlaceFor(fix: Fix, places: List<FalsePlace> = emptyList()): FalsePlace? =

@@ -62,7 +62,7 @@ class SourcesTest {
         }
     }
 
-    // Everything off is a phone with nothing to place itself by, and it is
+    // Everything off is a device with nothing to place itself by, and it is
     // allowed: the button says how many are left, so it cannot be done by
     // accident and forgotten.
     @Test

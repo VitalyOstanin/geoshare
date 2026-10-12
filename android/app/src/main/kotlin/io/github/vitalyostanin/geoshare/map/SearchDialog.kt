@@ -26,7 +26,7 @@ import java.time.ZoneId
  */
 @Composable
 fun SearchDialog(
-    /** Whose phone [phoneName] names, so a search opened on another member's device says whose. */
+    /** Whose device [phoneName] names, so a search opened on another member's device says whose. */
     memberName: String,
     phoneName: String,
     renew: Boolean,

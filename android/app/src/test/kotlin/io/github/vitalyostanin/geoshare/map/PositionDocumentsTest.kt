@@ -48,7 +48,7 @@ class PositionDocumentsTest {
         assertEquals(one, other)
     }
 
-    // A phone under observation: signed in, positions in hand, and a screen
+    // A device under observation: signed in, positions in hand, and a screen
     // saying nobody shares — its own grant was not written yet.
     @Test
     fun `this phone's own document is followed before its grant names it`() {

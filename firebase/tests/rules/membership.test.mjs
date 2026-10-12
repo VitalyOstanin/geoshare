@@ -12,7 +12,7 @@ setUpRules();
 
 describe('membership', () => {
     // The roster of the household that predates invitations: nobody runs it,
-    // so nobody may edit it, and a phone that could would be a phone that can
+    // so nobody may edit it, and a device that could would be a device that can
     // add itself to the group.
     it('a member cannot add anybody to the group', async () => {
         const db = testEnv.authenticatedContext(ALICE).firestore();
@@ -49,7 +49,7 @@ describe('membership', () => {
     });
 
     // Otherwise a group could be conjured around somebody who never asked to
-    // be in one, and their phone would start writing into it.
+    // be in one, and their device would start writing into it.
     it('a group cannot be made with somebody else already in it', async () => {
         const db = testEnv.authenticatedContext(STRANGER).firestore();
 
@@ -155,7 +155,7 @@ describe('invitations', () => {
         await assertFails(getDocs(collection(db, `groups/${GROUP}/invitations`)));
     });
 
-    // A day, as the application makes them, and an hour's grace for a phone
+    // A day, as the application makes them, and an hour's grace for a device
     // whose clock runs ahead of the server's.
     it('an invitation lasts no longer than a day', async () => {
         await plantAnAdministrator();

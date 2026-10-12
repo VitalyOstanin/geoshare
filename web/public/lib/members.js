@@ -4,7 +4,7 @@ import { shortenedAddress } from './join.js';
 import { compareIds } from './order.js';
 import { WORDS } from './words.js';
 
-/** How many phones of one member this page will follow. The rules say the same. */
+/** How many devices of one member this page will follow. The rules say the same. */
 const DEVICES_PER_MEMBER = 10;
 
 /**
@@ -23,7 +23,7 @@ export function orderedForNavigation(positions, ownMemberId) {
 
         const member = compareIds(left.memberId, right.memberId);
 
-        // The phones of one member follow each other, and keep their places
+        // The devices of one member follow each other, and keep their places
         // between two glances at the panel.
         return member !== 0 ? member : compareIds(left.positionId, right.positionId);
     });
@@ -102,7 +102,7 @@ export function memberName(profile, memberId, own) {
  * The letter that stands in for a member without a picture.
  *
  * The name is what the group calls them, so its first letter is what they are
- * recognised by; the same rule the phone follows, so a member looks the same
+ * recognised by; the same rule the device follows, so a member looks the same
  * on both clients.
  */
 export function memberInitial(name) {
@@ -138,7 +138,7 @@ export function positionDocuments(grants) {
     return [...grants.values()]
         .flatMap((grant) =>
             grant.devices
-                // A subscription each, so a grant naming more phones than a
+                // A subscription each, so a grant naming more devices than a
                 // person can carry would put this page out of action — and the
                 // grant is written by somebody else. The rules hold the list
                 // to the same number; this is what happens to a document

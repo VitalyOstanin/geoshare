@@ -1,4 +1,4 @@
-// The group in the menu and "Мои устройства": the roster, one's own phones,
+// The group in the menu and "Мои устройства": the roster, one's own devices,
 // and the windows shared with the panel that runs the group.
 
 import { phoneLines } from '../lib/group-lines.js';
@@ -96,9 +96,9 @@ export function drawGroup() {
 }
 
 /**
- * This member's phones, drawn whenever the panel is open and something it shows
- * has changed. Every one of them may be rung from here: this page is not a
- * phone, so none of them is the one in hand.
+ * This member's devices, drawn whenever the panel is open and something it
+ * shows has changed. Every one of them may be rung from here: this page is not
+ * a device, so none of them is the one in hand.
  */
 function drawPhones() {
     if (!elements.phones.open) {
@@ -153,7 +153,7 @@ function drawPhones() {
 
             const search = standing.get(phone.phoneId) ?? null;
 
-            // Only whoever runs the group opens a search, and here the phone
+            // Only whoever runs the group opens a search, and here the device
             // is one's own, the one lost.
             if (running) {
                 actions.append(searchButton(phone, memberId, search));
@@ -167,7 +167,7 @@ function drawPhones() {
                 about.append(until);
             }
 
-            // Last in the row: a phone handed on, reset or lost stays in every
+            // Last in the row: a device handed on, reset or lost stays in every
             // list until its member takes it out, and only they may.
             const remove = document.createElement('button');
 
@@ -219,7 +219,7 @@ export function iconsInRow(actions) {
 }
 
 /**
- * The round button that opens a search for [phone], outlined in red like the
+ * The round button that opens a search for [device], outlined in red like the
  * siren beside it, and ends it once it is found: filled and blinking while
  * the search stands, so a row being looked for is seen before it is read.
  * The words it used to carry are its hint and its label.
@@ -245,10 +245,10 @@ export function searchButton(phone, memberId, search) {
 }
 
 /**
- * The status of a call to [phone], laid onto [about], and the round button
+ * The status of a call to [device], laid onto [about], and the round button
  * that starts or stops it: shared between a row of the panel that runs the
  * group and one of "Мои устройства", since a call is rung and read the same
- * way in both, one phone at a time.
+ * way in both, one device at a time.
  */
 export function sirenButtonFor(phone, memberId, now, about) {
     const siren = state.sirens.get(phone.phoneId) ?? null;
@@ -317,7 +317,7 @@ elements.phonesClose.addEventListener('click', () => elements.phones.close());
 
 /**
  * A click on the dark behind a window closes it, as a tap beside a sheet does
- * on a phone; the same rule as the panel's, for every other window of the
+ * on a device; the same rule as the panel's, for every other window of the
  * page. The click is kept from the menu underneath, which stays as it was.
  */
 export function closeOnClickOutside(dialog, close) {
@@ -387,7 +387,7 @@ function memberRow(memberId) {
 }
 
 /**
- * The position a member was last heard from at, of all their phones: the one
+ * The position a member was last heard from at, of all their devices: the one
  * a viewer asking for them by name most likely means.
  */
 function freshestPositionOf(memberId) {

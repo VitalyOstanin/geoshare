@@ -2,9 +2,9 @@ package io.github.vitalyostanin.geoshare.collection
 
 // What the provider attached to a position, read rather than merely kept.
 //
-// The name of the provider says which of the phone's ways of knowing handed
+// The name of the provider says which of the device's ways of knowing handed
 // the answer over, and that is all it says. It does not say how the answer was
-// arrived at, and on these phones the two come apart: a fix arrives under the
+// arrived at, and on these devices the two come apart: a fix arrives under the
 // name `gps`, having been read off a list an assistance service sent over the
 // network, with not one satellite heard at the time. Both look the same to
 // every rule here, and they are worth opposite amounts — one is the receiver's
@@ -48,7 +48,7 @@ data class ProviderNote(
     /**
      * Which kind of answer the provider calls this one.
      *
-     * The numbers are the ones these phones use rather than anything the
+     * The numbers are the ones these devices use rather than anything the
      * platform documents: [MEASURED_SOURCE] beside a real satellite count and
      * [ASSISTED_SOURCE] beside a silent one. Read as a hint and never on its
      * own — the loudness below is the measurement, and this is the label.
@@ -74,7 +74,7 @@ const val ASSISTED_SOURCE: Int = 128
  * The note as the provider wrote it, split into the fields that are read here.
  *
  * The keys are matched without regard to case: what a provider calls its
- * fields is its own business, and two phones of the same make have already
+ * fields is its own business, and two devices of the same make have already
  * been seen to differ in the shape of the word rather than the word itself.
  */
 fun noteOf(alongside: String?): ProviderNote {

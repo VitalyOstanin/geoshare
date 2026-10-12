@@ -10,14 +10,14 @@ import kotlinx.coroutines.tasks.await
 private const val TAG = "geoshare.device"
 
 /**
- * Takes back what this phone wrote under the id it went by before, once.
+ * Takes back what this device wrote under the id it went by before, once.
  *
- * A phone that moved from a random id to the system's one would otherwise
+ * A device that moved from a random id to the system's one would otherwise
  * leave its old position on everybody's map for good, greying, beside the new
  * one; its readers would go on following a document nobody writes, and the
- * list of its phones would name one that is gone.
+ * list of its devices would name one that is gone.
  *
- * The old id is forgotten only once the documents are: a phone offline or not
+ * The old id is forgotten only once the documents are: a device offline or not
  * yet let into the group tries again the next time it starts. Removing what
  * is already gone does nothing, so the screen and the service may both try at
  * once.
@@ -41,13 +41,13 @@ suspend fun leavePreviousId(
 }
 
 /**
- * Removes one of a member's phones from the group: its position, its claim to
- * be looking, its place among the phones the member gives out and its line in
- * the member's list of phones, with the name the member gave it.
+ * Removes one of a member's devices from the group: its position, its claim to
+ * be looking, its place among the devices the member gives out and its line in
+ * the member's list of devices, with the name the member gave it.
  *
  * What everybody sees goes with it: the marker on the map and the line in the
- * lists. The names other members gave the phone stay with them, keyed by the
- * same id, and come back if the phone does.
+ * lists. The names other members gave the device stay with them, keyed by the
+ * same id, and come back if the device does.
  *
  * One batch, so the four go together or not at all. Only the member may write
  * any of them, so this is done by the member, never for them.

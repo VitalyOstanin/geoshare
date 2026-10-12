@@ -53,7 +53,7 @@ fun satellitePositions(context: Context): Flow<Fix> = callbackFlow {
             }
 
             // Abstract until Android 11; a provider that is switched off while
-            // the phone is listening simply stops answering.
+            // the device is listening simply stops answering.
             override fun onProviderDisabled(provider: String) = Unit
 
             override fun onProviderEnabled(provider: String) = Unit
@@ -92,7 +92,7 @@ fun lastSatellitePosition(context: Context): Fix? {
     val known = manager.getLastKnownLocation(LocationManager.GPS_PROVIDER) ?: return null
 
     // The store answers for the provider that was asked with whatever it last
-    // put there, which on at least one of these phones is another provider's
+    // put there, which on at least one of these devices is another provider's
     // answer entirely — and an answer from the towers filed under the
     // satellites is the one thing this must not be mistaken for.
     if (known.provider != LocationManager.GPS_PROVIDER) {

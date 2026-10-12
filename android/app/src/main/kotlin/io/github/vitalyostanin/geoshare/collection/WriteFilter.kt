@@ -18,12 +18,12 @@ data class Fix(
      * where it did not say.
      *
      * Carried because a position is a claim of two parts — where, and how
-     * sure — and a phone whose satellites are being jammed answers with the
+     * sure — and a device whose satellites are being jammed answers with the
      * second part telling the truth long after the first has stopped.
      */
     val accuracyMetres: Double? = null,
     /**
-     * Which of the phone's ways of knowing answered, in the platform's own
+     * Which of the device's ways of knowing answered, in the platform's own
      * word for it: `gps` for the satellites, `network` for the towers and the
      * Wi-Fi, `fused` for Play Services having picked one of them itself.
      *
@@ -35,12 +35,12 @@ data class Fix(
      */
     val from: String? = null,
     /**
-     * How long the phone had been awake when the fix was taken, or nothing
+     * How long the device had been awake when the fix was taken, or nothing
      * where that is not known.
      *
-     * A second clock, because the first one moves. The wall clock of a phone
+     * A second clock, because the first one moves. The wall clock of a device
      * is set from the network and from the satellites, and both of those can
-     * step it: a step of a few seconds between two fixes turns a phone
+     * step it: a step of a few seconds between two fixes turns a device
      * standing still into one that travelled. This count runs from the last
      * boot and nothing sets it back.
      *
@@ -57,12 +57,12 @@ data class Fix(
  * Whether a fix is worth a write.
  *
  * Writes are what wake the other side's subscription, so the threshold is not
- * only about the free quota: a phone lying on a table would otherwise keep
+ * only about the free quota: a device lying on a table would otherwise keep
  * everyone's screen busy redrawing the same marker.
  *
- * The thresholds belong to the mode rather than to this file. A phone asking
+ * The thresholds belong to the mode rather than to this file. A device asking
  * the chip four times a minute because somebody is watching should be saying
- * what it finds on the same terms; a phone asking once a quarter of an hour
+ * what it finds on the same terms; a device asking once a quarter of an hour
  * should not.
  */
 fun shouldWrite(last: Fix?, next: Fix, mode: CollectionMode): Boolean {
@@ -84,7 +84,7 @@ fun shouldWrite(last: Fix?, next: Fix, mode: CollectionMode): Boolean {
  * The same reasoning as [apart], asked of one fix against now rather than of
  * two fixes against each other: a clock stepped between the fix and the
  * moment it is judged at makes a fresh answer look stale, or a stale one
- * fresh. [nowSinceBoot] is how long the phone has been awake at that moment,
+ * fresh. [nowSinceBoot] is how long the device has been awake at that moment,
  * and it is absent wherever the caller has no such count to offer — a test
  * holding a fixed wall clock, or a fix read back from the trail file, which
  * carries none of its own.
@@ -103,12 +103,12 @@ fun since(fix: Fix, now: Instant, nowSinceBoot: Duration? = null): Duration {
  * How much time passed between two fixes, counted on the steadier of the two
  * clocks they carry.
  *
- * The wall clock of a phone is set from the network and from the satellites,
+ * The wall clock of a device is set from the network and from the satellites,
  * and either can step it between one fix and the next. A step of a minute
- * backwards turns a phone standing still into one that crossed the city, and
+ * backwards turns a device standing still into one that crossed the city, and
  * a step forwards hides a jump that did happen — and under a false signal the
  * wall clock is part of the lie, since the time it is set from comes off the
- * same satellites. Where both fixes know how long the phone had been awake,
+ * same satellites. Where both fixes know how long the device had been awake,
  * that count answers instead: it runs from the last boot and nothing sets it
  * back.
  *

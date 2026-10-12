@@ -43,59 +43,59 @@ import java.time.Instant
 import java.time.ZoneId
 
 /**
- * A member's own phones, seen by that member rather than by whoever runs the
+ * A member's own devices, seen by that member rather than by whoever runs the
  * group.
  *
  * [AdminPanel] answers "what does the household look like", which only the
  * group's administrator needs; this screen answers the narrower question any
- * member asks about themselves — "which of my phones are in touch, and can I
+ * member asks about themselves — "which of my devices are in touch, and can I
  * make one of them sound" — so it opens straight from the map rather than
  * from the group's own settings.
  */
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun MyPhonesScreen(
-    /** All of this member's phones, this one included. */
+    /** All of this member's devices, this one included. */
     phones: List<PhoneLine>,
-    /** This phone's own `{uid}.{deviceId}`: listed, but never rung from itself. */
+    /** This device's own `{uid}.{deviceId}`: listed, but never rung from itself. */
     ownPhoneId: String?,
     now: Instant,
     sirenOf: (phoneId: String) -> Flow<Siren?>,
     onCallSiren: suspend (phoneId: String) -> WriteOutcome,
     onStopSiren: suspend (phoneId: String) -> Unit,
-    /** A phone's request to forget its place as the database has it. */
+    /** A device's request to forget its place as the database has it. */
     resetOf: (phoneId: String) -> Flow<Reset?>,
-    /** Asks one of these phones to forget its place; answers how the write came out. */
+    /** Asks one of these devices to forget its place; answers how the write came out. */
     onAskReset: suspend (phoneId: String) -> WriteOutcome,
-    /** Takes a phone out of every group; answers whether each database allowed it. */
+    /** Takes a device out of every group; answers whether each database allowed it. */
     onForgetPhone: suspend (phoneId: String) -> Boolean,
-    /** The groups a removed phone leaves, named in the dialog when there is more than one. */
+    /** The groups a removed device leaves, named in the dialog when there is more than one. */
     groupNames: List<String> = emptyList(),
     /**
      * The group the list is of, said under the title while the device is in
-     * more than one: the phones are read from that group alone, and a phone
+     * more than one: the devices are read from that group alone, and a device
      * the member has only in another one shows after switching to it.
      */
     groupCaption: String? = null,
-    /** The group's searches, by the phone each one is looking for. */
+    /** The group's searches, by the device each one is looking for. */
     searches: Map<String, Search> = emptyMap(),
-    /** Whether this member runs the group: only they may open a search, on their own phones. */
+    /** Whether this member runs the group: only they may open a search, on their own devices. */
     mayLookFor: Boolean,
-    /** Opens a search on one of these phones; answers how the write came out. */
+    /** Opens a search on one of these devices; answers how the write came out. */
     onSearch: suspend (
         phoneId: String,
         phoneName: String?,
         renew: Boolean,
         hours: Int,
     ) -> WriteOutcome,
-    /** Ends the search on one phone: it is found. */
+    /** Ends the search on one device: it is found. */
     onEndSearch: suspend (phoneId: String) -> Unit,
     onClose: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val scope = rememberCoroutineScope()
 
-    // The siren of every phone this screen offers to ring, followed while it
+    // The siren of every device this screen offers to ring, followed while it
     // is open: a call rung from anywhere else shows on its row as well.
     val ringable =
         remember(phones, ownPhoneId) {
@@ -107,13 +107,13 @@ fun MyPhonesScreen(
     val searching = rememberAskedWrite<PhoneLine>()
     var searchHours by remember { mutableStateOf(DEFAULT_SEARCH_HOURS) }
     var helpOpen by remember { mutableStateOf(false) }
-    // The phone the member asked to remove, held while the dialog is up.
+    // The device the member asked to remove, held while the dialog is up.
     var removeAsk by remember { mutableStateOf<PhoneLine?>(null) }
     var removeTrouble by remember { mutableStateOf(false) }
     var removeBusy by remember { mutableStateOf(false) }
     val sirenNow by sirenClock(now, sirens)
 
-    // The requests to forget a place on the same phones: this one forgets
+    // The requests to forget a place on the same devices: this one forgets
     // its own from the settings, where the button has always been.
     val resets by remember(ringable) { resetsOf(ringable, resetOf) }
         .collectAsState(initial = emptyMap())
@@ -144,7 +144,7 @@ fun MyPhonesScreen(
 
     Surface(modifier = modifier.fillMaxSize()) {
         // Scrolled and inset the way the admin panel is, and for the same
-        // reasons: one row per phone runs off a phone, and the title has to
+        // reasons: one row per device runs off a device, and the title has to
         // clear the clock.
         Column(
             modifier =
@@ -257,7 +257,7 @@ fun MyPhonesScreen(
                             ResetButton(onClick = { resetting.ask(phone) })
                         }
 
-                        // A phone does not ring itself: the button belongs to
+                        // A device does not ring itself: the button belongs to
                         // every row but the one this screen is drawn on.
                         if (phone.phoneId != ownPhoneId) {
                             SirenButton(
@@ -267,8 +267,8 @@ fun MyPhonesScreen(
                             )
                         }
 
-                        // Every phone offers it, this one included: an
-                        // administrator may open a search on any phone of
+                        // Every device offers it, this one included: an
+                        // administrator may open a search on any device of
                         // theirs, this one among them.
                         if (mayLookFor) {
                             SearchButton(
@@ -285,7 +285,7 @@ fun MyPhonesScreen(
                         }
 
                         // Last in the row and as red as the siren: removing a
-                        // phone is as final. This phone is taken out by
+                        // device is as final. This device is taken out by
                         // signing out on it, so its row has no bin.
                         if (phone.phoneId != ownPhoneId) {
                             OutlinedIconButton(
