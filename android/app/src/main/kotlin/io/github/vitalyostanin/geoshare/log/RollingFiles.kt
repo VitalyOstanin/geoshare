@@ -87,7 +87,7 @@ class RollingFiles(
     }
 
     /** Waits for the bytes already handed over to reach the file, and no longer. */
-    private fun settle() {
+    fun settle() {
         try {
             writer.submit { }.get(SETTLE_SECONDS, TimeUnit.SECONDS)
         } catch (refused: RejectedExecutionException) {

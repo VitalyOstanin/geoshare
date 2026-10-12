@@ -75,6 +75,12 @@ class FileLog(
         files.append(line.toByteArray())
     }
 
+    /**
+     * Waits, for a couple of seconds at most, for the lines already said to
+     * reach the file; for a process that is about to die.
+     */
+    fun flush() = files.settle()
+
     /** Both files, oldest line first, which is the order a reader expects. */
     fun read(): String = files.read()
 

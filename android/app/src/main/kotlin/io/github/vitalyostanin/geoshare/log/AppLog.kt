@@ -52,6 +52,12 @@ object AppLog {
         file?.append('W', tag, message, error)
     }
 
+    /** Lets the file catch up with what was said; see [FileLog.flush]. */
+    fun flush() {
+        file?.flush()
+        kept?.flush()
+    }
+
     fun e(tag: String, message: String, error: Throwable? = null) {
         Log.e(tag, message, error)
         file?.append('E', tag, message, error)
