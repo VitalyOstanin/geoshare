@@ -160,8 +160,8 @@ class BeingCarried(private val sensorsTell: Boolean) {
      * answer and no other, because only such an answer claims to know where
      * the device is closely enough for standing still to mean anything.
      */
-    fun noticeAnAnswerThatWillNotFollow(fix: Fix, whence: FoundBy) {
-        val walk = walkingNow(stirsHeard) ?: return
+    fun noticeAnAnswerThatWillNotFollow(fix: Fix, whence: FoundBy, now: Instant) {
+        val walk = walkingNow(stirsHeard, now) ?: return
 
         if (walk.steps == 0L) {
             return

@@ -242,7 +242,7 @@ class CarriedTest {
             Stir(noon.plusSeconds(60 * 16), steps = 1_550),
         )
 
-        assertEquals(50L, walkingNow(stirs)?.steps)
+        assertEquals(50L, walkingNow(stirs, stirs.last().at)?.steps)
     }
 
     @Test
@@ -253,7 +253,7 @@ class CarriedTest {
             Stir(noon.plusSeconds(120), steps = 1_400),
         )
 
-        val walked = walkingNow(stirs)
+        val walked = walkingNow(stirs, stirs.last().at)
 
         assertEquals(400L, walked?.steps)
         assertEquals(noon.plusSeconds(60), walked?.since)
@@ -270,20 +270,33 @@ class CarriedTest {
             Stir(noon.plusSeconds(180), steps = 310),
         )
 
-        val walked = walkingNow(stirs)
+        val walked = walkingNow(stirs, stirs.last().at)
 
         assertEquals(300L, walked?.steps)
         assertEquals(noon.plusSeconds(60), walked?.since)
     }
 
+    // The counter falls silent once the device stops, so a rest shows only
+    // as the time since its last reading.
+    @Test
+    fun `a walk with no reading for longer than the break is over`() {
+        val stirs = listOf(
+            Stir(noon, steps = 1_000),
+            Stir(noon.plusSeconds(60), steps = 1_100),
+        )
+
+        assertEquals(100L, walkingNow(stirs, noon.plusSeconds(60))?.steps)
+        assertNull(walkingNow(stirs, noon.plusSeconds(60 * 20)))
+    }
+
     @Test
     fun `a phone whose counter has been read once is not walking yet`() {
-        assertNull(walkingNow(listOf(Stir(noon, steps = 1_000))))
+        assertNull(walkingNow(listOf(Stir(noon, steps = 1_000)), noon))
     }
 
     @Test
     fun `stirs without a step count are not walking`() {
-        assertNull(walkingNow(listOf(Stir(noon), Stir(noon.plusSeconds(60)))))
+        assertNull(walkingNow(listOf(Stir(noon), Stir(noon.plusSeconds(60))), noon.plusSeconds(60)))
     }
 
     private fun walk(steps: Long) = Walk(since = noon.minusSeconds(60), steps = steps)

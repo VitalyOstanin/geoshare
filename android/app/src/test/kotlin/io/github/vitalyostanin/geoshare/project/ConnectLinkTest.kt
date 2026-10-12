@@ -113,6 +113,17 @@ class ConnectLinkTest {
         )
     }
 
+    // The join page reads the fragment first; so does the application.
+    @Test
+    fun `where the query and the fragment disagree the fragment wins`() {
+        assertEquals(
+            ConnectLink.parse("https://$SITE.web.app/join#g=group-2&c=HGFEDCBA"),
+            ConnectLink.parse(
+                "https://$SITE.web.app/join?g=group-1&c=ABCDEFGH#g=group-2&c=HGFEDCBA",
+            ),
+        )
+    }
+
     @Test
     fun `a plain http link is refused`() {
         assertNull(ConnectLink.parse("http://$SITE.web.app/join"))

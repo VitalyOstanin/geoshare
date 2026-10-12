@@ -78,9 +78,15 @@ export function parseInvitation(hash) {
  * The query is read too, not only the fragment invitationLink writes: the
  * application's own deep link moves the fields there (see buildIntentUrl),
  * and a person forwarding that link — from a browser's address bar rather
- * than the page's own button — pastes the query form.
+ * than the page's own button — pastes the query form. Either Hosting host
+ * is accepted, and `/join/` as well as `/join`, as the application does
+ * (ConnectLink.parse).
  */
-const PASTED_LINK = /https:\/\/([a-z0-9-]+)\.web\.app\/join(?:\?([^\s#]*))?(?:#([^\s]*))?/iu;
+const PASTED_LINK = new RegExp(
+    String.raw`https://([a-z0-9-]+)\.(?:web\.app|firebaseapp\.com)/join/?`
+        + String.raw`(?:\?([^\s#]*))?(?:#([^\s]*))?`,
+    'iu',
+);
 
 /** Punctuation a messenger tacks onto a link it autolinks, trimmed off the end. */
 const TRAILING_PUNCTUATION = /[).,;:!?\]}'"<>]+$/u;

@@ -222,6 +222,19 @@ test('an empty fragment does not hide the invitation in the query', () => {
     });
 });
 
+// The application reads both Hosting hosts and a slash after "join"; so
+// does the page.
+test('a pasted firebaseapp.com link with a slash after join is read too', () => {
+    assert.deepEqual(invitationTyped('https://imaginary-group.firebaseapp.com/join/#g=g&c=ABCDEFGH'), {
+        site: 'imaginary-group',
+        groupId: 'g',
+        code: 'ABCDEFGH',
+        by: '',
+        name: '',
+        to: '',
+    });
+});
+
 test('a pasted link with neither a group nor a code carries no invitation', () => {
     assert.equal(invitationTyped('https://imaginary-group.web.app/join?utm_source=chat'), null);
 });

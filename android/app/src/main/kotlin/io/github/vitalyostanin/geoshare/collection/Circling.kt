@@ -1,5 +1,6 @@
 package io.github.vitalyostanin.geoshare.collection
 
+import io.github.vitalyostanin.geoshare.map.wrapDegrees
 import java.time.Duration
 import kotlin.math.abs
 import kotlin.math.atan2
@@ -270,7 +271,9 @@ private fun spotsOf(run: List<Fix>): List<Spot> {
 
     return run.zip(sinceFirst(run)) { fix, at ->
         Spot(
-            east = (fix.longitude - first.longitude) * perDegree * shrink,
+            // The short way round: a step across the 180th meridian is a
+            // fraction of a degree, not 360.
+            east = wrapDegrees(fix.longitude - first.longitude) * perDegree * shrink,
             north = (fix.latitude - first.latitude) * perDegree,
             at = at,
         )

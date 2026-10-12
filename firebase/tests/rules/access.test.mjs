@@ -184,6 +184,7 @@ describe('profiles', () => {
             'https://example.com/me.png',
             'http://lh3.googleusercontent.com/a/example',
             'https://example.com/lh3.googleusercontent.com/a/example',
+            'https://colab.googleusercontent.com/a/example',
         ]) {
             await assertFails(
                 setDoc(memberOf(db, ALICE), { displayName: 'Alice', photoUrl, updatedAt: new Date() }),

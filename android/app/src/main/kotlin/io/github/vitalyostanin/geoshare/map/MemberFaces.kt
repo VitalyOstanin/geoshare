@@ -74,10 +74,11 @@ fun rememberMemberFaces(profiles: Map<String, MemberProfile>): Map<String, Bitma
  */
 private suspend fun loadFace(context: Context, url: String): Bitmap? {
     // A profile is written by the member it describes, so the address in it is
-    // whatever they put there; only the two schemes a picture can be fetched
-    // over are followed, and anything else leaves the pin with its initial.
-    if (!url.startsWith("https://") && !url.startsWith("http://")) {
-        AppLog.w(TAG, "the picture address is not one that can be fetched")
+    // whatever they put there; the profile source already holds it to the
+    // account host, and so does this, so that no other way in reaches the
+    // network. Anything else leaves the pin with its initial.
+    if (accountPicture(url) == null) {
+        AppLog.w(TAG, "the picture address is not an account picture")
 
         return null
     }

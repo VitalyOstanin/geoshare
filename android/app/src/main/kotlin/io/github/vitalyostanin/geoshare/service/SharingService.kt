@@ -738,7 +738,7 @@ class SharingService : LifecycleService() {
         // about the filter instead.
         noteFix(fix, mode, judged.jump, judged.agreed, judged.home, trusted)
 
-        carried.noticeAnAnswerThatWillNotFollow(fix, judged.whence)
+        carried.noticeAnAnswerThatWillNotFollow(fix, judged.whence, Instant.now())
 
         if (judged.leftOutAsJump(jumps.enabled)) {
             candidate = fix

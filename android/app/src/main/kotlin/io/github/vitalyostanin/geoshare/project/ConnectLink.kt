@@ -77,8 +77,9 @@ data class ConnectLink(val site: String, val invitation: Invitation?) {
             // The join page hands the link over as intent://, whose own
             // #Intent takes the fragment's place, so it moves the
             // invitation into the query; a link shared as it is keeps it
-            // after the #.
-            val fields = fieldsOf(fragment) + fieldsOf(query)
+            // after the #. Where both carry a field, the fragment's wins,
+            // as on the join page (invitationTyped in join.js).
+            val fields = fieldsOf(query) + fieldsOf(fragment)
 
             if ("g" !in fields && "c" !in fields) {
                 return ConnectLink(site, invitation = null)

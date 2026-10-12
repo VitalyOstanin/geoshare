@@ -19,6 +19,7 @@ class AccountPictureTest {
         assertNull(accountPicture("https://example.com/lh3.googleusercontent.com/a/x"))
         assertNull(accountPicture("https://googleusercontent.com.example.com/a/x"))
         assertNull(accountPicture("https://x@example.com/.googleusercontent.com/a"))
+        assertNull(accountPicture("https://colab.googleusercontent.com/a/x"))
     }
 
     @Test

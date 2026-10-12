@@ -357,8 +357,15 @@ service cloud.firestore {
           return request.auth != null && request.auth.uid == uid;
         }
 
+        // Only under a group that exists: the sign-in is open to any Google
+        // account, and without this one could write a claim under every
+        // made-up group id there is and fill the family's project with them.
+        function groupExists() {
+          return exists(/databases/$(database)/documents/groups/$(groupId));
+        }
+
         allow read: if isSelf();
-        allow create, update: if isSelf() && claimShape();
+        allow create, update: if isSelf() && claimShape() && groupExists();
         allow delete: if isSelf();
       }
 
@@ -630,7 +637,7 @@ service cloud.firestore {
                   (request.resource.data.photoUrl is string &&
                    request.resource.data.photoUrl.size() <= 500 &&
                    request.resource.data.photoUrl
-                     .matches('https://[a-z0-9.-]*[.]googleusercontent[.]com/.*')));
+                     .matches('https://lh[0-9]+[.]googleusercontent[.]com/.*')));
         }
 
         function isOwner() {

@@ -7,9 +7,10 @@ package io.github.vitalyostanin.geoshare.map
  * Any member writes the address of their own picture, and every device that
  * shows them fetches it. An address anywhere else would have each of those
  * devices call on a server of the member's choosing, and tell it where they
- * are online from and when.
+ * are online from and when. Only the `lh` hosts: the rest of
+ * googleusercontent.com serves content people put there themselves.
  */
-private val ACCOUNT_PICTURE = Regex("https://[a-z0-9.-]*\\.googleusercontent\\.com/.*")
+private val ACCOUNT_PICTURE = Regex("https://lh[0-9]+\\.googleusercontent\\.com/.*")
 
 /** [address] where it is an account picture, or nothing where it is not one. */
 fun accountPicture(address: String?): String? = address?.takeIf { ACCOUNT_PICTURE.matches(it) }

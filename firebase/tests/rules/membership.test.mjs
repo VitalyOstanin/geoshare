@@ -4,7 +4,7 @@ import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
 
 import { assertFails, assertSucceeds } from '@firebase/rules-unit-testing';
-import { collection, deleteDoc, getDoc, getDocs, arrayUnion, setDoc, updateDoc, writeBatch } from 'firebase/firestore';
+import { collection, deleteDoc, doc, getDoc, getDocs, arrayUnion, setDoc, updateDoc, writeBatch } from 'firebase/firestore';
 
 import { setUpRules, GROUP, ALICE, BOB, STRANGER, STRANGER_EMAIL, FOREVER, testEnv, grantOf, someGrant, CODE, OTHER_CODE, groupDoc, invitationOf, claimOf, inTenMinutes, plantAnAdministrator, plantAnInvitation, plantAnAddressedInvitation, signedInAs } from './helpers.mjs';
 
@@ -191,6 +191,8 @@ describe('invitations', () => {
     });
 
     it('the code somebody holds is theirs alone to write and to read', async () => {
+        await plantAnAdministrator();
+
         const mine = testEnv.authenticatedContext(STRANGER).firestore();
         const other = testEnv.authenticatedContext(BOB).firestore();
 
@@ -198,6 +200,14 @@ describe('invitations', () => {
         await assertSucceeds(getDoc(claimOf(mine, STRANGER)));
         await assertFails(getDoc(claimOf(other, STRANGER)));
         await assertFails(setDoc(claimOf(other, STRANGER), { code: CODE }));
+    });
+
+    it('a claim under a group that does not exist is refused', async () => {
+        const db = testEnv.authenticatedContext(STRANGER).firestore();
+
+        const claim = doc(db, `groups/no-such-group/joins/${STRANGER}`);
+
+        await assertFails(setDoc(claim, { code: CODE }));
     });
 
     // The rules build a document path out of what is written here, so what is

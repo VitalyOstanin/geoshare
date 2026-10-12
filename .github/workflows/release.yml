@@ -27,6 +27,11 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          # The token of this job may write the repository; the build that
+          # follows runs plugin and dependency code, which has no use for it.
+          # Publishing goes through the release action's API call instead.
+          persist-credentials: false
 
       - name: Read the pinned versions
         run: grep -E '^[A-Z][A-Z0-9_]*=' tools/versions.env >> "$GITHUB_ENV"

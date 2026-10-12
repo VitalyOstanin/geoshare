@@ -333,11 +333,15 @@ data class Walk(val since: Instant, val steps: Long)
  * A count lower than the one before it is a counter that started again with a
  * reboot. Nothing says when the steps in that reading were taken, so the
  * stretch starts after them.
+ *
+ * A stretch whose last reading is more than [WALKING_BREAK] before [now] is
+ * over: the counter reports in batches while the device walks and falls
+ * silent once it stops, so the rest shows only as the time since.
  */
-fun walkingNow(stirs: List<Stir>): Walk? {
+fun walkingNow(stirs: List<Stir>, now: Instant): Walk? {
     val counted = stirs.filter { it.steps != null }.sortedBy { it.at }
 
-    if (counted.size < 2) {
+    if (counted.size < 2 || Duration.between(counted.last().at, now) > WALKING_BREAK) {
         return null
     }
 

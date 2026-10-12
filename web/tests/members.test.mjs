@@ -119,6 +119,7 @@ test('a picture anywhere but the account host draws no picture', () => {
     assert.equal(pictureAddress('https://example.com/lh3.googleusercontent.com/a/x'), null);
     assert.equal(pictureAddress('https://googleusercontent.com.example.com/a/x'), null);
     assert.equal(pictureAddress('https://x@example.com/.googleusercontent.com/a'), null);
+    assert.equal(pictureAddress('https://colab.googleusercontent.com/a/x'), null);
 });
 
 // The same rule the Android panel follows: a member carrying two devices has

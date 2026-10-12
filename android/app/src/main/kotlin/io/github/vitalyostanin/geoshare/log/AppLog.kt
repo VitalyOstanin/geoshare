@@ -1,16 +1,26 @@
 package io.github.vitalyostanin.geoshare.log
 
 import android.util.Log
+import io.github.vitalyostanin.geoshare.BuildConfig
 import java.io.File
 
 /**
  * Where the application says what it is doing.
  *
- * Every message goes to both the system log and a file of our own: the system
- * log is the one that also carries what the platform says back, and the file is
- * the one that can be read on a device whose system log is closed.
+ * Every message goes to a file of our own, and in a debug build to the system
+ * log as well: the system log is the one that also carries what the platform
+ * says back, and the file is the one that can be read on a device whose system
+ * log is closed.
+ *
+ * A release build keeps out of the system log, because the messages carry
+ * positions to the metre and the system log is readable by whatever holds the
+ * permission to read it; the file stays private to the application.
  */
 object AppLog {
+    /** Whether messages also go to the system log; a test sets it either way. */
+    @Volatile
+    internal var toSystemLog: Boolean = BuildConfig.DEBUG
+
     @Volatile
     private var file: FileLog? = null
 
@@ -43,12 +53,16 @@ object AppLog {
     }
 
     fun i(tag: String, message: String) {
-        Log.i(tag, message)
+        if (toSystemLog) {
+            Log.i(tag, message)
+        }
         file?.append('I', tag, message)
     }
 
     fun w(tag: String, message: String, error: Throwable? = null) {
-        Log.w(tag, message, error)
+        if (toSystemLog) {
+            Log.w(tag, message, error)
+        }
         file?.append('W', tag, message, error)
     }
 
@@ -59,7 +73,9 @@ object AppLog {
     }
 
     fun e(tag: String, message: String, error: Throwable? = null) {
-        Log.e(tag, message, error)
+        if (toSystemLog) {
+            Log.e(tag, message, error)
+        }
         file?.append('E', tag, message, error)
     }
 }

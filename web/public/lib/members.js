@@ -110,7 +110,7 @@ export function memberInitial(name) {
 }
 
 /** The host account pictures are kept on, and the only one drawn from. */
-const ACCOUNT_PICTURE = /^https:\/\/[a-z0-9.-]*\.googleusercontent\.com\/.*$/;
+const ACCOUNT_PICTURE = /^https:\/\/lh[0-9]+\.googleusercontent\.com\/.*$/;
 
 /**
  * The address of a member's picture, or nothing.

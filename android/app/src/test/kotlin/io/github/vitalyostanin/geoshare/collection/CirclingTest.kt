@@ -1,5 +1,6 @@
 package io.github.vitalyostanin.geoshare.collection
 
+import io.github.vitalyostanin.geoshare.map.wrapDegrees
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNotNull
@@ -45,8 +46,12 @@ class CirclingTest {
             ),
         )
 
-    private fun around(radiusMetres: Double, speedMps: Double, turns: Int = 1): List<Fix> {
-        val centre = 61.03 to 4.57
+    private fun around(
+        radiusMetres: Double,
+        speedMps: Double,
+        turns: Int = 1,
+        centre: Pair<Double, Double> = 61.03 to 4.57,
+    ): List<Fix> {
         val metresPerDegree = Math.toRadians(1.0) * EARTH_RADIUS_METRES
         val shrink = cos(Math.toRadians(centre.first))
 
@@ -55,7 +60,9 @@ class CirclingTest {
                 val angle = turns * step * 7.0 * speedMps / radiusMetres
 
                 (centre.first + radiusMetres * cos(angle) / metresPerDegree) to
-                    (centre.second + radiusMetres * sin(angle) / (metresPerDegree * shrink))
+                    wrapDegrees(
+                        centre.second + radiusMetres * sin(angle) / (metresPerDegree * shrink),
+                    )
             },
         )
     }
@@ -186,6 +193,21 @@ class CirclingTest {
 
         assertNotNull(circle)
         assertEquals(900.0, circle!!.radiusMetres, 10.0)
+    }
+
+    // The arc starts west of the 180th meridian and ends east of it.
+    @Test
+    fun `a circle across the 180th meridian is caught like any other`() {
+        assertTrue(
+            goingInCircles(
+                around(
+                    radiusMetres = 900.0,
+                    speedMps = 20.0,
+                    centre =
+                    0.0 to 179.996,
+                ),
+            ),
+        )
     }
 
     @Test

@@ -311,8 +311,9 @@ read them; the rules refuse a profile carrying any other field.
 
 Both values come from the account the member signed in with, and neither client
 uploads an image: the picture is the address the provider already serves. The
-rules take only an address on `*.googleusercontent.com` over https, where the
-provider keeps account pictures, and both clients draw nothing from anywhere
+rules take only an address on `lh<digits>.googleusercontent.com` over https,
+where the provider keeps account pictures (the rest of the domain serves
+content people put there themselves), and both clients draw nothing from anywhere
 else: every member's device fetches the picture, and an address of the member's
 choosing would have each of them call on that server. A client
 writes the document only when what the account says differs from what is stored,
