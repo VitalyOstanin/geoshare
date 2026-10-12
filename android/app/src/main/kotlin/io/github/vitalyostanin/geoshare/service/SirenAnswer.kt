@@ -102,21 +102,22 @@ class SirenAnswer(private val context: Context, private val scope: CoroutineScop
                 }
             }
 
+            val words = context.inAppLanguage()
             val callerName =
                 if (called.calledBy == memberId) {
-                    context.getString(R.string.siren_called_by_you)
+                    words.getString(R.string.siren_called_by_you)
                 } else {
                     withTimeoutOrNull(SIREN_NAME_WAIT.toMillis()) {
                         memberDisplayName(called.calledBy, connection)
-                    } ?: unnamedMember(context, called.calledBy)
+                    } ?: unnamedMember(words, called.calledBy)
                 }
 
-            val group = groupNameForNotice(context, connection)
+            val group = groupNameForNotice(words, connection)
 
             if (devicePermissions(context).notificationsGranted) {
                 context.getSystemService<NotificationManager>()?.notify(
                     SIREN_NOTIFICATION_ID,
-                    sirenNotification(context, callerName, group, until),
+                    sirenNotification(words, callerName, group, until),
                 )
             }
 

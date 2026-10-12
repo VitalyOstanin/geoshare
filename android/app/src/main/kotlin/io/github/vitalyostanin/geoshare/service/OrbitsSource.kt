@@ -101,12 +101,13 @@ private suspend fun fetchIfDue(context: Context, directory: File): Orbits? {
         return null
     }
 
+    val words = context.inAppLanguage()
     val question = RoamingQuestion(
-        title = context.getString(R.string.orbits_roaming_title),
-        text = context.getString(R.string.orbits_roaming_text),
+        title = words.getString(R.string.orbits_roaming_title),
+        text = words.getString(R.string.orbits_roaming_text),
     )
 
-    if (!mayDownloadNow(context, question)) {
+    if (!mayDownloadNow(words, question)) {
         return null
     }
 

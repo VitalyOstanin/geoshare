@@ -74,6 +74,7 @@ import io.github.vitalyostanin.geoshare.service.BackgroundWorkSetting
 import io.github.vitalyostanin.geoshare.service.DeviceIdentity
 import io.github.vitalyostanin.geoshare.service.JumpFilterSetting
 import io.github.vitalyostanin.geoshare.service.LanguageChoice
+import io.github.vitalyostanin.geoshare.service.LanguageSetting
 import io.github.vitalyostanin.geoshare.service.SharingService
 import io.github.vitalyostanin.geoshare.service.SharingSetting
 import io.github.vitalyostanin.geoshare.service.SourcesSetting
@@ -634,6 +635,7 @@ class MainActivity : AppCompatActivity() {
                 LocaleListCompat.forLanguageTags(tag)
             }
 
+        LanguageSetting(this).tag = tag
         AppCompatDelegate.setApplicationLocales(locales)
     }
 

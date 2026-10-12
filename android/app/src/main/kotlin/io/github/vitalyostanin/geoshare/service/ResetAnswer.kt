@@ -111,13 +111,14 @@ suspend fun answerResets(
         jumps.askToForget()
         AppLog.i(TAG, "asked from elsewhere to forget the place")
 
+        val words = context.inAppLanguage()
         val name =
             if (asked.askedBy == memberId) {
-                context.getString(R.string.siren_called_by_you)
+                words.getString(R.string.siren_called_by_you)
             } else {
                 withTimeoutOrNull(RESET_NAME_WAIT.toMillis()) {
                     memberDisplayName(asked.askedBy, connection)
-                } ?: unnamedMember(context, asked.askedBy)
+                } ?: unnamedMember(words, asked.askedBy)
             }
         val now = Instant.now()
 
@@ -133,7 +134,7 @@ suspend fun answerResets(
 
         if (devicePermissions(context).notificationsGranted) {
             context.getSystemService<NotificationManager>()
-                ?.notify(RESET_NOTIFICATION_ID, resetNotification(context, name, now))
+                ?.notify(RESET_NOTIFICATION_ID, resetNotification(words, name, now))
         }
     }
 }

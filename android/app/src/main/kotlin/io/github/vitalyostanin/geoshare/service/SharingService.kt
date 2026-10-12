@@ -1634,7 +1634,7 @@ class SharingService : LifecycleService() {
         ServiceCompat.startForeground(
             this,
             SHARING_NOTIFICATION_ID,
-            sharingNotification(this),
+            sharingNotification(inAppLanguage()),
             ServiceInfo.FOREGROUND_SERVICE_TYPE_LOCATION,
         )
 

@@ -39,10 +39,11 @@ suspend fun keepSearchNotification(context: Context, phoneId: String, connection
             return@collectLatest
         }
 
+        val words = context.inAppLanguage()
         val openedByName =
             memberDisplayName(search.openedBy, connection)
-                ?: unnamedMember(context, search.openedBy)
-        val group = groupNameForNotice(context, connection)
+                ?: unnamedMember(words, search.openedBy)
+        val group = groupNameForNotice(words, connection)
 
         while (search.stands(Instant.now())) {
             // A member who refused notifications still gets the banner over
@@ -51,7 +52,7 @@ suspend fun keepSearchNotification(context: Context, phoneId: String, connection
                 context.getSystemService<NotificationManager>()?.notify(
                     connection.projectId,
                     SEARCH_NOTIFICATION_ID,
-                    searchNotification(context, search, openedByName, group),
+                    searchNotification(words, search, openedByName, group),
                 )
             }
 
