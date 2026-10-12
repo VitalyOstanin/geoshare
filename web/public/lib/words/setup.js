@@ -162,7 +162,7 @@ export const WORDS_EN = {
         'sign-in on the group page at the end will.',
     s4Next: 'Both steps done',
     s5Title: (name) => `Group “${name}” is ready`,
-    s5Text: 'Connect your own device first: you become the group’s admin and can invite ' +
+    s5Text: 'Connect your own device first: you become the group’s administrator and can invite ' +
         'the others from the app.',
     s5Open: 'Open in the geoshare app',
     s5Camera: 'Is this page open on a computer? Point your device’s camera at it:',

@@ -302,11 +302,11 @@ export const EN = {
     groupShare: 'Send',
     groupCopy: 'Copy',
     groupCopied: 'Invitation copied',
-    groupRunsIt: 'admin',
+    groupRunsIt: 'administrator',
     groupRemove: 'Remove from the group',
-    groupMakeAdmin: 'Make admin',
-    groupStopRunning: 'Remove admin role',
-    groupGiveUpRunning: 'Give up your admin role? Only another admin can give it back.',
+    groupMakeAdmin: 'Make administrator',
+    groupStopRunning: 'Remove administrator role',
+    groupGiveUpRunning: 'Give up your administrator role? Only another administrator can give it back.',
     groupRemoveTitle: (name) => `Remove ${name} from the group?`,
     groupRemoveNote:
         'They will no longer see the group, nor the group them. ' +

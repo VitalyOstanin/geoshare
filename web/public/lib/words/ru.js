@@ -309,11 +309,11 @@ export const RU = {
     groupShare: 'Отправить',
     groupCopy: 'Скопировать',
     groupCopied: 'Приглашение скопировано',
-    groupRunsIt: 'админ',
+    groupRunsIt: 'администратор',
     groupRemove: 'Удалить из группы',
-    groupMakeAdmin: 'Сделать админом',
-    groupStopRunning: 'Снять роль админа',
-    groupGiveUpRunning: 'Снять с себя роль админа? Вернуть её сможет только другой админ.',
+    groupMakeAdmin: 'Сделать администратором',
+    groupStopRunning: 'Снять роль администратора',
+    groupGiveUpRunning: 'Снять с себя роль администратора? Вернуть её сможет только другой администратор.',
     groupRemoveTitle: (name) => `Удалить из группы: ${name}?`,
     groupRemoveNote:
         'Участник перестанет видеть группу, а группа — его. ' +
