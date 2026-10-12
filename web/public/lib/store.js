@@ -315,21 +315,7 @@ export function keepWatching(memberId, onError, onClaim = () => {}) {
 
     let timer = null;
     let touched = Date.now();
-    // When a push last reached the server; a failed one leaves it where it
-    // was, so the next check tries again rather than the next refresh.
-    let pushed = 0;
-
-    const push = () => setDoc(marker, { memberId, since: serverTimestamp() })
-        .then(() => {
-            pushed = Date.now();
-        })
-        .catch(onError);
-    const pushWhenDue = () => {
-        if (Date.now() - pushed >= WATCH_REFRESH_MS) {
-            push();
-        }
-    };
-    const withdraw = () => deleteDoc(marker).catch(onError);
+    const { push, pushWhenDue, withdraw } = claimWriter(marker, memberId, onError);
     const looking = () =>
         document.visibilityState !== 'hidden'
         && document.hasFocus()
@@ -368,18 +354,12 @@ export function keepWatching(memberId, onError, onClaim = () => {}) {
         }
     };
 
-    document.addEventListener('visibilitychange', review);
-    window.addEventListener('focus', review);
-    window.addEventListener('blur', review);
-    ATTENTION.forEach((event) => window.addEventListener(event, noticed, { passive: true }));
+    const stopFollowing = followAttention(review, noticed);
 
     review();
 
     return () => {
-        document.removeEventListener('visibilitychange', review);
-        window.removeEventListener('focus', review);
-        window.removeEventListener('blur', review);
-        ATTENTION.forEach((event) => window.removeEventListener(event, noticed));
+        stopFollowing();
 
         if (timer) {
             clearInterval(timer);
@@ -389,5 +369,46 @@ export function keepWatching(memberId, onError, onClaim = () => {}) {
         onClaim(false);
 
         return withdraw();
+    };
+}
+
+/** Writes and withdraws the page's claim in [marker], keeping a write to one per refresh. */
+function claimWriter(marker, memberId, onError) {
+    // When a push last reached the server; a failed one leaves it where it
+    // was, so the next check tries again rather than the next refresh.
+    let pushed = 0;
+
+    const push = () => setDoc(marker, { memberId, since: serverTimestamp() })
+        .then(() => {
+            pushed = Date.now();
+        })
+        .catch(onError);
+
+    return {
+        push,
+        pushWhenDue: () => {
+            if (Date.now() - pushed >= WATCH_REFRESH_MS) {
+                push();
+            }
+        },
+        withdraw: () => deleteDoc(marker).catch(onError),
+    };
+}
+
+/**
+ * Calls [review] whenever the page is shown, hidden, focused or left, and
+ * [noticed] on every sign of somebody at it. Returns what stops both.
+ */
+function followAttention(review, noticed) {
+    document.addEventListener('visibilitychange', review);
+    window.addEventListener('focus', review);
+    window.addEventListener('blur', review);
+    ATTENTION.forEach((event) => window.addEventListener(event, noticed, { passive: true }));
+
+    return () => {
+        document.removeEventListener('visibilitychange', review);
+        window.removeEventListener('focus', review);
+        window.removeEventListener('blur', review);
+        ATTENTION.forEach((event) => window.removeEventListener(event, noticed));
     };
 }

@@ -34,6 +34,15 @@ export default [
         },
     },
     {
+        // The page's own code, held to functions that fit on one screen: the
+        // longest of them were split at 60 lines of code, blank lines and
+        // comments not counted, and this keeps them from growing back.
+        files: ['web/public/**/*.js'],
+        rules: {
+            'max-lines-per-function': ['error', { max: 60, skipBlankLines: true, skipComments: true }],
+        },
+    },
+    {
         // Written to be read by a browser, which brings its own globals.
         files: ['web/**/*.js'],
         languageOptions: {

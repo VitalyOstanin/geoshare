@@ -81,39 +81,10 @@ export function showCard(view, names, faces, now) {
     }
 
     if (shown && (group.length > 1 || view.selection.list)) {
-        const back = document.createElement('button');
-
-        back.type = 'button';
-        back.className = 'group-back';
-        // The arrow says which way the button goes before the words are read; an
-        // arrow written as a character rather than drawn, because a set of icons
-        // is a dependency of its own and this is the only one the page needs.
-        back.textContent = WORDS.backToList;
-        // Drawn again rather than only shown: the marker for the whole list
-        // comes back only once the member is no longer kept apart from it.
-        back.addEventListener('click', () => {
-            view.selection = listShown(view.selection);
-            redrawSelection(view);
-            view.onCardChange();
-        });
-
-        content.prepend(back);
+        content.prepend(backButton(view));
     }
 
-    // Named in the language the rest of the card is read in: a cross drawn
-    // out of two lines has no text inside it for a reader who is listening to
-    // the page rather than looking at it.
-    const close = document.createElement('button');
-
-    close.type = 'button';
-    close.className = 'card-close';
-    close.setAttribute('aria-label', WORDS.close);
-    close.addEventListener('click', () => {
-        if (closeCards(view)) {
-            view.onCardChange();
-            redrawSelection(view);
-        }
-    });
+    const close = cardCloseButton(view);
 
     // Scrolling lives on this wrapper rather than on #card itself: #card is
     // also the close button's positioned ancestor, and an ancestor that
@@ -128,6 +99,50 @@ export function showCard(view, names, faces, now) {
 
     view.card.replaceChildren(close, body);
     view.card.hidden = false;
+}
+
+/** The way back from one member to the list of everybody under the marker. */
+function backButton(view) {
+    const back = document.createElement('button');
+
+    back.type = 'button';
+    back.className = 'group-back';
+    // The arrow says which way the button goes before the words are read; an
+    // arrow written as a character rather than drawn, because a set of icons
+    // is a dependency of its own and this is the only one the page needs.
+    back.textContent = WORDS.backToList;
+    // Drawn again rather than only shown: the marker for the whole list
+    // comes back only once the member is no longer kept apart from it.
+    back.addEventListener('click', () => {
+        view.selection = listShown(view.selection);
+        redrawSelection(view);
+        view.onCardChange();
+    });
+
+    return back;
+}
+
+/**
+ * The cross in the card's corner.
+ *
+ * Named in the language the rest of the card is read in: a cross drawn
+ * out of two lines has no text inside it for a reader who is listening to
+ * the page rather than looking at it.
+ */
+function cardCloseButton(view) {
+    const close = document.createElement('button');
+
+    close.type = 'button';
+    close.className = 'card-close';
+    close.setAttribute('aria-label', WORDS.close);
+    close.addEventListener('click', () => {
+        if (closeCards(view)) {
+            view.onCardChange();
+            redrawSelection(view);
+        }
+    });
+
+    return close;
 }
 
 /** The members under one marker, as rows that open their cards. */
@@ -203,6 +218,39 @@ function detail(view, position, name, faces, now) {
     const card = document.createElement('div');
     card.className = 'detail';
 
+    const heading = detailHeading(view, position, name, faces, now);
+
+    card.append(heading, summary(view, position, now));
+
+    const sought = view.soughtLine?.(position);
+
+    if (sought) {
+        card.append(sought);
+    }
+
+    const warnings = warningsOf(position, now);
+
+    if (warnings) {
+        card.append(warnings);
+    }
+
+    // Everything else behind one button, and the choice kept: a viewer who
+    // opens the details wants them on the next card too, and one who closed
+    // them opened the card for the summary.
+    const details = detailTable(position);
+    const more = moreButton(view, details);
+
+    // Beside the name rather than under the details: opened, the details
+    // reach the bottom of the card, and a button below them had to be
+    // scrolled to.
+    heading.append(more);
+    card.append(details);
+
+    return card;
+}
+
+/** The member's face and, beside it, the person and the device, each pressed to rename it. */
+function detailHeading(view, position, name, faces, now) {
     // The same face the marker carries, so that a card opened from the panel
     // is recognisably the person whose pin is on the map.
     const heading = document.createElement('div');
@@ -238,24 +286,11 @@ function detail(view, position, name, faces, now) {
 
     heading.append(face, titles);
 
-    card.append(heading, summary(view, position, now));
+    return heading;
+}
 
-    const sought = view.soughtLine?.(position);
-
-    if (sought) {
-        card.append(sought);
-    }
-
-    const warnings = warningsOf(position, now);
-
-    if (warnings) {
-        card.append(warnings);
-    }
-
-    // Everything else behind one button, and the choice kept: a viewer who
-    // opens the details wants them on the next card too, and one who closed
-    // them opened the card for the summary.
-    const details = detailTable(position);
+/** The button that opens and closes the details, remembering the choice for the next card. */
+function moreButton(view, details) {
     const more = document.createElement('button');
 
     view.detailsOpen ??= readDetailsOpen();
@@ -277,13 +312,7 @@ function detail(view, position, name, faces, now) {
         showDetails(view.detailsOpen);
     });
 
-    // Beside the name rather than under the details: opened, the details
-    // reach the bottom of the card, and a button below them had to be
-    // scrolled to.
-    heading.append(more);
-    card.append(details);
-
-    return card;
+    return more;
 }
 
 /**

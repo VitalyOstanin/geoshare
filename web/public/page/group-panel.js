@@ -131,69 +131,81 @@ function drawPhones() {
     }
 
     elements.phonesList.replaceChildren(
-        ...phones.map((phone) => {
-            const row = document.createElement('div');
-            const about = document.createElement('div');
-            const name = document.createElement('span');
-            const said = document.createElement('span');
-            const actions = document.createElement('div');
-
-            row.className = 'admin-member';
-            name.className = 'admin-name';
-            name.textContent = phone.name;
-            said.className = 'admin-about';
-            // The name stands just above, so the line does not say it again.
-            said.textContent = phoneText(phone, now, false);
-            about.append(name, said);
-            actions.className = 'admin-actions';
-            // Plain and before the siren: the quiet one of the two.
-            actions.append(resetButtonFor(phone, now, about));
-            actions.append(sirenButtonFor(phone, memberId, now, about));
-            state.sirensShown.add(phone.phoneId);
-
-            const search = standing.get(phone.phoneId) ?? null;
-
-            // Only whoever runs the group opens a search, and here the device
-            // is one's own, the one lost.
-            if (running) {
-                actions.append(searchButton(phone, memberId, search));
-            }
-
-            if (search) {
-                const until = document.createElement('span');
-
-                until.className = 'admin-about sought-until';
-                until.textContent = WORDS.soughtUntil(untilText(search.endsAt));
-                about.append(until);
-            }
-
-            // Last in the row: a device handed on, reset or lost stays in every
-            // list until its member takes it out, and only they may.
-            const remove = document.createElement('button');
-
-            remove.type = 'button';
-            remove.className = 'phone-remove';
-            remove.title = WORDS.phoneRemove;
-            remove.setAttribute('aria-label', WORDS.phoneRemove);
-            remove.innerHTML = BIN_ICON;
-            remove.addEventListener('click', () => {
-                askConfirm(
-                    {
-                        title: WORDS.phoneRemoveTitle(phone.name),
-                        note: WORDS.phoneRemoveNote,
-                        go: WORDS.phoneRemoveGo,
-                    },
-                    () => forgetPhone(phone.phoneId),
-                );
-            });
-            actions.append(remove);
-            iconsInRow(actions);
-
-            row.append(about, actions);
-
-            return row;
-        }),
+        ...phones.map((phone) =>
+            phoneRow(phone, memberId, now, running, standing.get(phone.phoneId) ?? null),
+        ),
     );
+}
+
+/**
+ * One device in the panel: what it is and says, and what may be done to it
+ * from here. [search] is the search standing for it, or null.
+ */
+function phoneRow(phone, memberId, now, running, search) {
+    const row = document.createElement('div');
+    const about = document.createElement('div');
+    const name = document.createElement('span');
+    const said = document.createElement('span');
+    const actions = document.createElement('div');
+
+    row.className = 'admin-member';
+    name.className = 'admin-name';
+    name.textContent = phone.name;
+    said.className = 'admin-about';
+    // The name stands just above, so the line does not say it again.
+    said.textContent = phoneText(phone, now, false);
+    about.append(name, said);
+    actions.className = 'admin-actions';
+    // Plain and before the siren: the quiet one of the two.
+    actions.append(resetButtonFor(phone, now, about));
+    actions.append(sirenButtonFor(phone, memberId, now, about));
+    state.sirensShown.add(phone.phoneId);
+
+    // Only whoever runs the group opens a search, and here the device
+    // is one's own, the one lost.
+    if (running) {
+        actions.append(searchButton(phone, memberId, search));
+    }
+
+    if (search) {
+        const until = document.createElement('span');
+
+        until.className = 'admin-about sought-until';
+        until.textContent = WORDS.soughtUntil(untilText(search.endsAt));
+        about.append(until);
+    }
+
+    // Last in the row: a device handed on, reset or lost stays in every
+    // list until its member takes it out, and only they may.
+    actions.append(removeButtonFor(phone));
+    iconsInRow(actions);
+
+    row.append(about, actions);
+
+    return row;
+}
+
+/** The bin that takes a device out of every list, once its member confirms it. */
+function removeButtonFor(phone) {
+    const remove = document.createElement('button');
+
+    remove.type = 'button';
+    remove.className = 'phone-remove';
+    remove.title = WORDS.phoneRemove;
+    remove.setAttribute('aria-label', WORDS.phoneRemove);
+    remove.innerHTML = BIN_ICON;
+    remove.addEventListener('click', () => {
+        askConfirm(
+            {
+                title: WORDS.phoneRemoveTitle(phone.name),
+                note: WORDS.phoneRemoveNote,
+                go: WORDS.phoneRemoveGo,
+            },
+            () => forgetPhone(phone.phoneId),
+        );
+    });
+
+    return remove;
 }
 
 /**

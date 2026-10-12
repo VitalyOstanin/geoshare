@@ -276,56 +276,14 @@ async function runSteps() {
     const stepFns = [
         () => enableFirestoreApi(api, project.projectNumber),
         () => createDatabase(api, projectId, config.location),
-        async () => {
-            const response = await fetch('firestore.rules');
-
-            if (!response.ok) {
-                throw new Error(`firestore.rules -> ${response.status}`);
-            }
-
-            await deployRules(api, projectId, await response.text());
-        },
+        () => deployServedRules(api, projectId),
         async () => {
             context.web = await ensureWebApp(api, projectId);
             context.android = await ensureAndroidApp(api, projectId, config.packageName);
         },
         () => ensureFingerprints(api, context.android.name, config.fingerprints),
-        async () => {
-            await ensureSite(api, projectId, context.web.appId);
-            context.manifest = await readJson('setup-files.json');
-            context.files = {};
-
-            for (const path of context.manifest.paths) {
-                context.files[path] = await readBytes(`group${path}`);
-            }
-
-            // The page and its settings go out in one release: a page released
-            // without them would not open for a member who reloads it meanwhile.
-            const settings = await appSettings(api, context.android.name, projectId);
-
-            context.files['/geoshare.json'] = JSON.stringify(settings, null, 2) + '\n';
-            context.files['/firebase-config.js'] = await webConfigFile(
-                api,
-                context.web.name,
-                projectId,
-            );
-
-            await deploySite(
-                api,
-                projectId,
-                context.files,
-                versionConfig(context.manifest.hosting),
-            );
-        },
-        async () => {
-            const served = await releasedPaths(api, projectId);
-
-            for (const path of GENERATED) {
-                if (!served.has(path)) {
-                    throw failure(`${path} is missing`, 'missing');
-                }
-            }
-        },
+        () => publishGroupPage(api, projectId, context),
+        () => checkServed(api, projectId),
     ];
 
     for (let index = 0; index < stepFns.length; index++) {
@@ -343,6 +301,61 @@ async function runSteps() {
     }
 
     return null;
+}
+
+/** Deploys the rules the page itself was served with. */
+async function deployServedRules(api, projectId) {
+    const response = await fetch('firestore.rules');
+
+    if (!response.ok) {
+        throw new Error(`firestore.rules -> ${response.status}`);
+    }
+
+    await deployRules(api, projectId, await response.text());
+}
+
+/**
+ * Releases the group's page, its settings and its Firebase configuration,
+ * once the site exists. [context] holds the apps the earlier steps made and
+ * keeps what was read and written here.
+ */
+async function publishGroupPage(api, projectId, context) {
+    await ensureSite(api, projectId, context.web.appId);
+    context.manifest = await readJson('setup-files.json');
+    context.files = {};
+
+    for (const path of context.manifest.paths) {
+        context.files[path] = await readBytes(`group${path}`);
+    }
+
+    // The page and its settings go out in one release: a page released
+    // without them would not open for a member who reloads it meanwhile.
+    const settings = await appSettings(api, context.android.name, projectId);
+
+    context.files['/geoshare.json'] = JSON.stringify(settings, null, 2) + '\n';
+    context.files['/firebase-config.js'] = await webConfigFile(
+        api,
+        context.web.name,
+        projectId,
+    );
+
+    await deploySite(
+        api,
+        projectId,
+        context.files,
+        versionConfig(context.manifest.hosting),
+    );
+}
+
+/** Fails unless every file written for the group is being served. */
+async function checkServed(api, projectId) {
+    const served = await releasedPaths(api, projectId);
+
+    for (const path of GENERATED) {
+        if (!served.has(path)) {
+            throw failure(`${path} is missing`, 'missing');
+        }
+    }
 }
 
 async function startSetup() {

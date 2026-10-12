@@ -26,6 +26,48 @@ export function openHelpTable({ title, intro, headings, rows }, document_ = docu
 
     introduction.textContent = intro;
 
+    const table = tableOf(headings, rows, document_);
+
+    // Nothing of the dialog outlives its closing: it is rebuilt on the next
+    // opening, and a page that kept them would grow one for every reading.
+    // Taken down here rather than on the dialog's own closing event, which is
+    // delivered in the browser's own time and was seen not to arrive at all in
+    // a window nothing was drawing.
+    const dismiss = () => {
+        dialog.close();
+        dialog.remove();
+    };
+
+    const close = closeCross(dismiss, document_);
+
+    // The escape key asks to cancel before anything is closed, which is the
+    // one chance to hear about it without the event above.
+    dialog.addEventListener('cancel', dismiss);
+
+    // A click on the dark behind the window closes it, the way a tap beside a
+    // sheet does on a device. The dark is not an element of its own -- it is
+    // the dialog's own backdrop -- so such a click arrives at the dialog
+    // itself, as does a click on the dialog's padding; the point is compared
+    // with the box to tell the two apart.
+    dialog.addEventListener('click', (event) => {
+        if (event.target !== dialog) {
+            return;
+        }
+
+        if (outsideTheBox(dialog.getBoundingClientRect(), event)) {
+            dismiss();
+        }
+    });
+
+    dialog.append(close, heading, introduction, table);
+    document_.body.append(dialog);
+    dialog.showModal();
+
+    return dialog;
+}
+
+/** The table itself: a heading row, then a row for each name with its cells. */
+function tableOf(headings, rows, document_) {
     const table = document_.createElement('table');
     const head = document_.createElement('tr');
 
@@ -56,19 +98,17 @@ export function openHelpTable({ title, intro, headings, rows }, document_ = docu
         table.append(line);
     }
 
-    // Nothing of the dialog outlives its closing: it is rebuilt on the next
-    // opening, and a page that kept them would grow one for every reading.
-    // Taken down here rather than on the dialog's own closing event, which is
-    // delivered in the browser's own time and was seen not to arrive at all in
-    // a window nothing was drawing.
-    const dismiss = () => {
-        dialog.close();
-        dialog.remove();
-    };
+    return table;
+}
 
-    // The same cross in the same corner as a member's card: two windows over
-    // one map, closed by one gesture. The word stays as the label a screen
-    // reader says, since a multiplication sign read aloud is not "close".
+/**
+ * The cross that closes the window.
+ *
+ * The same cross in the same corner as a member's card: two windows over
+ * one map, closed by one gesture. The word stays as the label a screen
+ * reader says, since a multiplication sign read aloud is not "close".
+ */
+function closeCross(dismiss, document_) {
     const close = document_.createElement('button');
 
     close.className = 'close-cross';
@@ -77,28 +117,5 @@ export function openHelpTable({ title, intro, headings, rows }, document_ = docu
     close.setAttribute('aria-label', WORDS.close);
     close.addEventListener('click', dismiss);
 
-    // The escape key asks to cancel before anything is closed, which is the
-    // one chance to hear about it without the event above.
-    dialog.addEventListener('cancel', dismiss);
-
-    // A click on the dark behind the window closes it, the way a tap beside a
-    // sheet does on a device. The dark is not an element of its own -- it is
-    // the dialog's own backdrop -- so such a click arrives at the dialog
-    // itself, as does a click on the dialog's padding; the point is compared
-    // with the box to tell the two apart.
-    dialog.addEventListener('click', (event) => {
-        if (event.target !== dialog) {
-            return;
-        }
-
-        if (outsideTheBox(dialog.getBoundingClientRect(), event)) {
-            dismiss();
-        }
-    });
-
-    dialog.append(close, heading, introduction, table);
-    document_.body.append(dialog);
-    dialog.showModal();
-
-    return dialog;
+    return close;
 }
