@@ -201,14 +201,14 @@ fun SettingsScreen(
     Surface(modifier = modifier.fillMaxSize()) {
         // Scrolled rather than fitted: the permissions are one row per member,
         // and a group large enough to need them is large enough to run off a
-        // phone screen. The insets are taken inside the scrolling, so that the
-        // title clears the clock and the last row clears the gesture bar
-        // without the scrolled content being cut short of either.
+        // phone screen. The insets are taken outside the scrolling, so that the
+        // content stops at the clock and the gesture bar instead of passing
+        // under them.
         Column(
             modifier =
             Modifier
-                .verticalScroll(rememberScrollState())
-                .windowInsetsPadding(WindowInsets.safeDrawing),
+                .windowInsetsPadding(WindowInsets.safeDrawing)
+                .verticalScroll(rememberScrollState()),
         ) {
             Row(
                 modifier = Modifier.fillMaxWidth().padding(start = 16.dp, top = 8.dp, end = 8.dp),

@@ -6,11 +6,14 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.widthIn
+import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -124,12 +127,19 @@ internal fun FullScreenQr(link: String, onClose: () -> Unit) {
 
     Dialog(
         onDismissRequest = onClose,
-        properties = DialogProperties(usePlatformDefaultWidth = false),
+        // Drawn edge to edge, so that the white covers the status bar too.
+        properties =
+        DialogProperties(usePlatformDefaultWidth = false, decorFitsSystemWindows = false),
     ) {
         FullBrightness()
 
         Column(
-            modifier = Modifier.fillMaxSize().background(QR_LIGHT).padding(24.dp),
+            modifier =
+            Modifier
+                .fillMaxSize()
+                .background(QR_LIGHT)
+                .windowInsetsPadding(WindowInsets.safeDrawing)
+                .padding(24.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp, Alignment.CenterVertically),
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
