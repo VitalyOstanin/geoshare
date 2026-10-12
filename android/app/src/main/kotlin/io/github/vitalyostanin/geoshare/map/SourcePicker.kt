@@ -92,7 +92,7 @@ fun SourcePicker(
                 DropdownMenuItem(
                     text = {
                         Row(
-                            modifier = Modifier.width(260.dp),
+                            modifier = Modifier.width(MENU_ROW_WIDTH),
                             horizontalArrangement = Arrangement.spacedBy(12.dp),
                             verticalAlignment = Alignment.CenterVertically,
                         ) {

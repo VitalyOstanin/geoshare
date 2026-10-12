@@ -2,6 +2,7 @@ package io.github.vitalyostanin.geoshare.map
 
 import com.google.firebase.Timestamp
 import io.github.vitalyostanin.geoshare.service.PhoneField
+import io.github.vitalyostanin.geoshare.service.deviceIdOf
 import java.time.Instant
 
 /** How many devices of one member this device will follow. The rules say the same. */
@@ -70,7 +71,7 @@ fun withPhones(
     positions: List<MemberPosition>,
     grants: Map<String, MemberGrant>,
 ): List<MemberPosition> = positions.map { position ->
-    val deviceId = position.positionId.substringAfter('.')
+    val deviceId = deviceIdOf(position.positionId)
     val phone = grants[position.memberId]?.phones?.get(deviceId)
     val onlineAt = phone?.onlineAt
 

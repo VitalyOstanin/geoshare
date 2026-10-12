@@ -1,5 +1,6 @@
 package io.github.vitalyostanin.geoshare.map
 
+import io.github.vitalyostanin.geoshare.service.memberIdOf
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.flowOf
@@ -22,6 +23,9 @@ const val SIREN_SECONDS: Long = 22
 /** How long a call waits for its device, and how long the caller's screen waits for an answer. */
 val SIREN_FRESH: Duration = Duration.ofSeconds(60)
 
+/** How often a siren's countdown is redrawn while it runs. */
+val SIREN_TICK: Duration = Duration.ofSeconds(1)
+
 /**
  * One call as the device or the caller's screen holds it, out of what the
  * document says.
@@ -37,7 +41,7 @@ data class Siren(
     val stoppedBy: String?,
     val stoppedAt: Instant?,
 ) {
-    val memberId: String get() = phoneId.substringBefore('.')
+    val memberId: String get() = memberIdOf(phoneId)
 }
 
 /**

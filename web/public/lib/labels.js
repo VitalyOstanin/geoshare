@@ -7,6 +7,7 @@
 // document and takes the names in the same order.
 
 import { compareIds } from './order.js';
+import { deviceIdOf } from './phones.js';
 
 /** As much of a name as fits on a card. The application cuts it to the same. */
 export const LABEL_LIMIT = 40;
@@ -162,7 +163,7 @@ export function labelledPositions(positions, labels, grants) {
     for (const position of positions) {
         const phones = seen.get(position.memberId) ?? new Map();
 
-        phones.set(deviceIdOf(position), null);
+        phones.set(deviceIdOf(position.positionId), null);
         seen.set(position.memberId, phones);
     }
 
@@ -172,14 +173,10 @@ export function labelledPositions(positions, labels, grants) {
     ]));
 
     return positions.map((position) => {
-        const named = names.get(position.memberId).get(deviceIdOf(position));
+        const named = names.get(position.memberId).get(deviceIdOf(position.positionId));
 
         return named === null || named === position.deviceName
             ? position
             : { ...position, deviceName: named };
     });
-}
-
-function deviceIdOf(position) {
-    return position.positionId.slice(position.positionId.indexOf('.') + 1);
 }

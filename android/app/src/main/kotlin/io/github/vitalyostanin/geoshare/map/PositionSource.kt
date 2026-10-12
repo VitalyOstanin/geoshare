@@ -6,6 +6,7 @@ import com.google.firebase.firestore.MetadataChanges
 import io.github.vitalyostanin.geoshare.log.AppLog
 import io.github.vitalyostanin.geoshare.project.GroupConnection
 import io.github.vitalyostanin.geoshare.service.PositionField
+import io.github.vitalyostanin.geoshare.service.memberIdOf
 import io.github.vitalyostanin.geoshare.service.positionId
 import io.github.vitalyostanin.geoshare.service.positionsOf
 import kotlinx.coroutines.channels.awaitClose
@@ -198,7 +199,7 @@ private fun positionOf(document: DocumentSnapshot): MemberPosition? {
         // Written into the document by the device that wrote the position. A
         // document from before positions were kept per device has no such
         // field, and there the whole id is the account.
-        memberId = document.getString(PositionField.MEMBER_ID) ?: document.id.substringBefore('.'),
+        memberId = document.getString(PositionField.MEMBER_ID) ?: memberIdOf(document.id),
         deviceName = null,
         latitude = latitude,
         longitude = longitude,

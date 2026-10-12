@@ -1,5 +1,6 @@
 package io.github.vitalyostanin.geoshare.map
 
+import io.github.vitalyostanin.geoshare.service.deviceIdOf
 import io.github.vitalyostanin.geoshare.service.positionId
 
 /** As much of a name as fits on a card. The page cuts it to the same. */
@@ -131,7 +132,7 @@ fun labelledPositions(
     val seen = mutableMapOf<String, MutableMap<String, String?>>()
 
     for (position in positions) {
-        val deviceId = position.positionId.substringAfter('.')
+        val deviceId = deviceIdOf(position.positionId)
         val models = seen.getOrPut(position.memberId) { mutableMapOf() }
 
         models[deviceId] = searches[position.positionId]?.phoneName?.takeIf { it.isNotBlank() }
@@ -142,7 +143,7 @@ fun labelledPositions(
     }
 
     return positions.map { position ->
-        val deviceId = position.positionId.substringAfter('.')
+        val deviceId = deviceIdOf(position.positionId)
         val named = names.getValue(position.memberId)[deviceId]
 
         if (named == null || named == position.deviceName) {

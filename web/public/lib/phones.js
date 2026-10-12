@@ -5,6 +5,21 @@
 // and whether it is on a cable are not a place, and the filter that holds a
 // position back when the answers look forged has nothing to say about them.
 
+/**
+ * The member a device's id belongs to: the part before the dot. An id with no
+ * dot in it, from before positions were kept per device, is the member's own.
+ */
+export function memberIdOf(phoneId) {
+    const dot = phoneId.indexOf('.');
+
+    return dot < 0 ? phoneId : phoneId.slice(0, dot);
+}
+
+/** The device a device's id stands for: everything after the first dot. */
+export function deviceIdOf(phoneId) {
+    return phoneId.slice(phoneId.indexOf('.') + 1);
+}
+
 /** How many devices of one member this page will follow. The rules say the same. */
 const PHONES_PER_MEMBER = 10;
 
@@ -82,7 +97,7 @@ export function combinedGrants(named, phones) {
  */
 export function withPhones(positions, grants) {
     return positions.map((position) => {
-        const deviceId = position.positionId.slice(position.positionId.indexOf('.') + 1);
+        const deviceId = deviceIdOf(position.positionId);
         const phone = grants.get(position.memberId)?.phones?.get(deviceId);
 
         if (!phone || phone.onlineAt === null || phone.onlineAt <= position.knownAt) {

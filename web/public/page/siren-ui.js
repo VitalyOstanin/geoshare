@@ -2,12 +2,13 @@
 
 import { ageText, positionAge } from '../lib/age.js';
 import { shortName } from '../lib/members.js';
-import { sirenState } from '../lib/sirens.js';
+import { SIREN_TICK_MS, sirenState } from '../lib/sirens.js';
 import { WORDS } from '../lib/words.js';
 import { callSiren, watchSiren } from '../lib/store-search.js';
 import { elements, state } from './state.js';
 import { linkIsLost, troubleOf } from './link-ui.js';
 import { drawGroup } from './group-panel.js';
+import { deviceIdOf } from '../lib/phones.js';
 
 /** The loudspeaker on the button that rings a device, and the one struck through that stops it. */
 export const SPEAKER_ICON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 9v6h4l5 4V5L8 9z"/><path d="M16.5 8.5a5 5 0 0 1 0 7"/><path d="M19.5 5.5a9 9 0 0 1 0 13"/></svg>';
@@ -21,7 +22,7 @@ export const MUTE_ICON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentCo
  */
 export function sirenText(siren, now, phones) {
     const phone = phones.find((one) => one.phoneId === siren.phoneId)?.name
-        ?? shortName(siren.phoneId.split('.')[1] ?? siren.phoneId);
+        ?? shortName(deviceIdOf(siren.phoneId));
 
     switch (now.kind) {
         case 'waiting':
@@ -74,7 +75,7 @@ export function followSirens() {
     });
 
     if (live && state.sirenTick === null) {
-        state.sirenTick = setInterval(drawGroup, 1000);
+        state.sirenTick = setInterval(drawGroup, SIREN_TICK_MS);
     } else if (!live && state.sirenTick !== null) {
         clearInterval(state.sirenTick);
         state.sirenTick = null;

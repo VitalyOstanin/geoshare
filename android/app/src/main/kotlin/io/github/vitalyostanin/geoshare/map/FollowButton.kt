@@ -50,8 +50,11 @@ private val FOLLOW_BUTTON_HEIGHT = 40.dp
  */
 private const val FOLLOW_LABEL_MILLIS = 2_500L
 
-/** As wide as the menu's own rows, so the hint under them wraps the same way. */
-private val FOLLOW_MENU_WIDTH = 260.dp
+/**
+ * How wide a row of the map's drop-down menus is: the follow menu's and the
+ * sources'. The hint under the follow menu is as wide, so it wraps the same way.
+ */
+internal val MENU_ROW_WIDTH = 260.dp
 
 /** How faded the follow button is while a hand holds the following still, as on the page. */
 private const val PAUSED_ALPHA = 0.75f
@@ -251,7 +254,7 @@ private fun FollowMenu(
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             modifier =
             Modifier
-                .width(FOLLOW_MENU_WIDTH)
+                .width(MENU_ROW_WIDTH)
                 .padding(horizontal = 12.dp, vertical = 8.dp),
         )
     }
@@ -281,7 +284,7 @@ private fun FollowModeItem(
             Icon(painter = painterResource(icon), contentDescription = null)
         },
         text = {
-            Column(modifier = Modifier.width(FOLLOW_MENU_WIDTH)) {
+            Column(modifier = Modifier.width(MENU_ROW_WIDTH)) {
                 Text(text = title, style = MaterialTheme.typography.bodyLarge)
                 Text(
                     text = subtitle,

@@ -196,7 +196,6 @@ test('a member without a name is shown by as much of the id', () => {
         length,
         javascriptNumber(javascript('web/public/lib/members.js', 'SHORT_ID_LENGTH')),
     );
-    assert.equal(length, kotlinNumber(kotlin('map/AdminPanel.kt', 'NAME_SHOWN_INSTEAD')));
     assert.equal(
         kotlinNumber(kotlin('map/GroupLine.kt', 'PHONE_ID_SHOWN')),
         javascriptNumber(javascript('web/public/lib/group-lines.js', 'PHONE_ID_SHOWN')),

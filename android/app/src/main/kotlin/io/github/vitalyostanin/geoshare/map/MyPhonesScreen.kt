@@ -111,7 +111,7 @@ fun MyPhonesScreen(
     var removeAsk by remember { mutableStateOf<PhoneLine?>(null) }
     var removeTrouble by remember { mutableStateOf(false) }
     var removeBusy by remember { mutableStateOf(false) }
-    val sirenNow by sirenClock(now, sirens)
+    val sirenNow by sirenClock(sirens)
 
     // The requests to forget a place on the same devices: this one forgets
     // its own from the settings, where the button has always been.

@@ -14,9 +14,6 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import java.time.Instant
 
-/** How often a sounding countdown redraws. */
-private const val SIREN_TICK_MS = 1_000L
-
 /**
  * A write a dialog asks for: what it is about, how the last attempt came out,
  * and whether one is on its way.
@@ -81,16 +78,24 @@ fun <T> rememberAskedWrite(): AskedWrite<T> {
 }
 
 /**
+ * A clock that ticks every [SIREN_TICK] for as long as [ticking] holds of the
+ * moment just read, and starts over whenever [key] changes.
+ */
+@Composable
+fun sirenTicks(key: Any?, ticking: (Instant) -> Boolean = { true }): State<Instant> =
+    produceState(Instant.now(), key) {
+        value = Instant.now()
+
+        while (ticking(value)) {
+            delay(SIREN_TICK.toMillis())
+            value = Instant.now()
+        }
+    }
+
+/**
  * The clock a sounding countdown reads: it ticks every second while any of
  * [sirens] is live, where the screen's own clock ticks far slower.
  */
 @Composable
-fun sirenClock(now: Instant, sirens: Map<String, Siren>): State<Instant> =
-    produceState(now, sirens) {
-        value = Instant.now()
-
-        while (anyLive(sirens.values, value)) {
-            delay(SIREN_TICK_MS)
-            value = Instant.now()
-        }
-    }
+fun sirenClock(sirens: Map<String, Siren>): State<Instant> =
+    sirenTicks(sirens) { anyLive(sirens.values, it) }

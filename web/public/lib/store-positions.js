@@ -6,6 +6,7 @@
 import { doc, onSnapshot } from 'https://www.gstatic.com/firebasejs/12.19.0/firebase-firestore.js';
 import { positionMoments } from './age.js';
 import { currentGroup, refusals, store } from './store.js';
+import { memberIdOf } from './phones.js';
 
 /**
  * The positions, as they change.
@@ -116,7 +117,7 @@ export function positionOf(snapshot) {
         // positions were kept per device has no owner field, and there the
         // whole id is the account.
         positionId: snapshot.id,
-        memberId: typeof data.memberId === 'string' ? data.memberId : snapshot.id.split('.')[0],
+        memberId: typeof data.memberId === 'string' ? data.memberId : memberIdOf(snapshot.id),
         latitude: data.latitude,
         longitude: data.longitude,
         takenAt: data.takenAt.toMillis(),

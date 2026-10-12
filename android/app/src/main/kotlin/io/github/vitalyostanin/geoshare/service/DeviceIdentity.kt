@@ -88,6 +88,12 @@ class DeviceIdentity(context: Context) {
  */
 fun positionId(memberId: String, deviceId: String): String = "$memberId.$deviceId"
 
+/** The account a [positionId] belongs to: the part before the dot. */
+fun memberIdOf(positionId: String): String = positionId.substringBefore('.')
+
+/** The device a [positionId] stands for: everything after the first dot. */
+fun deviceIdOf(positionId: String): String = positionId.substringAfter('.')
+
 /**
  * The system's id as this application uses it, or nothing where it is missing
  * or does not look like one: an id with a dot in it would split the documents

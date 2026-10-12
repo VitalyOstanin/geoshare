@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 
-import { combinedGrants, phonesOf, withPhones } from '../public/lib/phones.js';
+import { combinedGrants, deviceIdOf, memberIdOf, phonesOf, withPhones } from '../public/lib/phones.js';
 
 const HER = 'uid-her';
 
@@ -84,4 +84,15 @@ test('the phones to follow are those of the grant and of the phones together', (
     );
 
     assert.deepEqual(grants.get(HER).devices, ['old', 'new', 'newer']);
+});
+
+// The account's id has no dot in it, and everything after the first one is
+// the device's, whatever it holds.
+test('a device id is split at the first dot only', () => {
+    assert.equal(memberIdOf('u1.dev.2'), 'u1');
+    assert.equal(deviceIdOf('u1.dev.2'), 'dev.2');
+});
+
+test('an id from before positions were kept per device is the member\'s own', () => {
+    assert.equal(memberIdOf('u1'), 'u1');
 });

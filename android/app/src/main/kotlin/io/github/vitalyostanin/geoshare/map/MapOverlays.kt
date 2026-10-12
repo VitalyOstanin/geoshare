@@ -10,7 +10,6 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
@@ -20,13 +19,9 @@ import androidx.compose.ui.unit.dp
 import io.github.vitalyostanin.geoshare.R
 import io.github.vitalyostanin.geoshare.membership.Leave
 import io.github.vitalyostanin.geoshare.membership.Roster
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.launch
 import java.time.Instant
-
-/** How often the siren banner decides whether the device is still sounding. */
-private const val SIREN_BANNER_TICK_MS = 1_000L
 
 /** What the help button over the map explains: the follow modes, the sources and the list. */
 @Composable
@@ -136,12 +131,8 @@ internal fun OwnSirenBanner(
             ownPhoneId?.let(actions.sirenOf) ?: flowOf(null)
         }
     val ownSiren by ownSirenFlow.collectAsState(initial = null)
-    val sirenNow by produceState(Instant.now(), ownSiren) {
-        while (ownSiren != null) {
-            value = Instant.now()
-            delay(SIREN_BANNER_TICK_MS)
-        }
-    }
+    // Ticks while there is a siren of one's own, to decide whether it still sounds.
+    val sirenNow by sirenTicks(ownSiren) { ownSiren != null }
     val sirenScope = rememberCoroutineScope()
     val siren = ownSiren ?: return
     val state = sirenState(siren, sirenNow)

@@ -8,6 +8,8 @@
 // renewal by the server's clock, which is what the rules count from too, so
 // the page and the rules agree on when the place closes.
 
+import { memberIdOf } from './phones.js';
+
 /** The lengths an administrator chooses from, in hours: six hours, a day, three days. */
 export const SEARCH_HOURS = [6, 24, 72];
 
@@ -42,7 +44,7 @@ export function searchOf(phoneId, data) {
 
     return {
         phoneId,
-        memberId: phoneId.slice(0, phoneId.indexOf('.')),
+        memberId: memberIdOf(phoneId),
         // As the administrator saw the device when they opened or renewed the
         // search: what a viewer with nothing else to call it by is told.
         phoneName: typeof data.phoneName === 'string' ? data.phoneName : null,

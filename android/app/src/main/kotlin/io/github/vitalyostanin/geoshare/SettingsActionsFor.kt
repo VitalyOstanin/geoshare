@@ -21,6 +21,7 @@ import io.github.vitalyostanin.geoshare.service.MadeInvitation
 import io.github.vitalyostanin.geoshare.service.ThemeChoice
 import io.github.vitalyostanin.geoshare.service.askReset
 import io.github.vitalyostanin.geoshare.service.callSiren
+import io.github.vitalyostanin.geoshare.service.deviceIdOf
 import io.github.vitalyostanin.geoshare.service.endSearch
 import io.github.vitalyostanin.geoshare.service.forgetAidingData
 import io.github.vitalyostanin.geoshare.service.foundGroup
@@ -325,7 +326,7 @@ internal fun settingsActions(
     },
     // From every group, each under the account it knows the member by: the
     // device is the same one in all of them.
-    onForgetPhone = { phoneId -> forgetDeviceEverywhere(phoneId.substringAfter('.')) },
+    onForgetPhone = { phoneId -> forgetDeviceEverywhere(deviceIdOf(phoneId)) },
     onEndSearch = { phoneId ->
         try {
             withinAnswerWait { endSearch(phoneId, connection = connection) }

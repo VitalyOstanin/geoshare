@@ -21,6 +21,7 @@ import { resetOf } from './resets.js';
 import { searchOf } from './searches.js';
 import { sirenOf } from './sirens.js';
 import { currentGroup, store } from './store.js';
+import { deviceIdOf, memberIdOf } from './phones.js';
 
 /**
  * The places this group says a false signal puts devices at, and again
@@ -217,7 +218,8 @@ export function stopSiren(phoneId, stopperId) {
  * the device comes back if it is ever in touch under this account again.
  */
 export function forgetPhone(phoneId) {
-    const [memberId, deviceId] = phoneId.split('.');
+    const memberId = memberIdOf(phoneId);
+    const deviceId = deviceIdOf(phoneId);
     const group = ['groups', currentGroup()];
     const batch = writeBatch(store);
 

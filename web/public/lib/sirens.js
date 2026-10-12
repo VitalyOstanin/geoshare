@@ -7,8 +7,13 @@
 // answered device from one switched off, and gives up waiting after the same
 // SIREN_FRESH_MS.
 
+import { memberIdOf } from './phones.js';
+
 /** How long a device sounds once it starts, in seconds. */
 export const SIREN_SECONDS = 22;
+
+/** How often a siren's countdown is redrawn while it runs. */
+export const SIREN_TICK_MS = 1000;
 
 /** How long a call waits for its device, and how long the caller's screen waits for an answer. */
 export const SIREN_FRESH_MS = 60_000;
@@ -35,7 +40,7 @@ export function sirenOf(phoneId, data) {
 
     return {
         phoneId,
-        memberId: phoneId.slice(0, phoneId.indexOf('.')),
+        memberId: memberIdOf(phoneId),
         calledBy: data.calledBy,
         calledAt: data.calledAt,
         heardAt: Number.isFinite(data.heardAt) ? data.heardAt : null,

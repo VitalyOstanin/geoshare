@@ -37,6 +37,7 @@ import io.github.vitalyostanin.geoshare.membership.Roster
 import io.github.vitalyostanin.geoshare.membership.looksLikeAnAddress
 import io.github.vitalyostanin.geoshare.membership.runsTheGroup
 import io.github.vitalyostanin.geoshare.service.MadeInvitation
+import io.github.vitalyostanin.geoshare.service.deviceIdOf
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.launch
@@ -150,7 +151,7 @@ fun AdminPanel(
     val sirens by remember(ringable) { sirensOf(ringable, sirenOf) }
         .collectAsState(initial = emptyMap())
     val ringing = rememberAskedWrite<SirenAsk>()
-    val sirenNow by sirenClock(now, sirens)
+    val sirenNow by sirenClock(sirens)
 
     // The requests to forget a place on the same devices, followed the same
     // way, so a reset asked from anywhere shows on its row too.
@@ -438,7 +439,7 @@ internal fun sirenText(siren: Siren, state: SirenState, phones: List<PhoneLine>)
 
     val phone =
         phones.firstOrNull { it.phoneId == siren.phoneId }?.name
-            ?: siren.phoneId.substringAfter('.').take(NAME_SHOWN_INSTEAD)
+            ?: shortName(deviceIdOf(siren.phoneId))
 
     return when (state) {
         SirenState.Waiting -> stringResource(R.string.siren_status_waiting, phone)
@@ -475,14 +476,11 @@ private fun phoneLine(search: Search, lines: List<GroupLine>): PhoneLine = lines
     ?.firstOrNull { it.phoneId == search.phoneId }
     ?: PhoneLine(
         phoneId = search.phoneId,
-        name = search.phoneName ?: search.phoneId.substringAfter('.').take(NAME_SHOWN_INSTEAD),
+        name = search.phoneName ?: shortName(deviceIdOf(search.phoneId)),
         onlineAt = null,
         batteryPercent = null,
         charging = false,
     )
-
-/** How much of an account id stands in for a name nobody has published. */
-internal const val NAME_SHOWN_INSTEAD = 6
 
 /** What the clipboard calls what it is holding, where a system shows the name. */
 internal const val CLIPBOARD_SAYS = "geoshare"

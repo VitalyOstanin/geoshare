@@ -74,6 +74,13 @@ class DeviceIdentityTest {
         assertEquals("1b4e28ba-2fa1-11d2-883f-0016d3cca427", identity.previousId)
     }
 
+    @Test
+    fun `a position id is split at the first dot only`() {
+        assertEquals("u1", memberIdOf("u1.dev.2"))
+        assertEquals("dev.2", deviceIdOf("u1.dev.2"))
+        assertEquals("u1.dev.2", positionId(memberIdOf("u1.dev.2"), deviceIdOf("u1.dev.2")))
+    }
+
     private fun identity(system: String?): DeviceIdentity {
         mockkStatic(Settings.Secure::class)
         every { Settings.Secure.getString(any(), any()) } returns system
