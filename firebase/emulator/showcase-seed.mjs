@@ -83,6 +83,10 @@ const MEMBERS = [
         longitude: 24.735,
         ageMinutes: 11,
         battery: 55,
+        // The one whose newer answers are being held back, for the card that
+        // says why: three of them since six minutes ago, each too far from the
+        // last place to have been reached in time.
+        leftOut: { count: 3, reason: 'Speed', sinceMinutes: 6 },
     },
 ];
 
@@ -253,6 +257,11 @@ for (const member of MEMBERS) {
         writtenAt: timeValue(seen),
         mode: stringValue('Standby'),
         batteryPercent: { integerValue: String(member.battery) },
+        ...(member.leftOut && {
+            leftOutCount: { integerValue: String(member.leftOut.count) },
+            leftOutReason: stringValue(member.leftOut.reason),
+            leftOutSince: timeValue(minutesAgo(member.leftOut.sinceMinutes)),
+        }),
     });
 }
 
