@@ -9,7 +9,9 @@
 // middle of Tallinn, positions a few minutes old and batteries at different
 // levels, so a screenshot shows a lived-in map rather than a test fixture.
 // The ages are counted from the moment of the run, so run it right before
-// taking the pictures.
+// taking the pictures. Stop the app on every device signed in to the
+// emulators first: the Firestore emulator will not clear a database a client
+// is still listening to and answers 499.
 //
 // Written against the emulators' own REST interfaces, like seed.mjs: no
 // credentials exist here and an owner token is whatever the emulator is told.
@@ -192,7 +194,9 @@ async function clear(url) {
     const response = await fetch(url, { method: 'DELETE', headers: { Authorization: 'Bearer owner' } });
 
     if (!response.ok) {
-        throw new Error(`${url}: ${response.status} ${await response.text()}`);
+        const hint = response.status === 499 ? ' (is the app still running against the emulators?)' : '';
+
+        throw new Error(`${url}: ${response.status} ${await response.text()}${hint}`);
     }
 }
 
