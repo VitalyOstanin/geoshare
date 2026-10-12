@@ -7,40 +7,27 @@ them.
 
 ## Files
 
-| File                    | What it is                                          |
-|-------------------------|-----------------------------------------------------|
-| `firestore.rules`       | Who may read and write what                          |
-| `firestore.indexes.json`| Composite indexes; empty, every query is by document |
-| `data-model.md`         | The documents and their fields                       |
-| `tests/`                | The rules, checked against the emulator              |
+| File                     | What it is                                                  |
+|--------------------------|-------------------------------------------------------------|
+| `firestore.rules`        | Who may read and write what                                 |
+| `firestore.indexes.json` | Composite indexes; empty, every query is by document        |
+| `data-model.md`          | The documents and their fields                              |
+| `tests/`                 | The rules, checked against the emulator                     |
+| `emulator/`              | Seeds for the emulator: a stand-in group and a showcase one |
 
 `firebase.json` in the repository root points at the first two and configures
 the emulator.
 
 ## Setting the project up
 
-Done once; the project this repository talks to already exists.
+A project is created by the setup page or by `tools/project.sh`; the app reads
+its settings from `geoshare.json` at run time, so nothing is put into the
+build. The steps are in:
 
-1. Create a project. It is also a Google Cloud project, and the account that
-   creates it owns both.
-2. Create the Firestore database in production mode. **The location cannot be
-   changed afterwards**, so pick the one closest to where the devices are.
-   One database per project is free.
-3. Under Authentication, enable Google as a sign-in provider.
-4. Enable Hosting. It hands out `<project-id>.web.app`, which is on the list of
-   authorised sign-in domains from the start — a domain of our own would have to
-   be added there by hand.
-5. Register the Android application and put the `google-services.json` it hands
-   out into `android/app/`. The file is deliberately not in the repository. The
-   console's own wizard is hard to reach; the command line does the same:
-
-   ```
-   firebase apps:create ANDROID <name> --package-name <package>
-   firebase apps:sdkconfig ANDROID <app id> --out android/app/google-services.json
-   ```
-6. Once both devices have signed in, create `groups/family` with a `members`
-   array holding their account identifiers. The rules read that array, so until
-   it exists nobody can read anything.
+- [Getting started](../README.md#getting-started) in the root README;
+- [docs/new-project.md](../docs/new-project.md), creating a project;
+- [docs/console-steps.md](../docs/console-steps.md), the settings that exist
+  only in the console.
 
 ## Deploying the rules
 
