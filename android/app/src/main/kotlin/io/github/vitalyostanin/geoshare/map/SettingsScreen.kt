@@ -210,70 +210,13 @@ fun SettingsScreen(
                 .windowInsetsPadding(WindowInsets.safeDrawing)
                 .verticalScroll(rememberScrollState()),
         ) {
-            Row(
-                modifier = Modifier.fillMaxWidth().padding(start = 16.dp, top = 8.dp, end = 8.dp),
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                Text(
-                    text = stringResource(R.string.settings_title),
-                    style = MaterialTheme.typography.titleLarge,
-                    modifier = Modifier.weight(1f),
-                )
-
-                TextButton(onClick = onClose) {
-                    Text(text = stringResource(R.string.settings_close))
-                }
-            }
+            SettingsHeader(onClose = onClose)
 
             HorizontalDivider()
 
-            SwitchRow(
-                checked = settings.sharing,
-                onCheckedChange = actions.onSharingChange,
-                verticalPadding = 12.dp,
-            ) {
-                Text(text = stringResource(R.string.sharing_action), modifier = Modifier.weight(1f))
-            }
+            SharingSection(settings = settings, actions = actions)
 
-            // Shown once the system has stopped asking: from there on the
-            // answer is changed on the settings screen, and saying so beats an
-            // inert switch.
-            if (settings.sharing && settings.permissionNotice != null) {
-                Text(
-                    text = stringResource(permissionMessage(settings.permissionNotice)),
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.error,
-                    modifier = Modifier.padding(horizontal = 16.dp),
-                )
-
-                TextButton(
-                    onClick = actions.onOpenSettings,
-                    modifier = Modifier.padding(horizontal = 8.dp),
-                ) {
-                    Text(text = stringResource(R.string.permission_open_settings))
-                }
-            }
-
-            SwitchRow(
-                checked = settings.jumpsFiltered,
-                onCheckedChange = actions.onJumpsFilteredChange,
-            ) {
-                Text(text = stringResource(R.string.jumps_title), modifier = Modifier.weight(1f))
-            }
-
-            // Said under the switch rather than left to the title: what it
-            // does is easy to read as "be more accurate", and what it really
-            // does is throw answers away.
-            Text(
-                text = stringResource(R.string.jumps_explained),
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier.padding(start = 16.dp, end = 16.dp, bottom = 8.dp),
-            )
-
-            if (settings.jumpsFiltered) {
-                ForgetPlaceRow(onForgetPlace = actions.onForgetPlace)
-            }
+            JumpsSection(settings = settings, actions = actions)
 
             HorizontalDivider()
 
@@ -363,6 +306,81 @@ fun SettingsScreen(
             onSignOut = actions.onSignOut,
             onDismiss = { signingOut = false },
         )
+    }
+}
+
+/** The title of the screen and the way back to the map. */
+@Composable
+private fun SettingsHeader(onClose: () -> Unit) {
+    Row(
+        modifier = Modifier.fillMaxWidth().padding(start = 16.dp, top = 8.dp, end = 8.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Text(
+            text = stringResource(R.string.settings_title),
+            style = MaterialTheme.typography.titleLarge,
+            modifier = Modifier.weight(1f),
+        )
+
+        TextButton(onClick = onClose) {
+            Text(text = stringResource(R.string.settings_close))
+        }
+    }
+}
+
+/** The switch that shares the position, and the way to the permission the system stopped asking for. */
+@Composable
+private fun SharingSection(settings: SettingsState, actions: SettingsActions) {
+    SwitchRow(
+        checked = settings.sharing,
+        onCheckedChange = actions.onSharingChange,
+        verticalPadding = 12.dp,
+    ) {
+        Text(text = stringResource(R.string.sharing_action), modifier = Modifier.weight(1f))
+    }
+
+    // Shown once the system has stopped asking: from there on the
+    // answer is changed on the settings screen, and saying so beats an
+    // inert switch.
+    if (settings.sharing && settings.permissionNotice != null) {
+        Text(
+            text = stringResource(permissionMessage(settings.permissionNotice)),
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.error,
+            modifier = Modifier.padding(horizontal = 16.dp),
+        )
+
+        TextButton(
+            onClick = actions.onOpenSettings,
+            modifier = Modifier.padding(horizontal = 8.dp),
+        ) {
+            Text(text = stringResource(R.string.permission_open_settings))
+        }
+    }
+}
+
+/** The switch that leaves out answers which jump, what that means, and the way to forget a wrong place. */
+@Composable
+private fun JumpsSection(settings: SettingsState, actions: SettingsActions) {
+    SwitchRow(
+        checked = settings.jumpsFiltered,
+        onCheckedChange = actions.onJumpsFilteredChange,
+    ) {
+        Text(text = stringResource(R.string.jumps_title), modifier = Modifier.weight(1f))
+    }
+
+    // Said under the switch rather than left to the title: what it
+    // does is easy to read as "be more accurate", and what it really
+    // does is throw answers away.
+    Text(
+        text = stringResource(R.string.jumps_explained),
+        style = MaterialTheme.typography.bodySmall,
+        color = MaterialTheme.colorScheme.onSurfaceVariant,
+        modifier = Modifier.padding(start = 16.dp, end = 16.dp, bottom = 8.dp),
+    )
+
+    if (settings.jumpsFiltered) {
+        ForgetPlaceRow(onForgetPlace = actions.onForgetPlace)
     }
 }
 

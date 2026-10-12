@@ -285,13 +285,7 @@ private fun pinBitmap(
 
     val headWidth = head + step * (circles.size - 1).coerceAtLeast(0)
 
-    val textPaint =
-        Paint(Paint.ANTI_ALIAS_FLAG).apply {
-            color = LABEL_TEXT_COLOUR
-            textSize = dpToPx(context, LABEL_TEXT_DP).toFloat()
-            textAlign = Paint.Align.CENTER
-            isFakeBoldText = true
-        }
+    val textPaint = labelPaint(context, LABEL_TEXT_COLOUR)
 
     val metrics = textPaint.fontMetrics
     val labelHeight = (metrics.descent - metrics.ascent).toInt() + down * 2
@@ -300,13 +294,7 @@ private fun pinBitmap(
     // The capsule above the name, in white on the sought colour rather than
     // the name's dark on white: it is what the whole group is scanning the
     // map for, and it has to be found before the name is read.
-    val soughtPaint =
-        Paint(Paint.ANTI_ALIAS_FLAG).apply {
-            color = Color.WHITE
-            textSize = dpToPx(context, LABEL_TEXT_DP).toFloat()
-            textAlign = Paint.Align.CENTER
-            isFakeBoldText = true
-        }
+    val soughtPaint = labelPaint(context, Color.WHITE)
     val soughtMetrics = soughtPaint.fontMetrics
     val soughtHeight =
         if (soughtMark != null) {
@@ -339,48 +327,37 @@ private fun pinBitmap(
     val corner = dpToPx(context, LABEL_CORNER_DP).toFloat()
 
     if (soughtMark != null) {
-        val soughtBoxPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = SOUGHT_COLOUR }
+        val capsule =
+            RectF(middle - soughtWidth / 2f, 0f, middle + soughtWidth / 2f, soughtHeight.toFloat())
 
-        canvas.drawRoundRect(
-            middle - soughtWidth / 2f,
-            0f,
-            middle + soughtWidth / 2f,
-            soughtHeight.toFloat(),
+        drawSoughtCapsule(
+            canvas,
+            capsule,
             corner,
-            corner,
-            soughtBoxPaint,
+            soughtMark,
+            down - soughtMetrics.ascent,
+            soughtPaint,
         )
-        canvas.drawText(soughtMark, middle, down - soughtMetrics.ascent, soughtPaint)
     }
 
     val labelTop = (soughtStack + framed).toFloat()
-    val boxPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = LABEL_BACKGROUND }
-
-    if (frame != null) {
-        val framePaint = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = frame }
-
-        canvas.drawRoundRect(
-            middle - labelWidth / 2f - framed,
-            labelTop - framed,
-            middle + labelWidth / 2f + framed,
-            labelTop + labelHeight + framed,
-            corner + framed,
-            corner + framed,
-            framePaint,
-        )
-    }
-
-    canvas.drawRoundRect(
+    val labelBox = RectF(
         middle - labelWidth / 2f,
         labelTop,
         middle + labelWidth / 2f,
         labelTop + labelHeight,
-        corner,
-        corner,
-        boxPaint,
     )
 
-    canvas.drawText(label, middle, labelTop + down - metrics.ascent, textPaint)
+    drawLabel(
+        canvas,
+        labelBox,
+        corner,
+        frame,
+        framed,
+        label,
+        labelTop + down - metrics.ascent,
+        textPaint,
+    )
 
     val headCentre = headTop + head / 2f
     val shape =
@@ -395,26 +372,13 @@ private fun pinBitmap(
         )
 
     if (soughtMark != null) {
-        // Drawn before the outline and the fill, which cover the part of it
-        // that lies inside the head: what is left once they are drawn is the
-        // ring outside the white edge, the way a box-shadow sits behind an
-        // element on the page.
-        val ringPaint =
-            Paint(Paint.ANTI_ALIAS_FLAG).apply {
-                color = SOUGHT_COLOUR
-                style = Paint.Style.STROKE
-                strokeWidth = ring.toFloat()
-            }
-        val ringRadius = head / 2f + edge + ring / 2f
-
-        canvas.drawRoundRect(
-            middle - headWidth / 2f - edge - ring / 2f,
-            headCentre - ringRadius,
-            middle + headWidth / 2f + edge + ring / 2f,
-            headCentre + ringRadius,
-            ringRadius,
-            ringRadius,
-            ringPaint,
+        drawSoughtRing(
+            canvas,
+            middle,
+            headCentre,
+            headWidth / 2f + edge,
+            head / 2f + edge,
+            ring.toFloat(),
         )
     }
 
@@ -433,12 +397,126 @@ private fun pinBitmap(
     val faceInset = (head - faceSide) / 2f
     val first = middle - headWidth / 2f + faceInset + faceSide / 2f
 
+    drawFaces(context, canvas, circles, first, step.toFloat(), headCentre, faceSide / 2f)
+
+    return bitmap
+}
+
+/** The paint the name and the sought word are written with: the same size and weight, in [colour]. */
+private fun labelPaint(context: Context, colour: Int): Paint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+    color = colour
+    textSize = dpToPx(context, LABEL_TEXT_DP).toFloat()
+    textAlign = Paint.Align.CENTER
+    isFakeBoldText = true
+}
+
+/** The capsule above the name: [word] in [paint] on the sought colour. */
+private fun drawSoughtCapsule(
+    canvas: Canvas,
+    capsule: RectF,
+    corner: Float,
+    word: String,
+    baseline: Float,
+    paint: Paint,
+) {
+    canvas.drawRoundRect(
+        capsule,
+        corner,
+        corner,
+        Paint(Paint.ANTI_ALIAS_FLAG).apply {
+            color =
+                SOUGHT_COLOUR
+        },
+    )
+    canvas.drawText(word, capsule.centerX(), baseline, paint)
+}
+
+/** The name on its white box, framed in [frame] by [framed] pixels when there is one. */
+private fun drawLabel(
+    canvas: Canvas,
+    box: RectF,
+    corner: Float,
+    frame: Int?,
+    framed: Int,
+    label: String,
+    baseline: Float,
+    paint: Paint,
+) {
+    if (frame != null) {
+        canvas.drawRoundRect(
+            box.left - framed,
+            box.top - framed,
+            box.right + framed,
+            box.bottom + framed,
+            corner + framed,
+            corner + framed,
+            Paint(Paint.ANTI_ALIAS_FLAG).apply { color = frame },
+        )
+    }
+
+    canvas.drawRoundRect(
+        box,
+        corner,
+        corner,
+        Paint(Paint.ANTI_ALIAS_FLAG).apply {
+            color =
+                LABEL_BACKGROUND
+        },
+    )
+    canvas.drawText(label, box.centerX(), baseline, paint)
+}
+
+/**
+ * The ring around a sought member's head, [halfWidth] and [halfHeight] out
+ * from the middle to the outside of the white edge, [ring] pixels wide.
+ */
+private fun drawSoughtRing(
+    canvas: Canvas,
+    middle: Float,
+    headCentre: Float,
+    halfWidth: Float,
+    halfHeight: Float,
+    ring: Float,
+) {
+    // Drawn before the outline and the fill, which cover the part of it
+    // that lies inside the head: what is left once they are drawn is the
+    // ring outside the white edge, the way a box-shadow sits behind an
+    // element on the page.
+    val ringPaint =
+        Paint(Paint.ANTI_ALIAS_FLAG).apply {
+            color = SOUGHT_COLOUR
+            style = Paint.Style.STROKE
+            strokeWidth = ring
+        }
+    val ringRadius = halfHeight + ring / 2f
+
+    canvas.drawRoundRect(
+        middle - halfWidth - ring / 2f,
+        headCentre - ringRadius,
+        middle + halfWidth + ring / 2f,
+        headCentre + ringRadius,
+        ringRadius,
+        ringRadius,
+        ringPaint,
+    )
+}
+
+/** The circles in the head, [step] apart from the first at [first], the last one a count when it has no picture. */
+private fun drawFaces(
+    context: Context,
+    canvas: Canvas,
+    circles: List<Circle>,
+    first: Float,
+    step: Float,
+    centreY: Float,
+    radius: Float,
+) {
     circles.forEachIndexed { index, circle ->
         drawFace(
             canvas = canvas,
             centreX = first + step * index,
-            centreY = headCentre,
-            radius = faceSide / 2f,
+            centreY = centreY,
+            radius = radius,
             ring = dpToPx(context, FACE_EDGE_DP).toFloat(),
             circle = circle,
             textSize =
@@ -452,8 +530,6 @@ private fun pinBitmap(
             ).toFloat(),
         )
     }
-
-    return bitmap
 }
 
 /**
