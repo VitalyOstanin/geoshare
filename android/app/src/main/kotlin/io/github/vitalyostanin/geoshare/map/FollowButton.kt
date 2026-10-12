@@ -89,20 +89,7 @@ internal fun FollowButton(
     paused: Boolean = false,
 ) {
     var open by remember { mutableStateOf(false) }
-    val label = when (mode) {
-        FollowMode.NONE -> stringResource(R.string.map_follow_none)
-
-        FollowMode.ALL -> stringResource(R.string.map_follow_all)
-
-        // targetName is null here only where nobody has ever been chosen, or
-        // the menu's own ONE was picked and is still waiting for somebody —
-        // a case the button reports through targetAvailable, not through
-        // this fallback.
-        FollowMode.ONE ->
-            targetName
-                ?.let { stringResource(R.string.map_follow_one, it) }
-                ?: stringResource(R.string.map_follow_one_unnamed)
-    }
+    val label = followLabel(mode, targetName)
 
     val icon = when (mode) {
         FollowMode.NONE -> R.drawable.ic_follow_none
@@ -150,88 +137,123 @@ internal fun FollowButton(
             tonalElevation = 3.dp,
             shadowElevation = 3.dp,
         ) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Box(
-                    modifier = Modifier.size(FOLLOW_BUTTON_HEIGHT),
-                    contentAlignment = Alignment.Center,
-                ) {
-                    // The description TalkBack reads for the whole button,
-                    // named on the icon the same way MapRoundButton names it:
-                    // the label beside it, once it is showing, would only
-                    // repeat the same words a second time.
-                    Icon(
-                        painter = painterResource(icon),
-                        contentDescription = label,
-                        tint = MaterialTheme.colorScheme.onSurface,
-                    )
-                }
-
-                AnimatedVisibility(
-                    visible = showLabel,
-                    enter = expandHorizontally(),
-                    exit = shrinkHorizontally(),
-                ) {
-                    Text(
-                        text = label,
-                        style = MaterialTheme.typography.bodyMedium,
-                        maxLines = 1,
-                        softWrap = false,
-                        modifier = Modifier.padding(end = 14.dp).clearAndSetSemantics {},
-                    )
-                }
-            }
+            FollowFace(icon = icon, label = label, showLabel = showLabel)
         }
 
-        DropdownMenu(expanded = open, onDismissRequest = { open = false }) {
-            FollowModeItem(
-                icon = R.drawable.ic_follow_none,
-                title = stringResource(R.string.map_follow_menu_none_title),
-                subtitle = stringResource(R.string.map_follow_menu_none_subtitle),
-                current = mode == FollowMode.NONE,
-                onClick = {
-                    open = false
-                    onPick(FollowMode.NONE)
-                },
-            )
-            FollowModeItem(
-                icon = R.drawable.ic_follow_one,
-                title =
-                targetName
-                    ?.let { stringResource(R.string.map_follow_menu_one_title_named, it) }
-                    ?: stringResource(R.string.map_follow_menu_one_title),
-                subtitle = stringResource(R.string.map_follow_menu_one_subtitle),
-                current = mode == FollowMode.ONE,
-                onClick = {
-                    open = false
-                    onPick(FollowMode.ONE)
-                },
-            )
-            FollowModeItem(
-                icon = R.drawable.ic_follow_all,
-                title = stringResource(R.string.map_follow_menu_all_title),
-                subtitle = stringResource(R.string.map_follow_menu_all_subtitle),
-                current = mode == FollowMode.ALL,
-                onClick = {
-                    open = false
-                    onPick(FollowMode.ALL)
-                },
-            )
+        FollowMenu(
+            open = open,
+            mode = mode,
+            targetName = targetName,
+            onDismiss = { open = false },
+            onPick = { picked ->
+                open = false
+                onPick(picked)
+            },
+        )
+    }
+}
 
-            HorizontalDivider()
+/** What the button says it is doing, out loud and to TalkBack alike. */
+@Composable
+private fun followLabel(mode: FollowMode, targetName: String?): String = when (mode) {
+    FollowMode.NONE -> stringResource(R.string.map_follow_none)
 
-            // Unselectable on purpose: this is not a fourth choice, it is what
-            // the second choice above needs explained, and a menu of three
-            // rows and a caption reads as three rows all the same.
+    FollowMode.ALL -> stringResource(R.string.map_follow_all)
+
+    // targetName is null here only where nobody has ever been chosen, or
+    // the menu's own ONE was picked and is still waiting for somebody —
+    // a case the button reports through targetAvailable, not through
+    // this fallback.
+    FollowMode.ONE ->
+        targetName
+            ?.let { stringResource(R.string.map_follow_one, it) }
+            ?: stringResource(R.string.map_follow_one_unnamed)
+}
+
+/** The inside of the button: the mode's mark, and its name while [showLabel] holds. */
+@Composable
+private fun FollowFace(icon: Int, label: String, showLabel: Boolean) {
+    Row(verticalAlignment = Alignment.CenterVertically) {
+        Box(
+            modifier = Modifier.size(FOLLOW_BUTTON_HEIGHT),
+            contentAlignment = Alignment.Center,
+        ) {
+            // The description TalkBack reads for the whole button,
+            // named on the icon the same way MapRoundButton names it:
+            // the label beside it, once it is showing, would only
+            // repeat the same words a second time.
+            Icon(
+                painter = painterResource(icon),
+                contentDescription = label,
+                tint = MaterialTheme.colorScheme.onSurface,
+            )
+        }
+
+        AnimatedVisibility(
+            visible = showLabel,
+            enter = expandHorizontally(),
+            exit = shrinkHorizontally(),
+        ) {
             Text(
-                text = stringResource(R.string.map_follow_menu_hint),
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier =
-                Modifier
-                    .width(FOLLOW_MENU_WIDTH)
-                    .padding(horizontal = 12.dp, vertical = 8.dp),
+                text = label,
+                style = MaterialTheme.typography.bodyMedium,
+                maxLines = 1,
+                softWrap = false,
+                modifier = Modifier.padding(end = 14.dp).clearAndSetSemantics {},
             )
         }
+    }
+}
+
+/** The three modes to choose from, and what the second of them needs explained. */
+@Composable
+private fun FollowMenu(
+    open: Boolean,
+    mode: FollowMode,
+    targetName: String?,
+    onDismiss: () -> Unit,
+    onPick: (FollowMode) -> Unit,
+) {
+    DropdownMenu(expanded = open, onDismissRequest = onDismiss) {
+        FollowModeItem(
+            icon = R.drawable.ic_follow_none,
+            title = stringResource(R.string.map_follow_menu_none_title),
+            subtitle = stringResource(R.string.map_follow_menu_none_subtitle),
+            current = mode == FollowMode.NONE,
+            onClick = { onPick(FollowMode.NONE) },
+        )
+        FollowModeItem(
+            icon = R.drawable.ic_follow_one,
+            title =
+            targetName
+                ?.let { stringResource(R.string.map_follow_menu_one_title_named, it) }
+                ?: stringResource(R.string.map_follow_menu_one_title),
+            subtitle = stringResource(R.string.map_follow_menu_one_subtitle),
+            current = mode == FollowMode.ONE,
+            onClick = { onPick(FollowMode.ONE) },
+        )
+        FollowModeItem(
+            icon = R.drawable.ic_follow_all,
+            title = stringResource(R.string.map_follow_menu_all_title),
+            subtitle = stringResource(R.string.map_follow_menu_all_subtitle),
+            current = mode == FollowMode.ALL,
+            onClick = { onPick(FollowMode.ALL) },
+        )
+
+        HorizontalDivider()
+
+        // Unselectable on purpose: this is not a fourth choice, it is what
+        // the second choice above needs explained, and a menu of three
+        // rows and a caption reads as three rows all the same.
+        Text(
+            text = stringResource(R.string.map_follow_menu_hint),
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier =
+            Modifier
+                .width(FOLLOW_MENU_WIDTH)
+                .padding(horizontal = 12.dp, vertical = 8.dp),
+        )
     }
 }
 

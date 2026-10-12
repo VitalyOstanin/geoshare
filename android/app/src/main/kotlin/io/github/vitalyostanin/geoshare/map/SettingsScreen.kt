@@ -668,10 +668,25 @@ private fun BackgroundWorkSection(
         }
     }
 
-    if (!startupScreen) {
-        return
+    if (startupScreen) {
+        StartupSection(
+            startupSet = startupSet,
+            onOpenStartup = onOpenStartup,
+            onStartupSetChange = onStartupSetChange,
+        )
     }
+}
 
+/**
+ * The manufacturer's screen that lets the application start on its own, which
+ * nothing here can read, and the tick that says the member has been to it.
+ */
+@Composable
+private fun StartupSection(
+    startupSet: Boolean,
+    onOpenStartup: () -> Unit,
+    onStartupSetChange: (Boolean) -> Unit,
+) {
     // The title on a line of its own: beside a button, a word and a tick it
     // was left a few letters' width on a device and broke inside words.
     Text(

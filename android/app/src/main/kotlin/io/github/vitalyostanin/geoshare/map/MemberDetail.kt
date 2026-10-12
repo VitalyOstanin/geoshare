@@ -208,33 +208,14 @@ private fun DetailBody(
             .verticalScroll(rememberScrollState())
             .padding(start = 16.dp, end = 8.dp, bottom = 12.dp),
     ) {
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            MemberFace(
-                memberId = member.memberId,
-                name = name,
-                picture = face,
-                stale = isGrey(member, now),
-            )
-
-            // The two names are what is pressed to rename them, underlined
-            // the way the other words of the card that can be pressed are:
-            // a row of its own for renaming took two lines of a card that
-            // is short of them. Oneself is named on the account, not here.
-            Column(modifier = Modifier.weight(1f).padding(start = 8.dp)) {
-                NameText(
-                    text = name,
-                    style = MaterialTheme.typography.titleMedium,
-                    onClick = onNamePerson,
-                )
-                NameText(
-                    text =
-                    member.deviceName?.takeIf { it.isNotBlank() }
-                        ?: stringResource(R.string.unnamed_device),
-                    style = MaterialTheme.typography.bodyMedium,
-                    onClick = onNamePhone,
-                )
-            }
-        }
+        DetailHeader(
+            member = member,
+            name = name,
+            face = face,
+            now = now,
+            onNamePerson = onNamePerson,
+            onNamePhone = onNamePhone,
+        )
 
         DetailSummary(member = member, away = away, now = now)
 
@@ -259,53 +240,98 @@ private fun DetailBody(
         // is what a card is opened for, and these rows are what pushed it
         // past the height of a screen.
         if (detailsOpen) {
-            DetailRow(R.string.map_detail_at, momentText(member.positionAt))
-            DetailRow(R.string.map_detail_online, momentText(member.knownAt))
-            DetailRow(R.string.map_detail_mode) {
-                var helpOpen by remember { mutableStateOf(false) }
+            DetailRows(member = member)
+        }
+    }
+}
 
-                // A name alone answers nothing: "Standby" says what the
-                // device was doing only to somebody who already knows the
-                // five, and a card is the one place a member meets a mode.
-                Text(
-                    text = stringResource(modeLabel(member.mode)),
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.primary,
-                    textDecoration = TextDecoration.Underline,
-                    modifier = Modifier.clickable { helpOpen = true },
-                )
+/** The face and the two names, the person's and the device's, each pressed to rename it. */
+@Composable
+private fun DetailHeader(
+    member: MemberPosition,
+    name: String,
+    face: Bitmap?,
+    now: Instant,
+    onNamePerson: (() -> Unit)?,
+    onNamePhone: () -> Unit,
+) {
+    Row(verticalAlignment = Alignment.CenterVertically) {
+        MemberFace(
+            memberId = member.memberId,
+            name = name,
+            picture = face,
+            stale = isGrey(member, now),
+        )
 
-                if (helpOpen) {
-                    ModeHelp(onClose = { helpOpen = false })
-                }
-            }
-            DetailRow(
-                R.string.map_detail_found_by,
-                stringResource(foundByLabel(member.foundBy)),
+        // The two names are what is pressed to rename them, underlined
+        // the way the other words of the card that can be pressed are:
+        // a row of its own for renaming took two lines of a card that
+        // is short of them. Oneself is named on the account, not here.
+        Column(modifier = Modifier.weight(1f).padding(start = 8.dp)) {
+            NameText(
+                text = name,
+                style = MaterialTheme.typography.titleMedium,
+                onClick = onNamePerson,
             )
-            DetailRow(R.string.map_detail_width) {
-                val metres = member.accuracyMetres
-
-                Text(
-                    text =
-                    metres
-                        ?.let { widthText(positionWidth(it)) }
-                        ?: stringResource(R.string.map_detail_unknown),
-                    style = MaterialTheme.typography.bodyMedium,
-                    color =
-                    if (metres != null) {
-                        widthColour(widthIsWide(metres))
-                    } else {
-                        MaterialTheme.colorScheme.onSurface
-                    },
-                )
-            }
-            DetailRow(
-                R.string.map_detail_position,
-                coordinatesText(member.latitude, member.longitude),
+            NameText(
+                text =
+                member.deviceName?.takeIf { it.isNotBlank() }
+                    ?: stringResource(R.string.unnamed_device),
+                style = MaterialTheme.typography.bodyMedium,
+                onClick = onNamePhone,
             )
         }
     }
+}
+
+/** The rows behind the pull of the handle: the moments, the mode, the source, the width and the coordinates. */
+@Composable
+private fun DetailRows(member: MemberPosition) {
+    DetailRow(R.string.map_detail_at, momentText(member.positionAt))
+    DetailRow(R.string.map_detail_online, momentText(member.knownAt))
+    DetailRow(R.string.map_detail_mode) {
+        var helpOpen by remember { mutableStateOf(false) }
+
+        // A name alone answers nothing: "Standby" says what the
+        // device was doing only to somebody who already knows the
+        // five, and a card is the one place a member meets a mode.
+        Text(
+            text = stringResource(modeLabel(member.mode)),
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.primary,
+            textDecoration = TextDecoration.Underline,
+            modifier = Modifier.clickable { helpOpen = true },
+        )
+
+        if (helpOpen) {
+            ModeHelp(onClose = { helpOpen = false })
+        }
+    }
+    DetailRow(
+        R.string.map_detail_found_by,
+        stringResource(foundByLabel(member.foundBy)),
+    )
+    DetailRow(R.string.map_detail_width) {
+        val metres = member.accuracyMetres
+
+        Text(
+            text =
+            metres
+                ?.let { widthText(positionWidth(it)) }
+                ?: stringResource(R.string.map_detail_unknown),
+            style = MaterialTheme.typography.bodyMedium,
+            color =
+            if (metres != null) {
+                widthColour(widthIsWide(metres))
+            } else {
+                MaterialTheme.colorScheme.onSurface
+            },
+        )
+    }
+    DetailRow(
+        R.string.map_detail_position,
+        coordinatesText(member.latitude, member.longitude),
+    )
 }
 
 /**
