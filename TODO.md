@@ -16,12 +16,28 @@ after a sign-in.
 
 The map draws one background and that is all there is. Where more than one is
 available for free, the member should be able to pick: OpenStreetMap tiles as
-they are now, and Yandex Maps through the free Lite tier, which is the better
-one over Russia.
+they are now, and Yandex Maps, which is the better one over Russia.
 
-Worth doing once a second background is confirmed to be usable without a
-payment method — the choice itself is a setting and a tile source behind it,
-but every candidate carries its own terms, key and attribution.
+The first candidate is Yandex's Tiles API on the web page, as a fallback layer.
+Its terms, read in September 2026 (https://yandex.ru/legal/maps_api/):
+
+- **Free** for commercial and non-commercial use up to 30 requests a second,
+  and allowed in closed systems as well as open ones.
+- **A key of one's own.** It comes from Yandex's developer cabinet and may not
+  be handed to anyone else, so whoever deploys the page brings their own key,
+  restricted to the page's domain; without a key the choice is not offered.
+- **On the map.** Yandex's logo and copyright, a link to
+  https://yandex.ru/legal/maps_termsofuse and an "Open in Yandex Maps" button.
+- **Caching** no longer than 30 days.
+- **Visitors' data.** Yandex receives the visitors' addresses and locations,
+  and their consent is the page owner's to obtain.
+- **Technically** `https://tiles.api-maps.yandex.ru/v1/tiles/` with
+  `projection=web_mercator` (the default projection is elliptical and does not
+  line up with MapLibre), `scale=2` on dense screens, and a line in the page's
+  `img-src`.
+
+The choice itself is a setting and a tile source behind it, but every
+candidate carries its own terms, key and attribution.
 
 Paid providers belong in the same choice rather than outside it. Free tiers are
 what this household happens to use, not a property of the design: somebody with
