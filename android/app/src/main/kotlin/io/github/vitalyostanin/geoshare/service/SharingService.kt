@@ -1119,8 +1119,13 @@ class SharingService : LifecycleService() {
     private suspend fun tellThemAnswersAreBeingLeftOut(writer: EveryGroup, reason: String) {
         val news = leftOut.note(reason, Instant.now()) ?: return
 
-        runCatching { writer.noteLeftOut(news.count, news.reason, news.since) }
-            .onFailure { AppLog.i(TAG, "nowhere to say answers are being left out yet") }
+        try {
+            writer.noteLeftOut(news.count, news.reason, news.since)
+        } catch (cancellation: CancellationException) {
+            throw cancellation
+        } catch (error: Exception) {
+            AppLog.i(TAG, "nowhere to say answers are being left out yet: ${error.message}")
+        }
     }
 
     /**
