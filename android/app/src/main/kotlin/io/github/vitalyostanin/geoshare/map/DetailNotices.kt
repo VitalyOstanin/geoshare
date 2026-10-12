@@ -147,17 +147,7 @@ internal fun DetailWarnings(member: MemberPosition, now: Instant) {
                 pluralStringResource(R.plurals.map_detail_left_out_answers, it, it),
             )
         }
-    // A source the member switched off is named: which of the five it was is
-    // what they open the card to find out.
-    val reason =
-        sourceLeftOut(member.leftOutReason)
-            ?.let {
-                stringResource(
-                    R.string.left_out_by_source_named,
-                    stringResource(sourceChoiceLabel(it)),
-                )
-            }
-            ?: stringResource(leftOutReasonLabel(member.leftOutReason))
+    val reason = leftOutReasonText(member.leftOutReason)
     val settling = stringResource(R.string.map_detail_settling_sentence).takeIf { member.settling }
     // The answers refused for lying in the same place are that place again, so
     // they are counted into its sentence rather than given one of their own.
@@ -226,3 +216,17 @@ internal fun DetailWarnings(member: MemberPosition, now: Instant) {
         ReasonHelp(onClose = { helpOpen = false })
     }
 }
+
+/**
+ * Why answers were left out, in words. A source the member switched off is
+ * named: which of the five it was is what they open the card to find out.
+ */
+@Composable
+private fun leftOutReasonText(leftOutReason: String?): String = sourceLeftOut(leftOutReason)
+    ?.let {
+        stringResource(
+            R.string.left_out_by_source_named,
+            stringResource(sourceChoiceLabel(it)),
+        )
+    }
+    ?: stringResource(leftOutReasonLabel(leftOutReason))

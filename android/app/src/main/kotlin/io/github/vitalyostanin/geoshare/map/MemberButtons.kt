@@ -271,27 +271,7 @@ private fun MemberButton(
         } else {
             MaterialTheme.colorScheme.surface
         },
-        border =
-        when {
-            // A search takes over from every other border a card can wear:
-            // it is a fact about the member, not about what this screen is
-            // waiting on right now.
-            sought != null -> BorderStroke(width = 2.dp, color = Color(SOUGHT_COLOUR))
-
-            // The ring waiting to be answered takes over from the plainer
-            // one below: a card cannot at once be the one already open and
-            // the one ONE is waiting to be given, since opening it is what
-            // answers the wait.
-            ringAlpha != null ->
-                BorderStroke(
-                    width = 2.dp,
-                    color = MaterialTheme.colorScheme.primary.copy(alpha = ringAlpha),
-                )
-
-            shown -> BorderStroke(width = 2.dp, color = MaterialTheme.colorScheme.primary)
-
-            else -> null
-        },
+        border = memberBorder(sought = sought, ringAlpha = ringAlpha, shown = shown),
     ) {
         Column(modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp)) {
             Row(
@@ -340,6 +320,29 @@ private fun MemberButton(
             }
         }
     }
+}
+
+/** The border of a member's card: the search, then the wait for ONE's target, then the card being open. */
+@Composable
+private fun memberBorder(sought: Search?, ringAlpha: Float?, shown: Boolean): BorderStroke? = when {
+    // A search takes over from every other border a card can wear:
+    // it is a fact about the member, not about what this screen is
+    // waiting on right now.
+    sought != null -> BorderStroke(width = 2.dp, color = Color(SOUGHT_COLOUR))
+
+    // The ring waiting to be answered takes over from the plainer
+    // one below: a card cannot at once be the one already open and
+    // the one ONE is waiting to be given, since opening it is what
+    // answers the wait.
+    ringAlpha != null ->
+        BorderStroke(
+            width = 2.dp,
+            color = MaterialTheme.colorScheme.primary.copy(alpha = ringAlpha),
+        )
+
+    shown -> BorderStroke(width = 2.dp, color = MaterialTheme.colorScheme.primary)
+
+    else -> null
 }
 
 @Composable

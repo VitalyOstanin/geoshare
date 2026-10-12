@@ -1,6 +1,7 @@
 package io.github.vitalyostanin.geoshare.project
 
 import android.content.ClipboardManager
+import android.content.Context
 import androidx.annotation.StringRes
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Arrangement
@@ -198,19 +199,7 @@ private fun NotConnected(
     }
 
     FilledTonalButton(
-        onClick = {
-            val pasted =
-                context
-                    .getSystemService(ClipboardManager::class.java)
-                    ?.primaryClip
-                    ?.takeIf { it.itemCount > 0 }
-                    ?.getItemAt(0)
-                    ?.coerceToText(context)
-                    ?.toString()
-                    .orEmpty()
-
-            onPasteLink(pasted)
-        },
+        onClick = { onPasteLink(clipboardText(context)) },
     ) {
         Text(text = stringResource(R.string.connect_paste_link))
     }
@@ -244,6 +233,16 @@ private fun NotConnected(
         )
     }
 }
+
+/** What the clipboard holds as text, or nothing when it is empty. */
+private fun clipboardText(context: Context): String = context
+    .getSystemService(ClipboardManager::class.java)
+    ?.primaryClip
+    ?.takeIf { it.itemCount > 0 }
+    ?.getItemAt(0)
+    ?.coerceToText(context)
+    ?.toString()
+    .orEmpty()
 
 /** Screen Б: [settings] as [ConnectState.Confirm] holds them, before they are accepted. */
 @Composable

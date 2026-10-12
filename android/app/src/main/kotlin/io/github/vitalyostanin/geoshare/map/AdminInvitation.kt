@@ -125,36 +125,7 @@ internal fun AdminInvitation(
             modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
         )
 
-        Row(
-            modifier = Modifier.fillMaxWidth().padding(horizontal = 8.dp),
-            horizontalArrangement = Arrangement.Start,
-        ) {
-            TextButton(
-                onClick = {
-                    val send = Intent(Intent.ACTION_SEND).apply {
-                        type = "text/plain"
-                        putExtra(Intent.EXTRA_TEXT, link)
-                    }
-
-                    context.startActivity(Intent.createChooser(send, null))
-                },
-            ) {
-                Text(text = stringResource(R.string.group_invite_send))
-            }
-
-            TextButton(
-                onClick = {
-                    context
-                        .getSystemService(ClipboardManager::class.java)
-                        .setPrimaryClip(ClipData.newPlainText(CLIPBOARD_SAYS, link))
-                    Toast
-                        .makeText(context, R.string.group_copied, Toast.LENGTH_SHORT)
-                        .show()
-                },
-            ) {
-                Text(text = stringResource(R.string.group_copy))
-            }
-        }
+        SendOrCopyLink(link = link)
 
         TextButton(
             onClick = onOpenInvite,
@@ -170,6 +141,43 @@ internal fun AdminInvitation(
             TextButton(onClick = onOpenInvite) {
                 Text(text = stringResource(R.string.group_make_invitation))
             }
+        }
+    }
+}
+
+/** The two ways the link leaves this device: handed to another application, or copied. */
+@Composable
+private fun SendOrCopyLink(link: String) {
+    val context = LocalContext.current
+
+    Row(
+        modifier = Modifier.fillMaxWidth().padding(horizontal = 8.dp),
+        horizontalArrangement = Arrangement.Start,
+    ) {
+        TextButton(
+            onClick = {
+                val send = Intent(Intent.ACTION_SEND).apply {
+                    type = "text/plain"
+                    putExtra(Intent.EXTRA_TEXT, link)
+                }
+
+                context.startActivity(Intent.createChooser(send, null))
+            },
+        ) {
+            Text(text = stringResource(R.string.group_invite_send))
+        }
+
+        TextButton(
+            onClick = {
+                context
+                    .getSystemService(ClipboardManager::class.java)
+                    .setPrimaryClip(ClipData.newPlainText(CLIPBOARD_SAYS, link))
+                Toast
+                    .makeText(context, R.string.group_copied, Toast.LENGTH_SHORT)
+                    .show()
+            },
+        ) {
+            Text(text = stringResource(R.string.group_copy))
         }
     }
 }
