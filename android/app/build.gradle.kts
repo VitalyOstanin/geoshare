@@ -4,6 +4,7 @@ import java.util.Properties
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.compose)
+    alias(libs.plugins.aboutlibraries.android)
 }
 
 // The versions the build image installs, read from the one file that states
@@ -96,6 +97,23 @@ android {
     }
 }
 
+// The list behind the licences screen. Who wrote a library and how to fund it
+// are not what the screen is for, and only make the file larger.
+aboutLibraries {
+    // Nothing is fetched while building: the plugin reads licence texts off
+    // the network with no timeout, and a connection that never answers held a
+    // build for good. The texts come from config/licenses in this module.
+    offlineMode = true
+
+    collect {
+        configPath = file("config")
+    }
+
+    export {
+        excludeFields.addAll("developers", "funding")
+    }
+}
+
 // A test stuck on a delay or a lock would hold the run until somebody stops it
 // by hand. The whole suite takes a small part of this.
 tasks.withType<Test>().configureEach {
@@ -136,6 +154,8 @@ dependencies {
     implementation(libs.camera.camera2)
     implementation(libs.camera.lifecycle)
     implementation(libs.camera.view)
+
+    implementation(libs.aboutlibraries.core)
 
     testImplementation(libs.junit)
     testImplementation(libs.mockk)

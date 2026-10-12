@@ -114,6 +114,9 @@
     <string name="phone_name_for_all">Это имя видят все, кому видно это устройство.</string>
     <string name="map_open_settings">Настройки</string>
     <string name="settings_title">Настройки</string>
+    <string name="licences_open">Лицензии открытого ПО</string>
+    <string name="licences_title">Лицензии</string>
+    <string name="licences_intro">geoshare распространяется по лицензии MIT. В приложение входят библиотеки:</string>
     <string name="settings_close">Закрыть</string>
     <string name="constellation_gps">GPS</string>
     <string name="constellation_glonass">ГЛОНАСС</string>

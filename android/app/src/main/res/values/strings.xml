@@ -127,6 +127,10 @@
     <string name="map_account_nameless" translatable="false">?</string>
     <string name="settings_title">Settings</string>
     <string name="settings_close">Close</string>
+    <string name="licences_open">Open source licences</string>
+    <string name="licences_title">Licences</string>
+    <string name="licences_intro">geoshare is distributed under the MIT licence. It includes these libraries:</string>
+    <string name="app_version" translatable="false">geoshare %1$s</string>
     <string name="constellation_gps">GPS</string>
     <string name="constellation_glonass">GLONASS</string>
     <string name="constellation_galileo">Galileo</string>

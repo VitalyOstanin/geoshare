@@ -237,6 +237,7 @@ fun MapScreen(
     // puts the member back where they were rather than on the map.
     var adminOpen by rememberSaveable { mutableStateOf(false) }
     var myPhonesOpen by rememberSaveable { mutableStateOf(false) }
+    var licencesOpen by rememberSaveable { mutableStateOf(false) }
     // The list of every member, over the map and the strip; saveable like the
     // panels, so that turning the device does not drop the member back on the map.
     var membersOpen by rememberSaveable { mutableStateOf(false) }
@@ -321,7 +322,10 @@ fun MapScreen(
     BackHandler(enabled = awaitingTarget) { awaitingTarget = false }
     BackHandler(enabled = adminOpen) { adminOpen = false }
     BackHandler(enabled = myPhonesOpen) { myPhonesOpen = false }
-    BackHandler(enabled = settingsOpen && !adminOpen && !myPhonesOpen) { settingsOpen = false }
+    BackHandler(enabled = licencesOpen) { licencesOpen = false }
+    BackHandler(enabled = settingsOpen && !adminOpen && !myPhonesOpen && !licencesOpen) {
+        settingsOpen = false
+    }
     BackHandler(enabled = !settingsOpen && (opened != null || group.isNotEmpty())) {
         openedPositionId = null
         openedGroup = emptyList()
@@ -682,6 +686,7 @@ fun MapScreen(
             onClose = { settingsOpen = false },
             onOpenAdmin = { adminOpen = true },
             onOpenMyPhones = { myPhonesOpen = true },
+            onOpenLicences = { licencesOpen = true },
             // With one group there is no list to leave it from, so the
             // settings offer it; with more, the list does, for any of them.
             onLeaveGroup =
@@ -707,6 +712,7 @@ fun MapScreen(
 
         OverTheSettings(
             myPhonesOpen = myPhonesOpen,
+            licencesOpen = licencesOpen,
             adminOpen = adminOpen,
             runsTheGroup = runsTheGroup,
             settings = settings,
@@ -720,6 +726,7 @@ fun MapScreen(
             seenAt = positions.associate { it.positionId to it.knownAt },
             groups = groups,
             onCloseMyPhones = { myPhonesOpen = false },
+            onCloseLicences = { licencesOpen = false },
             onCloseAdmin = { adminOpen = false },
         )
     }

@@ -36,6 +36,10 @@ zxing = "3.5.4"
 # frames zxing reads the code out of. No Play Services under it, so the
 # scanner works on a phone without them like the rest of the application.
 camerax = "1.6.2"
+# The licences of everything the application carries, listed on a screen of
+# its own: the plugin collects them from the dependencies at build time, the
+# core library reads what it collected.
+aboutLibraries = "15.2.0"
 junit = "4.13.2"
 # Stand-ins for the platform classes the JVM tests cannot build for real:
 # a Location or a GnssStatus off the stub jar answers every call with 0.
@@ -81,6 +85,7 @@ camera-view = { module = "androidx.camera:camera-view", version.ref = "camerax" 
 kotlinx-coroutines-android = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-android", version.ref = "coroutines" }
 # Awaits a Play Services Task from a coroutine; Firebase returns those.
 kotlinx-coroutines-play-services = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-play-services", version.ref = "coroutines" }
+aboutlibraries-core = { module = "com.mikepenz:aboutlibraries-core", version.ref = "aboutLibraries" }
 junit = { module = "junit:junit", version.ref = "junit" }
 mockk = { module = "io.mockk:mockk-jvm", version.ref = "mockk" }
 org-json = { module = "org.json:json", version.ref = "orgJson" }
@@ -92,3 +97,6 @@ org-json = { module = "org.json:json", version.ref = "orgJson" }
 android-application = { id = "com.android.application", version.ref = "agp" }
 kotlin-compose = { id = "org.jetbrains.kotlin.plugin.compose", version.ref = "kotlin" }
 ktlint = { id = "org.jlleitschuh.gradle.ktlint", version.ref = "ktlintPlugin" }
+# The Android flavour of the plugin: it writes the list into the resources as
+# part of every build, rather than leaving a task to be run by hand.
+aboutlibraries-android = { id = "com.mikepenz.aboutlibraries.plugin.android", version.ref = "aboutLibraries" }

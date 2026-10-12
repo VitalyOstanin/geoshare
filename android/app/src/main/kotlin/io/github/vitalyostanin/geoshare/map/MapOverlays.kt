@@ -235,8 +235,8 @@ internal fun BelowTheMap(
 }
 
 /**
- * The device list and the administrator's panel, each drawn over the
- * settings it was opened from, so that the way back out is the screen it was
+ * The device list, the licences and the administrator's panel, each drawn
+ * over the settings it was opened from, so that the way back out is the screen it was
  * opened from, whichever of the two ways back is used.
  *
  * [runsTheGroup] is weighed again on every draw rather than only when the
@@ -248,6 +248,7 @@ internal fun BelowTheMap(
 @Composable
 internal fun OverTheSettings(
     myPhonesOpen: Boolean,
+    licencesOpen: Boolean,
     adminOpen: Boolean,
     runsTheGroup: Boolean,
     settings: SettingsState,
@@ -261,8 +262,13 @@ internal fun OverTheSettings(
     seenAt: Map<String, Instant>,
     groups: GroupSwitch,
     onCloseMyPhones: () -> Unit,
+    onCloseLicences: () -> Unit,
     onCloseAdmin: () -> Unit,
 ) {
+    if (licencesOpen) {
+        LicencesScreen(onClose = onCloseLicences)
+    }
+
     // The devices are read from this member's own grant, which the member
     // always may read.
     if (myPhonesOpen) {

@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- The licence list the plugin writes at build time. The resource shrinker
+     AGP 9 runs on a release build removes it otherwise, as the plugin's own
+     documentation warns. -->
+<resources xmlns:tools="http://schemas.android.com/tools"
+    tools:keep="@raw/aboutlibraries" />

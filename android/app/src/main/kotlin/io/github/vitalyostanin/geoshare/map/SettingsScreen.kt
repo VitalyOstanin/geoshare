@@ -37,6 +37,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import io.github.vitalyostanin.geoshare.BuildConfig
 import io.github.vitalyostanin.geoshare.R
 import io.github.vitalyostanin.geoshare.collection.Constellation
 import io.github.vitalyostanin.geoshare.collection.SourceChoice
@@ -186,6 +187,8 @@ fun SettingsScreen(
     /** The way to the screen where the group is run, offered to whoever runs it. */
     onOpenAdmin: () -> Unit,
     onOpenMyPhones: () -> Unit,
+    /** The licences of the libraries inside the application. */
+    onOpenLicences: () -> Unit,
     /** Leaving the group, offered here while it is the only one; null while the list offers it. */
     onLeaveGroup: (() -> Unit)?,
     /** What the group shown is called, for the question signing out asks. */
@@ -296,6 +299,24 @@ fun SettingsScreen(
             ) {
                 Text(text = stringResource(R.string.sign_out_action))
             }
+
+            HorizontalDivider()
+
+            // Last, under signing out: read once if ever, and the version
+            // under it is what somebody reporting a fault is asked for.
+            TextButton(
+                onClick = onOpenLicences,
+                modifier = Modifier.padding(horizontal = 8.dp),
+            ) {
+                Text(text = stringResource(R.string.licences_open))
+            }
+
+            Text(
+                text = stringResource(R.string.app_version, BuildConfig.VERSION_NAME),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.padding(start = 16.dp, end = 16.dp, bottom = 16.dp),
+            )
         }
     }
 
