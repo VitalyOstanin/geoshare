@@ -27,16 +27,7 @@ class PhoneStatusWriter(
     private val connection: GroupConnection,
 ) {
     suspend fun write(mode: CollectionMode, batteryPercent: Int, charging: Boolean) {
-        val entry =
-            mapOf(
-                PhoneField.MODEL to device.name,
-                // By the server's clock, which is the one the readers can
-                // trust to say how long ago the phone was last heard from.
-                PhoneField.ONLINE_AT to FieldValue.serverTimestamp(),
-                PhoneField.MODE to mode.name,
-                PhoneField.BATTERY_PERCENT to batteryPercent,
-                PhoneField.CHARGING to charging,
-            )
+        val entry = phoneEntry(device.name, mode, batteryPercent, charging)
 
         phonesOf(connection)
             .document(memberId)
@@ -44,3 +35,19 @@ class PhoneStatusWriter(
             .await()
     }
 }
+
+/** The entry [PhoneStatusWriter.write] merges in, kept apart to be checked without a database. */
+internal fun phoneEntry(
+    model: String,
+    mode: CollectionMode,
+    batteryPercent: Int,
+    charging: Boolean,
+): Map<String, Any> = mapOf(
+    PhoneField.MODEL to model,
+    // By the server's clock, which is the one the readers can
+    // trust to say how long ago the device was last heard from.
+    PhoneField.ONLINE_AT to FieldValue.serverTimestamp(),
+    PhoneField.MODE to mode.name,
+    PhoneField.BATTERY_PERCENT to batteryPercent,
+    PhoneField.CHARGING to charging,
+)

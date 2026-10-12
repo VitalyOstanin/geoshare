@@ -46,29 +46,7 @@ class PositionWriter(
         settling: Boolean = false,
     ) {
         val position =
-            mapOf(
-                PositionField.MEMBER_ID to memberId,
-                PositionField.LATITUDE to fix.latitude,
-                PositionField.LONGITUDE to fix.longitude,
-                PositionField.TAKEN_AT to Timestamp(Date.from(fix.takenAt)),
-                // The reader compares this against its own clock to age the
-                // marker, and phone clocks disagree.
-                PositionField.WRITTEN_AT to FieldValue.serverTimestamp(),
-                PositionField.MODE to mode.name,
-                PositionField.BATTERY_PERCENT to batteryPercent,
-                // A percentage on its own says nothing about which way it is
-                // going: fifteen percent on a charger is a phone about to be
-                // fine, and fifteen percent off one is a phone about to go
-                // quiet.
-                PositionField.CHARGING to charging,
-                // How the phone arrived at this, in its own words rather than
-                // the provider's: the same answer reads as `gps` whether the
-                // receiver measured it or an assistance service sent it over,
-                // and those are worth opposite amounts to whoever is looking.
-                // Worked out by the caller, which is where the receiver's own
-                // last answer is to hand.
-                PositionField.FOUND_BY to foundBy.name,
-            ) + width(fix) + settling(settling)
+            positionDocument(memberId, fix, mode, batteryPercent, charging, foundBy, settling)
 
         positionsOf(connection)
             .document(positionId(memberId, device.id))
@@ -104,27 +82,65 @@ class PositionWriter(
             )
             .await()
     }
-
-    /**
-     * The width of the answer, where there is one.
-     *
-     * Left out of the document rather than written as null when the provider
-     * said nothing: the readers draw a circle for a width they have and leave
-     * the marker alone for one they do not, and an absent field says that
-     * plainly without every reader having to know that null means absent.
-     */
-    private fun width(fix: Fix): Map<String, Any> =
-        fix.accuracyMetres?.let { mapOf(PositionField.ACCURACY_METRES to it) }.orEmpty()
-
-    /**
-     * That the receiver had not settled, where it had not.
-     *
-     * Left out of the document rather than written as false, for the same
-     * reason as the width above: the readers say something about a position
-     * whose phone had just been switched on and leave every other one alone,
-     * and an absent field says that without a reader having to know that false
-     * and absent mean the same thing.
-     */
-    private fun settling(settling: Boolean): Map<String, Any> =
-        if (settling) mapOf(PositionField.SETTLING to true) else emptyMap()
 }
+
+/**
+ * The document [PositionWriter.write] sets, apart from where it is set.
+ *
+ * Kept out of the writer so that what goes into the database can be checked
+ * without a database: the fields, the ones left out, and what each is called.
+ */
+internal fun positionDocument(
+    memberId: String,
+    fix: Fix,
+    mode: CollectionMode,
+    batteryPercent: Int,
+    charging: Boolean,
+    foundBy: FoundBy,
+    settling: Boolean,
+): Map<String, Any> = mapOf(
+    PositionField.MEMBER_ID to memberId,
+    PositionField.LATITUDE to fix.latitude,
+    PositionField.LONGITUDE to fix.longitude,
+    PositionField.TAKEN_AT to Timestamp(Date.from(fix.takenAt)),
+    // The reader compares this against its own clock to age the
+    // marker, and phone clocks disagree.
+    PositionField.WRITTEN_AT to FieldValue.serverTimestamp(),
+    PositionField.MODE to mode.name,
+    PositionField.BATTERY_PERCENT to batteryPercent,
+    // A percentage on its own says nothing about which way it is
+    // going: fifteen percent on a charger is a phone about to be
+    // fine, and fifteen percent off one is a phone about to go
+    // quiet.
+    PositionField.CHARGING to charging,
+    // How the phone arrived at this, in its own words rather than
+    // the provider's: the same answer reads as `gps` whether the
+    // receiver measured it or an assistance service sent it over,
+    // and those are worth opposite amounts to whoever is looking.
+    // Worked out by the caller, which is where the receiver's own
+    // last answer is to hand.
+    PositionField.FOUND_BY to foundBy.name,
+) + width(fix) + settlingOf(settling)
+
+/**
+ * The width of the answer, where there is one.
+ *
+ * Left out of the document rather than written as null when the provider
+ * said nothing: the readers draw a circle for a width they have and leave
+ * the marker alone for one they do not, and an absent field says that
+ * plainly without every reader having to know that null means absent.
+ */
+private fun width(fix: Fix): Map<String, Any> =
+    fix.accuracyMetres?.let { mapOf(PositionField.ACCURACY_METRES to it) }.orEmpty()
+
+/**
+ * That the receiver had not settled, where it had not.
+ *
+ * Left out of the document rather than written as false, for the same
+ * reason as the width above: the readers say something about a position
+ * whose phone had just been switched on and leave every other one alone,
+ * and an absent field says that without a reader having to know that false
+ * and absent mean the same thing.
+ */
+private fun settlingOf(settling: Boolean): Map<String, Any> =
+    if (settling) mapOf(PositionField.SETTLING to true) else emptyMap()
