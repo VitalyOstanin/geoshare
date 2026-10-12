@@ -25,6 +25,7 @@ import java.time.LocalDate
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 import java.time.format.FormatStyle
+import java.util.Locale
 
 /**
  * Told to everybody while the database is silent, over the map where the
@@ -37,6 +38,7 @@ import java.time.format.FormatStyle
 @Composable
 fun LinkBanner(link: LinkState) {
     val since = link.since ?: return
+    val locale = appLocale()
 
     Card(
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
@@ -53,14 +55,15 @@ fun LinkBanner(link: LinkState) {
             )
             Column(modifier = Modifier.padding(horizontal = 12.dp, vertical = 10.dp)) {
                 Text(
-                    text = stringResource(R.string.link_lost, clockText(since)),
+                    text = stringResource(R.string.link_lost, clockText(since, locale)),
                     style = MaterialTheme.typography.bodyMedium,
                     fontWeight = FontWeight.SemiBold,
                 )
                 Text(
                     text =
-                    link.knownAt?.let { stringResource(R.string.link_known_at, clockText(it)) }
-                        ?: stringResource(R.string.link_known_never),
+                    link.knownAt?.let {
+                        stringResource(R.string.link_known_at, clockText(it, locale))
+                    } ?: stringResource(R.string.link_known_never),
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
@@ -77,17 +80,20 @@ fun LinkBanner(link: LinkState) {
 fun knownNote(): String? {
     val knownAt = LocalLink.current.takeIf { it.lost }?.knownAt ?: return null
 
-    return stringResource(R.string.known_at, clockText(knownAt))
+    return stringResource(R.string.known_at, clockText(knownAt, appLocale()))
 }
 
 /** A time of day, with the date as well once it is not today's. */
-private fun clockText(moment: Instant): String {
+private fun clockText(moment: Instant, locale: Locale): String {
     val local = moment.atZone(ZoneId.systemDefault())
     val today = local.toLocalDate() == LocalDate.now()
 
-    return local.format(if (today) CLOCK else CLOCK_WITH_DATE)
+    val format =
+        if (today) {
+            DateTimeFormatter.ofLocalizedTime(FormatStyle.SHORT)
+        } else {
+            DateTimeFormatter.ofLocalizedDateTime(FormatStyle.SHORT)
+        }
+
+    return local.format(format.withLocale(locale))
 }
-
-private val CLOCK = DateTimeFormatter.ofLocalizedTime(FormatStyle.SHORT)
-
-private val CLOCK_WITH_DATE = DateTimeFormatter.ofLocalizedDateTime(FormatStyle.SHORT)

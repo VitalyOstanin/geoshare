@@ -15,10 +15,6 @@ import androidx.compose.ui.unit.dp
 import io.github.vitalyostanin.geoshare.R
 import java.time.Instant
 import java.time.ZoneId
-import java.time.format.DateTimeFormatter
-
-/** When a search would end: the day as well as the time, the same as a permission's end. */
-private val SEARCH_ENDS_AT: DateTimeFormatter = DateTimeFormatter.ofPattern("d MMM HH:mm")
 
 /**
  * Opening a search, or renewing one already standing.
@@ -77,7 +73,7 @@ fun SearchDialog(
                     text =
                     stringResource(
                         R.string.search_until,
-                        SEARCH_ENDS_AT.format(
+                        endsAtText(
                             endIfChosen(hours, now).atZone(ZoneId.systemDefault()),
                         ),
                     ),

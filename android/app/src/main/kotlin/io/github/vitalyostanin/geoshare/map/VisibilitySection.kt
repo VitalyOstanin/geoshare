@@ -25,16 +25,6 @@ import androidx.compose.ui.unit.dp
 import io.github.vitalyostanin.geoshare.R
 import java.time.Instant
 import java.time.ZoneId
-import java.time.format.DateTimeFormatter
-
-/**
- * When a permission ends: the day as well as the time.
- *
- * The longest span is a day, so a permission given in the evening runs out
- * tomorrow, and an hour alone would read as one that ends this morning. The
- * year is left out: nothing here reaches one.
- */
-private val ENDS_AT: DateTimeFormatter = DateTimeFormatter.ofPattern("d MMM HH:mm")
 
 /**
  * Who may watch this member, and for how long.
@@ -177,7 +167,7 @@ private fun sharingText(until: Instant?, now: Instant): String =
         is Sharing.Until ->
             stringResource(
                 R.string.visibility_until,
-                ENDS_AT.format(sharing.moment.atZone(ZoneId.systemDefault())),
+                endsAtText(sharing.moment.atZone(ZoneId.systemDefault())),
             )
     }
 

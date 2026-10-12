@@ -28,10 +28,6 @@ import io.github.vitalyostanin.geoshare.project.ConnectLink
 import io.github.vitalyostanin.geoshare.service.MadeInvitation
 import java.time.Instant
 import java.time.ZoneId
-import java.time.format.DateTimeFormatter
-
-/** When an invitation expires: the day, spelled out, and the time (ADR-0019). */
-private val INVITATION_EXPIRES_AT: DateTimeFormatter = DateTimeFormatter.ofPattern("d MMMM, HH:mm")
 
 /**
  * The invitation link [AdminInvitation] shows and hands over, built from what
@@ -123,7 +119,7 @@ internal fun AdminInvitation(
             text =
             stringResource(
                 R.string.group_invite_expires,
-                INVITATION_EXPIRES_AT.format(invitation.expiresAt.atZone(ZoneId.systemDefault())),
+                invitationEndsText(invitation.expiresAt.atZone(ZoneId.systemDefault())),
             ),
             style = MaterialTheme.typography.bodySmall,
             modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
@@ -201,7 +197,7 @@ private fun InvitationOver(invitation: MadeInvitation, used: Boolean, onOpenInvi
         } else {
             stringResource(
                 R.string.group_invite_expired,
-                INVITATION_EXPIRES_AT.format(invitation.expiresAt.atZone(ZoneId.systemDefault())),
+                invitationEndsText(invitation.expiresAt.atZone(ZoneId.systemDefault())),
             )
         },
         style = MaterialTheme.typography.bodyMedium,

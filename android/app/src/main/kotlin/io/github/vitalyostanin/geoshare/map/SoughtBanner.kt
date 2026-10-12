@@ -65,7 +65,7 @@ fun SoughtBanner(
                 stringResource(
                     R.string.sought_banner,
                     phoneName,
-                    SOUGHT_ENDS_AT.format(search.endsAt.atZone(ZoneId.systemDefault())),
+                    endsAtText(search.endsAt.atZone(ZoneId.systemDefault())),
                 ),
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onErrorContainer,

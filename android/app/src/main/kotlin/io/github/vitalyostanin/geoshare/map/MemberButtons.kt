@@ -330,7 +330,7 @@ private fun MemberButton(
                     text =
                     stringResource(
                         R.string.sought_until_short,
-                        soughtEndsShort(sought.endsAt, now),
+                        soughtEndsShort(sought.endsAt, now, appLocale()),
                     ),
                     style = MaterialTheme.typography.bodySmall,
                     color = Color(SOUGHT_COLOUR),
@@ -423,7 +423,7 @@ internal fun MemberRow(
                     text =
                     stringResource(
                         R.string.sought_until,
-                        SOUGHT_ENDS_AT.format(sought.endsAt.atZone(ZoneId.systemDefault())),
+                        endsAtText(sought.endsAt.atZone(ZoneId.systemDefault())),
                     ),
                     style = MaterialTheme.typography.bodySmall,
                     color = Color(SOUGHT_COLOUR),

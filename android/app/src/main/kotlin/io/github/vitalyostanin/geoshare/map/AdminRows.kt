@@ -24,7 +24,6 @@ import io.github.vitalyostanin.geoshare.R
 import io.github.vitalyostanin.geoshare.membership.runsTheGroup
 import java.time.Instant
 import java.time.ZoneId
-import java.time.format.DateTimeFormatter
 
 /**
  * One member, with what the household knows about them from here, each of
@@ -161,7 +160,7 @@ private fun AdminPhoneRow(
                     text =
                     stringResource(
                         R.string.sought_until,
-                        SEARCH_ENDS_AT.format(search.endsAt.atZone(ZoneId.systemDefault())),
+                        endsAtText(search.endsAt.atZone(ZoneId.systemDefault())),
                     ),
                     style = MaterialTheme.typography.bodySmall,
                     color = Color(SOUGHT_COLOUR),
@@ -219,9 +218,6 @@ private fun AdminPhoneRow(
     }
 }
 
-/** When a search ends: the day as well as the time, the same reading a permission's end has. */
-private val SEARCH_ENDS_AT: DateTimeFormatter = DateTimeFormatter.ofPattern("d MMM HH:mm")
-
 /**
  * Every search standing now, under the rows: who is looked for, who opened it
  * and when it ends, with the two things to do about it.
@@ -248,7 +244,7 @@ internal fun AdminSearchSummary(
                 R.string.search_summary,
                 phoneName,
                 memberName,
-                SEARCH_ENDS_AT.format(search.endsAt.atZone(ZoneId.systemDefault())),
+                endsAtText(search.endsAt.atZone(ZoneId.systemDefault())),
             ),
             style = MaterialTheme.typography.bodyMedium,
             color = Color(SOUGHT_COLOUR),

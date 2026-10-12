@@ -11,15 +11,12 @@ import androidx.core.content.getSystemService
 import io.github.vitalyostanin.geoshare.MainActivity
 import io.github.vitalyostanin.geoshare.R
 import io.github.vitalyostanin.geoshare.map.Search
+import io.github.vitalyostanin.geoshare.map.endsAtText
 import java.time.ZoneId
-import java.time.format.DateTimeFormatter
 
 const val SEARCH_NOTIFICATION_ID = 2
 
 private const val CHANNEL_ID = "search"
-
-/** When a search ends: the day as well as the time, the same reading a permission's end has. */
-private val SOUGHT_ENDS_AT: DateTimeFormatter = DateTimeFormatter.ofPattern("d MMM HH:mm")
 
 /**
  * Told to the member being looked for, on top of the notification the service
@@ -68,7 +65,10 @@ fun searchNotification(
             context.getString(
                 R.string.sought_notification_text,
                 openedByName,
-                SOUGHT_ENDS_AT.format(search.endsAt.atZone(ZoneId.systemDefault())),
+                endsAtText(
+                    search.endsAt.atZone(ZoneId.systemDefault()),
+                    context.resources.configuration.locales[0],
+                ),
             ),
         )
         .setContentIntent(open)

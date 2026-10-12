@@ -33,9 +33,7 @@ import kotlinx.coroutines.launch
 import java.time.Instant
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
-
-/** When a search ends: the day as well as the time, the same reading a permission's end has. */
-internal val SOUGHT_ENDS_AT: DateTimeFormatter = DateTimeFormatter.ofPattern("d MMM HH:mm")
+import java.util.Locale
 
 private val SOUGHT_ENDS_TIME: DateTimeFormatter = DateTimeFormatter.ofPattern("HH:mm")
 
@@ -47,6 +45,7 @@ private val SOUGHT_ENDS_TIME: DateTimeFormatter = DateTimeFormatter.ofPattern("H
 internal fun soughtEndsShort(
     endsAt: Instant,
     now: Instant,
+    locale: Locale,
     zone: ZoneId = ZoneId.systemDefault(),
 ): String {
     val ends = endsAt.atZone(zone)
@@ -54,7 +53,7 @@ internal fun soughtEndsShort(
     return if (ends.toLocalDate() == now.atZone(zone).toLocalDate()) {
         SOUGHT_ENDS_TIME.format(ends)
     } else {
-        SOUGHT_ENDS_AT.format(ends)
+        endsAtText(ends, locale)
     }
 }
 
@@ -86,7 +85,7 @@ internal fun DetailSought(
             text =
             stringResource(
                 R.string.sought_until,
-                SOUGHT_ENDS_AT.format(search.endsAt.atZone(ZoneId.systemDefault())),
+                endsAtText(search.endsAt.atZone(ZoneId.systemDefault())),
             ) + " · " + stringResource(R.string.search_opened_by, openedByName),
             style = MaterialTheme.typography.bodySmall,
             color = Color(SOUGHT_COLOUR),

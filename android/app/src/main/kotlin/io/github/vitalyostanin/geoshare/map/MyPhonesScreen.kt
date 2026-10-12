@@ -41,7 +41,6 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.launch
 import java.time.Instant
 import java.time.ZoneId
-import java.time.format.DateTimeFormatter
 
 /**
  * A member's own phones, seen by that member rather than by whoever runs the
@@ -221,7 +220,7 @@ fun MyPhonesScreen(
 
                         if (search != null) {
                             val zoned = search.endsAt.atZone(ZoneId.systemDefault())
-                            val endsAt = SEARCH_ENDS_AT.format(zoned)
+                            val endsAt = endsAtText(zoned)
 
                             Text(
                                 text = stringResource(R.string.sought_until, endsAt),
@@ -427,6 +426,3 @@ fun MyPhonesScreen(
         )
     }
 }
-
-/** Same pattern as [AdminPanel]'s own: private to each file, so each spells it out itself. */
-private val SEARCH_ENDS_AT: DateTimeFormatter = DateTimeFormatter.ofPattern("d MMM HH:mm")
