@@ -77,6 +77,19 @@ class ConnectLinkTest {
     }
 
     @Test
+    fun `punctuation after a link in a message is not read as part of its last field`() {
+        val link = "https://$SITE.web.app/join#g=group-1&c=ABCDEFGH&to=v%E2%80%A6%40gmail.com"
+
+        for (mark in listOf(".", ",", ")", ").", "!?")) {
+            assertEquals(
+                "after '$mark'",
+                "v…@gmail.com",
+                ConnectLink.parse("Вступай: $link$mark")?.invitation?.invitedAddress,
+            )
+        }
+    }
+
+    @Test
     fun `a firebaseapp-dot-com link is read the same, and settingsUrl still names web-app`() {
         val link = ConnectLink.parse("https://$SITE.firebaseapp.com/join")
 

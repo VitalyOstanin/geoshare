@@ -23,6 +23,14 @@ private val LINK_PATTERN = Regex(
 )
 
 /**
+ * What a message puts right after a link — the full stop, the comma, the
+ * closing bracket — and the link's last field would otherwise swallow, so
+ * that an invited address read `v…@gmail.com.`. The same set the join page
+ * cuts off (`TRAILING_PUNCTUATION` in `join.js`).
+ */
+private const val TRAILING_PUNCTUATION = ").,;:!?]}'\"<>"
+
+/**
  * A connection link: what the project owner's site hands out on its own
  * (ADR-0001) and what an invitation adds after the `#` (ADR-0015,
  * ADR-0017, ADR-0018).
@@ -53,7 +61,8 @@ data class ConnectLink(val site: String, val invitation: Invitation?) {
          */
         fun parse(text: String): ConnectLink? {
             val match = LINK_PATTERN.find(text) ?: return null
-            val (site, rest) = match.destructured
+            val (site, linkTail) = match.destructured
+            val rest = linkTail.trimEnd { it in TRAILING_PUNCTUATION }
             val hashIndex = rest.indexOf('#')
             val beforeHash = if (hashIndex >= 0) rest.substring(0, hashIndex) else rest
             val fragment = if (hashIndex >= 0) rest.substring(hashIndex + 1) else ""
