@@ -26,8 +26,12 @@ private const val DEVICES_PER_MEMBER = 10
  * Shared with the grants, which are refused for the same reason and come back
  * the same way: the member hands the permission back, and nothing about that
  * reaches a client whose subscription has already been turned away.
+ *
+ * Only a fallback: a member who gives a permission touches their profile, and
+ * that retries at once (Refusals.retryNow). Every retry is reads the rules
+ * charge the project for, so the timer is a quarter of an hour, not a minute.
  */
-internal val RETRY_AFTER: Duration = Duration.ofMinutes(1)
+internal val RETRY_AFTER: Duration = Duration.ofMinutes(15)
 
 /** The widest answer still drawn as a circle. The rules say the same number. */
 internal const val WIDEST_CIRCLE_METRES = 100_000.0

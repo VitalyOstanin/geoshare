@@ -376,7 +376,7 @@
     <string name="mode_help_when">When</string>
     <string name="mode_help_asks">What the device does</string>
     <string name="mode_help_when_viewing">Somebody has the map open.</string>
-    <string name="mode_help_asks_viewing">Asks for the most exact position every 15 seconds, and writes it as soon as the marker would move.</string>
+    <string name="mode_help_asks_viewing">Asks for the most exact position every 30 seconds, and writes it as soon as the marker would move.</string>
     <string name="mode_help_when_moving">The device noticed walking, running, cycling or riding.</string>
     <string name="mode_help_asks_moving">Asks every 5 minutes.</string>
     <string name="mode_help_when_standby">Away from where it last wrote, with nobody looking.</string>

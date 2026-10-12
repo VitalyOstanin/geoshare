@@ -334,7 +334,7 @@
     <string name="mode_help_when">Когда</string>
     <string name="mode_help_asks">Что делает устройство</string>
     <string name="mode_help_when_viewing">Кто-то смотрит карту.</string>
-    <string name="mode_help_asks_viewing">Запрашивает самое точное место каждые 15 секунд и записывает его, как только метка сдвинулась бы.</string>
+    <string name="mode_help_asks_viewing">Запрашивает самое точное место каждые 30 секунд и записывает его, как только метка сдвинулась бы.</string>
     <string name="mode_help_when_moving">Устройство заметило ходьбу, бег, велосипед или поездку.</string>
     <string name="mode_help_asks_moving">Запрашивает каждые 5 минут.</string>
     <string name="mode_help_when_standby">Устройство не там, где записало место в прошлый раз, и карту никто не смотрит.</string>

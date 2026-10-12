@@ -75,15 +75,18 @@ enum class CollectionMode(
      * Somebody has the map open; the only mode that turns the receiver on.
      *
      * Movement is written on the same terms it is collected on: a watcher
-     * following somebody on foot should see the marker move, and twenty-five
-     * metres is about fifteen seconds of walking. Stillness is not: one open
-     * map puts every phone of the group into this mode, and a group of twenty
+     * following somebody on foot should see the marker move, and fifty metres
+     * is about half a minute of walking. The step is no finer because every
+     * position written under watch is delivered to each watcher and costs the
+     * group several reads, so a shorter step buys reads rather than anything
+     * the watcher needs. Stillness is not written on those terms: one open map
+     * puts every phone of the group into this mode, and a group of twenty
      * phones on tables saying the same place twice a minute spends the free
      * quota of writes in a working day. Three minutes still says it within
      * one claim of [WATCH_AHEAD], and the card's "in touch" comes from the
      * phone's summary, which is written the moment this mode begins.
      */
-    Viewing(Accuracy.High, Duration.ofSeconds(15), Duration.ZERO, 25.0, Duration.ofMinutes(3)),
+    Viewing(Accuracy.High, Duration.ofSeconds(30), Duration.ZERO, 50.0, Duration.ofMinutes(3)),
 
     /**
      * The small hours, when a phone on a bedside table is not news.

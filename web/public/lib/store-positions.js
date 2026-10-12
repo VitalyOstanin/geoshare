@@ -5,7 +5,7 @@
 
 import { doc, onSnapshot } from 'https://www.gstatic.com/firebasejs/12.19.0/firebase-firestore.js';
 import { positionMoments } from './age.js';
-import { RETRY_AFTER_MS, currentGroup, store } from './store.js';
+import { currentGroup, refusals, store } from './store.js';
 
 /**
  * The positions, as they change.
@@ -24,7 +24,6 @@ export function watchPositions(documents, onPositions, onRefused) {
     const refused = new Set();
     const publish = () => onPositions([...known.values()]);
     const stops = new Map();
-    const waiting = new Set();
     let wanted = true;
 
     const sayRefused = () => onRefused?.(refused.size);
@@ -65,8 +64,9 @@ export function watchPositions(documents, onPositions, onRefused) {
     // A refused document stays refused until the member says otherwise, and
     // what they say does not reach this page: a permission lives in their
     // grant, which a refused reader cannot see either. So the
-    // subscription is made again on a timer, and a permission handed back
-    // brings the marker back with it instead of waiting for a reload.
+    // subscription is made again when a profile changes or, failing that, on
+    // a slow timer, and a permission handed back brings the marker back with
+    // it instead of waiting for a reload.
     const askAgainLater = (id) => {
         stops.get(id)?.();
         stops.delete(id);
@@ -75,15 +75,11 @@ export function watchPositions(documents, onPositions, onRefused) {
             return;
         }
 
-        const timer = setTimeout(() => {
-            waiting.delete(timer);
-
+        refusals.retryLater(`positions/${id}`, () => {
             if (wanted) {
                 follow(id);
             }
-        }, RETRY_AFTER_MS);
-
-        waiting.add(timer);
+        });
     };
 
     documents.forEach(follow);
@@ -94,8 +90,7 @@ export function watchPositions(documents, onPositions, onRefused) {
 
     return () => {
         wanted = false;
-        waiting.forEach(clearTimeout);
-        waiting.clear();
+        documents.forEach((id) => refusals.forget(`positions/${id}`));
         stops.forEach((stop) => stop());
         stops.clear();
     };

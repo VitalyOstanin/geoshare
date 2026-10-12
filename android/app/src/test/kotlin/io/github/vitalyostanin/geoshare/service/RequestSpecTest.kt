@@ -18,7 +18,7 @@ class RequestSpecTest {
         val spec = requestSpec(CollectionMode.Viewing)!!
 
         assertEquals(Priority.PRIORITY_HIGH_ACCURACY, spec.priority)
-        assertEquals(Duration.ofSeconds(15).toMillis(), spec.intervalMillis)
+        assertEquals(Duration.ofSeconds(30).toMillis(), spec.intervalMillis)
         assertEquals(0L, spec.maxDelayMillis)
     }
 

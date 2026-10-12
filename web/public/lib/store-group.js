@@ -22,7 +22,7 @@ import {
     newInvitationCode,
     rosterWithout,
 } from './membership.js';
-import { RETRY_AFTER_MS, currentGroup, rememberGroup, store } from './store.js';
+import { currentGroup, refusals, rememberGroup, store } from './store.js';
 
 /**
  * Who is in the group, as the group document holds it.
@@ -216,6 +216,9 @@ export function profileOf(document) {
             memberId: document.id,
             displayName: data.displayName,
             photoUrl: typeof data.photoUrl === 'string' && data.photoUrl !== '' ? data.photoUrl : null,
+            // When the member last touched the profile; what a permission
+            // handed back also does, so a change here is the cue to ask again.
+            updatedAt: typeof data.updatedAt?.toMillis === 'function' ? data.updatedAt.toMillis() : null,
         },
     ];
 }
@@ -230,7 +233,8 @@ export function profileOf(document) {
  * member who shares with this viewer answers with their phones; one who does
  * not answers with a refusal, which is simply an absence here — the same member
  * is already missing from the map. The subscriptions are made again on a
- * timer, so a permission handed back arrives without a reload.
+ * timer (and at once when a profile changes), so a permission
+ * handed back arrives without a reload.
  *
  * The phones are followed apart from the positions: whether a phone is in
  * touch, how charged it is and whether it is on a cable are not a place, and
@@ -273,12 +277,12 @@ export function watchGrants(memberIds, onGrants) {
 
 /**
  * One document of each member of a collection, followed and asked for again a
- * minute after a refusal. The callback hears a snapshot, or null for a
+ * while after a refusal: at once when a profile changes, otherwise on the
+ * slow timer of `RETRY_AFTER_MS`. The callback hears a snapshot, or null for a
  * refusal.
  */
 export function followEach(memberIds, collectionName, onDocument) {
     const stops = new Map();
-    const waiting = new Set();
     let wanted = true;
 
     const follow = (memberId) => {
@@ -303,23 +307,18 @@ export function followEach(memberIds, collectionName, onDocument) {
             return;
         }
 
-        const timer = setTimeout(() => {
-            waiting.delete(timer);
-
+        refusals.retryLater(`${collectionName}/${memberId}`, () => {
             if (wanted) {
                 follow(memberId);
             }
-        }, RETRY_AFTER_MS);
-
-        waiting.add(timer);
+        });
     };
 
     memberIds.forEach(follow);
 
     return () => {
         wanted = false;
-        waiting.forEach(clearTimeout);
-        waiting.clear();
+        memberIds.forEach((memberId) => refusals.forget(`${collectionName}/${memberId}`));
         stops.forEach((stop) => stop());
         stops.clear();
     };

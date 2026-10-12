@@ -68,9 +68,13 @@ internal fun Flow<OwnLine>.goneAfterListed(): Flow<Unit> = flow {
  * This device's line in [memberId]'s list of devices in [connection]'s group,
  * whenever the list changes.
  *
- * The list is written by every device of the member, each into its own line,
- * and the one way a line goes while its document stays is another device of
- * the member removing it from "My devices".
+ * The list is the devices the member gives out, in the member's grant, and
+ * the one way a device goes from it is another device of the member removing
+ * it from "My devices". The member's `devices` document would also say so, but
+ * every device of the member rewrites its own status line there, and each such
+ * write would be delivered to all of them: reads for nothing. The grant
+ * changes only when the list or the permissions do, and the service listens
+ * to it anyway.
  */
 internal fun ownLine(
     connection: GroupConnection,
@@ -78,7 +82,7 @@ internal fun ownLine(
     deviceId: String,
 ): Flow<OwnLine> = callbackFlow {
     val subscription =
-        phonesOf(connection)
+        grantsOf(connection)
             .document(memberId)
             .addSnapshotListener { snapshot, error ->
                 if (error != null) {
@@ -94,7 +98,11 @@ internal fun ownLine(
                     trySend(
                         ownLineOf(
                             exists = snapshot.exists(),
-                            listed = snapshot.data?.keys.orEmpty(),
+                            listed =
+                            (snapshot.get(GrantField.DEVICES) as? List<*>)
+                                .orEmpty()
+                                .filterIsInstance<String>()
+                                .toSet(),
                             deviceId = deviceId,
                             fromServer = fromServer,
                         ),

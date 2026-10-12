@@ -52,7 +52,7 @@ export const EN = {
     modeHelpAsks: 'What the device does',
     close: 'Close',
     modeWhenViewing: 'Somebody has the map open.',
-    modeAsksViewing: 'Asks for the most exact position every 15 seconds, and writes it as soon as '
+    modeAsksViewing: 'Asks for the most exact position every 30 seconds, and writes it as soon as '
         + 'the marker would move.',
     modeWhenMoving: 'The device noticed walking, running, cycling or riding.',
     modeAsksMoving: 'Asks every 5 minutes.',

@@ -32,7 +32,7 @@ enough time passed, so a device lying still costs almost nothing.
 | # | Mode      | When                              | Location request | Interval |
 |---|-----------|-----------------------------------|------------------|----------|
 | 1 | `Standby` | nobody looking                    | balanced power   | 15 min   |
-| 2 | `Viewing` | somebody has the map open         | high accuracy    | 15 s     |
+| 2 | `Viewing` | somebody has the map open         | high accuracy    | 30 s     |
 | 3 | `Night`   | 23:00–07:00, or battery under 15% | low power        | 20 min   |
 
 High accuracy is reserved for the minutes somebody is actually watching, and a

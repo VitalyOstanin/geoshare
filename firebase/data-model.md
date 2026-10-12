@@ -426,7 +426,7 @@ nobody can explain.
 
 A write happens when the position moved far enough from the last written one, or
 enough time passed without a write — both by the standards of the mode: 75
-metres or 10 minutes in the quiet modes, 25 metres or 3 minutes while somebody
+metres or 10 minutes in the quiet modes, 50 metres or 3 minutes while somebody
 is watching. Jitter therefore produces no writes and wakes no subscribers, and
 the mode that spends the battery on frequent fixes is the mode that says what
 they found. The time in the watched mode is long because one open map puts every
@@ -486,7 +486,7 @@ a reload leaves one marker rather than a trail of them.
 | `Idle`    | Inside the current geofence      | none             | —          | —            |
 | `Standby` | Outside it, nobody watching      | balanced         | 15 min     | 10 min       |
 | `Moving`  | Activity recognised as movement  | balanced         | 5 min      | 5 min        |
-| `Viewing` | A live claim in `watch`          | high accuracy    | 15 s       | none         |
+| `Viewing` | A live claim in `watch`          | high accuracy    | 30 s       | none         |
 | `Night`   | 23:00 to 07:00, nobody watching  | low power        | 20 min     | 5 min        |
 
 `Night` is also forced whenever the battery drops below 15 percent. The names

@@ -138,6 +138,8 @@ export const state = {
     // for them are put in: the profile this viewer publishes is compared with
     // their own words, not with what they call themselves here.
     accountProfiles: null,
+    // The latest touch of any profile seen so far, to tell a later one from a repeat.
+    profileChange: null,
     // What this viewer calls the phones and the people, for themselves.
     labels: NO_LABELS,
     stopLabels: null,

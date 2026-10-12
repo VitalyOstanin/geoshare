@@ -152,7 +152,7 @@ Acceptance:
 
 - Status: done
 - ADR: 0008, 0031
-- Tests: rules `access.test.mjs` (a member touches their own profile to say their sharing changed); Android `RefusalsTest`
+- Tests: rules `access.test.mjs` (a member touches their own profile to say their sharing changed); Android `RefusalsTest`; web `refusals.test.mjs`
 
 As a member given a permission to see somebody I see their place at once, so
 that I do not wait a minute after they share.
@@ -160,7 +160,7 @@ that I do not wait a minute after they share.
 Acceptance:
 - the one who grants touches their profile; the readers who were refused
   retry at once on that signal;
-- without the signal they retry after a minute.
+- without the signal they retry after a quarter of an hour.
 
 ## DEV-10 Report that it is alive
 

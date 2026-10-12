@@ -28,6 +28,7 @@ import {
     setDoc,
 } from 'https://www.gstatic.com/firebasejs/12.19.0/firebase-firestore.js';
 import { firebaseConfig } from '../firebase-config.js';
+import { createRefusals } from './refusals.js';
 
 /**
  * Where this browser keeps the group it looks at.
@@ -128,16 +129,19 @@ const WATCH_AHEAD_MS = 7 * 60 * 1000;
 export const IDLE_AFTER_MS = 5 * 60 * 1000;
 
 /**
- * How long to wait before asking again for a document that was refused.
+ * How long to wait before asking again for a document that was refused, when
+ * nothing has told the page sooner.
  *
- * A refusal is usually the member saying they no longer share, but it is also
- * what an expired permission and a permission not yet granted look like, and
- * neither of those changes the profiles the subscriptions are built from.
- *
- * Shared with `store-positions.js` and `store-group.js`, whose own retrying
- * subscriptions wait the same amount before asking again.
+ * A refusal is usually the member saying they no longer share, and a permission
+ * handed back touches their profile, which the page is already following and
+ * retries on at once (see `refusals.js`). The timer only covers a permission
+ * that expires or that arrives without such a touch, so it is slow: every ask
+ * is a paid read.
  */
-export const RETRY_AFTER_MS = 60 * 1000;
+export const RETRY_AFTER_MS = 15 * 60 * 1000;
+
+/** The refused subscriptions of the page, asked for again on a profile change or on the timer. */
+export const refusals = createRefusals(RETRY_AFTER_MS);
 
 /** Where this browser keeps the name it watches under, so a reload keeps one marker. */
 const DEVICE_KEY = 'geoshare.device';

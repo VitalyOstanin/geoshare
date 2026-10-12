@@ -19,7 +19,7 @@ private const val TAG = "geoshare.watching"
  *
  * This is the request half of "fresh on demand": the other phones watch this
  * collection, and seeing a live marker here is what makes them collect every
- * fifteen seconds instead of every fifteen minutes.
+ * thirty seconds instead of every fifteen minutes.
  */
 class WatchWriter(
     private val memberId: String,
