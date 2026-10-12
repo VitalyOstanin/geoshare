@@ -1,0 +1,81 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>geoshare</title>
+<meta name="description" content="Обмен местоположением внутри группы, например семьи, на устройствах Android и в браузере. Участники входят обычными аккаунтами Google, а всё работает на бесплатном тарифе Firebase.">
+<link rel="alternate" hreflang="en" href="../">
+<link rel="stylesheet" href="../fonts/fonts.css">
+<link rel="stylesheet" href="../style.css">
+</head>
+<body>
+<header class="wrap">
+  <a class="brand" href="./">
+    <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 21s-7-6.2-7-11.5A7 7 0 0 1 19 9.5C19 14.8 12 21 12 21z"/><circle cx="12" cy="9.5" r="2.5"/></svg>
+    geoshare
+  </a>
+  <nav>
+    <a href="https://github.com/VitalyOstanin/geoshare/blob/master/README.ru.md">GitHub</a>
+    <a href="../" hreflang="en" lang="en">English</a>
+  </nav>
+</header>
+
+<main>
+  <section class="wrap intro">
+    <h1>Где ваша семья — в вашем бесплатном Firebase</h1>
+    <p>Android и браузер. Обычные аккаунты Google. Никакого нашего сервера.</p>
+    <div class="actions">
+      <a class="button primary" href="https://github.com/VitalyOstanin/geoshare/releases/latest">Скачать для Android</a>
+      <a class="button" href="https://geoshare-setup.web.app/">Настроить группу</a>
+    </div>
+  </section>
+
+  <section class="wrap hero">
+    <picture>
+      <source media="(prefers-color-scheme: dark)" srcset="../images/hero-dark.webp">
+      <img src="../images/hero-light.webp" width="1600" height="900" alt="Одна группа на двух устройствах Android и в браузере">
+    </picture>
+  </section>
+
+  <section class="features">
+    <ul class="wrap grid">
+      <li><figure class="shot"><picture><source media="(prefers-color-scheme: dark)" srcset="../images/ru/map-dark.webp"><img src="../images/ru/map-light.webp" loading="lazy" alt="Карта с лицами участников и полосой под ней"></picture><figcaption>Все на одной карте</figcaption></figure></li>
+      <li><figure class="shot"><picture><source media="(prefers-color-scheme: dark)" srcset="../images/ru/sharing-dark.webp"><img src="../images/ru/sharing-light.webp" loading="lazy" alt="Выбор, кому открыть место и до какого времени"></picture><figcaption>Кому показывать и до какого времени — решаете вы</figcaption></figure></li>
+      <li><figure class="shot"><picture><source media="(prefers-color-scheme: dark)" srcset="../images/ru/invitation-dark.webp"><img src="../images/ru/invitation-light.webp" loading="lazy" alt="Приглашение в виде QR-кода"></picture><figcaption>Вход по QR-коду</figcaption></figure></li>
+      <li><figure class="shot"><picture><source media="(prefers-color-scheme: dark)" srcset="../images/ru/search-dark.webp"><img src="../images/ru/search-light.webp" loading="lazy" alt="Участник в поиске, обведённый красным на карте"></picture><figcaption>Поиск участника</figcaption></figure></li>
+      <li><figure class="shot"><picture><source media="(prefers-color-scheme: dark)" srcset="../images/ru/siren-dark.webp"><img src="../images/ru/siren-light.webp" loading="lazy" alt="Сирена звучит на устройстве"></picture><figcaption>Сирена на потерянном устройстве</figcaption></figure></li>
+      <li><figure class="shot"><picture><source media="(prefers-color-scheme: dark)" srcset="../images/ru/held-back-dark.webp"><img src="../images/ru/held-back-light.webp" loading="lazy" alt="Карточка объясняет, почему позиция отброшена"></picture><figcaption>Ложные позиции не попадают на карту</figcaption></figure></li>
+    </ul>
+  </section>
+
+  <section class="wrap steps">
+    <h2>Группа в три шага</h2>
+    <ol class="grid">
+      <li><figure class="shot"><picture><source media="(prefers-color-scheme: dark)" srcset="../images/ru/step-project-dark.webp"><img src="../images/ru/step-project-light.webp" loading="lazy" alt="Страница настройки, первый шаг: создать проект Firebase"></picture><figcaption><span class="n">1</span><span>Создать бесплатный <a href="https://console.firebase.google.com/">проект Firebase</a></span></figcaption></figure></li>
+      <li><figure class="shot"><picture><source media="(prefers-color-scheme: dark)" srcset="../images/ru/step-setup-dark.webp"><img src="../images/ru/step-setup-light.webp" loading="lazy" alt="Страница настройки просит войти через Google и разрешить настройку"></picture><figcaption><span class="n">2</span><span>Открыть <a href="https://geoshare-setup.web.app/">страницу настройки</a></span></figcaption></figure></li>
+      <li><figure class="shot"><picture><source media="(prefers-color-scheme: dark)" srcset="../images/ru/step-link-dark.webp"><img src="../images/ru/step-link-light.webp" loading="lazy" alt="Ссылка подключения и её QR-код"></picture><figcaption><span class="n">3</span><span>Отправить ссылку</span></figcaption></figure></li>
+    </ol>
+  </section>
+  <section class="limits">
+    <div class="wrap">
+      <h2>Бесплатно — в пределах суточных лимитов Firebase</h2>
+      <ul class="grid">
+        <li><span class="figure">50 000</span><div>чтений в сутки</div></li>
+        <li><span class="figure">20 000</span><div>записей в сутки</div></li>
+        <li><span class="figure">~10%</span><div>расходует семья с несколькими устройствами</div></li>
+      </ul>
+      <p>После превышения база перестаёт отвечать до сброса квоты в полночь по тихоокеанскому времени. Следите за расходом в <a href="https://console.firebase.google.com/">консоли Firebase</a>.</p>
+    </div>
+  </section>
+</main>
+
+<footer class="wrap">
+  <div>Данные остаются в проекте Firebase владельца проекта · лицензия MIT</div>
+  <nav>
+    <a href="https://github.com/VitalyOstanin/geoshare/blob/master/README.ru.md#приватность">Приватность</a>
+    <a href="https://github.com/VitalyOstanin/geoshare/blob/master/SECURITY.md">Безопасность</a>
+  </nav>
+</footer>
+</body>
+</html>

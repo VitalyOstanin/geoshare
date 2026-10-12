@@ -1,0 +1,81 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>geoshare</title>
+<meta name="description" content="Location sharing within a group, such as a family, on Android devices and in a browser. Members sign in with their ordinary Google accounts, and everything runs on the free tier of Firebase.">
+<link rel="alternate" hreflang="ru" href="ru/">
+<link rel="stylesheet" href="fonts/fonts.css">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header class="wrap">
+  <a class="brand" href="./">
+    <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 21s-7-6.2-7-11.5A7 7 0 0 1 19 9.5C19 14.8 12 21 12 21z"/><circle cx="12" cy="9.5" r="2.5"/></svg>
+    geoshare
+  </a>
+  <nav>
+    <a href="https://github.com/VitalyOstanin/geoshare">GitHub</a>
+    <a href="ru/" hreflang="ru" lang="ru">Русский</a>
+  </nav>
+</header>
+
+<main>
+  <section class="wrap intro">
+    <h1>Where your family is — on your own free Firebase</h1>
+    <p>Android and a browser. Ordinary Google accounts. No server of ours.</p>
+    <div class="actions">
+      <a class="button primary" href="https://github.com/VitalyOstanin/geoshare/releases/latest">Download for Android</a>
+      <a class="button" href="https://geoshare-setup.web.app/">Set up a group</a>
+    </div>
+  </section>
+
+  <section class="wrap hero">
+    <picture>
+      <source media="(prefers-color-scheme: dark)" srcset="images/hero-dark.webp">
+      <img src="images/hero-light.webp" width="1600" height="900" alt="One group on two Android devices and in a browser">
+    </picture>
+  </section>
+
+  <section class="features">
+    <ul class="wrap grid">
+      <li><figure class="shot"><picture><source media="(prefers-color-scheme: dark)" srcset="images/en/map-dark.webp"><img src="images/en/map-light.webp" loading="lazy" alt="The map with every member's face and the strip below it"></picture><figcaption>Everybody on one map</figcaption></figure></li>
+      <li><figure class="shot"><picture><source media="(prefers-color-scheme: dark)" srcset="images/en/sharing-dark.webp"><img src="images/en/sharing-light.webp" loading="lazy" alt="Choosing whom to share with and until when"></picture><figcaption>Share with whom you choose, until when you choose</figcaption></figure></li>
+      <li><figure class="shot"><picture><source media="(prefers-color-scheme: dark)" srcset="images/en/invitation-dark.webp"><img src="images/en/invitation-light.webp" loading="lazy" alt="An invitation shown as a QR code"></picture><figcaption>Join by a QR code</figcaption></figure></li>
+      <li><figure class="shot"><picture><source media="(prefers-color-scheme: dark)" srcset="images/en/search-dark.webp"><img src="images/en/search-light.webp" loading="lazy" alt="A member being searched for, ringed in red on the map"></picture><figcaption>Search for a member</figcaption></figure></li>
+      <li><figure class="shot"><picture><source media="(prefers-color-scheme: dark)" srcset="images/en/siren-dark.webp"><img src="images/en/siren-light.webp" loading="lazy" alt="The siren sounding on a device"></picture><figcaption>A siren on a lost device</figcaption></figure></li>
+      <li><figure class="shot"><picture><source media="(prefers-color-scheme: dark)" srcset="images/en/held-back-dark.webp"><img src="images/en/held-back-light.webp" loading="lazy" alt="A card saying why a position was held back"></picture><figcaption>False positions held back</figcaption></figure></li>
+    </ul>
+  </section>
+
+  <section class="wrap steps">
+    <h2>A group in three steps</h2>
+    <ol class="grid">
+      <li><figure class="shot"><picture><source media="(prefers-color-scheme: dark)" srcset="images/en/step-project-dark.webp"><img src="images/en/step-project-light.webp" loading="lazy" alt="The setup page, first step: create a Firebase project"></picture><figcaption><span class="n">1</span><span>Create a free <a href="https://console.firebase.google.com/">Firebase project</a></span></figcaption></figure></li>
+      <li><figure class="shot"><picture><source media="(prefers-color-scheme: dark)" srcset="images/en/step-setup-dark.webp"><img src="images/en/step-setup-light.webp" loading="lazy" alt="The setup page asking to sign in with Google and allow the setup"></picture><figcaption><span class="n">2</span><span>Open the <a href="https://geoshare-setup.web.app/">setup page</a></span></figcaption></figure></li>
+      <li><figure class="shot"><picture><source media="(prefers-color-scheme: dark)" srcset="images/en/step-link-dark.webp"><img src="images/en/step-link-light.webp" loading="lazy" alt="The connection link and its QR code"></picture><figcaption><span class="n">3</span><span>Send the link</span></figcaption></figure></li>
+    </ol>
+  </section>
+  <section class="limits">
+    <div class="wrap">
+      <h2>Free, within Firebase's daily limits</h2>
+      <ul class="grid">
+        <li><span class="figure">50,000</span><div>reads a day</div></li>
+        <li><span class="figure">20,000</span><div>writes a day</div></li>
+        <li><span class="figure">~10%</span><div>what a family of a few devices uses</div></li>
+      </ul>
+      <p>Past a limit the database stops answering until the quota resets at midnight Pacific time. Keep an eye on usage in the <a href="https://console.firebase.google.com/">Firebase console</a>.</p>
+    </div>
+  </section>
+</main>
+
+<footer class="wrap">
+  <div>Data stays in the project owner's Firebase project · MIT licence</div>
+  <nav>
+    <a href="https://github.com/VitalyOstanin/geoshare#privacy">Privacy</a>
+    <a href="https://github.com/VitalyOstanin/geoshare/blob/master/SECURITY.md">Security</a>
+  </nav>
+</footer>
+</body>
+</html>
