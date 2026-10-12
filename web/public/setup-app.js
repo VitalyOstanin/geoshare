@@ -25,88 +25,14 @@ import {
     servesGroup,
 } from './lib/setup-hosting.js';
 import { qrSvg } from './lib/qr-svg.js';
+import { spokenLanguage } from './lib/language.js';
+import { WORDS_EN, WORDS_RU } from './lib/words/setup.js';
 
-// The page is Russian only for now; a second language is a second object of
-// the same keys, picked in `words` below.
-const WORDS_RU = {
-    kicker: (n) => `Geoshare · заведение группы · шаг ${n} из 5`,
-    s1Title: 'Создайте проект Firebase',
-    s1List: [
-        'Откройте консоль Firebase под аккаунтом, которому будет принадлежать группа. ' +
-            'Если вы там впервые — примите условия.',
-        'Нажмите «Создать проект», назовите его, например, «Семья».',
-        'Google Analytics можно выключить — группе он не нужен.',
-        'Дождитесь «Проект готов» и вернитесь на эту вкладку.',
-    ],
-    s1Console: 'Открыть консоль Firebase',
-    s1Plan: 'Тариф оставьте бесплатным (Spark). Платёжная карта не нужна.',
-    s1Next: 'Проект создан — дальше',
-    s2Title: 'Разрешите настроить проект',
-    s2Text:
-        'Google спросит, можно ли этой странице управлять вашими проектами Firebase и базой. ' +
-        'Доступ действует около часа и нужен только на время настройки: страница ничего не ' +
-        'хранит и никуда его не передаёт.',
-    s2Auth: 'Войти через Google и разрешить',
-    s2Got: 'Доступ получен',
-    s2Refused: (why) => `Доступ не получен: ${why}`,
-    s2NoLibrary: 'Не удалось загрузить вход Google. Проверьте сеть и обновите страницу.',
-    s2NoConfig: 'Не удалось прочитать setup-config.json рядом со страницей.',
-    s2Pick: 'Выберите проект группы',
-    s2NoProjects: 'В этом аккаунте нет проектов Firebase. Вернитесь к шагу 1.',
-    s2Go: (name) => `Настроить «${name}»`,
-    s2IsGroup: (id) => `${id} · уже настроен как группа`,
-    s2Go0: 'Настроить',
-    s3Title: (name) => `Настраиваю «${name}»`,
-    s3Text: 'Не закрывайте вкладку. Обычно 2–5 минут: база после включения ещё немного ' +
-        'недоступна.',
-    s3Retry: 'Повторить',
-    s3Next: 'Дальше',
-    s3Wait: 'Дальше — после настройки',
-    s3Taken: (id) =>
-        `Адрес ${id}.web.app уже занят чужим сайтом. Страница группы должна называться так же, ` +
-        'как проект, поэтому другое имя не подойдёт. Создайте новый проект с другим ' +
-        'идентификатором (при создании его можно изменить под названием) и начните заново.',
-    steps: [
-        'База Firestore включена',
-        'База создана (Европа)',
-        'Правила доступа выложены',
-        'Приложение и страница зарегистрированы',
-        'Отпечаток сборки добавлен',
-        'Страница группы выложена',
-        'Настройки для устройств выложены',
-    ],
-    s4Title: 'Два шага в консоли',
-    s4Text: 'Их Google разрешает только самому владельцу. Ссылки уже ведут в ваш проект.',
-    privacy: 'Политика конфиденциальности',
-    s4SignIn: '1. Вход через Google',
-    s4On: '✓ включён',
-    s4Off: 'ещё не включён',
-    s4Checking: 'проверяю…',
-    s4SignInHow: 'Get started → Google → Enable → название (например, «Семья») и почта поддержки → ' +
-        'Save.',
-    s4OpenProviders: 'Открыть способы входа',
-    s4Redirect: '2. Адрес возврата страницы',
-    s4RedirectHow:
-        'Web client (auto created by Google Service) → Authorized redirect URIs → Add URI → ' +
-        'вставить → Save.',
-    s4Copy: 'Скопировать',
-    s4Copied: 'Скопировано',
-    s4OpenCredentials: 'Открыть клиентов OAuth',
-    s4Tick: 'Адрес добавлен и сохранён',
-    s4Note: 'Первый шаг страница видит сама. Второй проверить не может — проверит вход на ' +
-        'странице группы в конце.',
-    s4Next: 'Оба шага сделаны',
-    s5Title: (name) => `Группа «${name}» готова`,
-    s5Text: 'Подключите своё устройство первым: вы станете администратором группы и сможете ' +
-        'приглашать остальных из приложения.',
-    s5Open: 'Открыть в приложении geoshare',
-    s5Camera: 'Страница открыта на компьютере? Наведите камеру устройства:',
-    s5Foot: (site) =>
-        `Карта группы на компьютере: ${site}. Доступ, выданный этой странице, можно отозвать ` +
-        'в настройках аккаунта Google — группе он больше не нужен.',
-};
-
-const words = WORDS_RU;
+// The words come in one object per language with the same keys (lib/words/setup.js);
+// the one the browser asks for is picked here.
+const words = spokenLanguage() === 'ru' ? WORDS_RU : WORDS_EN;
+document.documentElement.lang = spokenLanguage();
+document.title = words.title;
 
 const SCOPES = [
     'https://www.googleapis.com/auth/firebase',
