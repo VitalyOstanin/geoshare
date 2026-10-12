@@ -15,7 +15,6 @@ import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Icon
@@ -94,16 +93,7 @@ internal fun GroupDetail(
             }
 
             LazyColumn(modifier = Modifier.fillMaxWidth().heightIn(max = LIST_MAX_HEIGHT)) {
-                items(members, key = { it.positionId }) { member ->
-                    MemberRow(
-                        member = member,
-                        name = names[member.positionId] ?: shortName(member.memberId),
-                        face = faces[member.memberId],
-                        now = now,
-                        sought = searches[member.positionId]?.takeIf { it.stands(now) },
-                        onSelect = onSelect,
-                    )
-                }
+                memberRows(members, names, faces, searches, now, onSelect)
             }
         }
     }

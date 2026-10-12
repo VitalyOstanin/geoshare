@@ -13,7 +13,6 @@ import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -95,16 +94,8 @@ internal fun MembersScreen(
             HorizontalDivider()
 
             LazyColumn(modifier = Modifier.fillMaxWidth()) {
-                items(members, key = { it.positionId }) { member ->
-                    MemberRow(
-                        member = member,
-                        name = names[member.positionId] ?: shortName(member.memberId),
-                        face = faces[member.memberId],
-                        now = now,
-                        sought = searches[member.positionId]?.takeIf { it.stands(now) },
-                        onSelect = onSelect,
-                        away = distanceFromViewer(member, positions, ownMemberId, now),
-                    )
+                memberRows(members, names, faces, searches, now, onSelect) { member ->
+                    distanceFromViewer(member, positions, ownMemberId, now)
                 }
             }
         }

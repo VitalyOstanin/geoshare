@@ -50,21 +50,6 @@ export function sirenOf(phoneId, data) {
 }
 
 /**
- * Whether the device should sound for `siren` at `now`: not stopped, newer
- * than `lastAnswered`, and still within `SIREN_FRESH_MS` of `calledAt` — a
- * call whose own clock ran a little ahead counts too, since `calledAt` is
- * the server's own stamp and the device reads it no faster than the server
- * wrote it.
- */
-export function shouldSound(siren, lastAnswered, now) {
-    return (
-        siren.stoppedBy === null &&
-        (lastAnswered === null || siren.calledAt > lastAnswered) &&
-        now < siren.calledAt + SIREN_FRESH_MS
-    );
-}
-
-/**
  * `siren`'s state at `now`, for the caller's own screen to show, in the
  * order the document's own fields settle it: a stop wins over everything
  * else, an answer over silence, and silence past `SIREN_FRESH_MS` means

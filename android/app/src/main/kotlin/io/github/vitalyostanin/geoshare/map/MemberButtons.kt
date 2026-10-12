@@ -21,6 +21,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyListScope
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -226,16 +227,7 @@ private fun MoreSheet(
         )
 
         LazyColumn(modifier = Modifier.fillMaxWidth().padding(top = 8.dp, bottom = 16.dp)) {
-            items(members, key = { it.positionId }) { member ->
-                MemberRow(
-                    member = member,
-                    name = names[member.positionId] ?: shortName(member.memberId),
-                    face = faces[member.memberId],
-                    now = now,
-                    sought = searches[member.positionId]?.takeIf { it.stands(now) },
-                    onSelect = onSelect,
-                )
-            }
+            memberRows(members, names, faces, searches, now, onSelect)
         }
     }
 }
@@ -365,6 +357,33 @@ private fun MoreButton(count: Int, onOpen: () -> Unit, modifier: Modifier = Modi
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
         }
+    }
+}
+
+/**
+ * A row for each of [members], named and pictured out of the group's [names]
+ * and [faces], with the search standing for each; [away] says how far each is
+ * from the viewer, on the lists that say so.
+ */
+internal fun LazyListScope.memberRows(
+    members: List<MemberPosition>,
+    names: Map<String, String>,
+    faces: Map<String, Bitmap>,
+    searches: Map<String, Search>,
+    now: Instant,
+    onSelect: (String) -> Unit,
+    away: (MemberPosition) -> Double? = { null },
+) {
+    items(members, key = { it.positionId }) { member ->
+        MemberRow(
+            member = member,
+            name = names[member.positionId] ?: shortName(member.memberId),
+            face = faces[member.memberId],
+            now = now,
+            sought = searches[member.positionId]?.takeIf { it.stands(now) },
+            onSelect = onSelect,
+            away = away(member),
+        )
     }
 }
 
