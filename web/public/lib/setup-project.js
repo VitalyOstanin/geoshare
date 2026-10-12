@@ -22,6 +22,44 @@ const DATABASE_RETRY_MS = 15_000;
 const realSleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
 /**
+ * An Error tagged with what went wrong in terms the page can put into words:
+ * 'network', 'denied', 'timeout', 'missing' or 'other'. The text of the Error
+ * stays technical, for the console; the page shows a phrase picked by the kind.
+ */
+export function failure(message, kind) {
+    const error = new Error(message);
+
+    error.kind = kind;
+
+    return error;
+}
+
+function kindOfStatus(status) {
+    if (status === 401 || status === 403) {
+        return 'denied';
+    }
+
+    return status === 404 ? 'missing' : 'other';
+}
+
+/** The kind of a thrown value; anything not tagged is 'other'. */
+export function failureKind(error) {
+    return error?.kind || 'other';
+}
+
+/** The key in the words of the setup page for a kind of failure. */
+export function failureWord(kind) {
+    const keys = {
+        network: 'errNetwork',
+        denied: 'errDenied',
+        timeout: 'errTimeout',
+        missing: 'errMissing',
+    };
+
+    return keys[kind] || 'errOther';
+}
+
+/**
  * The caller of the Google APIs for one token. An answer that is not a success
  * is thrown as an Error carrying `status` and the parsed body in `data`, since
  * the steps tell "already there" (409) and "not ready yet" (403) by the status.
@@ -39,11 +77,18 @@ export function makeApi(fetchFn, token) {
             headers['Content-Type'] = 'application/octet-stream';
         }
 
-        const response = await fetchFn(url, {
-            method,
-            headers,
-            body: body ? (raw ? body : JSON.stringify(body)) : undefined,
-        });
+        let response;
+
+        try {
+            response = await fetchFn(url, {
+                method,
+                headers,
+                body: body ? (raw ? body : JSON.stringify(body)) : undefined,
+            });
+        } catch (cause) {
+            throw failure(`${method} ${url.replace(/\?.*/, '')} failed: ${cause.message}`, 'network');
+        }
+
         const text = await response.text();
         let data = null;
 
@@ -61,6 +106,7 @@ export function makeApi(fetchFn, token) {
 
             error.status = response.status;
             error.data = data;
+            error.kind = kindOfStatus(response.status);
             throw error;
         }
 
@@ -82,7 +128,7 @@ export async function waitOperation(api, base, op, sleep = realSleep) {
     }
 
     if (!current.done) {
-        throw new Error('the operation did not finish in time');
+        throw failure('the operation did not finish in time', 'timeout');
     }
 
     if (current.error) {

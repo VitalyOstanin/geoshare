@@ -13,6 +13,9 @@ import {
     ensureAndroidApp,
     ensureFingerprints,
     deployRules,
+    failure,
+    failureKind,
+    failureWord,
 } from './lib/setup-project.js';
 import {
     ensureSite,
@@ -70,6 +73,13 @@ function show(step) {
     window.scrollTo(0, 0);
 }
 
+/** The phrase for a thrown value; the technical text goes to the console. */
+function describe(error) {
+    console.error(error);
+
+    return words[failureWord(failureKind(error))];
+}
+
 function fail(id, text) {
     $(id).textContent = text;
     $(id).hidden = false;
@@ -90,7 +100,7 @@ async function readJson(path) {
     const response = await fetch(path);
 
     if (!response.ok) {
-        throw new Error(`${path} -> ${response.status}`);
+        throw failure(`${path} -> ${response.status}`, 'missing');
     }
 
     return response.json();
@@ -100,7 +110,7 @@ async function readBytes(path) {
     const response = await fetch(path);
 
     if (!response.ok) {
-        throw new Error(`${path} -> ${response.status}`);
+        throw failure(`${path} -> ${response.status}`, 'missing');
     }
 
     return new Uint8Array(await response.arrayBuffer());
@@ -188,7 +198,7 @@ async function gotToken(answer) {
     try {
         renderProjects(await listProjects(state.api));
     } catch (error) {
-        fail('s2-error', error.message);
+        fail('s2-error', describe(error));
     }
 }
 
@@ -312,7 +322,7 @@ async function runSteps() {
 
             for (const path of GENERATED) {
                 if (!served.has(path)) {
-                    throw new Error(`${path} is missing`);
+                    throw failure(`${path} is missing`, 'missing');
                 }
             }
         },
@@ -324,7 +334,7 @@ async function runSteps() {
         try {
             await stepFns[index]();
         } catch (error) {
-            mark(index, 'failed', error.message);
+            mark(index, 'failed', describe(error));
 
             return error;
         }

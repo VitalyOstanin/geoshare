@@ -10,8 +10,12 @@ import {
     ensureWebApp,
     listProjects,
     makeApi,
+    failureKind,
+    failureWord,
     waitOperation,
 } from '../public/lib/setup-project.js';
+
+import { WORDS_EN, WORDS_RU } from '../public/lib/words/setup.js';
 
 const PROJECT = 'geoshare-test-project';
 const PACKAGE = 'io.github.vitalyostanin.geoshare';
@@ -238,4 +242,40 @@ test('a release that fails otherwise is thrown', async () => {
     );
 
     await assert.rejects(deployRules(api, PROJECT, 'x'), (error) => error.status === 400);
+});
+
+test('a failed step is told to the page by a kind, not by the text of the exception', async () => {
+    const denied = makeApi(fakeFetch(() => [403, { error: { status: 'PERMISSION_DENIED' } }]).fetchFn, 't');
+    const unauthorized = makeApi(fakeFetch(() => [401, {}]).fetchFn, 't');
+    const gone = makeApi(fakeFetch(() => [404, {}]).fetchFn, 't');
+    const broken = makeApi(fakeFetch(() => [500, 'oops']).fetchFn, 't');
+    const offline = makeApi(async () => {
+        throw new TypeError('Failed to fetch');
+    }, 't');
+    const kindOf = async (api) => failureKind(await api('GET', 'https://x.test/a').catch((e) => e));
+
+    assert.equal(await kindOf(denied), 'denied');
+    assert.equal(await kindOf(unauthorized), 'denied');
+    assert.equal(await kindOf(gone), 'missing');
+    assert.equal(await kindOf(broken), 'other');
+    assert.equal(await kindOf(offline), 'network');
+});
+
+test('an operation that does not finish is a timeout', async () => {
+    const api = async () => ({ name: 'op', done: false });
+    const error = await waitOperation(api, 'https://x.test', { name: 'op' }, noSleep)
+        .catch((e) => e);
+
+    assert.equal(failureKind(error), 'timeout');
+});
+
+test('every kind of failure has a phrase in both languages', () => {
+    for (const kind of ['network', 'denied', 'timeout', 'missing', 'other']) {
+        const key = failureWord(kind);
+
+        assert.equal(typeof WORDS_EN[key], 'string', key);
+        assert.equal(typeof WORDS_RU[key], 'string', key);
+    }
+
+    assert.equal(failureWord(failureKind(new Error('anything'))), failureWord('other'));
 });
