@@ -37,6 +37,27 @@ import java.time.format.DateTimeFormatter
 /** When a search ends: the day as well as the time, the same reading a permission's end has. */
 internal val SOUGHT_ENDS_AT: DateTimeFormatter = DateTimeFormatter.ofPattern("d MMM HH:mm")
 
+private val SOUGHT_ENDS_TIME: DateTimeFormatter = DateTimeFormatter.ofPattern("HH:mm")
+
+/**
+ * When a search ends, short enough for a narrow card of the strip: the time
+ * alone while the search ends today, the day as well once it does not. The
+ * full form, with the day always, stays on the open card, where there is room.
+ */
+internal fun soughtEndsShort(
+    endsAt: Instant,
+    now: Instant,
+    zone: ZoneId = ZoneId.systemDefault(),
+): String {
+    val ends = endsAt.atZone(zone)
+
+    return if (ends.toLocalDate() == now.atZone(zone).toLocalDate()) {
+        SOUGHT_ENDS_TIME.format(ends)
+    } else {
+        SOUGHT_ENDS_AT.format(ends)
+    }
+}
+
 /**
  * Told on the card of a member the group is looking for: until when, who
  * opened the search, and, to whoever runs the group, the button that ends it.

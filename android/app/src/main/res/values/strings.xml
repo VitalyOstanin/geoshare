@@ -290,6 +290,7 @@
     <string name="search_go">Open</string>
     <string name="search_cancel">Cancel</string>
     <string name="sought_until">searching until %1$s</string>
+    <string name="sought_until_short">until %1$s</string>
     <string name="search_summary">Searching for %1$s (%2$s) until %3$s</string>
     <string name="search_opened_by">Opened by %1$s.</string>
     <string name="search_opened_by_you">Opened by you.</string>

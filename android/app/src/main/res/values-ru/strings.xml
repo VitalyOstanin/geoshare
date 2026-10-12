@@ -256,6 +256,7 @@
     <string name="search_go">Открыть</string>
     <string name="search_cancel">Отмена</string>
     <string name="sought_until">ищем до %1$s</string>
+    <string name="sought_until_short">до %1$s</string>
     <string name="search_summary">%1$s (%2$s): ищем до %3$s</string>
     <string name="search_opened_by">Открыли поиск: %1$s.</string>
     <string name="search_opened_by_you">Открыли вы.</string>

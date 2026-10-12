@@ -329,8 +329,8 @@ private fun MemberButton(
                 Text(
                     text =
                     stringResource(
-                        R.string.sought_until,
-                        SOUGHT_ENDS_AT.format(sought.endsAt.atZone(ZoneId.systemDefault())),
+                        R.string.sought_until_short,
+                        soughtEndsShort(sought.endsAt, now),
                     ),
                     style = MaterialTheme.typography.bodySmall,
                     color = Color(SOUGHT_COLOUR),
