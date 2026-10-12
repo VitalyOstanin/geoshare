@@ -13,7 +13,9 @@ ensure_firebase_image
 
 # The image is the one the rules tests use: a Node runtime is all this needs,
 # and a second image for one command would be a second thing to keep current.
-exec podman run --rm "${limit_args[@]}" \
+# Each test has a limit of its own; this one is for the process that outlives
+# its tests, held up by a timer or a handle left open.
+exec timeout 10m podman run --rm "${limit_args[@]}" \
     -v "${REPO_ROOT}:/src:z" -w /src/web \
     "${FIREBASE_IMAGE}" \
     npm test

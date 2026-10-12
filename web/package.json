@@ -4,6 +4,6 @@
     "type": "module",
     "description": "The map page: the same positions the phones write, in a browser",
     "scripts": {
-        "test": "node --test tests/*.test.mjs"
+        "test": "node --test --test-timeout=30000 tests/*.test.mjs"
     }
 }

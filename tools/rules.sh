@@ -24,7 +24,9 @@ ensure_firebase_image
 # and a proxy listening on the host's loopback is nothing at all from inside a
 # container on its own network. npm then fails to reach the registry with a
 # refused connection to an address it was never meant to use.
-exec podman run --rm --http-proxy=false "${limit_args[@]}" \
+# The limit covers what the tests' own does not: an emulator that never comes
+# up, or an install that waits on the registry.
+exec timeout 20m podman run --rm --http-proxy=false "${limit_args[@]}" \
     -v "${REPO_ROOT}:/src:z" -v "${NPM_VOLUME}:/npm" -w /src \
     "${FIREBASE_IMAGE}" \
     bash -c 'npm --prefix firebase/tests ci \

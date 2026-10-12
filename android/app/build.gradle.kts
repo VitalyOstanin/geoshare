@@ -1,3 +1,4 @@
+import java.time.Duration
 import java.util.Properties
 
 plugins {
@@ -77,6 +78,12 @@ android {
         // the real exception types instead of stand-ins.
         unitTests.isReturnDefaultValues = true
     }
+}
+
+// A test stuck on a delay or a lock would hold the run until somebody stops it
+// by hand. The whole suite takes a small part of this.
+tasks.withType<Test>().configureEach {
+    timeout.set(Duration.ofMinutes(10))
 }
 
 dependencies {
