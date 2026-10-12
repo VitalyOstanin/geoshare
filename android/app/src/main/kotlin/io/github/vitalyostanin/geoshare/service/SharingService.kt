@@ -111,6 +111,15 @@ import java.util.Locale
 
 private const val TAG = "geoshare.service"
 
+/** What [SharingService] made of a fix before deciding whether to write it. */
+private class Judgement(
+    val whence: FoundBy,
+    val settling: Boolean,
+    val jump: JumpReason?,
+    val agreed: Boolean,
+    val home: Boolean,
+)
+
 /**
  * How often the device says how it is when nothing else has made it say so.
  *
@@ -745,6 +754,61 @@ class SharingService : LifecycleService() {
         // one source the spoofer cannot reach.
         trusted: Boolean = false,
     ): Boolean {
+        val judged = judge(fix, trusted)
+
+        // Every fix that arrives is written down, whether or not it is written
+        // out: what the provider answers where it is being jammed is the thing
+        // to be read afterwards, and a filtered log would answer questions
+        // about the filter instead.
+        noteFix(fix, mode, judged.jump, judged.agreed, judged.home, trusted)
+
+        carried.noticeAnAnswerThatWillNotFollow(fix, judged.whence)
+
+        if (judged.jump != null && jumps.enabled && !judged.agreed && !judged.home) {
+            candidate = fix
+            jumpsInARow += 1
+
+            tellThemAnswersAreBeingLeftOut(writer, judged.jump.name)
+
+            askTheOtherRadios(writer, mode)
+
+            return false
+        }
+
+        // Left out the same way a jump is, and for a reason of the same kind:
+        // the member has said this is not a source to take into account. So it
+        // moves no marker, becomes no last position and reaches nobody — while
+        // staying in the log, where the question of what the provider was
+        // saying is answered.
+        if (!sources.uses(judged.whence)) {
+            AppLog.i(
+                TAG,
+                "left out a position found by ${judged.whence.said}: " +
+                    "this phone was told not to take that source into account",
+            )
+
+            // The switch as well as the fact, because "a source was switched
+            // off" answers none of what a member opens the card for.
+            tellThemAnswersAreBeingLeftOut(
+                writer,
+                "$LEFT_OUT_BY_SOURCE:${choiceFor(judged.whence)?.name.orEmpty()}",
+            )
+
+            return false
+        }
+
+        candidate = null
+        jumpsInARow = 0
+
+        return writeAndRemember(writer, fix, mode, judged, always)
+    }
+
+    /**
+     * What is made of a fix before it is written or left out: where it came
+     * from, whether the receiver is still settling, and whether it is a jump
+     * and, if so, whether one of the ways out of a jump applies.
+     */
+    private fun judge(fix: Fix, trusted: Boolean): Judgement {
         if (jumps.takeForgetRequest()) {
             forgetThePlace()
         }
@@ -809,50 +873,20 @@ class SharingService : LifecycleService() {
         // is — so this cannot be arranged by feeding the device a signal.
         val home = jump != null && !agreed && comingHome(trail, lastFix, fix)
 
-        // Every fix that arrives is written down, whether or not it is written
-        // out: what the provider answers where it is being jammed is the thing
-        // to be read afterwards, and a filtered log would answer questions
-        // about the filter instead.
-        noteFix(fix, mode, jump, agreed, home, trusted)
+        return Judgement(whence, settling, jump, agreed, home)
+    }
 
-        carried.noticeAnAnswerThatWillNotFollow(fix, whence)
-
-        if (jump != null && jumps.enabled && !agreed && !home) {
-            candidate = fix
-            jumpsInARow += 1
-
-            tellThemAnswersAreBeingLeftOut(writer, jump.name)
-
-            askTheOtherRadios(writer, mode)
-
-            return false
-        }
-
-        // Left out the same way a jump is, and for a reason of the same kind:
-        // the member has said this is not a source to take into account. So it
-        // moves no marker, becomes no last position and reaches nobody — while
-        // staying in the log, where the question of what the provider was
-        // saying is answered.
-        if (!sources.uses(whence)) {
-            AppLog.i(
-                TAG,
-                "left out a position found by ${whence.said}: " +
-                    "this phone was told not to take that source into account",
-            )
-
-            // The switch as well as the fact, because "a source was switched
-            // off" answers none of what a member opens the card for.
-            tellThemAnswersAreBeingLeftOut(
-                writer,
-                "$LEFT_OUT_BY_SOURCE:${choiceFor(whence)?.name.orEmpty()}",
-            )
-
-            return false
-        }
-
-        candidate = null
-        jumpsInARow = 0
-
+    /**
+     * Writes a fix that was not left out, when it passes the filter, and
+     * remembers it as the last position once a group took it.
+     */
+    private suspend fun writeAndRemember(
+        writer: EveryGroup,
+        fix: Fix,
+        mode: CollectionMode,
+        judged: Judgement,
+        always: Boolean,
+    ): Boolean {
         if (!always && !shouldWrite(lastFix, fix, mode)) {
             return false
         }
@@ -860,14 +894,14 @@ class SharingService : LifecycleService() {
         // Read once and carried into the write: asking twice would let the
         // cable come out between the two answers, and then the document would
         // disagree with what was decided here.
-        val written = Written(fix, charging(), settling)
+        val written = Written(fix, charging(), judged.settling)
 
         // News passes the filter by; a repeat of itself is not news.
         if (written == lastWritten) {
             return false
         }
 
-        if (!writeQuietly(writer, written, mode, whence)) {
+        if (!writeQuietly(writer, written, mode, judged.whence)) {
             return false
         }
 

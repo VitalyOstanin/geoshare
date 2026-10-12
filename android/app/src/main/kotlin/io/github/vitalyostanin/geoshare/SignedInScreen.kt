@@ -15,10 +15,12 @@ import io.github.vitalyostanin.geoshare.collection.Constellation
 import io.github.vitalyostanin.geoshare.download.DownloadSetting
 import io.github.vitalyostanin.geoshare.log.AppLog
 import io.github.vitalyostanin.geoshare.map.FirstShareQuestion
+import io.github.vitalyostanin.geoshare.map.GroupChoice
 import io.github.vitalyostanin.geoshare.map.GroupSwitch
 import io.github.vitalyostanin.geoshare.map.KeepWatching
 import io.github.vitalyostanin.geoshare.map.LocalLink
 import io.github.vitalyostanin.geoshare.map.MapScreen
+import io.github.vitalyostanin.geoshare.map.MemberProfile
 import io.github.vitalyostanin.geoshare.map.PublishProfile
 import io.github.vitalyostanin.geoshare.map.SettingsActions
 import io.github.vitalyostanin.geoshare.map.SettingsState
@@ -128,70 +130,7 @@ internal fun SignedInScreen(
         leavePreviousId(current.memberId, activity.device, connection = connection)
     }
 
-    // Only ConnectState.Done ever leaves one of these
-    // behind; an ordinary sign-in finds nothing and
-    // this does nothing.
-    var wrongAccount by remember {
-        mutableStateOf<PendingInvitation?>(null)
-    }
-
-    LaunchedEffect(connection, current.memberId) {
-        // Kept for the sign-in to the group it invites
-        // to, which need not be the one on the screen.
-        val kept = PendingInvitationStore.read(activity)
-
-        // One the rules already turned down is not tried again; the map
-        // goes on saying so until the group is dropped or another link
-        // is opened.
-        answers.refusedJoin = refusedJoinOf(kept, connection.projectId)
-
-        val pending =
-            kept
-                ?.takeIf { it.isFor(connection.projectId) && !it.refused }
-                ?: return@LaunchedEffect
-
-        // Plainly another account: said before any
-        // write, and the invitation is kept for the
-        // right one (ADR-0019).
-        if (pending.meantForAnotherAccount(current.email)) {
-            wrongAccount = pending
-
-            return@LaunchedEffect
-        }
-
-        val joined =
-            activity.withGroup("joined a group from a pending invitation") {
-                consumePendingInvitation(
-                    activity,
-                    current.memberId,
-                    pending,
-                    connection = connection,
-                )
-            }
-
-        // Refused by the rules: the invitation is marked so, and the map
-        // says it in its own words. Anything else — no network — is the
-        // general trouble line, and the invitation waits for another try.
-        answers.refusedJoin =
-            refusedJoinOf(PendingInvitationStore.read(activity), connection.projectId)
-        answers.groupTrouble = !joined && answers.refusedJoin == null
-    }
-
-    wrongAccount?.let { pending ->
-        WrongAccountDialog(
-            invitedAddress = pending.invitedAddress.orEmpty(),
-            signedInAddress =
-            ConnectLink.shortenedAddress(current.email.orEmpty()),
-            onLater = {
-                PendingInvitationStore.clear(activity)
-                wrongAccount = null
-            },
-            onSwitchAccount = {
-                wrongAccount = null
-                activity.signIn.signOut()
-            },
-        )
-    }
+    PendingInvitationAnswer(activity, connection, current, answers)
 
     // A service left without a session stops after a
     // minute, and the account signed in after that —
@@ -294,48 +233,143 @@ internal fun SignedInScreen(
                     writeLabel(current.memberId, kind, key, name, connection = connection)
                 }
             },
-            groups =
-            GroupSwitch(
-                choices = groupChoices,
-                selected = connection.projectId,
-                onSelect = { projectId -> Connections.select(activity, projectId) },
-                onJoin = activity.connectFlow::askForLink,
-                // In the activity's scope rather than the dialog's: the
-                // dialog goes with the screen the moment the group does,
-                // and what follows the batch must not go with it.
-                onLeave = { ask ->
-                    val leaving = Connections.of(ask.projectId)
-
-                    leaving == null ||
-                        activity.lifecycleScope
-                            .async { activity.leave(leaving, ask.how) }
-                            .await()
-                },
-            ),
+            groups = groupSwitch(activity, connection, groupChoices),
         )
 
         // Once per group, over the map: whom to show this member's place to,
         // while nobody has been given it yet.
         if (!outside) {
-            FirstShareQuestion(
-                connection = connection,
-                memberId = current.memberId,
-                profiles = profiles,
-                onShare = { readers, span ->
-                    activity.lifecycleScope.launch {
-                        val now = Instant.now()
-
-                        publishSharing(
-                            memberId = current.memberId,
-                            sharedWith =
-                            readers.fold(sharedWith) { given, reader ->
-                                withShare(given, reader, span, now)
-                            },
-                            connection = connection,
-                        )
-                    }
-                },
-            )
+            AskFirstShare(activity, connection, current.memberId, profiles, sharedWith)
         }
     }
+}
+
+/**
+ * Takes up an invitation kept from before the sign-in, for this group and
+ * account, and asks about one that was plainly meant for another account.
+ */
+@Composable
+private fun PendingInvitationAnswer(
+    activity: MainActivity,
+    connection: GroupConnection,
+    current: AuthState.SignedIn,
+    answers: GroupAnswers,
+) {
+    // Only ConnectState.Done ever leaves one of these
+    // behind; an ordinary sign-in finds nothing and
+    // this does nothing.
+    var wrongAccount by remember {
+        mutableStateOf<PendingInvitation?>(null)
+    }
+
+    LaunchedEffect(connection, current.memberId) {
+        // Kept for the sign-in to the group it invites
+        // to, which need not be the one on the screen.
+        val kept = PendingInvitationStore.read(activity)
+
+        // One the rules already turned down is not tried again; the map
+        // goes on saying so until the group is dropped or another link
+        // is opened.
+        answers.refusedJoin = refusedJoinOf(kept, connection.projectId)
+
+        val pending =
+            kept
+                ?.takeIf { it.isFor(connection.projectId) && !it.refused }
+                ?: return@LaunchedEffect
+
+        // Plainly another account: said before any
+        // write, and the invitation is kept for the
+        // right one (ADR-0019).
+        if (pending.meantForAnotherAccount(current.email)) {
+            wrongAccount = pending
+
+            return@LaunchedEffect
+        }
+
+        val joined =
+            activity.withGroup("joined a group from a pending invitation") {
+                consumePendingInvitation(
+                    activity,
+                    current.memberId,
+                    pending,
+                    connection = connection,
+                )
+            }
+
+        // Refused by the rules: the invitation is marked so, and the map
+        // says it in its own words. Anything else — no network — is the
+        // general trouble line, and the invitation waits for another try.
+        answers.refusedJoin =
+            refusedJoinOf(PendingInvitationStore.read(activity), connection.projectId)
+        answers.groupTrouble = !joined && answers.refusedJoin == null
+    }
+
+    wrongAccount?.let { pending ->
+        WrongAccountDialog(
+            invitedAddress = pending.invitedAddress.orEmpty(),
+            signedInAddress =
+            ConnectLink.shortenedAddress(current.email.orEmpty()),
+            onLater = {
+                PendingInvitationStore.clear(activity)
+                wrongAccount = null
+            },
+            onSwitchAccount = {
+                wrongAccount = null
+                activity.signIn.signOut()
+            },
+        )
+    }
+}
+
+/** The groups this device is in, to switch between, join and leave. */
+private fun groupSwitch(
+    activity: MainActivity,
+    connection: GroupConnection,
+    groupChoices: List<GroupChoice>,
+): GroupSwitch = GroupSwitch(
+    choices = groupChoices,
+    selected = connection.projectId,
+    onSelect = { projectId -> Connections.select(activity, projectId) },
+    onJoin = activity.connectFlow::askForLink,
+    // In the activity's scope rather than the dialog's: the
+    // dialog goes with the screen the moment the group does,
+    // and what follows the batch must not go with it.
+    onLeave = { ask ->
+        val leaving = Connections.of(ask.projectId)
+
+        leaving == null ||
+            activity.lifecycleScope
+                .async { activity.leave(leaving, ask.how) }
+                .await()
+    },
+)
+
+/** Once per group, over the map: whom to show this member's place to, while nobody has been given it yet. */
+@Composable
+private fun AskFirstShare(
+    activity: MainActivity,
+    connection: GroupConnection,
+    memberId: String,
+    profiles: Map<String, MemberProfile>?,
+    sharedWith: Map<String, Instant>,
+) {
+    FirstShareQuestion(
+        connection = connection,
+        memberId = memberId,
+        profiles = profiles,
+        onShare = { readers, span ->
+            activity.lifecycleScope.launch {
+                val now = Instant.now()
+
+                publishSharing(
+                    memberId = memberId,
+                    sharedWith =
+                    readers.fold(sharedWith) { given, reader ->
+                        withShare(given, reader, span, now)
+                    },
+                    connection = connection,
+                )
+            }
+        },
+    )
 }
