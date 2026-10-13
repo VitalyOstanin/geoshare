@@ -1,0 +1,34 @@
+# The page's scripts that no test loads, so Node's coverage table leaves them
+# out instead of showing them at nought. Most draw on the map or the document,
+# or talk to Firebase, which these tests have neither of. tools/coverage.sh
+# fails on a script missing from both the report and this list, and on one
+# listed here that the tests have started to load: take it out, and the list
+# only gets shorter.
+app.js
+boot-sign-in.js
+boot-theme.js
+firebase-config.example.js
+join-app.js
+lib/faces.js
+lib/join-words.js
+lib/map-card.js
+lib/map-follow.js
+lib/map.js
+lib/store-group.js
+lib/store-positions.js
+lib/store-search.js
+lib/store.js
+page/admin-panel.js
+page/card-place.js
+page/dialogs.js
+page/group-panel.js
+page/link-ui.js
+page/menus.js
+page/pause.js
+page/reset-ui.js
+page/search-ui.js
+page/siren-ui.js
+page/state.js
+page/strip-tip.js
+page/strip.js
+setup-app.js
