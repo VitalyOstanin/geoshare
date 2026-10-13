@@ -242,10 +242,19 @@
     color: var(--link);
 }
 
+/* A name of one long word, or an address, breaks where it has to: unbroken,
+   it set the width of the whole menu, and every row's mark went past the
+   right edge with it. */
+.group-member > :first-child {
+    min-width: 0;
+    overflow-wrap: anywhere;
+}
+
 /* The one who runs the group, in a column of its own at the right edge: the
    names beside it are links, and a word pressed up against one reads as part
    of it. */
 .group-runs {
+    flex-shrink: 0;
     margin-left: auto;
     font-size: var(--text-body);
     opacity: 0.7;
