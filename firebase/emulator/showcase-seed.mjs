@@ -46,49 +46,77 @@ const MEMBERS = [
         // as Anna, so she borrows the first of them.
         email: 'parent@geoshare.test',
         name: 'Anna',
-        device: 'pixel-8',
-        model: 'Pixel 8',
-        latitude: 59.437,
-        longitude: 24.7454,
-        ageMinutes: 2,
-        battery: 81,
+        // Two devices of her own, each under the name she gave it: the one
+        // member on the screenshots whose markers carry a device name.
+        devices: [
+            {
+                id: 'pixel-8',
+                name: 'New phone',
+                model: 'Pixel 8',
+                latitude: 59.437,
+                longitude: 24.7454,
+                ageMinutes: 2,
+                battery: 81,
+            },
+            {
+                id: 'galaxy-s10',
+                name: 'Old phone',
+                model: 'Galaxy S10',
+                latitude: 59.4313,
+                longitude: 24.7579,
+                ageMinutes: 23,
+                battery: 92,
+            },
+        ],
     },
     {
         localId: 'showmark1',
         email: 'mark@geoshare.test',
         name: 'Mark',
-        device: 'galaxy-s24',
-        model: 'Galaxy S24',
-        latitude: 59.4386,
-        longitude: 24.788,
-        ageMinutes: 7,
-        battery: 64,
+        devices: [
+            {
+                id: 'galaxy-s24',
+                model: 'Galaxy S24',
+                latitude: 59.4386,
+                longitude: 24.788,
+                ageMinutes: 7,
+                battery: 64,
+            },
+        ],
     },
     {
         localId: 'showmia1',
         email: 'mia@geoshare.test',
         name: 'Mia',
-        device: 'redmi-note-13',
-        model: 'Redmi Note 13',
-        latitude: 59.44,
-        longitude: 24.737,
-        ageMinutes: 4,
-        battery: 38,
+        devices: [
+            {
+                id: 'redmi-note-13',
+                model: 'Redmi Note 13',
+                latitude: 59.44,
+                longitude: 24.737,
+                ageMinutes: 4,
+                battery: 38,
+            },
+        ],
     },
     {
         localId: 'showleo2',
         email: 'leo@geoshare.test',
         name: 'Leo',
-        device: 'galaxy-a54',
-        model: 'Galaxy A54',
-        latitude: 59.4455,
-        longitude: 24.735,
-        ageMinutes: 11,
-        battery: 55,
-        // The one whose newer answers are being held back, for the card that
-        // says why: three of them since six minutes ago, each too far from the
-        // last place to have been reached in time.
-        leftOut: { count: 3, reason: 'Speed', sinceMinutes: 6 },
+        devices: [
+            {
+                id: 'galaxy-a54',
+                model: 'Galaxy A54',
+                latitude: 59.4455,
+                longitude: 24.735,
+                ageMinutes: 11,
+                battery: 55,
+                // The one whose newer answers are being held back, for the card
+                // that says why: three of them since six minutes ago, each too
+                // far from the last place to have been reached in time.
+                leftOut: { count: 3, reason: 'Speed', sinceMinutes: 6 },
+            },
+        ],
     },
 ];
 
@@ -222,7 +250,6 @@ await write('project/group', { group: stringValue(GROUP) });
 
 for (const member of MEMBERS) {
     const uid = uids.get(member.email);
-    const seen = minutesAgo(member.ageMinutes);
 
     await write(`groups/${GROUP}/members/${uid}`, {
         displayName: stringValue(member.name),
@@ -240,37 +267,47 @@ for (const member of MEMBERS) {
 
     await write(`groups/${GROUP}/grants/${uid}`, {
         sharedWith: sharedWith(readers),
-        devices: { arrayValue: { values: [stringValue(member.device)] } },
+        devices: {
+            arrayValue: { values: member.devices.map((device) => stringValue(device.id)) },
+        },
     });
 
-    await write(`groups/${GROUP}/devices/${uid}`, {
-        [member.device]: {
+    const devices = member.devices.map((device) => [
+        device.id,
+        {
             mapValue: {
                 fields: {
-                    model: stringValue(member.model),
-                    onlineAt: timeValue(seen),
+                    ...(device.name && { name: stringValue(device.name) }),
+                    model: stringValue(device.model),
+                    onlineAt: timeValue(minutesAgo(device.ageMinutes)),
                     mode: stringValue('Standby'),
-                    batteryPercent: { integerValue: String(member.battery) },
+                    batteryPercent: { integerValue: String(device.battery) },
                     charging: { booleanValue: false },
                 },
             },
         },
-    });
+    ]);
 
-    await write(`groups/${GROUP}/positions/${uid}.${member.device}`, {
-        memberId: stringValue(uid),
-        latitude: { doubleValue: member.latitude },
-        longitude: { doubleValue: member.longitude },
-        takenAt: timeValue(seen),
-        writtenAt: timeValue(seen),
-        mode: stringValue('Standby'),
-        batteryPercent: { integerValue: String(member.battery) },
-        ...(member.leftOut && {
-            leftOutCount: { integerValue: String(member.leftOut.count) },
-            leftOutReason: stringValue(member.leftOut.reason),
-            leftOutSince: timeValue(minutesAgo(member.leftOut.sinceMinutes)),
-        }),
-    });
+    await write(`groups/${GROUP}/devices/${uid}`, Object.fromEntries(devices));
+
+    for (const device of member.devices) {
+        const seen = minutesAgo(device.ageMinutes);
+
+        await write(`groups/${GROUP}/positions/${uid}.${device.id}`, {
+            memberId: stringValue(uid),
+            latitude: { doubleValue: device.latitude },
+            longitude: { doubleValue: device.longitude },
+            takenAt: timeValue(seen),
+            writtenAt: timeValue(seen),
+            mode: stringValue('Standby'),
+            batteryPercent: { integerValue: String(device.battery) },
+            ...(device.leftOut && {
+                leftOutCount: { integerValue: String(device.leftOut.count) },
+                leftOutReason: stringValue(device.leftOut.reason),
+                leftOutSince: timeValue(minutesAgo(device.leftOut.sinceMinutes)),
+            }),
+        });
+    }
 }
 
 for (const { email } of MEMBERS) {
