@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Runs the instrumented smoke tests on the headless emulator: the application
-# starts, and the settings and licences screens draw.
+# starts, and the settings, licences and connection screens draw.
 #
 # Starts the emulator when it is not running and stops it afterwards; one left
 # running for a try-out is used as it is and left running.

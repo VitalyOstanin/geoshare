@@ -68,7 +68,7 @@ publishing run the Firebase command line on the machine itself, and need
 | 9  | `tools/run-services.sh`      | stand-in Firestore and sign-in, filled with stand-in data                   |
 | 10 | `tools/run-emulator.sh`      | a headless Android emulator; with the line above, a stand without a project |
 | 11 | `tools/coverage.sh`          | how much of the code the Android and the page's tests reach                 |
-| 12 | `tools/test-instrumented.sh` | smoke tests on the emulator: start-up, settings, licences                   |
+| 12 | `tools/test-instrumented.sh` | smoke tests on the emulator: start-up, settings, licences, connecting       |
 
 The rest of `tools/` — `project.sh`, `web-config.sh`, `setup-site.sh`,
 `read-cost.sh`, `device-log.sh`, `device-sky.sh`, `siren-sound.sh`,

@@ -261,6 +261,13 @@ private fun Confirm(
     // The owner's own link to a device with nothing connected yet carries no
     // invitation, so only the project row is left; see ConnectFlow.settle.
     InvitationFields(invitation)
+    // The captions above are whatever the link says; the site is where the
+    // settings were really read from, the one thing here to check against
+    // what the person who sent the link said it would be.
+    ConnectField(
+        R.string.connect_field_site,
+        stringResource(R.string.connect_site_host, settings.site),
+    )
     ConnectField(R.string.connect_field_project, settings.projectId)
 
     // Whoever set the project up reads it all from the Firebase console, rules
@@ -300,10 +307,14 @@ private fun InvitationFields(invitation: Invitation?) {
     invitation?.groupName?.let {
         val quoted = stringResource(R.string.connect_quoted_value, it)
 
-        ConnectField(R.string.connect_field_group, quoted)
+        ConnectField(R.string.connect_field_group, quoted, fromLink = true)
     }
-    invitation?.inviter?.let { ConnectField(R.string.connect_field_invited_by, it) }
-    invitation?.invitedAddress?.let { ConnectField(R.string.connect_field_for_account, it) }
+    invitation?.inviter?.let {
+        ConnectField(R.string.connect_field_invited_by, it, fromLink = true)
+    }
+    invitation?.invitedAddress?.let {
+        ConnectField(R.string.connect_field_for_account, it, fromLink = true)
+    }
 }
 
 /** Screen В: [site]'s `geoshare.json` could not be fetched, for either [FailureKind]. */
@@ -333,7 +344,7 @@ private fun Failed(site: String, onCancel: () -> Unit, onRetry: () -> Unit) {
 
 /** One row of the key/value block Б shows: [label] on the left, [value] on the right. */
 @Composable
-private fun ConnectField(@StringRes label: Int, value: String) {
+private fun ConnectField(@StringRes label: Int, value: String, fromLink: Boolean = false) {
     Row(
         modifier = Modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.SpaceBetween,
@@ -343,7 +354,16 @@ private fun ConnectField(@StringRes label: Int, value: String) {
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
-        Text(text = value, style = MaterialTheme.typography.bodyMedium)
+        Column(horizontalAlignment = Alignment.End) {
+            Text(text = value, style = MaterialTheme.typography.bodyMedium)
+            if (fromLink) {
+                Text(
+                    text = stringResource(R.string.connect_from_link),
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
+        }
     }
 }
 
