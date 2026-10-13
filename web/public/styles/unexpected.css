@@ -18,7 +18,10 @@
     padding: 0.6rem 0.8rem;
     border-left: 4px solid var(--error);
     border-radius: var(--radius-medium);
-    background: var(--surface);
+    /* Opaque, unlike the surfaces over the map: it can stand over a page of
+       text, the sign-in screen's among them, and words showing through would
+       be read with its own. Canvas is the page's own ground in either theme. */
+    background: linear-gradient(var(--surface), var(--surface)), Canvas;
     color: var(--on-surface);
     box-shadow: var(--shadow-high);
     font-size: var(--text-body);
