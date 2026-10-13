@@ -39,7 +39,7 @@ camerax = "1.6.2"
 # The licences of everything the application carries, listed on a screen of
 # its own: the plugin collects them from the dependencies at build time, the
 # core library reads what it collected.
-aboutLibraries = "15.2.0"
+aboutLibraries = "15.3.0"
 junit = "4.13.2"
 # The instrumented smoke tests: the runner on the device and the JUnit 4
 # bridge the Compose test rules are built on.
