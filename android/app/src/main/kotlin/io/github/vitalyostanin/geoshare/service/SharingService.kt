@@ -72,6 +72,7 @@ import io.github.vitalyostanin.geoshare.collection.whomToAsk
 import io.github.vitalyostanin.geoshare.collection.word
 import io.github.vitalyostanin.geoshare.log.AppLog
 import io.github.vitalyostanin.geoshare.map.PublishedProfile
+import io.github.vitalyostanin.geoshare.map.logFailure
 import io.github.vitalyostanin.geoshare.map.stands
 import io.github.vitalyostanin.geoshare.membership.Presence
 import io.github.vitalyostanin.geoshare.membership.presenceBeforeAnswer
@@ -461,7 +462,7 @@ class SharingService : LifecycleService() {
                 } catch (cancellation: CancellationException) {
                     throw cancellation
                 } catch (refusal: Exception) {
-                    AppLog.w(
+                    logFailure(
                         TAG,
                         "could not end the search in $link from its own notification",
                         refusal,
@@ -488,7 +489,7 @@ class SharingService : LifecycleService() {
                 } catch (cancellation: CancellationException) {
                     throw cancellation
                 } catch (refusal: Exception) {
-                    AppLog.w(TAG, "could not say the siren was stopped in $link", refusal)
+                    logFailure(TAG, "could not say the siren was stopped in $link", refusal)
                 }
             }
         }
@@ -694,7 +695,7 @@ class SharingService : LifecycleService() {
             } catch (cancellation: CancellationException) {
                 throw cancellation
             } catch (error: Exception) {
-                AppLog.w(TAG, "could not say how the phone is", error)
+                logFailure(TAG, "could not say how the phone is", error)
             }
         }
     }
@@ -1438,7 +1439,7 @@ class SharingService : LifecycleService() {
     } catch (cancellation: CancellationException) {
         throw cancellation
     } catch (error: Exception) {
-        AppLog.w(TAG, "could not write the position", error)
+        logFailure(TAG, "could not write the position", error)
 
         false
     }

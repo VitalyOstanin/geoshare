@@ -3,6 +3,7 @@ package io.github.vitalyostanin.geoshare.service
 import com.google.firebase.firestore.FieldValue
 import com.google.firebase.firestore.SetOptions
 import io.github.vitalyostanin.geoshare.log.AppLog
+import io.github.vitalyostanin.geoshare.map.logFailure
 import io.github.vitalyostanin.geoshare.project.GroupConnection
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.tasks.await
@@ -36,7 +37,7 @@ suspend fun leavePreviousId(
     } catch (cancellation: CancellationException) {
         throw cancellation
     } catch (error: Exception) {
-        AppLog.w(TAG, "could not take back the documents of the previous id", error)
+        logFailure(TAG, "could not take back the documents of the previous id", error)
     }
 }
 

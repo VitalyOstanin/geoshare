@@ -7,6 +7,7 @@ import io.github.vitalyostanin.geoshare.R
 import io.github.vitalyostanin.geoshare.log.AppLog
 import io.github.vitalyostanin.geoshare.map.Search
 import io.github.vitalyostanin.geoshare.map.idTail
+import io.github.vitalyostanin.geoshare.map.logFailure
 import io.github.vitalyostanin.geoshare.map.searchOf
 import io.github.vitalyostanin.geoshare.project.GroupConnection
 import kotlinx.coroutines.CancellationException
@@ -180,7 +181,7 @@ suspend fun memberDisplayName(memberId: String, connection: GroupConnection): St
 } catch (cancellation: CancellationException) {
     throw cancellation
 } catch (refusal: Exception) {
-    AppLog.w(TAG, "could not read the name of $memberId", refusal)
+    logFailure(TAG, "could not read the name of $memberId", refusal)
     null
 }
 

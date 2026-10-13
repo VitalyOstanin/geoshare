@@ -67,7 +67,7 @@ suspend fun publishProfile(
     } catch (error: Exception) {
         // The markers fall back to the id, which is what they showed before
         // profiles existed, so this is worth a line rather than a message.
-        AppLog.w(TAG, "could not publish the profile", error)
+        logFailure(TAG, "could not publish the profile", error)
 
         return false
     }
@@ -105,7 +105,7 @@ suspend fun publishDevice(
     } catch (error: Exception) {
         // Nothing on this device stops working: it goes on writing its own
         // position, and it is the readers who will not find the document.
-        AppLog.w(TAG, "could not publish the phone", error)
+        logFailure(TAG, "could not publish the phone", error)
 
         return false
     }
@@ -128,7 +128,7 @@ private suspend fun announceSharing(memberId: String, connection: GroupConnectio
     } catch (cancellation: CancellationException) {
         throw cancellation
     } catch (error: Exception) {
-        AppLog.w(TAG, "could not say that the permissions changed", error)
+        logFailure(TAG, "could not say that the permissions changed", error)
     }
 }
 
@@ -167,7 +167,7 @@ suspend fun publishSharing(
     } catch (cancellation: CancellationException) {
         throw cancellation
     } catch (error: Exception) {
-        AppLog.w(TAG, "could not publish the permissions", error)
+        logFailure(TAG, "could not publish the permissions", error)
 
         return false
     }

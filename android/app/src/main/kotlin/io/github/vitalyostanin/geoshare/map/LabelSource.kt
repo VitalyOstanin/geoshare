@@ -155,7 +155,7 @@ private suspend fun trying(failure: String, write: suspend () -> Unit): Boolean 
 } catch (cancellation: CancellationException) {
     throw cancellation
 } catch (error: Exception) {
-    AppLog.w(TAG, failure, error)
+    logFailure(TAG, failure, error)
 
     false
 }

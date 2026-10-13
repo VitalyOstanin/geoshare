@@ -3,7 +3,6 @@ package io.github.vitalyostanin.geoshare.map
 import com.google.firebase.firestore.FieldValue
 import io.github.vitalyostanin.geoshare.collection.WATCH_REFRESH
 import io.github.vitalyostanin.geoshare.collection.WATCH_RETRY
-import io.github.vitalyostanin.geoshare.log.AppLog
 import io.github.vitalyostanin.geoshare.project.GroupConnection
 import io.github.vitalyostanin.geoshare.service.WatchField
 import io.github.vitalyostanin.geoshare.service.positionId
@@ -60,7 +59,7 @@ class WatchWriter(
                 // The old claim is still out there and has minutes left on it,
                 // so a failed write is worth a line and another try soon, not
                 // a message on screen.
-                AppLog.w(TAG, "could not say that we are looking", error)
+                logFailure(TAG, "could not say that we are looking", error)
                 next = WATCH_RETRY
             }
 
@@ -90,7 +89,7 @@ class WatchWriter(
         } catch (cancellation: CancellationException) {
             throw cancellation
         } catch (error: Exception) {
-            AppLog.w(TAG, "could not say that we stopped looking", error)
+            logFailure(TAG, "could not say that we stopped looking", error)
         }
     }
 }

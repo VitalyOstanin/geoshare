@@ -35,7 +35,6 @@ import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.unit.dp
 import com.google.firebase.firestore.Source
 import io.github.vitalyostanin.geoshare.R
-import io.github.vitalyostanin.geoshare.log.AppLog
 import io.github.vitalyostanin.geoshare.project.GroupConnection
 import io.github.vitalyostanin.geoshare.service.grantsOf
 import io.github.vitalyostanin.geoshare.service.permissionsOf
@@ -80,7 +79,7 @@ private suspend fun nothingShared(memberId: String, connection: GroupConnection)
 } catch (cancellation: CancellationException) {
     throw cancellation
 } catch (error: Exception) {
-    AppLog.w(TAG, "could not read whom the place is shown to", error)
+    logFailure(TAG, "could not read whom the place is shown to", error)
     null
 }
 

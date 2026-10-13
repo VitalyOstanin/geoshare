@@ -5,9 +5,7 @@ import io.github.vitalyostanin.geoshare.collection.CollectionMode
 import io.github.vitalyostanin.geoshare.collection.Fix
 import io.github.vitalyostanin.geoshare.collection.FoundBy
 import io.github.vitalyostanin.geoshare.collection.watchedUntil
-import io.github.vitalyostanin.geoshare.log.AppLog
-import io.github.vitalyostanin.geoshare.map.Failure
-import io.github.vitalyostanin.geoshare.map.failureOf
+import io.github.vitalyostanin.geoshare.map.logFailure
 import io.github.vitalyostanin.geoshare.map.stands
 import io.github.vitalyostanin.geoshare.project.GroupConnection
 import kotlinx.coroutines.CancellationException
@@ -144,15 +142,7 @@ class EveryGroup(private val links: () -> List<GroupLink>) {
             } catch (cancellation: CancellationException) {
                 throw cancellation
             } catch (refusal: Exception) {
-                if (failureOf(refusal) == Failure.UNEXPECTED) {
-                    AppLog.e(
-                        TAG,
-                        "could not $what in ${link.connection.projectId}: a fault here",
-                        refusal,
-                    )
-                } else {
-                    AppLog.w(TAG, "could not $what in ${link.connection.projectId}", refusal)
-                }
+                logFailure(TAG, "could not $what in ${link.connection.projectId}", refusal)
 
                 // Every group's refusal travels with the one thrown, so that
                 // a failure everywhere says what each group answered.

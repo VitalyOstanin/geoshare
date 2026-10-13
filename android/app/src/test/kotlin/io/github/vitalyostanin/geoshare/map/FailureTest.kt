@@ -2,6 +2,7 @@ package io.github.vitalyostanin.geoshare.map
 
 import com.google.firebase.firestore.FirebaseFirestoreException
 import com.google.firebase.firestore.FirebaseFirestoreException.Code
+import io.github.vitalyostanin.geoshare.log.AppLog
 import org.junit.Assert.assertEquals
 import org.junit.Test
 import java.io.IOException
@@ -30,5 +31,23 @@ class FailureTest {
     fun `a fault of the application's own is neither`() {
         assertEquals(Failure.UNEXPECTED, failureOf(IllegalStateException("no state")))
         assertEquals(Failure.UNEXPECTED, failureOf(NullPointerException()))
+    }
+
+    @Test
+    fun `writing a failure down does not fail whatever its kind`() {
+        val wasToSystemLog = AppLog.toSystemLog
+        AppLog.toSystemLog = false
+
+        try {
+            logFailure(
+                "test",
+                "a refusal",
+                FirebaseFirestoreException("denied", Code.PERMISSION_DENIED),
+            )
+            logFailure("test", "no answer", IOException("reset"))
+            logFailure("test", "a fault", IllegalStateException("no state"))
+        } finally {
+            AppLog.toSystemLog = wasToSystemLog
+        }
     }
 }

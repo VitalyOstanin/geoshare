@@ -7,8 +7,8 @@ import androidx.compose.runtime.setValue
 import androidx.lifecycle.lifecycleScope
 import io.github.vitalyostanin.geoshare.auth.AuthState
 import io.github.vitalyostanin.geoshare.download.DownloadSetting
-import io.github.vitalyostanin.geoshare.log.AppLog
 import io.github.vitalyostanin.geoshare.map.SettingsActions
+import io.github.vitalyostanin.geoshare.map.logFailure
 import io.github.vitalyostanin.geoshare.map.publishSharing
 import io.github.vitalyostanin.geoshare.map.withShare
 import io.github.vitalyostanin.geoshare.map.withinAnswerWait
@@ -320,11 +320,7 @@ internal fun settingsActions(
         } catch (cancellation: CancellationException) {
             throw cancellation
         } catch (refusal: Exception) {
-            AppLog.w(
-                MainActivity.TAG,
-                "a siren could not be stopped",
-                refusal,
-            )
+            logFailure(MainActivity.TAG, "a siren could not be stopped", refusal)
         }
     },
     // From every group, each under the account it knows the member by: the
@@ -336,11 +332,7 @@ internal fun settingsActions(
         } catch (cancellation: CancellationException) {
             throw cancellation
         } catch (refusal: Exception) {
-            AppLog.w(
-                MainActivity.TAG,
-                "a search could not be ended",
-                refusal,
-            )
+            logFailure(MainActivity.TAG, "a search could not be ended", refusal)
         }
     },
 )

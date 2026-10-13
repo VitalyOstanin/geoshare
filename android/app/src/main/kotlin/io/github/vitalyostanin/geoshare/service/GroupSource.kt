@@ -8,6 +8,7 @@ import io.github.vitalyostanin.geoshare.collection.listenAgainAfter
 import io.github.vitalyostanin.geoshare.collection.spread
 import io.github.vitalyostanin.geoshare.log.AppLog
 import io.github.vitalyostanin.geoshare.map.PublishedProfile
+import io.github.vitalyostanin.geoshare.map.logFailure
 import io.github.vitalyostanin.geoshare.membership.INVITATION_LASTS
 import io.github.vitalyostanin.geoshare.membership.Invitation
 import io.github.vitalyostanin.geoshare.membership.Presence
@@ -213,7 +214,7 @@ suspend fun readProjectMark(connection: GroupConnection): ProjectMark = try {
 } catch (cancelled: CancellationException) {
     throw cancelled
 } catch (failure: Exception) {
-    AppLog.w(TAG, "could not read the mark of ${connection.projectId}", failure)
+    logFailure(TAG, "could not read the mark of ${connection.projectId}", failure)
     ProjectMark.Unknown
 }
 

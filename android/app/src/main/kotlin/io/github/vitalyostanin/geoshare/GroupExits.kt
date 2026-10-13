@@ -2,6 +2,7 @@ package io.github.vitalyostanin.geoshare
 
 import io.github.vitalyostanin.geoshare.log.AppLog
 import io.github.vitalyostanin.geoshare.map.PublishedProfile
+import io.github.vitalyostanin.geoshare.map.logFailure
 import io.github.vitalyostanin.geoshare.membership.Leave
 import io.github.vitalyostanin.geoshare.project.Connections
 import io.github.vitalyostanin.geoshare.project.GroupConnection
@@ -30,7 +31,7 @@ private suspend fun answered(what: String, write: suspend () -> Unit): Boolean =
 } catch (cancellation: CancellationException) {
     throw cancellation
 } catch (refusal: Exception) {
-    AppLog.w(MainActivity.TAG, "could not $what", refusal)
+    logFailure(MainActivity.TAG, "could not $what", refusal)
     false
 }
 

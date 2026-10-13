@@ -8,6 +8,7 @@ import io.github.vitalyostanin.geoshare.R
 import io.github.vitalyostanin.geoshare.log.AppLog
 import io.github.vitalyostanin.geoshare.map.SIREN_SECONDS
 import io.github.vitalyostanin.geoshare.map.Siren
+import io.github.vitalyostanin.geoshare.map.logFailure
 import io.github.vitalyostanin.geoshare.map.shouldSound
 import io.github.vitalyostanin.geoshare.permission.devicePermissions
 import io.github.vitalyostanin.geoshare.project.GroupConnection
@@ -98,7 +99,7 @@ class SirenAnswer(private val context: Context, private val scope: CoroutineScop
                 } catch (cancellation: CancellationException) {
                     throw cancellation
                 } catch (refusal: Exception) {
-                    AppLog.w(TAG, "could not say the siren was heard", refusal)
+                    logFailure(TAG, "could not say the siren was heard", refusal)
                 }
             }
 
