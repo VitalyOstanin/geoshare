@@ -5,6 +5,7 @@ import io.github.vitalyostanin.geoshare.collection.SourceChoice
 import io.github.vitalyostanin.geoshare.download.DownloadNetwork
 import io.github.vitalyostanin.geoshare.download.DownloadState
 import io.github.vitalyostanin.geoshare.membership.Invitation
+import io.github.vitalyostanin.geoshare.membership.ProjectMark
 import io.github.vitalyostanin.geoshare.membership.Roster
 import io.github.vitalyostanin.geoshare.permission.PermissionStep
 import io.github.vitalyostanin.geoshare.project.RefusedJoin
@@ -134,6 +135,8 @@ data class SettingsActions(
     val onStartupSetChange: (Boolean) -> Unit,
     /** Makes a group, named as typed; blank founds one with no name of its own. */
     val onFoundGroup: (String?) -> Unit,
+    /** Whether the project already has a group; read once by the screens that offer to make one. */
+    val onReadProjectMark: suspend () -> ProjectMark,
     /** Makes an invitation good for one address, typed into the dialog that asks for it. */
     val onMakeInvitation: (String) -> Unit,
     val onJoinGroup: (Invitation) -> Unit,

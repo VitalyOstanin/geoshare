@@ -114,7 +114,7 @@ project's own description of who it is for.
 | 3   | invitation text   | The group id and the code joined by a dot, because a write has to know its path before it is made. What was sent before invitations named an address; still read when pasted, no longer handed out — the connection link is sent instead                                                | `android/.../membership/Codes.kt`, `web/public/lib/membership.js`, `invitationFrom()` |
 | 4   | join claim        | A document the person joining writes under their own account id, holding the code they are using. It is how a code reaches the rules, which cannot be told anything except through the database                                                                                         | `firestore.rules`, `match /joins/{uid}`                                               |
 | 5   | joining           | The write that adds one's own account to the roster and changes nothing else, allowed only while a join claim names an invitation that has not run out                                                                                                                                  | `firestore.rules`, `joining()`                                                        |
-| 6   | founding          | The write that creates a group: named after the founder, with the founder alone on the roster and alone among the administrators                                                                                                                                                        | `firestore.rules`, `founding()`                                                       |
+| 6   | founding          | The write that creates a group: named after the founder, with the founder alone on the roster and alone among the administrators, in one batch with `project/group`, so once per project                                                                                                | `firestore.rules`, `founding()`                                                       |
 | 7   | shortened address | The invited address as a link and the screens show it: the first four characters of the name, or only the first when the name is four or shorter, then `…` and the domain whole. The full address is known to the rules alone                                                           | `android/.../project/ConnectLink.kt`, `web/public/lib/join.js`, `shortenedAddress()`  |
 
 ## What a member publishes
@@ -207,10 +207,11 @@ the device and are named here because the code names them.
 
 ## Entities and relations
 
-Everything lives under one group document. Nothing outside `groups` is
-reachable at all — a request no `match` reaches is refused, whatever else the
-project keeps in the same database — so the group is both the unit of access
-and the root of the data.
+Everything lives under one group document, and a project holds one group
+(ADR-0036). Outside `groups` only `project/group` is reachable, and only to
+read — a request no `match` reaches is refused, whatever else the project
+keeps in the same database — so the group is both the unit of access and the
+root of the data.
 
 ### The entities
 
@@ -221,6 +222,11 @@ founded on a device. Created by its founder, updated either by somebody adding
 themselves on an invitation or by an administrator editing the roster, and
 never deleted — deleting it would leave the profiles, grants and positions
 underneath it with nothing to say who may read them.
+
+**Project's group** — `project/group`. One field, `group`: the id of the one
+group the project holds. Written in the batch that founds the group and never
+changed or deleted from a client; any signed-in account may read it, which is
+how a client knows not to offer founding a second group.
 
 **Member** — not a document. A member is an account whose id appears in
 `members`. Everything a member has in the database is keyed by that id in a

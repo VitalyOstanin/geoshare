@@ -26,6 +26,18 @@ export const ADMINISTRATOR = 'administrator';
  */
 export const UNRUN = 'unrun';
 
+/**
+ * What the screen offers somebody with no group: to make one while the
+ * project has none, or only a way into the one it has. A mark that could not
+ * be read counts as no mark, since the rules refuse a second group anyway.
+ */
+export const GROUP_FREE = 'free';
+export const GROUP_TAKEN = 'taken';
+
+export function offerWithoutGroup(projectGroup) {
+    return typeof projectGroup === 'string' && projectGroup !== '' ? GROUP_TAKEN : GROUP_FREE;
+}
+
 export function standingIn(roster, memberId) {
     if (roster === null || !roster.members.includes(memberId)) {
         return UNGROUPED;

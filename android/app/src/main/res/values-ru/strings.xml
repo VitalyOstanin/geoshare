@@ -406,6 +406,8 @@
     <string name="group_removed_join">Вступить по ссылке</string>
     <string name="group_none_title">Группы пока нет</string>
     <string name="group_none_map_text">Создайте группу — вы станете её администратором и сможете приглашать остальных. Если вас пригласили, вступите по ссылке из приглашения.</string>
+    <string name="group_taken_title">В проекте уже есть группа</string>
+    <string name="group_taken_text">Вы в ней не состоите. Вступите по ссылке из приглашения — его даёт администратор группы. Для своей отдельной группы нужен свой проект.</string>
     <string name="group_join_refused_title">Не удалось вступить в «%1$s»</string>
     <string name="group_join_refused_text">Приглашение больше не действует: им уже воспользовались, его отозвали или истёк срок. Попросите новую ссылку.</string>
     <string name="group_join_refused_text_by">Приглашение больше не действует: им уже воспользовались, его отозвали или истёк срок. Попросите новую ссылку у того, кто пригласил: %1$s.</string>

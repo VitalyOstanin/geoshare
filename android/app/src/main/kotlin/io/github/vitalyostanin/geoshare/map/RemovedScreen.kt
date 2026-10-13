@@ -28,6 +28,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import io.github.vitalyostanin.geoshare.R
+import io.github.vitalyostanin.geoshare.membership.ProjectMark
+import io.github.vitalyostanin.geoshare.membership.isTaken
 import io.github.vitalyostanin.geoshare.project.RefusedJoin
 import kotlinx.coroutines.launch
 
@@ -65,7 +67,9 @@ fun RemovedScreen(removed: RemovedGroup, switcher: Boolean, modifier: Modifier =
  *
  * Offers the two ways to get one: [onFoundGroup] founds a group, with the name
  * typed or `null` when the field is left empty, and [onJoin] asks for a link
- * to join one by.
+ * to join one by. Where the project's mark says it has a group already
+ * ([readProjectMark], read once), only the second is offered, since the first
+ * would be refused.
  */
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
@@ -74,36 +78,48 @@ fun NoGroupScreen(
     onFoundGroup: (String?) -> Unit,
     onJoin: () -> Unit,
     modifier: Modifier = Modifier,
+    readProjectMark: suspend () -> ProjectMark = { ProjectMark.Unknown },
 ) {
     var groupName by remember { mutableStateOf("") }
+    val taken = rememberProjectMark(readProjectMark).isTaken()
 
     CardOverTheMap(switcher = switcher, modifier = modifier) {
         Column(modifier = Modifier.padding(18.dp)) {
             Text(
-                text = stringResource(R.string.group_none_title),
+                text =
+                stringResource(
+                    if (taken) R.string.group_taken_title else R.string.group_none_title,
+                ),
                 fontSize = 18.sp,
                 fontWeight = FontWeight.Medium,
                 modifier = Modifier.padding(bottom = 8.dp),
             )
 
             Text(
-                text = stringResource(R.string.group_none_map_text),
+                text =
+                stringResource(
+                    if (taken) R.string.group_taken_text else R.string.group_none_map_text,
+                ),
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 modifier = Modifier.padding(bottom = 8.dp),
             )
 
-            OutlinedTextField(
-                value = groupName,
-                onValueChange = { groupName = it.take(GROUP_NAME_LIMIT) },
-                label = { Text(text = stringResource(R.string.group_name_optional_label)) },
-                singleLine = true,
-                modifier = Modifier.fillMaxWidth(),
-            )
+            if (!taken) {
+                OutlinedTextField(
+                    value = groupName,
+                    onValueChange = { groupName = it.take(GROUP_NAME_LIMIT) },
+                    label = { Text(text = stringResource(R.string.group_name_optional_label)) },
+                    singleLine = true,
+                    modifier = Modifier.fillMaxWidth(),
+                )
+            }
 
             FlowRow(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-                TextButton(onClick = { onFoundGroup(groupNameText(groupName)) }) {
-                    Text(text = stringResource(R.string.group_found))
+                if (!taken) {
+                    TextButton(onClick = { onFoundGroup(groupNameText(groupName)) }) {
+                        Text(text = stringResource(R.string.group_found))
+                    }
                 }
 
                 TextButton(onClick = onJoin) {

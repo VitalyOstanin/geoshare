@@ -7,10 +7,10 @@ rules_version = '2';
 // load-bearing.
 //
 // Nothing is granted that is not written below. A request no `match` reaches
-// is refused, which means every collection outside `groups` is already shut —
-// anything the owner of the project keeps by hand, anything a later
-// application puts in the same database — and a subcollection under a group
-// stays shut until a rule names it. There is deliberately no
+// is refused, which means every collection outside `groups` and `project` is
+// already shut — anything the owner of the project keeps by hand, anything a
+// later application puts in the same database — and a subcollection under a
+// group stays shut until a rule names it. There is deliberately no
 // `match /{document=**}` here, not even one saying `if false`: allow rules are
 // added together and none of them takes anything away, so a catch-all cannot
 // forbid, and the only thing such a line could ever do is grant. The checks in
@@ -38,6 +38,33 @@ service cloud.firestore {
     // a place's.
     function longestName() {
       return 100;
+    }
+
+    // The one group this project holds (ADR-0036): a single document naming it.
+    //
+    // The data and the quotas of a project belong to one group, and whoever
+    // owns the project sees all of it in the console. Without this document
+    // anybody who opened the site could found a group of their own and spend
+    // the project's quotas on it; a second group is a second project. The
+    // document is written once, in the batch that founds the group, and the
+    // group's own rule refuses a founding that does not write it.
+    //
+    // Read by a single get, which is how a client decides whether to offer
+    // founding a group; it is never listed. Nothing here is edited or removed
+    // from a client: a group that has to be replaced is a job for the console.
+    match /project/group {
+      function nameTheGroup() {
+        return request.auth != null &&
+               request.resource.data.keys().hasOnly(['group']) &&
+               request.resource.data.group == request.auth.uid &&
+               existsAfter(/databases/$(database)/documents/groups/$(request.auth.uid));
+      }
+
+      allow get: if request.auth != null;
+      allow list: if false;
+      allow create: if nameTheGroup() &&
+                       !exists(/databases/$(database)/documents/project/group);
+      allow update, delete: if false;
     }
 
     match /groups/{groupId} {
@@ -117,9 +144,18 @@ service cloud.firestore {
       // what the person invited is told: a code carries the name of the group
       // beside it, because a rule weighs a write to a path, and a path has to
       // be known before the write is made.
+      //
+      // And it is the only one the project will have (ADR-0036): the batch
+      // that makes the group also writes `project/group`, which must not be
+      // there yet and must name this group afterwards. The data and quotas of
+      // the project belong to one group, so a stranger who reaches the site
+      // after it has been founded cannot found another and spend them.
       function founding() {
         return request.auth != null &&
                groupId == request.auth.uid &&
+               !exists(/databases/$(database)/documents/project/group) &&
+               existsAfter(/databases/$(database)/documents/project/group) &&
+               getAfter(/databases/$(database)/documents/project/group).data.group == groupId &&
                request.resource.data.keys().hasOnly(['members', 'admins', 'name']) &&
                request.resource.data.members == [request.auth.uid] &&
                request.resource.data.admins == [request.auth.uid] &&

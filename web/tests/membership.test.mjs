@@ -3,9 +3,12 @@ import { test } from 'node:test';
 
 import {
     ADMINISTRATOR,
+    GROUP_FREE,
+    GROUP_TAKEN,
     MEMBER,
     UNGROUPED,
     UNRUN,
+    offerWithoutGroup,
     invitationFrom,
     looksLikeACode,
     looksLikeAGroupName,
@@ -228,4 +231,18 @@ test('the founder is not offered to be relieved even when named', () => {
 
     assert.equal(mayStopRunning(roster, ALICE, BOB), false);
     assert.equal(mayStopRunning(roster, ALICE, ALICE), false);
+});
+
+// A project holds one group; somebody outside it is offered a way in only.
+test('a project with no group mark offers to make one', () => {
+    assert.equal(offerWithoutGroup(null), GROUP_FREE);
+});
+
+test('a mark that could not be read offers to make one, as the rules decide', () => {
+    assert.equal(offerWithoutGroup(undefined), GROUP_FREE);
+    assert.equal(offerWithoutGroup(''), GROUP_FREE);
+});
+
+test('a project whose group is marked offers only a way into it', () => {
+    assert.equal(offerWithoutGroup(ALICE), GROUP_TAKEN);
 });

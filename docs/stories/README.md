@@ -101,6 +101,7 @@ Each story names its records in `ADR`; the same links the other way round:
 | 33 | [0033](../ADR/0033-a-setup-page-finishes-the-project.md)             | A setup page finishes the group's project                              | OWN-09                                                         |
 | 34 | [0034](../ADR/0034-the-published-key-is-listed-in-the-repository.md) | The published key's fingerprints are listed in the repository          | OWN-08, OWN-10                                                 |
 | 35 | [0035](../ADR/0035-the-page-serves-its-libraries-itself.md)          | The page serves its libraries itself, one directory per version        | — (how the page is built and served)                           |
+| 36 | [0036](../ADR/0036-a-project-holds-one-group.md)                     | A project holds one group, founded once                                | ADM-01                                                         |
 
 Stories that rest on no record: OWN-07, OWN-10, ADM-10, ADM-11, MEM-06, MEM-11,
 MEM-12, MEM-15, MEM-22, DEV-05, DEV-06, DEV-12, DEV-13, DEV-14.

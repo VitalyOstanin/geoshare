@@ -415,6 +415,7 @@ fun MapScreen(
                     switcher = switcher,
                     onFoundGroup = actions.onFoundGroup,
                     onJoin = groups.onJoin,
+                    readProjectMark = actions.onReadProjectMark,
                 )
             }
 

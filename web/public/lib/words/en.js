@@ -281,6 +281,8 @@ export const EN = {
     group: 'Group',
     groupNone: 'You are not in a group yet. Make one and hand out an invitation, '
         + 'or paste in the invitation somebody sent you.',
+    groupTaken: 'This project already has a group, and you are not in it. Paste in an '
+        + 'invitation from its administrator. A group of your own needs a project of its own.',
     groupFound: 'Make a group',
     groupNameLabel: 'Group name',
     groupInvitation: 'Invitation link',

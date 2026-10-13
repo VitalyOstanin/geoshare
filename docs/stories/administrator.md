@@ -22,8 +22,8 @@ administrator does too; the stories here are what only an administrator does.
 ## ADM-01 Found the group
 
 - Status: done
-- ADR: 0009, 0016, 0019
-- Tests: rules `membership.test.mjs` (membership; the name of a group); Android `MembershipTest`, `GroupCaptionTest`; page `group-name.test.mjs`, `membership.test.mjs`
+- ADR: 0009, 0016, 0019, 0036
+- Tests: rules `membership.test.mjs` (membership; the name of a group; the one group of a project); Android `MembershipTest`, `GroupCaptionTest`; page `group-name.test.mjs`, `membership.test.mjs`
 
 As the first person to sign in to a new project I found the group, giving it a
 name if I like, so that there is a group to invite the others to.
@@ -34,7 +34,12 @@ Acceptance:
   among the administrators;
 - without a name the group is shown as "Группа · <founder's name>" in Russian
   and "<founder's name>'s group" in English;
-- both the device and the page can found it.
+- both the device and the page can found it;
+- a project is founded once: the founding writes `project/group`, and once
+  that names a group nobody else can found one;
+- a person without a group in a project that has one is told so, and that a
+  group of their own needs a project of its own, and is offered only an
+  invitation.
 
 ## ADM-02 Rename the group
 

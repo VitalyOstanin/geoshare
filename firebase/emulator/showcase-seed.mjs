@@ -216,6 +216,10 @@ await write(`groups/${GROUP}`, {
     admins: { arrayValue: { values: [stringValue(uids.get(ADMIN))] } },
 });
 
+// The mark that the project has its group (ADR-0036): without it a build
+// pointed at the emulator would offer to found a second one.
+await write('project/group', { group: stringValue(GROUP) });
+
 for (const member of MEMBERS) {
     const uid = uids.get(member.email);
     const seen = minutesAgo(member.ageMinutes);

@@ -250,6 +250,7 @@ fun SettingsScreen(
                 profiles = profiles,
                 trouble = settings.groupTrouble,
                 onFoundGroup = actions.onFoundGroup,
+                readProjectMark = actions.onReadProjectMark,
                 onJoinGroup = actions.onJoinGroup,
                 onPasteLink = actions.onPasteLink,
                 onOpenAdmin = onOpenAdmin,

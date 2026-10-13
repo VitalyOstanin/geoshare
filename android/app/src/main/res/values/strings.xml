@@ -475,6 +475,8 @@
     <string name="group_removed_join">Join by link</string>
     <string name="group_none_title">No group yet</string>
     <string name="group_none_map_text">Create a group: you will run it and can invite the others. If you were invited, join by the link from the invitation.</string>
+    <string name="group_taken_title">This project already has a group</string>
+    <string name="group_taken_text">You are not in it. Join by the link from an invitation, which an administrator of the group hands out. A group of your own needs a project of its own.</string>
     <!-- The same card when the invitation this device came with was refused:
          used, withdrawn or run out, which the device cannot tell apart. -->
     <string name="group_join_refused_title">Could not join “%1$s”</string>

@@ -11,10 +11,12 @@ import io.github.vitalyostanin.geoshare.map.PublishedProfile
 import io.github.vitalyostanin.geoshare.membership.INVITATION_LASTS
 import io.github.vitalyostanin.geoshare.membership.Invitation
 import io.github.vitalyostanin.geoshare.membership.Presence
+import io.github.vitalyostanin.geoshare.membership.ProjectMark
 import io.github.vitalyostanin.geoshare.membership.Roster
 import io.github.vitalyostanin.geoshare.membership.RosterRead
 import io.github.vitalyostanin.geoshare.membership.newInvitationCode
 import io.github.vitalyostanin.geoshare.membership.presenceOf
+import io.github.vitalyostanin.geoshare.membership.projectMarkOf
 import io.github.vitalyostanin.geoshare.membership.rosterFounded
 import io.github.vitalyostanin.geoshare.membership.rosterWithout
 import io.github.vitalyostanin.geoshare.project.Connections
@@ -154,6 +156,12 @@ private fun Any?.asIds(): List<String> = (this as? List<*>).orEmpty().filterIsIn
  * from making them without end; [name] is a caption on top of that, given if
  * the founder typed one (ADR-0016).
  *
+ * The project's mark (`project/group`) goes in the same batch. A project holds
+ * one group, and the rules refuse a group made without the mark and a mark made
+ * without the group, so that two accounts founding at once cannot both succeed
+ * and a device outside the group can read the mark to learn the project is
+ * taken ([readProjectMark]).
+ *
  * The device is moved into the new group only once the write has been allowed.
  * Moving it first would leave a device whose founding was refused writing into
  * a group that does not exist, with every refusal afterwards saying nothing
@@ -177,10 +185,36 @@ suspend fun foundGroup(
             roster.asDocument() + (GroupField.NAME to name)
         }
 
-    groupDocumentOf(connection.store, uid).set(fields).await()
+    connection.store
+        .batch()
+        .set(groupDocumentOf(connection.store, uid), fields)
+        .set(projectGroupDocument(connection.store), mapOf(ProjectField.GROUP to uid))
+        .commit()
+        .await()
     Connections.moveTo(context, connection.projectId, uid)
 
     AppLog.i(TAG, "the group has been founded")
+}
+
+/**
+ * What the project's mark says, read once.
+ *
+ * Read rather than subscribed to, by the screens that offer a device with no
+ * group the way to make one: the answer only decides whether they offer it, and
+ * a mark that appears while the screen is open is caught by the rules refusing
+ * the founding. A failed read, no network included, is [ProjectMark.Unknown],
+ * which the screens treat as a free project: the offer stays, and the rules
+ * answer for it.
+ */
+suspend fun readProjectMark(connection: GroupConnection): ProjectMark = try {
+    val snapshot = projectGroupDocument(connection.store).get().await()
+
+    projectMarkOf(snapshot.exists(), snapshot.get(ProjectField.GROUP))
+} catch (cancelled: CancellationException) {
+    throw cancelled
+} catch (failure: Exception) {
+    AppLog.w(TAG, "could not read the mark of ${connection.projectId}", failure)
+    ProjectMark.Unknown
 }
 
 /**

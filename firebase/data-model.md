@@ -5,6 +5,7 @@ device does. History is deliberately not kept: each new fix overwrites the
 previous one, which keeps both storage and read counts flat.
 
 ```text
+project/group                               group: the one group this project holds
 groups/{groupId}                            members: [uid, ...], admins: [uid, ...], owner?
 groups/{groupId}/invitations/{code}         a code that lets one more person in
 groups/{groupId}/joins/{uid}                the code somebody is holding, while they join
@@ -38,6 +39,7 @@ opposite of the roster: they write it and nobody else does.
 
 ## Contents
 
+- [project/group](#projectgroup)
 - [groups/{groupId}](#groupsgroupid)
 - [invitations/{code}](#invitationscode)
 - [joins/{uid}](#joinsuid)
@@ -53,6 +55,18 @@ opposite of the roster: they write it and nobody else does.
 - [positions/{uid}.{deviceId}](#positionsuiddeviceid)
 - [watch/{uid}.{deviceId}](#watchuiddeviceid)
 - [Collection modes](#collection-modes)
+
+## project/group
+
+| Field   | Type   | Meaning                                |
+|---------|--------|----------------------------------------|
+| `group` | string | The id of the one group of the project |
+
+A project holds one group (ADR-0036). This document is created in the batch
+that founds it, naming it, and is never changed or deleted from a client; the
+founding is refused without it, and refused once it exists. Any signed-in
+account may read it by its path, so that a client offers founding only in a
+project that has no group yet; nobody may list the collection.
 
 ## groups/{groupId}
 

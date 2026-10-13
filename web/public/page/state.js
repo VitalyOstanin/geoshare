@@ -220,6 +220,10 @@ export const state = {
     // read.
     roster: null,
     stopRoster: null,
+    // The group the project already has, read once while this account is on no
+    // roster: undefined before it is read, null where there is none or it could
+    // not be told.
+    projectGroup: undefined,
     // Where a false signal is known to put devices: a position there is drawn
     // grey and measured from by nobody.
     falsePlaces: [],

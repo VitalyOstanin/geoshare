@@ -14,7 +14,15 @@ import { memberName } from '../lib/members.js';
 import { standingSearches } from '../lib/searches.js';
 import { sirenState, sirenTold } from '../lib/sirens.js';
 import { WORDS } from '../lib/words.js';
-import { ADMINISTRATOR, UNGROUPED, UNRUN, runsTheGroup, standingIn } from '../lib/membership.js';
+import {
+    ADMINISTRATOR,
+    GROUP_FREE,
+    UNGROUPED,
+    UNRUN,
+    offerWithoutGroup,
+    runsTheGroup,
+    standingIn,
+} from '../lib/membership.js';
 import { foundGroup, joinGroup } from '../lib/store-group.js';
 import { endSearch, forgetPhone, stopSiren } from '../lib/store-search.js';
 import { elements, state } from './state.js';
@@ -57,20 +65,25 @@ export function drawGroup() {
     const standing = standingIn(state.roster, state.member.memberId);
     const ungrouped = standing === UNGROUPED;
     const running = standing === ADMINISTRATOR;
+    // Where the project already has a group, making another is not offered:
+    // the rules would refuse it.
+    const mayFound = ungrouped && offerWithoutGroup(state.projectGroup) === GROUP_FREE;
 
     elements.groupLabel.textContent = WORDS.group;
 
     elements.groupNote.hidden = !ungrouped && standing !== UNRUN;
-    elements.groupNote.textContent = ungrouped ? WORDS.groupNone : WORDS.groupUnrun;
+    elements.groupNote.textContent = ungrouped
+        ? (mayFound ? WORDS.groupNone : WORDS.groupTaken)
+        : WORDS.groupUnrun;
 
     elements.groupMembers.replaceChildren(
         ...(state.roster?.members ?? []).map((memberId) => memberRow(memberId)),
     );
 
-    elements.groupFoundName.hidden = !ungrouped;
+    elements.groupFoundName.hidden = !mayFound;
     elements.groupFoundName.placeholder = WORDS.groupNameLabel;
 
-    elements.groupFound.hidden = !ungrouped;
+    elements.groupFound.hidden = !mayFound;
     elements.groupFound.textContent = WORDS.groupFound;
 
     elements.groupAdmin.hidden = !running;

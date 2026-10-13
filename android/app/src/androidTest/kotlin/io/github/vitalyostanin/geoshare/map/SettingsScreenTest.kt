@@ -9,6 +9,7 @@ import androidx.test.platform.app.InstrumentationRegistry
 import io.github.vitalyostanin.geoshare.BuildConfig
 import io.github.vitalyostanin.geoshare.R
 import io.github.vitalyostanin.geoshare.download.DownloadState
+import io.github.vitalyostanin.geoshare.membership.ProjectMark
 import io.github.vitalyostanin.geoshare.service.AidingErasure
 import io.github.vitalyostanin.geoshare.service.LanguageChoice
 import io.github.vitalyostanin.geoshare.service.ThemeChoice
@@ -119,6 +120,7 @@ private fun quietActions() = SettingsActions(
     onOpenStartup = {},
     onStartupSetChange = {},
     onFoundGroup = {},
+    onReadProjectMark = { ProjectMark.Unknown },
     onMakeInvitation = {},
     onJoinGroup = {},
     onPasteLink = {},

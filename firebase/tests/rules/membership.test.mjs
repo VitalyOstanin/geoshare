@@ -6,7 +6,7 @@ import { describe, it } from 'node:test';
 import { assertFails, assertSucceeds } from '@firebase/rules-unit-testing';
 import { collection, deleteDoc, doc, getDoc, getDocs, arrayUnion, setDoc, updateDoc, writeBatch } from 'firebase/firestore';
 
-import { setUpRules, GROUP, ALICE, BOB, STRANGER, STRANGER_EMAIL, FOREVER, testEnv, grantOf, someGrant, CODE, OTHER_CODE, groupDoc, invitationOf, claimOf, inTenMinutes, plantAnAdministrator, plantAnInvitation, plantAnAddressedInvitation, signedInAs } from './helpers.mjs';
+import { setUpRules, GROUP, ALICE, BOB, STRANGER, STRANGER_EMAIL, FOREVER, testEnv, grantOf, someGrant, CODE, OTHER_CODE, groupDoc, projectGroupDoc, foundGroup, invitationOf, claimOf, inTenMinutes, plantAnAdministrator, plantAnInvitation, plantAnAddressedInvitation, signedInAs } from './helpers.mjs';
 
 setUpRules();
 
@@ -26,7 +26,7 @@ describe('membership', () => {
         const db = testEnv.authenticatedContext(STRANGER).firestore();
 
         await assertSucceeds(
-            setDoc(groupDoc(db, STRANGER), { members: [STRANGER], admins: [STRANGER] }),
+            foundGroup(db, STRANGER, { members: [STRANGER], admins: [STRANGER] }),
         );
     });
 
@@ -36,7 +36,7 @@ describe('membership', () => {
         const db = testEnv.authenticatedContext(STRANGER).firestore();
 
         await assertFails(
-            setDoc(groupDoc(db, 'a-new-group'), { members: [STRANGER], admins: [STRANGER] }),
+            foundGroup(db, 'a-new-group', { members: [STRANGER], admins: [STRANGER] }),
         );
     });
 
@@ -44,7 +44,7 @@ describe('membership', () => {
         const db = testEnv.authenticatedContext(STRANGER).firestore();
 
         await assertFails(
-            setDoc(groupDoc(db, ALICE), { members: [STRANGER], admins: [STRANGER] }),
+            foundGroup(db, ALICE, { members: [STRANGER], admins: [STRANGER] }),
         );
     });
 
@@ -54,7 +54,7 @@ describe('membership', () => {
         const db = testEnv.authenticatedContext(STRANGER).firestore();
 
         await assertFails(
-            setDoc(groupDoc(db, STRANGER), { members: [STRANGER, ALICE], admins: [STRANGER] }),
+            foundGroup(db, STRANGER, { members: [STRANGER, ALICE], admins: [STRANGER] }),
         );
     });
 
@@ -62,7 +62,7 @@ describe('membership', () => {
         const db = testEnv.authenticatedContext(STRANGER).firestore();
 
         await assertFails(
-            setDoc(groupDoc(db, STRANGER), { members: [STRANGER], admins: [ALICE] }),
+            foundGroup(db, STRANGER, { members: [STRANGER], admins: [ALICE] }),
         );
     });
 
@@ -70,6 +70,98 @@ describe('membership', () => {
         const db = testEnv.authenticatedContext(ALICE).firestore();
 
         await assertFails(deleteDoc(groupDoc(db)));
+    });
+});
+
+// ADR-0036: one group to a project, founded together with the document that
+// names it.
+describe('the one group of a project', () => {
+    const founder = { members: [STRANGER], admins: [STRANGER] };
+    const plantTheProjectGroup = () =>
+        testEnv.withSecurityRulesDisabled(async (context) => {
+            const db = context.firestore();
+
+            await setDoc(projectGroupDoc(db), { group: ALICE });
+            await setDoc(groupDoc(db, ALICE), { members: [ALICE], admins: [ALICE] });
+        });
+
+    it('a group is founded together with the document that names it', async () => {
+        const db = testEnv.authenticatedContext(STRANGER).firestore();
+
+        await assertSucceeds(foundGroup(db, STRANGER, founder));
+        await assertSucceeds(getDoc(projectGroupDoc(db)));
+    });
+
+    it('a group is not founded without the document that names it', async () => {
+        const db = testEnv.authenticatedContext(STRANGER).firestore();
+
+        await assertFails(setDoc(groupDoc(db, STRANGER), founder));
+    });
+
+    it('a second group is not founded in a project that has one', async () => {
+        await plantTheProjectGroup();
+
+        const db = testEnv.authenticatedContext(STRANGER).firestore();
+
+        await assertFails(foundGroup(db, STRANGER, founder));
+        await assertFails(setDoc(groupDoc(db, STRANGER), founder));
+    });
+
+    it('the document naming the group is not written without the group', async () => {
+        const db = testEnv.authenticatedContext(STRANGER).firestore();
+
+        await assertFails(setDoc(projectGroupDoc(db), { group: STRANGER }));
+    });
+
+    it('the document naming the group cannot name somebody else', async () => {
+        const db = testEnv.authenticatedContext(STRANGER).firestore();
+
+        await assertFails(
+            writeBatch(db)
+                .set(groupDoc(db, STRANGER), founder)
+                .set(projectGroupDoc(db), { group: ALICE })
+                .commit(),
+        );
+        await assertFails(
+            writeBatch(db)
+                .set(groupDoc(db, STRANGER), founder)
+                .set(projectGroupDoc(db), { group: STRANGER, extra: 1 })
+                .commit(),
+        );
+    });
+
+    it('the document naming the group is never changed or removed', async () => {
+        await plantTheProjectGroup();
+
+        const db = testEnv.authenticatedContext(ALICE).firestore();
+
+        await assertFails(updateDoc(projectGroupDoc(db), { group: STRANGER }));
+        await assertFails(setDoc(projectGroupDoc(db), { group: ALICE }));
+        await assertFails(deleteDoc(projectGroupDoc(db)));
+    });
+
+    it('anybody signed in reads the document naming the group, once', async () => {
+        await plantTheProjectGroup();
+
+        const db = testEnv.authenticatedContext(STRANGER).firestore();
+
+        await assertSucceeds(getDoc(projectGroupDoc(db)));
+        await assertFails(getDocs(collection(db, 'project')));
+    });
+
+    it('nobody signed out reads the document naming the group', async () => {
+        await plantTheProjectGroup();
+
+        const db = testEnv.unauthenticatedContext().firestore();
+
+        await assertFails(getDoc(projectGroupDoc(db)));
+    });
+
+    it('no other document of the project collection is read or written', async () => {
+        const db = testEnv.authenticatedContext(STRANGER).firestore();
+
+        await assertFails(getDoc(doc(db, 'project/other')));
+        await assertFails(setDoc(doc(db, 'project/other'), { group: STRANGER }));
     });
 });
 
@@ -531,7 +623,7 @@ describe('the name of a group', () => {
         const db = testEnv.authenticatedContext(STRANGER).firestore();
 
         await assertSucceeds(
-            setDoc(groupDoc(db, STRANGER), {
+            foundGroup(db, STRANGER, {
                 members: [STRANGER],
                 admins: [STRANGER],
                 name: 'Hikers',
@@ -543,9 +635,9 @@ describe('the name of a group', () => {
         const db = testEnv.authenticatedContext(STRANGER).firestore();
         const founded = (name) => ({ members: [STRANGER], admins: [STRANGER], name });
 
-        await assertFails(setDoc(groupDoc(db, STRANGER), founded('   ')));
-        await assertFails(setDoc(groupDoc(db, STRANGER), founded('x'.repeat(61))));
-        await assertFails(setDoc(groupDoc(db, STRANGER), founded(42)));
+        await assertFails(foundGroup(db, STRANGER, founded('   ')));
+        await assertFails(foundGroup(db, STRANGER, founded('x'.repeat(61))));
+        await assertFails(foundGroup(db, STRANGER, founded(42)));
     });
 
     it('the administrator renames the group', async () => {

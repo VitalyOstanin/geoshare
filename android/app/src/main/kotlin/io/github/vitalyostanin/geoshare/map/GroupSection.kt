@@ -14,6 +14,7 @@ import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -23,9 +24,11 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import io.github.vitalyostanin.geoshare.R
 import io.github.vitalyostanin.geoshare.membership.Invitation
+import io.github.vitalyostanin.geoshare.membership.ProjectMark
 import io.github.vitalyostanin.geoshare.membership.Roster
 import io.github.vitalyostanin.geoshare.membership.Standing
 import io.github.vitalyostanin.geoshare.membership.invitationFrom
+import io.github.vitalyostanin.geoshare.membership.isTaken
 import io.github.vitalyostanin.geoshare.membership.runsTheGroup
 import io.github.vitalyostanin.geoshare.membership.standingIn
 import io.github.vitalyostanin.geoshare.project.ConnectLink
@@ -54,6 +57,8 @@ fun GroupSection(
     /** Whether the last write to the group was refused. */
     trouble: Boolean,
     onFoundGroup: (String?) -> Unit,
+    /** Whether the project already has a group, read once when the way in is shown. */
+    readProjectMark: suspend () -> ProjectMark,
     onJoinGroup: (Invitation) -> Unit,
     /** Hands pasted text carrying an invitation link to the same path a messenger's link takes. */
     onPasteLink: (String) -> Unit,
@@ -86,6 +91,7 @@ fun GroupSection(
             standing == Standing.Ungrouped || standing == Standing.Outsider ->
                 WayIn(
                     onFoundGroup = onFoundGroup,
+                    readProjectMark = readProjectMark,
                     onJoinGroup = onJoinGroup,
                     onPasteLink = onPasteLink,
                 )
@@ -150,14 +156,18 @@ internal fun wayInPaste(typed: String): WayInPaste {
 /**
  * The two ways into a group, offered together.
  *
- * Together because the device cannot tell which of them applies: a group that
+ * Together because the roster cannot tell which of them applies: a group that
  * has not been made and a group this account is not on both read as no roster
- * at all. Founding one when a group already exists is refused by the rules,
- * which is the answer to the question the screen could not ask.
+ * at all. What does tell them apart is the project's mark, read once
+ * ([readProjectMark]): where it names a group, the project is taken, and making
+ * one is not offered since the rules would refuse it. A mark that is not there
+ * or could not be read leaves both ways on offer, and founding one when a group
+ * exists is still refused by the rules.
  */
 @Composable
 private fun WayIn(
     onFoundGroup: (String?) -> Unit,
+    readProjectMark: suspend () -> ProjectMark,
     onJoinGroup: (Invitation) -> Unit,
     onPasteLink: (String) -> Unit,
 ) {
@@ -165,29 +175,40 @@ private fun WayIn(
     var groupName by remember { mutableStateOf("") }
     var scanning by remember { mutableStateOf(false) }
     val pasted = wayInPaste(typed)
+    val taken = rememberProjectMark(readProjectMark).isTaken()
+
+    if (taken) {
+        Text(
+            text = stringResource(R.string.group_taken_title),
+            style = MaterialTheme.typography.titleSmall,
+            modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp),
+        )
+    }
 
     Text(
-        text = stringResource(R.string.group_none),
+        text = stringResource(if (taken) R.string.group_taken_text else R.string.group_none),
         style = MaterialTheme.typography.bodyMedium,
         modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
     )
 
-    // Optional: a group founded with the field left empty gets no name of its
-    // own and is shown by its founder's instead (ADR-0016).
-    OutlinedTextField(
-        value = groupName,
-        onValueChange = { groupName = it.take(GROUP_NAME_LIMIT) },
-        label = { Text(text = stringResource(R.string.group_name_optional_label)) },
-        singleLine = true,
-        modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 4.dp),
-    )
+    if (!taken) {
+        // Optional: a group founded with the field left empty gets no name of its
+        // own and is shown by its founder's instead (ADR-0016).
+        OutlinedTextField(
+            value = groupName,
+            onValueChange = { groupName = it.take(GROUP_NAME_LIMIT) },
+            label = { Text(text = stringResource(R.string.group_name_optional_label)) },
+            singleLine = true,
+            modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 4.dp),
+        )
 
-    Row(
-        modifier = Modifier.fillMaxWidth().padding(horizontal = 8.dp),
-        horizontalArrangement = Arrangement.Start,
-    ) {
-        TextButton(onClick = { onFoundGroup(groupNameText(groupName)) }) {
-            Text(text = stringResource(R.string.group_found))
+        Row(
+            modifier = Modifier.fillMaxWidth().padding(horizontal = 8.dp),
+            horizontalArrangement = Arrangement.Start,
+        ) {
+            TextButton(onClick = { onFoundGroup(groupNameText(groupName)) }) {
+                Text(text = stringResource(R.string.group_found))
+            }
         }
     }
 
@@ -323,3 +344,15 @@ private fun MemberRow(name: String, runsTheGroup: Boolean) {
         }
     }
 }
+
+/**
+ * The project's mark, read once when the screen that asks is first shown.
+ *
+ * [ProjectMark.Unknown] until the read returns, so the screen starts as it
+ * would for a free project and changes only if the mark turns out to be there.
+ * Not read again: the answer only decides what is offered, and the rules
+ * answer for anything it got wrong.
+ */
+@Composable
+internal fun rememberProjectMark(read: suspend () -> ProjectMark): ProjectMark =
+    produceState<ProjectMark>(initialValue = ProjectMark.Unknown) { value = read() }.value

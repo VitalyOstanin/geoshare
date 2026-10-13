@@ -31,6 +31,7 @@ import io.github.vitalyostanin.geoshare.service.makeInvitation
 import io.github.vitalyostanin.geoshare.service.openSearch
 import io.github.vitalyostanin.geoshare.service.phoneReset
 import io.github.vitalyostanin.geoshare.service.phoneSiren
+import io.github.vitalyostanin.geoshare.service.readProjectMark
 import io.github.vitalyostanin.geoshare.service.removeFromGroup
 import io.github.vitalyostanin.geoshare.service.renameGroup
 import io.github.vitalyostanin.geoshare.service.renewSearch
@@ -208,6 +209,8 @@ internal fun settingsActions(
                 }
         }
     },
+    // Read when a screen without a group is shown, once: see readProjectMark.
+    onReadProjectMark = { readProjectMark(connection) },
     onMakeInvitation = { email ->
         activity.lifecycleScope.launch {
             answers.groupTrouble =

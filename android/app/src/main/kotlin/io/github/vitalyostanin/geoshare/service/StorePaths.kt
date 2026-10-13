@@ -32,6 +32,18 @@ import io.github.vitalyostanin.geoshare.project.GroupConnection
 fun groupDocumentOf(store: FirebaseFirestore, group: String): DocumentReference =
     store.collection("groups").document(group)
 
+/**
+ * The project's mark that its group has been made: one document, `project/group`,
+ * naming the group.
+ *
+ * Outside `groups/` because it is about the project rather than about a group,
+ * and so that a device with no group of its own can read it: the rules let any
+ * signed-in account do that, and let it be created once, together with the
+ * group it names.
+ */
+fun projectGroupDocument(store: FirebaseFirestore): DocumentReference =
+    store.collection("project").document("group")
+
 fun positionsOf(connection: GroupConnection): CollectionReference =
     connection.groupDocument.collection("positions")
 
@@ -158,6 +170,12 @@ object GroupField {
 
     /** What people call the group (ADR-0016); absent until it is given one. */
     const val NAME = "name"
+}
+
+/** The one field of the project's mark (see [projectGroupDocument]). */
+object ProjectField {
+    /** The id of the project's group. */
+    const val GROUP = "group"
 }
 
 /** The fields of an invitation. */

@@ -9,6 +9,7 @@ import {
     arrayUnion,
     collection,
     doc,
+    getDoc,
     onSnapshot,
     serverTimestamp,
     setDoc,
@@ -80,17 +81,44 @@ export function idsOf(field) {
  * browser is moved into the new group only once the write has been allowed —
  * a viewer whose founding was refused would otherwise be left looking at a
  * group that does not exist.
+ *
+ * The project's one group is marked in the same batch: the rules take the
+ * mark and the group only together, so a project can never hold a group
+ * without the mark that tells everybody else it is taken.
  */
 export async function foundGroup(memberId, name = '') {
     const trimmed = name.trim();
 
-    await setDoc(doc(store, 'groups', memberId), {
-        members: [memberId],
-        admins: [memberId],
-        ...(trimmed === '' ? {} : { name: trimmed }),
-    });
+    await writeBatch(store)
+        .set(doc(store, 'groups', memberId), {
+            members: [memberId],
+            admins: [memberId],
+            ...(trimmed === '' ? {} : { name: trimmed }),
+        })
+        .set(doc(store, 'project', 'group'), { group: memberId })
+        .commit();
 
     rememberGroup(memberId);
+}
+
+/**
+ * The group the project already has, or null where there is none or it
+ * cannot be told.
+ *
+ * Anybody signed in may read the mark, which the group document itself does
+ * not allow. A refused or failed read is read as not known rather than thrown:
+ * the screen then offers to make a group as before, and the rules still
+ * refuse a second one.
+ */
+export async function projectGroupOf() {
+    try {
+        const snapshot = await getDoc(doc(store, 'project', 'group'));
+        const group = snapshot.exists() ? snapshot.data().group : null;
+
+        return typeof group === 'string' && group !== '' ? group : null;
+    } catch {
+        return null;
+    }
 }
 
 /**

@@ -8,7 +8,7 @@ import { readFileSync } from 'node:fs';
 import { after, before, beforeEach } from 'node:test';
 
 import { initializeTestEnvironment } from '@firebase/rules-unit-testing';
-import { doc, serverTimestamp, setDoc } from 'firebase/firestore';
+import { doc, serverTimestamp, setDoc, writeBatch } from 'firebase/firestore';
 
 export const GROUP = 'family';
 export const ALICE = 'alice-uid';
@@ -71,8 +71,19 @@ export const CODE = 'ABCD2345';
 export const OTHER_CODE = 'KLMN6789';
 
 export const groupDoc = (db, id = GROUP) => doc(db, `groups/${id}`);
+export const projectGroupDoc = (db) => doc(db, 'project/group');
 export const invitationOf = (db, code) => doc(db, `groups/${GROUP}/invitations/${code}`);
 export const claimOf = (db, uid) => doc(db, `groups/${GROUP}/joins/${uid}`);
+
+// Founding a group the way the clients do it (ADR-0036): the group and the
+// document naming it in one batch. `data` is what the group is written with;
+// `named` is what `project/group` says, the group's own id unless a test means
+// otherwise.
+export const foundGroup = (db, groupId, data, named = groupId) =>
+    writeBatch(db)
+        .set(groupDoc(db, groupId), data)
+        .set(projectGroupDoc(db), { group: named })
+        .commit();
 
 export const inTenMinutes = () => new Date(Date.now() + 10 * 60 * 1000);
 

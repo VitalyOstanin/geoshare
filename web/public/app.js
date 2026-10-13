@@ -16,7 +16,13 @@ import { withSearches, standingSearches } from './lib/searches.js';
 import { keepWatching, refusals, watchSignIn, watchWatchers } from './lib/store.js';
 import { watchPositions } from './lib/store-positions.js';
 import { lastProfileChange, profilesChanged } from './lib/refusals.js';
-import { publishProfile, watchGrants, watchProfiles, watchRoster } from './lib/store-group.js';
+import {
+    projectGroupOf,
+    publishProfile,
+    watchGrants,
+    watchProfiles,
+    watchRoster,
+} from './lib/store-group.js';
 import { watchFalsePlaces, watchLabels, watchSearches } from './lib/store-search.js';
 import { AGE_TICK_MS, SIGNED_IN_KEY, elements, state } from './page/state.js';
 import { FULL_SCREEN, showFollowMenu, showFullScreen, showMenu } from './page/menus.js';
@@ -174,6 +180,7 @@ function followTheGroup() {
 
     state.stopRoster ??= watchRoster((roster) => {
         state.roster = roster;
+        readProjectGroup(roster);
         drawGroup();
     });
 
@@ -193,6 +200,41 @@ function followTheGroup() {
     state.stopWatchers ??= watchWatchers(state.member.memberId, (watchers) => {
         state.watchers = watchers;
         render();
+    });
+}
+
+/** Stops following the roster and forgets it, and the mark read beside it. */
+function forgetRoster() {
+    state.stopRoster?.();
+    state.stopRoster = null;
+    state.roster = null;
+    state.projectGroup = undefined;
+}
+
+/**
+ * Reads whether the project already has a group, once per sign-in and only
+ * for somebody with no group: a member needs no answer, and the mark does not
+ * change under anybody's feet often enough to be worth following.
+ */
+function readProjectGroup(roster) {
+    // Forgotten while there is a roster, so that somebody who leaves the
+    // group is told about the project as it is by then.
+    if (roster !== null) {
+        state.projectGroup = undefined;
+        return;
+    }
+    if (state.projectGroup !== undefined) {
+        return;
+    }
+
+    const member = state.member;
+
+    state.projectGroup = null;
+    projectGroupOf().then((group) => {
+        if (state.member === member) {
+            state.projectGroup = group;
+            drawGroup();
+        }
     });
 }
 
@@ -310,11 +352,9 @@ export function stop() {
     state.stopWatchers = null;
     state.watchers = [];
 
-    state.stopRoster?.();
-    state.stopRoster = null;
+    forgetRoster();
     unfollowAttention();
     unfollowLink();
-    state.roster = null;
 
     state.stopFalsePlaces?.();
     state.stopFalsePlaces = null;
