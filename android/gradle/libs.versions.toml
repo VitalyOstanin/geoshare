@@ -53,6 +53,9 @@ mockk = "1.14.11"
 # one is built with `unitTests.isReturnDefaultValues`, under which every
 # method simply answers 0, "" or null rather than parsing anything.
 orgJson = "20260814"
+# The software bill of materials attached to every release: the libraries the
+# release build carries, in a machine-readable list.
+cyclonedx = "3.5.1"
 ktlintPlugin = "14.2.0"
 # The ktlint the plugin runs, rather than whichever one it defaults to: the
 # rules change between releases and the check has to fail the same way
@@ -108,3 +111,6 @@ ktlint = { id = "org.jlleitschuh.gradle.ktlint", version.ref = "ktlintPlugin" }
 # The Android flavour of the plugin: it writes the list into the resources as
 # part of every build, rather than leaving a task to be run by hand.
 aboutlibraries-android = { id = "com.mikepenz.aboutlibraries.plugin.android", version.ref = "aboutLibraries" }
+# Writes the bill of materials of the application as CycloneDX JSON, for the
+# release on GitHub to carry.
+cyclonedx = { id = "org.cyclonedx.bom", version.ref = "cyclonedx" }

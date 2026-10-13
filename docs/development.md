@@ -9,6 +9,7 @@ project is for and how to start using it is in the [README](../README.md).
 - [Collection modes and battery](#collection-modes-and-battery)
 - [Building](#building)
 - [Releasing](#releasing)
+  - [Checking a release](#checking-a-release)
   - [Rolling back](#rolling-back)
 - [Layout](#layout)
 - [Further reading](#further-reading)
@@ -129,10 +130,28 @@ variables: they are fixed in `firebase.json`.
    `tools/project.sh update`, and in which order
    ([Updating a group's project](../firebase/README.md#updating-a-groups-project)).
    `tools/release-notes.sh <version>` prints what the release will say.
-3. Tag the commit on master `v<version>` and push the tag. `release.yml` runs
-   the checks of `ci.yml`, refuses a tag off master, a tag that differs from
+3. Tag the commit on master with an annotated tag, `git tag -a v<version>`,
+   and push the tag. `release.yml` runs the checks of `ci.yml`, refuses a
+   lightweight tag, a tag off master, a tag that differs from
    `appVersionName` and notes without a date, then builds, signs, checks
-   what the package says about itself and publishes it with its checksum.
+   what the package says about itself and publishes it with its checksum and
+   its bill of materials, `geoshare-<version>.cdx.json` in CycloneDX.
+
+### Checking a release
+
+Every published package carries two attestations, signed for the run that
+built it: where it was built, and the bill of materials it was built from.
+With the [GitHub CLI](https://cli.github.com/):
+
+```sh
+gh attestation verify geoshare-<version>.apk --repo VitalyOstanin/geoshare
+gh attestation verify geoshare-<version>.apk --repo VitalyOstanin/geoshare \
+    --predicate-type https://cyclonedx.org/bom
+```
+
+The first says the package came out of `release.yml` in this repository, at
+the tagged commit; the second, that the attached bill of materials is the one
+built with it. A package that fails either did not come from here.
 
 ### Rolling back
 

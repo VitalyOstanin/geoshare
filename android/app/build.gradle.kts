@@ -1,3 +1,6 @@
+import org.cyclonedx.gradle.CyclonedxDirectTask
+import org.cyclonedx.model.Component
+import org.gradle.api.file.RegularFile
 import java.time.Duration
 import java.util.Properties
 
@@ -5,6 +8,9 @@ plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.compose)
     alias(libs.plugins.aboutlibraries.android)
+    // The software bill of materials that goes onto the GitHub release next
+    // to the APK; see the cyclonedxDirectBom block below.
+    alias(libs.plugins.cyclonedx)
 }
 
 // The versions the build image installs, read from the one file that states
@@ -194,4 +200,16 @@ dependencies {
     androidTestImplementation(libs.androidx.test.runner)
     androidTestImplementation(libs.androidx.test.ext.junit)
     debugImplementation(libs.compose.ui.test.manifest)
+}
+
+// The bill of materials of the release APK: only what the release build puts
+// on its runtime classpath, so no test library, no debug-only tool and no
+// build plugin is listed as something the user's phone carries. JSON only;
+// the XML twin the plugin writes by default would be a second file to attach.
+tasks.named<CyclonedxDirectTask>("cyclonedxDirectBom") {
+    projectType = Component.Type.APPLICATION
+    componentName = "io.github.vitalyostanin.geoshare"
+    componentVersion = appVersionName
+    includeConfigs = listOf("releaseRuntimeClasspath")
+    xmlOutput.convention(null as RegularFile?)
 }
