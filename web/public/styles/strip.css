@@ -16,7 +16,11 @@
        keeps it inside of. */
     max-width: min(22rem, calc(100% - 1rem));
     z-index: 3;
-    background: var(--surface);
+    /* Opaque, unlike the other surfaces over the map: on a phone the card
+       spans the window and lies over the map's attribution, whose words
+       showed through and read as a line of the card. Canvas is the page's own
+       ground in either theme. */
+    background: linear-gradient(var(--surface), var(--surface)), Canvas;
     color: var(--on-surface);
     border: 1px solid var(--edge);
     border-radius: var(--radius-large);
@@ -26,7 +30,7 @@
 
 /* The arrow down to the entry of the strip the card is about, drawn as the
    strip's window draws its own (see #strip-tip::after); page/card-place.js
-   sets where it stands. */
+   sets where it stands. Opaque like the card it hangs from. */
 #card.pointing::after {
     content: "";
     position: absolute;
@@ -34,7 +38,7 @@
     left: var(--arrow-x, 50%);
     width: 0.7rem;
     height: 0.7rem;
-    background: var(--surface);
+    background: linear-gradient(var(--surface), var(--surface)), Canvas;
     border-right: 1px solid var(--edge);
     border-bottom: 1px solid var(--edge);
     transform: translate(-50%, -50%) rotate(45deg);
