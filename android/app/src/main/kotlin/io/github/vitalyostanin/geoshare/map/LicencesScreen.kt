@@ -62,7 +62,20 @@ internal fun licenceLines(json: String): List<LicenceLine> = Libs
     .build()
     .libraries
     .map { library ->
-        val licences = library.licenses.sortedBy { it.spdxId ?: it.name }
+        // A library given a text of its own in config/libraries keeps the
+        // licence its POM names as well, and that SPDX text has a blank where
+        // the holder goes: the plugin adds the one to the other rather than
+        // replacing it. Where both are there, the text naming the holder
+        // stands for the licence.
+        val ownTexts =
+            library.licenses
+                .filter { it.hash != it.spdxId }
+                .mapNotNull { it.spdxId }
+                .toSet()
+        val licences =
+            library.licenses
+                .filterNot { it.hash == it.spdxId && it.spdxId in ownTexts }
+                .sortedBy { it.spdxId ?: it.name }
 
         LicenceLine(
             name = library.name,

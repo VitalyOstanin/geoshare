@@ -31,7 +31,33 @@ class LicenceLinesTest {
         assertEquals("13.6.1", lines.getValue("maplibre").version)
     }
 
+    @Test
+    fun `a text naming the holder stands in for the blank one of the same licence`() {
+        val line = licenceLines(HELD).single()
+
+        assertEquals(listOf("Apache-2.0", "MIT"), line.labels)
+        assertEquals("Apache License\n\nCopyright 2004 The Holders", line.text)
+    }
+
     private companion object {
+        val HELD =
+            """
+            {
+              "libraries": [
+                {"uniqueId": "org.example:held", "artifactVersion": "1.0", "name": "Held",
+                 "developers": [], "licenses": ["Apache-2.0", "MIT-held", "MIT"]}
+              ],
+              "licenses": {
+                "Apache-2.0": {"name": "Apache License 2.0", "spdxId": "Apache-2.0",
+                  "content": "Apache License", "hash": "Apache-2.0"},
+                "MIT-held": {"name": "MIT License", "spdxId": "MIT",
+                  "content": "Copyright 2004 The Holders", "hash": "MIT-held"},
+                "MIT": {"name": "MIT License", "spdxId": "MIT",
+                  "content": "Copyright (c) <year> <copyright holders>", "hash": "MIT"}
+              }
+            }
+            """.trimIndent()
+
         val LIST =
             """
             {

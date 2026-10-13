@@ -152,6 +152,8 @@ aboutLibraries {
 // by hand. The whole suite takes a small part of this.
 tasks.withType<Test>().configureEach {
     timeout.set(Duration.ofMinutes(10))
+    // LicenceHoldersTest reads the list the licences screen is built from.
+    dependsOn("prepareLibraryDefinitionsDebug")
 }
 
 dependencies {

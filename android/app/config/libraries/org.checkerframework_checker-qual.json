@@ -1,0 +1,6 @@
+{
+  "uniqueId": "org.checkerframework:checker-qual",
+  "licenses": [
+    "MIT-checker-framework"
+  ]
+}
