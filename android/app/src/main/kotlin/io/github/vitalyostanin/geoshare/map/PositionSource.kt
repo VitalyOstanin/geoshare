@@ -112,7 +112,18 @@ fun memberPositions(
     val positions = positionsOf(connection)
     val refusals = Refusals(this)
 
-    fun publish() = trySend(MembersInView(known.values.toList(), refused.size))
+    // Held back until every document has answered once, a refusal counting
+    // as an answer: the map opens on the freshest of one's own devices, and a
+    // list that so far holds only the old one would open it there for good.
+    val unanswered = documents.toMutableSet()
+
+    fun show() = trySend(MembersInView(known.values.toList(), refused.size))
+
+    fun publish() {
+        if (unanswered.isEmpty()) {
+            show()
+        }
+    }
 
     // A refusal stays a refusal until the member says otherwise, and what they
     // say does not reach this screen: a permission lives in their grant, which
@@ -127,6 +138,8 @@ fun memberPositions(
             // write is still waiting is not part of the document, and a listener
             // told only of the data would hear of it only as a side effect.
             document.addSnapshotListener(MetadataChanges.INCLUDE) { snapshot, error ->
+                unanswered.remove(id)
+
                 if (error != null) {
                     AppLog.i(TAG, "$id is out of reach: ${error.code}")
                     refused.add(id)
@@ -168,7 +181,7 @@ fun memberPositions(
     // empty map rather than waiting for an answer that never comes: a member
     // whose grant this device may not read has no document to subscribe to at
     // all.
-    publish()
+    show()
 
     awaitClose { subscriptions.values.forEach { it.remove() } }
 }

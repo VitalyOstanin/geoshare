@@ -23,7 +23,8 @@ import { memberIdOf } from './phones.js';
 export function watchPositions(documents, onPositions, onRefused) {
     const known = new Map();
     const refused = new Set();
-    const publish = () => onPositions([...known.values()]);
+    const show = () => onPositions([...known.values()]);
+    const { answered, publish } = onceAllAnswered(documents, show);
     const stops = new Map();
     let wanted = true;
 
@@ -36,6 +37,7 @@ export function watchPositions(documents, onPositions, onRefused) {
                 doc(store, 'groups', currentGroup(), 'positions', id),
                 (snapshot) => {
                     const position = snapshot.exists() ? positionOf(snapshot) : null;
+                    const first = answered(id);
 
                     if (refused.delete(id)) {
                         sayRefused();
@@ -43,14 +45,16 @@ export function watchPositions(documents, onPositions, onRefused) {
 
                     if (position) {
                         known.set(id, position);
-                    } else if (!known.delete(id)) {
+                    } else if (!known.delete(id) && !first) {
                         return;
                     }
 
                     publish();
                 },
                 () => {
-                    if (known.delete(id)) {
+                    const first = answered(id);
+
+                    if (known.delete(id) || first) {
                         publish();
                     }
 
@@ -87,13 +91,33 @@ export function watchPositions(documents, onPositions, onRefused) {
 
     // Said once at the start, so that a group with nothing to draw shows an
     // empty map rather than waiting for an answer that never comes.
-    publish();
+    show();
 
     return () => {
         wanted = false;
         documents.forEach((id) => refusals.forget(`positions/${id}`));
         stops.forEach((stop) => stop());
         stops.clear();
+    };
+}
+
+/**
+ * What a subscription to many documents says, held back until every one of
+ * them has answered once, a refusal counting as an answer: the map opens on
+ * the freshest of one's own devices, and a list that so far holds only the old
+ * one would open it there for good.
+ */
+function onceAllAnswered(documents, show) {
+    const unanswered = new Set(documents);
+
+    return {
+        /** Whether this was the document's first answer. */
+        answered: (id) => unanswered.delete(id),
+        publish: () => {
+            if (unanswered.size === 0) {
+                show();
+            }
+        },
     };
 }
 
