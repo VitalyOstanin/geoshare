@@ -3,6 +3,7 @@
 import { ageText, positionAge } from '../lib/age.js';
 import { showFace } from '../lib/faces.js';
 import { FOLLOW_ALL, FOLLOW_NONE, FOLLOW_ONE } from '../lib/following.js';
+import { followCardDevice } from './card-actions.js';
 import { centreOnce, lookAt, showMembers, shownPositions } from '../lib/map.js';
 import { batteryText } from '../lib/map-card.js';
 import { awaitingFollowTarget, followMode, followPaused, followTarget } from '../lib/map-follow.js';
@@ -60,6 +61,7 @@ export function render() {
 
     showMembers(state.view, state.positions, labels, pictures, state.member.memberId, now);
     centreOnce(state.view, state.positions, state.member.memberId);
+    followCardDevice();
 
     // Whoever the open card is about is marked in the panel, so that a card
     // over the map and a card in the strip are visibly the same member.

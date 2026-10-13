@@ -42,6 +42,7 @@ import {
 import { askSearch, closeSearch, untilText } from './search-ui.js';
 import { drawAdmin, openAdmin } from './admin-panel.js';
 import { followResets, resetButtonFor } from './reset-ui.js';
+import { cardDeviceId, redrawCardDevice } from './card-actions.js';
 
 /**
  * The group, as the menu shows it.
@@ -61,6 +62,13 @@ export function drawGroup() {
     }
 
     state.sirensShown = new Set();
+
+    // The device on an open card is followed as the panels' are.
+    const cardDevice = cardDeviceId();
+
+    if (cardDevice !== null) {
+        state.sirensShown.add(cardDevice);
+    }
 
     const standing = standingIn(state.roster, state.member.memberId);
     const ungrouped = standing === UNGROUPED;
@@ -106,6 +114,7 @@ export function drawGroup() {
     drawPhones();
     followSirens();
     followResets();
+    redrawCardDevice();
 }
 
 /**

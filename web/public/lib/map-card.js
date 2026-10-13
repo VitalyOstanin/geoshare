@@ -222,7 +222,21 @@ function detail(view, position, name, faces, now) {
 
     const heading = detailHeading(view, position, name, faces, now);
 
-    card.append(heading, summary(view, position, now));
+    // Right of the name, so the card is no taller for them; what they leave on
+    // the device is a line under the heading.
+    const actions = view.deviceActions?.(position) ?? null;
+
+    if (actions) {
+        heading.append(actions.buttons);
+    }
+
+    card.append(heading);
+
+    if (actions?.status) {
+        card.append(actions.status);
+    }
+
+    card.append(summary(view, position, now));
 
     const sought = view.soughtLine?.(position);
 

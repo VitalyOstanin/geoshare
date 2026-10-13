@@ -30,6 +30,7 @@ import { drawGroup } from './page/group-panel.js';
 import { closeAdmin } from './page/admin-panel.js';
 import { askName, closeNaming } from './page/dialogs.js';
 import { closeSearch, drawSearchAsk, drawSought, searchesChanged, soughtLine } from './page/search-ui.js';
+import { deviceActions } from './page/card-actions.js';
 import { drawSirenAsk } from './page/siren-ui.js';
 import { followLink, knownNote, unfollowLink } from './page/link-ui.js';
 import { followAttention, unfollowAttention } from './page/pause.js';
@@ -98,6 +99,7 @@ function showTheMap() {
         state.view.onName = askName;
         state.view.personName = personName;
         state.view.soughtLine = soughtLine;
+        state.view.deviceActions = deviceActions;
         state.view.knownNote = knownNote;
     }
 

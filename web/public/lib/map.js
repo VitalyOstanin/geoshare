@@ -238,6 +238,9 @@ function newView(map, onCardChange, cardElement) {
         // What the card's ages are as of while the database is silent, empty
         // while it answers. Set by the page, which judges the link.
         knownNote: null,
+        // The round buttons for a device's card and the line they leave:
+        // `(position) => { buttons, status } | null`. Set by the page.
+        deviceActions: null,
     };
 }
 
