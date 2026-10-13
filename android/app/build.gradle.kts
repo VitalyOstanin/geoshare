@@ -106,6 +106,11 @@ android {
 
 // The list behind the licences screen. Who wrote a library and how to fund it
 // are not what the screen is for, and only make the file larger.
+//
+// Gradle warns that debugCompileClasspath and debugRuntimeClasspath are
+// resolved during configuration time: this plugin collects them there on
+// purpose, as the price of working with the configuration cache
+// (https://github.com/mikepenz/AboutLibraries/issues/1369).
 aboutLibraries {
     // Nothing is fetched while building: the plugin reads licence texts off
     // the network with no timeout, and a connection that never answers held a
