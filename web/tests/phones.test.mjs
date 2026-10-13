@@ -35,6 +35,20 @@ test('a phone entry keeps what a phone writes and drops the rest', () => {
     });
 });
 
+// Ten is the most the page follows of one member; an entry that is not a
+// device must not take the place of one that is.
+test('entries that are not devices do not count towards the ten', () => {
+    const data = { broken: null, junk: 'text' };
+    for (let n = 0; n < 10; n += 1) {
+        data[`device${n}`] = { model: 'BVL-N49' };
+    }
+
+    const phones = phonesOf(data);
+
+    assert.equal(phones.size, 10);
+    assert.equal(phones.has('device9'), true);
+});
+
 // The case this exists for: the answers are being thrown away, the position
 // is an hour old, and the device has since been put on a cable.
 test('what the phone said after the position was written is laid over it', () => {

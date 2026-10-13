@@ -18,6 +18,7 @@ set -euo pipefail
 source "$(dirname "${BASH_SOURCE[0]}")/lib.sh"
 
 readonly BOOT_TIMEOUT="${BOOT_TIMEOUT:-300}"
+require_whole_number BOOT_TIMEOUT
 
 if [[ "${1:-}" == "--stop" ]]; then
     podman rm -f "${EMULATOR_NAME}" > /dev/null 2>&1 || true

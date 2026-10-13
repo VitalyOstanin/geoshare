@@ -33,12 +33,13 @@ const NAME_LIMIT = 40;
  */
 export function phonesOf(data) {
     const phones = new Map();
+    // The entries that are not devices are dropped before the count, so that
+    // one of them does not take the place of a real device.
+    const entries = Object.entries(data ?? {})
+        .filter(([, entry]) => entry !== null && typeof entry === 'object')
+        .slice(0, PHONES_PER_MEMBER);
 
-    for (const [deviceId, entry] of Object.entries(data ?? {}).slice(0, PHONES_PER_MEMBER)) {
-        if (entry === null || typeof entry !== 'object') {
-            continue;
-        }
-
+    for (const [deviceId, entry] of entries) {
         phones.set(deviceId, {
             model: shortText(entry.model),
             name: shortText(entry.name),

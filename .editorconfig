@@ -25,3 +25,25 @@ max_line_length = 100
 quote_type = single
 insert_final_newline = true
 trim_trailing_whitespace = true
+
+# The rest of what is written by hand: the scripts, the styles, the data and
+# the documents. ShellCheck and the Markdown renderers are the checks; these
+# are what an editor does while typing.
+[*.{sh,css,html,yml,yaml}]
+indent_style = space
+indent_size = 4
+insert_final_newline = true
+trim_trailing_whitespace = true
+
+[*.{yml,yaml}]
+indent_size = 2
+
+# The JSON files keep the indent each was written with: the Firebase ones
+# two, the npm ones four, as their own tools write them.
+[*.json]
+insert_final_newline = true
+trim_trailing_whitespace = true
+
+# Two trailing spaces are a line break in Markdown, so they stay.
+[*.md]
+insert_final_newline = true

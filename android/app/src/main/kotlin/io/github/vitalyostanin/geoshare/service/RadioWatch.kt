@@ -8,6 +8,7 @@ import android.location.GnssStatus
 import android.location.LocationManager
 import android.os.Handler
 import android.os.Looper
+import androidx.annotation.MainThread
 import io.github.vitalyostanin.geoshare.collection.AidingDoubt
 import io.github.vitalyostanin.geoshare.collection.Clock
 import io.github.vitalyostanin.geoshare.collection.Constellation
@@ -122,7 +123,13 @@ private val SKY_STILL_CURRENT: Duration = Duration.ofSeconds(5)
  * The measurements arrive whether or not a position comes out of them, which
  * is the case this exists for: a device that has gone silent is a device with
  * nothing to write down, and this is what can still be written.
+ *
+ * Held to the main thread, and without a lock for that reason: the receiver's
+ * callbacks arrive on the main looper's handler (see [start]), and the
+ * service reads and notes from its lifecycle scope, which runs there too. A
+ * caller moved to another dispatcher has to come back before it calls in.
  */
+@MainThread
 class RadioWatch(
     private val context: Context,
     /**

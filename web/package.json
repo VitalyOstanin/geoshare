@@ -1,6 +1,7 @@
 {
     "name": "geoshare-web",
     "private": true,
+    "license": "MIT",
     "type": "module",
     "description": "The map page: the same positions the phones write, in a browser",
     "scripts": {

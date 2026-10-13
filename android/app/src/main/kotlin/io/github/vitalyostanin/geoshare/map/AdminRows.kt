@@ -298,7 +298,7 @@ internal fun phoneText(phone: PhoneLine, now: Instant, named: Boolean = true): S
             },
         )
 
-    phone.batteryPercent?.let { said.add(stringResource(R.string.map_battery, it)) }
+    phone.batteryPercent?.let { said.add(percentText(it)) }
 
     if (phone.charging) {
         said.add(stringResource(R.string.admin_phone_charging))

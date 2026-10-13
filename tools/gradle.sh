@@ -27,20 +27,24 @@ if [[ -n "${ANDROID_SERIAL:-}" ]]; then
     env_args+=(-e "ANDROID_SERIAL=${ANDROID_SERIAL}")
 fi
 
-# The try-out emulator runs in a pod of its own, where nothing outside can see
-# it; the adb server it publishes is how an instrumented run reaches it. Passed
-# only while that container is up, so an ordinary build is unaffected and a
-# device plugged into the machine keeps being the device a run installs on.
-if podman container exists "${EMULATOR_NAME}"; then
-    env_args+=(-e "ADB_SERVER_SOCKET=${ADB_SERVER_SOCKET}")
+# The network the build runs in. The host's, by default: a proxy on the host
+# loopback is not reachable from the container's own network.
+#
+# GRADLE_IN_POD runs it in the try-out emulator's pod instead, which is how
+# an instrumented run reaches the emulator. The Android plugin's test engine
+# calls adb on its default port with an environment of its own, so no
+# variable pointing elsewhere reaches it; inside the pod that port is the
+# emulator's own adb server, and the devices plugged into the machine are
+# not in sight at all. The pod has no proxy, so a build there has to find
+# everything in the cache already.
+network_args=(--network host "${proxy_run_args[@]}")
+if [[ -n "${GRADLE_IN_POD:-}" ]]; then
+    network_args=(--pod "${POD_NAME}" --http-proxy=false)
 fi
 
 ensure_sdk_image
 
-# --network host: a proxy on the host loopback is not reachable from the
-# container's own network, and it is also how the container reaches an
-# emulator running on the host.
-exec podman run --rm --network host "${proxy_run_args[@]}" "${limit_args[@]}" "${env_args[@]}" \
+exec podman run --rm "${network_args[@]}" "${limit_args[@]}" "${env_args[@]}" \
     -v "${REPO_ROOT}:/src:z" -v "${CACHE_VOLUME}:/gradle" \
     -v "${KEY_VOLUME}:/root/.android" -w /src/android \
     "${SDK_IMAGE}" \

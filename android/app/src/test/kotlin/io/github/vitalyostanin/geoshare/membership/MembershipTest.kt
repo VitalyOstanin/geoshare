@@ -58,9 +58,19 @@ class MembershipTest {
     fun `the last administrator cannot be removed`() {
         val roster = Roster(members = listOf(alice, bob), admins = listOf(alice))
 
-        assertTrue(mayBeRemoved(roster, bob))
-        assertFalse(mayBeRemoved(roster, alice))
-        assertFalse(mayBeRemoved(roster, stranger))
+        assertTrue(mayBeRemoved(roster, bob, by = alice))
+        assertFalse(mayBeRemoved(roster, alice, by = alice))
+        assertFalse(mayBeRemoved(roster, stranger, by = alice))
+    }
+
+    @Test
+    fun `only somebody who runs the group takes others off it`() {
+        val carol = "carol-uid"
+        val roster = Roster(members = listOf(alice, bob, carol), admins = listOf(alice))
+
+        assertFalse(mayBeRemoved(roster, carol, by = bob))
+        assertTrue(mayBeRemoved(roster, carol, by = alice))
+        assertFalse(mayBeRemoved(roster, carol, by = stranger))
     }
 
     // The household made in the console names no administrators, and its

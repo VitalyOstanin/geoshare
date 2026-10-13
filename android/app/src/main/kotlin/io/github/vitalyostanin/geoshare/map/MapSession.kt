@@ -118,7 +118,7 @@ fun rememberSearches(): State<Map<String, Search>> {
  * out of a standing search is worth being current about, and nothing this
  * short costs a subscription that only reads a moment already held in memory.
  */
-private const val SOUGHT_CHECK_MILLIS = 30_000L
+private const val SOUGHT_CHECK_MS = 30_000L
 
 /**
  * The devices the group is looking for right now, freshly worked out against
@@ -136,7 +136,7 @@ private fun soughtPhoneIds(searches: Map<String, Search>): List<String> {
 
     LaunchedEffect(Unit) {
         while (true) {
-            delay(SOUGHT_CHECK_MILLIS)
+            delay(SOUGHT_CHECK_MS)
             now = Instant.now()
         }
     }

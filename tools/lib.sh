@@ -11,6 +11,18 @@ readonly REPO_ROOT
 # shellcheck source=versions.env
 source "${REPO_ROOT}/tools/versions.env"
 
+# Stops a script whose setting, read from the environment, is not a whole
+# number. Bash arithmetic takes any other word for the name of a variable: a
+# typo reads as 0, and a word with brackets in it runs what is inside them.
+require_whole_number() {
+    local name="$1"
+
+    if [[ ! "${!name}" =~ ^[0-9]+$ ]]; then
+        echo "error: ${name}='${!name}' is not a whole number" >&2
+        exit 1
+    fi
+}
+
 # The tag carries the version the image was built for, so a bump to
 # versions.env asks for a new image instead of silently reusing the old one.
 #
@@ -58,6 +70,7 @@ readonly POD_NAME="${POD_NAME:-geoshare}"
 # 5038 rather than 5037, because the machine's own adb server usually holds
 # 5037 and the devices plugged into it have to keep working.
 readonly ADB_HOST_PORT="${ADB_HOST_PORT:-5038}"
+require_whole_number ADB_HOST_PORT
 readonly ADB_SERVER_SOCKET="${ADB_SERVER_SOCKET:-tcp:127.0.0.1:${ADB_HOST_PORT}}"
 
 ensure_pod() {

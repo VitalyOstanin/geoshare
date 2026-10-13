@@ -14,7 +14,7 @@
 # anything to say are run.
 #
 # The names it prints are the names of the scripts beside it: test, style,
-# lint, web_test, js_lint, rules. --list exists so that a caller which runs
+# lint, web_test, js_lint, rules, shell_lint. --list exists so that a caller which runs
 # them somewhere else can be told which ones to run.
 set -euo pipefail
 
@@ -87,6 +87,7 @@ if [[ -n "${everything}" ]]; then
     want web_test
     want js_lint
     want rules
+    want shell_lint
 else
     kotlin_only=yes
 
@@ -120,8 +121,12 @@ else
                 want rules
                 want js_lint
                 ;;
-            # Everything else -- the lists, the notes, the scripts themselves
-            # -- is checked by nothing here.
+            # The scripts, wherever they are.
+            *.sh)
+                want shell_lint
+                ;;
+            # Everything else -- the lists and the notes -- is checked by
+            # nothing here.
             *) ;;
         esac
     done < <(changed_files)
@@ -161,5 +166,6 @@ for check in "${wanted[@]}"; do
         web_test) "${HERE}/web-test.sh" ;;
         js_lint) "${HERE}/js-lint.sh" ;;
         rules) "${HERE}/rules.sh" ;;
+        shell_lint) "${HERE}/shell-lint.sh" ;;
     esac
 done

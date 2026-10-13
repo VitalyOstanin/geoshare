@@ -99,6 +99,8 @@ fun rosterWithout(roster: Roster, uid: String): Roster = Roster(
  *
  * Asked the way the rules ask it, so the screen offers nothing a write would
  * be refused:
+ * - by nobody who does not run the group; leaving is a write of its own and
+ *   is not offered here;
  * - not the last administrator while the founder is not there to run the
  *   group: a group nobody runs is a group nobody can add to or remove from,
  *   which is the console again;
@@ -106,12 +108,13 @@ fun rosterWithout(roster: Roster, uid: String): Roster = Roster(
  * - not another administrator, by anybody but the founder — anybody else
  *   first takes the role, and the place is a second write.
  */
-fun mayBeRemoved(roster: Roster, uid: String, by: String? = null): Boolean {
+fun mayBeRemoved(roster: Roster, uid: String, by: String): Boolean {
     val byFounder = roster.founder != null && by == roster.founder
 
     val left = rosterWithout(roster, uid)
 
     return uid in roster.members &&
+        runsTheGroup(roster, by) &&
         (uid != roster.founder || byFounder) &&
         (uid !in roster.admins || byFounder) &&
         (left.admins.isNotEmpty() || roster.founder in left.members)

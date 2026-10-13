@@ -20,7 +20,7 @@ import kotlinx.coroutines.flow.callbackFlow
  * same place, and that does not change in a second. Every answer also costs a
  * row in the sky file.
  */
-private const val SATELLITES_ASKED_EVERY_MILLIS = 5_000L
+private const val SATELLITES_ASKED_EVERY_MS = 5_000L
 
 /**
  * Positions from the satellites and nothing else.
@@ -64,7 +64,7 @@ fun satellitePositions(context: Context): Flow<Fix> = callbackFlow {
 
     manager.requestLocationUpdates(
         LocationManager.GPS_PROVIDER,
-        SATELLITES_ASKED_EVERY_MILLIS,
+        SATELLITES_ASKED_EVERY_MS,
         0f,
         listener,
         Looper.getMainLooper(),

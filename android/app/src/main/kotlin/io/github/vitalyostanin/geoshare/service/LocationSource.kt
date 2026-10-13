@@ -38,7 +38,7 @@ private const val TAG = "geoshare.location"
  * own ones are only asked to answer once, and a receiver indoors may never
  * do so.
  */
-private const val ONE_ANSWER_MILLIS = 30_000L
+private const val ONE_ANSWER_MS = 30_000L
 
 /**
  * Positions as they arrive, for as long as the flow is collected.
@@ -164,7 +164,7 @@ private suspend fun platformPosition(context: Context, providers: List<String>):
 
     for (provider in providers) {
         val location =
-            withTimeoutOrNull(ONE_ANSWER_MILLIS) { oneAnswer(context, manager, provider) }
+            withTimeoutOrNull(ONE_ANSWER_MS) { oneAnswer(context, manager, provider) }
 
         if (location != null) {
             noteIfPretended(location)

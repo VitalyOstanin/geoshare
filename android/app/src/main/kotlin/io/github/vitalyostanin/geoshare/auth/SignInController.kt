@@ -27,7 +27,7 @@ private const val ALREADY_PRESENTED = "ERROR_WEB_CONTEXT_ALREADY_PRESENTED"
  * How long a return to the screen waits for a browser sign-in to finish before
  * giving up on it: a page that did finish signs in well within it.
  */
-private const val RETURN_GRACE_MILLIS = 5_000L
+private const val RETURN_GRACE_MS = 5_000L
 
 /*
  * The message Firebase's own sign-in activity sends when the member comes back
@@ -209,13 +209,13 @@ class SignInController(
      * letting it say the page was left, and a page that broke ("missing initial
      * state") never answers at all: the attempt would wait for good, with
      * nothing on the screen or in the log. Called on every return to the
-     * screen; after [RETURN_GRACE_MILLIS] it says what that activity would
+     * screen; after [RETURN_GRACE_MS] it says what that activity would
      * have said, which ends the attempt as cancelled.
      */
     suspend fun cameBack(context: Context) {
         if (current.value != AuthState.SigningIn) return
 
-        delay(RETURN_GRACE_MILLIS)
+        delay(RETURN_GRACE_MS)
 
         if (current.value == AuthState.SigningIn && auth.currentUser == null) {
             AppLog.w(TAG, "came back without the sign-in page's answer; giving up on it")

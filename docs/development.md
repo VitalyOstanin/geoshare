@@ -9,6 +9,7 @@ project is for and how to start using it is in the [README](../README.md).
 - [Collection modes and battery](#collection-modes-and-battery)
 - [Building](#building)
 - [Releasing](#releasing)
+  - [Rolling back](#rolling-back)
 - [Layout](#layout)
 - [Further reading](#further-reading)
 
@@ -54,22 +55,24 @@ publishing run the Firebase command line on the machine itself, and need
 `node` with `npx` and `python3` besides — the full list is in
 [new-project.md](new-project.md).
 
-| #  | Command                 | What it does                                                                |
-|----|-------------------------|-----------------------------------------------------------------------------|
-| 1  | `tools/build.sh`        | builds the Android application                                              |
-| 2  | `tools/test.sh`         | runs the Android unit tests                                                 |
-| 3  | `tools/lint.sh`         | formatting check and Android lint                                           |
-| 4  | `tools/rules.sh`        | security rules tests against the Firestore emulator                         |
-| 5  | `tools/web-test.sh`     | the tests of the page's own logic                                           |
-| 6  | `tools/js-lint.sh`      | ESLint over the page and the emulator scripts                               |
-| 7  | `tools/sign-release.sh` | signs the release build with the release key                                |
-| 8  | `tools/check.sh`        | the checks a change needs, `--all` for every one; CI runs it                |
-| 9  | `tools/run-services.sh` | stand-in Firestore and sign-in, filled with stand-in data                   |
-| 10 | `tools/run-emulator.sh` | a headless Android emulator; with the line above, a stand without a project |
-| 11 | `tools/coverage.sh`     | how much of the code the Android and the page's tests reach                 |
+| #  | Command                      | What it does                                                                |
+|----|------------------------------|-----------------------------------------------------------------------------|
+| 1  | `tools/build.sh`             | builds the Android application                                              |
+| 2  | `tools/test.sh`              | runs the Android unit tests                                                 |
+| 3  | `tools/lint.sh`              | formatting check and Android lint                                           |
+| 4  | `tools/rules.sh`             | security rules tests against the Firestore emulator                         |
+| 5  | `tools/web-test.sh`          | the tests of the page's own logic                                           |
+| 6  | `tools/js-lint.sh`           | ESLint over the page and the emulator scripts                               |
+| 7  | `tools/sign-release.sh`      | signs the release build with the release key                                |
+| 8  | `tools/check.sh`             | the checks a change needs, `--all` for every one; CI runs it                |
+| 9  | `tools/run-services.sh`      | stand-in Firestore and sign-in, filled with stand-in data                   |
+| 10 | `tools/run-emulator.sh`      | a headless Android emulator; with the line above, a stand without a project |
+| 11 | `tools/coverage.sh`          | how much of the code the Android and the page's tests reach                 |
+| 12 | `tools/test-instrumented.sh` | smoke tests on the emulator: start-up, settings, licences                   |
 
 The rest of `tools/` — `project.sh`, `web-config.sh`, `setup-site.sh`,
-`read-cost.sh`, `device-log.sh`, `device-sky.sh`, `siren-sound.sh` — says
+`read-cost.sh`, `device-log.sh`, `device-sky.sh`, `siren-sound.sh`,
+`signing.sh` — says
 what it does and how to call it at the top of each file.
 
 `VARIANT=release tools/build.sh` makes the unsigned release package;
@@ -101,6 +104,7 @@ The scripts read these from the environment; none has to be set.
 | 16 | `GEOSHARE_RELEASE_*`  | `sign-release.sh`              | the release key: keystore, alias, password                         | none; see the script's header    |
 | 17 | `HTTPS_PROXY`         | all containers (`lib.sh`)      | handed to image builds and containers when set                     | none                             |
 | 18 | `CLOUD_SHELL`         | `project.sh`                   | set by Google Cloud Shell; sign-in without a local browser         | none                             |
+| 19 | `TIMEOUT`             | `test-instrumented.sh`         | how long the instrumented run may take as a whole                  | `30m`                            |
 
 The names of the podman resources — `POD_NAME`, `SERVICES_NAME`,
 `EMULATOR_NAME`, `SDK_IMAGE`, `EMULATOR_IMAGE`, `FIREBASE_IMAGE`,
@@ -122,6 +126,26 @@ variables: they are fixed in `firebase.json`.
    `appVersionName` and notes without a date, then builds, signs, checks
    what the package says about itself and publishes it with its checksum.
 
+### Rolling back
+
+Android does not install a package over one with a higher version code, so a
+bad release is not taken back by pointing at an older one:
+
+1. Revert the change on master and release it as the next patch version,
+   following the steps above. Devices update to it like to any other.
+2. Mark the bad release on GitHub as a pre-release and say in its notes what
+   is wrong, so that nobody new installs it.
+3. If the release changed the rules or the page, each project owner checks out
+   the tag of the previous release and runs `tools/project.sh update` from it,
+   once the devices have the fixed release: the older rules may refuse what
+   the bad one writes. The rules usually need no rollback at all, since a
+   release only widens them (see
+   [Updating a group's project](../firebase/README.md#updating-a-groups-project)).
+
+Nothing in the application is switched on or off from outside: there is no
+server of the project's own to hold such switches. A feature that misbehaves
+is taken out by a release.
+
 ## Layout
 
 | # | Directory   | Contents                                                          |
@@ -131,6 +155,8 @@ variables: they are fixed in `firebase.json`.
 | 3 | `firebase/` | security rules, indexes, document model, rules tests              |
 | 4 | `docs/`     | architecture decisions, stories, console steps, project setup     |
 | 5 | `tools/`    | build, test, setup and release entry points                       |
+| 6 | `site/`     | the landing page in two languages, its pictures and fonts         |
+| 7 | `.github/`  | CI and release workflows, Dependabot settings                     |
 
 ## Further reading
 

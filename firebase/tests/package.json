@@ -1,6 +1,7 @@
 {
   "name": "geoshare-rules-tests",
   "private": true,
+  "license": "MIT",
   "type": "module",
   "description": "Security rules tests, run against the Firestore emulator",
   "scripts": {

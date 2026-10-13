@@ -370,7 +370,7 @@ private fun DetailSummary(member: MemberPosition, away: Double?, now: Instant) {
         Fact(
             text =
             percent
-                ?.let { stringResource(R.string.map_battery, it) }
+                ?.let { percentText(it) }
                 ?: stringResource(R.string.map_detail_unknown),
             colour =
             if (percent != null && member.charging) {

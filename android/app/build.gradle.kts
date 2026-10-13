@@ -49,6 +49,7 @@ android {
         versionCode = appVersionCode
         versionName = appVersionName
         buildConfigField("String", "SETUP_PAGE_URL", "\"$setupPageUrl\"")
+        testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
 
         ndk {
             // The map draws in native code, and the library ships that code
@@ -112,6 +113,28 @@ aboutLibraries {
     export {
         excludeFields.addAll("developers", "funding")
     }
+
+    // The build fails on a dependency under any licence not named here, so a
+    // new one is read and agreed to before it ships. Each of these lets the
+    // application be passed on under MIT with the notices the screen shows.
+    // The Go licence (re2j) and the Play Integrity terms have no SPDX id: the
+    // list keys them by a hash of their text, and the check reads the Go one
+    // by its name, so both are named both ways.
+    license {
+        strictMode = com.mikepenz.aboutlibraries.plugin.StrictMode.FAIL
+        allowedLicenses.addAll(
+            "Apache-2.0",
+            "MIT",
+            "BSD-2-Clause",
+            "BSD-3-Clause",
+            "ASDKL",
+            "PCSDKToS",
+            "2895aeae23f1ae6eaa282fe471e528c6",
+            "Go License",
+            "7546fd760989f8b6ad8de53f6c981adb",
+            "Play Integrity API Terms of Service",
+        )
+    }
 }
 
 // A test stuck on a delay or a lock would hold the run until somebody stops it
@@ -162,4 +185,13 @@ dependencies {
     // Overrides the Android stub org.json.* on the unit test classpath, which
     // answers every call with a default rather than parsing anything.
     testImplementation(libs.org.json)
+
+    // The smoke tests on the emulator: the application starts, and the
+    // settings and licences screens draw. The manifest artefact adds the empty
+    // activity a Compose rule without an activity of its own draws into.
+    androidTestImplementation(platform(libs.compose.bom))
+    androidTestImplementation(libs.compose.ui.test.junit4)
+    androidTestImplementation(libs.androidx.test.runner)
+    androidTestImplementation(libs.androidx.test.ext.junit)
+    debugImplementation(libs.compose.ui.test.manifest)
 }

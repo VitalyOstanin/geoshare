@@ -48,7 +48,7 @@ private val FOLLOW_BUTTON_HEIGHT = 40.dp
  * map is not left wide for good: the button says what changed and then goes
  * back to being one more circle among the others.
  */
-private const val FOLLOW_LABEL_MILLIS = 2_500L
+private const val FOLLOW_LABEL_MS = 2_500L
 
 /**
  * How wide a row of the map's drop-down menus is: the follow menu's and the
@@ -111,7 +111,7 @@ internal fun FollowButton(
         if (changeCount == 0) return@LaunchedEffect
 
         showLabel = true
-        delay(FOLLOW_LABEL_MILLIS)
+        delay(FOLLOW_LABEL_MS)
         showLabel = false
     }
 

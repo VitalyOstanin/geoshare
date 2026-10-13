@@ -107,6 +107,11 @@ jobs:
       - name: Lint the JavaScript
         run: npx --yes "eslint@${ESLINT_VERSION}" web firebase
 
+      - name: Check the shell scripts
+        run: |
+          git ls-files -z '*.sh' | xargs -0 docker run --rm -v "$PWD:/mnt:ro" -w /mnt \
+            "koalaman/shellcheck:v${SHELLCHECK_VERSION}" -x
+
       - name: The rules against the emulator
         # A project id starting with "demo-" keeps the emulator and the client
         # library away from the real service; no credentials are involved.

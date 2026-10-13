@@ -1,5 +1,6 @@
 package io.github.vitalyostanin.geoshare.log
 
+import androidx.annotation.MainThread
 import io.github.vitalyostanin.geoshare.collection.Clock
 import io.github.vitalyostanin.geoshare.collection.Constellation
 import io.github.vitalyostanin.geoshare.collection.DRIFT_LEAST_APART_MS
@@ -42,7 +43,12 @@ const val SKY_FILE_LIMIT_BYTES: Long = 2L * 1024 * 1024
  * number — so that the tools made for that logger read this file as it is.
  * The rows of this application's own sit beside them under names of their
  * own, which those tools pass over.
+ *
+ * Written from the main thread only, like [RadioWatch] that feeds it: the
+ * drift row compares a block with the one kept before it, and that pair is
+ * read and replaced without a lock.
  */
+@MainThread
 object SkyLog {
     @Volatile
     private var files: RollingFiles? = null

@@ -449,6 +449,11 @@ class MainActivity : AppCompatActivity() {
                     onLeave = { ask ->
                         val leaving = Connections.of(ask.projectId)
 
+                        // In the activity's scope, waited on from the leave
+                        // dialog's: leaving the group shown takes this screen
+                        // and the dialog away, and the dialog's scope with
+                        // them, which would cancel the sign-out halfway rather
+                        // than only the wait for it.
                         leaving == null ||
                             lifecycleScope.async { leave(leaving, ask.how) }.await()
                     },

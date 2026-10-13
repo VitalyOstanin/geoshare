@@ -3,7 +3,8 @@
 import { ageText, positionAge } from '../lib/age.js';
 import { outsideTheBox } from '../lib/outside-the-box.js';
 import { labelText } from '../lib/labels.js';
-import { WORDS } from '../lib/words.js';
+import { percentText } from '../lib/percent.js';
+import { SPEAKING, WORDS } from '../lib/words.js';
 import { ADMINISTRATOR, standingIn } from '../lib/membership.js';
 import { writeLabel } from '../lib/store-search.js';
 import { elements, state } from './state.js';
@@ -139,7 +140,7 @@ export function phoneText(phone, now, named = true) {
     const said = [named ? WORDS.adminPhoneOnline(phone.name, age) : WORDS.phoneOnline(age)];
 
     if (phone.batteryPercent !== null) {
-        said.push(`${phone.batteryPercent}%`);
+        said.push(percentText(phone.batteryPercent, SPEAKING));
     }
 
     if (phone.charging) {

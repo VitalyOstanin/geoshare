@@ -17,6 +17,7 @@ import { modeText } from './modes.js';
 import { widthIsWide, widthText } from './width.js';
 import { foundText, leftOutText } from './found.js';
 import { distanceFromViewer, distanceText } from './distance.js';
+import { percentText } from './percent.js';
 import { SPEAKING, WORDS } from './words.js';
 import { redrawSelection } from './map.js';
 import { bringTheRingIntoSight, setFollowTarget } from './map-follow.js';
@@ -558,8 +559,9 @@ function reasonButton(reason) {
 export function batteryText(position, into = document.createElement('span')) {
     into.replaceChildren();
     into.classList.toggle('charging', position.charging && position.batteryPercent !== null);
-    into.textContent =
-        position.batteryPercent === null ? WORDS.unknown : `${position.batteryPercent}%`;
+    into.textContent = position.batteryPercent === null
+        ? WORDS.unknown
+        : percentText(position.batteryPercent, SPEAKING);
 
     return into;
 }

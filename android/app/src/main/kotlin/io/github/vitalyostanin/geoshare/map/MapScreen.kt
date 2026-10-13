@@ -66,7 +66,7 @@ internal const val HALF_LIT = 0.5f
  * mistake is not left with a strip ringed in a colour they never meant to
  * see.
  */
-private const val AWAITING_TARGET_MILLIS = 15_000L
+private const val AWAITING_TARGET_MS = 15_000L
 
 /** As much of the screen as the full list may take before it starts scrolling instead. */
 internal val LIST_MAX_HEIGHT = 220.dp
@@ -211,7 +211,7 @@ fun MapScreen(
     // strip forever would read as broken rather than as waiting.
     LaunchedEffect(awaitingTarget) {
         if (awaitingTarget) {
-            delay(AWAITING_TARGET_MILLIS)
+            delay(AWAITING_TARGET_MS)
             awaitingTarget = false
         }
     }

@@ -62,6 +62,8 @@ export function runsTheGroup(roster, memberId) {
  *
  * Asked the way the rules ask it, so the screen offers nothing a write would
  * be refused:
+ * - only somebody who runs the group takes others off it; leaving is a write
+ *   of its own and is not offered here;
  * - the last administrator may not go while the founder is not there to run
  *   the group: a group whose roster nobody may change is a group that goes
  *   back to the console;
@@ -70,7 +72,7 @@ export function runsTheGroup(roster, memberId) {
  *   takes the role, and the place is a second write.
  */
 export function mayBeRemoved(roster, memberId, by) {
-    if (!roster.members.includes(memberId)) {
+    if (!roster.members.includes(memberId) || !runsTheGroup(roster, by)) {
         return false;
     }
 

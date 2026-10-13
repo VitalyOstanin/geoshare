@@ -284,6 +284,37 @@ joined an hour ago; written by an administrator.
 because every device weighs its own answers against it; written by an
 administrator.
 
+**Device list** — `groups/{groupId}/devices/{uid}`. One entry per device of
+the member, under the device's id: `model`, `name`, `onlineAt` (the server's
+clock), `mode`, `batteryPercent`, `charging`. Nothing in it is a place, so it is
+written apart from the position and is not held back with it. Written by its
+member; read one document at a time by that member, by the readers their grant
+names, and by the administrators. At most ten entries.
+
+**Labels** — `groups/{groupId}/labels/{uid}`. Fields: `devices` (a device's
+address `{uid}.{deviceId}` to the name this member gives it, at most 500) and
+`members` (a member's id to the name this member gives them, at most 50). A
+member's own names for the others, read and written by that member alone.
+
+**Search** — `groups/{groupId}/searches/{uid}.{deviceId}`. Fields: `openedBy`,
+`startedAt`, `renewedBy`, `renewedAt` (both times the server's), `hours` (1 to
+72), `phoneName` (optional). While it stands, everybody in the group reads that
+device's position whatever the grant says. Read by everybody in the group;
+opened and renewed by an administrator; called off by deleting it, by any
+administrator or by the member whose device it is.
+
+**Siren** — `groups/{groupId}/sirens/{uid}.{deviceId}`. Fields: `calledBy`,
+`calledAt`, `heardAt`, `stoppedBy`, `stoppedAt`. A call that makes the device
+sound for twenty seconds. Written by an administrator for any device, by a
+member for their own; the device adds `heardAt`. Read by the same people and by
+nobody else. Never deleted, only called again.
+
+**Reset** — `groups/{groupId}/resets/{uid}.{deviceId}`. Fields: `askedBy`,
+`askedAt`, `doneAt`. A request that the device forget the last place it
+believed — the anchor a *jump* is measured from — pressed from somebody else's
+screen. The same writers and readers as a siren; the device adds `doneAt`.
+Never deleted, only asked again.
+
 ### How they relate
 
 | № | From | To | How many | Tied by |
@@ -302,6 +333,11 @@ administrator.
 | 12 | Account | Join claim | 0 or 1 per group | document id = account id |
 | 13 | Group | False place | 0 or more | subcollection |
 | 14 | Group | Group setting | 0 or 1 today (`circling`) | subcollection, key checked by the rules |
+| 15 | Member | Device list | 0 or 1 per group | document id = account id |
+| 16 | Member | Labels | 0 or 1 per group | document id = account id |
+| 17 | Device | Search | 0 or 1 | search id = `{account id}.{device id}` |
+| 18 | Device | Siren | 0 or 1 | siren id = `{account id}.{device id}` |
+| 19 | Device | Reset | 0 or 1 | reset id = `{account id}.{device id}` |
 
 ### What holds them together
 
@@ -335,3 +371,8 @@ are what a reader of the data should be able to assume.
 | 7 | `groups/{groupId}/joins/{uid}` | the account it names; the rules read it | the account it names |
 | 8 | `groups/{groupId}/falsePlaces/{placeId}` | members | administrators |
 | 9 | `groups/{groupId}/settings/circling` | members | administrators |
+| 10 | `groups/{groupId}/devices/{uid}` | the member it names, the readers in their grant, administrators | the member it names |
+| 11 | `groups/{groupId}/labels/{uid}` | the member it names | the member it names |
+| 12 | `groups/{groupId}/searches/{uid}.{deviceId}` | members | administrators; deleted also by the member it names |
+| 13 | `groups/{groupId}/sirens/{uid}.{deviceId}` | administrators, the member it names | administrators, the member it names; the device adds `heardAt` |
+| 14 | `groups/{groupId}/resets/{uid}.{deviceId}` | administrators, the member it names | administrators, the member it names; the device adds `doneAt` |

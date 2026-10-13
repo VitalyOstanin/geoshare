@@ -470,7 +470,7 @@ private fun BatteryText(member: MemberPosition) {
     val percent = member.batteryPercent ?: return
 
     Text(
-        text = stringResource(R.string.map_battery, percent),
+        text = percentText(percent),
         style = MaterialTheme.typography.bodySmall,
         color = batteryColour(member.charging),
     )

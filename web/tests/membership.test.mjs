@@ -59,9 +59,18 @@ test('removing a member takes the running of the group with them', () => {
 test('the last administrator cannot be removed', () => {
     const roster = { members: [ALICE, BOB], admins: [ALICE] };
 
-    assert.equal(mayBeRemoved(roster, ALICE), false);
-    assert.equal(mayBeRemoved(roster, BOB), true);
-    assert.equal(mayBeRemoved(roster, STRANGER), false);
+    assert.equal(mayBeRemoved(roster, ALICE, ALICE), false);
+    assert.equal(mayBeRemoved(roster, BOB, ALICE), true);
+    assert.equal(mayBeRemoved(roster, STRANGER, ALICE), false);
+});
+
+test('only somebody who runs the group takes others off it', () => {
+    const CAROL = 'carol-uid';
+    const roster = { members: [ALICE, BOB, CAROL], admins: [ALICE] };
+
+    assert.equal(mayBeRemoved(roster, CAROL, BOB), false);
+    assert.equal(mayBeRemoved(roster, CAROL, ALICE), true);
+    assert.equal(mayBeRemoved(roster, CAROL, STRANGER), false);
 });
 
 // The household made in the console names no administrators, and its owner

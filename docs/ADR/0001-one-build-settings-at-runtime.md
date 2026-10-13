@@ -2,6 +2,7 @@
 
 - Status: Accepted; the process restart on a change of project superseded by ADR-0026
 - Date: 2026-09-30
+- Note: `tools/new-project.sh` named below is now `tools/project.sh create`
 
 ## Context
 

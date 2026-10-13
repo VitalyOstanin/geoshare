@@ -13,7 +13,7 @@ import java.time.format.DateTimeFormatter
 import java.time.format.FormatStyle
 
 /** How often the ages on screen are recounted. Half a minute keeps "5 minutes ago" honest. */
-private const val AGE_TICK_MILLIS = 30_000L
+private const val AGE_TICK_MS = 30_000L
 
 /** The moment itself, for the card a member opens rather than for the buttons. */
 @Composable
@@ -65,7 +65,7 @@ private fun pluralAge(plural: Int, count: Long): String =
 @Composable
 internal fun currentTime() = produceState(initialValue = Instant.now()) {
     while (true) {
-        delay(AGE_TICK_MILLIS)
+        delay(AGE_TICK_MS)
         value = Instant.now()
     }
 }
