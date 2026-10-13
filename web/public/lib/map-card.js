@@ -8,7 +8,7 @@
 
 import { STALE_COLOUR, memberColour, shortName } from './members.js';
 import { showFace } from './faces.js';
-import { ageText, isStuck, positionAge, timeText } from './age.js';
+import { ageText, isStuck, positionAge, stuckCause, timeText } from './age.js';
 import { isGrey } from './false-places.js';
 import { openModeHelp } from './mode-help.js';
 import { openReasonHelp } from './reason-help.js';
@@ -391,7 +391,12 @@ function warningsOf(position, now) {
     }
 
     if (isStuck(position.positionAt, position.knownAt, now)) {
-        sentences.push([WORDS.stuckSentence(ageText(positionAge(position.knownAt, now)))]);
+        const age = ageText(positionAge(position.knownAt, now));
+        const words = stuckCause(position.leftOutCount) === 'rejected'
+            ? WORDS.stuckSentence
+            : WORDS.stuckSilentSentence;
+
+        sentences.push([words(age)]);
     }
 
     if (position.leftOutCount > 0 && !refusedHere) {

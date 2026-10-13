@@ -134,7 +134,10 @@ internal fun DetailWarnings(member: MemberPosition, now: Instant) {
 
     val stuckSentence =
         stringResource(
-            R.string.map_detail_stuck_sentence,
+            when (stuckCause(member.leftOutCount)) {
+                StuckCause.Rejected -> R.string.map_detail_stuck_sentence
+                StuckCause.Silent -> R.string.map_detail_stuck_silent_sentence
+            },
             ageText(positionAge(member.knownAt, now)),
         ).takeIf { stuck }
     val lead =

@@ -57,6 +57,7 @@
     <string name="map_detail_online_ago">в сети %1$s</string>
     <string name="map_detail_unsent">ждёт сети</string>
     <string name="map_detail_stuck_sentence">В сети %1$s, но новое место не принято.</string>
+    <string name="map_detail_stuck_silent_sentence">В сети %1$s, но новых мест от устройства не приходило.</string>
     <string name="map_detail_left_out_lead">Отброшено: %1$s, причина:</string>
     <string name="map_detail_false_place_lead">Позиция, скорее всего, ложная:</string>
     <string name="map_detail_false_place_and_after">Эта позиция и ещё %1$d после неё — в</string>

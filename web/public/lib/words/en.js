@@ -101,6 +101,7 @@ export const EN = {
     falsePlaceAndAfter: (count) => `This position and ${count} more after it are in`,
     falsePlaceWhere: 'a known spoofed area',
     stuckSentence: (age) => `Online ${age}, but no new location has been accepted.`,
+    stuckSilentSentence: (age) => `Online ${age}, but the device has sent no new location.`,
     leftOutLead: (answers) => `Rejected ${answers}:`,
     settlingSentence: 'The receiver had not settled since the device was switched on.',
 

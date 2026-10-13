@@ -119,6 +119,7 @@ export const RU = {
     falsePlaceAndAfter: (count) => `Эта позиция и ещё ${count} после неё — в`,
     falsePlaceWhere: 'известной области подмены',
     stuckSentence: (age) => `В сети ${age}, но новое место не принято.`,
+    stuckSilentSentence: (age) => `В сети ${age}, но новых мест от устройства не приходило.`,
     leftOutLead: (answers) => `Отброшено: ${answers}, причина:`,
     settlingSentence: 'Приёмник не устоялся после включения устройства.',
 

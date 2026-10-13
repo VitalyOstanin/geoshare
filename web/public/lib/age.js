@@ -47,13 +47,26 @@ export function isStale(knownAt, now) {
  * believed for as long as it takes a marker to go grey.
  *
  * That is a marker stuck where it last was: every answer since has been left
- * out, and the card should say so rather than leave the viewer to compare two
- * clock times. A device gone quiet is not stuck, only old, and the grey already
- * says that. The same mark as the grey on purpose, so that the two clients
- * need no second number to agree on.
+ * out, or none has come, and the card should say so rather than leave the
+ * viewer to compare two clock times; stuckCause tells the two apart. A device
+ * gone quiet is not stuck, only old, and the grey already says that. The same mark
+ * as the grey on purpose, so that the two clients need no second number to
+ * agree on.
  */
 export function isStuck(positionAt, knownAt, now) {
     return !isStale(knownAt, now) && knownAt - positionAt >= STALE_AFTER_MS;
+}
+
+/**
+ * Why a stuck marker has stayed where it is: 'rejected' when the device sent
+ * answers and they were left out, 'silent' when it sent none at all.
+ *
+ * The two look the same on the map and send whoever looks for the device to
+ * different places: rejected answers point at the filter, no answers at the
+ * device itself.
+ */
+export function stuckCause(leftOutCount) {
+    return leftOutCount > 0 ? 'rejected' : 'silent';
 }
 
 /**

@@ -70,4 +70,11 @@ class PositionAgeTest {
 
         assertFalse(isStuck(knownAt.minus(Duration.ofHours(3)), knownAt, now))
     }
+
+    @Test
+    fun `a stuck marker is put down to rejected answers only when some were`() {
+        assertEquals(StuckCause.Rejected, stuckCause(2))
+        assertEquals(StuckCause.Silent, stuckCause(0))
+        assertEquals(StuckCause.Silent, stuckCause(null))
+    }
 }

@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 
-import { STALE_AFTER_MS, ageText, isStale, isStuck, positionAge, positionMoments } from '../public/lib/age.js';
+import { STALE_AFTER_MS, ageText, isStale, isStuck, positionAge, positionMoments, stuckCause } from '../public/lib/age.js';
 
 const NOW = Date.parse('2026-09-11T12:00:00Z');
 const MINUTE = 60 * 1000;
@@ -102,4 +102,10 @@ test('a phone gone quiet is old rather than stuck', () => {
     const knownAt = NOW - STALE_AFTER_MS;
 
     assert.equal(isStuck(knownAt - 3 * HOUR, knownAt, NOW), false);
+});
+
+test('a stuck marker is put down to rejected answers only when some were', () => {
+    assert.equal(stuckCause(2), 'rejected');
+    assert.equal(stuckCause(0), 'silent');
+    assert.equal(stuckCause(undefined), 'silent');
 });

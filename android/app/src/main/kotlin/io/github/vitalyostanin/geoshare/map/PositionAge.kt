@@ -40,10 +40,28 @@ fun isStale(knownAt: Instant, now: Instant): Boolean = Duration.between(knownAt,
  * believed for as long as it takes a marker to go grey.
  *
  * That is a marker stuck where it last was: every answer since has been left
- * out, and the card should say so rather than leave the viewer to compare two
- * clock times. A device gone quiet is not stuck, only old, and the grey already
- * says that. The same mark as the grey on purpose, so that the page and this
- * screen need no second number to agree on.
+ * out, or none has come, and the card should say so rather than leave the
+ * viewer to compare two clock times; stuckCause tells the two apart. A device
+ * gone quiet is not stuck, only old, and the grey already says that. The same mark
+ * as the grey on purpose, so that the page and this screen need no second
+ * number to agree on.
  */
 fun isStuck(positionAt: Instant, knownAt: Instant, now: Instant): Boolean =
     !isStale(knownAt, now) && Duration.between(positionAt, knownAt) >= STALE_AFTER
+
+/** Why a stuck marker has stayed where it is. */
+enum class StuckCause {
+    /** The device sent answers, and they were left out. */
+    Rejected,
+
+    /** The device sent no answer at all: its receiver gave it nothing. */
+    Silent,
+}
+
+/**
+ * The two look the same on the map and send whoever looks for the device to
+ * different places: rejected answers point at the filter, no answers at the
+ * device itself.
+ */
+fun stuckCause(leftOutCount: Int?): StuckCause =
+    if ((leftOutCount ?: 0) > 0) StuckCause.Rejected else StuckCause.Silent
