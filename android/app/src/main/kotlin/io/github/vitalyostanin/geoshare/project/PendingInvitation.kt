@@ -2,6 +2,7 @@ package io.github.vitalyostanin.geoshare.project
 
 import android.content.Context
 import io.github.vitalyostanin.geoshare.log.AppLog
+import io.github.vitalyostanin.geoshare.service.readString
 import org.json.JSONException
 import org.json.JSONObject
 
@@ -146,7 +147,7 @@ object PendingInvitationStore {
     /** Reads back what [save] kept, without clearing it — [clear] does that once it is spent. */
     fun read(context: Context): PendingInvitation? {
         val kept = Connections.files(context)
-            .getString(KEY_PENDING_INVITATION, null) ?: return null
+            .readString(KEY_PENDING_INVITATION, null) ?: return null
         val invitation = PendingInvitation.parse(kept)
 
         if (invitation == null) {

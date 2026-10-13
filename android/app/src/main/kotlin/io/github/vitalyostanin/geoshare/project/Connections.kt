@@ -3,6 +3,7 @@ package io.github.vitalyostanin.geoshare.project
 import android.content.Context
 import com.google.firebase.FirebaseApp
 import io.github.vitalyostanin.geoshare.log.AppLog
+import io.github.vitalyostanin.geoshare.service.readString
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -89,7 +90,7 @@ object Connections {
      * Called once, before anything else in the application touches Firebase.
      */
     fun start(context: Context) {
-        val stored = files(context).getString(KEY_LIST, null)
+        val stored = files(context).readString(KEY_LIST, null)
         val list =
             if (stored != null) {
                 ConnectionList.parse(stored).also {
@@ -229,7 +230,7 @@ object Connections {
      */
     private fun instanceName(context: Context, projectId: String): String {
         val files = files(context)
-        val owner = files.getString(KEY_DEFAULT_PROJECT, null)
+        val owner = files.readString(KEY_DEFAULT_PROJECT, null)
 
         if (owner == null) {
             files.edit().putString(KEY_DEFAULT_PROJECT, projectId).commit()
@@ -249,10 +250,10 @@ object Connections {
     private fun migrated(context: Context): ConnectionList? {
         val settings =
             context.getSharedPreferences(OLD_PROJECT_FILE, Context.MODE_PRIVATE)
-                .getString(OLD_PROJECT_KEY, null) ?: return null
+                .readString(OLD_PROJECT_KEY, null) ?: return null
         val group =
             context.getSharedPreferences(OLD_GROUP_FILE, Context.MODE_PRIVATE)
-                .getString(OLD_GROUP_KEY, null)
+                .readString(OLD_GROUP_KEY, null)
         val list = ConnectionList.migrated(settings, group)
 
         if (list == null) {

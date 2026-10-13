@@ -1,6 +1,7 @@
 package io.github.vitalyostanin.geoshare.project
 
 import android.content.Context
+import io.github.vitalyostanin.geoshare.service.readString
 
 private const val KEY_PREFIX = "group_caption/"
 
@@ -17,7 +18,7 @@ private const val KEY_PREFIX = "group_caption/"
  */
 object GroupNames {
     fun of(context: Context, projectId: String): String? =
-        Connections.files(context).getString(KEY_PREFIX + projectId, null)
+        Connections.files(context).readString(KEY_PREFIX + projectId, null)
 
     /** Keeps [caption] for [projectId]'s group; a blank one says nothing new. */
     fun note(context: Context, projectId: String, caption: String?) {

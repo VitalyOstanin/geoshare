@@ -23,8 +23,8 @@ class AnsweredSiren(context: Context) {
      * one group kept stands in until that group's own is written.
      */
     fun calledAt(projectId: String): Instant? = (
-        store.getLong("$KEY_CALLED_AT.$projectId", -1).takeIf { it >= 0 }
-            ?: store.getLong(KEY_CALLED_AT, -1).takeIf { it >= 0 }
+        store.readLong("$KEY_CALLED_AT.$projectId", -1).takeIf { it >= 0 }
+            ?: store.readLong(KEY_CALLED_AT, -1).takeIf { it >= 0 }
         )?.let(Instant::ofEpochMilli)
 
     fun keep(projectId: String, calledAt: Instant) {

@@ -53,15 +53,15 @@ class DoneReset(context: Context) {
      * knew one group kept stands in until that group's own is written.
      */
     fun askedAt(projectId: String): Instant? = (
-        store.getLong("$KEY_ASKED_AT.$projectId", -1).takeIf { it >= 0 }
-            ?: store.getLong(KEY_ASKED_AT, -1).takeIf { it >= 0 }
+        store.readLong("$KEY_ASKED_AT.$projectId", -1).takeIf { it >= 0 }
+            ?: store.readLong(KEY_ASKED_AT, -1).takeIf { it >= 0 }
         )?.let(Instant::ofEpochMilli)
 
     /** Who asked, as a name, or null while nobody has asked from elsewhere. */
-    val by: String? get() = store.getString(KEY_BY, null)
+    val by: String? get() = store.readString(KEY_BY, null)
 
     val doneAt: Instant?
-        get() = store.getLong(KEY_DONE_AT, -1).takeIf { it >= 0 }?.let(Instant::ofEpochMilli)
+        get() = store.readLong(KEY_DONE_AT, -1).takeIf { it >= 0 }?.let(Instant::ofEpochMilli)
 
     fun keep(projectId: String, askedAt: Instant, by: String, doneAt: Instant) {
         store.edit()

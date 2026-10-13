@@ -30,7 +30,7 @@ class SourcesSetting(context: Context) {
 
     /** The names of the switches turned off, as [SourceChoice] spells them. */
     var leftOut: Set<String>
-        get() = store.getStringSet(KEY_LEFT_OUT, emptySet()).orEmpty()
+        get() = store.readStringSet(KEY_LEFT_OUT, emptySet()).orEmpty()
         // Copied on the way in: the platform keeps the very set it is handed
         // and reading it back later would hand out a live reference to it.
         set(value) = store.edit().putStringSet(KEY_LEFT_OUT, value.toSet()).apply()

@@ -1,6 +1,7 @@
 package io.github.vitalyostanin.geoshare.map
 
 import android.content.Context
+import io.github.vitalyostanin.geoshare.service.readString
 
 private const val FILE = "profile"
 private const val KEY_GROUP = "group"
@@ -37,10 +38,10 @@ class PublishedProfile(context: Context) {
 
     /** What was last accepted, or nothing on a device that has told nobody anything. */
     fun told(): ProfileTold? {
-        val group = store.getString(KEY_GROUP, null) ?: return null
-        val memberId = store.getString(KEY_MEMBER, null) ?: return null
-        val displayName = store.getString(KEY_NAME, null) ?: return null
-        val deviceId = store.getString(KEY_DEVICE, null) ?: return null
+        val group = store.readString(KEY_GROUP, null) ?: return null
+        val memberId = store.readString(KEY_MEMBER, null) ?: return null
+        val displayName = store.readString(KEY_NAME, null) ?: return null
+        val deviceId = store.readString(KEY_DEVICE, null) ?: return null
 
         return ProfileTold(
             group = group,
@@ -48,7 +49,7 @@ class PublishedProfile(context: Context) {
             displayName = displayName,
             // The one field a profile is allowed to be without, so its absence
             // is an answer rather than a gap.
-            pictureUrl = store.getString(KEY_PICTURE, null),
+            pictureUrl = store.readString(KEY_PICTURE, null),
             deviceId = deviceId,
         )
     }

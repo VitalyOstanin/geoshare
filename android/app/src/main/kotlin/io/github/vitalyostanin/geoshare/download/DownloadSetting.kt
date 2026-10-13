@@ -2,6 +2,8 @@ package io.github.vitalyostanin.geoshare.download
 
 import android.content.Context
 import android.content.SharedPreferences
+import io.github.vitalyostanin.geoshare.service.readBoolean
+import io.github.vitalyostanin.geoshare.service.readLong
 import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.callbackFlow
@@ -36,7 +38,7 @@ class DownloadSetting(context: Context) {
     val allowed: Set<DownloadNetwork>
         get() =
             DownloadNetwork.entries
-                .filter { store.getBoolean(it.name, it in DEFAULT_DOWNLOAD_NETWORKS) }
+                .filter { store.readBoolean(it.name, it in DEFAULT_DOWNLOAD_NETWORKS) }
                 .toSet()
 
     fun allow(network: DownloadNetwork, allowed: Boolean) {
@@ -44,11 +46,11 @@ class DownloadSetting(context: Context) {
     }
 
     var declinedAt: Instant?
-        get() = store.getLong(KEY_DECLINED_AT, 0L).takeIf { it != 0L }?.let(Instant::ofEpochMilli)
+        get() = store.readLong(KEY_DECLINED_AT, 0L).takeIf { it != 0L }?.let(Instant::ofEpochMilli)
         set(value) = store.edit().putLong(KEY_DECLINED_AT, value?.toEpochMilli() ?: 0L).apply()
 
     var waitingInRoaming: Boolean
-        get() = store.getBoolean(KEY_WAITING, false)
+        get() = store.readBoolean(KEY_WAITING, false)
         set(value) = store.edit().putBoolean(KEY_WAITING, value).apply()
 
     /** The member said "download" to the question: one download may go. */
@@ -58,7 +60,7 @@ class DownloadSetting(context: Context) {
 
     /** Spends the one download the member allowed, if there is one. */
     fun takeGrant(): Boolean {
-        if (!store.getBoolean(KEY_GRANTED, false)) {
+        if (!store.readBoolean(KEY_GRANTED, false)) {
             return false
         }
 
@@ -77,7 +79,7 @@ class DownloadSetting(context: Context) {
     fun state(): DownloadState = DownloadState(
         allowed = allowed,
         waitingInRoaming = waitingInRoaming,
-        granted = store.getBoolean(KEY_GRANTED, false),
+        granted = store.readBoolean(KEY_GRANTED, false),
     )
 
     /**

@@ -18,7 +18,7 @@ class JumpFilterSetting(context: Context) {
     private val store = context.getSharedPreferences(FILE, Context.MODE_PRIVATE)
 
     var enabled: Boolean
-        get() = store.getBoolean(KEY_JUMPS, false)
+        get() = store.readBoolean(KEY_JUMPS, false)
         set(value) = store.edit().putBoolean(KEY_JUMPS, value).apply()
 
     /**
@@ -34,7 +34,7 @@ class JumpFilterSetting(context: Context) {
 
     /** True once, for the service, if forgetting has been asked for. */
     fun takeForgetRequest(): Boolean {
-        if (!store.getBoolean(KEY_FORGET, false)) {
+        if (!store.readBoolean(KEY_FORGET, false)) {
             return false
         }
 

@@ -21,14 +21,14 @@ class BackgroundWorkSetting(context: Context) {
     private val store = context.getSharedPreferences(FILE, Context.MODE_PRIVATE)
 
     var batteryAsked: Boolean
-        get() = store.getBoolean(KEY_ASKED, false)
+        get() = store.readBoolean(KEY_ASKED, false)
         set(value) = store.edit().putBoolean(KEY_ASKED, value).apply()
 
     var startupSet: Boolean
-        get() = store.getBoolean(KEY_STARTUP, false)
+        get() = store.readBoolean(KEY_STARTUP, false)
         set(value) = store.edit().putBoolean(KEY_STARTUP, value).apply()
 
     var movementAsked: Boolean
-        get() = store.getBoolean(KEY_MOVEMENT, false)
+        get() = store.readBoolean(KEY_MOVEMENT, false)
         set(value) = store.edit().putBoolean(KEY_MOVEMENT, value).apply()
 }

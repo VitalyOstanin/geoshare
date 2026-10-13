@@ -10,6 +10,7 @@ import io.github.vitalyostanin.geoshare.service.PhoneField
 import io.github.vitalyostanin.geoshare.service.comingBack
 import io.github.vitalyostanin.geoshare.service.labelsOf
 import io.github.vitalyostanin.geoshare.service.phonesOf
+import io.github.vitalyostanin.geoshare.service.readString
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.Flow
@@ -34,7 +35,7 @@ class LabelCache(context: Context) {
     private val store = context.getSharedPreferences(FILE, Context.MODE_PRIVATE)
 
     fun read(memberId: String): Labels = try {
-        store.getString(memberId, null)?.let { kept ->
+        store.readString(memberId, null)?.let { kept ->
             val json = JSONObject(kept)
 
             labelsFrom(

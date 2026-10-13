@@ -38,6 +38,7 @@ import io.github.vitalyostanin.geoshare.R
 import io.github.vitalyostanin.geoshare.project.GroupConnection
 import io.github.vitalyostanin.geoshare.service.grantsOf
 import io.github.vitalyostanin.geoshare.service.permissionsOf
+import io.github.vitalyostanin.geoshare.service.readBoolean
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.tasks.await
 
@@ -56,7 +57,7 @@ class FirstShareAsked(context: Context) {
     private val store = context.getSharedPreferences(FILE, Context.MODE_PRIVATE)
 
     fun asked(projectId: String, memberId: String): Boolean =
-        store.getBoolean(key(projectId, memberId), false)
+        store.readBoolean(key(projectId, memberId), false)
 
     fun markAsked(projectId: String, memberId: String) {
         store.edit().putBoolean(key(projectId, memberId), true).apply()

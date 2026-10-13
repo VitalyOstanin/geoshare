@@ -7,6 +7,7 @@ import io.github.vitalyostanin.geoshare.log.AppLog
 import io.github.vitalyostanin.geoshare.log.SkyLog
 import io.github.vitalyostanin.geoshare.log.UncaughtExceptionLogger
 import io.github.vitalyostanin.geoshare.project.Connections
+import io.github.vitalyostanin.geoshare.service.SettingsMigrations
 import io.github.vitalyostanin.geoshare.service.StandInServices
 import java.io.File
 
@@ -18,6 +19,8 @@ class GeoshareApplication : Application() {
         UncaughtExceptionLogger.install()
         SkyLog.start(File(filesDir, "logs"), device())
         AppLog.i(TAG, "application started")
+        // Before anything reads a setting, and so before the connections.
+        SettingsMigrations.run(this)
         // First of all: the automatic provider that used to do this off a
         // baked-in google-services.json is removed from the manifest, and
         // nothing below may reach Firebase before a project has been chosen

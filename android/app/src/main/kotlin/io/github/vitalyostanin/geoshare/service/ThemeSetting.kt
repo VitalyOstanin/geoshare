@@ -23,7 +23,7 @@ class ThemeSetting(context: Context) {
     private val store = context.getSharedPreferences(FILE, Context.MODE_PRIVATE)
 
     var choice: ThemeChoice
-        get() = themeNamed(store.getString(KEY_THEME, null))
+        get() = themeNamed(store.readString(KEY_THEME, null))
         set(value) = store.edit().putString(KEY_THEME, value.name).apply()
 }
 

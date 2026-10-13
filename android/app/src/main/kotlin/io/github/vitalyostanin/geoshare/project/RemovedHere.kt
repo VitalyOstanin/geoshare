@@ -1,6 +1,7 @@
 package io.github.vitalyostanin.geoshare.project
 
 import android.content.Context
+import io.github.vitalyostanin.geoshare.service.readBoolean
 
 private const val KEY_PREFIX = "removed_elsewhere/"
 
@@ -14,7 +15,7 @@ private const val KEY_PREFIX = "removed_elsewhere/"
  */
 object RemovedHere {
     fun has(context: Context, projectId: String): Boolean =
-        Connections.files(context).getBoolean(KEY_PREFIX + projectId, false)
+        Connections.files(context).readBoolean(KEY_PREFIX + projectId, false)
 
     fun note(context: Context, projectId: String) {
         Connections.files(context).edit().putBoolean(KEY_PREFIX + projectId, true).apply()

@@ -55,7 +55,7 @@ class LanguageSetting(context: Context) {
     private val store = context.getSharedPreferences(FILE, Context.MODE_PRIVATE)
 
     var tag: String?
-        get() = store.getString(KEY_LANGUAGE, null)
+        get() = store.readString(KEY_LANGUAGE, null)
         set(value) = store.edit().putString(KEY_LANGUAGE, value.orEmpty()).apply()
 }
 

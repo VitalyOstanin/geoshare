@@ -15,6 +15,6 @@ class SharingSetting(context: Context) {
     private val store = context.getSharedPreferences(FILE, Context.MODE_PRIVATE)
 
     var enabled: Boolean
-        get() = store.getBoolean(KEY_ENABLED, false)
+        get() = store.readBoolean(KEY_ENABLED, false)
         set(value) = store.edit().putBoolean(KEY_ENABLED, value).apply()
 }

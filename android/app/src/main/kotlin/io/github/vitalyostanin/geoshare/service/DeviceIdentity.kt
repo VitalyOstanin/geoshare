@@ -46,11 +46,11 @@ class DeviceIdentity(context: Context) {
      * it did and the documents under it have not yet been taken back.
      */
     val previousId: String?
-        get() = store.getString(KEY_ID, null)?.takeIf { it != id }
+        get() = store.readString(KEY_ID, null)?.takeIf { it != id }
 
     /** Says that the documents under [previousId] are gone, so it need not be asked about again. */
     fun forgetPrevious(previous: String) {
-        if (store.getString(KEY_ID, null) == previous) {
+        if (store.readString(KEY_ID, null) == previous) {
             store.edit().remove(KEY_ID).apply()
         }
     }
@@ -64,7 +64,7 @@ class DeviceIdentity(context: Context) {
         Settings.Secure.getString(resolver, Settings.Secure.ANDROID_ID)
 
     private fun madeId(): String =
-        store.getString(KEY_ID, null) ?: UUID.randomUUID().toString().also { made ->
+        store.readString(KEY_ID, null) ?: UUID.randomUUID().toString().also { made ->
             store.edit().putString(KEY_ID, made).apply()
         }
 

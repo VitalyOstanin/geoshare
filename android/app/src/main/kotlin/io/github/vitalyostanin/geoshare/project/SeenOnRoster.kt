@@ -1,6 +1,7 @@
 package io.github.vitalyostanin.geoshare.project
 
 import android.content.Context
+import io.github.vitalyostanin.geoshare.service.readStringSet
 
 private const val KEY = "seen_on_roster"
 
@@ -41,7 +42,7 @@ object SeenOnRoster {
 
     // A copy: the set the preferences hand out is theirs and must not change.
     private fun seen(context: Context): Set<String> =
-        Connections.files(context).getStringSet(KEY, null)?.toSet().orEmpty()
+        Connections.files(context).readStringSet(KEY, null)?.toSet().orEmpty()
 
     private fun entry(projectId: String, uid: String) = "$projectId/$uid"
 }

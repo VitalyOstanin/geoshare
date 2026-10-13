@@ -26,7 +26,7 @@ class AidingDoubtSetting(context: Context) {
 
     var doubted: Set<Constellation>
         get() =
-            store.getString(KEY_DOUBTED, "")
+            store.readString(KEY_DOUBTED, "")
                 .orEmpty()
                 .split(",")
                 .filter { it.isNotBlank() }
