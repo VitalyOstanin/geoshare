@@ -64,12 +64,13 @@ publishing run the Firebase command line on the machine itself, and need
 | 5  | `tools/web-test.sh`          | the tests of the page's own logic                                           |
 | 6  | `tools/js-lint.sh`           | ESLint over the page and the emulator scripts                               |
 | 7  | `tools/md-lint.sh`           | markdownlint over the documents                                             |
-| 8  | `tools/sign-release.sh`      | signs the release build with the release key                                |
-| 9  | `tools/check.sh`             | the checks a change needs, `--all` for every one; CI runs it                |
-| 10 | `tools/run-services.sh`      | stand-in Firestore and sign-in, filled with stand-in data                   |
-| 11 | `tools/run-emulator.sh`      | a headless Android emulator; with the line above, a stand without a project |
-| 12 | `tools/coverage.sh`          | how much of the code the Android and the page's tests reach                 |
-| 13 | `tools/test-instrumented.sh` | smoke tests on the emulator: start-up, settings, licences, connecting       |
+| 8  | `tools/serve-web.sh`         | the page at 127.0.0.1:5000, with the headers and the policy Hosting sends   |
+| 9  | `tools/sign-release.sh`      | signs the release build with the release key                                |
+| 10 | `tools/check.sh`             | the checks a change needs, `--all` for every one; CI runs it                |
+| 11 | `tools/run-services.sh`      | stand-in Firestore and sign-in, filled with stand-in data                   |
+| 12 | `tools/run-emulator.sh`      | a headless Android emulator; with the line above, a stand without a project |
+| 13 | `tools/coverage.sh`          | how much of the code the Android and the page's tests reach                 |
+| 14 | `tools/test-instrumented.sh` | smoke tests on the emulator: start-up, settings, licences, connecting       |
 
 The rest of `tools/` — `project.sh`, `web-config.sh`, `setup-site.sh`,
 `read-cost.sh`, `device-log.sh`, `device-sky.sh`, `siren-sound.sh`,
