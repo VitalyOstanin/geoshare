@@ -8,7 +8,8 @@ English · [Русский](README.ru.md)
 </picture>
 
 Location sharing within a group, such as a family, on Android devices and in
-a browser, run entirely on the free tier of Firebase.
+a browser. Members sign in with their ordinary Google accounts, and everything
+runs on the free tier of Firebase.
 
 Every member's device reports where it is; everybody the member shares with
 sees it on a map — in the Android application or on a web page — with how old
@@ -22,6 +23,7 @@ backend. Each group's data stays in a Firebase project of its own.
 - [What it does](#what-it-does)
 - [Getting started](#getting-started)
 - [Privacy](#privacy)
+- [Free tier limits](#free-tier-limits)
 - [False positions](#false-positions)
 - [Development](#development)
 - [License](#license)
@@ -115,6 +117,17 @@ describes it.
 - The document model and the reasons behind every rule are in
   [firebase/data-model.md](firebase/data-model.md), and the rules are held to
   them by tests run against the Firestore emulator.
+
+## Free tier limits
+
+The free Spark plan has daily limits: 50,000 document reads, 20,000 writes
+and 20,000 deletes, and 1 GiB of data
+([Firestore quotas](https://firebase.google.com/docs/firestore/quotas)). A
+family with two phones and the page open now and then uses about 5% of the
+reads and writes a day.
+Past a limit the database stops answering until the quota resets, around
+midnight Pacific time, so the project owner should keep an eye on usage: in
+the Firebase console, or with `tools/project.sh show <project-id> --usage`.
 
 ## False positions
 
