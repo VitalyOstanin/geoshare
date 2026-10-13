@@ -81,6 +81,7 @@ import io.github.vitalyostanin.geoshare.project.GroupConnection
 import io.github.vitalyostanin.geoshare.project.RemovedHere
 import io.github.vitalyostanin.geoshare.project.SeenOnRoster
 import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.awaitCancellation
@@ -97,6 +98,9 @@ import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.onStart
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
+import kotlinx.coroutines.withContext
 import kotlinx.coroutines.withTimeoutOrNull
 import java.time.Duration
 import java.time.Instant
@@ -245,6 +249,14 @@ class SharingService : LifecycleService() {
 
     /** The run of answers left out since the last position was written. */
     private val leftOut = LeftOutRun()
+
+    /**
+     * Held while a fix is judged and the service's memory is brought up to
+     * date with it. The rules are worked out off the main thread, and a fix
+     * arriving meanwhile from another source must not read what the one
+     * before it has not yet written back.
+     */
+    private val judging = Mutex()
 
     /** Where this device keeps being, kept across restarts of the process. */
     private val trailStore by lazy { TrailStore(this) }
@@ -731,20 +743,33 @@ class SharingService : LifecycleService() {
         // one source the spoofer cannot reach.
         trusted: Boolean = false,
     ): Boolean {
-        val judged = whatToMakeOf(fix, trusted)
+        // Read once for both halves below: a switch flipped in between would
+        // count a fix as a jump and then write it out.
+        val jumpsOn = jumps.enabled
+        val judged =
+            judging.withLock {
+                val judged = whatToMakeOf(fix, trusted)
 
-        // Every fix that arrives is written down, whether or not it is written
-        // out: what the provider answers where it is being jammed is the thing
-        // to be read afterwards, and a filtered log would answer questions
-        // about the filter instead.
-        noteFix(fix, mode, judged.jump, judged.agreed, judged.home, trusted)
+                // Every fix that arrives is written down, whether or not it is
+                // written out: what the provider answers where it is being
+                // jammed is the thing to be read afterwards, and a filtered log
+                // would answer questions about the filter instead.
+                noteFix(fix, mode, judged.jump, judged.agreed, judged.home, trusted)
 
-        carried.noticeAnAnswerThatWillNotFollow(fix, judged.whence, Instant.now())
+                carried.noticeAnAnswerThatWillNotFollow(fix, judged.whence, Instant.now())
 
-        if (judged.leftOutAsJump(jumps.enabled)) {
-            candidate = fix
-            jumpsInARow += 1
+                if (judged.leftOutAsJump(jumpsOn)) {
+                    candidate = fix
+                    jumpsInARow += 1
+                } else if (sources.uses(judged.whence)) {
+                    candidate = null
+                    jumpsInARow = 0
+                }
 
+                judged
+            }
+
+        if (judged.leftOutAsJump(jumpsOn)) {
             tellThemAnswersAreBeingLeftOut(writer, judged.jump?.name.orEmpty())
 
             askTheOtherRadios(writer, mode)
@@ -774,9 +799,6 @@ class SharingService : LifecycleService() {
             return false
         }
 
-        candidate = null
-        jumpsInARow = 0
-
         return writeAndRemember(writer, fix, mode, judged, always)
     }
 
@@ -785,7 +807,7 @@ class SharingService : LifecycleService() {
      * own memory brought up to date with it, then read once into the
      * [Grounds] the decision is taken on.
      */
-    private fun whatToMakeOf(fix: Fix, trusted: Boolean): Judgement {
+    private suspend fun whatToMakeOf(fix: Fix, trusted: Boolean): Judgement {
         if (jumps.takeForgetRequest()) {
             forgetThePlace()
         }
@@ -816,7 +838,9 @@ class SharingService : LifecycleService() {
                 trail = trail,
             )
 
-        return judge(fix, trusted, grounds)
+        // The rules are a pure function of the fix and of a snapshot nothing
+        // else holds, so they are worked out off the main thread.
+        return withContext(Dispatchers.Default) { judge(fix, trusted, grounds) }
     }
 
     /**
