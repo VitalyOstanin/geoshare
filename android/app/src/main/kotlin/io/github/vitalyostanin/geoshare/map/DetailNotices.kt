@@ -152,7 +152,7 @@ internal fun DetailWarnings(member: MemberPosition, now: Instant) {
         member.leftOutReason == JumpReason.FalsePlace.name
     val falsePlaceLead =
         when {
-            refusedHere -> stringResource(R.string.map_detail_false_place_and_after, count ?: 0)
+            refusedHere -> stringResource(R.string.map_detail_false_place_and_after, count)
             member.inFalsePlace -> stringResource(R.string.map_detail_false_place_lead)
             else -> null
         }

@@ -169,7 +169,7 @@ private fun FullBrightness() {
             (view.parent as? DialogWindowProvider)?.window ?: (view.context as? Activity)?.window
         val before = window?.attributes?.screenBrightness
 
-        window?.attributes = window?.attributes?.apply { screenBrightness = 1f }
+        window?.attributes = window.attributes?.apply { screenBrightness = 1f }
 
         onDispose {
             if (window != null && before != null) {

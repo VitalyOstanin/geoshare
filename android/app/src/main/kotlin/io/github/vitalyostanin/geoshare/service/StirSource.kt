@@ -87,8 +87,9 @@ fun stirs(context: Context): Flow<Stir> = callbackFlow {
         }
 
     motion?.let { sensor ->
-        askAgain = { sensors.requestTriggerSensor(whenItMoves, sensor) }
-        askAgain?.invoke()
+        val ask: () -> Unit = { sensors.requestTriggerSensor(whenItMoves, sensor) }
+        askAgain = ask
+        ask()
     }
 
     counter?.let { sensor ->
