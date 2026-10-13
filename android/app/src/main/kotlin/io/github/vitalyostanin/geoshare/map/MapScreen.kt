@@ -94,6 +94,12 @@ private val FollowTargetSaver = listSaver<FollowTarget?, String>(
     restore = { saved -> if (saved.isEmpty()) null else FollowTarget(saved[0], saved[1]) },
 )
 
+/** Keeps the positions under an opened marker across a recreated screen, as the card is kept. */
+private val PositionIdsSaver = listSaver<List<String>, String>(
+    save = { it },
+    restore = { it },
+)
+
 /**
  * The screen a signed-in member sees: everyone on a map, and a row of buttons
  * to move the map onto one of them.
@@ -216,15 +222,20 @@ fun MapScreen(
         }
     }
 
-    var showAll by remember { mutableStateOf(false) }
-    var openedPositionId by remember { mutableStateOf<String?>(null) }
+    // Kept across a recreated screen, as the follow mode is: turning the
+    // phone or a change of the system theme would otherwise close the card
+    // somebody was reading.
+    var showAll by rememberSaveable { mutableStateOf(false) }
+    var openedPositionId by rememberSaveable { mutableStateOf<String?>(null) }
 
     // Kept across cards: a member who opened the details wants them on the
     // next card too, and one who closed them opened the card for the summary.
     var detailsOpen by rememberSaveable { mutableStateOf(false) }
     // The positions under one marker, held by id for the same reason a single
     // one is: the list keeps arriving, and the card has to follow it.
-    var openedGroup by remember { mutableStateOf<List<String>>(emptyList()) }
+    var openedGroup by rememberSaveable(stateSaver = PositionIdsSaver) {
+        mutableStateOf(emptyList())
+    }
     // Where the buttons of the strip and the map came out across the screen:
     // a card stands over the button of the member it is about.
     val stripCentres = remember { mutableStateMapOf<String, Float>() }
