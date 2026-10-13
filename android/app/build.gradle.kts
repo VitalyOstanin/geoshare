@@ -104,6 +104,14 @@ android {
     }
 }
 
+kotlin {
+    compilerOptions {
+        // A warning left standing is one nobody reads again: they were found
+        // three at a time, long after the change that brought each of them.
+        allWarningsAsErrors = true
+    }
+}
+
 // The list behind the licences screen. Who wrote a library and how to fund it
 // are not what the screen is for, and only make the file larger.
 //

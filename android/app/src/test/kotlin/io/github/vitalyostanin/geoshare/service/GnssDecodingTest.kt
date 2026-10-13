@@ -18,6 +18,10 @@ import org.junit.Test
 // held here is the reading for the versions before each newer field arrived:
 // the branches for the newer ones need a device or an emulator.
 class GnssDecodingTest {
+    // The gain on a measurement is what the versions before 13 report, and
+    // the code under test reads it there for them; the stand-in says it the
+    // same deprecated way.
+    @Suppress("DEPRECATION")
     private fun measurement(
         svid: Int,
         gainDb: Double? = null,
