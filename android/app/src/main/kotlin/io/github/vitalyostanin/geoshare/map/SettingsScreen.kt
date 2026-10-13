@@ -685,7 +685,7 @@ private fun BackgroundWorkSection(
             )
         } else {
             TextButton(onClick = onAllowSirenThroughSilence) {
-                Text(text = stringResource(R.string.background_battery_allow))
+                Text(text = stringResource(R.string.siren_silence_allow))
             }
         }
     }

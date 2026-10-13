@@ -20,7 +20,7 @@
     <string name="sign_in_unfinished_go">Sign in</string>
 
     <string name="sign_out_action">Sign out</string>
-    <string name="sign_out_choose_title">Sign out</string>
+    <string name="sign_out_choose_title">Sign out of the account</string>
     <string name="sign_out_here">Only in the group “%1$s”</string>
     <string name="sign_out_here_note">The device leaves this group. Your other groups stay as they are, and your location keeps going to them.</string>
     <string name="sign_out_everywhere">In every group</string>
@@ -319,6 +319,7 @@
     <string name="siren_silence_title">Siren in \"Do Not Disturb\"</string>
     <string name="siren_silence_note">Optional: without it the siren is silent when the device is set to total silence</string>
     <string name="siren_silence_granted">allowed</string>
+    <string name="siren_silence_allow">Allow</string>
     <string name="my_phones_title">My devices</string>
     <string name="my_phones_this">this device</string>
     <string name="my_phones_none">No device has shared its position from this account yet</string>
