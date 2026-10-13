@@ -4,7 +4,7 @@ One document per member for what a member is, and one per device for what a
 device does. History is deliberately not kept: each new fix overwrites the
 previous one, which keeps both storage and read counts flat.
 
-```
+```text
 groups/{groupId}                            members: [uid, ...], admins: [uid, ...], owner?
 groups/{groupId}/invitations/{code}         a code that lets one more person in
 groups/{groupId}/joins/{uid}                the code somebody is holding, while they join
@@ -58,7 +58,7 @@ opposite of the roster: they write it and nobody else does.
 
 | Field     | Type   | Meaning                                                              |
 |-----------|--------|----------------------------------------------------------------------|
-| `members` | list   | Who is in the group; every other rule reads membership here           |
+| `members` | list   | Who is in the group; every other rule reads membership here          |
 | `admins`  | list   | Who may change the roster besides the founder; a subset of `members` |
 | `owner`   | string | The founder, where the group is not named after them; console only   |
 | `name`    | string | What people call the group; optional, 1–60 characters (ADR-0016)     |
@@ -135,11 +135,11 @@ nothing, and nothing is what may change the roster. Naming its owner in
 
 ## invitations/{code}
 
-| Field       | Type      | Meaning                                     |
-|-------------|-----------|---------------------------------------------|
-| `createdBy` | string    | The administrator who made it                |
-| `expiresAt` | timestamp | When it stops letting anybody in             |
-| `email`     | string    | The Google address it lets in (ADR-0015)     |
+| Field       | Type      | Meaning                                  |
+|-------------|-----------|------------------------------------------|
+| `createdBy` | string    | The administrator who made it            |
+| `expiresAt` | timestamp | When it stops letting anybody in         |
+| `email`     | string    | The Google address it lets in (ADR-0015) |
 
 The code is the name of the document rather than a field, so an invitation
 cannot be found except by knowing it. Nobody reads this collection -- not even
@@ -161,9 +161,9 @@ the invitation is written.
 
 ## joins/{uid}
 
-| Field  | Type   | Meaning                              |
-|--------|--------|--------------------------------------|
-| `code` | string | The code this person is holding      |
+| Field  | Type   | Meaning                         |
+|--------|--------|---------------------------------|
+| `code` | string | The code this person is holding |
 
 A rule cannot be told anything except through the database: the write it weighs
 is the roster, and a code has nowhere to ride in it. So the person joining
@@ -176,12 +176,12 @@ eight letters and digits, because the rules build a document path out of it.
 
 ## falsePlaces/{placeId}
 
-| Field          | Type   | Meaning                                                    |
-|----------------|--------|------------------------------------------------------------|
-| `latitude`     | number | Degrees                                                      |
-| `longitude`    | number | Degrees                                                      |
-| `radiusMetres` | number | How far around the point to distrust; at most 50 000         |
-| `named`        | string | What the place is, so a log line says something readable     |
+| Field          | Type   | Meaning                                                  |
+|----------------|--------|----------------------------------------------------------|
+| `latitude`     | number | Degrees                                                  |
+| `longitude`    | number | Degrees                                                  |
+| `radiusMetres` | number | How far around the point to distrust; at most 50 000     |
+| `named`        | string | What the place is, so a log line says something readable |
 
 Where a false signal puts the devices of this group. Held here rather than in
 the build: which places those are is a fact about one household's surroundings,
@@ -209,16 +209,16 @@ document typed wrong in the console does not stop the rest from arriving.
 One document per subject. Today there is one: `circling`, the limits of the
 rule that reads the shape of a run of answers.
 
-| Field            | Type   | Meaning                                                      |
-|------------------|--------|--------------------------------------------------------------|
-| `answers`        | int    | How many answers in a row are fitted to a circle; at least 4   |
-| `withinSeconds`  | number | How long those answers may be spread over                      |
-| `roundness`      | number | How far off the circle they may sit, as a share of its radius   |
-| `widestMetres`   | number | The widest circle worth calling a circle                       |
-| `tightestMetres` | number | The tightest one                                               |
-| `steadiness`     | number | How much the speed may vary, as a share of its average          |
-| `turnedDegrees`  | number | How far round the circle the answers have to have gone          |
-| `slowestMps`     | number | The slowest the answers may move and still be a road            |
+| Field            | Type   | Meaning                                                       |
+|------------------|--------|---------------------------------------------------------------|
+| `answers`        | int    | How many answers in a row are fitted to a circle; at least 4  |
+| `withinSeconds`  | number | How long those answers may be spread over                     |
+| `roundness`      | number | How far off the circle they may sit, as a share of its radius |
+| `widestMetres`   | number | The widest circle worth calling a circle                      |
+| `tightestMetres` | number | The tightest one                                              |
+| `steadiness`     | number | How much the speed may vary, as a share of its average        |
+| `turnedDegrees`  | number | How far round the circle the answers have to have gone        |
+| `slowestMps`     | number | The slowest the answers may move and still be a road          |
 
 Every field may be absent, and what is absent keeps the value the build
 carries. The build's limits catch a transmitter of any shape; a group that has
@@ -317,11 +317,11 @@ replaces what the last one left; nothing deletes it.
 
 ## members/{uid}
 
-| Field         | Type      | Meaning                                                  |
-|---------------|-----------|----------------------------------------------------------|
-| `displayName` | string    | What the member is called on the other screens             |
+| Field         | Type      | Meaning                                                         |
+|---------------|-----------|-----------------------------------------------------------------|
+| `displayName` | string    | What the member is called on the other screens                  |
 | `photoUrl`    | string    | The account picture, as the provider hosts it; null without one |
-| `updatedAt`   | timestamp | When the profile was last written; set by the server itself |
+| `updatedAt`   | timestamp | When the profile was last written; set by the server itself     |
 
 Everybody in the group reads this document, so nothing else belongs in it. Which
 devices a member carries and whom they let watch are answers to "where is this
@@ -462,10 +462,10 @@ old document to age on screen until it is deleted.
 
 ## watch/{uid}.{deviceId}
 
-| Field      | Type      | Meaning                                            |
-|------------|-----------|----------------------------------------------------|
+| Field      | Type      | Meaning                                                    |
+|------------|-----------|------------------------------------------------------------|
 | `memberId` | string    | The account looking; the rules require it to be the writer |
-| `since`    | timestamp | When the claim was made; set by the server itself    |
+| `since`    | timestamp | When the claim was made; set by the server itself          |
 
 A claim is worth seven minutes from `since`, and the viewer refreshes it every
 five, trying a failed refresh again within a minute. Every device of the group
@@ -501,13 +501,13 @@ a reload leaves one marker rather than a trail of them.
 
 ## Collection modes
 
-| Mode      | Trigger                          | Priority         | Interval   | Batch window |
-|-----------|----------------------------------|------------------|------------|--------------|
-| `Idle`    | Inside the current geofence      | none             | —          | —            |
-| `Standby` | Outside it, nobody watching      | balanced         | 15 min     | 10 min       |
-| `Moving`  | Activity recognised as movement  | balanced         | 5 min      | 5 min        |
-| `Viewing` | A live claim in `watch`          | high accuracy    | 30 s       | none         |
-| `Night`   | 23:00 to 07:00, nobody watching  | low power        | 20 min     | 5 min        |
+| Mode      | Trigger                         | Priority      | Interval | Batch window |
+|-----------|---------------------------------|---------------|----------|--------------|
+| `Idle`    | Inside the current geofence     | none          | —        | —            |
+| `Standby` | Outside it, nobody watching     | balanced      | 15 min   | 10 min       |
+| `Moving`  | Activity recognised as movement | balanced      | 5 min    | 5 min        |
+| `Viewing` | A live claim in `watch`         | high accuracy | 30 s     | none         |
+| `Night`   | 23:00 to 07:00, nobody watching | low power     | 20 min   | 5 min        |
 
 `Night` is also forced whenever the battery drops below 15 percent. The names
 are written as the devices write them, which is the form the `mode` field

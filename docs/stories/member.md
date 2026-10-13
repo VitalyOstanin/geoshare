@@ -47,6 +47,7 @@ Google account it was made for and land on the group's map, so that I join
 without typing anything.
 
 Acceptance:
+
 - the link opens the application, which fetches the project's settings and
   shows the group, who invited and for which account (ADR-0018 says what is
   not shown);
@@ -67,6 +68,7 @@ told both addresses and offered to switch accounts, so that I do not stay
 outside wondering why.
 
 Acceptance:
+
 - the refusal names the signed-in address and the shortened invited one;
 - the invitation is kept for the next sign-in.
 
@@ -82,6 +84,7 @@ one Google account, so that I do not need a second device or a second
 application.
 
 Acceptance:
+
 - a link to another project adds a group beside the others, without a
   restart;
 - the map shows one group at a time, chosen from a chip, drawn only while
@@ -102,6 +105,7 @@ As a member I leave a group, so that I am off its roster and what I wrote
 there is gone.
 
 Acceptance:
+
 - one batch takes me off the roster and deletes my position, grant and
   claims, then the device signs out of that project and forgets it;
 - a member whose going would leave nobody to run the group only takes the
@@ -119,6 +123,7 @@ As a member I sign this device out of one group, or of all of them, so that a
 device I give away stops showing my groups and sending my place.
 
 Acceptance:
+
 - "here" signs this device out of the group on screen; the other groups stay
   and keep getting my place;
 - "everywhere" signs this device out of every group and turns sharing off;
@@ -137,6 +142,7 @@ sign-in did not finish and given a button to try again, so that I am not left
 on a map of another group wondering.
 
 Acceptance:
+
 - the sign-in screen explains in muted text, not red, and suggests Chrome as
   the default browser if it repeats;
 - after a cancelled sign-in to a further group the map of a group already
@@ -152,6 +158,7 @@ As a member at a computer I sign in on the group's page and see the same map,
 so that I need no device to look.
 
 Acceptance:
+
 - the page shows the members, their places, searches and sirens as the device
   does;
 - the page does not publish a position, and grants are given from the device.
@@ -169,6 +176,7 @@ account, so that it shows up as another device of mine rather than replacing
 the first.
 
 Acceptance:
+
 - every device writes its own position, named after its model;
 - the map labels the device's name only when I have more than one.
 
@@ -183,6 +191,7 @@ As a member I see the list of my devices in the group and forget one I no
 longer have, so that the group stops seeing a device I sold.
 
 Acceptance:
+
 - "My devices" lists this group's devices, this one marked;
 - forgetting a device, from the device or the page, removes its position and
   watch claim and takes it out of my grant and device list in that group.
@@ -199,6 +208,7 @@ As a member I choose whom I show my place to, and for how long: an hour, eight
 hours, a day or always, so that nobody watches me unless I let them.
 
 Acceptance:
+
 - without a grant nobody reads my position;
 - a permission runs out by itself at the time chosen, and the rules refuse
   the read from then;
@@ -215,6 +225,7 @@ As a member I switch sharing off on the device or from its notification, so
 that the device stops writing my place.
 
 Acceptance:
+
 - the service stops and its notification goes;
 - the switch stays as I left it after a restart and after signing in again.
 
@@ -229,6 +240,7 @@ and offered to show my place to them, so that sharing is mutual when I want
 it.
 
 Acceptance:
+
 - the card says the member does not see where I am;
 - one button opens the grant for that member.
 
@@ -243,7 +255,8 @@ As a member I see who is looking at the map with me in it, so that I know when
 I am being watched.
 
 Acceptance:
-- "Looking at the map: <names>" is shown while somebody holds a live watch
+
+- "Looking at the map: &lt;names&gt;" is shown while somebody holds a live watch
   claim;
 - the application icon carries a badge while my place is being shared.
 
@@ -259,6 +272,7 @@ As a member I see on a map where the members who share with me are, how old
 each place is and how accurate, so that I know whether to trust it.
 
 Acceptance:
+
 - a marker per device, with an accuracy ring;
 - a marker goes grey when its place is older than half an hour;
 - opening the map makes the watched devices collect faster;
@@ -275,6 +289,7 @@ As a member I keep the map centred on one member as they move, so that I do
 not have to pan by hand.
 
 Acceptance:
+
 - dragging the map holds the camera for 20 seconds, then following resumes.
 
 ### MEM-16 Name people and devices for myself
@@ -288,6 +303,7 @@ As a member I call a device "new device" rather than its model, and a person
 map speaks my words.
 
 Acceptance:
+
 - the names are kept in my own documents and nobody else sees them;
 - the device and the page show them alike, cut to 40 characters.
 
@@ -302,6 +318,7 @@ towers or Wi-Fi, and why the device left some answers out, so that I can tell a
 true place from a spoofed one.
 
 Acceptance:
+
 - the card names the source and the collection mode;
 - a place taken in a recorded false place is marked;
 - the device counts the answers it left out and says why.
@@ -318,6 +335,7 @@ devices, makes it sound or resets its place, so that nothing is done to my
 device without my knowing.
 
 Acceptance:
+
 - each comes as a notification naming who did it;
 - a search for my device can be ended by me from any of my devices.
 
@@ -333,6 +351,7 @@ As a member I choose Russian or English and light or dark, so that the
 application reads as I want.
 
 Acceptance:
+
 - the language is the system's per-application choice on Android 13 and
   later;
 - the page follows the same choices.
@@ -348,6 +367,7 @@ Wi-Fi, the mobile network at home and in roaming, so that a trip abroad does
 not cost me.
 
 Acceptance:
+
 - out of the box Wi-Fi and the home network are on, roaming off;
 - in roaming I am asked each time, "Download" or "Not now";
 - the map and the positions go over any network.
@@ -363,6 +383,7 @@ As a person shown an invitation QR code on another device I scan it from the
 connection screen, so that I do not need the link sent to me.
 
 Acceptance:
+
 - the camera scanner sits beside pasting a link, and in the settings'
   invitation field;
 - the camera is asked for only when the scanner is opened;
@@ -382,4 +403,5 @@ As a member I keep a shopping list with the group, reminders, and notes pinned
 to a place, so that the group's everyday things live with its map.
 
 Acceptance:
+
 - to be agreed; whether this belongs in geoshare at all is still open.

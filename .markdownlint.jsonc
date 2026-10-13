@@ -1,0 +1,16 @@
+// The rules the documents are held to; every rule not named here is on with
+// its default settings.
+{
+    "default": true,
+    // Lines are broken where the sentence reads best, and a table row or a link
+    // is as long as it has to be.
+    "MD013": false,
+    // Tables are aligned with spaces, so that they read in the source as well.
+    "MD060": { "style": "aligned" },
+    // A story or a decision repeats its own headings section by section
+    // ("Acceptance", "Consequences"); only a repeat under one parent is a
+    // mistake.
+    "MD024": { "siblings_only": true },
+    // The light and dark screenshots at the top of the README.
+    "MD033": { "allowed_elements": ["picture", "source", "img"] }
+}

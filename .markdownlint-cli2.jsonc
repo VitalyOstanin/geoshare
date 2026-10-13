@@ -1,0 +1,13 @@
+// Which documents tools/md-lint.sh reads. The rules themselves are in
+// .markdownlint.jsonc, where an editor's markdownlint finds them too.
+{
+    "globs": ["**/*.md"],
+    "gitignore": true,
+    "ignores": [
+        // Copied from the packages as they are.
+        "web/public/lib/vendor/**",
+        // Local working notes, kept out of the repository.
+        "docs/__check/**",
+        "docs/superpowers/**"
+    ]
+}

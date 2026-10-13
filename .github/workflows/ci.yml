@@ -74,8 +74,9 @@ jobs:
           if-no-files-found: ignore
           retention-days: 3
 
-  # The page and the rules: the page's own tests, the linter of the
-  # JavaScript half, and the rules against the Firestore emulator.
+  # The page and the rules: the page's own tests, the linters of the
+  # JavaScript half and of the documents, and the rules against the Firestore
+  # emulator.
   web:
     runs-on: ubuntu-24.04
     timeout-minutes: 15
@@ -106,6 +107,9 @@ jobs:
 
       - name: Lint the JavaScript
         run: npx --yes "eslint@${ESLINT_VERSION}" web firebase
+
+      - name: Lint the Markdown
+        run: npx --yes "markdownlint-cli2@${MARKDOWNLINT_CLI2_VERSION}"
 
       - name: Check the shell scripts
         run: |

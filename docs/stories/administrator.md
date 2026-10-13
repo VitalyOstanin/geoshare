@@ -29,6 +29,7 @@ As the first person to sign in to a new project I found the group, giving it a
 name if I like, so that there is a group to invite the others to.
 
 Acceptance:
+
 - the group's id is the founder's uid; the founder is alone on the roster and
   among the administrators;
 - without a name the group is shown as "Группа · <founder's name>" in Russian
@@ -46,6 +47,7 @@ As an administrator I rename the group from the group panel, so that the
 members tell it apart from their other groups.
 
 Acceptance:
+
 - only an administrator may change the name;
 - every device and page of the group shows the new name without restarting.
 
@@ -59,6 +61,7 @@ As an administrator I make an invitation for one Google address, so that only
 that person can join on the link and only once.
 
 Acceptance:
+
 - the invitation is a connection link, sent through the system's share menu,
   copied, or shown as a QR code;
 - the link carries the group's name, the inviting member's name and the
@@ -81,6 +84,7 @@ As an administrator I take a member off the roster, so that they no longer see
 the group nor are seen in it.
 
 Acceptance:
+
 - the founder can take anybody off; another administrator takes off only a
   member who runs nothing, so another administrator is taken off in two
   steps: the role first (ADM-05);
@@ -98,6 +102,7 @@ As an administrator I make another member an administrator, or step down
 myself, so that the group is never left to one person.
 
 Acceptance:
+
 - any administrator can make any member an administrator;
 - an administrator can stop running the group while another one stays;
 - nobody but the founder can take the founder off the roster or off the
@@ -114,6 +119,7 @@ when each last wrote, in which mode and whether it is charging, so that I
 notice a device that has gone quiet.
 
 Acceptance:
+
 - the panel lists every member, the administrators marked, me marked as me;
 - a device is described by the time of its last write, its mode and its
   charge, or as "not in touch yet";
@@ -134,6 +140,7 @@ that everybody in the group sees where it is while we look, whatever its owner
 had shared.
 
 Acceptance:
+
 - while the search stands, every member can read that one device's position,
   and nothing else of its owner;
 - the device is marked on every map with a red ring, "searching";
@@ -153,6 +160,7 @@ As an administrator, or as the device's owner, I make the device sound like an
 alarm, so that it is found under a cushion or in a bag.
 
 Acceptance:
+
 - the device sounds loudly for 22 seconds, even with its sound off, and says
   on its screen who called; with the owner's leave it sounds through total
   silence too;
@@ -171,6 +179,7 @@ whose marker is stuck, so that it takes the next place however far it is from
 the old one.
 
 Acceptance:
+
 - the device forgets its last place, takes the next one and says in a
   notification who reset it;
 - the one who reset sees "waiting for the device", "the device took it", or
@@ -189,6 +198,7 @@ track going round in circles, so that every device of the group leaves out
 answers from there.
 
 Acceptance:
+
 - only an administrator writes false places and the threshold; every member
   reads them;
 - the devices and the page mark positions taken in a false place.
@@ -205,6 +215,7 @@ already published build, so that a household keeps its devices on one version
 without everybody doing it by hand.
 
 Acceptance:
+
 - only a build published on the releases page is offered;
 - the application starts on its own after the update and works.
 
@@ -218,6 +229,7 @@ As an administrator I have no more right to a member's position than any other
 member, so that running the group is not watching it.
 
 Acceptance:
+
 - the rules give an administrator a member's position only through that
   member's grant, or through a standing search (ADM-07);
 - the administrator does not see whom a member shares with.

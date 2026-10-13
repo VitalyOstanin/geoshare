@@ -29,6 +29,7 @@ so that the group's data lives in a project of its own on the free plan and no
 build of the application has to know about it.
 
 Acceptance:
+
 - `tools/project.sh create` makes the project, registers the Android
   application and the page, adds the fingerprints of the signing keys, creates
   the database and deploys the rules and the page;
@@ -46,6 +47,7 @@ As a project owner I do the one step the script cannot, by a page of
 instructions, so that the members can sign in with their Google accounts.
 
 Acceptance:
+
 - `docs/console-steps.md` (and its Russian copy) names every click;
 - `tools/project.sh show --wait` waits until the provider is on and says so.
 
@@ -60,6 +62,7 @@ the setup, so that my device connects to the project without an invitation and
 I can found the group.
 
 Acceptance:
+
 - the script ends with `https://<site>.web.app/join` and a QR code of it;
 - the device that opens the link fetches the settings and asks to sign in;
 - the first signed-in person founds the group (ADM-01).
@@ -76,6 +79,7 @@ and page with one command, so that the group gets fixes without being set up
 again.
 
 Acceptance:
+
 - `tools/project.sh update <project>` deploys the rules, the page and
   `geoshare.json`;
 - the data already in the database stays.
@@ -91,6 +95,7 @@ As a project owner I see the reads, writes and storage of the last days
 against the free tier, so that I learn in time whether the group outgrows it.
 
 Acceptance:
+
 - `tools/project.sh show --usage` prints how much of the free plan the
   project has used today, `--days N` the N quota days before it;
 - administrators who do not own the project do not see them.
@@ -107,6 +112,7 @@ every run and pick the Google account that holds it, so that one machine
 looks after all of them without a working copy each.
 
 Acceptance:
+
 - every command takes the project id;
 - `--account <address>` picks one of the accounts the command line is
   signed in to.
@@ -122,6 +128,7 @@ As a project owner I remove a project the group no longer uses, so that
 nothing is left running in my account.
 
 Acceptance:
+
 - `tools/project.sh delete <project> --yes` asks Google to shut the project
   down, and does nothing without `--yes`;
 - the project can be restored for 30 days.
@@ -138,6 +145,7 @@ Cloud Shell in a browser, following one page, so that I need no computer of
 my own prepared for it.
 
 Acceptance:
+
 - `docs/new-project.md` leads from an empty account to the connection link;
 - the fingerprint of the key the published application is signed with is
   known to the script without a build container.
@@ -159,6 +167,7 @@ console and let a setup page finish it, so that a browser on a computer or on
 the device is all the setup needs.
 
 Acceptance:
+
 - "Create your own group" on the connection screen explains the three stages
   and opens the setup page;
 - the page lists the projects of the Google account it is allowed into and
@@ -183,5 +192,6 @@ As a project owner I give the members the application from the repository's
 releases page, signed with one key, so that nobody has to build it.
 
 Acceptance:
+
 - a signed release APK is published on GitHub Releases;
 - "Download the application" on the page leads there (ADR-0018).

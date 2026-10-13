@@ -14,8 +14,8 @@
 # anything to say are run.
 #
 # The names it prints are the names of the scripts beside it: test, style,
-# lint, web_test, js_lint, rules, shell_lint. --list exists so that a caller which runs
-# them somewhere else can be told which ones to run.
+# lint, web_test, js_lint, md_lint, rules, shell_lint. --list exists so that a
+# caller which runs them somewhere else can be told which ones to run.
 set -euo pipefail
 
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -86,6 +86,7 @@ if [[ -n "${everything}" ]]; then
     want lint
     want web_test
     want js_lint
+    want md_lint
     want rules
     want shell_lint
 else
@@ -95,6 +96,18 @@ else
         [[ -n "${file}" ]] || continue
 
         case "${file}" in
+            # The stories and the decisions are read by the page's tests as
+            # well, which hold every story to the records it points at.
+            docs/stories/*.md | docs/ADR/*.md)
+                want md_lint
+                want web_test
+                ;;
+            # The documents, wherever they are, and the settings of their
+            # linter. First, so that a note under firebase/ or web/ does not
+            # ask for the checks of the code beside it.
+            *.md | .markdownlint-cli2.jsonc | */.markdownlint.jsonc | .markdownlint.jsonc)
+                want md_lint
+                ;;
             # A Kotlin file asks for the tests and for the formatting. Whether
             # the Android lint is asked for as well is decided below, once
             # every file has been seen: it reads the manifest, the resources
@@ -125,7 +138,7 @@ else
             *.sh)
                 want shell_lint
                 ;;
-            # Everything else -- the lists and the notes -- is checked by
+            # Everything else -- the lists and the settings -- is checked by
             # nothing here.
             *) ;;
         esac
@@ -165,6 +178,7 @@ for check in "${wanted[@]}"; do
         lint) "${HERE}/lint.sh" ;;
         web_test) "${HERE}/web-test.sh" ;;
         js_lint) "${HERE}/js-lint.sh" ;;
+        md_lint) "${HERE}/md-lint.sh" ;;
         rules) "${HERE}/rules.sh" ;;
         shell_lint) "${HERE}/shell-lint.sh" ;;
     esac

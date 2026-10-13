@@ -1,0 +1,6 @@
+// The templates are the body of an issue or a pull request, under a title
+// GitHub gives them: they open on a section, not on a heading of their own.
+{
+    "extends": "../.markdownlint.jsonc",
+    "MD041": false
+}

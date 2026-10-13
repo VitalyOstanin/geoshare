@@ -50,7 +50,7 @@ available for free, the member should be able to pick: OpenStreetMap tiles as
 they are now, and Yandex Maps, which is the better one over Russia.
 
 The first candidate is Yandex's Tiles API on the web page, as a fallback layer.
-Its terms, read in September 2026 (https://yandex.ru/legal/maps_api/):
+Its terms, read in September 2026 (<https://yandex.ru/legal/maps_api/>):
 
 - **Free** for commercial and non-commercial use up to 30 requests a second,
   and allowed in closed systems as well as open ones.
@@ -58,7 +58,7 @@ Its terms, read in September 2026 (https://yandex.ru/legal/maps_api/):
   be handed to anyone else, so whoever deploys the page brings their own key,
   restricted to the page's domain; without a key the choice is not offered.
 - **On the map.** Yandex's logo and copyright, a link to
-  https://yandex.ru/legal/maps_termsofuse and an "Open in Yandex Maps" button.
+  <https://yandex.ru/legal/maps_termsofuse> and an "Open in Yandex Maps" button.
 - **Caching** no longer than 30 days.
 - **Visitors' data.** Yandex receives the visitors' addresses and locations,
   and their consent is the page owner's to obtain.

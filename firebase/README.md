@@ -42,7 +42,7 @@ build. The steps are in:
 Either paste `firestore.rules` into the rules editor in the console, or use the
 command line from a checkout:
 
-```
+```sh
 firebase login
 firebase deploy --only firestore:rules --project <project-id>
 ```
@@ -74,7 +74,7 @@ rules change with that in mind:
 - The update deploys the working copy, so the release's tag is checked out
   first:
 
-  ```
+  ```sh
   git checkout v0.2.0
   tools/project.sh update <project-id>
   ```
@@ -85,7 +85,7 @@ rules change with that in mind:
 
 ## Checking the rules
 
-```
+```sh
 tools/rules.sh
 ```
 

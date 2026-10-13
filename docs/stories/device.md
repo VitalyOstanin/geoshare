@@ -32,6 +32,7 @@ As a member I let a foreground service on my device write my place, so that the
 group sees it without my opening the application.
 
 Acceptance:
+
 - the service runs with a notification that says it shares and lets it stop;
 - each device writes `positions/{uid}.{deviceId}` of its own;
 - the same place is written into every group the device is signed in to.
@@ -46,6 +47,7 @@ As a member I let my device collect fast only while somebody has the map open,
 so that the battery is spent when it is worth it.
 
 Acceptance:
+
 - a viewer renews a watch claim every minute; a claim older than three
   minutes stops counting;
 - a device that sees a live claim on itself switches to the viewing mode.
@@ -61,6 +63,7 @@ As a member I let my device stay quiet while I do not move, so that a day at
 home costs little battery.
 
 Acceptance:
+
 - moving is learnt from the system's activity transitions;
 - standing still inside a 150 m geofence keeps the receiver off;
 - an idle device rewrites the same point about every 25 minutes so that it
@@ -78,6 +81,7 @@ sign in and share my place, so that the group is not limited to devices with
 Google on them.
 
 Acceptance:
+
 - sign-in goes through the browser;
 - without Play services the platform's own providers are asked, and only the
   sources switched on in the settings.
@@ -93,6 +97,7 @@ permissions step by step, so that the service is not killed and I know why
 each is asked.
 
 Acceptance:
+
 - each step says what it is for;
 - for makers that stop background work the application opens their own list
   of allowed applications and lets me say it is done.
@@ -108,6 +113,7 @@ As a member I let the service start by itself after the device restarts, so
 that I do not have to remember to open the application.
 
 Acceptance:
+
 - after a restart the service runs if sharing was on;
 - it stays off if sharing was off.
 
@@ -123,6 +129,7 @@ leave out answers that cannot be true, so that the group does not see me
 jump to an airport.
 
 Acceptance:
+
 - satellites standing below the horizon, or at a distance off their published
   orbits, mark the epoch false; two in a row leave the fix out;
 - a place that moved while the device stood still is refused;
@@ -141,6 +148,7 @@ As a member taken off a roster I am told so on that group's map instead of an
 empty map, so that I know what happened.
 
 Acceptance:
+
 - "You were removed from the group", with "Remove the group" and "Join by
   link";
 - the group's settings say the same;
@@ -158,6 +166,7 @@ As a member given a permission to see somebody I see their place at once, so
 that I do not wait a minute after they share.
 
 Acceptance:
+
 - the one who grants touches their profile; the readers who were refused
   retry at once on that signal;
 - without the signal they retry after a quarter of an hour.
@@ -173,6 +182,7 @@ As a member I let my device say when it last wrote, in which mode and whether
 it is charging, so that an administrator notices it has gone quiet (ADM-06).
 
 Acceptance:
+
 - the device's status is written when its mode changes, when it is plugged in
   or out, and otherwise as often as an idle device rewrites its place;
 - it carries no place.
@@ -188,6 +198,7 @@ of the raw satellite measurements, so that a wrong place can be looked into
 afterwards.
 
 Acceptance:
+
 - logs roll over and are kept within a limit;
 - the satellite file is in GnssLogger's layout, so other tools read it.
 
@@ -203,6 +214,7 @@ search, calls the siren or resets its place, so that it answers at once and
 not at its next own wake-up, without a paid Firebase plan.
 
 Acceptance:
+
 - to be agreed.
 
 ## DEV-13 Update itself
@@ -216,6 +228,7 @@ As a member I let the application learn about a new published build and
 install it, so that I do not have to look for updates.
 
 Acceptance:
+
 - asks about once a day, over the networks allowed (MEM-20);
 - installs only a build signed with the same key;
 - starts the service again after the install.
@@ -232,4 +245,5 @@ geofence and activity recognition of Huawei's own services, so that standing
 still is as cheap there as on other devices.
 
 Acceptance:
+
 - to be agreed.

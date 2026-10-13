@@ -21,6 +21,7 @@ me, who invited and for which account, so that I know it is genuine before I
 install anything.
 
 Acceptance:
+
 - the join page reads only the link, not the database and not
   `geoshare.json`;
 - it shows the group's name, the inviting member's name and the shortened
@@ -38,6 +39,7 @@ As a person without the application I tap "Download the app" on the
 join page, so that I get it from the repository's releases.
 
 Acceptance:
+
 - the button leads to the repository's GitHub releases page;
 - on a browser that is not Android's, "Open in the app" copies the link and
   says to open it on an Android device.
@@ -53,6 +55,7 @@ page, so that the application gets the project and the invitation in one step
 and goes on to sign-in (MEM-01).
 
 Acceptance:
+
 - "Open in the app" is a real link that Chrome hands to the
   application;
 - with the application already in a group, the link adds a group beside it.
@@ -69,6 +72,7 @@ another account I am told so, so that I ask for a new one rather than
 retrying.
 
 Acceptance:
+
 - another account: both addresses are named and switching accounts is
   offered (MEM-02);
 - used, withdrawn or run out: the group's map says the invitation no longer
