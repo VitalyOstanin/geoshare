@@ -235,7 +235,7 @@ internal fun BelowTheMap(
 }
 
 /**
- * The device list, the licences and the administrator's panel, each drawn
+ * The device list, the position accuracy, the licences and the administrator's panel, each drawn
  * over the settings it was opened from, so that the way back out is the screen it was
  * opened from, whichever of the two ways back is used.
  *
@@ -248,6 +248,7 @@ internal fun BelowTheMap(
 @Composable
 internal fun OverTheSettings(
     myPhonesOpen: Boolean,
+    accuracyOpen: Boolean,
     licencesOpen: Boolean,
     adminOpen: Boolean,
     runsTheGroup: Boolean,
@@ -262,11 +263,16 @@ internal fun OverTheSettings(
     seenAt: Map<String, Instant>,
     groups: GroupSwitch,
     onCloseMyPhones: () -> Unit,
+    onCloseAccuracy: () -> Unit,
     onCloseLicences: () -> Unit,
     onCloseAdmin: () -> Unit,
 ) {
     if (licencesOpen) {
         LicencesScreen(onClose = onCloseLicences)
+    }
+
+    if (accuracyOpen) {
+        AccuracyScreen(settings = settings, actions = actions, onClose = onCloseAccuracy)
     }
 
     // The devices are read from this member's own grant, which the member

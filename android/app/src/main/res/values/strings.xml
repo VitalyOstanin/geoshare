@@ -127,6 +127,11 @@
     <string name="map_account_nameless" translatable="false">?</string>
     <string name="settings_title">Settings</string>
     <string name="settings_close">Close</string>
+    <string name="settings_this_device">This device</string>
+    <string name="accuracy_open">Position accuracy</string>
+    <string name="accuracy_open_note">Jumps, sources, satellite data, downloads</string>
+    <string name="accuracy_title">Position accuracy</string>
+    <string name="accuracy_back">Back</string>
     <string name="licences_open">Open source licences</string>
     <string name="licences_title">Licences</string>
     <string name="licences_intro">geoshare is distributed under the MIT licence. It includes these libraries:</string>
@@ -534,6 +539,8 @@
          states. Screen А, before a link has been offered: the phone's own
          placeholder, shown in place of the map before it has a project. -->
     <string name="connect_not_connected_title">Not connected yet.</string>
+    <string name="connect_unreadable_title">The list of groups could not be read</string>
+    <string name="connect_unreadable_notice">The list of groups kept on this device is damaged, so the app opened as if new. Join your group again with its link or invitation QR code. The damaged list is kept for a bug report.</string>
     <string name="connect_not_connected_hint">Open a connection link or point the camera at an invitation\'s QR code.</string>
     <!-- Screen А offered to a device already in a group, from the group list's
          "Join a group by link". -->

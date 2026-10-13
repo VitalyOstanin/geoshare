@@ -18,6 +18,14 @@ private const val KEY_LIST = "list"
  * them.
  */
 internal const val KEY_UNREADABLE_LIST = "list_unreadable"
+
+/**
+ * Set by the first group joined after a list was set aside. The notice about
+ * the damaged list belongs to the empty start that followed the damage; once
+ * a group has been joined it must not come back if the device later leaves
+ * every group, while the set-aside list itself stays for the bug report.
+ */
+internal const val KEY_JOINED_AFTER_UNREADABLE = "list_unreadable_joined"
 private const val KEY_DEFAULT_PROJECT = "default_project"
 private const val TAG = "geoshare.connections"
 
@@ -113,8 +121,10 @@ object Connections {
      * device being switched off or the process being cut short, and the list
      * is what the next start reads before anything else.
      */
-    fun connect(context: Context, settings: ProjectSettings, group: String) =
+    fun connect(context: Context, settings: ProjectSettings, group: String) {
         publish(context, kept.with(Connected(settings, group)))
+        markJoinedAfterUnreadable(context)
+    }
 
     /**
      * Says the device is now in [group] of a project it already reaches —
@@ -160,6 +170,26 @@ object Connections {
         SignInStarted.forget(context, projectId)
 
         AppLog.i(TAG, "no longer in $projectId")
+    }
+
+    /**
+     * Whether a kept list that could not be read has been set aside on this
+     * device and no group has been joined since: the first screen says so
+     * instead of greeting the person as if the app were new.
+     */
+    fun unreadableListKept(context: Context): Boolean = files(context).let {
+        it.contains(KEY_UNREADABLE_LIST) && !it.contains(KEY_JOINED_AFTER_UNREADABLE)
+    }
+
+    /** Remembers that a group was joined after the list was set aside; the set-aside list stays. */
+    internal fun markJoinedAfterUnreadable(context: Context) {
+        if (!unreadableListKept(context)) {
+            return
+        }
+
+        if (!files(context).edit().putBoolean(KEY_JOINED_AFTER_UNREADABLE, true).commit()) {
+            AppLog.e(TAG, "the joining after the unreadable groups could not be written down")
+        }
     }
 
     /** The file the kept list lives in, beside which [PendingInvitationStore] keeps its own key. */

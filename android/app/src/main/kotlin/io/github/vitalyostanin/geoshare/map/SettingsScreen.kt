@@ -1,5 +1,6 @@
 package io.github.vitalyostanin.geoshare.map
 
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -187,6 +188,8 @@ fun SettingsScreen(
     /** The way to the screen where the group is run, offered to whoever runs it. */
     onOpenAdmin: () -> Unit,
     onOpenMyPhones: () -> Unit,
+    /** The screen with what decides how true the position is: jumps, sources, downloads. */
+    onOpenAccuracy: () -> Unit,
     /** The licences of the libraries inside the application. */
     onOpenLicences: () -> Unit,
     /** Leaving the group, offered here while it is the only one; null while the list offers it. */
@@ -219,27 +222,17 @@ fun SettingsScreen(
 
             SharingSection(settings = settings, actions = actions)
 
-            JumpsSection(settings = settings, actions = actions)
-
             HorizontalDivider()
 
-            SourcesSection(
-                leftOut = settings.sourcesLeftOut,
-                onSourceUseChange = actions.onSourceUseChange,
-            )
-
-            HorizontalDivider()
-
-            AidingSection(
-                doubted = settings.aidingDoubted,
-                onForgetAiding = actions.onForgetAiding,
-            )
-
-            HorizontalDivider()
-
-            DownloadsSection(
-                downloads = settings.downloads,
-                onDownloadNetworkChange = actions.onDownloadNetworkChange,
+            BackgroundWorkSection(
+                batteryUnrestricted = settings.batteryUnrestricted,
+                sirenThroughSilence = settings.sirenThroughSilence,
+                startupScreen = settings.startupScreen,
+                startupSet = settings.startupSet,
+                onAllowBattery = actions.onAllowBattery,
+                onAllowSirenThroughSilence = actions.onAllowSirenThroughSilence,
+                onOpenStartup = actions.onOpenStartup,
+                onStartupSetChange = actions.onStartupSetChange,
             )
 
             HorizontalDivider()
@@ -271,26 +264,11 @@ fun SettingsScreen(
 
             HorizontalDivider()
 
-            BackgroundWorkSection(
-                batteryUnrestricted = settings.batteryUnrestricted,
-                sirenThroughSilence = settings.sirenThroughSilence,
-                startupScreen = settings.startupScreen,
-                startupSet = settings.startupSet,
-                onAllowBattery = actions.onAllowBattery,
-                onAllowSirenThroughSilence = actions.onAllowSirenThroughSilence,
-                onOpenStartup = actions.onOpenStartup,
-                onStartupSetChange = actions.onStartupSetChange,
-            )
+            ThisDeviceSection(settings = settings, actions = actions)
 
             HorizontalDivider()
 
-            PhoneNameRow(name = settings.phoneName, onPhoneNameChange = actions.onPhoneNameChange)
-
-            HorizontalDivider()
-
-            AppearanceRow(theme = settings.theme, onThemeChange = actions.onThemeChange)
-
-            LanguageRow(language = settings.language, onLanguageChange = actions.onLanguageChange)
+            AccuracyRow(settings = settings, onOpen = onOpenAccuracy)
 
             HorizontalDivider()
 
@@ -346,6 +324,146 @@ private fun SettingsHeader(onClose: () -> Unit) {
 
         TextButton(onClick = onClose) {
             Text(text = stringResource(R.string.settings_close))
+        }
+    }
+}
+
+/**
+ * What belongs to this device alone rather than to the group: its name, how
+ * the application looks, and in which language it speaks.
+ */
+@Composable
+private fun ThisDeviceSection(settings: SettingsState, actions: SettingsActions) {
+    Text(
+        text = stringResource(R.string.settings_this_device),
+        style = MaterialTheme.typography.titleMedium,
+        modifier = Modifier.padding(start = 16.dp, top = 8.dp, end = 16.dp),
+    )
+
+    PhoneNameRow(name = settings.phoneName, onPhoneNameChange = actions.onPhoneNameChange)
+
+    AppearanceRow(theme = settings.theme, onThemeChange = actions.onThemeChange)
+
+    LanguageRow(language = settings.language, onLanguageChange = actions.onLanguageChange)
+}
+
+/**
+ * The line under "Position accuracy" that a section behind it has to be read
+ * for: the first warning any of those sections shows, or null while none does.
+ *
+ * Lifted onto the row because the sections were taken off the main screen, and
+ * a satellite system heard to no use or a download waiting for an answer is
+ * worth less if it is only found by opening a screen nobody has a reason to open.
+ */
+@Composable
+private fun accuracyWarning(settings: SettingsState): String? {
+    if (settings.aidingDoubted.isNotEmpty()) {
+        val named =
+            inOrder(settings.aidingDoubted)
+                .map { system -> stringResource(constellationLabel(system)) }
+                .joinToString(", ")
+
+        return stringResource(R.string.aiding_wasted, named)
+    }
+
+    if (settings.downloads.waitingInRoaming) {
+        return stringResource(R.string.downloads_waiting)
+    }
+
+    return null
+}
+
+/** The way to the position accuracy screen, in red while something there needs the member. */
+@Composable
+private fun AccuracyRow(settings: SettingsState, onOpen: () -> Unit) {
+    val warning = accuracyWarning(settings)
+
+    Row(
+        modifier =
+        Modifier
+            .fillMaxWidth()
+            .clickable(role = Role.Button, onClick = onOpen)
+            .padding(horizontal = 16.dp, vertical = 12.dp),
+        horizontalArrangement = Arrangement.spacedBy(12.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Column(modifier = Modifier.weight(1f)) {
+            Text(text = stringResource(R.string.accuracy_open))
+            Text(
+                text = warning ?: stringResource(R.string.accuracy_open_note),
+                style = MaterialTheme.typography.bodySmall,
+                color =
+                if (warning != null) {
+                    MaterialTheme.colorScheme.error
+                } else {
+                    MaterialTheme.colorScheme.onSurfaceVariant
+                },
+            )
+        }
+
+        Text(text = "\u203A", style = MaterialTheme.typography.titleLarge)
+    }
+}
+
+/**
+ * Jumps, the sources of a position, the satellite data and the downloads.
+ *
+ * Drawn over the settings it is opened from, like the device list, so that
+ * either way back is the settings screen.
+ */
+@Composable
+fun AccuracyScreen(
+    settings: SettingsState,
+    actions: SettingsActions,
+    onClose: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    Surface(modifier = modifier.fillMaxSize()) {
+        Column(
+            modifier =
+            Modifier
+                .windowInsetsPadding(WindowInsets.safeDrawing)
+                .verticalScroll(rememberScrollState()),
+        ) {
+            Row(
+                modifier = Modifier.fillMaxWidth().padding(start = 16.dp, top = 8.dp, end = 8.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Text(
+                    text = stringResource(R.string.accuracy_title),
+                    style = MaterialTheme.typography.titleLarge,
+                    modifier = Modifier.weight(1f),
+                )
+
+                TextButton(onClick = onClose) {
+                    Text(text = stringResource(R.string.accuracy_back))
+                }
+            }
+
+            HorizontalDivider()
+
+            JumpsSection(settings = settings, actions = actions)
+
+            HorizontalDivider()
+
+            SourcesSection(
+                leftOut = settings.sourcesLeftOut,
+                onSourceUseChange = actions.onSourceUseChange,
+            )
+
+            HorizontalDivider()
+
+            AidingSection(
+                doubted = settings.aidingDoubted,
+                onForgetAiding = actions.onForgetAiding,
+            )
+
+            HorizontalDivider()
+
+            DownloadsSection(
+                downloads = settings.downloads,
+                onDownloadNetworkChange = actions.onDownloadNetworkChange,
+            )
         }
     }
 }

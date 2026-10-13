@@ -4,6 +4,7 @@ import android.content.ClipboardManager
 import android.content.Context
 import androidx.annotation.StringRes
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -17,11 +18,13 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
@@ -29,6 +32,7 @@ import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -131,6 +135,32 @@ private fun AppMark() {
     }
 }
 
+/** The notice that stands in for the hint when the kept list of groups was damaged. */
+@Composable
+private fun UnreadableNotice() {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(12.dp))
+            .background(MaterialTheme.colorScheme.errorContainer)
+            .padding(horizontal = 12.dp, vertical = 10.dp),
+        horizontalArrangement = Arrangement.spacedBy(12.dp),
+        verticalAlignment = Alignment.Top,
+    ) {
+        Icon(
+            painter = painterResource(R.drawable.ic_warning),
+            contentDescription = null,
+            modifier = Modifier.size(18.dp),
+            tint = MaterialTheme.colorScheme.error,
+        )
+        Text(
+            text = stringResource(R.string.connect_unreadable_notice),
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onErrorContainer,
+        )
+    }
+}
+
 /**
  * Screen А: nothing offered yet, with [showError] for a paste that held no
  * link this project recognises ([ConnectState.NoLinkPasted]). A link the
@@ -158,27 +188,34 @@ private fun NotConnected(
 
     AppMark()
 
+    // A device that set its damaged list aside has no group for that reason
+    // alone; telling it apart from a fresh install keeps the person from
+    // wondering where their groups went.
+    val unreadable = onCancel == null && remember { Connections.unreadableListKept(context) }
+
     Text(
         text =
         stringResource(
-            if (onCancel ==
-                null
-            ) {
-                R.string.connect_not_connected_title
-            } else {
-                R.string.connect_join_title
+            when {
+                unreadable -> R.string.connect_unreadable_title
+                onCancel == null -> R.string.connect_not_connected_title
+                else -> R.string.connect_join_title
             },
         ),
         style = MaterialTheme.typography.headlineSmall,
         textAlign = TextAlign.Center,
     )
 
-    Text(
-        text = stringResource(R.string.connect_not_connected_hint),
-        style = MaterialTheme.typography.bodyMedium,
-        color = MaterialTheme.colorScheme.onSurfaceVariant,
-        textAlign = TextAlign.Center,
-    )
+    if (unreadable) {
+        UnreadableNotice()
+    } else {
+        Text(
+            text = stringResource(R.string.connect_not_connected_hint),
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            textAlign = TextAlign.Center,
+        )
+    }
 
     if (showError) {
         Text(

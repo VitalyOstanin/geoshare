@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- A triangle with an exclamation mark: marks a notice that something went wrong. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="24dp"
+    android:height="24dp"
+    android:viewportWidth="24"
+    android:viewportHeight="24"
+    android:tint="#FF000000">
+    <path
+        android:fillColor="#FF000000"
+        android:pathData="M12,3L2,21H22L12,3ZM13,18H11V16H13V18ZM13,14H11V10H13V14Z"
+        android:fillType="evenOdd" />
+</vector>

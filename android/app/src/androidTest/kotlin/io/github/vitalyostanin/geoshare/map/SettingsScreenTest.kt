@@ -35,10 +35,14 @@ class SettingsScreenTest {
 
     private val context = InstrumentationRegistry.getInstrumentation().targetContext
 
-    private fun show(onOpenLicences: () -> Unit = {}) {
+    private fun show(
+        settings: SettingsState = quietSettings(),
+        onOpenAccuracy: () -> Unit = {},
+        onOpenLicences: () -> Unit = {},
+    ) {
         composeRule.setContent {
             SettingsScreen(
-                settings = quietSettings(),
+                settings = settings,
                 actions = quietActions(),
                 profiles = emptyMap(),
                 ownMemberId = "member-a",
@@ -46,6 +50,7 @@ class SettingsScreenTest {
                 onClose = {},
                 onOpenAdmin = {},
                 onOpenMyPhones = {},
+                onOpenAccuracy = onOpenAccuracy,
                 onOpenLicences = onOpenLicences,
                 onLeaveGroup = null,
                 groupCaption = "",
@@ -53,6 +58,73 @@ class SettingsScreenTest {
                 removed = null,
             )
         }
+    }
+
+    @Test
+    fun mainScreenLeavesTheAccuracySectionsToTheirOwnScreen() {
+        show()
+
+        composeRule.onNodeWithText(context.getString(R.string.jumps_title)).assertDoesNotExist()
+        composeRule.onNodeWithText(context.getString(R.string.sources_title)).assertDoesNotExist()
+        composeRule.onNodeWithText(context.getString(R.string.downloads_title)).assertDoesNotExist()
+        composeRule.onNodeWithText(context.getString(R.string.settings_this_device)).assertExists()
+    }
+
+    @Test
+    fun accuracyRowOpensTheAccuracyScreen() {
+        var opened = 0
+        show(onOpenAccuracy = { opened++ })
+
+        composeRule
+            .onNodeWithText(context.getString(R.string.accuracy_open_note))
+            .performScrollTo()
+            .performClick()
+
+        assertTrue("the accuracy screen was not opened", opened == 1)
+    }
+
+    @Test
+    fun accuracyRowSaysWhatIsWrongInPlaceOfItsUsualNote() {
+        show(
+            settings =
+            quietSettings().copy(
+                downloads = DownloadState(allowed = emptySet(), waitingInRoaming = true),
+            ),
+        )
+
+        composeRule
+            .onNodeWithText(context.getString(R.string.downloads_waiting))
+            .performScrollTo()
+            .assertExists()
+        composeRule
+            .onNodeWithText(context.getString(R.string.accuracy_open_note))
+            .assertDoesNotExist()
+    }
+
+    @Test
+    fun accuracyScreenHoldsTheSectionsTakenOffTheMainScreen() {
+        composeRule.setContent {
+            AccuracyScreen(settings = quietSettings(), actions = quietActions(), onClose = {})
+        }
+
+        composeRule.onNodeWithText(context.getString(R.string.sources_title)).assertExists()
+        composeRule.onNodeWithText(context.getString(R.string.accuracy_back)).assertExists()
+    }
+
+    @Test
+    fun accuracyScreenBackButtonCloses() {
+        var closed = 0
+        composeRule.setContent {
+            AccuracyScreen(
+                settings = quietSettings(),
+                actions = quietActions(),
+                onClose = { closed++ },
+            )
+        }
+
+        composeRule.onNodeWithText(context.getString(R.string.accuracy_back)).performClick()
+
+        assertTrue("the screen was not closed", closed == 1)
     }
 
     @Test

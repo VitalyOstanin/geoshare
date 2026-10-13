@@ -128,6 +128,8 @@ internal fun MemberDetail(
     onNamePerson: (() -> Unit)?,
     /** Shows them this member's place for a span; null where the card does not offer it. */
     onShareBack: ((ShareSpan) -> Unit)? = null,
+    /** The reset and the siren of this device; null where the card does not offer them. */
+    reach: DeviceReach? = null,
     modifier: Modifier = Modifier,
 ) {
     val pull =
@@ -165,8 +167,13 @@ internal fun MemberDetail(
                 onNamePhone = onNamePhone,
                 onNamePerson = onNamePerson,
                 onShareBack = onShareBack,
+                reach = reach,
             )
         }
+    }
+
+    if (reach != null) {
+        DeviceReachDialogs(reach = reach, now = now)
     }
 }
 
@@ -186,6 +193,7 @@ private fun DetailBody(
     onNamePhone: () -> Unit,
     onNamePerson: (() -> Unit)?,
     onShareBack: ((ShareSpan) -> Unit)?,
+    reach: DeviceReach?,
 ) {
     Column(
         modifier =
@@ -205,7 +213,14 @@ private fun DetailBody(
             now = now,
             onNamePerson = onNamePerson,
             onNamePhone = onNamePhone,
+            reach = reach,
         )
+
+        // Under the row with the buttons they belong to, where the answer to
+        // pressing one is looked for.
+        if (reach != null) {
+            DeviceReachStatus(reach = reach, now = now)
+        }
 
         DetailSummary(member = member, away = away, now = now)
 
@@ -244,6 +259,7 @@ private fun DetailHeader(
     now: Instant,
     onNamePerson: (() -> Unit)?,
     onNamePhone: () -> Unit,
+    reach: DeviceReach?,
 ) {
     Row(verticalAlignment = Alignment.CenterVertically) {
         MemberFace(
@@ -270,6 +286,12 @@ private fun DetailHeader(
                 style = MaterialTheme.typography.bodyMedium,
                 onClick = onNamePhone,
             )
+        }
+
+        // Beside the names rather than on a row of their own: a card is short
+        // of rows, and the buttons are round and bare, as on the panels.
+        if (reach != null) {
+            DeviceReachButtons(reach = reach)
         }
     }
 }

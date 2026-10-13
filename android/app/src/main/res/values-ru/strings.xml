@@ -119,6 +119,11 @@
     <string name="licences_title">Лицензии</string>
     <string name="licences_intro">geoshare распространяется по лицензии MIT. В приложение входят библиотеки:</string>
     <string name="settings_close">Закрыть</string>
+    <string name="settings_this_device">Это устройство</string>
+    <string name="accuracy_open">Точность места</string>
+    <string name="accuracy_open_note">Скачки, источники, спутниковые данные, загрузки</string>
+    <string name="accuracy_title">Точность места</string>
+    <string name="accuracy_back">Назад</string>
     <string name="constellation_gps">GPS</string>
     <string name="constellation_glonass">ГЛОНАСС</string>
     <string name="constellation_galileo">Galileo</string>
@@ -486,6 +491,8 @@
          что раньше показывался вместо карты до подключения проекта. -->
     <string name="connect_not_connected_title">Приложение ещё не подключено.</string>
     <string name="connect_join_title">Вступить ещё в одну группу</string>
+    <string name="connect_unreadable_title">Список групп не прочитался</string>
+    <string name="connect_unreadable_notice">Сохранённый на устройстве список групп повреждён, поэтому приложение открылось как новое. Подключитесь к своей группе снова — по ссылке или QR-коду приглашения. Повреждённый список сохранён для разбора ошибки.</string>
     <string name="connect_not_connected_hint">Откройте ссылку подключения или наведите камеру на QR-код приглашения.</string>
     <string name="connect_paste_link">Вставить ссылку</string>
     <string name="connect_scan_qr">Сканировать QR-код</string>

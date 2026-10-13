@@ -248,6 +248,7 @@ fun MapScreen(
     // puts the member back where they were rather than on the map.
     var adminOpen by rememberSaveable { mutableStateOf(false) }
     var myPhonesOpen by rememberSaveable { mutableStateOf(false) }
+    var accuracyOpen by rememberSaveable { mutableStateOf(false) }
     var licencesOpen by rememberSaveable { mutableStateOf(false) }
     // The list of every member, over the map and the strip; saveable like the
     // panels, so that turning the device does not drop the member back on the map.
@@ -333,8 +334,12 @@ fun MapScreen(
     BackHandler(enabled = awaitingTarget) { awaitingTarget = false }
     BackHandler(enabled = adminOpen) { adminOpen = false }
     BackHandler(enabled = myPhonesOpen) { myPhonesOpen = false }
+    BackHandler(enabled = accuracyOpen) { accuracyOpen = false }
     BackHandler(enabled = licencesOpen) { licencesOpen = false }
-    BackHandler(enabled = settingsOpen && !adminOpen && !myPhonesOpen && !licencesOpen) {
+    BackHandler(
+        enabled =
+        settingsOpen && !adminOpen && !myPhonesOpen && !accuracyOpen && !licencesOpen,
+    ) {
         settingsOpen = false
     }
     BackHandler(enabled = !settingsOpen && (opened != null || group.isNotEmpty())) {
@@ -581,10 +586,37 @@ fun MapScreen(
 
             if (opened != null) {
                 val openedSearch = searches[opened.positionId]?.takeIf { it.stands(now) }
+                val openedName = people[opened.positionId] ?: shortName(opened.memberId)
+                val unnamedDevice = stringResource(R.string.unnamed_device)
+                val reach =
+                    if (offersReach(
+                            opened.positionId,
+                            opened.memberId,
+                            ownPhoneId,
+                            ownMemberId,
+                            runsTheGroup,
+                        )
+                    ) {
+                        rememberDeviceReach(
+                            phone =
+                            PhoneLine(
+                                phoneId = opened.positionId,
+                                name =
+                                opened.deviceName?.takeIf { it.isNotBlank() } ?: unnamedDevice,
+                                onlineAt = null,
+                                batteryPercent = null,
+                                charging = false,
+                            ),
+                            memberName = openedName,
+                            actions = actions,
+                        )
+                    } else {
+                        null
+                    }
 
                 MemberDetail(
                     member = opened,
-                    name = people[opened.positionId] ?: shortName(opened.memberId),
+                    name = openedName,
                     face = faces[opened.memberId],
                     now = now,
                     away = distanceFromViewer(opened, positions, ownMemberId, now),
@@ -619,6 +651,7 @@ fun MapScreen(
                                 now,
                             )
                         },
+                    reach = reach,
                     // Against the strip rather than floating over the map: the
                     // card is a sheet pulled up out of it, over the button of
                     // the member it is about.
@@ -698,6 +731,7 @@ fun MapScreen(
             onClose = { settingsOpen = false },
             onOpenAdmin = { adminOpen = true },
             onOpenMyPhones = { myPhonesOpen = true },
+            onOpenAccuracy = { accuracyOpen = true },
             onOpenLicences = { licencesOpen = true },
             // With one group there is no list to leave it from, so the
             // settings offer it; with more, the list does, for any of them.
@@ -724,6 +758,7 @@ fun MapScreen(
 
         OverTheSettings(
             myPhonesOpen = myPhonesOpen,
+            accuracyOpen = accuracyOpen,
             licencesOpen = licencesOpen,
             adminOpen = adminOpen,
             runsTheGroup = runsTheGroup,
@@ -738,6 +773,7 @@ fun MapScreen(
             seenAt = positions.associate { it.positionId to it.knownAt },
             groups = groups,
             onCloseMyPhones = { myPhonesOpen = false },
+            onCloseAccuracy = { accuracyOpen = false },
             onCloseLicences = { licencesOpen = false },
             onCloseAdmin = { adminOpen = false },
         )

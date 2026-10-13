@@ -74,4 +74,64 @@ class ConnectScreenTest {
             .onNodeWithText(context.getString(R.string.connect_from_link))
             .assertDoesNotExist()
     }
+
+    private fun showFirstScreen() {
+        composeRule.setContent {
+            ConnectScreen(
+                state = ConnectState.NotConnected,
+                onPasteLink = {},
+                onCancel = {},
+                onRetry = {},
+                onConnect = {},
+            )
+        }
+    }
+
+    // A set-aside list is the one thing the first screen has to explain.
+    @Test
+    fun aDamagedListIsSaidSoInsteadOfGreetingAsIfNew() {
+        val files = Connections.files(context)
+        // A mark left by an earlier run that joined would hide the notice.
+        files
+            .edit()
+            .putString(KEY_UNREADABLE_LIST, "{broken")
+            .remove(KEY_JOINED_AFTER_UNREADABLE)
+            .commit()
+
+        try {
+            showFirstScreen()
+
+            composeRule
+                .onNodeWithText(context.getString(R.string.connect_unreadable_title))
+                .assertExists()
+            composeRule
+                .onNodeWithText(context.getString(R.string.connect_unreadable_notice))
+                .assertExists()
+            composeRule
+                .onNodeWithText(context.getString(R.string.connect_not_connected_title))
+                .assertDoesNotExist()
+            composeRule
+                .onNodeWithText(context.getString(R.string.connect_not_connected_hint))
+                .assertDoesNotExist()
+            composeRule
+                .onNodeWithText(context.getString(R.string.connect_scan_qr))
+                .assertExists()
+        } finally {
+            files.edit().remove(KEY_UNREADABLE_LIST).commit()
+        }
+    }
+
+    @Test
+    fun withoutASetAsideListTheFirstScreenIsTheUsualOne() {
+        Connections.files(context).edit().remove(KEY_UNREADABLE_LIST).commit()
+
+        showFirstScreen()
+
+        composeRule
+            .onNodeWithText(context.getString(R.string.connect_not_connected_title))
+            .assertExists()
+        composeRule
+            .onNodeWithText(context.getString(R.string.connect_unreadable_title))
+            .assertDoesNotExist()
+    }
 }
