@@ -192,6 +192,8 @@ fun SettingsScreen(
     onOpenAccuracy: () -> Unit,
     /** The licences of the libraries inside the application. */
     onOpenLicences: () -> Unit,
+    /** The screen for telling what went wrong, with the log it would send. */
+    onOpenReport: () -> Unit,
     /** Leaving the group, offered here while it is the only one; null while the list offers it. */
     onLeaveGroup: (() -> Unit)?,
     /** What the group shown is called, for the question signing out asks. */
@@ -278,6 +280,10 @@ fun SettingsScreen(
             ) {
                 Text(text = stringResource(R.string.sign_out_action))
             }
+
+            HorizontalDivider()
+
+            ReportRow(onOpen = onOpenReport)
 
             HorizontalDivider()
 
@@ -371,6 +377,24 @@ private fun accuracyWarning(settings: SettingsState): String? {
     }
 
     return null
+}
+
+/** The way to the screen for reporting a problem. */
+@Composable
+private fun ReportRow(onOpen: () -> Unit) {
+    Row(
+        modifier =
+        Modifier
+            .fillMaxWidth()
+            .clickable(role = Role.Button, onClick = onOpen)
+            .padding(horizontal = 16.dp, vertical = 12.dp),
+        horizontalArrangement = Arrangement.spacedBy(12.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Text(text = stringResource(R.string.report_open), modifier = Modifier.weight(1f))
+
+        Text(text = "\u203A", style = MaterialTheme.typography.titleLarge)
+    }
 }
 
 /** The way to the position accuracy screen, in red while something there needs the member. */

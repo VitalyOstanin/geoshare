@@ -132,6 +132,12 @@
     <string name="accuracy_open_note">Jumps, sources, satellite data, downloads</string>
     <string name="accuracy_title">Position accuracy</string>
     <string name="accuracy_back">Back</string>
+    <string name="report_open">Report a problem</string>
+    <string name="report_title">Report a problem</string>
+    <string name="report_what_went_wrong">What went wrong</string>
+    <string name="report_what_is_sent">What is sent</string>
+    <string name="report_open_issue">Open issue</string>
+    <string name="report_share_log">Share the full log</string>
     <string name="licences_open">Open source licences</string>
     <string name="licences_title">Licences</string>
     <string name="licences_intro">geoshare is distributed under the MIT licence. It includes these libraries:</string>

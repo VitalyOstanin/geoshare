@@ -250,6 +250,7 @@ fun MapScreen(
     var myPhonesOpen by rememberSaveable { mutableStateOf(false) }
     var accuracyOpen by rememberSaveable { mutableStateOf(false) }
     var licencesOpen by rememberSaveable { mutableStateOf(false) }
+    var reportOpen by rememberSaveable { mutableStateOf(false) }
     // The list of every member, over the map and the strip; saveable like the
     // panels, so that turning the device does not drop the member back on the map.
     var membersOpen by rememberSaveable { mutableStateOf(false) }
@@ -336,9 +337,11 @@ fun MapScreen(
     BackHandler(enabled = myPhonesOpen) { myPhonesOpen = false }
     BackHandler(enabled = accuracyOpen) { accuracyOpen = false }
     BackHandler(enabled = licencesOpen) { licencesOpen = false }
+    BackHandler(enabled = reportOpen) { reportOpen = false }
     BackHandler(
         enabled =
-        settingsOpen && !adminOpen && !myPhonesOpen && !accuracyOpen && !licencesOpen,
+        settingsOpen && !adminOpen && !myPhonesOpen && !accuracyOpen &&
+            !licencesOpen && !reportOpen,
     ) {
         settingsOpen = false
     }
@@ -733,6 +736,7 @@ fun MapScreen(
             onOpenMyPhones = { myPhonesOpen = true },
             onOpenAccuracy = { accuracyOpen = true },
             onOpenLicences = { licencesOpen = true },
+            onOpenReport = { reportOpen = true },
             // With one group there is no list to leave it from, so the
             // settings offer it; with more, the list does, for any of them.
             onLeaveGroup =
@@ -760,6 +764,7 @@ fun MapScreen(
             myPhonesOpen = myPhonesOpen,
             accuracyOpen = accuracyOpen,
             licencesOpen = licencesOpen,
+            reportOpen = reportOpen,
             adminOpen = adminOpen,
             runsTheGroup = runsTheGroup,
             settings = settings,
@@ -775,6 +780,7 @@ fun MapScreen(
             onCloseMyPhones = { myPhonesOpen = false },
             onCloseAccuracy = { accuracyOpen = false },
             onCloseLicences = { licencesOpen = false },
+            onCloseReport = { reportOpen = false },
             onCloseAdmin = { adminOpen = false },
         )
     }

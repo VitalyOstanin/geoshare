@@ -83,6 +83,18 @@
             android:name="com.google.firebase.provider.FirebaseInitProvider"
             tools:node="remove" />
 
+        <!-- Hands the scrubbed log, written to the cache directory, to the
+             application the member shares it with; nothing else is exposed. -->
+        <provider
+            android:name="androidx.core.content.FileProvider"
+            android:authorities="${applicationId}.reports"
+            android:exported="false"
+            android:grantUriPermissions="true">
+            <meta-data
+                android:name="android.support.FILE_PROVIDER_PATHS"
+                android:resource="@xml/report_paths" />
+        </provider>
+
         <!-- Where the language a member picks inside the application is kept on
              a phone that has nowhere of its own to keep it: per-application
              languages are a setting of the system only from Android 13, and

@@ -12,6 +12,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
@@ -250,6 +251,7 @@ internal fun OverTheSettings(
     myPhonesOpen: Boolean,
     accuracyOpen: Boolean,
     licencesOpen: Boolean,
+    reportOpen: Boolean,
     adminOpen: Boolean,
     runsTheGroup: Boolean,
     settings: SettingsState,
@@ -265,8 +267,18 @@ internal fun OverTheSettings(
     onCloseMyPhones: () -> Unit,
     onCloseAccuracy: () -> Unit,
     onCloseLicences: () -> Unit,
+    onCloseReport: () -> Unit,
     onCloseAdmin: () -> Unit,
 ) {
+    if (reportOpen) {
+        val context = LocalContext.current
+
+        ReportScreen(
+            known = remember { knownToTheApplication(context, profiles, labels) },
+            onClose = onCloseReport,
+        )
+    }
+
     if (licencesOpen) {
         LicencesScreen(onClose = onCloseLicences)
     }

@@ -72,6 +72,13 @@ object AppLog {
         kept?.flush()
     }
 
+    /** The ordinary log as it stands, oldest line first; empty before [start]. */
+    fun read(): String {
+        file?.flush()
+
+        return file?.read().orEmpty()
+    }
+
     fun e(tag: String, message: String, error: Throwable? = null) {
         if (toSystemLog) {
             Log.e(tag, message, error)

@@ -39,6 +39,7 @@ class SettingsScreenTest {
         settings: SettingsState = quietSettings(),
         onOpenAccuracy: () -> Unit = {},
         onOpenLicences: () -> Unit = {},
+        onOpenReport: () -> Unit = {},
     ) {
         composeRule.setContent {
             SettingsScreen(
@@ -52,6 +53,7 @@ class SettingsScreenTest {
                 onOpenMyPhones = {},
                 onOpenAccuracy = onOpenAccuracy,
                 onOpenLicences = onOpenLicences,
+                onOpenReport = onOpenReport,
                 onLeaveGroup = null,
                 groupCaption = "",
                 severalGroups = false,
@@ -138,6 +140,22 @@ class SettingsScreenTest {
             .performClick()
 
         assertTrue("the licences were not opened", opened == 1)
+    }
+
+    // The row stands over the licences, so a member looking for the way to
+    // report a fault finds it before the fine print.
+    @Test
+    fun reportRowOpensTheReportScreen() {
+        var opened = 0
+        show(onOpenReport = { opened++ })
+
+        composeRule
+            .onNodeWithText(context.getString(R.string.report_open))
+            .performScrollTo()
+            .assertExists()
+            .performClick()
+
+        assertTrue("the report screen was not opened", opened == 1)
     }
 
     @Test

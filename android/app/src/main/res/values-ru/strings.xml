@@ -115,6 +115,12 @@
     <string name="phone_name_for_all">Это имя видят все, кому видно это устройство.</string>
     <string name="map_open_settings">Настройки</string>
     <string name="settings_title">Настройки</string>
+    <string name="report_open">Сообщить о проблеме</string>
+    <string name="report_title">Сообщить о проблеме</string>
+    <string name="report_what_went_wrong">Что пошло не так</string>
+    <string name="report_what_is_sent">Что отправляется</string>
+    <string name="report_open_issue">Открыть обращение</string>
+    <string name="report_share_log">Отправить весь журнал</string>
     <string name="licences_open">Лицензии открытого ПО</string>
     <string name="licences_title">Лицензии</string>
     <string name="licences_intro">geoshare распространяется по лицензии MIT. В приложение входят библиотеки:</string>
