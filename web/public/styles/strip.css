@@ -19,8 +19,8 @@
     background: var(--surface);
     color: var(--on-surface);
     border: 1px solid var(--edge);
-    border-radius: 0.75rem;
-    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.35);
+    border-radius: var(--radius-large);
+    box-shadow: var(--shadow-high);
     padding: 0.75rem 0.9rem;
 }
 
@@ -80,7 +80,7 @@
     min-width: 0;
     padding: 0.4rem 0.6rem;
     border: 1px solid var(--edge);
-    border-radius: 0.6rem;
+    border-radius: var(--radius-medium);
     background: transparent;
     color: inherit;
     font: inherit;
@@ -141,7 +141,7 @@
 .age,
 .battery {
     opacity: 0.7;
-    font-size: 0.85em;
+    font-size: var(--text-small);
 }
 
 /* An answer wide enough to be worth noticing, said in the colour of the number
@@ -173,7 +173,7 @@
 
 button {
     padding: 0.4rem 0.8rem;
-    border-radius: 0.6rem;
+    border-radius: var(--radius-medium);
     cursor: pointer;
 }
 
@@ -192,8 +192,8 @@ button {
     background: var(--surface);
     color: var(--on-surface);
     border: 1px solid var(--edge);
-    border-radius: 0.75rem;
-    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.28);
+    border-radius: var(--radius-large);
+    box-shadow: var(--shadow-high);
     pointer-events: none;
 }
 
@@ -234,6 +234,6 @@ button {
 }
 
 .strip-tip-device {
-    font-size: 0.9em;
+    font-size: var(--text-small);
     opacity: 0.75;
 }

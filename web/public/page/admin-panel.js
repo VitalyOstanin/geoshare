@@ -70,6 +70,7 @@ export function drawAdmin(running) {
 
     elements.adminTitle.textContent =
         groupCaption(state.roster, state.profiles, state.member.memberId);
+    elements.adminClose.title = WORDS.close;
     elements.adminClose.setAttribute('aria-label', WORDS.close);
     elements.adminHelp.title = WORDS.helpOpen;
     elements.adminHelp.setAttribute('aria-label', WORDS.helpOpen);

@@ -40,6 +40,17 @@
     --text-large: 1rem;
     --text-title: 1.375rem;
 
+    /* Corners and shadows, by what the element is rather than by the window
+       it happens to be in: a control, a window, a sheet over the map, and a
+       pill whose ends are round at any height. A shadow lifts either a
+       control off the map or a window over everything else. */
+    --radius-small: 0.4rem;
+    --radius-medium: 0.6rem;
+    --radius-large: 0.75rem;
+    --radius-pill: 999px;
+    --shadow-low: 0 1px 4px rgba(0, 0, 0, 0.3);
+    --shadow-high: 0 4px 16px rgba(0, 0, 0, 0.3);
+
     /* The same surfaces at night, named once and switched to in the two
        places below. A media query and an attribute cannot be asked for in one
        selector, so the switch is stated twice; the colours are not. */

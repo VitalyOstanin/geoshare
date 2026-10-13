@@ -8,7 +8,7 @@
     max-height: 80vh;
     overflow-y: auto;
     border: 1px solid var(--edge);
-    border-radius: 0.6rem;
+    border-radius: var(--radius-medium);
     padding: 1rem;
     background: var(--surface);
     color: var(--on-surface);
@@ -133,7 +133,7 @@
 
 #admin-buttons button {
     border: 1px solid var(--edge);
-    border-radius: 0.4rem;
+    border-radius: var(--radius-small);
     padding: 0.3rem 0.6rem;
     background: transparent;
     color: var(--link);
@@ -176,7 +176,7 @@
 
 #admin-invitation-buttons button {
     border: 1px solid var(--edge);
-    border-radius: 0.4rem;
+    border-radius: var(--radius-small);
     padding: 0.3rem 0.6rem;
     background: transparent;
     color: var(--link);
@@ -216,7 +216,7 @@
     width: 100%;
     padding: 0.35rem 0.5rem;
     border: 1px solid var(--edge);
-    border-radius: 0.4rem;
+    border-radius: var(--radius-small);
     background: transparent;
     color: inherit;
     font: inherit;
@@ -235,7 +235,7 @@
     margin-top: 0.6rem;
     padding: 0.35rem 0.5rem;
     border: 1px solid var(--edge);
-    border-radius: 0.4rem;
+    border-radius: var(--radius-small);
     background: transparent;
     color: inherit;
     font: inherit;
@@ -254,7 +254,7 @@
     margin-top: 0.6rem;
     padding: 0.35rem 0.5rem;
     border: 1px solid var(--edge);
-    border-radius: 0.4rem;
+    border-radius: var(--radius-small);
     background: transparent;
     color: inherit;
     font: inherit;
@@ -277,7 +277,7 @@
 #rename-buttons button,
 #invite-buttons button {
     border: 1px solid var(--edge);
-    border-radius: 0.4rem;
+    border-radius: var(--radius-small);
     padding: 0.3rem 0.6rem;
     background: transparent;
     color: var(--link);

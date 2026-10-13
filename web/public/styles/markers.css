@@ -16,8 +16,8 @@
 
 .member-label {
     background: var(--surface);
-    border-radius: 0.5rem;
-    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.3);
+    border-radius: var(--radius-small);
+    box-shadow: var(--shadow-low);
     color: var(--on-surface);
     font-size: 0.8125rem;
     font-weight: 600;
@@ -58,11 +58,11 @@
     /* A capsule rather than a circle: widened to hold several faces it keeps
        the round ends, where an oval would flatten. At the width of a single
        face the two are the same shape. */
-    border-radius: 999px;
+    border-radius: var(--radius-pill);
     background: var(--pin, #1e88e5);
     /* The white edge is what keeps the pin visible over a dark road or a
        green park. */
-    box-shadow: 0 0 0 2px #ffffff, 0 1px 4px rgba(0, 0, 0, 0.35);
+    box-shadow: 0 0 0 2px #ffffff, var(--shadow-low);
 }
 
 /* The point reaches eight pixels up into the head, so that the two read as
@@ -177,5 +177,5 @@
 .group-back:focus-visible {
     outline: 2px solid var(--link);
     outline-offset: 2px;
-    border-radius: 0.3rem;
+    border-radius: var(--radius-small);
 }

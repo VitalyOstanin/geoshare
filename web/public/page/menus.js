@@ -305,7 +305,8 @@ function sayMarkup() {
     elements.languageLabel.textContent = WORDS.language;
     elements.settingsButton.textContent = WORDS.settings;
     elements.settingsTitle.textContent = WORDS.settings;
-    elements.settingsClose.textContent = WORDS.close;
+    elements.settingsClose.title = WORDS.close;
+    elements.settingsClose.setAttribute('aria-label', WORDS.close);
     elements.mapHelp.title = WORDS.helpOpen;
     elements.mapHelp.setAttribute('aria-label', WORDS.helpOpen);
     // The group section says its own words, since what stands there depends on

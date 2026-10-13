@@ -10,10 +10,10 @@
     overflow-y: auto;
     box-sizing: border-box;
     padding: 0.75rem;
-    border-radius: 0.75rem;
+    border-radius: var(--radius-large);
     border: 1px solid var(--edge);
     background: canvas;
-    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+    box-shadow: var(--shadow-high);
     display: grid;
     gap: 0.6rem;
     font-size: var(--text-large);
@@ -69,7 +69,7 @@
     justify-self: start;
     padding: 0.45rem 1rem;
     border: 1px solid var(--edge);
-    border-radius: 0.6rem;
+    border-radius: var(--radius-medium);
 }
 
 /* Away from the text and large enough to hit on a device. */
@@ -172,7 +172,7 @@
 .choice {
     display: flex;
     border: 1px solid var(--edge);
-    border-radius: 0.6rem;
+    border-radius: var(--radius-medium);
     overflow: hidden;
 }
 
@@ -227,17 +227,6 @@
     font-size: var(--text-title);
 }
 
-#settings-close {
-    display: block;
-    margin: 0.9rem 0 0 auto;
-    padding: 0.35rem 0.25rem;
-    border: none;
-    background: transparent;
-    color: var(--link);
-    font: inherit;
-    cursor: pointer;
-}
-
 /* The group, which is the one part of the menu whose height is not known in
    advance: a roster of five and a roster of one are both ordinary. */
 .group-member {
@@ -280,7 +269,7 @@
     min-width: 0;
     padding: 0.25rem 0.35rem;
     border: 1px solid var(--edge);
-    border-radius: 0.4rem;
+    border-radius: var(--radius-small);
     background: canvas;
     color: inherit;
     font: inherit;
@@ -295,7 +284,7 @@
     margin-top: 0.3rem;
     padding: 0.25rem 0.35rem;
     border: 1px solid var(--edge);
-    border-radius: 0.4rem;
+    border-radius: var(--radius-small);
     background: canvas;
     color: inherit;
     font: inherit;

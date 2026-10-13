@@ -118,6 +118,8 @@ function drawPhones() {
     const standing = standingSearches(state.searches, now);
 
     elements.phonesTitle.textContent = WORDS.myPhonesTitle;
+    elements.phonesClose.title = WORDS.close;
+    elements.phonesClose.setAttribute('aria-label', WORDS.close);
     elements.phonesHelp.title = WORDS.helpOpen;
     elements.phonesHelp.setAttribute('aria-label', WORDS.helpOpen);
 

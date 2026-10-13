@@ -152,7 +152,7 @@
     position: relative;
     max-width: min(36rem, 92vw);
     border: 1px solid var(--edge);
-    border-radius: 0.6rem;
+    border-radius: var(--radius-medium);
     padding: 1rem;
     background: var(--surface);
     color: var(--on-surface);

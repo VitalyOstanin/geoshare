@@ -23,7 +23,7 @@
 .sought-mark {
     background: var(--alarm);
     color: var(--on-alarm);
-    border-radius: 999px;
+    border-radius: var(--radius-pill);
     font-size: var(--text-small);
     font-weight: 700;
     padding: 0.05rem 0.5rem;
@@ -37,7 +37,7 @@
     box-shadow:
         0 0 0 2px #ffffff,
         0 0 0 5px var(--alarm),
-        0 1px 4px rgba(0, 0, 0, 0.35);
+        var(--shadow-low);
 }
 
 /* The end of the search is a third line of the entry, under the age and the
@@ -49,7 +49,7 @@
 
 .sought-until {
     color: var(--alarm);
-    font-size: 0.8em;
+    font-size: var(--text-small);
     font-weight: 600;
 }
 
@@ -66,7 +66,7 @@
     padding: 0.35rem 0.5rem;
     border-left: 4px solid var(--alarm);
     background: var(--alarm-soft);
-    border-radius: 0.3rem;
+    border-radius: var(--radius-small);
     font-size: var(--text-body);
 }
 
@@ -76,7 +76,7 @@
 
 button.alarm-fill {
     border: 1px solid var(--alarm);
-    border-radius: 0.4rem;
+    border-radius: var(--radius-small);
     padding: 0.3rem 0.7rem;
     background: var(--alarm);
     color: var(--on-alarm);
@@ -90,7 +90,7 @@ button.alarm-fill {
    read as buttons beside the round siren rather than as words. */
 .admin-member button.alarm {
     border: 1px solid var(--alarm);
-    border-radius: 0.4rem;
+    border-radius: var(--radius-small);
     padding: 0.3rem 0.7rem;
     background: transparent;
     color: var(--alarm);
@@ -167,7 +167,7 @@ button.alarm-fill {
     align-items: center;
     gap: 0.3rem;
     border: 1px solid var(--alarm);
-    border-radius: 0.4rem;
+    border-radius: var(--radius-small);
     padding: 0.3rem 0.7rem;
     background: var(--alarm);
     color: var(--on-alarm);
@@ -206,7 +206,7 @@ button.alarm-fill {
     padding: 0.5rem 0.6rem;
     border-left: 4px solid var(--alarm);
     background: var(--alarm-soft);
-    border-radius: 0.3rem;
+    border-radius: var(--radius-small);
     font-size: var(--text-body);
 }
 
@@ -224,7 +224,7 @@ button.alarm-fill {
 #confirm-buttons button:not(.alarm),
 #siren-buttons button:not(.alarm) {
     border: 1px solid var(--edge);
-    border-radius: 0.4rem;
+    border-radius: var(--radius-small);
     padding: 0.3rem 0.7rem;
     background: transparent;
     color: var(--link);
@@ -261,7 +261,7 @@ button.alarm-fill {
 #confirm-buttons button.alarm,
 #siren-buttons button.alarm {
     border: 1px solid var(--alarm);
-    border-radius: 0.4rem;
+    border-radius: var(--radius-small);
     padding: 0.3rem 0.7rem;
     background: var(--alarm);
     color: var(--on-alarm);
@@ -302,13 +302,13 @@ button.alarm-fill {
     gap: 0.3rem;
     padding: 0.6rem 0.8rem;
     border-left: 4px solid var(--alarm);
-    border-radius: 0.6rem;
+    border-radius: var(--radius-medium);
     /* Filled as well as edged, where a warning is only edged: a search shown
        beside the lost connection has to be the louder of the two. The night
        fill lets the map through, so it lies over the surface. */
     background: linear-gradient(var(--alarm-soft), var(--alarm-soft)), var(--surface);
     color: var(--on-surface);
-    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.25);
+    box-shadow: var(--shadow-high);
     font-size: var(--text-body);
 }
 
@@ -358,10 +358,10 @@ button.alarm-fill {
     gap: 0.2rem;
     padding: 0.6rem 0.8rem;
     border-left: 4px solid var(--wide);
-    border-radius: 0.6rem;
+    border-radius: var(--radius-medium);
     background: var(--surface);
     color: var(--on-surface);
-    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.25);
+    box-shadow: var(--shadow-high);
     font-size: var(--text-body);
 }
 

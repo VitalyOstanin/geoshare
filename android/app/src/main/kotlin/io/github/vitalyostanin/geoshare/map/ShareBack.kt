@@ -56,7 +56,7 @@ internal fun ShareBackLine(
     var open by remember { mutableStateOf(false) }
 
     Surface(
-        shape = RoundedCornerShape(10.dp),
+        shape = RoundedCornerShape(8.dp),
         border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
         modifier = modifier.fillMaxWidth().padding(top = 8.dp, end = 8.dp),
     ) {
