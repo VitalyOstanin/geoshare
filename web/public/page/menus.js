@@ -53,7 +53,16 @@ signInReturned().catch((error) => {
     elements.signInError.textContent = signInTrouble(error);
 });
 
-elements.signOutButton.addEventListener('click', () => leave());
+elements.signOutButton.addEventListener('click', async () => {
+    // The claim to be watching is taken back first: once signed out, the rules
+    // refuse this page the delete, and every device would stay in its
+    // fifteen-second mode until the claim went stale. The withdrawal settles
+    // either way, so a refused one does not keep the account signed in.
+    const withdrawn = state.stopWatching?.();
+    state.stopWatching = null;
+    await withdrawn;
+    await leave();
+});
 
 // How long the name of a newly chosen mode stands beside its mark.
 export const FOLLOW_ANNOUNCE_MS = 2500;
