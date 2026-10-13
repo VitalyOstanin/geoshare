@@ -17,7 +17,7 @@
 // address and starts.
 import { Map as MapLibre, Marker, NavigationControl } from './vendor/maplibre-gl-6.9.0/maplibre-gl.mjs';
 
-import { STALE_COLOUR, memberColour } from './members.js';
+import { STALE_COLOUR, freshestOf, memberColour } from './members.js';
 import { showFace } from './faces.js';
 
 import { isGrey } from './false-places.js';
@@ -870,7 +870,8 @@ function wrapDegrees(degrees) {
 }
 
 /**
- * Opens the map on the first position to arrive, once.
+ * Opens the map on the viewer's own freshest position once one arrives, or on
+ * the first position of anyone when the viewer has none.
  *
  * After that the viewer is in charge of what they are looking at, and a list
  * that updates every few seconds must not drag the view back.
@@ -880,7 +881,7 @@ export function centreOnce(view, positions, ownMemberId) {
         return;
     }
 
-    const start = positions.find((position) => position.memberId === ownMemberId) ?? positions[0];
+    const start = freshestOf(positions, ownMemberId) ?? positions[0];
 
     if (!start) {
         return;

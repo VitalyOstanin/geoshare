@@ -62,5 +62,15 @@ fun memberName(
     unnamed: String? = null,
 ): String = if (own) ownName else profile?.displayName ?: unnamed ?: shortName(memberId)
 
+/**
+ * Where the map opens: the viewer's own device last heard from, rather than an
+ * old phone left at home that happens to come first; anyone's position when
+ * the viewer has none on the map.
+ */
+fun openingPosition(members: List<MemberPosition>, ownMemberId: String): MemberPosition? = members
+    .filter { it.memberId == ownMemberId }
+    .maxByOrNull { it.knownAt }
+    ?: members.firstOrNull()
+
 private const val SHORT_ID_LENGTH = 6
 private const val ID_TAIL_LENGTH = 4

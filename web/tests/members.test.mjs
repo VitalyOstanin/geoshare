@@ -3,6 +3,7 @@ import { test } from 'node:test';
 
 import {
     colourIndex,
+    freshestOf,
     memberInitial,
     memberName,
     orderedForNavigation,
@@ -173,4 +174,15 @@ test('an account without a name goes by its shortened address', () => {
 test('an account with neither has nothing to say', () => {
     assert.equal(profileName(null, null), null);
     assert.equal(profileName('', ' '), null);
+});
+
+test('the freshest position of a member is the one last heard from', () => {
+    const positions = [
+        { memberId: 'anna', positionId: 'anna.old', knownAt: 1000 },
+        { memberId: 'mark', positionId: 'mark.s24', knownAt: 9000 },
+        { memberId: 'anna', positionId: 'anna.new', knownAt: 5000 },
+    ];
+
+    assert.equal(freshestOf(positions, 'anna').positionId, 'anna.new');
+    assert.equal(freshestOf(positions, 'leo'), null);
 });

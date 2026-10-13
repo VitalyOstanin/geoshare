@@ -5,18 +5,21 @@ import org.junit.Test
 import java.time.Instant
 
 class MemberOrderTest {
-    private fun positionOf(memberId: String, device: String = "phone"): MemberPosition =
-        MemberPosition(
-            positionId = "$memberId.$device",
-            memberId = memberId,
-            deviceName = null,
-            latitude = 61.0,
-            longitude = 4.0,
-            takenAt = Instant.parse("2026-09-11T12:00:00Z"),
-            writtenAt = null,
-            mode = null,
-            batteryPercent = null,
-        )
+    private fun positionOf(
+        memberId: String,
+        device: String = "phone",
+        takenAt: Instant = Instant.parse("2026-09-11T12:00:00Z"),
+    ): MemberPosition = MemberPosition(
+        positionId = "$memberId.$device",
+        memberId = memberId,
+        deviceName = null,
+        latitude = 61.0,
+        longitude = 4.0,
+        takenAt = takenAt,
+        writtenAt = null,
+        mode = null,
+        batteryPercent = null,
+    )
 
     private fun idsOf(order: List<MemberPosition>): List<String> = order.map { it.memberId }
 
@@ -136,5 +139,16 @@ class MemberOrderTest {
     fun `a longer roster keeps the button for the rest`() {
         assertEquals(2, membersOnTheStrip(4))
         assertEquals(2, membersOnTheStrip(9))
+    }
+
+    @Test
+    fun `the map opens on our own device last heard from`() {
+        val old = positionOf("me", "old", Instant.parse("2026-09-11T11:00:00Z"))
+        val new = positionOf("me", "new", Instant.parse("2026-09-11T12:00:00Z"))
+        val members = listOf(positionOf("her"), old, new)
+
+        assertEquals("me.new", openingPosition(members, ownMemberId = "me")?.positionId)
+        assertEquals("her.phone", openingPosition(listOf(positionOf("her")), "me")?.positionId)
+        assertEquals(null, openingPosition(emptyList(), "me"))
     }
 }

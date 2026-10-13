@@ -10,7 +10,7 @@ import {
 } from '../lib/join.js';
 import { outsideTheBox } from '../lib/outside-the-box.js';
 import { lookAt } from '../lib/map.js';
-import { memberName } from '../lib/members.js';
+import { freshestOf, memberName } from '../lib/members.js';
 import { standingSearches } from '../lib/searches.js';
 import { sirenState, sirenTold } from '../lib/sirens.js';
 import { WORDS } from '../lib/words.js';
@@ -413,21 +413,9 @@ function memberRow(memberId) {
     return row;
 }
 
-/**
- * The position a member was last heard from at, of all their devices: the one
- * a viewer asking for them by name most likely means.
- */
+/** The freshest position of a member, looked up in what the page holds now. */
 function freshestPositionOf(memberId) {
-    let freshest = null;
-
-    for (const position of state.positions) {
-        if (position.memberId === memberId
-            && (freshest === null || position.knownAt > freshest.knownAt)) {
-            freshest = position;
-        }
-    }
-
-    return freshest;
+    return freshestOf(state.positions, memberId);
 }
 
 /**

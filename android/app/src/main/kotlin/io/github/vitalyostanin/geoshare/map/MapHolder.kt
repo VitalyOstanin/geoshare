@@ -596,8 +596,7 @@ internal class MapHolder(val view: MapView) {
             return
         }
 
-        val start =
-            members.firstOrNull { it.memberId == ownMemberId } ?: members.firstOrNull() ?: return
+        val start = openingPosition(members, ownMemberId) ?: return
 
         centred = true
 

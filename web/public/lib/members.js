@@ -29,6 +29,24 @@ export function orderedForNavigation(positions, ownMemberId) {
     });
 }
 
+/**
+ * The position a member was last heard from at, of all their devices: the one
+ * a viewer asking for them by name most likely means, and the one to open the
+ * map on rather than an old phone left at home. Null when there is none.
+ */
+export function freshestOf(positions, memberId) {
+    let freshest = null;
+
+    for (const position of positions) {
+        if (position.memberId === memberId
+            && (freshest === null || position.knownAt > freshest.knownAt)) {
+            freshest = position;
+        }
+    }
+
+    return freshest;
+}
+
 /** The colours members are told apart by, the same five the Android screen uses. */
 const MEMBER_COLOURS = ['#1e88e5', '#43a047', '#e53935', '#8e24aa', '#f9a825'];
 
