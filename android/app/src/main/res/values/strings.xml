@@ -393,7 +393,7 @@
     <string name="map_watching">Map open: %1$s</string>
 
     <string name="map_more">More</string>
-    <string name="map_more_title">Other members</string>
+    <string name="map_more_title">More on the map</string>
     <!-- The round button over the map and the title of the screen it opens:
          every member of the group in one list, the strip's own few included. -->
     <string name="map_members">Members</string>

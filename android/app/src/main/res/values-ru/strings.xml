@@ -349,7 +349,7 @@
     <string name="map_watching">Карту смотрят: %1$s</string>
 
     <string name="map_more">Ещё</string>
-    <string name="map_more_title">Остальные участники</string>
+    <string name="map_more_title">Ещё на карте</string>
     <string name="map_members">Участники</string>
     <string name="map_members_close">Назад к карте</string>
 
