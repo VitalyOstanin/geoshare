@@ -14,7 +14,7 @@ import {
     setDoc,
     updateDoc,
     writeBatch,
-} from 'https://www.gstatic.com/firebasejs/12.19.0/firebase-firestore.js';
+} from './vendor/firebase-12.19.0/firebase-firestore.js';
 import { pictureAddress, profileName } from './members.js';
 import { combinedGrants, phonesOf } from './phones.js';
 import {

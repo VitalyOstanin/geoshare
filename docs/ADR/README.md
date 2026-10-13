@@ -42,3 +42,4 @@ date is the decision's.
 | 0032 | [An invitation is scanned with CameraX and zxing](0032-scanning-an-invitation-with-camerax-and-zxing.md)               | Accepted                            | 2026-10-05 |
 | 0033 | [A setup page finishes the group's project](0033-a-setup-page-finishes-the-project.md)                                 | Accepted                            | 2026-10-05 |
 | 0034 | [The published key's fingerprints are listed in the repository](0034-the-published-key-is-listed-in-the-repository.md) | Accepted                            | 2026-10-06 |
+| 0035 | [The page serves its libraries itself, one directory per version](0035-the-page-serves-its-libraries-itself.md)        | Accepted                            | 2026-10-13 |

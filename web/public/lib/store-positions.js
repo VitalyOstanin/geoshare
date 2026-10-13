@@ -3,7 +3,7 @@
 // whose `store`, `currentGroup` and `RETRY_AFTER_MS` this imports rather than
 // keeping its own copies.
 
-import { doc, onSnapshot } from 'https://www.gstatic.com/firebasejs/12.19.0/firebase-firestore.js';
+import { doc, onSnapshot } from './vendor/firebase-12.19.0/firebase-firestore.js';
 import { positionMoments } from './age.js';
 import { currentGroup, refusals, store } from './store.js';
 import { memberIdOf } from './phones.js';

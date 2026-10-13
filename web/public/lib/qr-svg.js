@@ -1,6 +1,6 @@
 // The QR code of a link, drawn as SVG elements rather than markup.
 
-import encodeQR from './vendor/qr.mjs';
+import encodeQR from './vendor/qr-0.7.2/qr.mjs';
 
 const SVG = 'http://www.w3.org/2000/svg';
 

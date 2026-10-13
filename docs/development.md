@@ -72,8 +72,14 @@ publishing run the Firebase command line on the machine itself, and need
 
 The rest of `tools/` — `project.sh`, `web-config.sh`, `setup-site.sh`,
 `read-cost.sh`, `device-log.sh`, `device-sky.sh`, `siren-sound.sh`,
-`signing.sh` — says
+`signing.sh`, `vendor-web.sh` — says
 what it does and how to call it at the top of each file.
+
+The page serves Firebase, MapLibre GL JS and the QR encoder itself, from
+`web/public/lib/vendor/<package>-<version>/` (ADR-0035). Their versions are
+pinned in `web/package.json`, where Dependabot raises them; the page's tests
+then fail until `tools/vendor-web.sh` has copied the new versions in and
+`lib/vendor` is committed with the bump.
 
 `VARIANT=release tools/build.sh` makes the unsigned release package;
 `tools/sign-release.sh` signs it where the key is kept and refuses a key whose

@@ -7,5 +7,10 @@
     "scripts": {
         "test": "node --test --test-concurrency=4 --test-timeout=30000 tests/*.test.mjs",
         "coverage": "node --test --test-concurrency=4 --test-timeout=30000 --experimental-test-coverage --test-coverage-include='public/**' --test-coverage-exclude='public/lib/vendor/**' tests/*.test.mjs"
+    },
+    "devDependencies": {
+        "firebase": "12.19.0",
+        "maplibre-gl": "6.9.0",
+        "qr": "0.7.2"
     }
 }
