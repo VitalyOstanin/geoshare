@@ -321,6 +321,18 @@ export const EN = {
     phoneRemove: 'Remove device',
     helpOpen: 'Help',
     helpClose: 'Got it',
+    reportOpen: 'Report a problem',
+    reportTitle: 'Report a problem',
+    reportWhat: 'What went wrong',
+    reportSent: "What goes into the issue: the page's recent warnings and errors, with addresses, names, ids and the group's site left out",
+    reportEmpty: 'The page has logged nothing since it was opened.',
+    reportOpenIssue: 'Open issue',
+    reportCopyLog: 'Copy the log',
+    reportCopied: 'Copied',
+    reportClose: 'Close',
+    reportWarning:
+        'Issues on GitHub are public. The issue opens on GitHub filled in, and is posted only when you submit it there. ' +
+        'Add nothing private: no addresses, names, places, invitation links or the group\'s site.',
     helpTitleScreen: 'Buttons on this screen',
     helpTitleMap: 'Buttons on the map',
     helpSiren: 'Siren for 22 seconds: the device sounds loud, even with its sound off, so that it can be found',

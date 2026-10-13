@@ -29,6 +29,7 @@ import { FULL_SCREEN, showFollowMenu, showFullScreen, showMenu } from './page/me
 import { drawGroup } from './page/group-panel.js';
 import { closeAdmin } from './page/admin-panel.js';
 import { askName, closeNaming } from './page/dialogs.js';
+import './page/report-ui.js';
 import { closeSearch, drawSearchAsk, drawSought, searchesChanged, soughtLine } from './page/search-ui.js';
 import { deviceActions } from './page/card-actions.js';
 import { drawSirenAsk } from './page/siren-ui.js';

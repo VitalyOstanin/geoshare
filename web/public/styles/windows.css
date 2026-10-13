@@ -83,3 +83,76 @@
     font-weight: 600;
     cursor: pointer;
 }
+
+/* The report sits at the left of the help's buttons, apart from closing it. */
+#help-buttons {
+    gap: 0.3rem;
+}
+
+#help-report {
+    margin-right: auto;
+}
+
+/* Reporting a problem: what is written, what goes, and the way out. */
+#report label,
+#report-sent-label {
+    display: block;
+    margin: 0.5rem 0 0.3rem;
+    font-size: var(--text-small);
+    opacity: 0.8;
+}
+
+#report-what {
+    box-sizing: border-box;
+    width: 100%;
+    padding: 0.35rem 0.5rem;
+    border: 1px solid var(--edge);
+    border-radius: var(--radius-small);
+    background: transparent;
+    color: inherit;
+    font: inherit;
+    resize: vertical;
+}
+
+#report-tail {
+    max-height: 10rem;
+    overflow: auto;
+    margin: 0;
+    padding: 0.4rem 0.5rem;
+    border: 1px solid var(--edge);
+    border-radius: var(--radius-small);
+    font-size: var(--text-small);
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+}
+
+#report-warning {
+    margin: 0.5rem 0 0;
+    font-size: var(--text-small);
+    color: var(--error);
+}
+
+#report-buttons {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+    gap: 0.3rem;
+    margin-top: 0.6rem;
+}
+
+#report-buttons a,
+#report-buttons button {
+    border: 1px solid var(--edge);
+    border-radius: var(--radius-small);
+    padding: 0.3rem 0.6rem;
+    background: transparent;
+    color: var(--link);
+    font: inherit;
+    font-size: var(--text-small);
+    text-decoration: none;
+    cursor: pointer;
+}
+
+#report-buttons button[hidden] {
+    display: none;
+}

@@ -339,7 +339,25 @@
             <h2 id="help-title"></h2>
             <div id="help-list"></div>
             <div id="help-buttons">
+                <button id="help-report" type="button"></button>
                 <button id="help-close" type="button"></button>
+            </div>
+        </dialog>
+
+        <!-- A problem reported from the page: what the viewer writes and the
+             tail of the page's log, carried by the address of GitHub's own
+             form for a new issue. Nothing is sent from the page itself. -->
+        <dialog id="report" class="admin naming">
+            <h2 id="report-title"></h2>
+            <label id="report-what-label" for="report-what"></label>
+            <textarea id="report-what" rows="3" maxlength="600"></textarea>
+            <p id="report-sent-label"></p>
+            <pre id="report-tail"></pre>
+            <p id="report-warning"></p>
+            <div id="report-buttons">
+                <a id="report-open" target="_blank" rel="noopener"></a>
+                <button id="report-copy" type="button"></button>
+                <button id="report-close" type="button"></button>
             </div>
         </dialog>
 

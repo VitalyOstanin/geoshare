@@ -9,6 +9,7 @@
 
 import { browserOf, faultOf } from './fault.js';
 import { spokenLanguage } from './language.js';
+import { keepConsole, noteInLog } from './page-log.js';
 import { PAGE_VERSION } from './version.js';
 
 export const NEW_ISSUE = 'https://github.com/VitalyOstanin/geoshare/issues/new';
@@ -168,6 +169,7 @@ export function catchUnexpected(target = globalThis) {
     const language = spokenLanguage();
     const words = WORDS[language] ?? WORDS.en;
     const report = (fault) => {
+        noteInLog(fault.kind, [fault.message, ...(fault.place ? [fault.place] : [])]);
         show(words, detailsText(fault, words, { agent: navigator.userAgent, language }));
     };
 
@@ -186,5 +188,6 @@ export function catchUnexpected(target = globalThis) {
 }
 
 if (globalThis.document) {
+    keepConsole();
     catchUnexpected();
 }
