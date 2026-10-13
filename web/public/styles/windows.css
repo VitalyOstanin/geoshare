@@ -40,8 +40,8 @@
 }
 
 .help-look.alarm {
-    border-color: var(--alarm);
-    color: var(--alarm);
+    border-color: var(--alarm-text);
+    color: var(--alarm-text);
 }
 
 .help-look.filled {
