@@ -43,14 +43,14 @@ class LicencesScreenTest {
         composeRule.setContent { LicencesScreen(onClose = {}) }
         val mapLibre = hasText("MapLibre", substring = true, ignoreCase = true)
 
-        // The list is read off the main thread.
+        // The list is read off the main thread, and the scrolling container
+        // stands before its rows do: waiting for the container alone let the
+        // search run over an empty list.
         composeRule.waitUntil(timeoutMillis = 10_000) {
-            composeRule
-                .onAllNodes(hasScrollToNodeAction())
-                .fetchSemanticsNodes()
-                .isNotEmpty()
+            runCatching {
+                composeRule.onNode(hasScrollToNodeAction()).performScrollToNode(mapLibre)
+            }.isSuccess
         }
-        composeRule.onNode(hasScrollToNodeAction()).performScrollToNode(mapLibre)
         composeRule.onAllNodes(mapLibre)[0].performClick()
 
         // A phrase of the licence itself: the label under the name says BSD
