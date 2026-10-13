@@ -1,0 +1,113 @@
+/* A failure nothing on the page caught, told over everything else: the same
+   family as the banners of a silent database and of a search, edged in the
+   colour of an error. Every page loads it; the map's buttons stay clear. */
+.unexpected {
+    position: fixed;
+    top: 3.6rem;
+    left: 0.6rem;
+    right: 0.6rem;
+    z-index: 20;
+    max-width: 28rem;
+    max-height: calc(100% - 4.8rem);
+    overflow-y: auto;
+    margin: 0 auto;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.35rem;
+    padding: 0.6rem 0.8rem;
+    border-left: 4px solid var(--error);
+    border-radius: var(--radius-medium);
+    background: var(--surface);
+    color: var(--on-surface);
+    box-shadow: var(--shadow-high);
+    font-size: var(--text-body);
+}
+
+.unexpected-head {
+    align-self: stretch;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.unexpected-head b {
+    flex: 1;
+}
+
+/* Every page draws its buttons its own way, so these say all of theirs. */
+.unexpected-reload,
+.unexpected-copy {
+    padding: 0.25rem 0.6rem;
+    border: 1px solid var(--edge);
+    border-radius: var(--radius-small);
+    background: transparent;
+    color: inherit;
+    font: inherit;
+    font-size: var(--text-small);
+    cursor: pointer;
+}
+
+.unexpected-reload {
+    border-color: transparent;
+    background: var(--link);
+    color: var(--on-link);
+}
+
+.unexpected-close {
+    padding: 0 0.2rem;
+    border: 0;
+    background: none;
+    color: inherit;
+    font-size: 1.2rem;
+    line-height: 1;
+    opacity: 0.7;
+    cursor: pointer;
+}
+
+.unexpected-more {
+    padding: 0;
+    border: 0;
+    background: none;
+    color: var(--link);
+    font: inherit;
+    font-size: var(--text-small);
+    cursor: pointer;
+}
+
+.unexpected-details {
+    align-self: stretch;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.35rem;
+}
+
+.unexpected-details pre {
+    align-self: stretch;
+    margin: 0;
+    padding: 0.45rem 0.55rem;
+    border-radius: var(--radius-small);
+    background: color-mix(in srgb, var(--on-surface) 6%, transparent);
+    font: 0.75rem/1.45 ui-monospace, monospace;
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+}
+
+.unexpected-hint,
+.unexpected-warning {
+    margin: 0;
+    font-size: var(--text-small);
+}
+
+.unexpected-hint a {
+    color: var(--link);
+    text-decoration: underline;
+    text-underline-offset: 2px;
+}
+
+.unexpected-warning {
+    padding: 0.35rem 0.5rem;
+    border: 1px solid color-mix(in srgb, var(--error) 55%, transparent);
+    border-radius: var(--radius-small);
+}

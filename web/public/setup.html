@@ -7,6 +7,7 @@
         <link rel="icon" href="favicon.svg" type="image/svg+xml" />
         <link rel="icon" href="favicon-32.png" sizes="32x32" type="image/png" />
         <link rel="stylesheet" href="styles/base.css" />
+        <link rel="stylesheet" href="styles/unexpected.css" />
         <script src="boot-theme.js"></script>
         <style>
             /* base.css makes the body a fixed-height column for the map; this
@@ -155,6 +156,7 @@
 
         <!-- The Google Identity Services library is loaded by the script, so a
              blocked request is shown as a sentence and not a broken page. -->
+        <script type="module" src="lib/unexpected.js"></script>
         <script type="module" src="setup-app.js"></script>
     </body>
 </html>

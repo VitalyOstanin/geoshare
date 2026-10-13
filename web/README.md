@@ -76,3 +76,5 @@ Nothing here talks to Firebase: the rules the clients run into are covered by
 | 15 | `public/lib/setup-*.js`       | Creating the project and its Hosting site                       |
 | 16 | `public/styles/*.css`         | One file per part; the map takes what the panel leaves          |
 | 17 | `public/lib/vendor/`          | Firebase, MapLibre GL JS, the QR encoder: one directory each    |
+| 18 | `public/lib/unexpected.js`    | The banner every page shows for a failure nothing else caught   |
+| 19 | `public/lib/fault.js`         | What such a failure said, with everything private taken out     |

@@ -29,9 +29,12 @@ import { followLink, knownNote, unfollowLink } from './page/link-ui.js';
 import { followAttention, unfollowAttention } from './page/pause.js';
 import { notePageLooking, personName, render, showAccount } from './page/strip.js';
 import { keep } from './lib/kept.js';
+import { keepPrivate } from './lib/fault.js';
 
 watchSignIn((member) => {
     state.member = member;
+    // Kept out of what the page reports when something fails unexpectedly.
+    keepPrivate(member?.name, member?.email);
     rememberSignIn(member !== null);
 
     if (member) {
@@ -102,6 +105,7 @@ function followProfiles() {
     state.stopProfiles ??= watchProfiles(
         (profiles) => {
             state.accountProfiles = profiles;
+            keepPrivate(...[...profiles.values()].map((profile) => profile?.displayName));
 
             // A member handing a permission back touches their profile, and
             // that is the one thing a refused subscription cannot see for
