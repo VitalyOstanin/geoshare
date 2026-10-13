@@ -187,6 +187,8 @@ is taken out by a release.
 
 ## Further reading
 
+- [docs/architecture.md](architecture.md): accounts, projects, sites, the
+  group and the clients, and what a project gets for free.
 - [GLOSSARY.md](../GLOSSARY.md): the words used throughout, and the documents
   the database holds with how they relate.
 - [docs/ADR](ADR/README.md): the decisions behind the design.
