@@ -179,8 +179,10 @@ jobs:
       - name: Attest where the package was built
         # Binds the package's digest to this repository, commit and run;
         # gh attestation verify checks it. Only for a published release: the
-        # attestation is public, and a dispatched run publishes nothing.
-        if: startsWith(github.ref, 'refs/tags/')
+        # attestation is public, and a dispatched run publishes nothing. GitHub
+        # attests only for public repositories on the free plan, so a release
+        # cut while the repository is private goes without.
+        if: startsWith(github.ref, 'refs/tags/') && !github.event.repository.private
         uses: actions/attest@1e69f48acb82d1966a394da916b4c1698aa569d6 # v4.2.2
         with:
           subject-path: build/geoshare-*.apk
@@ -188,7 +190,7 @@ jobs:
       - name: Attest what the package was built from
         # Binds the bill of materials to the package's digest, so that the
         # attached file can be checked to be the one built with it.
-        if: startsWith(github.ref, 'refs/tags/')
+        if: startsWith(github.ref, 'refs/tags/') && !github.event.repository.private
         uses: actions/attest@1e69f48acb82d1966a394da916b4c1698aa569d6 # v4.2.2
         with:
           subject-path: build/geoshare-*.apk
