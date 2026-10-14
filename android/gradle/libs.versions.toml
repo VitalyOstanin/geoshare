@@ -5,10 +5,10 @@
 # added, not from an example. Check before bumping rather than after.
 
 [versions]
-agp = "9.4.0"
-kotlin = "2.4.20"
+agp = "9.4.1"
+kotlin = "2.4.21"
 composeBom = "2026.09.00"
-coreKtx = "1.19.0"
+coreKtx = "1.19.1"
 # The activity is an AppCompat one for one reason: the language a member picks
 # inside the application is applied through AppCompatDelegate, and below
 # Android 13 that is the only way the choice reaches the screens at all.
@@ -17,9 +17,9 @@ activityCompose = "1.13.0"
 lifecycle = "2.11.0"
 # Not used directly: Play Services pulls in a fragment old enough that the
 # activity-result check refuses to build, and this lifts it.
-fragment = "1.9.0"
+fragment = "1.9.1"
 coroutines = "1.11.0"
-firebaseBom = "34.19.0"
+firebaseBom = "35.0.0"
 playServicesLocation = "21.4.0"
 # The map background. Takes the same style document the page does and draws
 # OpenStreetMap tiles from it, so the application needs no map key and no
@@ -27,7 +27,7 @@ playServicesLocation = "21.4.0"
 maplibre = "13.6.1"
 # Loads the account picture into the map screen. Two artefacts: the Compose
 # entry point and the network layer it fetches through.
-coil = "3.6.2"
+coil = "3.6.3"
 # Draws an invitation as a QR code on the administrator's screen. The core
 # alone: it encodes and decodes in plain Java, without the camera or
 # Android parts of the wider project.
