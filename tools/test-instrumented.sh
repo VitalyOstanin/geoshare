@@ -31,10 +31,11 @@ if [[ -z "${ANDROID_SERIAL}" ]]; then
 fi
 export ANDROID_SERIAL
 
-# Built first on the host's network, where the dependencies can be fetched;
-# the run itself is in the emulator's pod, which can fetch nothing.
+# Built first on the host's network, where the dependencies and the test
+# platform the run drives can be fetched; the run itself is in the emulator's
+# pod, which can fetch nothing.
 echo "==> building the application and its tests"
-"${REPO_ROOT}/tools/gradle.sh" assembleDebug assembleDebugAndroidTest
+"${REPO_ROOT}/tools/gradle.sh" assembleDebug assembleDebugAndroidTest fetchTestPlatform
 
 # A report left by an earlier run would otherwise be read as this one's.
 report="${REPO_ROOT}/android/app/build/reports/androidTests/connected/debug/index.html"

@@ -175,6 +175,21 @@ tasks.withType<Test>().configureEach {
     dependsOn("prepareLibraryDefinitionsDebug")
 }
 
+// The instrumented run happens in the emulator's pod, which can fetch nothing,
+// and the test platform it drives is resolved by that run alone. Fetched here,
+// on the host's network, it is in the cache by the time the pod asks for it,
+// including the new version every Android Gradle plugin update brings.
+tasks.register("fetchTestPlatform") {
+    val platform =
+        files(
+            configurations.matching {
+                it.name.startsWith("unified-test-platform") && it.isCanBeResolved
+            },
+        )
+    inputs.files(platform)
+    doLast { logger.info("the test platform is ${platform.files.size} files") }
+}
+
 dependencies {
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.appcompat)
