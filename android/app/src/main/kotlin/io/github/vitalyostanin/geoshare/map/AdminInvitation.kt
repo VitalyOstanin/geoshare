@@ -87,7 +87,7 @@ internal fun AdminInvitation(
         Text(
             text =
             stringResource(
-                R.string.group_invite_screen_title,
+                R.string.group_invitation_screen_title,
                 ConnectLink.shortenedAddress(invitation.email),
             ),
             style = MaterialTheme.typography.titleMedium,
@@ -118,7 +118,7 @@ internal fun AdminInvitation(
         Text(
             text =
             stringResource(
-                R.string.group_invite_expires,
+                R.string.group_invitation_expires,
                 invitationEndsText(invitation.expiresAt.atZone(ZoneId.systemDefault())),
             ),
             style = MaterialTheme.typography.bodySmall,
@@ -164,7 +164,7 @@ private fun SendOrCopyLink(link: String) {
                 context.startActivity(Intent.createChooser(send, null))
             },
         ) {
-            Text(text = stringResource(R.string.group_invite_send))
+            Text(text = stringResource(R.string.group_invitation_send))
         }
 
         TextButton(
@@ -191,7 +191,7 @@ private fun InvitationOver(invitation: MadeInvitation, used: Boolean, onOpenInvi
     Text(
         text =
         stringResource(
-            R.string.group_invite_screen_title,
+            R.string.group_invitation_screen_title,
             ConnectLink.shortenedAddress(invitation.email),
         ),
         style = MaterialTheme.typography.titleMedium,
@@ -201,10 +201,10 @@ private fun InvitationOver(invitation: MadeInvitation, used: Boolean, onOpenInvi
     Text(
         text =
         if (used) {
-            stringResource(R.string.group_invite_used)
+            stringResource(R.string.group_invitation_used)
         } else {
             stringResource(
-                R.string.group_invite_expired,
+                R.string.group_invitation_expired,
                 invitationEndsText(invitation.expiresAt.atZone(ZoneId.systemDefault())),
             )
         },
@@ -219,7 +219,7 @@ private fun InvitationOver(invitation: MadeInvitation, used: Boolean, onOpenInvi
         Text(
             text =
             stringResource(
-                if (used) R.string.group_make_invitation else R.string.group_invite_again,
+                if (used) R.string.group_make_invitation else R.string.group_invitation_again,
             ),
         )
     }

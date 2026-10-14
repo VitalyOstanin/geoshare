@@ -104,7 +104,7 @@ private fun QrSquares(squares: BitMatrix, modifier: Modifier = Modifier) {
 @Composable
 internal fun InvitationQr(link: String, onOpen: () -> Unit, modifier: Modifier = Modifier) {
     val squares = remember(link) { qrSquares(link) }
-    val described = stringResource(R.string.group_invite_qr)
+    val described = stringResource(R.string.group_invitation_qr)
 
     QrSquares(
         squares = squares,
@@ -150,10 +150,10 @@ internal fun FullScreenQr(link: String, onClose: () -> Unit) {
                 modifier = Modifier.weight(1f, fill = false).widthIn(max = 480.dp),
             )
 
-            Text(text = stringResource(R.string.group_invite_qr_scan), color = QR_DARK)
+            Text(text = stringResource(R.string.group_invitation_qr_scan), color = QR_DARK)
 
             TextButton(onClick = onClose) {
-                Text(text = stringResource(R.string.group_invite_qr_close))
+                Text(text = stringResource(R.string.group_invitation_qr_close))
             }
         }
     }
