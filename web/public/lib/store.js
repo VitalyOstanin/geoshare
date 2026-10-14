@@ -28,6 +28,7 @@ import {
     setDoc,
 } from './vendor/firebase-13.0.0/firebase-firestore.js';
 import { firebaseConfig } from '../firebase-config.js';
+import { claimWriter } from './claim-writer.js';
 import { createRefusals } from './refusals.js';
 import { keep, readKept } from './kept.js';
 
@@ -314,7 +315,12 @@ export function keepWatching(memberId, onError, onClaim = () => {}) {
 
     let timer = null;
     let touched = Date.now();
-    const { push, pushWhenDue, withdraw } = claimWriter(marker, memberId, onError);
+    const { push, pushWhenDue, withdraw } = claimWriter(
+        () => setDoc(marker, { memberId, since: serverTimestamp() }),
+        () => deleteDoc(marker),
+        onError,
+        WATCH_REFRESH_MS,
+    );
     const looking = () =>
         document.visibilityState !== 'hidden'
         && document.hasFocus()
@@ -368,29 +374,6 @@ export function keepWatching(memberId, onError, onClaim = () => {}) {
         onClaim(false);
 
         return withdraw();
-    };
-}
-
-/** Writes and withdraws the page's claim in [marker], keeping a write to one per refresh. */
-function claimWriter(marker, memberId, onError) {
-    // When a push last reached the server; a failed one leaves it where it
-    // was, so the next check tries again rather than the next refresh.
-    let pushed = 0;
-
-    const push = () => setDoc(marker, { memberId, since: serverTimestamp() })
-        .then(() => {
-            pushed = Date.now();
-        })
-        .catch(onError);
-
-    return {
-        push,
-        pushWhenDue: () => {
-            if (Date.now() - pushed >= WATCH_REFRESH_MS) {
-                push();
-            }
-        },
-        withdraw: () => deleteDoc(marker).catch(onError),
     };
 }
 
