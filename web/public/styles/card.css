@@ -13,6 +13,17 @@
     min-width: 0;
 }
 
+/* While a siren sounds, its red button with its word is too wide to share the
+   line with the names: they keep room enough to be read, and the buttons go
+   under them rather than squeeze them a letter wide. */
+.detail-head:has(.siren-stop) {
+    flex-wrap: wrap;
+}
+
+.detail-head:has(.siren-stop) > div {
+    flex: 1 1 10rem;
+}
+
 /* The round buttons of a device sit at the right of the name and keep their
    size; the cross over the corner is kept clear by the heading's own margin. */
 .detail-actions {
