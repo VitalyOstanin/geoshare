@@ -116,6 +116,7 @@ The scripts read these from the environment; none has to be set.
 | 18 | `CLOUD_SHELL`         | `project.sh`                   | set by Google Cloud Shell; sign-in without a local browser         | none                             |
 | 19 | `TIMEOUT`             | `test-instrumented.sh`         | how long the instrumented run may take as a whole                  | `30m`                            |
 | 20 | `WEB_PORT`            | `serve-web.sh`                 | the port the page is served on                                     | `5000`                           |
+| 21 | `GRADLE_TIMEOUT`      | `gradle.sh`                    | how long one Gradle run may take as a whole                        | `60m`                            |
 
 The names of the podman resources — `POD_NAME`, `SERVICES_NAME`,
 `EMULATOR_NAME`, `SDK_IMAGE`, `EMULATOR_IMAGE`, `FIREBASE_IMAGE`,

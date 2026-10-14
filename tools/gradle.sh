@@ -44,7 +44,11 @@ fi
 
 ensure_sdk_image
 
-exec podman run --rm "${network_args[@]}" "${limit_args[@]}" "${env_args[@]}" \
+# Bounded like the other scripts that start a container: a build that hangs
+# outside the test task, in the compiler, R8 or a download, has nothing else
+# to stop it. A first build on a fresh cache takes a good part of this.
+exec timeout "${GRADLE_TIMEOUT:-60m}" \
+    podman run --rm "${network_args[@]}" "${limit_args[@]}" "${env_args[@]}" \
     -v "${REPO_ROOT}:/src:z" -v "${CACHE_VOLUME}:/gradle" \
     -v "${KEY_VOLUME}:/root/.android" -w /src/android \
     "${SDK_IMAGE}" \
