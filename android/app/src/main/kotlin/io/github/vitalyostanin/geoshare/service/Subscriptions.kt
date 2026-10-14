@@ -3,7 +3,7 @@ package io.github.vitalyostanin.geoshare.service
 import com.google.firebase.firestore.FirebaseFirestoreException
 import io.github.vitalyostanin.geoshare.collection.listenAgainAfter
 import io.github.vitalyostanin.geoshare.collection.spread
-import io.github.vitalyostanin.geoshare.log.AppLog
+import io.github.vitalyostanin.geoshare.map.logFailure
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.retryWhen
@@ -37,11 +37,7 @@ fun <T> Flow<T>.comingBack(
 ): Flow<T> = retryWhen { cause, attempt ->
     val waiting = spread(listenAgainAfter(attempt))
 
-    AppLog.w(
-        TAG,
-        "the $named subscription was refused; asking again in ${waiting.seconds} s",
-        cause,
-    )
+    logFailure(TAG, "the $named subscription failed; asking again in ${waiting.seconds} s", cause)
 
     // Before the wait rather than after it: the screen is wrong for as long as
     // it stands uncorrected, and the wait is five minutes by the end.

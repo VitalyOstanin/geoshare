@@ -95,7 +95,7 @@ fun rosterReads(connection: GroupConnection): Flow<RosterRead> = callbackFlow<Ro
 
     val failed = "could not read the roster of ${connection.projectId}"
 
-    AppLog.w(TAG, "$failed; asking again in ${waiting.seconds} s", cause)
+    logFailure(TAG, "$failed; asking again in ${waiting.seconds} s", cause)
     emit(if (refusedOutright(cause)) RosterRead.Refused else RosterRead.Unreachable)
     delay(waiting.toMillis())
 

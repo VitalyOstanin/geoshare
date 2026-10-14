@@ -1,6 +1,12 @@
 package io.github.vitalyostanin.geoshare.service
 
+import android.util.Log
 import com.google.firebase.firestore.FirebaseFirestoreException
+import io.github.vitalyostanin.geoshare.log.AppLog
+import io.mockk.every
+import io.mockk.mockkStatic
+import io.mockk.unmockkStatic
+import io.mockk.verify
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withTimeoutOrNull
@@ -52,6 +58,32 @@ class SubscriptionsTest {
     @Test
     fun `a subscription with nothing to forget is left as it was`() {
         assertEquals(listOf("the roster"), heardWithinASecond(forgetting = null))
+    }
+
+    // A fault of the application's own comes back like a refusal, and the
+    // log has to say which of the two it was.
+    @Test
+    fun `a fault of the application is logged as one, not as a refusal`() {
+        val wasToSystemLog = AppLog.toSystemLog
+        AppLog.toSystemLog = true
+        mockkStatic(Log::class)
+        every { Log.w(any(), any<String>(), any()) } returns 0
+        every { Log.e(any(), any(), any()) } returns 0
+
+        try {
+            runBlocking {
+                val told =
+                    flow<String> { error("a state that should not occur") }.comingBack("roster")
+
+                withTimeoutOrNull(1_000) { told.collect {} }
+            }
+
+            verify { Log.e(any(), match { "roster" in it && "a fault here" in it }, any()) }
+            verify(exactly = 0) { Log.w(any(), any<String>(), any()) }
+        } finally {
+            AppLog.toSystemLog = wasToSystemLog
+            unmockkStatic(Log::class)
+        }
     }
 
     /**
