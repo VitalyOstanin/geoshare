@@ -39,6 +39,7 @@ import io.github.vitalyostanin.geoshare.collection.SkySays
 import io.github.vitalyostanin.geoshare.collection.SkyShape
 import io.github.vitalyostanin.geoshare.collection.Slant
 import io.github.vitalyostanin.geoshare.collection.acrossTheBand
+import io.github.vitalyostanin.geoshare.collection.constellationPresence
 import io.github.vitalyostanin.geoshare.collection.counted
 import io.github.vitalyostanin.geoshare.collection.driftOf
 import io.github.vitalyostanin.geoshare.collection.driftShapeOf
@@ -50,7 +51,6 @@ import io.github.vitalyostanin.geoshare.collection.leftThePhonesClock
 import io.github.vitalyostanin.geoshare.collection.loudnessPerBand
 import io.github.vitalyostanin.geoshare.collection.offTheOrbits
 import io.github.vitalyostanin.geoshare.collection.parted
-import io.github.vitalyostanin.geoshare.collection.presenceOf
 import io.github.vitalyostanin.geoshare.collection.reported
 import io.github.vitalyostanin.geoshare.collection.satelliteTimeParted
 import io.github.vitalyostanin.geoshare.collection.shapeOf
@@ -610,7 +610,7 @@ class RadioWatch(
                         note(heard.getOrPut(constellation) { ArrayDeque() }, loudness)
                     }
 
-                    noteSilence(theOtherBandIsSilent(presenceOf(epoch)))
+                    noteSilence(theOtherBandIsSilent(constellationPresence(epoch)))
                     noteDrift(epoch)
                     noteAiding(epoch)
 

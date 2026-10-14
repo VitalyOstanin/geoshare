@@ -69,7 +69,7 @@ export function knownNote() {
         return '';
     }
 
-    return WORDS.knownAt(clockText(state.link.confirmedAt));
+    return WORDS.knownAt(timeOrDate(state.link.confirmedAt));
 }
 
 /** What a failed write says: a silent database, or one that refused. */
@@ -103,7 +103,7 @@ function drawLink() {
     document.documentElement.classList.toggle('link-lost', lost || paused);
 
     if (paused) {
-        elements.linkText.textContent = WORDS.pausedSince(clockText(state.pausedAt));
+        elements.linkText.textContent = WORDS.pausedSince(timeOrDate(state.pausedAt));
         elements.linkNote.textContent = WORDS.pausedNote;
 
         return;
@@ -113,14 +113,14 @@ function drawLink() {
         return;
     }
 
-    elements.linkText.textContent = WORDS.linkLost(clockText(state.link.cachedSince));
+    elements.linkText.textContent = WORDS.linkLost(timeOrDate(state.link.cachedSince));
     elements.linkNote.textContent = state.link.confirmedAt === null
         ? WORDS.linkKnownNever
-        : WORDS.linkKnownAt(clockText(state.link.confirmedAt));
+        : WORDS.linkKnownAt(timeOrDate(state.link.confirmedAt));
 }
 
 /** A time of day, with the date as well once it is not today's. */
-function clockText(millis) {
+function timeOrDate(millis) {
     const then = new Date(millis);
     const today = then.toDateString() === new Date().toDateString();
 

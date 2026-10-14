@@ -41,7 +41,7 @@ data class Presence(
 )
 
 /** The epoch counted that way, system by system. */
-fun presenceOf(sky: List<Satellite>): Map<Constellation, Presence> = sky
+fun constellationPresence(sky: List<Satellite>): Map<Constellation, Presence> = sky
     .groupBy { it.constellation }
     .mapValues { (_, satellites) ->
         Presence(

@@ -42,7 +42,8 @@ class OneTransmitterTest {
 
     @Test
     fun `an epoch is counted over the whole of it, not over what was heard`() {
-        val read = presenceOf(band(heard = 10, inFix = 9) + glonass(expected = 9, heard = 0))
+        val read =
+            constellationPresence(band(heard = 10, inFix = 9) + glonass(expected = 9, heard = 0))
 
         assertEquals(
             Presence(expected = 10, heard = 10, usedInFix = 9),
@@ -58,7 +59,7 @@ class OneTransmitterTest {
     fun `orbits held and not one satellite heard, while the near band carries the fix`() {
         val epoch = band(heard = 10, inFix = 9) + glonass(expected = 9, heard = 0)
 
-        assertTrue(theOtherBandIsSilent(presenceOf(epoch)))
+        assertTrue(theOtherBandIsSilent(constellationPresence(epoch)))
     }
 
     // One heard is enough to say the band is not silent: the rule is about a
@@ -67,7 +68,7 @@ class OneTransmitterTest {
     fun `a band with one satellite heard is not a silent band`() {
         val epoch = band(heard = 10, inFix = 9) + glonass(expected = 9, heard = 1)
 
-        assertFalse(theOtherBandIsSilent(presenceOf(epoch)))
+        assertFalse(theOtherBandIsSilent(constellationPresence(epoch)))
     }
 
     // A receiver that holds no GLONASS orbits has nothing to expect, so its
@@ -78,7 +79,7 @@ class OneTransmitterTest {
         val epoch = band(heard = 10, inFix = 9) +
             glonass(expected = 9, heard = 0).map { it.copy(hasEphemeris = false) }
 
-        assertFalse(theOtherBandIsSilent(presenceOf(epoch)))
+        assertFalse(theOtherBandIsSilent(constellationPresence(epoch)))
     }
 
     @Test
@@ -86,8 +87,8 @@ class OneTransmitterTest {
         val thinlyHeard = band(heard = 5, inFix = 4) + glonass(expected = 9, heard = 0)
         val thinlyUsed = band(heard = 10, inFix = 2) + glonass(expected = 9, heard = 0)
 
-        assertFalse(theOtherBandIsSilent(presenceOf(thinlyHeard)))
-        assertFalse(theOtherBandIsSilent(presenceOf(thinlyUsed)))
+        assertFalse(theOtherBandIsSilent(constellationPresence(thinlyHeard)))
+        assertFalse(theOtherBandIsSilent(constellationPresence(thinlyUsed)))
     }
 
     // Measured rather than argued: the silence alone fires on a tenth to a

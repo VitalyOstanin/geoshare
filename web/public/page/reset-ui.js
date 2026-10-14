@@ -12,7 +12,7 @@ import { drawGroup } from './group-panel.js';
 export const RESET_ICON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 21s-6-5.6-6-10.5a6 6 0 0 1 12 0c0 4.9-6 10.5-6 10.5z"/><path d="M9.8 10.5a2.2 2.2 0 1 0 2.2-2.2"/><path d="M12 6.6v1.7h1.7"/></svg>';
 
 /** The time of a request, or of its answer: a row tells of one only for a day. */
-function clockText(at) {
+function timeOfDay(at) {
     return new Date(at).toLocaleTimeString(SPEAKING, {
         hour: '2-digit',
         minute: '2-digit',
@@ -29,9 +29,9 @@ export function resetText(reset, now) {
 
     switch (told.kind) {
         case 'waiting':
-            return WORDS.resetWaiting(clockText(reset.askedAt));
+            return WORDS.resetWaiting(timeOfDay(reset.askedAt));
         case 'done':
-            return WORDS.resetDone(clockText(told.at));
+            return WORDS.resetDone(timeOfDay(told.at));
         default:
             return WORDS.resetNoAnswer;
     }

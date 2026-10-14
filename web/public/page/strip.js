@@ -298,11 +298,11 @@ function names() {
     }
 
     return new Map(
-        state.positions.map((position) => [position.positionId, nameOf(position, carried)]),
+        state.positions.map((position) => [position.positionId, carriedNameOf(position, carried)]),
     );
 }
 
-function nameOf(position, carried) {
+function carriedNameOf(position, carried) {
     const name = personName(position);
 
     if ((carried.get(position.memberId) ?? 1) > 1 && position.deviceName) {

@@ -278,7 +278,7 @@ private fun TheGroup(
     onLeaveGroup: (() -> Unit)?,
 ) {
     for (memberId in roster.members) {
-        MemberRow(
+        RosterRow(
             name = profiles[memberId]?.displayName ?: unnamedMember(memberId),
             runsTheGroup = runsTheGroup(roster, memberId),
         )
@@ -327,7 +327,7 @@ private fun TheGroup(
 
 /** One person on the roster, named and nothing more. */
 @Composable
-private fun MemberRow(name: String, runsTheGroup: Boolean) {
+private fun RosterRow(name: String, runsTheGroup: Boolean) {
     Row(
         modifier = Modifier.fillMaxWidth().padding(start = 16.dp, end = 8.dp, top = 4.dp),
         verticalAlignment = Alignment.CenterVertically,

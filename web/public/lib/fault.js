@@ -52,7 +52,7 @@ export function scrubbed(text, origin = globalThis.location?.origin) {
 }
 
 /** The first of the page's own files a stack names, as `file:line`. */
-export function placeOf(stack) {
+export function stackPlaceOf(stack) {
     const match = /((?:lib|page)\/[\w./-]+\.js|\b[\w-]+\.js):(\d+)(?::\d+)?/.exec(String(stack ?? ''));
 
     return match ? `${match[1]}:${match[2]}` : null;
@@ -93,6 +93,6 @@ export function faultOf({ kind, reason, place = null }, origin) {
     return {
         kind,
         message: scrubbed(message, origin),
-        place: scrubbed(place ?? placeOf(reason?.stack) ?? '', origin) || null,
+        place: scrubbed(place ?? stackPlaceOf(reason?.stack) ?? '', origin) || null,
     };
 }

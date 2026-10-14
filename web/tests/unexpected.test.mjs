@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { test } from 'node:test';
 
-import { browserOf, faultOf, keepPrivate, placeOf, scrubbed } from '../public/lib/fault.js';
+import { browserOf, faultOf, keepPrivate, scrubbed, stackPlaceOf } from '../public/lib/fault.js';
 import { NEW_ISSUE, detailsText, issueAddress } from '../public/lib/unexpected.js';
 import { PAGE_VERSION } from '../public/lib/version.js';
 
@@ -34,9 +34,9 @@ test('the place is the first of the page’s own files in a stack', () => {
         `    at ${ORIGIN}/app.js:40:1`;
     const firefox = `draw@${ORIGIN}/page/strip.js:33:5\n@${ORIGIN}/app.js:40:1`;
 
-    assert.equal(placeOf(chrome), 'lib/map-card.js:120');
-    assert.equal(placeOf(firefox), 'page/strip.js:33');
-    assert.equal(placeOf(undefined), null);
+    assert.equal(stackPlaceOf(chrome), 'lib/map-card.js:120');
+    assert.equal(stackPlaceOf(firefox), 'page/strip.js:33');
+    assert.equal(stackPlaceOf(undefined), null);
 });
 
 test('a rejection with no error in it still says something', () => {
