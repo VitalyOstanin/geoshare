@@ -60,7 +60,7 @@ publishing run the Firebase command line on the machine itself, and need
 |----|------------------------------|-----------------------------------------------------------------------------|
 | 1  | `tools/build.sh`             | builds the Android application                                              |
 | 2  | `tools/test.sh`              | runs the Android unit tests                                                 |
-| 3  | `tools/lint.sh`              | formatting check and Android lint                                           |
+| 3  | `tools/lint.sh`              | formatting, length of functions (detekt) and Android lint                   |
 | 4  | `tools/rules.sh`             | security rules tests against the Firestore emulator                         |
 | 5  | `tools/web-test.sh`          | the tests of the page's own logic                                           |
 | 6  | `tools/js-lint.sh`           | ESLint over the page and the emulator scripts                               |

@@ -1,0 +1,57 @@
+# One rule out of detekt: the length of a function. The formatting is ktlint's
+# and the rest is the Android lint's, so every other rule set is switched off
+# and the length is the only thing this run has to say.
+#
+# Held to the same 60 lines as the page's JavaScript, blank lines and comments
+# not counted. The functions already longer are listed in detekt-baseline.xml
+# and come off it as they are split; a new one fails the check.
+complexity:
+  active: true
+  CognitiveComplexMethod:
+    active: false
+  ComplexCondition:
+    active: false
+  ComplexInterface:
+    active: false
+  CyclomaticComplexMethod:
+    active: false
+  LabeledExpression:
+    active: false
+  LargeClass:
+    active: false
+  LongMethod:
+    active: true
+    allowedLines: 60
+  LongParameterList:
+    active: false
+  MethodOverloading:
+    active: false
+  NamedArguments:
+    active: false
+  NestedBlockDepth:
+    active: false
+  NestedScopeFunctions:
+    active: false
+  ReplaceSafeCallChainWithRun:
+    active: false
+  StringLiteralDuplication:
+    active: false
+  TooManyFunctions:
+    active: false
+
+comments:
+  active: false
+coroutines:
+  active: false
+empty-blocks:
+  active: false
+exceptions:
+  active: false
+naming:
+  active: false
+performance:
+  active: false
+potential-bugs:
+  active: false
+style:
+  active: false

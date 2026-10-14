@@ -4,6 +4,7 @@ plugins {
     alias(libs.plugins.aboutlibraries.android) apply false
     alias(libs.plugins.cyclonedx) apply false
     alias(libs.plugins.ktlint)
+    alias(libs.plugins.detekt) apply false
 }
 
 // Read out here because inside the blocks below `libs` would be looked up on

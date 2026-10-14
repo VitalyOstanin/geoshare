@@ -62,7 +62,7 @@ jobs:
         # The unit tests run with the coverage agent, so that the floor below
         # reads the report of this very run.
         working-directory: android
-        run: ./gradlew --no-daemon -Pcoverage ktlintCheck lintDebug createDebugUnitTestCoverageReport
+        run: ./gradlew --no-daemon -Pcoverage ktlintCheck detekt lintDebug createDebugUnitTestCoverageReport
 
       - name: Coverage floor
         run: tools/coverage-floor.sh

@@ -11,6 +11,17 @@ plugins {
     // The software bill of materials that goes onto the GitHub release next
     // to the APK; see the cyclonedxDirectBom block below.
     alias(libs.plugins.cyclonedx)
+    // The length of a function and nothing else; see config/detekt.yml.
+    alias(libs.plugins.detekt)
+}
+
+detekt {
+    // The application's own code, as the page's limit covers the page's own:
+    // a test that lays out a whole scene reads better in one piece.
+    source.setFrom("src/main/kotlin")
+    config.setFrom(rootProject.file("config/detekt.yml"))
+    buildUponDefaultConfig = true
+    baseline = file("detekt-baseline.xml")
 }
 
 // The versions the build image installs, read from the one file that states

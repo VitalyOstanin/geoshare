@@ -61,6 +61,10 @@ ktlintPlugin = "14.2.0"
 # rules change between releases and the check has to fail the same way
 # everywhere.
 ktlint = "1.8.0"
+# Only for the length of a function, which ktlint does not measure. An alpha:
+# the last stable release, 1.23.8, is built for Kotlin 2.0, and this one for
+# the Kotlin 2.4 the application is written in.
+detekt = "2.0.0-alpha.6"
 
 [libraries]
 androidx-core-ktx = { module = "androidx.core:core-ktx", version.ref = "coreKtx" }
@@ -108,6 +112,7 @@ org-json = { module = "org.json:json", version.ref = "orgJson" }
 android-application = { id = "com.android.application", version.ref = "agp" }
 kotlin-compose = { id = "org.jetbrains.kotlin.plugin.compose", version.ref = "kotlin" }
 ktlint = { id = "org.jlleitschuh.gradle.ktlint", version.ref = "ktlintPlugin" }
+detekt = { id = "dev.detekt", version.ref = "detekt" }
 # The Android flavour of the plugin: it writes the list into the resources as
 # part of every build, rather than leaving a task to be run by hand.
 aboutlibraries-android = { id = "com.mikepenz.aboutlibraries.plugin.android", version.ref = "aboutLibraries" }
