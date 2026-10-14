@@ -133,7 +133,14 @@ variables: they are fixed in `firebase.json`.
    `tools/project.sh update`, and in which order
    ([Updating a group's project](../firebase/README.md#updating-a-groups-project)).
    `tools/release-notes.sh <version>` prints what the release will say.
-3. Tag the commit on master with an annotated tag, `git tag -a v<version>`,
+3. Run the package that will be published. The checks build and test the
+   debug build only, and R8 shrinks the release one: a class that Firestore
+   or reflection reaches only at run time can be removed without any check
+   noticing. Build and sign it, `VARIANT=release tools/build.sh` and then
+   `tools/sign-release.sh`, install `build/geoshare-<version>.apk` on a
+   device or on the emulator of `tools/run-emulator.sh`, and go through
+   starting, connecting to a group and seeing positions on the map.
+4. Tag the commit on master with an annotated tag, `git tag -a v<version>`,
    and push the tag. `release.yml` runs the checks of `ci.yml`, refuses a
    lightweight tag, a tag off master, a tag that differs from
    `appVersionName` and notes without a date, then builds, signs, checks
