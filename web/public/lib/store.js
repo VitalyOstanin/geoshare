@@ -5,7 +5,7 @@
 // `store-positions.js`, `store-group.js` and `store-search.js`, all of which
 // import `app`/`auth`/`store` from here rather than making their own.
 
-import { initializeApp } from './vendor/firebase-12.19.0/firebase-app.js';
+import { initializeApp } from './vendor/firebase-13.0.0/firebase-app.js';
 import {
     GoogleAuthProvider,
     connectAuthEmulator,
@@ -14,7 +14,7 @@ import {
     onAuthStateChanged,
     signInWithRedirect,
     signOut,
-} from './vendor/firebase-12.19.0/firebase-auth.js';
+} from './vendor/firebase-13.0.0/firebase-auth.js';
 import {
     collection,
     connectFirestoreEmulator,
@@ -26,7 +26,7 @@ import {
     onSnapshot,
     serverTimestamp,
     setDoc,
-} from './vendor/firebase-12.19.0/firebase-firestore.js';
+} from './vendor/firebase-13.0.0/firebase-firestore.js';
 import { firebaseConfig } from '../firebase-config.js';
 import { createRefusals } from './refusals.js';
 import { keep, readKept } from './kept.js';

@@ -40,11 +40,3 @@ updates:
       npm:
         patterns:
           - "*"
-    # The rules tests run on the Firebase the page serves from
-    # web/public/lib/vendor (web/tests/vendor.test.mjs); a major version
-    # moves both at once, by hand.
-    ignore:
-      - dependency-name: "firebase"
-        update-types: ["version-update:semver-major"]
-      - dependency-name: "@firebase/rules-unit-testing"
-        update-types: ["version-update:semver-major"]
