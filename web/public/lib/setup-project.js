@@ -22,6 +22,31 @@ const DATABASE_RETRY_MS = 15_000;
 const realSleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
 /**
+ * setup-config.json as tools/setup-site.sh writes it, or null when it is not:
+ * a file cut short or written by hand would otherwise read as a config and
+ * fail steps later, with a message about a step rather than about the file.
+ * The fingerprints may be none; the console link may be left out.
+ */
+export function setupConfigOf(value) {
+    const filled = (field) => typeof field === 'string' && field.trim().length > 0;
+
+    if (
+        value === null ||
+        typeof value !== 'object' ||
+        !filled(value.clientId) ||
+        !filled(value.packageName) ||
+        !filled(value.location) ||
+        !Array.isArray(value.fingerprints) ||
+        !value.fingerprints.every(filled) ||
+        (value.consoleUrl !== undefined && !filled(value.consoleUrl))
+    ) {
+        return null;
+    }
+
+    return value;
+}
+
+/**
  * An Error tagged with what went wrong in terms the page can put into words:
  * 'network', 'denied', 'timeout', 'missing' or 'other'. The text of the Error
  * stays technical, for the console; the page shows a phrase picked by the kind.

@@ -10,6 +10,7 @@ import {
     ensureWebApp,
     listProjects,
     makeApi,
+    setupConfigOf,
     failureKind,
     failureWord,
     waitOperation,
@@ -278,4 +279,23 @@ test('every kind of failure has a phrase in both languages', () => {
     }
 
     assert.equal(failureWord(failureKind(new Error('anything'))), failureWord('other'));
+});
+
+test('a setup config as the script writes it is taken, a broken one is not', () => {
+    const written = {
+        clientId: '000000000000-example.apps.googleusercontent.com',
+        packageName: 'io.github.vitalyostanin.geoshare',
+        location: 'europe-north1',
+        fingerprints: [],
+        consoleUrl: 'https://console.firebase.google.com/',
+    };
+
+    assert.equal(setupConfigOf(written), written);
+    assert.equal(setupConfigOf({ ...written, consoleUrl: undefined }).location, 'europe-north1');
+    assert.equal(setupConfigOf(null), null);
+    assert.equal(setupConfigOf([]), null);
+    assert.equal(setupConfigOf({ ...written, clientId: '' }), null);
+    assert.equal(setupConfigOf({ ...written, location: undefined }), null);
+    assert.equal(setupConfigOf({ ...written, fingerprints: 'AB:CD' }), null);
+    assert.equal(setupConfigOf({ ...written, fingerprints: [42] }), null);
 });

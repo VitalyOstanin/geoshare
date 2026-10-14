@@ -16,6 +16,7 @@ import {
     failure,
     failureKind,
     failureWord,
+    setupConfigOf,
 } from './lib/setup-project.js';
 import {
     ensureSite,
@@ -207,8 +208,12 @@ $('s2-auth').addEventListener('click', async () => {
     $('s2-error').hidden = true;
 
     try {
-        state.config ??= await readJson('setup-config.json');
+        state.config ??= setupConfigOf(await readJson('setup-config.json'));
     } catch {
+        state.config = null;
+    }
+
+    if (!state.config) {
         fail('s2-error', words.s2NoConfig);
 
         return;
@@ -451,7 +456,7 @@ $('s1-console').textContent = words.s1Console;
 fetch('setup-config.json')
     .then((response) => (response.ok ? response.json() : null))
     .then((config) => {
-        state.config = config;
+        state.config = setupConfigOf(config);
         $('s1-console').href = config?.consoleUrl || 'https://console.firebase.google.com/';
     })
     .catch(() => {
