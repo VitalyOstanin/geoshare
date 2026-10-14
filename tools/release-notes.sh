@@ -27,5 +27,7 @@ fi
 awk -v heading="${heading}" '
     $0 == heading { inside = 1; next }
     inside && /^## / { exit }
+    # The link definitions at the end of the file belong to no section.
+    inside && /^\[[^]]+\]: / { exit }
     inside { print }
 ' "${changelog}"

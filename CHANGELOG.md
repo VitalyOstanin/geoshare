@@ -16,7 +16,35 @@ and the versions follow [Semantic Versioning](https://semver.org/).
 
 ## Contents
 
+- [Unreleased](#unreleased)
 - [0.1.0](#010---2026-10-14)
+
+## [Unreleased]
+
+### Fixed
+
+- The names on a member's card on the group's page stay readable while the
+  siren sounds: the buttons go under them.
+- A device that loses the network keeps collecting positions; what it
+  writes meanwhile is sent when the database is back.
+- A position is judged against the one written just before it, also when
+  two arrive at once.
+- A false place or a setting typed with a wrong type in the console is
+  ignored instead of stopping the device from reading the others.
+- The times on a member's card follow the language chosen in the
+  application.
+- An account whose domain is longer than about 54 characters is no longer
+  told that its own invitation is meant for another account.
+- An entry of a member's document that is not a device no longer pushes a
+  device off the member's list.
+- The setup page says that setup-config.json is broken instead of failing
+  a step later.
+
+### Project owners
+
+- `tools/project.sh update` brings the page's fix; the rules have not
+  changed, so it may come before or after the devices take the new
+  application.
 
 ## [0.1.0] - 2026-10-14
 
@@ -45,3 +73,6 @@ The first release.
 
 - Nothing to update: a project set up by the setup page or by
   `tools/project.sh` already has the rules and the page of this version.
+
+[Unreleased]: https://github.com/VitalyOstanin/geoshare/compare/v0.1.0...HEAD
+[0.1.0]: https://github.com/VitalyOstanin/geoshare/releases/tag/v0.1.0

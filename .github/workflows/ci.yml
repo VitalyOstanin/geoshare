@@ -126,6 +126,17 @@ jobs:
       - name: Lint the Markdown
         run: npx --yes "markdownlint-cli2@${MARKDOWNLINT_CLI2_VERSION}"
 
+      - name: The release notes hold their own section only
+        # What release.yml publishes for each dated version of CHANGELOG.md:
+        # the link definitions at the end of the file are not part of it.
+        run: |
+          for version in $(sed -n 's/^## \[\([0-9][^]]*\)\] - .*/\1/p' CHANGELOG.md); do
+            if tools/release-notes.sh "${version}" | grep -E '^\[[^]]+\]: '; then
+              echo "::error::the notes of ${version} carry the link definitions above"
+              exit 1
+            fi
+          done
+
       - name: Check the shell scripts
         run: |
           git ls-files -z '*.sh' | xargs -0 docker run --rm -v "$PWD:/mnt:ro" -w /mnt \
