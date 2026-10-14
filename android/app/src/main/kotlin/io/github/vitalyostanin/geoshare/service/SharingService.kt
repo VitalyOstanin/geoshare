@@ -251,10 +251,10 @@ class SharingService : LifecycleService() {
     private val leftOut = LeftOutRun()
 
     /**
-     * Held while a fix is judged and the service's memory is brought up to
-     * date with it. The rules are worked out off the main thread, and a fix
-     * arriving meanwhile from another source must not read what the one
-     * before it has not yet written back.
+     * Held while a fix is judged, written and remembered; see [inTurn]. The
+     * rules are worked out off the main thread and the write waits for the
+     * database, and a fix arriving meanwhile from another source must not
+     * read what the one before it has not yet written back.
      */
     private val judging = Mutex()
 
@@ -746,28 +746,38 @@ class SharingService : LifecycleService() {
         // Read once for both halves below: a switch flipped in between would
         // count a fix as a jump and then write it out.
         val jumpsOn = jumps.enabled
-        val judged =
-            judging.withLock {
-                val judged = whatToMakeOf(fix, trusted)
+        // Read inside the turn and kept for the rest, for the same reason.
+        var used = false
+        val (judged, wrote) =
+            inTurn(
+                judging,
+                judge = {
+                    val judged = whatToMakeOf(fix, trusted)
 
-                // Every fix that arrives is written down, whether or not it is
-                // written out: what the provider answers where it is being
-                // jammed is the thing to be read afterwards, and a filtered log
-                // would answer questions about the filter instead.
-                noteFix(fix, mode, judged.jump, judged.agreed, judged.home, trusted)
+                    // Every fix that arrives is written down, whether or not it
+                    // is written out: what the provider answers where it is
+                    // being jammed is the thing to be read afterwards, and a
+                    // filtered log would answer questions about the filter
+                    // instead.
+                    noteFix(fix, mode, judged.jump, judged.agreed, judged.home, trusted)
 
-                carried.noticeAnAnswerThatWillNotFollow(fix, judged.whence, Instant.now())
+                    carried.noticeAnAnswerThatWillNotFollow(fix, judged.whence, Instant.now())
 
-                if (judged.leftOutAsJump(jumpsOn)) {
-                    candidate = fix
-                    jumpsInARow += 1
-                } else if (sources.uses(judged.whence)) {
-                    candidate = null
-                    jumpsInARow = 0
-                }
+                    used = sources.uses(judged.whence)
 
-                judged
-            }
+                    if (judged.leftOutAsJump(jumpsOn)) {
+                        candidate = fix
+                        jumpsInARow += 1
+                    } else if (used) {
+                        candidate = null
+                        jumpsInARow = 0
+                    }
+
+                    judged
+                },
+                worthWriting = { !it.leftOutAsJump(jumpsOn) && used },
+                write = { writeAndRemember(writer, fix, mode, it, always) },
+            )
 
         if (judged.leftOutAsJump(jumpsOn)) {
             tellThemAnswersAreBeingLeftOut(writer, judged.jump?.name.orEmpty())
@@ -782,7 +792,7 @@ class SharingService : LifecycleService() {
         // moves no marker, becomes no last position and reaches nobody — while
         // staying in the log, where the question of what the provider was
         // saying is answered.
-        if (!sources.uses(judged.whence)) {
+        if (!used) {
             AppLog.i(
                 TAG,
                 "left out a position found by ${judged.whence.said}: " +
@@ -799,7 +809,7 @@ class SharingService : LifecycleService() {
             return false
         }
 
-        return writeAndRemember(writer, fix, mode, judged, always)
+        return wrote
     }
 
     /**
@@ -894,7 +904,10 @@ class SharingService : LifecycleService() {
      * what is wanted here. The device is standing where it was and asking the
      * provider for nothing; the news is that it is still there to say so.
      */
-    private suspend fun sayAgain(writer: EveryGroup, mode: CollectionMode): Boolean {
+    private suspend fun sayAgain(writer: EveryGroup, mode: CollectionMode): Boolean =
+        judging.withLock { sayAgainInTurn(writer, mode) }
+
+    private suspend fun sayAgainInTurn(writer: EveryGroup, mode: CollectionMode): Boolean {
         val known = lastFix ?: lastKnown ?: return false
         // The same position said again carries the same note about the
         // receiver: it is a statement about the answer, and the answer has not
