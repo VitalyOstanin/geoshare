@@ -43,26 +43,31 @@ fun circlingLimits(connection: GroupConnection): Flow<CircleLimits> = callbackFl
 
 /** The document read as limits, falling back to the build's own. */
 private fun limitsOf(snapshot: DocumentSnapshot?): CircleLimits {
-    val standing = CircleLimits()
-
     if (snapshot == null || !snapshot.exists()) {
-        return standing
+        return CircleLimits()
     }
 
-    val seconds = snapshot.getDouble(CirclingField.WITHIN_SECONDS)
-    val widest = snapshot.getDouble(CirclingField.WIDEST_METRES)
-    val tightest = snapshot.getDouble(CirclingField.TIGHTEST_METRES)
-    val turned = snapshot.getDouble(CirclingField.TURNED_DEGREES)
+    return limitsOf(snapshot.data.orEmpty())
+}
+
+/**
+ * The fields read as limits. A field that is missing, or typed by hand in the
+ * console as something other than a number, keeps the build's value, and the
+ * whole set is then weighed as it stands.
+ */
+internal fun limitsOf(fields: Map<String, Any?>): CircleLimits {
+    val standing = CircleLimits()
+    val number = { field: String -> numberIn(fields, field) }
     val asked =
         CircleLimits(
-            answers = snapshot.getLong(CirclingField.ANSWERS)?.toInt() ?: standing.answers,
-            within = seconds?.let(::asDuration) ?: standing.within,
-            roundness = snapshot.getDouble(CirclingField.ROUNDNESS) ?: standing.roundness,
-            widestMetres = widest ?: standing.widestMetres,
-            tightestMetres = tightest ?: standing.tightestMetres,
-            steadiness = snapshot.getDouble(CirclingField.STEADINESS) ?: standing.steadiness,
-            turnedDegrees = turned ?: standing.turnedDegrees,
-            slowestMps = snapshot.getDouble(CirclingField.SLOWEST_MPS) ?: standing.slowestMps,
+            answers = number(CirclingField.ANSWERS)?.toInt() ?: standing.answers,
+            within = number(CirclingField.WITHIN_SECONDS)?.let(::asDuration) ?: standing.within,
+            roundness = number(CirclingField.ROUNDNESS) ?: standing.roundness,
+            widestMetres = number(CirclingField.WIDEST_METRES) ?: standing.widestMetres,
+            tightestMetres = number(CirclingField.TIGHTEST_METRES) ?: standing.tightestMetres,
+            steadiness = number(CirclingField.STEADINESS) ?: standing.steadiness,
+            turnedDegrees = number(CirclingField.TURNED_DEGREES) ?: standing.turnedDegrees,
+            slowestMps = number(CirclingField.SLOWEST_MPS) ?: standing.slowestMps,
         )
 
     if (!circleLimitsStand(asked)) {
