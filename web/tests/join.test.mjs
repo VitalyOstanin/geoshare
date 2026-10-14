@@ -224,6 +224,19 @@ test('an empty fragment does not hide the invitation in the query', () => {
     });
 });
 
+// The application merges the two halves field by field, the fragment's value
+// winning; the page reads the same link the same way.
+test('the query and the fragment are read together, the fragment winning', () => {
+    assert.deepEqual(invitationTyped('See https://imaginary-group.web.app/join?g=old&c=ABCDEFGH#g=g&by=Anna.'), {
+        site: 'imaginary-group',
+        groupId: 'g',
+        code: 'ABCDEFGH',
+        by: 'Anna',
+        name: '',
+        to: '',
+    });
+});
+
 // The application reads both Hosting hosts and a slash after "join"; so
 // does the page.
 test('a pasted firebaseapp.com link with a slash after join is read too', () => {

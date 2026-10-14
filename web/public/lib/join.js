@@ -107,11 +107,16 @@ export function invitationTyped(text) {
     const found = PASTED_LINK.exec(text);
 
     if (found !== null) {
-        const [, site, query, fragment] = found;
-        // `||` rather than `??`: a link cut off right after its "#" has an
-        // empty fragment, and the invitation is then in the query.
-        const raw = (fragment || query || '').replace(TRAILING_PUNCTUATION, '');
-        const invitation = parseInvitation(raw);
+        const [, site, query = '', fragment] = found;
+        // Both halves are read, as the application reads them (ConnectLink.parse):
+        // the join page hands a link over with the invitation in the query, a
+        // link shared as it is keeps it after the #. The fragment comes first,
+        // so that where both carry a field its value is the one taken; what
+        // follows the link in the text sticks to whichever half ends it.
+        const parts = fragment === undefined
+            ? [query.replace(TRAILING_PUNCTUATION, '')]
+            : [fragment.replace(TRAILING_PUNCTUATION, ''), query];
+        const invitation = parseInvitation(parts.filter(Boolean).join('&'));
 
         return invitation === null ? null : { site, ...invitation };
     }
