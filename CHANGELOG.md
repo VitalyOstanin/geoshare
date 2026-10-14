@@ -16,7 +16,7 @@ and the versions follow [Semantic Versioning](https://semver.org/).
 
 ## Contents
 
-- [0.1.0](#010---unreleased)
+- [0.1.0](#010---2026-10-14)
 
 ## [0.1.0] - 2026-10-14
 
