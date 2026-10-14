@@ -140,6 +140,10 @@ places the group has marked as known to be false. A position it does not
 trust is held back, and the card says why; a device under a transmitter still
 reports that it is in touch and how charged it is.
 
+The project owner records the group's false places in the Firebase console,
+as [docs/false-places.md](docs/false-places.md) describes; no screen does it
+yet.
+
 ## Development
 
 How it works inside, the collection modes, building, testing and the layout of

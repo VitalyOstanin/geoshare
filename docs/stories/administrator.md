@@ -192,7 +192,8 @@ Acceptance:
 
 ## ADM-10 Record the places where receivers are lied to
 
-- Status: planned — the rules allow it, no screen writes it yet
+- Status: partly — the project owner records the places in the console
+  ([false-places.md](../false-places.md)); no screen writes them yet
 - ADR: —
 - Tests: rules `places-and-settings.test.mjs`; Android `FalsePlacesTest`, `FalseMarksTest`, `CirclingTest`; page `false-places.test.mjs`
 - Not covered: planned: the screen that writes them
