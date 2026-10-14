@@ -53,6 +53,8 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.io.File
 
+private const val TAG = "geoshare.report"
+
 /**
  * What the application knows that a log must not carry out: the projects and
  * sites it is connected to, the groups' names, the account's address and name,
@@ -66,8 +68,11 @@ internal fun knownToTheApplication(
     labels: Labels,
 ): Known {
     val connections = Connections.all.value
-    val told = runCatching { PublishedProfile(context).told() }.getOrNull()
-    val accounts = connections.mapNotNull { runCatching { it.auth.currentUser }.getOrNull() }
+    val told = knownOrSaid("the published profile") { PublishedProfile(context).told() }
+    val accounts =
+        connections.mapNotNull { connection ->
+            knownOrSaid("the account of ${connection.projectId}") { connection.auth.currentUser }
+        }
 
     return Known(
         projectIds = connections.map { it.projectId },
@@ -83,6 +88,15 @@ internal fun knownToTheApplication(
             labels.members.values,
     )
 }
+
+/**
+ * What [read] gives, or null when it fails, said in the log: whatever [what]
+ * holds then goes into the report unscrubbed, and the member reading the log
+ * before sending it is the one left to notice.
+ */
+internal fun <T> knownOrSaid(what: String, read: () -> T): T? = runCatching(read)
+    .onFailure { AppLog.w(TAG, "$what could not be read, so the report keeps it", it) }
+    .getOrNull()
 
 /**
  * The way to tell what went wrong: what the member writes, the part of the log
