@@ -20,7 +20,7 @@ function timeOfDay(at) {
 }
 
 /** What a row says of a request, or null once it is old. */
-export function resetText(reset, now) {
+function resetText(reset, now) {
     if (!resetTold(reset, now)) {
         return null;
     }

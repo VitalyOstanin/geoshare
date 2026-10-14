@@ -7,7 +7,7 @@ import { NEW_ISSUE } from './unexpected.js';
 import { PAGE_VERSION } from './version.js';
 
 /** The longest address the issue page is handed; browsers and servers refuse much past this. */
-export const ISSUE_URL_LIMIT = 6000;
+const ISSUE_URL_LIMIT = 6000;
 
 const DEFAULT_TITLE = 'Problem report';
 const TITLE_LIMIT = 100;

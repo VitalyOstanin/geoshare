@@ -8,10 +8,10 @@
 import { keep, readKept } from './kept.js';
 
 /** The answers, in the order their buttons stand in. */
-export const THEMES = ['light', 'dark', 'system'];
+const THEMES = ['light', 'dark', 'system'];
 
 /** The answer to fall back on: whatever the system is set to. */
-export const DEFAULT_THEME = 'system';
+const DEFAULT_THEME = 'system';
 
 /**
  * Where the answer is kept.

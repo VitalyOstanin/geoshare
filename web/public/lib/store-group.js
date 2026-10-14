@@ -51,7 +51,7 @@ export function watchRoster(onRoster) {
  * there is no group instead of failing, and what is actually in the document
  * is a question for the console.
  */
-export function rosterOf(snapshot) {
+function rosterOf(snapshot) {
     const data = snapshot.data();
 
     return {
@@ -229,7 +229,7 @@ export function watchProfiles(onProfiles, onError) {
     );
 }
 
-export function profileOf(document) {
+function profileOf(document) {
     const data = document.data();
 
     // A profile without a name says nothing the id does not already say, and
@@ -309,7 +309,7 @@ export function watchGrants(memberIds, onGrants) {
  * slow timer of `RETRY_AFTER_MS`. The callback hears a snapshot, or null for a
  * refusal.
  */
-export function followEach(memberIds, collectionName, onDocument) {
+function followEach(memberIds, collectionName, onDocument) {
     const stops = new Map();
     let wanted = true;
 
@@ -353,7 +353,7 @@ export function followEach(memberIds, collectionName, onDocument) {
 }
 
 /** The devices a grant names: the positions cannot be listed, so this is the list to read. */
-export function devicesOf(snapshot) {
+function devicesOf(snapshot) {
     const data = snapshot.data();
 
     return Array.isArray(data.devices) ? data.devices.filter((one) => typeof one === 'string') : [];

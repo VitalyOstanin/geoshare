@@ -541,7 +541,7 @@ function followTheCard(view, seen, { names, faces, now }) {
  * under the circle moves on its own, and a ring left where the member used to
  * be would be a claim about the wrong place.
  */
-export function drawWidth(view) {
+function drawWidth(view) {
     if (!view.ringReady) {
         return;
     }

@@ -11,11 +11,11 @@ import { keep, readKept } from './kept.js';
 export const LANGUAGES = ['ru', 'en', 'system'];
 
 /** The answer to fall back on: whatever the browser asks for. */
-export const DEFAULT_LANGUAGE = 'system';
+const DEFAULT_LANGUAGE = 'system';
 
 /** The languages there are words for, and the one to speak to everybody else. */
-export const SPOKEN = ['en', 'ru'];
-export const FALLBACK_LANGUAGE = 'en';
+const SPOKEN = ['en', 'ru'];
+const FALLBACK_LANGUAGE = 'en';
 
 /** Where the answer is kept, next to the theme. */
 export const LANGUAGE_KEY = 'geoshare.language';

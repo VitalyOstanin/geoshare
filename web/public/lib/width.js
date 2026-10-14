@@ -20,7 +20,7 @@ const TENTHS_IN_A_KILOMETRE = 10;
  * A hundred metres is where an answer stops naming a building and starts
  * naming a block, which is the difference the colour is there to show.
  */
-export const WIDTH_WORTH_NOTICING_METRES = 100;
+const WIDTH_WORTH_NOTICING_METRES = 100;
 
 /** The radius of the globe in metres, as the mean sphere everybody draws on. */
 const EARTH_RADIUS_METRES = 6_371_008.8;

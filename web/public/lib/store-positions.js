@@ -122,7 +122,7 @@ function onceAllAnswered(documents, show) {
 }
 
 /** The widest answer still drawn as a circle. The rules say the same number. */
-export const WIDEST_CIRCLE_METRES = 100_000;
+const WIDEST_CIRCLE_METRES = 100_000;
 
 export function positionOf(snapshot) {
     const data = snapshot.data();
@@ -182,7 +182,7 @@ export function positionOf(snapshot) {
  * rules refuse both, and this is what happens to a document written before
  * they did.
  */
-export function widthOf(metres) {
+function widthOf(metres) {
     if (typeof metres !== 'number' || !Number.isFinite(metres)) {
         return null;
     }
@@ -197,6 +197,6 @@ export function widthOf(metres) {
  * field of the wrong type, an infinity, or a degree count far outside the
  * globe all reach the clients, and the rules do not stop them.
  */
-export function placeable(degrees, limit) {
+function placeable(degrees, limit) {
     return typeof degrees === 'number' && Number.isFinite(degrees) && degrees >= limit && degrees <= -limit;
 }

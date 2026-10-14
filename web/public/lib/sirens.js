@@ -16,10 +16,10 @@ export const SIREN_SECONDS = 22;
 export const SIREN_TICK_MS = 1000;
 
 /** How long a call waits for its device, and how long the caller's screen waits for an answer. */
-export const SIREN_FRESH_MS = 60_000;
+const SIREN_FRESH_MS = 60_000;
 
 /** How long a call that is over — stopped, unanswered or sounded out — is told of on a row. */
-export const SIREN_TOLD_MS = 5 * 60_000;
+const SIREN_TOLD_MS = 5 * 60_000;
 
 /**
  * One call as the device or the caller's screen holds it, out of what the

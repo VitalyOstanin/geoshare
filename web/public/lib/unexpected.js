@@ -165,7 +165,7 @@ function show(words, details) {
 }
 
 /** Listens for what nothing else caught, for as long as the page is open. */
-export function catchUnexpected(target = globalThis) {
+function catchUnexpected(target = globalThis) {
     const language = spokenLanguage();
     const words = WORDS[language] ?? WORDS.en;
     const report = (fault) => {

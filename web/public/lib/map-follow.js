@@ -266,7 +266,7 @@ export function chooseFollow(view, mode) {
 }
 
 /** Whether "one" has a member on the map to centre on. */
-export function hasFollowTarget(view) {
+function hasFollowTarget(view) {
     return targetPosition(view.last?.positions ?? [], view.targetPositionId) !== null;
 }
 

@@ -12,7 +12,7 @@
 export const LINK_GRACE_MS = 10_000;
 
 /** How long an action waits for the database before saying it did not answer. */
-export const ANSWER_WAIT_MS = 15_000;
+const ANSWER_WAIT_MS = 15_000;
 
 /**
  * The link before any snapshot: the page has asked and heard nothing, so the

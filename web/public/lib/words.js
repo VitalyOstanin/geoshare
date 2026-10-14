@@ -11,7 +11,7 @@ import { RU } from './words/ru.js';
 import { spokenLanguage } from './language.js';
 
 /** Every language the page has words for, by its tag. */
-export const DICTIONARIES = { en: EN, ru: RU };
+const DICTIONARIES = { en: EN, ru: RU };
 
 /** The one it is speaking now. */
 export const SPEAKING = spokenLanguage();

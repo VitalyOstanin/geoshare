@@ -8,7 +8,7 @@ import { JOIN_RU } from './words/join-ru.js';
 import { spokenLanguage } from './language.js';
 
 /** Every language the join page has words for, by its tag. */
-export const JOIN_DICTIONARIES = { en: JOIN_EN, ru: JOIN_RU };
+const JOIN_DICTIONARIES = { en: JOIN_EN, ru: JOIN_RU };
 
 /** The one it is speaking now. */
 export const JOIN_WORDS = JOIN_DICTIONARIES[spokenLanguage()];
