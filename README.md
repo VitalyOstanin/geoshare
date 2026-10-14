@@ -151,4 +151,14 @@ the repository are in [docs/development.md](docs/development.md).
 
 ## License
 
-MIT, see [LICENSE](LICENSE).
+MIT, see [LICENSE](LICENSE). That is the licence of this repository's own
+code; the parts it carries keep their own:
+
+- the application's libraries are listed, each with its licence, on its
+  Open source licences screen in the settings;
+- the page carries copies of Firebase (Apache-2.0), MapLibre GL JS
+  (BSD-3-Clause) and qr (MIT or Apache-2.0) in `web/public/lib/vendor/`, each with its
+  licence beside it;
+- the map is drawn from OpenStreetMap data, © OpenStreetMap contributors,
+  under the [ODbL](https://www.openstreetmap.org/copyright), credited on the
+  map itself.
