@@ -29,6 +29,7 @@ import {
 } from './vendor/firebase-13.0.0/firebase-firestore.js';
 import { firebaseConfig } from '../firebase-config.js';
 import { claimWriter } from './claim-writer.js';
+import { configProblem } from './config-check.js';
 import { createRefusals } from './refusals.js';
 import { keep, readKept } from './kept.js';
 
@@ -139,6 +140,12 @@ export const refusals = createRefusals(RETRY_AFTER_MS);
 /** Where this browser keeps the name it watches under, so a reload keeps one marker. */
 const DEVICE_KEY = 'geoshare.device';
 
+// Refused before the library sees it: see config-check.js.
+const configFault = configProblem(firebaseConfig);
+if (configFault) {
+    throw new Error(configFault);
+}
+
 export const app = initializeApp(firebaseConfig);
 export const auth = getAuth(app);
 export const store = getFirestore(app);
@@ -148,11 +155,6 @@ export const store = getFirestore(app);
 // field, and its project id must start with `demo-` so nothing here can be
 // mistaken for, or reach, a real one. Without the field nothing changes.
 const emulators = firebaseConfig.emulators;
-if (emulators && !firebaseConfig.projectId?.startsWith('demo-')) {
-    // A real project id with emulators named beside it is a configuration
-    // mixed up somewhere; refusing it is better than writing to either.
-    throw new Error(`emulators are only for a demo- project, not ${firebaseConfig.projectId}`);
-}
 if (emulators) {
     connectAuthEmulator(auth, emulators.auth, { disableWarnings: true });
     connectFirestoreEmulator(store, emulators.firestore.host, emulators.firestore.port);

@@ -44,7 +44,15 @@ val toolVersions: Map<String, String> =
 
 val appVersionName: String = providers.gradleProperty("appVersionName").get()
 val appVersionCode: Int = providers.gradleProperty("appVersionCode").get().toInt()
-val setupPageUrl: String = providers.gradleProperty("setupPageUrl").get()
+// A fork sets an address of its own, and one that is not an https address
+// ending in a slash would build an app that opens the wrong page, or fail in
+// the generated BuildConfig with the cause out of sight.
+val setupPageUrl: String =
+    providers.gradleProperty("setupPageUrl").get().also {
+        require(Regex("""^https://[^"\\\s]+/$""").matches(it)) {
+            "setupPageUrl must be an https address ending in /, not '$it'"
+        }
+    }
 
 // Coverage is counted only when asked for, with -Pcoverage: the agent that
 // counts it slows every test run, and an ordinary run has no use for the
