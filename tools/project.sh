@@ -275,10 +275,18 @@ for entry in json.load(sys.stdin).get("certificates", []):
 # directly — for what the firebase command line has no command for, and for
 # the readings `show` makes many of — goes through it.
 firebase_access_token() {
-    # An access token lasts an hour; one older than three quarters of that is
-    # refreshed the same way require_login() got it, so that a long `create`
-    # or a 20-minute --wait does not run out halfway.
-    if [[ -z "${ACCESS_TOKEN:-}" ]] || (( SECONDS - ACCESS_TOKEN_AT > 2700 )); then
+    # An access token lasts an hour; one with less than a quarter of that left
+    # is refreshed the same way require_login() got it, so that a long
+    # `create` or a 20-minute --wait does not run out halfway. Most calls come
+    # from inside $(...) or a pipeline, whose variables are gone when it ends:
+    # the firebase command line's file is read again first, since it keeps
+    # the token a call like that refreshed, and the command line is started
+    # only when the file holds nothing fresher either.
+    if ! access_token_fresh; then
+        remember_access_token
+    fi
+
+    if ! access_token_fresh; then
         firebase projects:list > /dev/null
         remember_access_token
     fi
@@ -286,12 +294,19 @@ firebase_access_token() {
     echo "${ACCESS_TOKEN}"
 }
 
-# Reads the access token the firebase command line has just refreshed, once,
-# so that every Google API asked below uses it without starting the command
-# line again: each start of it costs seconds before any work is done.
+access_token_fresh() {
+    [[ -n "${ACCESS_TOKEN:-}" ]] && (( ACCESS_TOKEN_UNTIL - SECONDS > 900 ))
+}
+
+# Reads the access token the firebase command line last refreshed, and how
+# long it has left, so that every Google API asked below uses it without
+# starting the command line again: each start of it costs seconds before any
+# work is done.
 remember_access_token() {
-    ACCESS_TOKEN="$(ACCOUNT="${account}" python3 -c '
-import json, os
+    local stored
+
+    stored="$(ACCOUNT="${account}" python3 -c '
+import json, os, time
 
 path = os.path.expanduser("~/.config/configstore/firebase-tools.json")
 store = json.load(open(path))
@@ -301,9 +316,13 @@ wanted = os.environ["ACCOUNT"].lower()
 # login:add in additionalAccounts beside it, each with tokens of its own.
 accounts = [store] + store.get("additionalAccounts", [])
 match = [a for a in accounts if not wanted or a["user"]["email"].lower() == wanted]
-print(match[0]["tokens"]["access_token"])
+tokens = match[0]["tokens"]
+print(tokens["access_token"])
+# expires_at is in milliseconds since the epoch.
+print(int(tokens.get("expires_at", 0) / 1000 - time.time()))
 ')"
-    ACCESS_TOKEN_AT="${SECONDS}"
+    ACCESS_TOKEN="${stored%%$'\n'*}"
+    ACCESS_TOKEN_UNTIL=$((SECONDS + ${stored##*$'\n'}))
 }
 
 # Stops with a message naming the account when the project cannot be reached:
