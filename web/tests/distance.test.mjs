@@ -25,14 +25,14 @@ const at = (positionId, memberId, latitude, longitude, { minutes = 1, width = 20
 test('a degree of latitude is a hundred and eleven kilometres', () => {
     const metres = metresBetween({ latitude: 60, longitude: 30 }, { latitude: 61, longitude: 30 });
 
-    assert.ok(Math.abs(metres - 111195) < 10, `${metres}`);
+    assert.ok(Math.abs(metres - 111_195) < 10, `${metres}`);
 });
 
 // Along a parallel a degree narrows with the cosine: half as wide at sixty.
 test('a degree of longitude at sixty north is half that', () => {
     const metres = metresBetween({ latitude: 60, longitude: 30 }, { latitude: 60, longitude: 31 });
 
-    assert.ok(Math.abs(metres - 55597) < 50, `${metres}`);
+    assert.ok(Math.abs(metres - 55_597) < 50, `${metres}`);
 });
 
 test('the viewer is where the freshest of their own devices is', () => {

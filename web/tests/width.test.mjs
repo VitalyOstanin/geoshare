@@ -3,7 +3,7 @@ import { test } from 'node:test';
 
 import { accuracyRing, widthIsWide, widthText } from '../public/lib/width.js';
 
-const EARTH = 6371008.8;
+const EARTH = 6_371_008.8;
 
 const northwardsMetres = (degrees) => (degrees / 180) * Math.PI * EARTH;
 
@@ -66,7 +66,7 @@ test('a ring on the date line stays in one piece', () => {
 });
 
 test('a ring at the pole stays on the globe', () => {
-    const ring = accuracyRing(89.999, 30, 10000);
+    const ring = accuracyRing(89.999, 30, 10_000);
 
     assert.ok(ring.every(([east, north]) => Math.abs(north) <= 90 && Math.abs(east) <= 180));
 });

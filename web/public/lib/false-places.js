@@ -18,7 +18,7 @@ import { metresBetween } from './distance.js';
 const PLACES_KEPT = 50;
 
 /** The widest a place may be. The rules and the devices say the same. */
-const WIDEST_METRES = 50000;
+const WIDEST_METRES = 50_000;
 
 /**
  * A document read as a place, or null where it is not one: a document typed

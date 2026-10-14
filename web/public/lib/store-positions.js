@@ -122,7 +122,7 @@ function onceAllAnswered(documents, show) {
 }
 
 /** The widest answer still drawn as a circle. The rules say the same number. */
-export const WIDEST_CIRCLE_METRES = 100000;
+export const WIDEST_CIRCLE_METRES = 100_000;
 
 export function positionOf(snapshot) {
     const data = snapshot.data();

@@ -12,10 +12,13 @@ try {
         document.documentElement.dataset.signIn = 'waiting';
 
         // A page whose modules never arrive — no network, a blocked script —
-        // would otherwise wait for good without a way to sign in.
+        // would otherwise wait for good without a way to sign in. Declared in
+        // here: at the top of a classic script it would be a global.
+        const SIGN_IN_WAIT_MS = 15_000;
+
         setTimeout(() => {
             delete document.documentElement.dataset.signIn;
-        }, 15000);
+        }, SIGN_IN_WAIT_MS);
     }
 } catch {
     // A browser keeping no site data remembers no sign-in either, and the

@@ -21,7 +21,7 @@ const at = (positionId, latitude, longitude, minutes = 1) => ({
 test('a document is read as a place only with numbers the devices accept', () => {
     assert.deepEqual(placeOf({ ...LAKE, named: 'lake' }), LAKE);
     assert.equal(placeOf({ ...LAKE, radiusMetres: 0 }), null);
-    assert.equal(placeOf({ ...LAKE, radiusMetres: 50001 }), null);
+    assert.equal(placeOf({ ...LAKE, radiusMetres: 50_001 }), null);
     assert.equal(placeOf({ ...LAKE, latitude: 91 }), null);
     assert.equal(placeOf({ ...LAKE, longitude: '31' }), null);
     assert.equal(placeOf(null), null);

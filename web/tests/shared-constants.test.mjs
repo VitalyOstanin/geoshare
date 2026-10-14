@@ -61,11 +61,13 @@ function kotlinNumber(written) {
     return Number(written.replaceAll('_', '').replace(/f$/u, ''));
 }
 
-/** A number as the page writes one, products of literals included. */
+/** A number as the page writes one, 15_000 and products of literals included. */
 function javascriptNumber(written) {
-    assert.match(written, /^[\d\s*+]+$/u, `${written} is plain arithmetic`);
+    assert.match(written, /^[\d_\s*+]+$/u, `${written} is plain arithmetic`);
 
-    return written.split('*').reduce((product, factor) => product * Number(factor), 1);
+    return written
+        .split('*')
+        .reduce((product, factor) => product * Number(factor.replaceAll('_', '')), 1);
 }
 
 /** A Duration.ofMinutes(3) and the like, in milliseconds. */

@@ -17,6 +17,9 @@ import { followPositions, showPositions } from '../app.js';
 import { drawGroup, tryGroupWrite } from './group-panel.js';
 import { render } from './strip.js';
 
+// How long after a search's end the page asks again: see searchesChanged.
+const SEARCH_END_MARGIN_MS = 1000;
+
 /**
  * What a change to the searches changes: which devices this viewer may read,
  * so the positions are followed again; who is marked on the map and in the
@@ -36,7 +39,7 @@ export function searchesChanged() {
     if (next !== null) {
         // A second past the end, so that the rules and this page agree the
         // search is over by the time the positions are asked for again.
-        state.searchEnds = setTimeout(searchesChanged, next - now + 1000);
+        state.searchEnds = setTimeout(searchesChanged, next - now + SEARCH_END_MARGIN_MS);
     }
 
     followPositions(state.grants);

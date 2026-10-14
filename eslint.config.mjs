@@ -31,6 +31,12 @@ export default [
             // The page is split into modules that import from one another, and a
             // name used without its import would only fail once the code runs.
             'no-undef': 'error',
+            // One way of writing a long number: from five digits on, with
+            // separators, 15_000 rather than 15000.
+            'no-restricted-syntax': ['error', {
+                selector: 'Literal[raw=/^[0-9]{5}/]',
+                message: 'Write a number of five digits or more with separators, as 15_000.',
+            }],
         },
     },
     {

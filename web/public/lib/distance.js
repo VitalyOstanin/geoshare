@@ -9,7 +9,7 @@ import { isStale, isStuck } from './age.js';
 import { WORDS, SPEAKING } from './words.js';
 
 /** The radius the distance is measured on: the mean sphere the width uses. */
-const EARTH_RADIUS_METRES = 6371008.8;
+const EARTH_RADIUS_METRES = 6_371_008.8;
 
 const RADIANS_IN_A_DEGREE = Math.PI / 180;
 

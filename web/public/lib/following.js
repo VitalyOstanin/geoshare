@@ -23,7 +23,7 @@ export const FOLLOW_ALL = 'all';
  * enough that a map left alone is following again before the next position
  * after that one lands.
  */
-export const PAUSE_AFTER_A_GESTURE_MS = 20000;
+export const PAUSE_AFTER_A_GESTURE_MS = 20_000;
 
 /**
  * Whether the last manual gesture is still holding the map still.

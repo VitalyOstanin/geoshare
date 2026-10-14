@@ -77,7 +77,7 @@ describe('false places', () => {
         const db = testEnv.authenticatedContext(ALICE).firestore();
 
         await assertFails(setDoc(falsePlaceOf(db), { ...somePlace, radiusMetres: 0 }));
-        await assertFails(setDoc(falsePlaceOf(db), { ...somePlace, radiusMetres: 50001 }));
+        await assertFails(setDoc(falsePlaceOf(db), { ...somePlace, radiusMetres: 50_001 }));
     });
 
     it('nothing else goes in the document', async () => {

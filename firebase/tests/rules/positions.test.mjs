@@ -331,7 +331,7 @@ describe('positions', () => {
             setDoc(positionOf(db, ALICE), { ...positionFrom(ALICE), accuracyMetres: -1 }),
         );
         await assertFails(
-            setDoc(positionOf(db, ALICE), { ...positionFrom(ALICE), accuracyMetres: 100001 }),
+            setDoc(positionOf(db, ALICE), { ...positionFrom(ALICE), accuracyMetres: 100_001 }),
         );
         await assertFails(
             setDoc(positionOf(db, ALICE), { ...positionFrom(ALICE), accuracyMetres: 'wide' }),

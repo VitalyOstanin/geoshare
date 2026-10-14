@@ -80,7 +80,7 @@ const CLOSEST_ZOOM = 18;
  * quoted, 156543, is for tiles of 256, and with it every ring came out twice
  * the size it was aimed at.
  */
-const EQUATOR_METRES_PER_PIXEL = 78271.51696;
+const EQUATOR_METRES_PER_PIXEL = 78_271.51696;
 
 /**
  * How close two pins have to come before they are drawn as one.

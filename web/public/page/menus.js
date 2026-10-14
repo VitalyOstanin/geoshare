@@ -70,7 +70,7 @@ export const FOLLOW_ANNOUNCE_MS = 2500;
 // How long the page waits for a member to be picked after "follow a member"
 // was asked for with nobody to follow. Long enough to find somebody in the
 // strip, short enough that the strip does not stay outlined all afternoon.
-const FOLLOW_WAIT_MS = 15000;
+const FOLLOW_WAIT_MS = 15_000;
 
 elements.followButton.addEventListener('click', (event) => {
     event.stopPropagation();
