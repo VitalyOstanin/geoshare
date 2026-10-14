@@ -142,9 +142,12 @@ jobs:
           GEOSHARE_RELEASE_PASSWORD: ${{ secrets.GEOSHARE_RELEASE_PASSWORD }}
         run: |
           export GEOSHARE_RELEASE_KEYSTORE="${RUNNER_TEMP}/release.jks"
+          # Taken away however the signing ends: a refused key or a failed
+          # apksigner stops the step before any line after it.
+          trap 'rm -f "${GEOSHARE_RELEASE_KEYSTORE}"' EXIT
+          umask 077
           base64 --decode <<< "${GEOSHARE_RELEASE_KEYSTORE_BASE64}" > "${GEOSHARE_RELEASE_KEYSTORE}"
           tools/sign-release.sh
-          rm -f "${GEOSHARE_RELEASE_KEYSTORE}"
 
       - name: The package says what it should
         # Read off the signed file itself: the application, the version and
