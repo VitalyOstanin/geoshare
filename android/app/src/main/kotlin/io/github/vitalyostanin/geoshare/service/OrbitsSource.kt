@@ -178,7 +178,7 @@ private fun download(url: String, target: File) {
     }
 }
 
-private suspend fun read(file: File): Orbits? = withContext(Dispatchers.Default) {
+private suspend fun read(file: File): Orbits? = withContext(Dispatchers.IO) {
     try {
         GZIPInputStream(file.inputStream()).bufferedReader().useLines { orbitsOf(it) }
     } catch (broken: IOException) {
