@@ -178,8 +178,8 @@ for (const member of MEMBERS) {
         devices: { arrayValue: { values: [stringValue(member.device)] } },
     });
 
-    // How each device last said it is, which the admin panel lists and the
-    // siren is called on: without it a member shows no devices to ring.
+    // How each device last said it is, which the administrator's panel lists and
+    // the siren is called on: without it a member shows no devices to ring.
     await write(`groups/${GROUP}/devices/${uid}`, {
         [member.device]: {
             mapValue: {

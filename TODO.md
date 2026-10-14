@@ -18,7 +18,7 @@
 - [Taking a position somewhere else](#taking-a-position-somewhere-else)
 - [Naming the phones: what is left](#naming-the-phones-what-is-left)
 - [What a stranger would have to do to use this](#what-a-stranger-would-have-to-do-to-use-this)
-- [An admin panel for the family](#an-admin-panel-for-the-family)
+- [An administrator's panel for the family](#an-administrators-panel-for-the-family)
 - [The phones fetch their own updates](#the-phones-fetch-their-own-updates)
 - [The screen says the satellites are being spoofed](#the-screen-says-the-satellites-are-being-spoofed)
 - [Turning one member's position on for the rest, in an emergency](#turning-one-members-position-on-for-the-rest-in-an-emergency)
@@ -481,7 +481,7 @@ the database has to cope with "not configured yet" as an ordinary state rather
 than as a failure; and the walkthrough becomes something to keep working as
 the Firebase console and its command line change under it.
 
-## An admin panel for the family
+## An administrator's panel for the family
 
 The member who owns the Firebase project is already unlike the others: the
 project is theirs, the quota is theirs, and the rules are written by them. That
@@ -489,12 +489,12 @@ position could carry a screen the other members do not have — on the page and
 in the application both — showing every device in the group and what the
 project knows about it.
 
-The first thing that screen is needed for is a position that has stuck. The
-jump filter anchors on the last believed fix, and where the anchor itself is
-wrong the phone can refuse every honest answer that follows. On the phone this
-is settled by the button that forgets the last place, but the phone is not
-always the one to ask: a child's phone is in a pocket somewhere, and the member
-holding it should not have to be talked through a settings screen. The admin
+The first thing that screen is needed for is a position that has stuck. The jump
+filter anchors on the last believed fix, and where the anchor itself is wrong
+the phone can refuse every honest answer that follows. On the phone this is
+settled by the button that forgets the last place, but the phone is not always
+the one to ask: a child's phone is in a pocket somewhere, and the member holding
+it should not have to be talked through a settings screen. The administrator
 should be able to clear the anchor of any device in the group from where they
 are.
 
@@ -502,13 +502,13 @@ What it costs, so that the decision is made with the price in view:
 
 - A command has to reach a phone that is not being used. Today nothing travels
   towards the phone except what the collection service already reads, so the
-  command is a document the service watches, the admin writes and the phone
-  clears once it has acted. Waking a phone that is not listening is the same
-  unsolved problem as the push item above.
-- The rules have to say who may write such a command, and the answer is not
-  "the project owner" by default: ownership is a billing fact, not a permission
-  Firestore knows about. The admin has to be named in the data like anybody
-  else.
+  command is a document the service watches, the administrator writes and the
+  phone clears once it has acted. Waking a phone that is not listening is the
+  same unsolved problem as the push item above.
+- The rules have to say who may write such a command, and the answer is not "the
+  project owner" by default: ownership is a billing fact, not a permission
+  Firestore knows about. The administrator has to be named in the data like
+  anybody else.
 - A command that reaches into another person's phone is a different thing from
   sharing a position with them, and it should look like one: the phone says in
   its log what was asked and by whom, and the screen where the member sees it
@@ -590,8 +590,8 @@ What it costs, so that the decision is made with the price in view:
 Asking once a day is the ordinary case, and it is the wrong one for the case
 that matters: a build that fixes something the household is suffering from now
 should not wait for tomorrow's question. So the household should be able to
-start an update from the admin panel, and the phones should hear about it
-rather than be asked again.
+start an update from the administrator's panel, and the phones should hear about
+it rather than be asked again.
 
 What that adds, on top of the above:
 
@@ -644,10 +644,11 @@ and every wording here is one more line to translate.
 
 ## Turning one member's position on for the rest, in an emergency
 
-The admin panel decides who sees whom. What it cannot do today is change that
-in a hurry: an older member who has gone quiet and is being looked for by the
-whole family is exactly the case where every relative needs their position at
-once, and the person who could grant it is the person nobody can reach.
+The administrator's panel decides who sees whom. What it cannot do today is
+change that in a hurry: an older member who has gone quiet and is being looked
+for by the whole family is exactly the case where every relative needs their
+position at once, and the person who could grant it is the person nobody can
+reach.
 
 What it should carry:
 
@@ -679,11 +680,11 @@ What every screen shows while it stands:
   household: the marks stand on each of them, the panel lists them together,
   and ending one leaves the others standing.
 
-What it costs: the rules on the server have to admit a grant with an end to
-it, the page has to keep showing a position it is about to lose, and the
-application grows a state it has to show on its own screen rather than only
-obey. None of it is free, and all of it belongs to the admin panel rather than
-beside it.
+What it costs: the rules on the server have to admit a grant with an end to it,
+the page has to keep showing a position it is about to lose, and the application
+grows a state it has to show on its own screen rather than only obey. None of it
+is free, and all of it belongs to the administrator's panel rather than beside
+it.
 
 ## The phone being looked for makes a sound
 

@@ -11,7 +11,7 @@ class ProfileNameTest {
     }
 
     // A fresh account can come without a name, and the group would otherwise
-    // see the start of an id where the admin invited an address.
+    // see the start of an id where an administrator invited an address.
     @Test
     fun `an account without a name goes by its shortened address`() {
         assertEquals("test…@example.com", profileName(null, "tester@example.com"))
