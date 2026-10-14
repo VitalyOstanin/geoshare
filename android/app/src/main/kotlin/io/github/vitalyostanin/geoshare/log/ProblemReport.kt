@@ -1,6 +1,6 @@
 package io.github.vitalyostanin.geoshare.log
 
-import java.net.URLEncoder
+import io.github.vitalyostanin.geoshare.project.percentEncoded
 
 /** The longest address the issue page is handed; browsers and servers refuse much past this. */
 const val ISSUE_URL_LIMIT: Int = 6000
@@ -107,8 +107,4 @@ private fun body(description: String, appVersion: String, sdk: Int, tail: String
     }
 
 private fun issueUrl(title: String, body: String): String =
-    "$ISSUE_PAGE?title=${encode(title)}&body=${encode(body)}"
-
-// URLEncoder writes a space as a plus, which is right in a form and left as a
-// plus by some readers of an address; %20 is read as a space by all of them.
-private fun encode(text: String): String = URLEncoder.encode(text, "UTF-8").replace("+", "%20")
+    "$ISSUE_PAGE?title=${percentEncoded(title)}&body=${percentEncoded(body)}"

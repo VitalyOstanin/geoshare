@@ -3,6 +3,15 @@ package io.github.vitalyostanin.geoshare.project
 import java.net.URLDecoder
 import java.net.URLEncoder
 
+/**
+ * [text] as it goes into an address. URLEncoder writes a space as a plus,
+ * which is right in a form and left as a plus by some readers of an address;
+ * %20 is read as a space by all of them, and is what the page's
+ * encodeURIComponent writes, so both sides make the same link.
+ */
+internal fun percentEncoded(text: String): String =
+    URLEncoder.encode(text, "UTF-8").replace("+", "%20")
+
 /** How long a caption taken off an invitation link is kept. */
 private const val CAPTION_MAX_LENGTH = 60
 
@@ -115,7 +124,7 @@ data class ConnectLink(val site: String, val invitation: Invitation?) {
             ).mapNotNull { (key, value) -> value?.takeIf { it.isNotEmpty() }?.let { key to it } }
 
             return "https://$site.web.app/join#" +
-                fields.joinToString("&") { (key, value) -> "$key=${encode(value)}" }
+                fields.joinToString("&") { (key, value) -> "$key=${percentEncoded(value)}" }
         }
 
         /**
@@ -144,12 +153,6 @@ data class ConnectLink(val site: String, val invitation: Invitation?) {
          * account with a long domain still matches its own invitation.
          */
         fun invitedAs(email: String): String = shortenedAddress(email).take(CAPTION_MAX_LENGTH)
-
-        // URLEncoder writes a space as '+', which a fragment read back
-        // through URLDecoder would also accept; %20 is what the page's
-        // encodeURIComponent writes, so both sides make the same link.
-        private fun encode(value: String): String =
-            URLEncoder.encode(value, "UTF-8").replace("+", "%20")
 
         private fun fieldsOf(fragment: String): Map<String, String> =
             fragment.split("&").mapNotNull { pair ->

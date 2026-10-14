@@ -2,9 +2,8 @@ package io.github.vitalyostanin.geoshare.service
 
 import android.Manifest
 import android.content.Context
-import android.content.pm.PackageManager
-import androidx.core.content.ContextCompat
 import io.github.vitalyostanin.geoshare.permission.backgroundLocationGranted
+import io.github.vitalyostanin.geoshare.permission.granted
 import io.github.vitalyostanin.geoshare.project.Connections
 
 /**
@@ -23,6 +22,3 @@ fun startConditions(context: Context, fromBackground: Boolean): StartConditions 
     backgroundLocationGranted = backgroundLocationGranted(context),
     fromBackground = fromBackground,
 )
-
-private fun granted(context: Context, permission: String): Boolean =
-    ContextCompat.checkSelfPermission(context, permission) == PackageManager.PERMISSION_GRANTED

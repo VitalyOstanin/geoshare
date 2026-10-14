@@ -3,7 +3,6 @@ package io.github.vitalyostanin.geoshare.project
 import android.Manifest
 import android.content.Context
 import android.content.Intent
-import android.content.pm.PackageManager
 import android.net.Uri
 import android.os.Build
 import android.os.VibrationEffect
@@ -67,6 +66,7 @@ import androidx.lifecycle.compose.LifecycleResumeEffect
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import io.github.vitalyostanin.geoshare.R
 import io.github.vitalyostanin.geoshare.log.AppLog
+import io.github.vitalyostanin.geoshare.permission.granted
 import kotlinx.coroutines.awaitCancellation
 import kotlinx.coroutines.delay
 import java.util.concurrent.Executors
@@ -113,7 +113,7 @@ fun QrScanDialog(onFound: (String) -> Unit, onDismiss: () -> Unit) {
         DialogProperties(usePlatformDefaultWidth = false, decorFitsSystemWindows = false),
     ) {
         val context = LocalContext.current
-        var granted by remember { mutableStateOf(cameraGranted(context)) }
+        var granted by remember { mutableStateOf(granted(context, Manifest.permission.CAMERA)) }
         var refused by remember { mutableStateOf(false) }
         val ask =
             rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) {
@@ -130,7 +130,7 @@ fun QrScanDialog(onFound: (String) -> Unit, onDismiss: () -> Unit) {
         // Back from the application's settings, where the camera may have
         // been allowed by hand.
         LifecycleResumeEffect(Unit) {
-            granted = cameraGranted(context)
+            granted = granted(context, Manifest.permission.CAMERA)
             onPauseOrDispose {}
         }
 
@@ -146,11 +146,6 @@ fun QrScanDialog(onFound: (String) -> Unit, onDismiss: () -> Unit) {
         }
     }
 }
-
-private fun cameraGranted(context: Context): Boolean = ContextCompat.checkSelfPermission(
-    context,
-    Manifest.permission.CAMERA,
-) == PackageManager.PERMISSION_GRANTED
 
 /** The camera, the square and what the scanner has to say. */
 @Composable

@@ -48,5 +48,6 @@ fun movementGranted(context: Context): Boolean =
     Build.VERSION.SDK_INT < Build.VERSION_CODES.Q ||
         granted(context, Manifest.permission.ACTIVITY_RECOGNITION)
 
-private fun granted(context: Context, permission: String): Boolean =
+/** Whether [permission] is granted, as the platform answers it now. */
+internal fun granted(context: Context, permission: String): Boolean =
     ContextCompat.checkSelfPermission(context, permission) == PackageManager.PERMISSION_GRANTED
