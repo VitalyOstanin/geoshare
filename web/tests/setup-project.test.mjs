@@ -95,6 +95,16 @@ test('the projects come from the results of the list', async () => {
     assert.deepEqual(await listProjects(empty.api), []);
 });
 
+test('the projects of every page of the list are read', async () => {
+    const { api, requests } = fakeFetch((method, url) =>
+        url.includes('pageToken=next%2F1')
+            ? [200, { results: [{ projectId: 'second' }] }]
+            : [200, { results: [{ projectId: PROJECT }], nextPageToken: 'next/1' }]);
+
+    assert.deepEqual(await listProjects(api), [{ projectId: PROJECT }, { projectId: 'second' }]);
+    assert.equal(requests.length, 2);
+});
+
 test('enabling Firestore waits only for an operation that is not done', async () => {
     const done = fakeFetch(() => [200, { done: true }]);
     const pending = fakeFetch((method, url, body, n) =>

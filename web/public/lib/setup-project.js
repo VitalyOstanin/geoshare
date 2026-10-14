@@ -197,11 +197,24 @@ export async function waitOperation(api, base, op, sleep = realSleep) {
     return current.response;
 }
 
-/** The Firebase projects of the account, as the API lists them. */
+/**
+ * The Firebase projects of the account, as the API lists them, every page of
+ * the list: an account with more than a hundred projects had the rest left
+ * out of the choice.
+ */
 export async function listProjects(api) {
-    const data = await api('GET', `${FIREBASE}/projects?pageSize=100`);
+    const projects = [];
+    let pageToken = '';
 
-    return data?.results || [];
+    do {
+        const token = pageToken ? `&pageToken=${encodeURIComponent(pageToken)}` : '';
+        const data = await api('GET', `${FIREBASE}/projects?pageSize=100${token}`);
+
+        projects.push(...(data?.results || []));
+        pageToken = data?.nextPageToken || '';
+    } while (pageToken);
+
+    return projects;
 }
 
 /** Turns Firestore on for the project; enabling a service already on is a no-op. */
