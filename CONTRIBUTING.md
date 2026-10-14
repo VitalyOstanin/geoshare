@@ -53,6 +53,10 @@ affect; `tools/check.sh --all` runs every one.
 - A change a user would notice gets a line in [CHANGELOG.md](CHANGELOG.md)
   under the unreleased version.
 - Text on the screen comes in English and Russian.
+- A commit's subject starts with the part it changes, capitalised and
+  followed by a colon: `Android:`, `Page:`, `Setup page:`, `Rules:`,
+  `Tools:`, `Docs:`, `Release:`. A change across several parts goes without
+  one. The rest of the subject says what changed for whoever uses that part.
 
 ## Reporting a problem
 
