@@ -65,7 +65,7 @@ data class PendingInvitation(
         val invited = invitedAddress ?: return false
         val email = signedInEmail ?: return false
 
-        return !ConnectLink.shortenedAddress(email).equals(invited, ignoreCase = true)
+        return !ConnectLink.invitedAs(email).equals(invited, ignoreCase = true)
     }
 
     companion object {

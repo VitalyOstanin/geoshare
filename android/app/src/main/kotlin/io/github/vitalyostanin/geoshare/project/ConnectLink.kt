@@ -138,6 +138,13 @@ data class ConnectLink(val site: String, val invitation: Invitation?) {
             return name.take(kept) + "…" + email.substring(at)
         }
 
+        /**
+         * [email] as a link made out to it carries it once read: shortened,
+         * and cut to the length every caption of a link is cut to, so that an
+         * account with a long domain still matches its own invitation.
+         */
+        fun invitedAs(email: String): String = shortenedAddress(email).take(CAPTION_MAX_LENGTH)
+
         // URLEncoder writes a space as '+', which a fragment read back
         // through URLDecoder would also accept; %20 is what the page's
         // encodeURIComponent writes, so both sides make the same link.

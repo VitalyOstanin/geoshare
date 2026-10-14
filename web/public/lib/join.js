@@ -153,7 +153,11 @@ export function isWrongAccount(invitation, signedInEmail) {
         return false;
     }
 
-    return shortenedAddress(signedInEmail).toLowerCase() !== invitation.to.toLowerCase();
+    // Cut as the link's own `to` was when it was read, so that an account
+    // with a long domain still matches its own invitation.
+    const signedIn = capCaption(shortenedAddress(signedInEmail));
+
+    return signedIn.toLowerCase() !== invitation.to.toLowerCase();
 }
 
 /** How much of an address's name shortenedAddress keeps. */

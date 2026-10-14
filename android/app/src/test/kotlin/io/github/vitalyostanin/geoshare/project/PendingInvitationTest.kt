@@ -73,6 +73,15 @@ class PendingInvitationTest {
         assertEquals(false, invitation.meantForAnotherAccount("Ivan.Petrov@Example.com"))
     }
 
+    @Test
+    fun `an account with a long domain matches its own invitation`() {
+        val email = "ivan.petrov@" + "d".repeat(60) + ".example.com"
+        val carried = ConnectLink.shortenedAddress(email).take(60)
+        val invitation = PendingInvitation("group-1", "ABCDEFGH", carried)
+
+        assertEquals(false, invitation.meantForAnotherAccount(email))
+    }
+
     // Without either side there is nothing to compare, and the rules decide.
     @Test
     fun `nothing to compare is no verdict`() {

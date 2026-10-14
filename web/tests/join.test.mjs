@@ -279,6 +279,16 @@ test('an invitation for another address is a mismatch, case aside', () => {
     assert.equal(isWrongAccount(invitation, 'IVAN.PETROV@EXAMPLE.COM'), false);
 });
 
+test('an account with a long domain matches its own invitation', () => {
+    const email = `ivan.petrov@${'d'.repeat(60)}.example.com`;
+    const invitation = invitationTyped(
+        `https://imaginary-group.web.app/join#g=g&c=ABCDEFGH&to=${shortenedAddress(email)}`,
+    );
+
+    assert.equal(invitation.to.length, 60);
+    assert.equal(isWrongAccount(invitation, email), false);
+});
+
 test('nothing to compare either way is no mismatch', () => {
     const bare = invitationTyped('imaginary-group.ABCD2345');
     const named = invitationTyped(
