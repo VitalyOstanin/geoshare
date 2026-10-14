@@ -57,42 +57,8 @@ import kotlin.math.roundToInt
 /** Above this a surface counts as pale, below it as dark. */
 internal const val HALF_LIT = 0.5f
 
-/**
- * How long [FollowMode.ONE] waits, once picked with nobody yet chosen to sit
- * on, before giving up and letting the strip stop asking.
- *
- * Long enough that turning to tap a card is not a race against the menu
- * closing on its own; short enough that a member who opened the menu by
- * mistake is not left with a strip ringed in a colour they never meant to
- * see.
- */
-private const val AWAITING_TARGET_MS = 15_000L
-
 /** As much of the screen as the full list may take before it starts scrolling instead. */
 internal val LIST_MAX_HEIGHT = 220.dp
-
-/**
- * The gap between the controls in the row over the map; wider than the count
- * on the sources button sticks out past its circle.
- */
-private val TOP_BUTTONS_GAP = 12.dp
-
-/**
- * Who the follow button's [FollowMode.ONE] centres on.
- *
- * The name is captured at the moment the member's card is opened rather than
- * looked up again from [MemberPosition] each time the button is drawn: once
- * the member's position drops out of the positions this device is being shown,
- * there is nowhere left to look the name up from, and the button still has to
- * say whose card it was.
- */
-private data class FollowTarget(val positionId: String, val name: String)
-
-/** Keeps [FollowTarget] across a recreated screen, the way the mode is kept. */
-private val FollowTargetSaver = listSaver<FollowTarget?, String>(
-    save = { target -> target?.let { listOf(it.positionId, it.name) } ?: emptyList() },
-    restore = { saved -> if (saved.isEmpty()) null else FollowTarget(saved[0], saved[1]) },
-)
 
 /** Keeps the positions under an opened marker across a recreated screen, as the card is kept. */
 private val PositionIdsSaver = listSaver<List<String>, String>(
@@ -154,74 +120,20 @@ fun MapScreen(
     var naming by remember { mutableStateOf<Pair<LabelKind, String>?>(null) }
     val members = orderedForNavigation(positions, ownMemberId)
     var focus by remember { mutableStateOf<MapFocus?>(null) }
-    // Saveable, as is the target: a change of theme or of the screen's
-    // orientation recreates the screen, and the camera is to go on following.
-    var followMode by rememberSaveable { mutableStateOf(FollowMode.NONE) }
+    val follow = rememberFollowState()
     var mapHelpOpen by remember { mutableStateOf(false) }
     var groupsOpen by remember { mutableStateOf(false) }
     var leaveAsk by remember { mutableStateOf<LeaveAsk?>(null) }
     val switcher = switcherShown(groups.choices.size)
-    // The group shown, when an administrator has taken this device off it,
-    // or when the invitation it came with was refused and it never got in:
-    // the map and the settings both say so, in the same words.
     val outside =
         standingIn(settings.roster, ownMemberId).let {
             it == Standing.Ungrouped || it == Standing.Outsider
         }
-    val removed =
-        groups.choices
-            .firstOrNull { shown ->
-                shown.projectId == groups.selected &&
-                    (
-                        shown.removed ||
-                            (outside && settings.refusedJoin?.projectId == shown.projectId)
-                        )
-            }
-            ?.let { shown ->
-                RemovedGroup(
-                    caption = shown.caption,
-                    onDrop = {
-                        groups.onLeave(
-                            LeaveAsk(shown.projectId, shown.caption, Leave.NOT_ON_ROSTER),
-                        )
-                    },
-                    onJoin = groups.onJoin,
-                    // A refusal is the newer word: one removed and then
-                    // turned down by a spent link is told about the link.
-                    refused = settings.refusedJoin?.takeIf { it.projectId == shown.projectId },
-                )
-            }
+    val removed = removedGroup(groups, settings, outside)
     // A project the device reaches with no group of its own in it yet, told
     // only once the database has answered: before that the roster is null
     // for every member, and the card would flash on each start.
     val noGroup = removed == null && outside && settings.rosterAnswered
-    // Whether a hand is holding the following still; the button says so.
-    var followPaused by remember { mutableStateOf(false) }
-    var followTarget by rememberSaveable(stateSaver = FollowTargetSaver) {
-        mutableStateOf<FollowTarget?>(null)
-    }
-    // Bumped on every real change of the follow mode — from the menu, or from
-    // a target finally being chosen for [awaitingTarget] — so the button's
-    // label can unroll again each time rather than only on the first change:
-    // a key that stayed the same (say, ALL picked while ALL already ran)
-    // would leave [LaunchedEffect] with nothing to restart.
-    var followModeChanges by remember { mutableStateOf(0) }
-    // Set once ONE is picked with nobody yet chosen to sit on, and cleared the
-    // moment a target is noted — by any of the three ways a card opens, by
-    // picking a different mode from the menu, by the back gesture, or on its
-    // own once nobody has answered it for a while.
-    var awaitingTarget by remember { mutableStateOf(false) }
-
-    // Nobody answering the strip for that long is a menu opened by mistake
-    // rather than a member still deciding, and the ring left running on the
-    // strip forever would read as broken rather than as waiting.
-    LaunchedEffect(awaitingTarget) {
-        if (awaitingTarget) {
-            delay(AWAITING_TARGET_MS)
-            awaitingTarget = false
-        }
-    }
-
     // Kept across a recreated screen, as the follow mode is: turning the
     // phone or a change of the system theme would otherwise close the card
     // somebody was reading.
@@ -243,17 +155,7 @@ fun MapScreen(
     // Where the row of buttons over the map ends, for following everybody
     // to keep the top pin below it.
     var topCover by remember { mutableStateOf(0) }
-    var settingsOpen by rememberSaveable { mutableStateOf(false) }
-    // Opened from within the settings and drawn over them, so that closing it
-    // puts the member back where they were rather than on the map.
-    var adminOpen by rememberSaveable { mutableStateOf(false) }
-    var myPhonesOpen by rememberSaveable { mutableStateOf(false) }
-    var accuracyOpen by rememberSaveable { mutableStateOf(false) }
-    var licencesOpen by rememberSaveable { mutableStateOf(false) }
-    var reportOpen by rememberSaveable { mutableStateOf(false) }
-    // The list of every member, over the map and the strip; saveable like the
-    // panels, so that turning the device does not drop the member back on the map.
-    var membersOpen by rememberSaveable { mutableStateOf(false) }
+    val panels = rememberOpenPanels()
     // Held by id rather than by value: the position keeps arriving, and a card
     // showing the one from when it was opened would quietly go stale.
     val opened = positions.firstOrNull { it.positionId == openedPositionId }
@@ -262,21 +164,7 @@ fun MapScreen(
             positions.firstOrNull { it.positionId == positionId }
         }
     val ownName = stringResource(R.string.map_member_you)
-    // Who else has the map open, named rather than counted. The card used to
-    // carry this as the reason for the mode it was in — "somebody is looking" —
-    // which said that the household was being watched without saying by whom,
-    // and said it on every card at once, because a single open map puts every
-    // device of the group into the same mode.
-    val lookingNames =
-        watchingMembers(watchers, now).map { member ->
-            memberName(
-                profile = profiles[member],
-                memberId = member,
-                own = member == ownMemberId,
-                ownName = ownName,
-                unnamed = unnamedMember(member),
-            )
-        }
+    val lookingNames = lookingNames(watchers, now, profiles, ownMemberId, ownName)
     // Read through the resources rather than through a composable, because the
     // map asks for this text while it is drawing, with a count it works out
     // itself from the members standing together.
@@ -291,29 +179,10 @@ fun MapScreen(
     val people = named.people
     val names = named.markers
 
-    // Named at the place a member's card is opened, from whichever of the
-    // three ways it happened to open: a tap on the strip, a tap on the
-    // member's own marker, or a pick out of a group's list. All three end up
-    // here so that the follow button's ONE mode always has a name for
-    // whoever the last card was about, not only for the strip's own taps.
-    //
-    // Also where ONE's own wait ends: the same three ways of opening a card
-    // are the three ways the strip's ring is answered, and a name arriving
-    // now is exactly the one [awaitingTarget] was left waiting for.
     fun noteFollowTarget(positionId: String) {
         val memberId = positions.firstOrNull { it.positionId == positionId }?.memberId
 
-        followTarget =
-            FollowTarget(
-                positionId = positionId,
-                name = names[positionId] ?: memberId?.let(::shortName) ?: positionId,
-            )
-
-        if (awaitingTarget) {
-            followMode = FollowMode.ONE
-            awaitingTarget = false
-            followModeChanges++
-        }
+        follow.note(positionId, names[positionId] ?: memberId?.let(::shortName) ?: positionId)
     }
 
     // A tap is a request to look at somebody, not a state: tapping the same
@@ -326,30 +195,26 @@ fun MapScreen(
         noteFollowTarget(positionId)
     }
 
+    fun pickFollow(picked: FollowMode) {
+        follow.pick(
+            picked,
+            follow.target?.let { targetPosition(positions, it.positionId) != null } ?: false,
+        )
+    }
+
     // The way back out of whatever is open, in the order things were opened
     // in: the strip's own wait first, because it is the most recent thing a
     // press could have meant to cancel, then the card, then the settings
     // screen, and the application itself only when nothing of ours is left
     // on screen. Without these the gesture leaves the application from a
     // settings screen, which is not what anybody means by it.
-    BackHandler(enabled = awaitingTarget) { awaitingTarget = false }
-    BackHandler(enabled = adminOpen) { adminOpen = false }
-    BackHandler(enabled = myPhonesOpen) { myPhonesOpen = false }
-    BackHandler(enabled = accuracyOpen) { accuracyOpen = false }
-    BackHandler(enabled = licencesOpen) { licencesOpen = false }
-    BackHandler(enabled = reportOpen) { reportOpen = false }
-    BackHandler(
-        enabled =
-        settingsOpen && !adminOpen && !myPhonesOpen && !accuracyOpen &&
-            !licencesOpen && !reportOpen,
-    ) {
-        settingsOpen = false
-    }
-    BackHandler(enabled = !settingsOpen && (opened != null || group.isNotEmpty())) {
+    BackHandler(enabled = follow.awaitingTarget) { follow.awaitingTarget = false }
+    SettingsBackHandlers(panels)
+    BackHandler(enabled = !panels.settings && (opened != null || group.isNotEmpty())) {
         openedPositionId = null
         openedGroup = emptyList()
     }
-    BackHandler(enabled = membersOpen && !settingsOpen) { membersOpen = false }
+    BackHandler(enabled = panels.members && !panels.settings) { panels.members = false }
 
     Column(modifier = modifier.fillMaxSize()) {
         BoxWithConstraints(
@@ -359,15 +224,8 @@ fun MapScreen(
                 .weight(1f)
                 .onGloballyPositioned { mapLeft = it.positionInRoot().x },
         ) {
-            // Half the room above the strip: a card is a heading and five
-            // rows, and in a sideways window it would otherwise stand taller
-            // than the map it is a card about.
-            val cardHeight = maxHeight / 2
-            val cardWidth = minOf(CARD_MAX_WIDTH, maxWidth - CARD_MARGIN * 2)
-            val room = constraints.maxWidth.toFloat()
             // The member the card is about, or the first of a list in the
-            // order the strip shows them; one who is off the strip stands
-            // under the button for everybody else.
+            // order the strip shows them.
             val about =
                 openedPositionId
                     ?: members.firstOrNull { member ->
@@ -375,24 +233,9 @@ fun MapScreen(
                             it.positionId ==
                                 member.positionId
                         }
-                    }
-                        ?.positionId
-            val centre = (about?.let { stripCentres[it] } ?: stripCentres[MORE_ON_STRIP])
-            val placed =
-                Modifier
-                    .align(Alignment.BottomStart)
-                    .width(cardWidth)
-                    .offset {
-                        val left =
-                            cardLeft(
-                                centre = centre?.minus(mapLeft) ?: (room / 2),
-                                cardWidth = cardWidth.toPx(),
-                                room = room,
-                                margin = CARD_MARGIN.toPx(),
-                            )
+                    }?.positionId
+            val placed = cardPlace(about, stripCentres, mapLeft)
 
-                        IntOffset(left.roundToInt(), 0)
-                    }
             MemberMap(
                 positions = positions,
                 names = names,
@@ -407,9 +250,9 @@ fun MapScreen(
                 groupLabel = groupLabel,
                 focus = focus,
                 selected = openedPositionId,
-                followMode = followMode,
-                followTarget = followTarget?.positionId,
-                onPausedChange = { followPaused = it },
+                followMode = follow.mode,
+                followTarget = follow.target?.positionId,
+                onPausedChange = { follow.paused = it },
                 topCover = topCover,
                 onSelect = { positionId ->
                     openedPositionId = positionId
@@ -438,116 +281,43 @@ fun MapScreen(
                 )
             }
 
-            // The controls on one side and the account on the other, the way
-            // map applications lay them out: a row keeps a second control from
-            // ever landing on top of the first whatever either measures.
-            Row(
-                horizontalArrangement = Arrangement.spacedBy(TOP_BUTTONS_GAP),
-                verticalAlignment = Alignment.CenterVertically,
-                // The map is drawn to the edges of the window on purpose; what
-                // stands over it is not, or the clock is what the member taps.
-                modifier =
-                Modifier
-                    .align(Alignment.TopStart)
-                    .onGloballyPositioned { topCover = it.boundsInParent().bottom.roundToInt() }
-                    .statusBarsPadding()
-                    .padding(12.dp),
-            ) {
-                SourcePicker(
-                    leftOut = settings.sourcesLeftOut,
-                    onSourceUseChange = actions.onSourceUseChange,
-                )
-
-                FollowButton(
-                    mode = followMode,
-                    paused = followPaused,
-                    targetName = followTarget?.name,
+            MapTopRow(
+                settings = settings,
+                actions = actions,
+                follow =
+                FollowControl(
+                    mode = follow.mode,
+                    paused = follow.paused,
+                    targetName = follow.target?.name,
                     targetAvailable =
-                    followTarget?.let { targetPosition(positions, it.positionId) != null }
-                        ?: true,
-                    changeCount = followModeChanges,
-                    onPick = { picked ->
-                        val hasTarget =
-                            followTarget?.let { targetPosition(positions, it.positionId) != null }
-                                ?: false
-
-                        // ONE picked with nobody to sit on does not become the
-                        // mode yet: the strip is asked instead, and it is
-                        // noteFollowTarget, once somebody answers, that turns
-                        // the wait into the mode itself.
-                        if (picked == FollowMode.ONE && !hasTarget) {
-                            awaitingTarget = true
-                        } else {
-                            followMode = picked
-                            awaitingTarget = false
-                            followModeChanges++
-                        }
-                    },
-                )
-
-                MapRoundButton(
-                    icon = R.drawable.ic_help,
-                    label = stringResource(R.string.help_open),
-                    onClick = { mapHelpOpen = true },
-                )
-
-                // Only while there is a group to list: the device taken off it,
-                // or never in one, has no strip either.
-                if (removed == null && !noGroup) {
-                    MapRoundButton(
-                        icon = R.drawable.ic_members,
-                        label = stringResource(R.string.map_members),
-                        onClick = { membersOpen = true },
-                    )
-                }
-            }
+                    follow.target?.let { targetPosition(positions, it.positionId) != null } ?: true,
+                    changeCount = follow.changes,
+                    onPick = ::pickFollow,
+                ),
+                onHelp = { mapHelpOpen = true },
+                // Only while there is a group to list: the device taken off
+                // it, or never in one, has no strip either.
+                onMembers = { panels.members = true }.takeIf { removed == null && !noGroup },
+                onTopCover = { topCover = it },
+            )
 
             if (mapHelpOpen) {
                 MapHelpSheet(onClose = { mapHelpOpen = false })
             }
 
-            if (switcher) {
-                GroupChip(
-                    caption =
-                    groups.choices.firstOrNull { it.projectId == groups.selected }?.caption
-                        ?: groups.selected,
-                    onClick = { groupsOpen = true },
-                    modifier = Modifier.align(Alignment.TopStart).statusBarsPadding(),
-                )
-            }
-
-            if (groupsOpen) {
-                GroupSheet(
-                    choices = groups.choices,
-                    selected = groups.selected,
-                    onSelect = { projectId ->
-                        groupsOpen = false
-                        groups.onSelect(projectId)
-                    },
-                    onJoin = {
-                        groupsOpen = false
-                        groups.onJoin()
-                    },
-                    onLeave = { choice ->
-                        groupsOpen = false
-                        leaveAsk = LeaveAsk(choice.projectId, choice.caption, choice.leave)
-                    },
-                    onClose = { groupsOpen = false },
-                )
-            }
-
-            leaveAsk?.let { ask ->
-                LeaveGroupDialog(
-                    ask = ask,
-                    onLeave = { groups.onLeave(ask) },
-                    onDismiss = { leaveAsk = null },
-                )
-            }
+            MapGroupControls(
+                switcher = switcher,
+                groups = groups,
+                groupsOpen = groupsOpen,
+                onGroupsOpen = { groupsOpen = it },
+                leaveAsk = leaveAsk,
+                onLeaveAsk = { leaveAsk = it },
+            )
 
             AccountButton(
                 displayName = ownDisplayName,
                 pictureUrl = ownPictureUrl,
-                onClick = { settingsOpen = true },
+                onClick = { panels.settings = true },
                 modifier =
                 Modifier
                     .align(Alignment.TopEnd)
@@ -555,110 +325,38 @@ fun MapScreen(
                     .padding(12.dp),
             )
 
-            // Below the row of round buttons and the group chip rather than on
-            // top of them: the two are read in different moments, and a banner
-            // covering the buttons would be in the way of the one thing this
-            // screen is for.
-            OwnBanners(
+            MapBanners(
                 searches = searches,
                 now = now,
                 ownMemberId = ownMemberId,
+                ownPhoneId = ownPhoneId,
+                ownName = ownName,
                 names = names,
                 profiles = profiles,
-                ownName = ownName,
-                onFound = actions.onEndSearch,
-                modifier =
-                Modifier
-                    .align(Alignment.TopCenter)
-                    .statusBarsPadding()
-                    .padding(top = bannerOffset(switcher), start = 12.dp, end = 12.dp),
-            )
-
-            OwnSirenBanner(
-                ownPhoneId = ownPhoneId,
                 actions = actions,
-                profiles = profiles,
-                ownMemberId = ownMemberId,
-                ownName = ownName,
-                modifier =
-                Modifier
-                    .align(Alignment.TopCenter)
-                    .statusBarsPadding()
-                    .padding(top = bannerOffset(switcher), start = 12.dp, end = 12.dp),
+                switcher = switcher,
             )
 
             if (opened != null) {
-                val openedSearch = searches[opened.positionId]?.takeIf { it.stands(now) }
-                val openedName = people[opened.positionId] ?: shortName(opened.memberId)
-                val unnamedDevice = stringResource(R.string.unnamed_device)
-                val reach =
-                    if (offersReach(
-                            opened.positionId,
-                            opened.memberId,
-                            ownPhoneId,
-                            ownMemberId,
-                            runsTheGroup,
-                        )
-                    ) {
-                        rememberDeviceReach(
-                            phone =
-                            PhoneLine(
-                                phoneId = opened.positionId,
-                                name =
-                                opened.deviceName?.takeIf { it.isNotBlank() } ?: unnamedDevice,
-                                onlineAt = null,
-                                batteryPercent = null,
-                                charging = false,
-                            ),
-                            memberName = openedName,
-                            actions = actions,
-                        )
-                    } else {
-                        null
-                    }
-
-                MemberDetail(
-                    member = opened,
-                    name = openedName,
+                OpenedMemberCard(
+                    opened = opened,
+                    name = people[opened.positionId] ?: shortName(opened.memberId),
                     face = faces[opened.memberId],
+                    positions = positions,
+                    searches = searches,
                     now = now,
-                    away = distanceFromViewer(opened, positions, ownMemberId, now),
-                    search = openedSearch,
-                    openedByName =
-                    openedSearch?.let {
-                        memberName(
-                            profile = profiles[it.openedBy],
-                            memberId = it.openedBy,
-                            own = it.openedBy == ownMemberId,
-                            ownName = ownName,
-                            unnamed = unnamedMember(it.openedBy),
-                        )
-                    },
-                    runsTheGroup = runsTheGroup,
-                    onFound = { actions.onEndSearch(opened.positionId) },
+                    profiles = profiles,
+                    own = OwnSide(ownMemberId, ownPhoneId, ownName, runsTheGroup),
+                    settings = settings,
+                    actions = actions,
                     detailsOpen = detailsOpen,
                     onDetailsOpen = { detailsOpen = it },
                     onClose = { openedPositionId = null },
-                    onNamePhone = { naming = LabelKind.PHONE to opened.positionId },
-                    // Oneself is named on the account, not here.
-                    onNamePerson =
-                    { naming = LabelKind.MEMBER to opened.memberId }
-                        .takeIf { opened.memberId != ownMemberId },
-                    onShareBack =
-                    { span: ShareSpan -> actions.onShare(opened.memberId, span) }
-                        .takeIf {
-                            offersShareBack(
-                                opened.memberId,
-                                ownMemberId,
-                                settings.sharedWith,
-                                now,
-                            )
-                        },
-                    reach = reach,
+                    onNaming = { kind, key -> naming = kind to key },
                     // Against the strip rather than floating over the map: the
                     // card is a sheet pulled up out of it, over the button of
                     // the member it is about.
-                    modifier = placed.heightIn(max = cardHeight),
+                    modifier = placed,
                 )
             } else if (group.size > 1) {
                 GroupDetail(
@@ -673,7 +371,7 @@ fun MapScreen(
                         noteFollowTarget(positionId)
                     },
                     onClose = { openedGroup = emptyList() },
-                    modifier = placed.heightIn(max = cardHeight).padding(12.dp),
+                    modifier = placed.padding(12.dp),
                 )
             }
         }
@@ -696,7 +394,7 @@ fun MapScreen(
                 now = now,
                 searches = searches,
                 showAll = showAll,
-                awaitingTarget = awaitingTarget,
+                awaitingTarget = follow.awaitingTarget,
                 outOfReach = outOfReach,
                 onSelect = ::lookAt,
                 onShowAll = { showAll = it },
@@ -707,7 +405,7 @@ fun MapScreen(
 
     // Over the strip as well as the map: the strip's own few are in the list
     // too, and a list that left them showing below would read as two lists.
-    if (membersOpen && removed == null && !noGroup) {
+    if (panels.members && removed == null && !noGroup) {
         MembersScreen(
             members = members,
             positions = positions,
@@ -717,56 +415,16 @@ fun MapScreen(
             now = now,
             searches = searches,
             onSelect = { positionId ->
-                membersOpen = false
+                panels.members = false
                 lookAt(positionId)
             },
-            onClose = { membersOpen = false },
+            onClose = { panels.members = false },
         )
     }
 
-    if (settingsOpen) {
-        SettingsScreen(
-            settings = settings,
-            actions = actions,
-            profiles = profiles,
-            ownMemberId = ownMemberId,
-            now = now,
-            onClose = { settingsOpen = false },
-            onOpenAdmin = { adminOpen = true },
-            onOpenMyPhones = { myPhonesOpen = true },
-            onOpenAccuracy = { accuracyOpen = true },
-            onOpenLicences = { licencesOpen = true },
-            onOpenReport = { reportOpen = true },
-            // With one group there is no list to leave it from, so the
-            // settings offer it; with more, the list does, for any of them.
-            onLeaveGroup =
-            if (switcher) {
-                null
-            } else {
-                {
-                    leaveAsk =
-                        LeaveAsk(
-                            projectId = groups.selected,
-                            caption =
-                            groups.choices.firstOrNull()?.caption ?: groups.selected,
-                            how = howToLeave(settings.roster, ownMemberId),
-                        )
-                }
-            },
-            groupCaption =
-            groups.choices.firstOrNull { it.projectId == groups.selected }?.caption
-                ?: groups.selected,
-            severalGroups = switcher,
-            removed = removed,
-        )
-
-        OverTheSettings(
-            myPhonesOpen = myPhonesOpen,
-            accuracyOpen = accuracyOpen,
-            licencesOpen = licencesOpen,
-            reportOpen = reportOpen,
-            adminOpen = adminOpen,
-            runsTheGroup = runsTheGroup,
+    if (panels.settings) {
+        SettingsLayers(
+            panels = panels,
             settings = settings,
             actions = actions,
             profiles = profiles,
@@ -775,29 +433,16 @@ fun MapScreen(
             labels = labels,
             now = now,
             searches = searches,
-            seenAt = positions.associate { it.positionId to it.knownAt },
+            positions = positions,
             groups = groups,
-            onCloseMyPhones = { myPhonesOpen = false },
-            onCloseAccuracy = { accuracyOpen = false },
-            onCloseLicences = { licencesOpen = false },
-            onCloseReport = { reportOpen = false },
-            onCloseAdmin = { adminOpen = false },
+            switcher = switcher,
+            runsTheGroup = runsTheGroup,
+            removed = removed,
+            onLeaveAsk = { leaveAsk = it },
         )
     }
 
     naming?.let { (kind, key) ->
-        val phone = kind == LabelKind.PHONE
-        val shelf = if (phone) labels.phones else labels.members
-
-        NameDialog(
-            title = stringResource(if (phone) R.string.name_phone else R.string.name_person),
-            note = stringResource(R.string.name_for_you),
-            current = shelf[key],
-            onSave = { name ->
-                onLabel(kind, key, name)
-                naming = null
-            },
-            onClose = { naming = null },
-        )
+        NamingDialog(kind, key, labels, onLabel, onDone = { naming = null })
     }
 }

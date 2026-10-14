@@ -16,7 +16,7 @@
     <ID>LongMethod:MapScreen.kt:@Composable fun MapScreen</ID>
     <ID>LongMethod:MarkerIcon.kt:private fun pinBitmap: Bitmap</ID>
     <ID>LongMethod:MemberButtons.kt:@Composable internal fun MemberButtons</ID>
-    <ID>LongMethod:MyPhonesScreen.kt:@OptIn(ExperimentalLayoutApi::class) @Composable fun MyPhonesScreen</ID>
+    <ID>LongMethod:MyPhonesScreen.kt:@Composable fun MyPhonesScreen</ID>
     <ID>LongMethod:QrScanDialog.kt:@Composable private fun Scanner</ID>
     <ID>LongMethod:ReasonExplained.kt:fun reasonsExplained: List&lt;ReasonExplained></ID>
     <ID>LongMethod:ReportScreen.kt:@Composable fun ReportScreen</ID>

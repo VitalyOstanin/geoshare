@@ -192,34 +192,17 @@ fun AdminPanel(
                 .windowInsetsPadding(WindowInsets.safeDrawing)
                 .verticalScroll(rememberScrollState()),
         ) {
-            Row(
-                modifier = Modifier.fillMaxWidth().padding(start = 16.dp, top = 8.dp, end = 8.dp),
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                Text(
-                    text = caption,
-                    style = MaterialTheme.typography.titleLarge,
-                    modifier = Modifier.weight(1f),
-                )
-
-                if (runsTheGroup(roster, ownMemberId)) {
-                    TextButton(
-                        onClick = {
-                            renameText = roster.name.orEmpty()
-                            renameTrouble = null
-                            renaming = true
-                        },
-                    ) {
-                        Text(text = stringResource(R.string.group_name_rename))
-                    }
-                }
-
-                HelpButton(onClick = { helpOpen = true })
-
-                TextButton(onClick = onClose) {
-                    Text(text = stringResource(R.string.settings_close))
-                }
-            }
+            AdminHeader(
+                caption = caption,
+                onRename =
+                {
+                    renameText = roster.name.orEmpty()
+                    renameTrouble = null
+                    renaming = true
+                }.takeIf { runsTheGroup(roster, ownMemberId) },
+                onHelp = { helpOpen = true },
+                onClose = onClose,
+            )
 
             HorizontalDivider()
 
@@ -235,29 +218,13 @@ fun AdminPanel(
                     onStopRunning = {
                         if (line.isYou) givingUp = true else onSetRunning(line.memberId, false)
                     },
-                    onRemove = {
-                        removing =
-                            line.memberId to
-                            lineName
-                    },
-                    onSearch = { phone ->
-                        askSearch(
-                            phone,
-                            lineName,
-                            renew = false,
-                        )
-                    },
+                    onRemove = { removing = line.memberId to lineName },
+                    onSearch = { phone -> askSearch(phone, lineName, renew = false) },
                     onEndSearch = { phoneId -> scope.launch { onEndSearch(phoneId) } },
                     sirens = sirens,
                     sirenNow = sirenNow,
                     onSiren = { phone ->
-                        ringing.ask(
-                            SirenAsk(
-                                name = lineName,
-                                phones = listOf(phone),
-                                selected = phone.phoneId,
-                            ),
-                        )
+                        ringing.ask(SirenAsk(lineName, listOf(phone), phone.phoneId))
                     },
                     onStopSiren = { phoneId -> scope.launch { onStopSiren(phoneId) } },
                     resets = resets,
@@ -265,72 +232,28 @@ fun AdminPanel(
                 )
             }
 
-            // Every search standing now, under the rows rather than in them,
-            // with the one thing the device's own row does not offer: renewing
-            // it without ending it first.
-            for (search in standing.values) {
-                val phone = phoneLine(search, lines)
-                val soughtName =
-                    lines.firstOrNull { it.memberId == search.memberId }?.displayName
-                        ?: unnamedMember(search.memberId)
-
-                AdminSearchSummary(
-                    search = search,
-                    phoneName = phone.name,
-                    memberName = soughtName,
-                    openedByYou = search.openedBy == ownMemberId,
-                    openedByName =
-                    profiles[search.openedBy]?.displayName
-                        ?: unnamedMember(search.openedBy),
-                    onRenew = {
-                        askSearch(
-                            phone,
-                            soughtName,
-                            renew = true,
-                        )
-                    },
-                    onEndSearch = { scope.launch { onEndSearch(search.phoneId) } },
-                )
-            }
+            AdminSearchSummaries(
+                standing = standing,
+                lines = lines,
+                profiles = profiles,
+                ownMemberId = ownMemberId,
+                onRenew = { phone, name -> askSearch(phone, name, renew = true) },
+                onEndSearch = { phoneId -> scope.launch { onEndSearch(phoneId) } },
+            )
 
             HorizontalDivider()
 
-            // Keyed as a whole: collectAsStateWithLifecycle keeps the last value across a
-            // new flow, and a fresh code would go on reading as the spent one.
-            val invitationLeft by
-                key(invitation?.code) {
-                    remember {
-                        invitation?.let { invitationStanding(it.code) } ?: flowOf(null)
-                    }.collectAsStateWithLifecycle(initialValue = null)
-                }
-
-            AdminInvitation(
+            AdminInvitationSection(
                 invitation = invitation,
-                standing = invitationLeft,
+                invitationStanding = invitationStanding,
+                link = InvitationLink(site, profiles[ownMemberId]?.displayName, roster.name),
                 now = now,
-                link =
-                invitation?.let {
-                    invitationLinkText(
-                        made = it,
-                        site = site,
-                        inviter = profiles[ownMemberId]?.displayName,
-                        groupName = roster.name,
-                    )
-                },
+                trouble = trouble,
                 onOpenInvite = {
                     inviteEmail = ""
                     inviting = true
                 },
             )
-
-            if (trouble) {
-                Text(
-                    text = stringResource(R.string.group_refused),
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.error,
-                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
-                )
-            }
         }
     }
 
@@ -464,23 +387,6 @@ private data class SearchAsk(val phone: PhoneLine, val memberName: String, val r
 
 /** Whose device is about to be rung, and which of their devices is picked. */
 private data class SirenAsk(val name: String, val phones: List<PhoneLine>, val selected: String)
-
-/**
- * The device a standing search is about, out of what this screen already knows
- * of the member's devices — or, failing that, out of the search document
- * itself, for a device whose own status has not reached this screen.
- */
-private fun phoneLine(search: Search, lines: List<GroupLine>): PhoneLine = lines
-    .firstOrNull { it.memberId == search.memberId }
-    ?.phones
-    ?.firstOrNull { it.phoneId == search.phoneId }
-    ?: PhoneLine(
-        phoneId = search.phoneId,
-        name = search.phoneName ?: shortName(deviceIdOf(search.phoneId)),
-        onlineAt = null,
-        batteryPercent = null,
-        charging = false,
-    )
 
 /** What the clipboard calls what it is holding, where a system shows the name. */
 internal const val CLIPBOARD_SAYS = "geoshare"

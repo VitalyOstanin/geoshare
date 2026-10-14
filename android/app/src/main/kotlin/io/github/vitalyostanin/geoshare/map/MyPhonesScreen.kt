@@ -52,7 +52,6 @@ import java.time.ZoneId
  * make one of them sound" — so it opens straight from the map rather than
  * from the group's own settings.
  */
-@OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun MyPhonesScreen(
     /** All of this member's devices, this one included. */
@@ -142,6 +141,20 @@ fun MyPhonesScreen(
         searchHours = DEFAULT_SEARCH_HOURS
     }
 
+    val rowActions =
+        MyPhoneActions(
+            mayLookFor = mayLookFor,
+            onReset = { resetting.ask(it) },
+            onCall = { ringing.ask(it) },
+            onStop = { scope.launch { onStopSiren(it.phoneId) } },
+            onSearch = ::askSearch,
+            onEndSearch = { scope.launch { onEndSearch(it.phoneId) } },
+            onRemove = {
+                removeTrouble = false
+                removeAsk = it
+            },
+        )
+
     Surface(modifier = modifier.fillMaxSize()) {
         // Scrolled and inset the way the administrator's panel is, and for the
         // same reasons: one row per device runs off a device, and the title
@@ -152,31 +165,7 @@ fun MyPhonesScreen(
                 .windowInsetsPadding(WindowInsets.safeDrawing)
                 .verticalScroll(rememberScrollState()),
         ) {
-            Row(
-                modifier = Modifier.fillMaxWidth().padding(start = 16.dp, top = 8.dp, end = 8.dp),
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                Text(
-                    text = stringResource(R.string.my_phones_title),
-                    style = MaterialTheme.typography.titleLarge,
-                    modifier = Modifier.weight(1f),
-                )
-
-                HelpButton(onClick = { helpOpen = true })
-
-                TextButton(onClick = onClose) {
-                    Text(text = stringResource(R.string.settings_close))
-                }
-            }
-
-            if (groupCaption != null) {
-                Text(
-                    text = stringResource(R.string.my_phones_group, groupCaption),
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.padding(start = 16.dp, end = 16.dp, bottom = 8.dp),
-                )
-            }
+            MyPhonesHeader(groupCaption, onHelp = { helpOpen = true }, onClose = onClose)
 
             HorizontalDivider()
 
@@ -190,200 +179,37 @@ fun MyPhonesScreen(
             }
 
             for (phone in phones) {
-                val phoneSiren = sirens[phone.phoneId]
-                val phoneSirenState = phoneSiren?.let { sirenState(it, sirenNow) }
-                val sounding =
-                    phoneSirenState is SirenState.Waiting || phoneSirenState is SirenState.Sounding
-                val search = searches[phone.phoneId]?.takeIf { it.stands(now) }
+                val siren = sirens[phone.phoneId]
 
-                Row(
-                    modifier =
-                    Modifier
-                        .fillMaxWidth()
-                        .padding(start = 16.dp, end = 8.dp, top = 8.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
-                    Column(modifier = Modifier.weight(1f)) {
-                        Text(text = phone.name, style = MaterialTheme.typography.bodyLarge)
-
-                        Text(
-                            text =
-                            if (phone.phoneId == ownPhoneId) {
-                                stringResource(R.string.my_phones_this)
-                            } else {
-                                // The name stands just above.
-                                phoneText(phone, now, named = false)
-                            },
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        )
-
-                        if (search != null) {
-                            val zoned = search.endsAt.atZone(ZoneId.systemDefault())
-                            val endsAt = endsAtText(zoned)
-
-                            Text(
-                                text = stringResource(R.string.sought_until, endsAt),
-                                style = MaterialTheme.typography.bodySmall,
-                                color = Color(SOUGHT_COLOUR),
-                            )
-                        }
-
-                        if (phoneSiren != null && phoneSirenState != null) {
-                            sirenText(phoneSiren, phoneSirenState, listOf(phone))?.let {
-                                Text(
-                                    text = it,
-                                    style = MaterialTheme.typography.bodySmall,
-                                    fontWeight = FontWeight.SemiBold,
-                                    color = Color(SOUGHT_COLOUR),
-                                )
-                            }
-                        }
-
-                        resets[phone.phoneId]?.let { resetText(it, now) }?.let {
-                            Text(
-                                text = it,
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            )
-                        }
-                    }
-
-                    // Both buttons are outlined in the same red, and a row
-                    // this narrow does not always fit them side by side.
-                    FlowRow(verticalArrangement = Arrangement.Center) {
-                        // Plain and before the siren, as on the administrator's panel.
-                        if (phone.phoneId != ownPhoneId) {
-                            ResetButton(onClick = { resetting.ask(phone) })
-                        }
-
-                        // A device does not ring itself: the button belongs to
-                        // every row but the one this screen is drawn on.
-                        if (phone.phoneId != ownPhoneId) {
-                            SirenButton(
-                                sounding = sounding,
-                                onCall = { ringing.ask(phone) },
-                                onStop = { scope.launch { onStopSiren(phone.phoneId) } },
-                            )
-                        }
-
-                        // Every device offers it, this one included: an
-                        // administrator may open a search on any device of
-                        // theirs, this one among them.
-                        if (mayLookFor) {
-                            SearchButton(
-                                standing = search != null,
-                                enabled = !LocalLink.current.lost,
-                                onClick = {
-                                    if (search != null) {
-                                        scope.launch { onEndSearch(phone.phoneId) }
-                                    } else {
-                                        askSearch(phone)
-                                    }
-                                },
-                            )
-                        }
-
-                        // Last in the row and as red as the siren: removing a
-                        // device is as final. This device is taken out by
-                        // signing out on it, so its row has no bin.
-                        if (phone.phoneId != ownPhoneId) {
-                            OutlinedIconButton(
-                                border = BorderStroke(1.dp, Color(SOUGHT_COLOUR)),
-                                onClick = {
-                                    removeTrouble = false
-                                    removeAsk = phone
-                                },
-                            ) {
-                                Icon(
-                                    painter = painterResource(R.drawable.ic_bin),
-                                    contentDescription = stringResource(R.string.phone_remove),
-                                    tint = Color(SOUGHT_COLOUR),
-                                )
-                            }
-                        }
-                    }
-                }
+                MyPhoneRow(
+                    state =
+                    MyPhoneState(
+                        phone = phone,
+                        own = phone.phoneId == ownPhoneId,
+                        siren = siren,
+                        sirenState = siren?.let { sirenState(it, sirenNow) },
+                        search = searches[phone.phoneId]?.takeIf { it.stands(now) },
+                        reset = resets[phone.phoneId],
+                    ),
+                    now = now,
+                    actions = rowActions,
+                )
             }
         }
     }
 
     if (helpOpen) {
-        HelpSheet(
-            title = stringResource(R.string.help_title_screen),
-            entries =
-            listOfNotNull(
-                HelpEntry(
-                    R.drawable.ic_place_reset,
-                    HelpLook.Plain,
-                    stringResource(R.string.help_reset),
-                ),
-                HelpEntry(R.drawable.ic_siren, HelpLook.Alarm, stringResource(R.string.help_siren)),
-                if (mayLookFor) {
-                    HelpEntry(
-                        R.drawable.ic_search_alarm,
-                        HelpLook.Alarm,
-                        stringResource(R.string.help_search),
-                    )
-                } else {
-                    null
-                },
-                if (mayLookFor) {
-                    HelpEntry(
-                        R.drawable.ic_search_alarm,
-                        HelpLook.AlarmFilled,
-                        stringResource(R.string.help_search_standing),
-                    )
-                } else {
-                    null
-                },
-                HelpEntry(R.drawable.ic_bin, HelpLook.Alarm, stringResource(R.string.help_remove)),
-            ),
-            onClose = { helpOpen = false },
-        )
+        MyPhonesHelp(mayLookFor, onClose = { helpOpen = false })
     }
 
     removeAsk?.let { phone ->
-        AlertDialog(
-            onDismissRequest = { removeAsk = null },
-            title = { Text(text = stringResource(R.string.phone_remove_title, phone.name)) },
-            text = {
-                Column {
-                    Text(text = stringResource(R.string.phone_remove_text))
-
-                    if (groupNames.size > 1) {
-                        Text(
-                            text =
-                            stringResource(
-                                R.string.phone_remove_groups,
-                                groupNames.joinToString(", "),
-                            ),
-                            modifier = Modifier.padding(top = 8.dp),
-                        )
-                    }
-
-                    if (removeTrouble) {
-                        Text(
-                            text = stringResource(R.string.phone_remove_refused),
-                            color = MaterialTheme.colorScheme.error,
-                            modifier = Modifier.padding(top = 8.dp),
-                        )
-                    }
-                }
-            },
-            confirmButton = {
-                TextButton(onClick = ::writeRemoval, enabled = !removeBusy) {
-                    Text(
-                        text = stringResource(R.string.phone_remove_go),
-                        color = MaterialTheme.colorScheme.error,
-                    )
-                }
-            },
-            dismissButton = {
-                TextButton(onClick = { removeAsk = null }) {
-                    Text(text = stringResource(R.string.search_cancel))
-                }
-            },
+        RemovePhoneDialog(
+            phone = phone,
+            groupNames = groupNames,
+            trouble = removeTrouble,
+            busy = removeBusy,
+            onGo = ::writeRemoval,
+            onDismiss = { removeAsk = null },
         )
     }
 
