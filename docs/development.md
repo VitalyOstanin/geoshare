@@ -70,13 +70,13 @@ publishing run the Firebase command line on the machine itself, and need
 | 10 | `tools/check.sh`             | the checks a change needs, `--all` for every one; CI runs it                |
 | 11 | `tools/run-services.sh`      | stand-in Firestore and sign-in, filled with stand-in data                   |
 | 12 | `tools/run-emulator.sh`      | a headless Android emulator; with the line above, a stand without a project |
-| 13 | `tools/coverage.sh`          | how much of the code the tests reach; fails under the floors it keeps       |
+| 13 | `tools/coverage.sh`          | how much of the code the tests reach; fails under the floors CI checks too  |
 | 14 | `tools/test-instrumented.sh` | smoke tests on the emulator: start-up, settings, licences, connecting       |
 
-The rest of `tools/` — `project.sh`, `web-config.sh`, `setup-site.sh`,
-`read-cost.sh`, `device-log.sh`, `device-sky.sh`, `siren-sound.sh`,
-`signing.sh`, `vendor-web.sh` — says
-what it does and how to call it at the top of each file.
+The rest of `tools/` — `coverage-floor.sh`, `project.sh`, `web-config.sh`,
+`setup-site.sh`, `read-cost.sh`, `device-log.sh`, `device-sky.sh`,
+`siren-sound.sh`, `signing.sh`, `vendor-web.sh` — says what it does and how to
+call it at the top of each file.
 
 The page serves Firebase, MapLibre GL JS and the QR encoder itself, from
 `web/public/lib/vendor/<package>-<version>/` (ADR-0035). Their versions are

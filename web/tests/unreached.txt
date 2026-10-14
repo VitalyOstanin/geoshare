@@ -19,12 +19,14 @@ lib/store-positions.js
 lib/store-search.js
 lib/store.js
 page/admin-panel.js
+page/card-actions.js
 page/card-place.js
 page/dialogs.js
 page/group-panel.js
 page/link-ui.js
 page/menus.js
 page/pause.js
+page/report-ui.js
 page/reset-ui.js
 page/search-ui.js
 page/siren-ui.js
