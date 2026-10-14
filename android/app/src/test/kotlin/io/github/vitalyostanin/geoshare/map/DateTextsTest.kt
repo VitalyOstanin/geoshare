@@ -38,4 +38,24 @@ class DateTextsTest {
         assertEquals("12 октября, 14:30", russian)
         assertTrue(invitationEndsText(moment, Locale.US).startsWith("12 October, 2:30"))
     }
+
+    // The card of a member wrote these in the language the process started
+    // with, so a device switched to Russian inside the app showed "Oct 12".
+    @Test
+    fun `a moment on the card is written in the language asked for, not the process's`() {
+        val started = Locale.getDefault()
+        Locale.setDefault(Locale.US)
+
+        try {
+            val russian = momentText(moment.toInstant(), Locale.forLanguageTag("ru"), moment.zone)
+
+            assertTrue(russian, russian.startsWith("12 окт. 2026"))
+            assertTrue(russian, russian.endsWith("14:30"))
+            assertTrue(
+                momentText(moment.toInstant(), Locale.US, moment.zone).startsWith("Oct 12, 2026"),
+            )
+        } finally {
+            Locale.setDefault(started)
+        }
+    }
 }

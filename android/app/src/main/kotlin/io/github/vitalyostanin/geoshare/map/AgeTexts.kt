@@ -2,7 +2,6 @@ package io.github.vitalyostanin.geoshare.map
 
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.produceState
-import androidx.compose.runtime.remember
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import io.github.vitalyostanin.geoshare.R
@@ -11,22 +10,26 @@ import java.time.Instant
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 import java.time.format.FormatStyle
+import java.util.Locale
 
 /** How often the ages on screen are recounted. Half a minute keeps "5 minutes ago" honest. */
 private const val AGE_TICK_MS = 30_000L
 
 /** The moment itself, for the card a member opens rather than for the buttons. */
-@Composable
-internal fun momentText(moment: Instant): String {
-    val format =
-        remember {
-            DateTimeFormatter
-                .ofLocalizedDateTime(FormatStyle.MEDIUM, FormatStyle.SHORT)
-                .withZone(ZoneId.systemDefault())
-        }
+internal fun momentText(moment: Instant, locale: Locale, zone: ZoneId): String = DateTimeFormatter
+    .ofLocalizedDateTime(FormatStyle.MEDIUM, FormatStyle.SHORT)
+    .withLocale(locale)
+    .withZone(zone)
+    .format(moment)
 
-    return format.format(moment)
-}
+/**
+ * The same moment, in the app's current language: the language is switched
+ * inside the app without restarting the process, and a formatter left on the
+ * process's locale went on writing the months of the language it started in.
+ */
+@Composable
+internal fun momentText(moment: Instant): String =
+    momentText(moment, appLocale(), ZoneId.systemDefault())
 
 @Composable
 internal fun ageText(age: PositionAge): String = when (age) {
