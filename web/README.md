@@ -26,18 +26,22 @@ repository — it names the project. Write it once per working copy:
 tools/web-config.sh
 ```
 
-Then serve `web/public` over http and open it. A file URL will not do: the page
-is made of ES modules.
+Then serve it and open <http://127.0.0.1:5000/>. A file URL will not do: the
+page is made of ES modules. The script serves it the way Hosting does, with the
+rewrites and the headers in `firebase.json`, so what the Content-Security-Policy
+refuses is refused here before a deploy rather than on the site after one;
+`WEB_PORT` picks another port.
 
 ```sh
-python3 -m http.server --directory web/public 8477
+tools/serve-web.sh
 ```
 
 Publishing goes through the Firebase command line, at the version the
 repository pins in `tools/versions.env`:
 
 ```sh
-npx "firebase-tools@$(sed -n 's/^FIREBASE_TOOLS_VERSION=//p' tools/versions.env)" deploy --only hosting
+firebase="firebase-tools@$(sed -n 's/^FIREBASE_TOOLS_VERSION=//p' tools/versions.env)"
+npx --yes "$firebase" deploy --only hosting
 ```
 
 ## Tests

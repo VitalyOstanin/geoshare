@@ -40,19 +40,23 @@ build. The steps are in:
 ## Deploying the rules
 
 Either paste `firestore.rules` into the rules editor in the console, or use the
-command line from a checkout:
+command line from a checkout, at the version the repository pins in
+`tools/versions.env`:
 
 ```sh
-firebase login
-firebase deploy --only firestore:rules --project <project-id>
+firebase="firebase-tools@$(sed -n 's/^FIREBASE_TOOLS_VERSION=//p' tools/versions.env)"
+npx --yes "$firebase" login
+npx --yes "$firebase" deploy --only firestore:rules --project <project-id>
 ```
 
-On a machine with no browser of its own, `firebase login --no-localhost` prints
-a link and then exits; the code that link hands back goes into a second command,
-`firebase login <code>`, rather than into the first one's input.
+On a machine with no browser of its own, `npx --yes "$firebase" login
+--no-localhost` prints a link and then exits; the code that link hands back goes
+into a second command, `npx --yes "$firebase" login <code>`, rather than into the
+first one's input.
 
 The project identifier is not committed: `.firebaserc` is ignored, so either the
-`--project` argument carries it or `firebase use --add` writes it locally.
+`--project` argument carries it or `npx --yes "$firebase" use --add` writes it
+locally.
 
 ## Updating a group's project
 

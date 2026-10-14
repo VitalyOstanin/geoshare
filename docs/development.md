@@ -72,6 +72,7 @@ publishing run the Firebase command line on the machine itself, and need
 | 12 | `tools/run-emulator.sh`      | a headless Android emulator; with the line above, a stand without a project |
 | 13 | `tools/coverage.sh`          | how much of the code the tests reach; fails under the floors CI checks too  |
 | 14 | `tools/test-instrumented.sh` | smoke tests on the emulator: start-up, settings, licences, connecting       |
+| 15 | `tools/shell-lint.sh`        | ShellCheck over every shell script, at the version in `versions.env`        |
 
 The rest of `tools/` — `coverage-floor.sh`, `project.sh`, `web-config.sh`,
 `setup-site.sh`, `read-cost.sh`, `device-log.sh`, `device-sky.sh`,
@@ -114,11 +115,12 @@ The scripts read these from the environment; none has to be set.
 | 17 | `HTTPS_PROXY`         | all containers (`lib.sh`)      | handed to image builds and containers when set                     | none                             |
 | 18 | `CLOUD_SHELL`         | `project.sh`                   | set by Google Cloud Shell; sign-in without a local browser         | none                             |
 | 19 | `TIMEOUT`             | `test-instrumented.sh`         | how long the instrumented run may take as a whole                  | `30m`                            |
+| 20 | `WEB_PORT`            | `serve-web.sh`                 | the port the page is served on                                     | `5000`                           |
 
 The names of the podman resources — `POD_NAME`, `SERVICES_NAME`,
 `EMULATOR_NAME`, `SDK_IMAGE`, `EMULATOR_IMAGE`, `FIREBASE_IMAGE`,
-`CACHE_VOLUME`, `KEY_VOLUME`, `NPM_VOLUME` — can be changed too, which is only
-of use to keep two checkouts apart on one machine. The emulator ports are not
+`CACHE_VOLUME`, `KEY_VOLUME`, `NPM_VOLUME`, `MODULES_VOLUME` — can be changed
+too, which is only of use to keep two checkouts apart on one machine. The emulator ports are not
 variables: they are fixed in `firebase.json`.
 
 ## Releasing
@@ -139,9 +141,12 @@ variables: they are fixed in `firebase.json`.
 
 ### Checking a release
 
-Every published package carries two attestations, signed for the run that
-built it: where it was built, and the bill of materials it was built from.
-With the [GitHub CLI](https://cli.github.com/):
+Every package published since the repository became public carries two
+attestations, signed for the run that built it: where it was built, and the
+bill of materials it was built from. 0.1.0 has none: it was released while the
+repository was private, and GitHub attests only for public repositories on the
+free plan. Its checksum in `SHA256SUMS` is what there is to check it by. With
+the [GitHub CLI](https://cli.github.com/):
 
 ```sh
 gh attestation verify geoshare-<version>.apk --repo VitalyOstanin/geoshare

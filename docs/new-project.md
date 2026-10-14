@@ -42,9 +42,16 @@ and signs in with Google. Members are invited later from the application.
 
 ## Before the first run
 
-1. Sign the Firebase command line in as the project owner:
-   `npx firebase-tools login`, or `npx firebase-tools login --no-localhost` in
-   Cloud Shell or any shell without a browser of its own. This is the only
+1. Sign the Firebase command line in as the project owner, at the version
+   the repository pins in `tools/versions.env`:
+
+   ```sh
+   firebase="firebase-tools@$(sed -n 's/^FIREBASE_TOOLS_VERSION=//p' tools/versions.env)"
+   npx --yes "$firebase" login
+   ```
+
+   In Cloud Shell or any shell without a browser of its own, the last line is
+   `npx --yes "$firebase" login --no-localhost`. This is the only
    sign-in the script needs. Run at a terminal without it, or with a sign-in
    that no longer works, the script starts this login itself and goes on once
    it succeeds; with `--json` or without a terminal it stops right away and
@@ -52,7 +59,7 @@ and signs in with Google. Members are invited later from the application.
 
    Whoever looks after several projects under different Google accounts —
    a family's under one, a test project under another — signs each further
-   account in with `npx firebase-tools login:add <address>` and names it on
+   account in with `npx --yes "$firebase" login:add <address>` and names it on
    every run with `--account <address>`. Without `--account` the script asks
    as the command line's default account.
 2. If the project owner's Google account has never used Firebase, they open
