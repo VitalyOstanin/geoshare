@@ -8,11 +8,14 @@ import io.mockk.every
 import io.mockk.just
 import io.mockk.mockk
 import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.awaitCancellation
 import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.withTimeout
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertSame
 import org.junit.Assert.fail
 import org.junit.Test
+import java.time.Duration
 
 /** A write carried into every group: when it counts as taken and when as failed. */
 class EveryGroupTest {
@@ -69,10 +72,45 @@ class EveryGroupTest {
         coVerify(exactly = 0) { status.write(any(), any(), any()) }
     }
 
-    private fun link(projectId: String, refusal: Exception? = null): GroupLink {
+    @Test
+    fun `a group that does not answer holds up neither the others nor the service`() = runBlocking {
+        val silent = link("first", silent = true)
+        val taking = link("second")
+
+        val taken =
+            withTimeout(OUTER.toMillis()) {
+                EveryGroup(wait = WAIT) { listOf(silent, taking) }.tellStatus(MODE, 80, false)
+            }
+
+        // Firestore keeps a write it could not send and sends it when the
+        // database is back, so the group that did not answer counts as taken.
+        assertEquals(listOf("first", "second"), taken)
+        val status = taking.status
+        coVerify { status.write(MODE, 80, false) }
+    }
+
+    @Test
+    fun `a write no group answered still counts as made`() = runBlocking {
+        val silent = link("first", silent = true)
+
+        val taken =
+            withTimeout(OUTER.toMillis()) {
+                EveryGroup(wait = WAIT) { listOf(silent) }.tellStatus(MODE, 80, false)
+            }
+
+        assertEquals(listOf("first"), taken)
+    }
+
+    private fun link(
+        projectId: String,
+        refusal: Exception? = null,
+        silent: Boolean = false,
+    ): GroupLink {
         val status = mockk<PhoneStatusWriter>()
 
-        if (refusal == null) {
+        if (silent) {
+            coEvery { status.write(any(), any(), any()) } coAnswers { awaitCancellation() }
+        } else if (refusal == null) {
             coEvery { status.write(any(), any(), any()) } just Runs
         } else {
             coEvery { status.write(any(), any(), any()) } throws refusal
@@ -86,5 +124,7 @@ class EveryGroupTest {
 
     private companion object {
         val MODE = CollectionMode.entries.first()
+        val WAIT: Duration = Duration.ofMillis(50)
+        val OUTER: Duration = Duration.ofSeconds(5)
     }
 }

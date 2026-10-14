@@ -5,8 +5,12 @@ import io.github.vitalyostanin.geoshare.collection.CollectionMode
 import io.github.vitalyostanin.geoshare.collection.Fix
 import io.github.vitalyostanin.geoshare.collection.FoundBy
 import io.github.vitalyostanin.geoshare.collection.watchedUntil
+import io.github.vitalyostanin.geoshare.log.AppLog
+import io.github.vitalyostanin.geoshare.map.ANSWER_WAIT
+import io.github.vitalyostanin.geoshare.map.UnansweredException
 import io.github.vitalyostanin.geoshare.map.logFailure
 import io.github.vitalyostanin.geoshare.map.stands
+import io.github.vitalyostanin.geoshare.map.withinAnswerWait
 import io.github.vitalyostanin.geoshare.project.GroupConnection
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.channels.awaitClose
@@ -106,12 +110,22 @@ fun signedInTo(connection: GroupConnection): Flow<String?> = callbackFlow {
 /**
  * The writes of the service, carried into every group it is linked to.
  *
- * A group whose write is refused or does not answer is written down and
- * skipped; the others are not held up by it. Only when no group took the
- * write does it count as failed, which is what the service treats as the
- * position not having been written at all.
+ * A group whose write is refused is written down and skipped; the others are
+ * not held up by it. Only when no group took the write does it count as
+ * failed, which is what the service treats as the position not having been
+ * written at all.
+ *
+ * A group that does not answer within [wait] is not waited for either, and
+ * counts as having taken the write: Firestore keeps what it could not send
+ * and sends it when the database is back. Waiting for the answer instead
+ * would stop the service hearing the receiver for as long as the network is
+ * gone, which is exactly when the positions that follow are the ones that
+ * matter.
  */
-class EveryGroup(private val links: () -> List<GroupLink>) {
+class EveryGroup(
+    private val wait: Duration = ANSWER_WAIT,
+    private val links: () -> List<GroupLink>,
+) {
     suspend fun write(
         fix: Fix,
         mode: CollectionMode,
@@ -136,19 +150,20 @@ class EveryGroup(private val links: () -> List<GroupLink>) {
         var last: Exception? = null
 
         for (link in linked) {
-            try {
-                write(link)
-                taken += link.connection.projectId
-            } catch (cancellation: CancellationException) {
-                throw cancellation
-            } catch (refusal: Exception) {
-                logFailure(TAG, "could not $what in ${link.connection.projectId}", refusal)
+            val refusal = refusalOf(link, write)
 
-                // Every group's refusal travels with the one thrown, so that
-                // a failure everywhere says what each group answered.
-                last?.let(refusal::addSuppressed)
-                last = refusal
+            if (refusal == null) {
+                taken += link.connection.projectId
+
+                continue
             }
+
+            logFailure(TAG, "could not $what in ${link.connection.projectId}", refusal)
+
+            // Every group's refusal travels with the one thrown, so that a
+            // failure everywhere says what each group answered.
+            last?.let(refusal::addSuppressed)
+            last = refusal
         }
 
         if (taken.isEmpty()) {
@@ -157,6 +172,36 @@ class EveryGroup(private val links: () -> List<GroupLink>) {
 
         return taken
     }
+
+    /**
+     * What the group answered to the write: its refusal, or null once it
+     * took the write or did not answer within [wait].
+     *
+     * The refusal is caught inside the wait rather than thrown out of it, so
+     * that it arrives as the very exception the group raised: one thrown
+     * across a timeout can come out as a copy, and a copy would carry none of
+     * what the other groups answered.
+     */
+    private suspend fun refusalOf(link: GroupLink, write: suspend (GroupLink) -> Unit): Exception? =
+        try {
+            withinAnswerWait(wait) {
+                try {
+                    write(link)
+                    null
+                } catch (cancellation: CancellationException) {
+                    throw cancellation
+                } catch (refusal: Exception) {
+                    refusal
+                }
+            }
+        } catch (_: UnansweredException) {
+            AppLog.w(
+                TAG,
+                "${link.connection.projectId} did not answer within $wait; " +
+                    "the write is kept and goes out when the database is back",
+            )
+            null
+        }
 }
 
 /**
