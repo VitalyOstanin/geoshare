@@ -1,22 +1,16 @@
 package io.github.vitalyostanin.geoshare.service
 
-import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
-import android.content.IntentFilter
 import android.content.pm.ServiceInfo
 import android.location.LocationManager
-import android.os.BatteryManager
 import androidx.core.app.ServiceCompat
 import androidx.core.content.ContextCompat
-import androidx.core.content.getSystemService
 import androidx.lifecycle.LifecycleService
 import androidx.lifecycle.lifecycleScope
 import io.github.vitalyostanin.geoshare.collection.Accuracy
 import io.github.vitalyostanin.geoshare.collection.Answered
 import io.github.vitalyostanin.geoshare.collection.Asked
-import io.github.vitalyostanin.geoshare.collection.CARRIED_STEPS
-import io.github.vitalyostanin.geoshare.collection.CLOCK_TOLERANCE
 import io.github.vitalyostanin.geoshare.collection.CircleLimits
 import io.github.vitalyostanin.geoshare.collection.CollectionMode
 import io.github.vitalyostanin.geoshare.collection.CollectionState
@@ -26,60 +20,36 @@ import io.github.vitalyostanin.geoshare.collection.FalsePlace
 import io.github.vitalyostanin.geoshare.collection.Fix
 import io.github.vitalyostanin.geoshare.collection.FoundBy
 import io.github.vitalyostanin.geoshare.collection.Grounds
-import io.github.vitalyostanin.geoshare.collection.IDLE_REPEAT
 import io.github.vitalyostanin.geoshare.collection.Judgement
-import io.github.vitalyostanin.geoshare.collection.JumpReason
 import io.github.vitalyostanin.geoshare.collection.LEFT_OUT_BY_SOURCE
-import io.github.vitalyostanin.geoshare.collection.PutDown
-import io.github.vitalyostanin.geoshare.collection.STIRS_KEPT
 import io.github.vitalyostanin.geoshare.collection.SkySays
-import io.github.vitalyostanin.geoshare.collection.Stir
 import io.github.vitalyostanin.geoshare.collection.Trail
 import io.github.vitalyostanin.geoshare.collection.anchorFrom
 import io.github.vitalyostanin.geoshare.collection.andThen
 import io.github.vitalyostanin.geoshare.collection.answeredBy
-import io.github.vitalyostanin.geoshare.collection.carryingSince
 import io.github.vitalyostanin.geoshare.collection.choiceFor
 import io.github.vitalyostanin.geoshare.collection.chooseMode
-import io.github.vitalyostanin.geoshare.collection.clockDisagrees
-import io.github.vitalyostanin.geoshare.collection.distanceMetres
 import io.github.vitalyostanin.geoshare.collection.driftedWhilePutDown
 import io.github.vitalyostanin.geoshare.collection.fenceMoves
 import io.github.vitalyostanin.geoshare.collection.foundBy
-import io.github.vitalyostanin.geoshare.collection.impliedSpeedMps
 import io.github.vitalyostanin.geoshare.collection.judge
 import io.github.vitalyostanin.geoshare.collection.knows
 import io.github.vitalyostanin.geoshare.collection.networkAnswerStands
 import io.github.vitalyostanin.geoshare.collection.noteOf
 import io.github.vitalyostanin.geoshare.collection.orbitReference
 import io.github.vitalyostanin.geoshare.collection.otherRadiosAreDue
-import io.github.vitalyostanin.geoshare.collection.pinnedWhileWalking
-import io.github.vitalyostanin.geoshare.collection.putDownAt
 import io.github.vitalyostanin.geoshare.collection.remembering
 import io.github.vitalyostanin.geoshare.collection.rescueAccuracy
 import io.github.vitalyostanin.geoshare.collection.rescueAfter
 import io.github.vitalyostanin.geoshare.collection.said
 import io.github.vitalyostanin.geoshare.collection.sameAnswer
 import io.github.vitalyostanin.geoshare.collection.saysMoreThan
-import io.github.vitalyostanin.geoshare.collection.secondOpinionDue
-import io.github.vitalyostanin.geoshare.collection.secondOpinionEvery
-import io.github.vitalyostanin.geoshare.collection.secondOpinionWithEachFix
 import io.github.vitalyostanin.geoshare.collection.shouldWrite
-import io.github.vitalyostanin.geoshare.collection.walkNote
-import io.github.vitalyostanin.geoshare.collection.walkingNow
-import io.github.vitalyostanin.geoshare.collection.watchedUntil
 import io.github.vitalyostanin.geoshare.collection.whomToAsk
-import io.github.vitalyostanin.geoshare.collection.word
 import io.github.vitalyostanin.geoshare.log.AppLog
-import io.github.vitalyostanin.geoshare.map.PublishedProfile
 import io.github.vitalyostanin.geoshare.map.logFailure
 import io.github.vitalyostanin.geoshare.map.stands
-import io.github.vitalyostanin.geoshare.membership.Presence
-import io.github.vitalyostanin.geoshare.membership.presenceBeforeAnswer
 import io.github.vitalyostanin.geoshare.project.Connections
-import io.github.vitalyostanin.geoshare.project.GroupConnection
-import io.github.vitalyostanin.geoshare.project.RemovedHere
-import io.github.vitalyostanin.geoshare.project.SeenOnRoster
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -88,37 +58,22 @@ import kotlinx.coroutines.awaitCancellation
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.channelFlow
+import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.emptyFlow
 import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.flow.flatMapLatest
-import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.map
-import kotlinx.coroutines.flow.onStart
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
-import kotlinx.coroutines.withTimeoutOrNull
 import java.time.Duration
 import java.time.Instant
 import java.time.LocalTime
-import java.util.Locale
 
 private const val TAG = "geoshare.service"
-
-/**
- * How often the device says how it is when nothing else has made it say so.
- *
- * On the beat a device at rest writes its position again, for the same reason:
- * under a transmitter no position is written at all, and this is the only
- * news that keeps the marker out of the grey. An hour let it go grey for half
- * of every hour, and the card then read a device that is working and being
- * lied to as a device that has gone quiet.
- */
-private val STATUS_EVERY: Duration = IDLE_REPEAT
 
 /**
  * A position as it goes into the document: where the device was, and whether
@@ -174,28 +129,31 @@ class SharingService : LifecycleService() {
      */
     private var sessionWait: Job? = null
 
-    /**
-     * The groups the device is signed in to, each with what writes into it
-     * and listens to it, whenever that changes.
-     *
-     * Followed rather than read once: the answer at the moment the service
-     * starts is not the answer a second later, a group can be joined or left
-     * while it runs, and a service holding up a notification that says it is
-     * sharing has to be either sharing or gone.
-     */
-    private val links = MutableStateFlow<List<GroupLink>>(emptyList())
+    /** The groups the device is signed in to, each with what writes into it and listens to it. */
+    private val groups by lazy {
+        GroupLinks(this, lifecycleScope, sirens, jumps) { before, after ->
+            linksChanged(before, after)
+        }
+    }
 
-    /** What listens to each group for a siren, a search or a reset, by link. */
-    private val listening = mutableMapOf<GroupLink, Job>()
+    private val links: StateFlow<List<GroupLink>> get() = groups.links
 
     /** Every write outside the screens, carried into each linked group. */
     private val writer = EveryGroup { links.value }
+
+    /** How the device is, apart from where it is, said into every group. */
+    private val status by lazy {
+        DeviceStatus(this, lifecycleScope, writer, { links.value.isNotEmpty() }, { lastMode })
+    }
 
     /** The alarm stream at full volume while a call to this device sounds. */
     private val sirens by lazy { SirenAnswer(this, lifecycleScope) }
 
     /** What the satellites themselves are saying, apart from the written fix. */
     private val skyNotes by lazy { SkyNotes(this, { radio }, { lastFix }, { silence.heardAt }) }
+
+    /** A line in the log for every fix as it arrives. */
+    private val fixLog by lazy { FixLog(radio, skyNotes, { jumps.enabled }, ::leftOutEvidence) }
 
     private var lastFix: Fix? = null
 
@@ -354,31 +312,6 @@ class SharingService : LifecycleService() {
         }
     }
 
-    /**
-     * The cable going in or coming out, said at once.
-     *
-     * Waiting for the next fix would leave a device reading "12%" for the
-     * fifteen minutes it is already filling up, which is the case the reader
-     * most wants told — and under a transmitter there is no next fix at all.
-     */
-    private var powerSettling: Job? = null
-
-    private val power =
-        object : BroadcastReceiver() {
-            override fun onReceive(context: Context, intent: Intent) {
-                AppLog.i(TAG, "power changed: ${intent.action}")
-                // A loose cable says connected and disconnected several times
-                // a second, and each would be a write into every group: only
-                // where it settles is news.
-                powerSettling?.cancel()
-                powerSettling =
-                    lifecycleScope.launch {
-                        delay(POWER_SETTLES.toMillis())
-                        tellHowThePhoneIs()
-                    }
-            }
-        }
-
     override fun onCreate() {
         super.onCreate()
 
@@ -394,7 +327,7 @@ class SharingService : LifecycleService() {
         }
 
         usable = true
-        lifecycleScope.launch { followTheGroups() }
+        lifecycleScope.launch { groups.follow() }
         radio.start()
 
         trail = trailStore.read()
@@ -510,8 +443,7 @@ class SharingService : LifecycleService() {
     override fun onDestroy() {
         if (usable) {
             radio.stop()
-            unlink(links.value)
-            links.value = emptyList()
+            groups.unlinkAll()
             stopCollecting()
         }
 
@@ -520,82 +452,18 @@ class SharingService : LifecycleService() {
     }
 
     /**
-     * Follows the groups and who is signed in to each, and keeps a link to
-     * every group with a session: made when a session turns up, taken down
-     * when it ends or the group is left. The collection runs while there is
-     * at least one link and stops when the last one goes.
+     * Starts the collection when a group is linked and stops it when the
+     * last one goes.
      */
-    @OptIn(ExperimentalCoroutinesApi::class)
-    private suspend fun followTheGroups() {
-        Connections.all.flatMapLatest { connections ->
-            if (connections.isEmpty()) {
-                flowOf(emptyList())
-            } else {
-                combine(
-                    connections.map { connection ->
-                        // A group the device was taken off, or has not got
-                        // into yet, refuses every write; it is left alone
-                        // rather than written into and refused once a
-                        // minute. Founding or joining one republishes the
-                        // groups, and this is asked again from the start.
-                        // Until the first answer only a group once stood in
-                        // is written into; any other is held unlinked rather
-                        // than left out of the combination, which would hold
-                        // up every group with it.
-                        signedInTo(connection).flatMapLatest { uid ->
-                            if (uid == null) {
-                                flowOf(connection to null)
-                            } else {
-                                val wasIn =
-                                    SeenOnRoster.has(
-                                        this@SharingService,
-                                        connection.projectId,
-                                        uid,
-                                    )
-
-                                presenceIn(this@SharingService, connection, uid)
-                                    .map<Presence, Presence?> { it }
-                                    .onStart { emit(presenceBeforeAnswer(wasIn)) }
-                                    .map { presence ->
-                                        connection to
-                                            uid.takeIf {
-                                                presence == Presence.IN ||
-                                                    presence == Presence.UNKNOWN
-                                            }
-                                    }
-                            }
-                        }
-                    },
-                ) {
-                    it.toList()
-                }
-            }
-        }.collect { signedIn -> relink(signedIn) }
-    }
-
-    private fun relink(signedIn: List<Pair<GroupConnection, String?>>) {
-        val device = DeviceIdentity(this)
-        val kept = links.value
-        val next =
-            signedIn.mapNotNull { (connection, uid) ->
-                uid?.let {
-                    kept.firstOrNull { link -> link.serves(connection, uid) }
-                        ?: GroupLink(connection, uid, device)
-                }
-            }
-
-        unlink(kept.filter { it !in next })
-        links.value = next
-        next.filter { it !in kept }.forEach(::listenTo)
-
+    private fun linksChanged(before: List<GroupLink>, after: List<GroupLink>) {
         when {
-            next.isEmpty() && kept.isNotEmpty() -> {
+            after.isEmpty() && before.isNotEmpty() -> {
                 AppLog.i(TAG, "signed out of every group, no longer collecting")
                 stopCollecting()
                 awaitSession()
             }
 
-            next.isNotEmpty() -> {
+            after.isNotEmpty() -> {
                 sessionWait?.cancel()
                 sessionWait = null
                 startCollecting()
@@ -604,124 +472,19 @@ class SharingService : LifecycleService() {
     }
 
     /**
-     * What the service does for one group besides writing into it: hears a
-     * siren, a search or a request to forget the place there, and takes back
-     * what the device's previous id left in it.
-     */
-    private fun listenTo(link: GroupLink) {
-        AppLog.i(TAG, "writing into $link")
-
-        listening[link] =
-            lifecycleScope.launch {
-                val device = DeviceIdentity(this@SharingService)
-
-                LeavingHere.forget(link.connection.projectId)
-                launch { signOutWhenRemoved(link, device) }
-                // Once, after the move to the system's id: the old position
-                // would otherwise stay on the map beside the new one.
-                launch { leavePreviousId(link.memberId, device, link.connection) }
-                launch {
-                    keepSearchNotification(this@SharingService, link.phoneId, link.connection)
-                }
-                launch { sirens.answer(link.memberId, link.phoneId, link.connection) }
-                launch {
-                    answerResets(
-                        this@SharingService,
-                        link.memberId,
-                        link.phoneId,
-                        jumps,
-                        link.connection,
-                    )
-                }
-            }
-    }
-
-    /**
-     * Signs out of [link]'s group once another device of the member has
-     * removed this one from "My devices".
-     *
-     * Writing on would undo the removal: the next status puts the device's
-     * line back, and with it the marker on everybody's map. A device removed
-     * that way has usually changed hands, so it stops there rather than asks.
-     */
-    private suspend fun signOutWhenRemoved(link: GroupLink, device: DeviceIdentity) {
-        val projectId = link.connection.projectId
-
-        ownLine(link.connection, link.memberId, device.id).goneAfterListed().firstOrNull() ?: return
-
-        if (LeavingHere.has(projectId)) {
-            return
-        }
-
-        AppLog.i(TAG, "removed from $link by another device, signing out of it")
-        RemovedHere.note(this, projectId)
-        PublishedProfile(this).forget()
-        link.connection.auth.signOut()
-    }
-
-    private fun unlink(gone: List<GroupLink>) {
-        for (link in gone) {
-            AppLog.i(TAG, "no longer writing into $link")
-            listening.remove(link)?.cancel()
-        }
-    }
-
-    /**
      * Takes down everything [startCollecting] set up: the collection, the
      * cable receiver and whatever it was showing or sounding. What listens to
-     * each group is taken down by [unlink], group by group.
+     * each group is taken down by [GroupLinks], group by group.
      */
     private fun stopCollecting() {
         collection?.cancel()
         collection = null
-        runCatching { unregisterReceiver(power) }
+        status.stopHearingTheCable()
         // [keepSearchNotification] is cancelled along with [collection] and
         // leaves nothing to take its own notification down; the device may
         // still be being looked for when the collection stops.
         cancelSearchNotification(this)
         sirens.stop()
-    }
-
-    /**
-     * Says how the device is, apart from where it is: in touch now, in this
-     * mode, this charged, on a cable or off it.
-     *
-     * Not through the position, and not past the filter: a device whose
-     * answers are all being thrown away is still in touch and still on its
-     * cable, and a reader deciding whether it has gone quiet or run flat needs
-     * to hear that. A failure costs nothing but the news, which the next mode,
-     * cable or [STATUS_EVERY] says again.
-     */
-    private fun tellHowThePhoneIs() {
-        if (links.value.isEmpty()) {
-            return
-        }
-
-        val mode = lastMode
-        val percent = batteryPercent()
-        val cable = charging()
-
-        lifecycleScope.launch {
-            try {
-                writer.tellStatus(mode, percent, cable)
-            } catch (cancellation: CancellationException) {
-                throw cancellation
-            } catch (error: Exception) {
-                logFailure(TAG, "could not say how the phone is", error)
-            }
-        }
-    }
-
-    /**
-     * Says how the device is every [STATUS_EVERY], whatever else it is or is
-     * not writing: the moment it was last in touch is what tells a working
-     * device whose position is held back from one that has gone quiet.
-     */
-    private suspend fun keepTellingHowThePhoneIs() {
-        while (true) {
-            delay(STATUS_EVERY.toMillis())
-            tellHowThePhoneIs()
-        }
     }
 
     /**
@@ -759,7 +522,12 @@ class SharingService : LifecycleService() {
                     // being jammed is the thing to be read afterwards, and a
                     // filtered log would answer questions about the filter
                     // instead.
-                    noteFix(fix, mode, judged.jump, judged.agreed, judged.home, trusted)
+                    fixLog.note(
+                        fix,
+                        lastFix,
+                        mode,
+                        FixVerdict(judged.jump, judged.agreed, judged.home, trusted),
+                    )
 
                     carried.noticeAnAnswerThatWillNotFollow(fix, judged.whence, Instant.now())
 
@@ -871,7 +639,7 @@ class SharingService : LifecycleService() {
         // Read once and carried into the write: asking twice would let the
         // cable come out between the two answers, and then the document would
         // disagree with what was decided here.
-        val written = Written(fix, charging(), judged.settling)
+        val written = Written(fix, status.charging(), judged.settling)
 
         // News passes the filter by; a repeat of itself is not news.
         if (written == lastWritten) {
@@ -913,7 +681,7 @@ class SharingService : LifecycleService() {
         // receiver: it is a statement about the answer, and the answer has not
         // changed. Worked out afresh here it would say something about an
         // epoch this position never came out of.
-        val written = Written(known, charging(), lastWritten?.settling == true)
+        val written = Written(known, status.charging(), lastWritten?.settling == true)
 
         // Not weighed against what the member shares: this is the position
         // they have already shared, said again so that the marker does not go
@@ -948,11 +716,11 @@ class SharingService : LifecycleService() {
             return
         }
 
-        hearTheCable()
+        status.hearTheCable()
 
         collection =
             lifecycleScope.launch {
-                launch { keepTellingHowThePhoneIs() }
+                launch { status.keepTelling() }
 
                 // A flipped source switch restarts the round like a new mode
                 // does: the request itself has to change, not only the reading.
@@ -971,7 +739,7 @@ class SharingService : LifecycleService() {
         lastMode = mode
         // A mode beginning is news about the device as well as a reason to ask
         // for a position, and the first of them is the service starting.
-        tellHowThePhoneIs()
+        status.tell()
 
         val spec = requestSpec(mode)
 
@@ -1023,20 +791,6 @@ class SharingService : LifecycleService() {
                 writeIfWorth(writer, fix, mode)
             }
         }
-    }
-
-    /** Listens for the cable going in or coming out, which is said at once. */
-    private fun hearTheCable() {
-        ContextCompat.registerReceiver(
-            this,
-            power,
-            IntentFilter().apply {
-                addAction(Intent.ACTION_POWER_CONNECTED)
-                addAction(Intent.ACTION_POWER_DISCONNECTED)
-            },
-            // Only the system sends these, and nothing else may reach in.
-            ContextCompat.RECEIVER_NOT_EXPORTED,
-        )
     }
 
     /**
@@ -1284,90 +1038,6 @@ class SharingService : LifecycleService() {
     }
 
     /**
-     * Writes down a fix as it arrived, beside what it would take to be true.
-     *
-     * A line per fix rather than per write: the ones left out are the ones
-     * worth reading later, and the distance and the speed are what tell a walk
-     * from an answer given by a jammed receiver.
-     */
-    private fun noteFix(
-        fix: Fix,
-        mode: CollectionMode,
-        jump: JumpReason?,
-        agreed: Boolean,
-        home: Boolean,
-        trusted: Boolean,
-    ) {
-        val last = lastFix
-        val place = String.format(Locale.ROOT, "%.5f,%.5f", fix.latitude, fix.longitude)
-        val width = fix.accuracyMetres?.let { String.format(Locale.ROOT, " ±%.0f m", it) }.orEmpty()
-        // Which way of knowing answered. Written down beside the place
-        // because a position from the towers and a position from the
-        // satellites are worth reading differently, and until now the log
-        // said nothing about which of the two had just arrived.
-        //
-        // The name is followed by what the provider's own note said about how
-        // it arrived at the answer, where it said anything: the name `gps` has
-        // been seen on a position an assistance service handed over with not
-        // one satellite audible, and the two read the same until this is put
-        // beside them.
-        val said = answeredBy(noteOf(fix.reported?.alongside))
-        val how = if (said == Answered.Unsaid) "" else ", ${said.word}"
-        val source = fix.from?.let { " from $it$how" }.orEmpty()
-        val since =
-            if (last == null) {
-                // Not necessarily the first fix to arrive: while every answer
-                // is being left out, none of them becomes the position the
-                // next one is measured against.
-                "with no position to measure it from"
-            } else {
-                val moved = distanceMetres(last, fix)
-                val speed = impliedSpeedMps(last, fix)
-                val pace = speed?.let { String.format(Locale.ROOT, "%.1f", it) } ?: "no"
-
-                String.format(Locale.ROOT, "%.0f m from the last at %s m/s", moved, pace)
-            }
-        val verdict =
-            when {
-                jump == null -> ""
-
-                home ->
-                    "; a jump ${caughtBy(jump, fix, leftOutEvidence())}, taken: the phone has " +
-                        "been here before"
-
-                agreed ->
-                    "; a jump ${caughtBy(jump, fix, leftOutEvidence())}, taken because the fix " +
-                        "before it agrees"
-
-                jumps.enabled -> "; a jump ${caughtBy(jump, fix, leftOutEvidence())}, left out"
-
-                else ->
-                    "; a jump ${caughtBy(jump, fix, leftOutEvidence())}, kept because the " +
-                        "filter is off"
-            }
-
-        // The clock is asked about the satellites only. An answer from the
-        // towers is handed over seconds after it was taken, and its age would
-        // read as a receiver whose time has been tampered with.
-        val clock = if (trusted) "" else aClockApart(fix.takenAt)
-
-        AppLog.i(TAG, "fix $place$width$source in mode $mode, $since$verdict$clock")
-
-        radio.saying()?.let { AppLog.i(TAG, it) }
-        radio.satellitesSaying()?.let { AppLog.i(TAG, it) }
-        radio.skySaying()?.let { AppLog.i(TAG, it) }
-        radio.driftSaying()?.let { AppLog.i(TAG, it) }
-        radio.navigationSaying()?.let { AppLog.i(TAG, it) }
-        radio.orbitsSaying()?.let { AppLog.i(TAG, it) }
-
-        // The epoch behind the line just written, in its own file. Everything
-        // above is one sentence about a minute of averages; this is the sky
-        // itself, satellite by satellite, for the questions that come later.
-        radio.noteSky(fix.takenAt, fix)
-        skyNotes.noteWhatTheSatellitesLastSaid()
-    }
-
-    /**
      * Adds a written position to what the device remembers about itself.
      *
      * Written positions only. An answer left out never becomes part of what
@@ -1385,24 +1055,6 @@ class SharingService : LifecycleService() {
         if (!before && trail.knows(fix)) {
             AppLog.i(TAG, "this is a place the phone now counts as its own")
         }
-    }
-
-    /**
-     * What to add about the clock of the fix, when there is anything to add.
-     *
-     * A receiver takes its time from the satellites, so a false signal can
-     * carry a false clock, and that shows before the coordinates do. It cannot
-     * stand alone as a verdict — a device setting its own clock from the same
-     * satellites moves with the lie — but it costs nothing to write down.
-     */
-    private fun aClockApart(takenAt: Instant): String {
-        val now = Instant.now()
-
-        if (!clockDisagrees(takenAt, now, CLOCK_TOLERANCE)) {
-            return ""
-        }
-
-        return "; stamped ${Duration.between(takenAt, now).seconds} s from the phone's own clock"
     }
 
     /**
@@ -1454,7 +1106,7 @@ class SharingService : LifecycleService() {
             writer.write(
                 written.fix,
                 mode,
-                batteryPercent(),
+                status.batteryPercent(),
                 written.charging,
                 whence,
                 written.settling,
@@ -1493,29 +1145,10 @@ class SharingService : LifecycleService() {
             localTime = LocalTime.now(),
             insideGeofence = standing,
             moving = moving,
-            batteryPercent = batteryPercent(),
+            batteryPercent = status.batteryPercent(),
             ownMapOpen = ownMap,
         ),
     )
-
-    private fun batteryPercent(): Int = getSystemService<BatteryManager>()
-        ?.getIntProperty(BatteryManager.BATTERY_PROPERTY_CAPACITY)
-        ?: FULL_BATTERY
-
-    /**
-     * Whether the device is on a charger, which is what tells a low percentage
-     * that is about to grow from one that is about to run out.
-     *
-     * Read as "plugged into something" rather than through `isCharging`: a
-     * device that has reached a hundred percent stops charging while the cable
-     * is still in it, and the reader is asking about the cable.
-     */
-    private fun charging(): Boolean {
-        val battery =
-            registerReceiver(null, IntentFilter(Intent.ACTION_BATTERY_CHANGED)) ?: return false
-
-        return battery.getIntExtra(BatteryManager.EXTRA_PLUGGED, 0) != 0
-    }
 
     /**
      * The platform checks the location permission again here and answers a
@@ -1538,14 +1171,8 @@ class SharingService : LifecycleService() {
     }
 
     companion object {
-        /** How long the cable has to stay in or out before it is said. */
-        private val POWER_SETTLES: Duration = Duration.ofSeconds(2)
-
         /** How long a freshly started service waits for the account to be restored. */
         private val SESSION_WAIT: Duration = Duration.ofMinutes(1)
-
-        /** What a device that will not say counts as, so it is not treated as flat. */
-        private const val FULL_BATTERY = 100
 
         const val ACTION_STOP = "io.github.vitalyostanin.geoshare.STOP"
 
