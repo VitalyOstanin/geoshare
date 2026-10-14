@@ -12,5 +12,8 @@
         "firebase": "13.0.0",
         "maplibre-gl": "6.9.0",
         "qr": "0.7.2"
+    },
+    "overrides": {
+        "@grpc/grpc-js": "^1.14.6"
     }
 }

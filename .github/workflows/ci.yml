@@ -107,6 +107,15 @@ jobs:
           distribution: temurin
           java-version: ${{ env.FIREBASE_JRE_VERSION }}
 
+      - name: No known vulnerability in the npm packages
+        # Read off the lock files alone. A package Firebase pulls in can stay
+        # vulnerable for months after the fix: it is then raised through
+        # "overrides" in package.json, and this step is what notices the next
+        # one.
+        run: |
+          npm --prefix web audit --audit-level=high
+          npm --prefix firebase/tests audit --audit-level=high
+
       - name: The page's tests and their coverage floors
         working-directory: web
         run: npm run coverage
