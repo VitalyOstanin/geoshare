@@ -37,9 +37,11 @@ data class PhoneStatus(
  */
 fun phonesFrom(data: Map<String, Any?>?): Map<String, PhoneStatus> = data.orEmpty()
     .entries
+    // The entries that are not devices are dropped before the count, so that
+    // one of them does not take the place of a real device, as on the page.
+    .mapNotNull { (deviceId, entry) -> (entry as? Map<*, *>)?.let { deviceId to it } }
     .take(PHONES_PER_MEMBER)
-    .mapNotNull { (deviceId, entry) ->
-        val fields = entry as? Map<*, *> ?: return@mapNotNull null
+    .map { (deviceId, fields) ->
         val moment = (fields[PhoneField.ONLINE_AT] as? Timestamp)?.toInstant()
         val percent = (fields[PhoneField.BATTERY_PERCENT] as? Number)?.toInt()
 

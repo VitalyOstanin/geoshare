@@ -116,4 +116,17 @@ class PhoneStatusTest {
             phones.getValue("phone"),
         )
     }
+
+    @Test
+    fun `an entry that is not a device takes no device's place`() {
+        // The broken entry comes first: counted before it is dropped, it
+        // would push the tenth device out.
+        val entries =
+            listOf("broken" to "not an entry") +
+                (1..10).map { "phone$it" to mapOf("model" to "MAR-LX1") }
+
+        val phones = phonesFrom(entries.toMap())
+
+        assertEquals((1..10).map { "phone$it" }.toSet(), phones.keys)
+    }
 }
