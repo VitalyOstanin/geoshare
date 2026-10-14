@@ -235,9 +235,14 @@ function rulesOf(collection) {
     return text.slice(start, next < 0 ? text.length : next);
 }
 
-/** The fields a page module reads off a document, `data.name` or `data?.name`. */
+/**
+ * The fields a page module reads off a document, `data.name` or `data?.name`;
+ * not the end of a module's name such as `./group-data.js`.
+ */
 function pageReads(file) {
-    return new Set([...source(file).matchAll(/\bdata\??\.(\w+)/gu)].map((found) => found[1]));
+    const reads = source(file).matchAll(/(?<![\w-])data\??\.(\w+)/gu);
+
+    return new Set([...reads].map((found) => found[1]));
 }
 
 const FIELDS = 'service/StorePaths.kt';
@@ -276,7 +281,9 @@ test('the rules know every field the device writes, under the same name', () => 
 
 test('the page reads only fields the device writes', () => {
     const readers = {
+        'web/public/lib/position-data.js': ['PositionField'],
         'web/public/lib/store-positions.js': ['PositionField'],
+        'web/public/lib/group-data.js': ['GroupField', 'ProfileField', 'PhoneField', 'GrantField'],
         'web/public/lib/store-group.js': ['GroupField', 'ProfileField', 'PhoneField', 'GrantField'],
         'web/public/lib/store-search.js': ['SearchField', 'ResetField', 'SirenField'],
         'web/public/lib/labels.js': ['LabelField'],
