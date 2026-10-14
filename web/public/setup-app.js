@@ -335,7 +335,7 @@ async function publishGroupPage(api, projectId, context) {
 
     // The page and its settings go out in one release: a page released
     // without them would not open for a member who reloads it meanwhile.
-    const settings = await appSettings(api, context.android.name, projectId);
+    const settings = await appSettings(api, context.android, projectId);
 
     context.files['/geoshare.json'] = JSON.stringify(settings, null, 2) + '\n';
     context.files['/firebase-config.js'] = await webConfigFile(

@@ -55,11 +55,20 @@ export async function ensureSite(api, projectId, webAppId) {
  * The geoshare.json the app takes its project from, built out of the Android
  * app's own google-services config so the keys are the ones the app was
  * registered with.
+ *
+ * The config lists every Android app of the project, so the client is picked
+ * by the id of `androidApp`, the one ensureAndroidApp found or registered.
  */
-export async function appSettings(api, androidAppName, siteId) {
-    const config = await api('GET', `${FIREBASE}/${androidAppName}/config`);
+export async function appSettings(api, androidApp, siteId) {
+    const config = await api('GET', `${FIREBASE}/${androidApp.name}/config`);
     const services = JSON.parse(atob(config.configFileContents));
-    const client = services.client[0];
+    const client = services.client.find(
+        (each) => each.client_info.mobilesdk_app_id === androidApp.appId,
+    );
+
+    if (!client) {
+        throw new Error(`the config of ${androidApp.name} has no client ${androidApp.appId}`);
+    }
 
     return {
         version: 1,

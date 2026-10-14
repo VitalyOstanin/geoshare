@@ -15,6 +15,12 @@ import {
 
 const PROJECT = 'example-try-61d5c3';
 
+/** The Android app as ensureAndroidApp returns it. */
+const THIS_APP = {
+    name: `projects/${PROJECT}/androidApps/1:123456:android:abc`,
+    appId: '1:123456:android:abc',
+};
+
 function failure(status) {
     const error = new Error(`status ${status}`);
 
@@ -104,9 +110,7 @@ test('the settings come out of the android app config', async () => {
         [/GET .*\/config$/, { configFileContents: btoa(JSON.stringify(services)) }],
     ]);
 
-    const app = `projects/${PROJECT}/androidApps/1:1:android:x`;
-
-    assert.deepEqual(await appSettings(api, app, 's1'), {
+    assert.deepEqual(await appSettings(api, THIS_APP, 's1'), {
         version: 1,
         projectId: PROJECT,
         applicationId: '1:123456:android:abc',
@@ -114,6 +118,47 @@ test('the settings come out of the android app config', async () => {
         gcmSenderId: '123456',
         site: 's1',
     });
+});
+
+// A project with another Android app in it lists both in the config of
+// either; the settings are those of the app the setup page registered.
+test('the settings are those of this app when the project has another', async () => {
+    const services = {
+        project_info: { project_id: PROJECT, project_number: '123456' },
+        client: [
+            {
+                client_info: { mobilesdk_app_id: '1:123456:android:other' },
+                api_key: [{ current_key: 'key-other' }],
+            },
+            {
+                client_info: { mobilesdk_app_id: '1:123456:android:abc' },
+                api_key: [{ current_key: 'key-1' }],
+            },
+        ],
+    };
+    const api = fakeApi([
+        [/GET .*\/config$/, { configFileContents: btoa(JSON.stringify(services)) }],
+    ]);
+    const settings = await appSettings(api, THIS_APP, 's1');
+
+    assert.equal(settings.applicationId, '1:123456:android:abc');
+    assert.equal(settings.apiKey, 'key-1');
+});
+
+test('a config without this app is said to be one', async () => {
+    const services = {
+        project_info: { project_id: PROJECT, project_number: '123456' },
+        client: [
+            {
+                client_info: { mobilesdk_app_id: '1:123456:android:other' },
+                api_key: [{ current_key: 'key-other' }],
+            },
+        ],
+    };
+    const api = fakeApi([
+        [/GET .*\/config$/, { configFileContents: btoa(JSON.stringify(services)) }],
+    ]);
+    await assert.rejects(appSettings(api, THIS_APP, 's1'), /1:123456:android:abc/);
 });
 
 function deployApi(required) {
