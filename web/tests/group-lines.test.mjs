@@ -53,7 +53,7 @@ test('the one running the group is marked', () => {
 
 // What the panel counts is what this viewer may watch, not what the member
 // owns: a grant nobody may read says nothing about how many devices there are.
-test('the phones counted are the ones this viewer was given', () => {
+test('the devices counted are the ones this viewer was given', () => {
     const grants = new Map([[CHILD, { memberId: CHILD, devices: ['one', 'two'] }]]);
     const lines = groupOverview(roster, profiles, grants, PARENT);
 
@@ -102,7 +102,7 @@ test('a panel drawn before the profiles arrive still lists everybody', () => {
 // An administrator reads the devices without the grant, which is the case the
 // panel lists them for: whether a device is in touch is not a secret of whom
 // its owner shares with.
-test('the phones are listed by the names the map gives them', () => {
+test('the devices are listed by the names the map gives them', () => {
     const phones = phonesOf({
         old: { model: 'MAR-LX1', onlineAt: { toMillis: () => 5 } },
         new: { model: 'MAR-LX1', name: 'school phone' },
@@ -119,21 +119,21 @@ test('the phones are listed by the names the map gives them', () => {
 
 // The map shows the later of the device's state and its position; the panel
 // has to say the same, or the two disagree about one device.
-test('a position newer than the phone state sets the moment in touch', () => {
+test('a position newer than the device state sets the moment in touch', () => {
     const phones = new Map([['dev-one', { onlineAt: 1000, batteryPercent: 50, charging: false }]]);
     const [line] = phoneLines(CHILD, phones, undefined, new Map([[`${CHILD}.dev-one`, 5000]]));
 
     assert.equal(line.onlineAt, 5000);
 });
 
-test('a position older than the phone state leaves the state in place', () => {
+test('a position older than the device state leaves the state in place', () => {
     const phones = new Map([['dev-one', { onlineAt: 9000, batteryPercent: 50, charging: false }]]);
     const [line] = phoneLines(CHILD, phones, undefined, new Map([[`${CHILD}.dev-one`, 5000]]));
 
     assert.equal(line.onlineAt, 9000);
 });
 
-test('a phone with no state yet is in touch as of its position', () => {
+test('a device with no state yet is in touch as of its position', () => {
     const phones = new Map([['dev-one', { onlineAt: null, batteryPercent: null, charging: null }]]);
     const [line] = phoneLines(CHILD, phones, undefined, new Map([[`${CHILD}.dev-one`, 5000]]));
 

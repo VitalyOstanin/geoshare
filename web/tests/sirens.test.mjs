@@ -19,7 +19,7 @@ test('a document that is not a siren is none', () => {
     assert.equal(sirenOf('grandma', { calledBy: 'anna', calledAt: NOW }), null);
 });
 
-test('the member is the phone id up to its dot', () => {
+test('the member is the device id up to its dot', () => {
     assert.equal(called(0).memberId, 'grandma');
 });
 

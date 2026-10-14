@@ -6,14 +6,14 @@ import org.junit.Test
 
 class BackgroundWorkTest {
     @Test
-    fun `a restricted phone that shares is asked`() {
+    fun `a restricted device that shares is asked`() {
         assertTrue(
             batteryExemptionWanted(sharing = true, unrestricted = false, askedBefore = false),
         )
     }
 
     @Test
-    fun `a phone that already lets us run is not asked`() {
+    fun `a device that already lets us run is not asked`() {
         assertFalse(
             batteryExemptionWanted(sharing = true, unrestricted = true, askedBefore = false),
         )

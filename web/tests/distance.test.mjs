@@ -35,7 +35,7 @@ test('a degree of longitude at sixty north is half that', () => {
     assert.ok(Math.abs(metres - 55597) < 50, `${metres}`);
 });
 
-test('the viewer is where the freshest of their own phones is', () => {
+test('the viewer is where the freshest of their own devices is', () => {
     const positions = [
         at('me.old', 'me', 60, 30, { minutes: 10 }),
         at('me.new', 'me', 60.1, 30, { minutes: 2 }),
@@ -74,7 +74,7 @@ test('the card of the very place measured from says nothing', () => {
     assert.equal(distanceFromViewer(own, [own], 'me', NOW), null);
 });
 
-test('another phone of the viewer\'s own is measured like anybody else', () => {
+test('another device of the viewer\'s own is measured like anybody else', () => {
     const phone = at('me.phone', 'me', 60, 30, { minutes: 1 });
     const other = at('me.other', 'me', 60.01, 30, { minutes: 5 });
 

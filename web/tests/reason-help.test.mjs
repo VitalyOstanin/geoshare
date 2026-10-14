@@ -27,7 +27,7 @@ const WRITTEN = [
     'Width',
 ];
 
-test('the help explains every reason a phone writes', () => {
+test('the help explains every reason a device writes', () => {
     const described = reasonHelpRows().map((row) => row.reason).sort();
 
     assert.deepEqual(described, WRITTEN);

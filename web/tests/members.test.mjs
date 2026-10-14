@@ -29,7 +29,7 @@ test('the other members come before our own entry', () => {
     assert.deepEqual(idsOf(order), ['her.phone', 'me.phone']);
 });
 
-test('a grant naming more phones than a person carries is followed only so far', () => {
+test('a grant naming more devices than a person carries is followed only so far', () => {
     const grants = new Map([
         ['her', { memberId: 'her', devices: Array.from({ length: 30 }, (unused, index) => `p${index}`) }],
     ]);
@@ -37,7 +37,7 @@ test('a grant naming more phones than a person carries is followed only so far',
     assert.equal(positionDocuments(grants).length, 10);
 });
 
-test('the panel sorts ids the way the phone does, by the characters themselves', () => {
+test('the panel sorts ids the way the device does, by the characters themselves', () => {
     const members = [positionOf('Zeta'), positionOf('alpha'), positionOf('Beta')];
 
     assert.deepEqual(
@@ -125,7 +125,7 @@ test('a picture anywhere but the account host draws no picture', () => {
 
 // The same rule the Android panel follows: a member carrying two devices has
 // them next to each other, in the same places at every glance.
-test('the phones of one member keep their places', () => {
+test('the devices of one member keep their places', () => {
     const members = [positionOf('a', 'two'), positionOf('b'), positionOf('a', 'one')];
 
     assert.deepEqual(idsOf(orderedForNavigation(members, 'me')), [

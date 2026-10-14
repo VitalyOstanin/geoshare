@@ -336,7 +336,7 @@
     <!-- A permission given earlier, counting down: %1$s is a time of day. -->
     <string name="visibility_until">до %1$s</string>
 
-    <!-- The names of the five ways a phone collects its position. The page
+    <!-- The names of the five ways a device collects its position. The page
          names them the same way. -->
     <string name="mode_idle">На месте</string>
     <string name="mode_standby">Ожидание</string>

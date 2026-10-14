@@ -10,7 +10,7 @@ class ThemeSettingTest {
     }
 
     @Test
-    fun `a phone that has never been asked follows the system`() {
+    fun `a device that has never been asked follows the system`() {
         assertEquals(ThemeChoice.System, themeNamed(null))
     }
 

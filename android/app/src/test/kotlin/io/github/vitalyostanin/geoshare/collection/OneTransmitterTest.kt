@@ -102,7 +102,7 @@ class OneTransmitterTest {
     }
 
     @Test
-    fun `a phone with nothing to say leaves the answer alone`() {
+    fun `a device with nothing to say leaves the answer alone`() {
         assertFalse(fromOneTransmitter(SkySays()))
         assertFalse(theOtherBandIsSilent(emptyMap()))
     }

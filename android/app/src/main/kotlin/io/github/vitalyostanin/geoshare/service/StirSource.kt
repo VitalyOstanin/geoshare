@@ -57,7 +57,7 @@ fun stirs(context: Context): Flow<Stir> = callbackFlow {
         if (mayCountSteps(context)) sensors?.getDefaultSensor(Sensor.TYPE_STEP_COUNTER) else null
 
     if (motion == null && counter == null) {
-        AppLog.i(TAG, "no motion sensors to ask; the phone cannot say whether it was carried")
+        AppLog.i(TAG, "no motion sensors to ask; the device cannot say whether it was carried")
         awaitClose {}
 
         return@callbackFlow

@@ -692,7 +692,7 @@ Then run:
 EOF
 
     echo
-    echo "Once those two steps are done, phones can connect through:"
+    echo "Once those two steps are done, devices can connect through:"
     print_connect_link "${site_id}"
 
     if (( json_mode )); then

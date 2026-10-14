@@ -17,7 +17,7 @@ class TrailTest {
     }
 
     @Test
-    fun `a place from last week is no longer where the phone has been`() {
+    fun `a place from last week is no longer where the device has been`() {
         val old = Trail(listOf(home(0)))
         val now = home(Duration.ofDays(4).toMinutes())
 
@@ -55,7 +55,7 @@ class TrailTest {
     }
 
     @Test
-    fun `a place far off is not one this phone knows`() {
+    fun `a place far off is not one this device knows`() {
         val trail = Trail(listOf(home(0), home(30), home(60)))
 
         assertFalse(trail.knows(faraway(61)))
@@ -123,7 +123,7 @@ class TrailTest {
     }
 
     @Test
-    fun `a phone that has never written anything has nothing to measure from`() {
+    fun `a device that has never written anything has nothing to measure from`() {
         assertEquals(null, anchorFrom(Trail(), at(0)))
     }
 

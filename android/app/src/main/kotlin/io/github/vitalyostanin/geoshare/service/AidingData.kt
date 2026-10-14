@@ -54,7 +54,7 @@ fun forgetAidingData(context: Context): AidingErasure {
     val manager = context.getSystemService(LocationManager::class.java)
 
     if (manager == null) {
-        AppLog.w(TAG, "the aiding data was left alone: this phone has no location manager")
+        AppLog.w(TAG, "the aiding data was left alone: this device has no location manager")
 
         return AidingErasure.Refused
     }

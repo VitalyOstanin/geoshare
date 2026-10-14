@@ -51,12 +51,12 @@ class PositionDocumentsTest {
     // A device under observation: signed in, positions in hand, and a screen
     // saying nobody shares — its own grant was not written yet.
     @Test
-    fun `this phone's own document is followed before its grant names it`() {
+    fun `this device's own document is followed before its grant names it`() {
         assertEquals(listOf("me.phone"), positionDocuments(emptyMap(), own = "me.phone"))
     }
 
     @Test
-    fun `this phone's own document is followed once when its grant names it too`() {
+    fun `this device's own document is followed once when its grant names it too`() {
         val documents = positionDocuments(mapOf("me" to grant("me", "phone")), own = "me.phone")
 
         assertEquals(listOf("me.phone"), documents)

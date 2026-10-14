@@ -60,7 +60,7 @@ class FalsePlacesTest {
      * it did before any place was ever named.
      */
     @Test
-    fun `a phone that knows no places accuses nothing`() {
+    fun `a device that knows no places accuses nothing`() {
         assertNull(falsePlaceFor(fixAt(61.42565, 5.40377)))
         assertNull(whyAJump(null, fixAt(61.42565, 5.40377)))
     }

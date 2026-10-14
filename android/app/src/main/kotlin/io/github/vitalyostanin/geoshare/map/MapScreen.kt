@@ -135,7 +135,7 @@ fun MapScreen(
     // for every member, and the card would flash on each start.
     val noGroup = removed == null && outside && settings.rosterAnswered
     // Kept across a recreated screen, as the follow mode is: turning the
-    // phone or a change of the system theme would otherwise close the card
+    // device or a change of the system theme would otherwise close the card
     // somebody was reading.
     var showAll by rememberSaveable { mutableStateOf(false) }
     var openedPositionId by rememberSaveable { mutableStateOf<String?>(null) }

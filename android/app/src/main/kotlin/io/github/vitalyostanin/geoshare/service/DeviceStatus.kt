@@ -100,7 +100,7 @@ internal class DeviceStatus(
             } catch (cancellation: CancellationException) {
                 throw cancellation
             } catch (error: Exception) {
-                logFailure(TAG, "could not say how the phone is", error)
+                logFailure(TAG, "could not say how the device is", error)
             }
         }
     }

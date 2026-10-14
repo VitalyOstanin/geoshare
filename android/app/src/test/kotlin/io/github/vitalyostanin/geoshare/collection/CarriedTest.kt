@@ -19,7 +19,7 @@ class CarriedTest {
     private val untouched = Carrying(stirred = false, steps = 0)
 
     @Test
-    fun `an answer a kilometre from a phone nobody touched has walked away`() {
+    fun `an answer a kilometre from a device nobody touched has walked away`() {
         // The one this device actually gave at 11:00 that morning: four
         // satellites, a quarter of a kilometre of doubt, and a place a
         // kilometre from the flat it was lying in.
@@ -42,7 +42,7 @@ class CarriedTest {
     }
 
     @Test
-    fun `an answer wandering inside the doubt of a put-down phone is left alone`() {
+    fun `an answer wandering inside the doubt of a put-down device is left alone`() {
         val nearby = fix(61.03340, 4.40300, noon.plusSeconds(60), width = 30.0)
 
         assertFalse(driftedWhilePutDown(putDown, nearby, untouched))
@@ -60,14 +60,14 @@ class CarriedTest {
     }
 
     @Test
-    fun `a phone that was stirred is not accused of anything`() {
+    fun `a device that was stirred is not accused of anything`() {
         val elsewhere = fix(61.04170, 4.40300, noon.plusSeconds(60), width = 246.0)
 
         assertFalse(driftedWhilePutDown(putDown, elsewhere, Carrying(stirred = true)))
     }
 
     @Test
-    fun `a walk of twenty steps is a phone that went somewhere`() {
+    fun `a walk of twenty steps is a device that went somewhere`() {
         val elsewhere = fix(61.04170, 4.40300, noon.plusSeconds(60), width = 246.0)
 
         assertFalse(
@@ -85,7 +85,7 @@ class CarriedTest {
     }
 
     @Test
-    fun `a phone with no sensors to ask says nothing`() {
+    fun `a device with no sensors to ask says nothing`() {
         val elsewhere = fix(61.04170, 4.40300, noon.plusSeconds(60), width = 246.0)
 
         assertFalse(
@@ -94,7 +94,7 @@ class CarriedTest {
     }
 
     @Test
-    fun `an answer from before the phone settled is about another part of the day`() {
+    fun `an answer from before the device settled is about another part of the day`() {
         val earlier = fix(61.04170, 4.40300, noon.minusSeconds(60), width = 246.0)
 
         assertFalse(driftedWhilePutDown(putDown, earlier, untouched))
@@ -108,12 +108,12 @@ class CarriedTest {
     }
 
     @Test
-    fun `a phone still being knocked about is not put down yet`() {
+    fun `a device still being knocked about is not put down yet`() {
         assertNull(putDownAt(home, noon.minusSeconds(30), told = true, now = noon))
     }
 
     @Test
-    fun `a phone quiet for two minutes counts as put down when it fell quiet`() {
+    fun `a device quiet for two minutes counts as put down when it fell quiet`() {
         val anchor = putDownAt(home, noon.minusSeconds(180), told = true, now = noon, steps = 1_000)
 
         assertEquals(noon.minusSeconds(180).plus(PUT_DOWN_AFTER), anchor?.since)
@@ -123,7 +123,7 @@ class CarriedTest {
     // Nothing has stirred since the device was switched on, which is a device
     // that has been lying there the whole time.
     @Test
-    fun `a phone that never stirred is anchored from now`() {
+    fun `a device that never stirred is anchored from now`() {
         assertEquals(noon, putDownAt(home, null, told = true, now = noon)?.since)
     }
 
@@ -134,7 +134,7 @@ class CarriedTest {
     }
 
     @Test
-    fun `stirs from before the phone settled say nothing about it`() {
+    fun `stirs from before the device settled say nothing about it`() {
         val carrying =
             carryingSince(putDown, listOf(Stir(noon.minusSeconds(30)), Stir(noon.minusSeconds(5))))
 
@@ -224,7 +224,7 @@ class CarriedTest {
     }
 
     @Test
-    fun `a phone without sensors is not asked about being carried`() {
+    fun `a device without sensors is not asked about being carried`() {
         val walked = walk(steps = 500)
         val doorway = fix(61.03268, 4.40300, noon, width = 10.0)
         val same = fix(61.03270, 4.40302, noon.plusSeconds(300), width = 12.0)
@@ -290,7 +290,7 @@ class CarriedTest {
     }
 
     @Test
-    fun `a phone whose counter has been read once is not walking yet`() {
+    fun `a device whose counter has been read once is not walking yet`() {
         assertNull(walkingNow(listOf(Stir(noon, steps = 1_000)), noon))
     }
 
@@ -306,7 +306,7 @@ class CarriedTest {
     // thirty-three metres a second, which is a hundred and twenty kilometres
     // an hour.
     @Test
-    fun `a phone nobody touched is not travelling at the speed of a car`() {
+    fun `a device nobody touched is not travelling at the speed of a car`() {
         val moving = fix(61.11864, 5.38881, noon.plusSeconds(60), width = 15.0, speedMps = 33.3)
 
         assertTrue(hurriedWhilePutDown(putDown, moving, untouched))
@@ -326,14 +326,14 @@ class CarriedTest {
     // Of 6,405 answers the devices gave from home over three days, nine in
     // ten claimed exactly this.
     @Test
-    fun `a phone lying still is told it is going nowhere`() {
+    fun `a device lying still is told it is going nowhere`() {
         val resting = fix(61.03268, 4.40300, noon.plusSeconds(60), width = 15.0, speedMps = 0.0)
 
         assertFalse(hurriedWhilePutDown(putDown, resting, untouched))
     }
 
     @Test
-    fun `a phone somebody picked up may honestly be travelling`() {
+    fun `a device somebody picked up may honestly be travelling`() {
         val moving = fix(61.11864, 5.38881, noon.plusSeconds(60), width = 15.0, speedMps = 33.3)
 
         assertFalse(hurriedWhilePutDown(putDown, moving, Carrying(stirred = true)))

@@ -32,7 +32,7 @@ test('a search ends its hours after the last renewal', () => {
     assert.equal(search.startedAt, NOW - 30 * HOUR);
 });
 
-test('the phone\'s name comes along when the administrator gave one', () => {
+test('the device\'s name comes along when the administrator gave one', () => {
     const search = searchOf('grandma.a', written(2, 24, { phoneName: 'Old phone' }));
 
     assert.equal(search.phoneName, 'Old phone');
@@ -71,7 +71,7 @@ test('only the searches still standing are kept', () => {
 // Several devices may be looked for at once, of one member or of several: the
 // family may have lost two of grandma's devices together, and be looking for
 // uncle's at the same time.
-test('two phones of one member stand as two searches', () => {
+test('two devices of one member stand as two searches', () => {
     const searches = new Map([
         ['grandma.a', searchOf('grandma.a', written(1, 6))],
         ['grandma.b', searchOf('grandma.b', written(2, 24))],
@@ -83,7 +83,7 @@ test('two phones of one member stand as two searches', () => {
     );
 });
 
-test('phones of two members stand at once', () => {
+test('devices of two members stand at once', () => {
     const searches = new Map([
         ['grandma.a', searchOf('grandma.a', written(1, 6))],
         ['uncle.a', searchOf('uncle.a', written(1, 6))],
@@ -104,7 +104,7 @@ test('every position is keyed by the same id its search stands under', () => {
     assert.deepEqual([...standingSearches(searches, NOW).keys()], ['grandma.a']);
 });
 
-test('only the phone looked for is marked, and neither its sibling nor a stranger', () => {
+test('only the device looked for is marked, and neither its sibling nor a stranger', () => {
     const search = searchOf('grandma.a', written(1, 6));
     const positions = [
         { positionId: 'grandma.a', memberId: 'grandma' },
@@ -120,7 +120,7 @@ test('only the phone looked for is marked, and neither its sibling nor a strange
     );
 });
 
-test('a phone with no name of its own is called what the search saw', () => {
+test('a device with no name of its own is called what the search saw', () => {
     const search = searchOf('grandma.a', written(1, 6, { phoneName: 'Old phone' }));
     const positions = [{ positionId: 'grandma.a', memberId: 'grandma', deviceName: null }];
 
@@ -129,7 +129,7 @@ test('a phone with no name of its own is called what the search saw', () => {
     assert.equal(marked[0].deviceName, 'Old phone');
 });
 
-test('a phone already named keeps its own name over the search\'s', () => {
+test('a device already named keeps its own name over the search\'s', () => {
     const search = searchOf('grandma.a', written(1, 6, { phoneName: 'Old phone' }));
     const positions = [{ positionId: 'grandma.a', memberId: 'grandma', deviceName: 'Grandma\'s' }];
 

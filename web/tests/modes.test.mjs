@@ -8,7 +8,7 @@ import { WORDS } from '../public/lib/words.js';
 // two would pass whether the dictionary holds the mode or not: what is checked
 // is that the name came from the dictionary, which is where a translation of
 // it would be.
-test('every mode a phone writes is named by the dictionary', () => {
+test('every mode a device writes is named by the dictionary', () => {
     const modes = ['Idle', 'Standby', 'Moving', 'Viewing', 'Night'];
 
     for (const mode of modes) {

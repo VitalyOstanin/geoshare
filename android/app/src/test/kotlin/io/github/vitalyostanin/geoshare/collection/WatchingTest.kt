@@ -80,7 +80,7 @@ class WatchingTest {
     // The owner looking from another device of theirs names nobody in the
     // grant, and is somebody the device should be fresh for all the same.
     @Test
-    fun `the owner's own other phone always counts`() {
+    fun `the owner's own other device always counts`() {
         val claim = now.plusSeconds(300)
 
         assertEquals(

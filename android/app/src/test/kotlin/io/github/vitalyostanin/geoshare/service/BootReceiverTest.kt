@@ -6,7 +6,7 @@ import org.junit.Test
 
 class BootReceiverTest {
     @Test
-    fun `a phone that has just restarted brings the service back`() {
+    fun `a device that has just restarted brings the service back`() {
         assertEquals("boot", whatStoppedIt("android.intent.action.BOOT_COMPLETED"))
     }
 

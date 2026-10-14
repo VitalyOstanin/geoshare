@@ -515,7 +515,7 @@ class RadioWatch(
 
         AppLog.w(
             TAG,
-            "the time of ${apart.size} signal(s) does not run with the phone's: " +
+            "the time of ${apart.size} signal(s) does not run with the device's: " +
                 apart.joinToString(", ") {
                     "${it.signal.constellation.word} ${it.signal.id} ${it.verdict}"
                 },

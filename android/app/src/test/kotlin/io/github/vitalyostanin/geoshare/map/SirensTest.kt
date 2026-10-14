@@ -41,7 +41,7 @@ class SirensTest {
     }
 
     @Test
-    fun `the member is the phone id up to its dot`() {
+    fun `the member is the device id up to its dot`() {
         assertEquals("grandma", called(0).memberId)
     }
 
@@ -119,7 +119,7 @@ class SirensTest {
     }
 
     @Test
-    fun `every phone offered is followed, and a phone never called is left out`() {
+    fun `every device offered is followed, and a device never called is left out`() {
         val rung = called(5)
         val sirens =
             runBlocking {

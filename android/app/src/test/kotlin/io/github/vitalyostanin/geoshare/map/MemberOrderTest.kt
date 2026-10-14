@@ -83,7 +83,7 @@ class MemberOrderTest {
     // The same rule the web page follows: a member carrying two devices has
     // them next to each other, in the same places at every glance.
     @Test
-    fun `the phones of one member keep their places`() {
+    fun `the devices of one member keep their places`() {
         val members =
             listOf(positionOf("a", "two"), positionOf("b"), positionOf("a", "one"))
 

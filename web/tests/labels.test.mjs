@@ -36,7 +36,7 @@ function memoryStore() {
     };
 }
 
-test("the viewer's own name for a phone comes first", () => {
+test("the viewer's own name for a device comes first", () => {
     const labels = labelsFrom({ devices: { [`${HER}.phone`]: 'new phone' } });
 
     const [shown] = labelledPositions([position], labels, grantsNaming("mum's phone"));
@@ -44,19 +44,19 @@ test("the viewer's own name for a phone comes first", () => {
     assert.equal(shown.deviceName, 'new phone');
 });
 
-test("the owner's name for a phone comes next", () => {
+test("the owner's name for a device comes next", () => {
     const [shown] = labelledPositions([position], NO_LABELS, grantsNaming("mum's phone"));
 
     assert.equal(shown.deviceName, "mum's phone");
 });
 
-test("the phone's own model is shown where nobody named it", () => {
+test("the device's own model is shown where nobody named it", () => {
     const [shown] = labelledPositions([position], NO_LABELS, grantsNaming(null, 'MAR-LX1'));
 
     assert.equal(shown.deviceName, 'MAR-LX1');
 });
 
-test('a phone that has said nothing about itself is left unnamed', () => {
+test('a device that has said nothing about itself is left unnamed', () => {
     const [shown] = labelledPositions([position], NO_LABELS, grantsNaming(null));
 
     assert.equal(shown, position);
@@ -108,7 +108,7 @@ test('a browser that refuses storage starts without names', () => {
 // Two devices of one model that nobody named read the same everywhere; a number
 // after the name tells them apart, in the order of their ids so that every
 // screen numbers them alike.
-test('phones sharing a name are numbered in the order of their ids', () => {
+test('devices sharing a name are numbered in the order of their ids', () => {
     const phones = phonesOf({
         zulu: { model: 'BVL-N49' },
         alpha: { model: 'BVL-N49' },
@@ -137,7 +137,7 @@ test('twins skip a number another device is already called by', () => {
     assert.equal(names.get('zulu'), 'BVL-N49 (3)');
 });
 
-test('a phone named apart from its twin leaves the other unnumbered', () => {
+test('a device named apart from its twin leaves the other unnumbered', () => {
     const phones = phonesOf({ alpha: { model: 'BVL-N49' }, zulu: { model: 'BVL-N49' } });
     const labels = labelsFrom({ devices: { [`${HER}.zulu`]: 'old phone' } });
 
@@ -162,7 +162,7 @@ test('the map numbers twins the way the panel does', () => {
     assert.deepEqual(shown.map((one) => one.deviceName), ['BVL-N49 (2)', 'BVL-N49 (1)']);
 });
 
-test('phones of two members are numbered apart', () => {
+test('devices of two members are numbered apart', () => {
     const grants = combinedGrants(new Map(), new Map([
         [HER, phonesOf({ alpha: { model: 'BVL-N49' } })],
         ['uid-him', phonesOf({ beta: { model: 'BVL-N49' } })],

@@ -151,7 +151,7 @@ object PendingInvitationStore {
         val invitation = PendingInvitation.parse(kept)
 
         if (invitation == null) {
-            AppLog.w(TAG, "the pending invitation kept on the phone could not be read")
+            AppLog.w(TAG, "the pending invitation kept on the device could not be read")
         }
 
         return invitation

@@ -18,7 +18,7 @@ const position = {
     charging: false,
 };
 
-test('a phone entry keeps what a phone writes and drops the rest', () => {
+test('a device entry keeps what a device writes and drops the rest', () => {
     const phones = phonesOf({
         phone: { model: 'MAR-LX1', onlineAt: at(5), batteryPercent: 250, charging: 'yes' },
         broken: 'not an entry',
@@ -51,7 +51,7 @@ test('entries that are not devices do not count towards the ten', () => {
 
 // The case this exists for: the answers are being thrown away, the position
 // is an hour old, and the device has since been put on a cable.
-test('what the phone said after the position was written is laid over it', () => {
+test('what the device said after the position was written is laid over it', () => {
     const grants = combinedGrants(
         new Map([[HER, ['phone']]]),
         new Map([[HER, phonesOf({
@@ -68,7 +68,7 @@ test('what the phone said after the position was written is laid over it', () =>
     assert.equal(shown.mode, 'Viewing');
 });
 
-test('what the phone said before the position was written is not', () => {
+test('what the device said before the position was written is not', () => {
     const grants = combinedGrants(
         new Map([[HER, ['phone']]]),
         new Map([[HER, phonesOf({ phone: { onlineAt: at(500), charging: true } })]]),
@@ -79,7 +79,7 @@ test('what the phone said before the position was written is not', () => {
 
 // An administrator reads the devices of everybody and the grant of nobody: the
 // devices are shown to them, and no position is followed.
-test('phones read without the grant lead to no positions', () => {
+test('devices read without the grant lead to no positions', () => {
     const grants = combinedGrants(
         new Map(),
         new Map([[HER, phonesOf({ phone: { model: 'MAR-LX1' } })]]),
@@ -91,7 +91,7 @@ test('phones read without the grant lead to no positions', () => {
 
 // A device of an older build names itself in the grant and nowhere else, and a
 // newer one names itself in both.
-test('the phones to follow are those of the grant and of the phones together', () => {
+test('the devices to follow are those of the grant and of the devices together', () => {
     const grants = combinedGrants(
         new Map([[HER, ['old', 'new']]]),
         new Map([[HER, phonesOf({ new: {}, newer: {} })]]),

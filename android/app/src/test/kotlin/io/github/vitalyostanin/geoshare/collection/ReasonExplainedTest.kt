@@ -16,7 +16,7 @@ import org.junit.Test
  */
 class ReasonExplainedTest {
     @Test
-    fun `the help explains every reason a phone writes`() {
+    fun `the help explains every reason a device writes`() {
         val explained = reasonsExplained().map { it.reason }.toSet()
 
         assertEquals(JumpReason.entries.map { it.name }.toSet(), explained - LEFT_OUT_BY_SOURCE)

@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- The languages this application is written in, so that a phone running
+<!-- The languages this application is written in, so that a device running
      Android 13 or later offers them in its own settings beside the ones inside
      the application. The first is the one res/values holds. -->
 <locale-config xmlns:android="http://schemas.android.com/apk/res/android">

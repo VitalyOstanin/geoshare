@@ -181,7 +181,7 @@ internal class SkyNotes(
             TAG,
             String.format(
                 Locale.ROOT,
-                "the satellites put the phone %.0f m from the position being written: " +
+                "the satellites put the device %.0f m from the position being written: " +
                     "%.5f,%.5f ±%.0f m against %.5f,%.5f ±%.0f m",
                 apart,
                 satellites.latitude,

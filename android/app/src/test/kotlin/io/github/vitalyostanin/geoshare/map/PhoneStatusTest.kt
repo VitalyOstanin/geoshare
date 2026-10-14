@@ -35,7 +35,7 @@ class PhoneStatusTest {
     )
 
     @Test
-    fun `what the phone said after its position is laid over it`() {
+    fun `what the device said after its position is laid over it`() {
         val later = Instant.ofEpochSecond(9_000)
         val grants =
             grantsWith(
@@ -59,7 +59,7 @@ class PhoneStatusTest {
     // The device's own summary may have reached the database while the position
     // has not; the later moment from it must not pass for the position leaving.
     @Test
-    fun `a position still waiting to leave stays waiting under what the phone said`() {
+    fun `a position still waiting to leave stays waiting under what the device said`() {
         val grants = grantsWith(PhoneStatus(onlineAt = Instant.ofEpochSecond(9_000)))
 
         val shown = withPhones(listOf(position.copy(unsent = true)), grants).single()
@@ -68,7 +68,7 @@ class PhoneStatusTest {
     }
 
     @Test
-    fun `what the phone said before its position is not`() {
+    fun `what the device said before its position is not`() {
         val grants = grantsWith(PhoneStatus(onlineAt = Instant.ofEpochSecond(500), charging = true))
 
         assertSame(position, withPhones(listOf(position), grants).single())
@@ -77,7 +77,7 @@ class PhoneStatusTest {
     // An administrator reads everybody's devices and nobody's grant: the
     // devices are there to show, and no position is followed.
     @Test
-    fun `phones read without the grant lead to no positions`() {
+    fun `devices read without the grant lead to no positions`() {
         val grants = combinedGrants(emptyMap(), mapOf("her" to mapOf("phone" to PhoneStatus())))
 
         assertEquals(emptyList<String>(), grants.getValue("her").devices)
@@ -86,7 +86,7 @@ class PhoneStatusTest {
 
     // A device of an older build names itself in the grant and nowhere else.
     @Test
-    fun `the phones to follow are those of the grant and of the phones together`() {
+    fun `the devices to follow are those of the grant and of the devices together`() {
         val named = mapOf("her" to MemberGrant(memberId = "her", devices = listOf("old", "new")))
         val phones = mapOf("her" to mapOf("new" to PhoneStatus(), "newer" to PhoneStatus()))
         val grants = combinedGrants(named, phones)
@@ -95,7 +95,7 @@ class PhoneStatusTest {
     }
 
     @Test
-    fun `an entry keeps what a phone writes and drops the rest`() {
+    fun `an entry keeps what a device writes and drops the rest`() {
         val phones =
             phonesFrom(
                 mapOf(

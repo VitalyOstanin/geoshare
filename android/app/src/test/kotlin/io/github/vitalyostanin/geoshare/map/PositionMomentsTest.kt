@@ -58,7 +58,7 @@ class PositionMomentsTest {
     // The moment between the device writing and the server stamping, where the
     // local copy carries no stamp at all.
     @Test
-    fun `a position not yet stamped is dated by the phone that took it`() {
+    fun `a position not yet stamped is dated by the device that took it`() {
         val unstamped = position(taken, null)
 
         assertEquals(taken, unstamped.positionAt)

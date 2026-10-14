@@ -72,7 +72,7 @@ class SecondOpinionTest {
     // minutes at the fastest anybody is believed to travel is thirteen
     // kilometres, and a device that really did travel is not called a liar.
     @Test
-    fun `whatever the phone could have travelled between the questions is allowed`() {
+    fun `whatever the device could have travelled between the questions is allowed`() {
         val arrived = fix(61.03268, 4.58300, 20.0)
         val leftFrom = fix(61.03268, 4.40300, 50.0, takenAt = at.minus(Duration.ofMinutes(4)))
 
@@ -94,7 +94,7 @@ class SecondOpinionTest {
     // A tower answer that places the device in a region says nothing about a
     // doorway, and would accuse the satellites on the strength of nothing.
     @Test
-    fun `an answer that wide places the phone nowhere and is not asked`() {
+    fun `an answer that wide places the device nowhere and is not asked`() {
         val vague = fix(61.03268, 4.40300, NETWORK_WIDTH_LIMIT_METRES + 1.0)
 
         assertNull(secondOpinion(spoofed, vague, at))
@@ -125,7 +125,7 @@ class SecondOpinionTest {
     }
 
     @Test
-    fun `a phone whose radios were never asked is not accused of anything`() {
+    fun `a device whose radios were never asked is not accused of anything`() {
         assertNull(secondOpinion(spoofed, null, at))
         assertNull(whyAJump(null, spoofed, null, null, at))
     }

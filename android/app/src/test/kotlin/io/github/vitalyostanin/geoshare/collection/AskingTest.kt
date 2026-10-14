@@ -72,7 +72,7 @@ class AskingTest {
     // A tablet with Wi-Fi and no receiver, or a phone whose network provider
     // is missing: whatever is there is asked, and nothing that is not.
     @Test
-    fun `only providers the phone has are asked`() {
+    fun `only providers the device has are asked`() {
         assertEquals(
             Asked.Platform(listOf(GPS_PROVIDER)),
             whomToAsk(Accuracy.Balanced, false, emptySet(), setOf(GPS_PROVIDER)),

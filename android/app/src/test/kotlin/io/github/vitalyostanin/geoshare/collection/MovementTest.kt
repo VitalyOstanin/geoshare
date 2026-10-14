@@ -11,7 +11,7 @@ class MovementTest {
     private val stillEnded = ActivityChange(travelling = false, begun = false)
 
     @Test
-    fun `a phone nobody has heard from is not moving`() {
+    fun `a device nobody has heard from is not moving`() {
         assertFalse(movingAfter(emptyList()))
     }
 

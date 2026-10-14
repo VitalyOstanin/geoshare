@@ -145,7 +145,7 @@ class OrbitCheckTest {
     }
 
     @Test
-    fun `the place the phone is told it is at sees nothing wrong`() {
+    fun `the place the device is told it is at sees nothing wrong`() {
         val sky = upFrom(madrid).map { measured(it, madrid) }
 
         assertFalse(check(sky, madrid)!!.suspicious)
@@ -170,7 +170,7 @@ class OrbitCheckTest {
     }
 
     @Test
-    fun `a millisecond the phone got wrong is the phone's, not the sky's`() {
+    fun `a millisecond the device got wrong is the device's, not the sky's`() {
         val sky = upFrom(greenwich).map { measured(it, greenwich) }.toMutableList()
 
         sky[0] = sky[0].copy(receivedSvTimeNanos = sky[0].receivedSvTimeNanos - 1_000_000L)

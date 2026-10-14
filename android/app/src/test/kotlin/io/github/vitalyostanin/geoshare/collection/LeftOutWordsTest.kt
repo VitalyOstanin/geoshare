@@ -16,7 +16,7 @@ import org.junit.Test
  */
 class LeftOutWordsTest {
     @Test
-    fun `every reason a phone writes has a name`() {
+    fun `every reason a device writes has a name`() {
         for (reason in JumpReason.entries) {
             assertNotEquals(
                 "${reason.name} has no name of its own",

@@ -123,7 +123,7 @@ describes it.
 The free Spark plan has daily limits: 50,000 document reads, 20,000 writes
 and 20,000 deletes, and 1 GiB of data
 ([Firestore quotas](https://firebase.google.com/docs/firestore/quotas)). A
-family with two phones and the page open now and then uses about 5% of the
+family with two devices and the page open now and then uses about 5% of the
 reads and writes a day.
 Past a limit the database stops answering until the quota resets, around
 midnight Pacific time, so the project owner should keep an eye on usage: in

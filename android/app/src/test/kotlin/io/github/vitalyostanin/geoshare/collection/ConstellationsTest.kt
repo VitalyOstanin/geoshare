@@ -33,12 +33,12 @@ class ConstellationsTest {
     }
 
     @Test
-    fun `a phone going indoors loses every band at once and is told nothing`() {
+    fun `a device going indoors loses every band at once and is told nothing`() {
         assertNull(whatTheBandsSay(sharedBand = moving(-7.0), glonass = moving(-6.0)))
     }
 
     @Test
-    fun `one band cannot disagree with a band the phone never heard`() {
+    fun `one band cannot disagree with a band the device never heard`() {
         assertNull(whatTheBandsSay(sharedBand = moving(9.0), glonass = nothing))
         assertNull(whatTheBandsSay(sharedBand = nothing, glonass = moving(9.0)))
     }
@@ -131,7 +131,7 @@ class ConstellationsTest {
     // to compare against and the rule has to stay silent rather than call
     // every fix a lie.
     @Test
-    fun `a phone that hears one band is accused of nothing`() {
+    fun `a device that hears one band is accused of nothing`() {
         assertFalse(
             restsOnOneBand(mapOf(Constellation.Gps to Counted(heard = 12, usedInFix = 9))),
         )

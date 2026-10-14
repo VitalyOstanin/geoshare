@@ -19,7 +19,7 @@ class LanguageSettingTest {
     }
 
     @Test
-    fun `no tag at all is a member following their phone`() {
+    fun `no tag at all is a member following their device`() {
         assertEquals(LanguageChoice.System, languageChosen(null))
         assertEquals(LanguageChoice.System, languageChosen(""))
     }
@@ -27,7 +27,7 @@ class LanguageSettingTest {
     // The platform hands back whatever was stored, which may have been written
     // by a build that spoke a language this one does not.
     @Test
-    fun `a language this build does not speak leaves the phone in charge`() {
+    fun `a language this build does not speak leaves the device in charge`() {
         assertEquals(LanguageChoice.System, languageChosen("fr-FR"))
     }
 

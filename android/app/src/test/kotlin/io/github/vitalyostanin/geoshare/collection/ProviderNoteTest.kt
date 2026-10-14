@@ -60,7 +60,7 @@ class ProviderNoteTest {
     }
 
     @Test
-    fun `a phone that attached nothing is not accused of anything`() {
+    fun `a device that attached nothing is not accused of anything`() {
         assertEquals(Answered.Unsaid, answeredBy(noteOf(null)))
         assertEquals(Answered.Unsaid, answeredBy(noteOf("")))
         assertFalse(restsOnSatellites(null))

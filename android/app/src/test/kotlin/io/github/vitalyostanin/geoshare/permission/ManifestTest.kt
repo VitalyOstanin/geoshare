@@ -51,7 +51,7 @@ class ManifestTest {
     }
 
     @Test
-    fun `the application does not let the phone keep copies of its data`() {
+    fun `the application does not let the device keep copies of its data`() {
         assertTrue(manifest.contains("android:allowBackup=\"false\""))
     }
 

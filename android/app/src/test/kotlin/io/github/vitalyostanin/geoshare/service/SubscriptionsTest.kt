@@ -12,7 +12,7 @@ import java.io.IOException
 
 class SubscriptionsTest {
     @Test
-    fun `being told this phone may not ask is a refusal`() {
+    fun `being told this device may not ask is a refusal`() {
         assertTrue(refusedOutright(refusal()))
     }
 
@@ -40,7 +40,7 @@ class SubscriptionsTest {
     // well inside the second this waits, because the subscription itself is
     // not taken out again for five.
     @Test
-    fun `what was last heard is dropped once the phone is refused`() {
+    fun `what was last heard is dropped once the device is refused`() {
         assertEquals(
             listOf("the roster", "nothing"),
             heardWithinASecond(forgetting = { "nothing" }),

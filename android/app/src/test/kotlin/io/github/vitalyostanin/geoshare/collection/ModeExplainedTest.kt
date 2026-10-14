@@ -5,7 +5,7 @@ import org.junit.Test
 
 class ModeExplainedTest {
     @Test
-    fun `the help describes every mode a phone can be in`() {
+    fun `the help describes every mode a device can be in`() {
         val described = modesExplained().map { it.mode }.toSet()
 
         assertEquals(CollectionMode.entries.toSet(), described)

@@ -105,7 +105,7 @@ class CirclingTest {
     }
 
     @Test
-    fun `a standing phone is not a circle`() {
+    fun `a standing device is not a circle`() {
         val jitter =
             road(
                 listOf(
@@ -211,7 +211,7 @@ class CirclingTest {
     }
 
     @Test
-    fun `going round in circles is what the phone is told`() {
+    fun `going round in circles is what the device is told`() {
         assertTrue(goingInCircles(falseRoad))
         assertFalse(goingInCircles(falseRoad.take(4)))
     }

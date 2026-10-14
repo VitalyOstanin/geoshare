@@ -48,7 +48,7 @@ class ViewerDistanceTest {
     }
 
     @Test
-    fun `the viewer is where the freshest of their own phones is`() {
+    fun `the viewer is where the freshest of their own devices is`() {
         val positions =
             listOf(
                 at("me.old", 61.0, 4.0, minutes = 10),
@@ -72,7 +72,7 @@ class ViewerDistanceTest {
     // A device under observation: online every minute, the marker stuck in a
     // lake since a fix went wrong.
     @Test
-    fun `a marker the viewer's phone has left behind is not measured from`() {
+    fun `a marker the viewer's device has left behind is not measured from`() {
         val stuck =
             at("me.one", 61.14561, 5.4036).copy(
                 takenAt = now.minus(Duration.ofMinutes(90)),
@@ -91,7 +91,7 @@ class ViewerDistanceTest {
     }
 
     @Test
-    fun `another phone of the viewer's own is measured like anybody else`() {
+    fun `another device of the viewer's own is measured like anybody else`() {
         val phone = at("me.phone", 61.0, 4.0)
         val other = at("me.other", 61.01, 4.0, minutes = 5)
 

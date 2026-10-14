@@ -64,7 +64,7 @@
 
 /* One member of the panel that runs the group: a head line with their name
    above one row per phone, each with its own round buttons, and the
-   member-level worded actions last. A member with two phones lost needs two
+   member-level worded actions last. A member with two devices lost needs two
    rows of buttons, one beside each, rather than one pair shared between
    them. */
 .admin-group {
@@ -81,7 +81,7 @@
 }
 
 /* One device's own line inside the group: its text on the left, its own
-   siren and search on the right — the same shape a phone's row has in "Мои
+   siren and search on the right — the same shape a device's row has in "Мои
    устройства", nested here under its member's name instead of standing on
    its own. */
 .admin-phone {

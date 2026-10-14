@@ -44,7 +44,7 @@ class BeingCarriedTest {
     }
 
     @Test
-    fun `a phone left alone is anchored where it lies`() {
+    fun `a device left alone is anchored where it lies`() {
         val carried = BeingCarried(sensorsTell = true)
         val here = Fix(latitude = 1.0, longitude = 2.0, takenAt = start, accuracyMetres = 5.0)
 
@@ -56,7 +56,7 @@ class BeingCarriedTest {
     }
 
     @Test
-    fun `a stir after the anchor says the phone was picked up`() {
+    fun `a stir after the anchor says the device was picked up`() {
         val carried = BeingCarried(sensorsTell = true)
         val here = Fix(latitude = 1.0, longitude = 2.0, takenAt = start, accuracyMetres = 5.0)
         val settled = start.plus(PUT_DOWN_AFTER).plusSeconds(1)

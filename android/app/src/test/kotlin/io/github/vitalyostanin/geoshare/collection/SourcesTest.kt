@@ -7,7 +7,7 @@ import org.junit.Test
 
 class SourcesTest {
     @Test
-    fun `a phone that was asked for nothing in particular counts everything`() {
+    fun `a device that was asked for nothing in particular counts everything`() {
         FoundBy.entries.forEach { source ->
             assertTrue(source.name, usesWhatWasFoundBy(source, emptySet()))
         }

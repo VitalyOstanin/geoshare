@@ -18,7 +18,7 @@ const at = (positionId, latitude, longitude, minutes = 1) => ({
     knownAt: NOW - minutes * MINUTE,
 });
 
-test('a document is read as a place only with numbers the phones accept', () => {
+test('a document is read as a place only with numbers the devices accept', () => {
     assert.deepEqual(placeOf({ ...LAKE, named: 'lake' }), LAKE);
     assert.equal(placeOf({ ...LAKE, radiusMetres: 0 }), null);
     assert.equal(placeOf({ ...LAKE, radiusMetres: 50001 }), null);

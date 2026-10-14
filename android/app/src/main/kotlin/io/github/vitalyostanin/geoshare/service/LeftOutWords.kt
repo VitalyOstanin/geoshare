@@ -45,15 +45,15 @@ internal fun caughtBy(jump: JumpReason, fix: Fix, evidence: LeftOutEvidence): St
 
     JumpReason.FalsePlace -> "by landing on ${theFalsePlace(fix, evidence)}"
 
-    JumpReason.Unmoved -> "by the phone never having been carried there"
+    JumpReason.Unmoved -> "by the device never having been carried there"
 
-    JumpReason.Drifted -> "by the answer walking away from a phone nobody touched"
+    JumpReason.Drifted -> "by the answer walking away from a device nobody touched"
 
     JumpReason.Hurried ->
-        "by the speed it claims for a phone nobody touched: ${theSpeedClaimed(fix)}"
+        "by the speed it claims for a device nobody touched: ${theSpeedClaimed(fix)}"
 
     JumpReason.Contradicted ->
-        "by the other radios placing the phone ${apartFromTheRadios(fix, evidence)}"
+        "by the other radios placing the device ${apartFromTheRadios(fix, evidence)}"
 
     JumpReason.Circling -> "by the shape of the road: ${theCircleDrawn(evidence)}"
 
@@ -94,7 +94,7 @@ private fun theClockThatStepped(evidence: LeftOutEvidence): String {
 
     return String.format(
         Locale.ROOT,
-        "%s %d, %d ns from the receiver's clock and %d ns from the phone's own",
+        "%s %d, %d ns from the receiver's clock and %d ns from the device's own",
         stepped.signal.constellation.word,
         stepped.signal.id,
         stepped.apart.receiverNanos,

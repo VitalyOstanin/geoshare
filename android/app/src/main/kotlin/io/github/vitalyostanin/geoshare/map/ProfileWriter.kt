@@ -97,7 +97,7 @@ suspend fun publishDevice(
             .set(mapOf(GrantField.DEVICES to FieldValue.arrayUnion(deviceId)), SetOptions.merge())
             .await()
 
-        AppLog.i(TAG, "the phone of $memberId is now on the list its readers follow")
+        AppLog.i(TAG, "the device of $memberId is now on the list its readers follow")
 
         return true
     } catch (cancellation: CancellationException) {
@@ -105,7 +105,7 @@ suspend fun publishDevice(
     } catch (error: Exception) {
         // Nothing on this device stops working: it goes on writing its own
         // position, and it is the readers who will not find the document.
-        logFailure(TAG, "could not publish the phone", error)
+        logFailure(TAG, "could not publish the device", error)
 
         return false
     }

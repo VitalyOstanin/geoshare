@@ -226,7 +226,7 @@ class RepeatsTest {
     // that fits, and their wandering adds up to a kilometre of apparent road.
     // What tells them from a route is that they go nowhere.
     @Test
-    fun `a standing phone is not a route`() {
+    fun `a standing device is not a route`() {
         val jitter = mutableListOf<Double>()
         var wander = 0
 

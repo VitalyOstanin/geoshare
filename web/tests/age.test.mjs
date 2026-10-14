@@ -67,7 +67,7 @@ test('a position said again carries the age of the position, not of the writing'
     assert.equal(isStale(NOW, NOW), false);
 });
 
-test('a phone whose clock runs ahead is aged by the server stamp instead', () => {
+test('a device whose clock runs ahead is aged by the server stamp instead', () => {
     const takenAt = NOW + 10 * MINUTE;
     const writtenAt = NOW - MINUTE;
 
@@ -98,7 +98,7 @@ test('a device in touch with a position as old as the grey is stuck', () => {
     assert.equal(isStuck(NOW - STALE_AFTER_MS + MINUTE, NOW, NOW), false);
 });
 
-test('a phone gone quiet is old rather than stuck', () => {
+test('a device gone quiet is old rather than stuck', () => {
     const knownAt = NOW - STALE_AFTER_MS;
 
     assert.equal(isStuck(knownAt - 3 * HOUR, knownAt, NOW), false);

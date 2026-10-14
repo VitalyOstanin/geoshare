@@ -285,9 +285,9 @@
         <item quantity="other">%1$d devices shared with you</item>
     </plurals>
 
-    <!-- The group looking for one phone of a member: an administrator opens a
+    <!-- The group looking for one device of a member: an administrator opens a
          search, and while it stands everybody in the group sees where that
-         phone is. The same words the page uses for the same things. -->
+         device is. The same words the page uses for the same things. -->
     <string name="search_mark">Searching</string>
     <string name="search_start">Search</string>
     <string name="search_found">Found</string>
@@ -542,7 +542,7 @@
     <string name="help_members">Every member of the group in one list, with how far away each one is</string>
 
     <!-- ConnectScreen (project/ConnectScreen.kt), drawn from ConnectFlow's
-         states. Screen А, before a link has been offered: the phone's own
+         states. Screen А, before a link has been offered: the device's own
          placeholder, shown in place of the map before it has a project. -->
     <string name="connect_not_connected_title">Not connected yet.</string>
     <string name="connect_unreadable_title">The list of groups could not be read</string>

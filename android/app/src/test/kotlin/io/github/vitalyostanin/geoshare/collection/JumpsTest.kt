@@ -254,7 +254,7 @@ class JumpsTest {
     // agreeing with each other for no better reason than that answers that
     // wide agree with anything within a region.
     @Test
-    fun `two answers a region wide agreeing is not a phone saying where it is`() {
+    fun `two answers a region wide agreeing is not a device saying where it is`() {
         val anchor = fixAt(61.03268, 4.40300, 0, accuracy = 20.0)
         val first = fixAt(61.30000, 4.90000, 60, accuracy = 21_781.0)
         val second = fixAt(61.31000, 4.91000, 304, accuracy = 19_200.0)
@@ -436,7 +436,7 @@ class JumpsTest {
     // while the place they have walked to is a kilometre from where the device
     // is lying.
     @Test
-    fun `answers creeping away from a phone nobody touched are a jump`() {
+    fun `answers creeping away from a device nobody touched are a jump`() {
         val lying = fixAt(61.03268, 4.40300, 0, accuracy = 20.0)
         val crept = fixAt(61.04170, 4.40300, 1_800, accuracy = 40.0)
         val nearlyThere = fixAt(61.04168, 4.40300, 1_770, accuracy = 40.0)
@@ -455,7 +455,7 @@ class JumpsTest {
     // The same pair with the device having been carried: the sensors say it
     // went somewhere, and the rule has nothing to say about where.
     @Test
-    fun `answers that moved with the phone are left alone`() {
+    fun `answers that moved with the device are left alone`() {
         val lying = fixAt(61.03268, 4.40300, 0, accuracy = 20.0)
         val crept = fixAt(61.04170, 4.40300, 1_800, accuracy = 40.0)
         val nearlyThere = fixAt(61.04168, 4.40300, 1_770, accuracy = 40.0)
@@ -474,7 +474,7 @@ class JumpsTest {
     // and nothing is out of reach; what gives it away is the speed it was
     // handed with, which is a car's.
     @Test
-    fun `a speed claimed for a phone nobody touched is a jump`() {
+    fun `a speed claimed for a device nobody touched is a jump`() {
         val lying = fixAt(61.03268, 4.40300, 0, accuracy = 20.0)
         val racing = fixAt(61.03300, 4.40300, 60, accuracy = 15.0, speedMps = 33.3)
 
@@ -490,7 +490,7 @@ class JumpsTest {
     }
 
     @Test
-    fun `a phone lying still and told so is left alone`() {
+    fun `a device lying still and told so is left alone`() {
         val lying = fixAt(61.03268, 4.40300, 0, accuracy = 20.0)
         val resting = fixAt(61.03300, 4.40300, 60, accuracy = 15.0, speedMps = 0.0)
 

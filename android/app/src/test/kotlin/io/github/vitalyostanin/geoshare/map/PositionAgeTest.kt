@@ -59,13 +59,13 @@ class PositionAgeTest {
     }
 
     @Test
-    fun `a phone online with a position as old as the grey is stuck`() {
+    fun `a device online with a position as old as the grey is stuck`() {
         assertTrue(isStuck(now.minus(STALE_AFTER), now, now))
         assertFalse(isStuck(now.minus(STALE_AFTER).plusSeconds(60), now, now))
     }
 
     @Test
-    fun `a phone gone quiet is old rather than stuck`() {
+    fun `a device gone quiet is old rather than stuck`() {
         val knownAt = now.minus(STALE_AFTER)
 
         assertFalse(isStuck(knownAt.minus(Duration.ofHours(3)), knownAt, now))

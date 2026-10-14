@@ -168,6 +168,6 @@ val FoundBy.said: String
         FoundBy.Assistance -> "an assistance service"
         FoundBy.Unheard -> "satellites none of which were heard"
         FoundBy.OtherRadios -> "the towers and the Wi-Fi"
-        FoundBy.Pretended -> "another application on the phone"
+        FoundBy.Pretended -> "another application on the device"
         FoundBy.Unsaid -> "a means the provider did not say"
     }

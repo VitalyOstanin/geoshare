@@ -32,7 +32,7 @@ export function orderedForNavigation(positions, ownMemberId) {
 /**
  * The position a member was last heard from at, of all their devices: the one
  * a viewer asking for them by name most likely means, and the one to open the
- * map on rather than an old phone left at home. Null when there is none.
+ * map on rather than an old device left at home. Null when there is none.
  */
 export function freshestOf(positions, memberId) {
     let freshest = null;

@@ -42,7 +42,7 @@ class SearchesTest {
     }
 
     @Test
-    fun `the phone's name travels along with the search, when there is one`() {
+    fun `the device's name travels along with the search, when there is one`() {
         val named = written(renewedHoursAgo = 2, hours = 24, phoneName = "Old phone")!!
         val unnamed = written(renewedHoursAgo = 2, hours = 24)!!
 
@@ -58,7 +58,7 @@ class SearchesTest {
     }
 
     @Test
-    fun `an id with no dot names no phone, and is dropped like any other bad document`() {
+    fun `an id with no dot names no device, and is dropped like any other bad document`() {
         assertNull(
             searchOf(
                 phoneId = "grandma",
@@ -100,7 +100,7 @@ class SearchesTest {
     }
 
     @Test
-    fun `two phones of one member may stand at once`() {
+    fun `two devices of one member may stand at once`() {
         val searches =
             mapOf(
                 "grandma.oldphone" to
@@ -116,7 +116,7 @@ class SearchesTest {
     }
 
     @Test
-    fun `a search that has run out marks no phone`() {
+    fun `a search that has run out marks no device`() {
         val searches = mapOf("grandma.oldphone" to written(renewedHoursAgo = 7, hours = 6)!!)
 
         assertEquals(emptySet<String>(), soughtPhones(searches, now))

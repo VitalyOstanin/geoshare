@@ -258,7 +258,7 @@ const COLLECTIONS = {
     SirenField: 'sirens',
 };
 
-test('the rules know every field the phone writes, under the same name', () => {
+test('the rules know every field the device writes, under the same name', () => {
     for (const [object, collection] of Object.entries(COLLECTIONS)) {
         const rules = rulesOf(collection);
 
@@ -272,7 +272,7 @@ test('the rules know every field the phone writes, under the same name', () => {
     }
 });
 
-test('the page reads only fields the phone writes', () => {
+test('the page reads only fields the device writes', () => {
     const readers = {
         'web/public/lib/store-positions.js': ['PositionField'],
         'web/public/lib/store-group.js': ['GroupField', 'ProfileField', 'PhoneField', 'GrantField'],

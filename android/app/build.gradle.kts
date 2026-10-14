@@ -207,7 +207,7 @@ dependencies {
     implementation(libs.compose.material3)
 
     // Which project a build talks to is decided at run time, off the settings
-    // FamilyProject reads from the phone: nothing here reaches for
+    // FamilyProject reads from the device: nothing here reaches for
     // google-services.json, so one build serves every family.
     implementation(platform(libs.firebase.bom))
     implementation(libs.firebase.firestore)
@@ -245,7 +245,7 @@ dependencies {
 
 // The bill of materials of the release APK: only what the release build puts
 // on its runtime classpath, so no test library, no debug-only tool and no
-// build plugin is listed as something the user's phone carries. JSON only;
+// build plugin is listed as something a member's device carries. JSON only;
 // the XML twin the plugin writes by default would be a second file to attach.
 tasks.named<CyclonedxDirectTask>("cyclonedxDirectBom") {
     projectType = Component.Type.APPLICATION

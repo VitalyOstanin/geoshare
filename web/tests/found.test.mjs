@@ -8,7 +8,7 @@ import { WORDS } from '../public/lib/words.js';
 // comparing the two would pass whether the dictionary holds it or not: what is
 // checked is that the name came from the dictionary, which is where a
 // translation of it would be.
-test('every source a phone writes is named by the dictionary', () => {
+test('every source a device writes is named by the dictionary', () => {
     const sources = {
         Satellites: 'foundSatellites',
         Assistance: 'foundAssistance',
@@ -40,7 +40,7 @@ test('a source this build has never heard of is shown as unknown', () => {
 // The same check for the other list of words a device writes: why an answer was
 // left out. A reason missing from the dictionary would be shown as unknown on
 // every card, and nothing else would go wrong to say so.
-test('every reason a phone writes is named by the dictionary', () => {
+test('every reason a device writes is named by the dictionary', () => {
     const reasons = {
         Drifted: 'leftOutDrifted',
         Hurried: 'leftOutHurried',

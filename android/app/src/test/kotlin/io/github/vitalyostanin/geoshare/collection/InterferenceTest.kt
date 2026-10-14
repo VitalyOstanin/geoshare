@@ -58,7 +58,7 @@ class InterferenceTest {
     }
 
     @Test
-    fun `a fix taken when the phone says it was is no disagreement`() {
+    fun `a fix taken when the device says it was is no disagreement`() {
         val now = Instant.parse("2026-09-13T19:00:00Z")
 
         assertFalse(clockDisagrees(now.minusSeconds(2), now, CLOCK_TOLERANCE))
@@ -66,7 +66,7 @@ class InterferenceTest {
     }
 
     @Test
-    fun `a clock far from the phone's own disagrees whichever way it is out`() {
+    fun `a clock far from the device's own disagrees whichever way it is out`() {
         val now = Instant.parse("2026-09-13T19:00:00Z")
 
         assertTrue(clockDisagrees(now.minusSeconds(120), now, CLOCK_TOLERANCE))

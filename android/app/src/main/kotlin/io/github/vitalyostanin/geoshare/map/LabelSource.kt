@@ -44,7 +44,7 @@ class LabelCache(context: Context) {
             )
         } ?: Labels()
     } catch (error: Exception) {
-        AppLog.w(TAG, "the names kept on the phone could not be read", error)
+        AppLog.w(TAG, "the names kept on the device could not be read", error)
 
         Labels()
     }
@@ -139,7 +139,7 @@ suspend fun writePhoneName(
     deviceId: String,
     name: String?,
     connection: GroupConnection,
-): Boolean = trying("could not name the phone") {
+): Boolean = trying("could not name the device") {
     phonesOf(connection)
         .document(memberId)
         .set(

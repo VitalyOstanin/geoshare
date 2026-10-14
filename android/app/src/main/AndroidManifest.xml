@@ -14,7 +14,7 @@
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
     <uses-permission android:name="android.permission.ACCESS_BACKGROUND_LOCATION" />
 
-    <!-- Lets the phone say when its owner started walking or riding, which is
+    <!-- Lets the device say when its owner started walking or riding, which is
          what the Moving mode is made of. Counted by a chip that is awake
          anyway, so it costs nothing like a fix does; refusing it leaves every
          other mode working. -->
@@ -25,7 +25,7 @@
 
     <!-- Lets the settings screen tell the receiver to throw away the orbits
          and the last place it searches by. Granted without asking, since the
-         command changes nothing outside this phone's own receiver. -->
+         command changes nothing outside this device's own receiver. -->
     <uses-permission android:name="android.permission.ACCESS_LOCATION_EXTRA_COMMANDS" />
 
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
@@ -39,7 +39,7 @@
     <uses-permission android:name="android.permission.WAKE_LOCK" />
 
     <!-- The invitation scanner: asked for the first time it is opened, and
-         nothing else needs it. Not required of the hardware, so a phone
+         nothing else needs it. Not required of the hardware, so a device
          without a camera still installs and joins by pasting the link. -->
     <uses-permission android:name="android.permission.CAMERA" />
     <uses-feature android:name="android.hardware.camera.any" android:required="false" />
@@ -47,15 +47,15 @@
          install. -->
     <uses-permission android:name="android.permission.VIBRATE" />
 
-    <!-- Asked for in a dialog of the system's own: a phone that stops the
+    <!-- Asked for in a dialog of the system's own: a device that stops the
          service while nobody is looking at the screen stops answering the
          other members, whose fast collecting arrives over a subscription. -->
     <uses-permission android:name="android.permission.REQUEST_IGNORE_BATTERY_OPTIMIZATIONS" />
 
-    <!-- The manufacturers' own startup lists, which are what the phone reads
+    <!-- The manufacturers' own startup lists, which are what the device reads
          rather than the setting above. Named here because a package that is
          not asked for cannot be seen at all from Android 11 onwards, and the
-         settings row has to know whether this phone has such a screen. -->
+         settings row has to know whether this device has such a screen. -->
     <queries>
         <package android:name="com.hihonor.systemmanager" />
         <package android:name="com.huawei.systemmanager" />
@@ -96,7 +96,7 @@
         </provider>
 
         <!-- Where the language a member picks inside the application is kept on
-             a phone that has nowhere of its own to keep it: per-application
+             a device that has nowhere of its own to keep it: per-application
              languages are a setting of the system only from Android 13, and
              AndroidX stores the answer itself below that. The service is a
              place to hang the flag on rather than something to run, which is
@@ -129,7 +129,7 @@
                  an App Link for a site whose well-known file names this
                  application's package, and a *.web.app or *.firebaseapp.com
                  site belongs to Google, not to a group or this repository,
-                 to put one on — the phone falls back to the disambiguation
+                 to put one on — the device falls back to the disambiguation
                  sheet instead. The scheme, hosts and paths below are
                  separate <data> tags on purpose: every scheme × host × path
                  combination across them is accepted, so this covers both

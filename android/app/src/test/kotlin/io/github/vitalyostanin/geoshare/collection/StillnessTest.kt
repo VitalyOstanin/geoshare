@@ -13,7 +13,7 @@ class StillnessTest {
     // walking pace, carries a narrow width and contradicts nothing, so only
     // the device's own sensors are left to say that nobody carried it anywhere.
     @Test
-    fun `a kilometre travelled by a phone that never moved is a jump`() {
+    fun `a kilometre travelled by a device that never moved is a jump`() {
         assertTrue(movedWhileStanding(at(0), fixAt(61.03268, 4.40300, 10), farAway()))
     }
 

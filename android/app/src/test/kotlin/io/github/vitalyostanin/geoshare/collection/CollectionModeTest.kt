@@ -34,7 +34,7 @@ class CollectionModeTest {
     // claim lasts, or a watcher could look at a still device and never see it
     // say anything.
     @Test
-    fun `a still phone somebody is watching speaks within one claim`() {
+    fun `a still device somebody is watching speaks within one claim`() {
         assertTrue(CollectionMode.Viewing.writeSilence < WATCH_AHEAD)
     }
 

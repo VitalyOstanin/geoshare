@@ -85,7 +85,7 @@ fun standingStill(context: Context, centres: Flow<Fix?>): Flow<Boolean> = callba
                 val crossing = crossingOf(event.geofenceTransition) ?: return
 
                 dwelling = dwellingAfter(listOf(crossing), dwelling)
-                AppLog.i(TAG, "the phone is ${if (dwelling) "settled" else "away from the fence"}")
+                AppLog.i(TAG, "the device is ${if (dwelling) "settled" else "away from the fence"}")
                 trySend(dwelling)
             }
         }

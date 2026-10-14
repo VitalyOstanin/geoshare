@@ -38,7 +38,7 @@ class AdminInvitationTest {
     }
 
     @Test
-    fun `no link is built before this phone's own site is known`() {
+    fun `no link is built before this device's own site is known`() {
         assertNull(invitationLinkText(made, site = null, inviter = null, groupName = null))
     }
 }

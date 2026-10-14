@@ -117,21 +117,21 @@ class ModeSelectionTest {
     }
 
     @Test
-    fun `the map open on this phone outranks the geofence`() {
+    fun `the map open on this device outranks the geofence`() {
         val mode = chooseMode(state(insideGeofence = true, ownMapOpen = true))
 
         assertEquals(CollectionMode.Viewing, mode)
     }
 
     @Test
-    fun `the map open on this phone outranks the night`() {
+    fun `the map open on this device outranks the night`() {
         val mode = chooseMode(state(localTime = LocalTime.of(3, 0), ownMapOpen = true))
 
         assertEquals(CollectionMode.Viewing, mode)
     }
 
     @Test
-    fun `a closed map on this phone changes nothing`() {
+    fun `a closed map on this device changes nothing`() {
         assertEquals(CollectionMode.Standby, chooseMode(state(ownMapOpen = false)))
     }
 }

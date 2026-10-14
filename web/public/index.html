@@ -85,7 +85,7 @@
             </button>
 
             <!-- The whole screen for the map, where the browser allows it: a
-                 phone held up to find somebody has no use for the address
+                 device held up to find somebody has no use for the address
                  bar. Absent where the browser has no full screen to give. -->
             <button id="fullscreen-button" type="button" aria-pressed="false" hidden>
                 <svg data-full="off" viewBox="0 0 24 24" aria-hidden="true">
@@ -197,7 +197,7 @@
                 <hr />
 
                 <div id="account-links">
-                    <!-- Every member's own phones, to ring the one lost at
+                    <!-- Every member's own devices, to ring the one lost at
                          home: not only for whoever runs the group. -->
                     <button id="group-phones" type="button" hidden></button>
                     <button id="settings-button" type="button">Settings</button>
@@ -231,7 +231,7 @@
             </div>
         </dialog>
 
-        <!-- This member's phones, each with the siren that finds it. -->
+        <!-- This member's devices, each with the siren that finds it. -->
         <dialog id="phones" class="admin">
             <button id="phones-help" class="help-mark" type="button">?</button>
             <button id="phones-close" class="close-cross" type="button">×</button>
@@ -291,7 +291,7 @@
             </div>
         </dialog>
 
-        <!-- Ringing a phone: which of the member's phones, and what the
+        <!-- Ringing a device: which of the member's devices, and what the
              twenty seconds will do, before anything is written. -->
         <dialog id="siren" class="admin naming search">
             <h2 id="siren-title"></h2>
@@ -330,7 +330,7 @@
             <button id="sought-found" type="button" class="alarm-fill"></button>
         </div>
 
-        <!-- A name for a phone or a person, seen by this viewer alone. The
+        <!-- A name for a device or a person, seen by this viewer alone. The
              buttons are not a form's: the dialog is closed by the page once
              the name is on its way, and a submit would reload nothing here. -->
         <!-- What the buttons of the screen it was opened from do: each drawn

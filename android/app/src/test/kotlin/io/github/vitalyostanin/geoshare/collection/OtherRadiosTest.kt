@@ -56,7 +56,7 @@ class OtherRadiosTest {
     }
 
     @Test
-    fun `an answer wider than a district places the phone nowhere`() {
+    fun `an answer wider than a district places the device nowhere`() {
         val tooWide = NETWORK_WIDTH_LIMIT_METRES + 1.0
 
         val atTheLimit = fixAt(60.94, 4.31, width = NETWORK_WIDTH_LIMIT_METRES)
@@ -66,7 +66,7 @@ class OtherRadiosTest {
     }
 
     @Test
-    fun `an answer from an hour ago says where the phone was, not where it is`() {
+    fun `an answer from an hour ago says where the device was, not where it is`() {
         val old = fixAt(60.94, 4.31, width = 900.0, takenAt = NOW.minus(Duration.ofHours(1)))
 
         assertFalse(networkAnswerStands(old, NOW))
@@ -130,7 +130,7 @@ class OtherRadiosTest {
     // the doubt by arithmetic, and inside it by any honest reading of what a
     // network width means.
     @Test
-    fun `a tower missing the flat by a hundred metres has not found the phone elsewhere`() {
+    fun `a tower missing the flat by a hundred metres has not found the device elsewhere`() {
         val minutesOld = NOW.minus(Duration.ofMinutes(2))
         val inTheFlat = fixAt(61.03268, 4.40300, width = 28.1, takenAt = minutesOld)
         val fromATower = fixAt(61.03545, 4.36954, width = 1_700.0)

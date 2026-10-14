@@ -60,7 +60,7 @@ class GroupLineTest {
     // owns: a grant nobody may read says nothing about how many devices there
     // are.
     @Test
-    fun `the phones counted are the ones this phone was given`() {
+    fun `the devices counted are the ones this device was given`() {
         val grants =
             mapOf(
                 child to
@@ -113,7 +113,7 @@ class GroupLineTest {
     }
 
     @Test
-    fun `the phones are listed by the names the map gives them`() {
+    fun `the devices are listed by the names the map gives them`() {
         val roster = Roster(members = listOf(parent, child), admins = listOf(parent))
         val grants =
             combinedGrants(
@@ -140,7 +140,7 @@ class GroupLineTest {
     // The state is written every so often and the position far more often, so
     // the panel has to say what the map says: the later of the two.
     @Test
-    fun `a phone's age is the later of its state and its position`() {
+    fun `a device's age is the later of its state and its position`() {
         val id = "uid-parent.phone"
         val state = Instant.ofEpochSecond(100)
         val newer = Instant.ofEpochSecond(900)
@@ -156,7 +156,7 @@ class GroupLineTest {
     }
 
     @Test
-    fun `a phone with no state is as old as its position`() {
+    fun `a device with no state is as old as its position`() {
         val id = "uid-parent.phone"
         val at = Instant.ofEpochSecond(900)
         val phones = mapOf("phone" to PhoneStatus(name = "phone"))

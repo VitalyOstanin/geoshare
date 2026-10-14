@@ -27,7 +27,7 @@ class LabelsTest {
     )
 
     @Test
-    fun `the viewer's own name for a phone comes first`() {
+    fun `the viewer's own name for a device comes first`() {
         val labels = Labels(phones = mapOf("her.phone" to "new phone"))
 
         val grants = grantsNaming("mum's phone")
@@ -37,7 +37,7 @@ class LabelsTest {
     }
 
     @Test
-    fun `the owner's name for a phone comes next`() {
+    fun `the owner's name for a device comes next`() {
         val grants = grantsNaming("mum's phone")
         val shown = labelledPositions(listOf(position), Labels(), grants).single()
 
@@ -45,7 +45,7 @@ class LabelsTest {
     }
 
     @Test
-    fun `the phone's own model is shown where nobody named it`() {
+    fun `the device's own model is shown where nobody named it`() {
         val grants = grantsNaming(null, model = "MAR-LX1")
         val shown = labelledPositions(listOf(position), Labels(), grants).single()
 
@@ -53,7 +53,7 @@ class LabelsTest {
     }
 
     @Test
-    fun `a phone that has said nothing about itself is left unnamed`() {
+    fun `a device that has said nothing about itself is left unnamed`() {
         val shown = labelledPositions(listOf(position), Labels(), grantsNaming(null)).single()
 
         assertSame(position, shown)
@@ -95,7 +95,7 @@ class LabelsTest {
     // number after the name tells them apart, in the order of their ids so
     // that every screen numbers them alike.
     @Test
-    fun `phones sharing a name are numbered in the order of their ids`() {
+    fun `devices sharing a name are numbered in the order of their ids`() {
         val phones =
             mapOf(
                 "zulu" to PhoneStatus(model = "BVL-N49"),
@@ -128,7 +128,7 @@ class LabelsTest {
     }
 
     @Test
-    fun `a phone named apart from its twin leaves the other unnumbered`() {
+    fun `a device named apart from its twin leaves the other unnumbered`() {
         val phones =
             mapOf(
                 "alpha" to PhoneStatus(model = "BVL-N49"),
@@ -166,7 +166,7 @@ class LabelsTest {
     }
 
     @Test
-    fun `phones of two members are numbered apart`() {
+    fun `devices of two members are numbered apart`() {
         val grants =
             combinedGrants(
                 named = emptyMap(),

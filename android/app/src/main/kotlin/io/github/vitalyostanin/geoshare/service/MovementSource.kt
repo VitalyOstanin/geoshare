@@ -94,7 +94,7 @@ fun movement(context: Context): Flow<Moving> = callbackFlow {
                     }
 
                 moving = movingAfter(changes, moving)
-                AppLog.i(TAG, "the phone is ${if (moving) "on the move" else "standing still"}")
+                AppLog.i(TAG, "the device is ${if (moving) "on the move" else "standing still"}")
                 trySend(Moving(going = moving, told = true))
             }
         }

@@ -53,7 +53,7 @@ suspend fun askReset(phoneId: String, askerId: String, connection: GroupConnecti
             ),
         ).await()
 
-    AppLog.i(TAG, "a phone has been asked to forget its place")
+    AppLog.i(TAG, "a device has been asked to forget its place")
 }
 
 /** Marks that the device named by [phoneId] forgot its place. Written only by that device. */
@@ -63,5 +63,5 @@ suspend fun resetDone(phoneId: String, connection: GroupConnection) {
         .update(mapOf(ResetField.DONE_AT to FieldValue.serverTimestamp()))
         .await()
 
-    AppLog.i(TAG, "the phone said it forgot its place")
+    AppLog.i(TAG, "the device said it forgot its place")
 }

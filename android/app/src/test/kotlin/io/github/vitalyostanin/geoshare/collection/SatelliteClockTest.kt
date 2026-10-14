@@ -37,7 +37,7 @@ class SatelliteClockTest {
     // the receiver's clock and four milliseconds against the device's, which
     // is the epoch's stamp rather than the radio.
     @Test
-    fun `the real pair is microseconds from the receiver and milliseconds from the phone`() {
+    fun `the real pair is microseconds from the receiver and milliseconds from the device`() {
         val apart = clocksApart(before(), after())!!
 
         assertEquals(-22_035L, apart.receiverNanos)
@@ -61,7 +61,7 @@ class SatelliteClockTest {
     // so the two of them still agree, and only the clock no signal can reach
     // says a second went missing.
     @Test
-    fun `a scale walked whole is caught by the phone's own clock alone`() {
+    fun `a scale walked whole is caught by the device's own clock alone`() {
         val walked =
             after(
                 sent = 301_884_334_077_975L - 1_000_000_000L,
@@ -219,7 +219,7 @@ class SatelliteClockTest {
     }
 
     @Test
-    fun `a reading where every signal agrees has not left the phone's clock`() {
+    fun `a reading where every signal agrees has not left the device's clock`() {
         val watch = SatelliteClockWatch()
 
         watch.read(clock(), listOf(measurement()))
@@ -235,7 +235,7 @@ class SatelliteClockTest {
     }
 
     @Test
-    fun `a signal whose time stepped a whole second has left the phone's clock`() {
+    fun `a signal whose time stepped a whole second has left the device's clock`() {
         val watch = SatelliteClockWatch()
 
         watch.read(clock(), listOf(measurement()))

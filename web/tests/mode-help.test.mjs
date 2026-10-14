@@ -4,7 +4,7 @@ import { test } from 'node:test';
 import { modeHelpRows } from '../public/lib/mode-help.js';
 import { WORDS } from '../public/lib/words.js';
 
-test('the help describes every mode a phone writes', () => {
+test('the help describes every mode a device writes', () => {
     const described = modeHelpRows().map((row) => row.mode).sort();
 
     assert.deepEqual(described, ['Idle', 'Moving', 'Night', 'Standby', 'Viewing']);

@@ -260,7 +260,7 @@ class SharingService : LifecycleService() {
     private val playServices by lazy {
         playServicesPresent(this).also { present ->
             if (!present) {
-                AppLog.w(TAG, "no Play Services on this phone; the platform is asked instead")
+                AppLog.w(TAG, "no Play Services on this device; the platform is asked instead")
             }
         }
     }
@@ -342,7 +342,7 @@ class SharingService : LifecycleService() {
 
         AppLog.i(
             TAG,
-            "the phone remembers ${trail.fixes.size} places it has been" +
+            "the device remembers ${trail.fixes.size} places it has been" +
                 if (lastFix == null) "" else ", and measures from the last of them",
         )
     }
@@ -392,7 +392,7 @@ class SharingService : LifecycleService() {
 
     /** The person holding this device says it has been found. */
     private fun endTheSearchEverywhere() {
-        AppLog.i(TAG, "this phone says it has been found")
+        AppLog.i(TAG, "this device says it has been found")
 
         // Not a reason to stop sharing: only the search on this device is
         // over, and the service goes on exactly as it was. The
@@ -419,7 +419,7 @@ class SharingService : LifecycleService() {
 
     /** Whoever holds this device stops its siren before its time is up. */
     private fun quietenTheSirenEverywhere() {
-        AppLog.i(TAG, "the siren is stopped on the phone itself")
+        AppLog.i(TAG, "the siren is stopped on the device itself")
         sirens.quieten()
 
         // Written so that the caller's screen reads "stopped" rather than
@@ -564,7 +564,7 @@ class SharingService : LifecycleService() {
             AppLog.i(
                 TAG,
                 "left out a position found by ${judged.whence.said}: " +
-                    "this phone was told not to take that source into account",
+                    "this device was told not to take that source into account",
             )
 
             // The switch as well as the fact, because "a source was switched
@@ -1007,7 +1007,7 @@ class SharingService : LifecycleService() {
         if (driftedWhilePutDown(carried.putDown, fix, carried.carrying())) {
             AppLog.w(
                 TAG,
-                "the other radios walked away from a phone nobody touched too: ${saying(fix)}",
+                "the other radios walked away from a device nobody touched too: ${saying(fix)}",
             )
 
             return
@@ -1053,7 +1053,7 @@ class SharingService : LifecycleService() {
         trailStore.write(trail)
 
         if (!before && trail.knows(fix)) {
-            AppLog.i(TAG, "this is a place the phone now counts as its own")
+            AppLog.i(TAG, "this is a place the device now counts as its own")
         }
     }
 

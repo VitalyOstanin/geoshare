@@ -118,7 +118,7 @@ button.alarm-fill {
 }
 
 /* A round red loudspeaker ahead of "Look for": the siren on a device. The bin
-   after it, last in the row, removes the phone: as red, since it is as final. */
+   after it, last in the row, removes the device: as red, since it is as final. */
 .admin-actions button.siren-ring,
 .admin-actions button.search-mark,
 .admin-actions button.phone-remove {

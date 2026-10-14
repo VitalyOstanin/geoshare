@@ -111,7 +111,7 @@ internal class FixLog(
         val caught = "; a jump ${caughtBy(jump, fix, evidence())}"
 
         return when {
-            verdict.home -> "$caught, taken: the phone has been here before"
+            verdict.home -> "$caught, taken: the device has been here before"
             verdict.agreed -> "$caught, taken because the fix before it agrees"
             jumpsOn() -> "$caught, left out"
             else -> "$caught, kept because the filter is off"
@@ -133,6 +133,6 @@ internal class FixLog(
             return ""
         }
 
-        return "; stamped ${Duration.between(takenAt, now).seconds} s from the phone's own clock"
+        return "; stamped ${Duration.between(takenAt, now).seconds} s from the device's own clock"
     }
 }

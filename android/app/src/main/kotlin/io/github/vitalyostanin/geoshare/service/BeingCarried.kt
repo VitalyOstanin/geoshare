@@ -136,8 +136,8 @@ class BeingCarried(private val sensorsTell: Boolean) {
         if (settled?.at != putDown?.at) {
             AppLog.i(
                 TAG,
-                settled?.let { "the phone is standing where it was put down, at ${theSpot(it)}" }
-                    ?: "nothing to anchor on: the phone has been moved too recently",
+                settled?.let { "the device is standing where it was put down, at ${theSpot(it)}" }
+                    ?: "nothing to anchor on: the device has been moved too recently",
             )
         }
 

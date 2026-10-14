@@ -64,7 +64,7 @@ fun memberName(
 
 /**
  * Where the map opens: the viewer's own device last heard from, rather than an
- * old phone left at home that happens to come first; anyone's position when
+ * old device left at home that happens to come first; anyone's position when
  * the viewer has none on the map.
  */
 fun openingPosition(members: List<MemberPosition>, ownMemberId: String): MemberPosition? = members

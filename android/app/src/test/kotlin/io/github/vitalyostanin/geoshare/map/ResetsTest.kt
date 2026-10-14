@@ -78,7 +78,7 @@ class ResetsTest {
     }
 
     @Test
-    fun `the requests of several phones are gathered by phone, unasked ones left out`() =
+    fun `the requests of several devices are gathered by device, unasked ones left out`() =
         runBlocking {
             val reset = asked(Duration.ofMinutes(1))
             val gathered =
