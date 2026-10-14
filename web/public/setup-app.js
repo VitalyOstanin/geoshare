@@ -401,14 +401,24 @@ function refreshStep4Button() {
     $('s4-next').disabled = !$('s4-tick').checked;
 }
 
-async function pollSignIn() {
+// The next ask waits for the answer to this one: asked on a timer instead, a
+// slow answer could arrive after a later one and put the older state back.
+// [round] is what the screen was opened with; leaving it stops the asking,
+// and an answer that arrives afterwards is not shown.
+async function pollSignIn(round) {
     try {
         const on = await googleSignInEnabled(state.api, state.project.projectId);
 
-        $('s4-state').textContent = on ? words.s4On : words.s4Off;
-        $('s4-state').className = on ? 'small ok' : 'small muted';
+        if (state.polling === round) {
+            $('s4-state').textContent = on ? words.s4On : words.s4Off;
+            $('s4-state').className = on ? 'small ok' : 'small muted';
+        }
     } catch {
         // The next poll tries again; a screen that shows nothing new is not wrong.
+    }
+
+    if (state.polling === round) {
+        setTimeout(() => pollSignIn(round), SIGN_IN_POLL_MS);
     }
 }
 
@@ -422,8 +432,10 @@ function startStep4() {
     $('s4-credentials').href = `https://console.cloud.google.com/apis/credentials?project=${id}`;
     $('s4-state').textContent = words.s4Checking;
     show(4);
-    pollSignIn();
-    state.polling = setInterval(pollSignIn, SIGN_IN_POLL_MS);
+    const round = {};
+
+    state.polling = round;
+    pollSignIn(round);
 }
 
 $('s3-next').addEventListener('click', startStep4);
@@ -439,7 +451,7 @@ $('s4-copy').addEventListener('click', async () => {
 
 // Screen 5.
 $('s4-next').addEventListener('click', () => {
-    clearInterval(state.polling);
+    state.polling = null;
 
     const id = state.project.projectId;
     const link = `https://${id}.web.app/join`;
