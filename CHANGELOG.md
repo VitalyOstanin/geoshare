@@ -30,11 +30,16 @@ The first release.
 - Sharing per person, each permission with an end.
 - Joining by an invitation link or its QR code, once and within a day.
 - Running the group: invitations, removing members, other administrators.
-- Searching for a member, and a siren on a lost device.
+- Searching for a member, and a siren on a lost device; a stuck pin is
+  reset from the device's card.
 - Several groups on one device, and names of one's own for people and
   devices.
 - False positions left out: the device holds every answer against the
   rules described in the README before writing it.
+- Reporting a problem from the application and the page: an issue on
+  GitHub with the end of the log, names, places and ids left out. Nothing
+  is sent until it is submitted on GitHub.
+- The licences of the libraries the application is built from.
 
 ### Project owners
 
