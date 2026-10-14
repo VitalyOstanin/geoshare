@@ -154,7 +154,7 @@ function renderProjects(projects) {
         radio.type = 'radio';
         radio.name = 'project';
         text.className = 'choice-text';
-        name.style.fontWeight = '600';
+        name.className = 'choice-name';
         name.textContent = projectLabel(project);
         id.className = 'small muted';
         id.textContent = project.projectId;
@@ -254,8 +254,7 @@ function renderSteps() {
 
         line.className = 'line pending';
         mark.className = 'mark';
-        text.style.display = 'flex';
-        text.style.flexDirection = 'column';
+        text.className = 'line-text';
         why.className = 'why';
         why.hidden = true;
         text.append(label, why);
