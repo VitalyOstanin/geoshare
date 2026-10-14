@@ -14,6 +14,8 @@ const RULES = 'https://firebaserules.googleapis.com/v1';
 /** How long an operation is polled before the step gives up, in polls. */
 const OPERATION_POLLS = 90;
 const OPERATION_POLL_MS = 3000;
+// Polls of one operation lost in a row before the step gives up on it.
+const LOST_POLLS = 3;
 
 /** A fresh database refuses with 403 until the API enabled a moment ago spreads. */
 const DATABASE_ATTEMPTS = 20;
@@ -48,11 +50,12 @@ export function setupConfigOf(value) {
 
 /**
  * An Error tagged with what went wrong in terms the page can put into words:
- * 'network', 'denied', 'timeout', 'missing' or 'other'. The text of the Error
- * stays technical, for the console; the page shows a phrase picked by the kind.
+ * 'network', 'denied', 'timeout', 'missing', 'transient' or 'other'. The text
+ * of the Error stays technical, for the console; the page shows a phrase
+ * picked by the kind.
  */
-export function failure(message, kind) {
-    const error = new Error(message);
+export function failure(message, kind, cause) {
+    const error = new Error(message, { cause });
 
     error.kind = kind;
 
@@ -64,7 +67,18 @@ function kindOfStatus(status) {
         return 'denied';
     }
 
-    return status === 404 ? 'missing' : 'other';
+    if (status === 404) {
+        return 'missing';
+    }
+
+    // Too many requests, or a server that failed: the same request may pass
+    // in a moment.
+    return status === 429 || status >= 500 ? 'transient' : 'other';
+}
+
+/** Whether a call that failed this way may pass if it is made again. */
+function passing(error) {
+    return error?.kind === 'network' || error?.kind === 'transient';
 }
 
 /** The kind of a thrown value; anything not tagged is 'other'. */
@@ -78,6 +92,7 @@ export function failureWord(kind) {
         network: 'errNetwork',
         denied: 'errDenied',
         timeout: 'errTimeout',
+        transient: 'errTimeout',
         missing: 'errMissing',
     };
 
@@ -111,7 +126,11 @@ export function makeApi(fetchFn, token) {
                 body: body ? (raw ? body : JSON.stringify(body)) : undefined,
             });
         } catch (cause) {
-            throw failure(`${method} ${url.replace(/\?.*/, '')} failed: ${cause.message}`, 'network');
+            throw failure(
+                `${method} ${url.replace(/\?.*/, '')} failed: ${cause.message}`,
+                'network',
+                cause,
+            );
         }
 
         const text = await response.text();
@@ -143,13 +162,28 @@ export function makeApi(fetchFn, token) {
  * Waits for a long-running operation of the API at `base` and returns what it
  * produced. An operation that is still going after OPERATION_POLLS polls, or
  * ended with an error, is thrown.
+ *
+ * The operation goes on at Google whatever happens to one poll of it, so a
+ * poll lost to the network or to a busy server is made again; LOST_POLLS of
+ * them in a row are thrown.
  */
 export async function waitOperation(api, base, op, sleep = realSleep) {
     let current = op;
+    let lost = 0;
 
     for (let poll = 0; poll < OPERATION_POLLS && !current.done; poll++) {
         await sleep(OPERATION_POLL_MS);
-        current = await api('GET', `${base}/${current.name}`);
+
+        try {
+            current = await api('GET', `${base}/${current.name}`);
+            lost = 0;
+        } catch (error) {
+            lost++;
+
+            if (!passing(error) || lost >= LOST_POLLS) {
+                throw error;
+            }
+        }
     }
 
     if (!current.done) {

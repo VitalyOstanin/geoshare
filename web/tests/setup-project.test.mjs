@@ -11,6 +11,7 @@ import {
     listProjects,
     makeApi,
     setupConfigOf,
+    failure,
     failureKind,
     failureWord,
     waitOperation,
@@ -250,6 +251,8 @@ test('a failed step is told to the page by a kind, not by the text of the except
     const unauthorized = makeApi(fakeFetch(() => [401, {}]).fetchFn, 't');
     const gone = makeApi(fakeFetch(() => [404, {}]).fetchFn, 't');
     const broken = makeApi(fakeFetch(() => [500, 'oops']).fetchFn, 't');
+    const busy = makeApi(fakeFetch(() => [429, {}]).fetchFn, 't');
+    const refused = makeApi(fakeFetch(() => [400, {}]).fetchFn, 't');
     const offline = makeApi(async () => {
         throw new TypeError('Failed to fetch');
     }, 't');
@@ -258,8 +261,61 @@ test('a failed step is told to the page by a kind, not by the text of the except
     assert.equal(await kindOf(denied), 'denied');
     assert.equal(await kindOf(unauthorized), 'denied');
     assert.equal(await kindOf(gone), 'missing');
-    assert.equal(await kindOf(broken), 'other');
+    assert.equal(await kindOf(broken), 'transient');
+    assert.equal(await kindOf(busy), 'transient');
+    assert.equal(await kindOf(refused), 'other');
     assert.equal(await kindOf(offline), 'network');
+});
+
+test('a fetch that failed keeps what it failed with', async () => {
+    const reason = new TypeError('Failed to fetch');
+    const offline = makeApi(async () => {
+        throw reason;
+    }, 't');
+    const error = await offline('GET', 'https://x.test/a').catch((e) => e);
+
+    assert.equal(error.cause, reason);
+});
+
+// The operation goes on at Google while one poll of it is lost to the network
+// or to a busy server: the step waits on rather than failing with it.
+test('a poll lost to the network or a busy server is polled again', async () => {
+    const answers = [
+        () => {
+            throw failure('offline for a moment', 'network');
+        },
+        () => {
+            throw Object.assign(new Error('503'), { status: 503, kind: 'transient' });
+        },
+        () => ({ name: 'op', done: true, response: { v: 2 } }),
+    ];
+    const api = async () => answers.shift()();
+
+    assert.deepEqual(await waitOperation(api, 'https://x.test', { name: 'op' }, noSleep), { v: 2 });
+});
+
+test('polls lost one after another give up after a few', async () => {
+    let polls = 0;
+    const api = async () => {
+        polls++;
+        throw failure('offline', 'network');
+    };
+    const error = await waitOperation(api, 'https://x.test', { name: 'op' }, noSleep)
+        .catch((e) => e);
+
+    assert.equal(failureKind(error), 'network');
+    assert.ok(polls < 10, `${polls} polls`);
+});
+
+test('a poll the service refused is not polled again', async () => {
+    let polls = 0;
+    const api = async () => {
+        polls++;
+        throw Object.assign(new Error('403'), { status: 403, kind: 'denied' });
+    };
+
+    await assert.rejects(waitOperation(api, 'https://x.test', { name: 'op' }, noSleep), /403/);
+    assert.equal(polls, 1);
 });
 
 test('an operation that does not finish is a timeout', async () => {
@@ -271,7 +327,7 @@ test('an operation that does not finish is a timeout', async () => {
 });
 
 test('every kind of failure has a phrase in both languages', () => {
-    for (const kind of ['network', 'denied', 'timeout', 'missing', 'other']) {
+    for (const kind of ['network', 'denied', 'timeout', 'missing', 'transient', 'other']) {
         const key = failureWord(kind);
 
         assert.equal(typeof WORDS_EN[key], 'string', key);
