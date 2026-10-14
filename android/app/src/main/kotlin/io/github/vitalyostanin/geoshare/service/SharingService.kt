@@ -905,7 +905,8 @@ class SharingService : LifecycleService() {
             }
         }.collect { places ->
             falsePlaces = places
-            falsePlaceStore.write(places)
+            // Off the main thread: the list arrives whenever a member edits it.
+            withContext(Dispatchers.IO) { falsePlaceStore.write(places) }
         }
     }
 
