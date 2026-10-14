@@ -17,7 +17,7 @@
 // address and starts.
 import { Map as MapLibre, Marker, NavigationControl } from './vendor/maplibre-gl-6.9.0/maplibre-gl.mjs';
 
-import { STALE_COLOUR, freshestOf, memberColour } from './members.js';
+import { STALE_COLOUR, freshestOf, memberColour, pinColour } from './members.js';
 import { showFace } from './faces.js';
 
 import { isGrey } from './false-places.js';
@@ -777,7 +777,7 @@ function showPin(entry, names, faces, now) {
         const member = group[0];
         const name = nameOf(member, names);
         const stale = isGrey(member, now);
-        const colour = stale ? STALE_COLOUR : memberColour(member.memberId);
+        const colour = pinColour(member.memberId, stale);
 
         entry.label.textContent = name;
         entry.pin.style.setProperty('--pin', colour);
@@ -802,7 +802,7 @@ function showPin(entry, names, faces, now) {
         const old = isGrey(member, now);
         const face = entry.faces[index];
 
-        const colour = old ? STALE_COLOUR : memberColour(member.memberId);
+        const colour = pinColour(member.memberId, old);
 
         showFace(face, faces.get(member.memberId), name, colour);
         face.classList.toggle('stale', old);

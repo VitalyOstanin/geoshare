@@ -62,6 +62,15 @@ export function memberColour(memberId) {
 }
 
 /**
+ * The colour a member is drawn in on the pin, the card and the strip alike:
+ * their own, or grey once the position is old. One place, so that the three
+ * cannot come to disagree about which is which.
+ */
+export function pinColour(memberId, stale) {
+    return stale ? STALE_COLOUR : memberColour(memberId);
+}
+
+/**
  * The index the colour is taken at, which is where the two clients have to
  * agree. The remainder is taken before the sign is dropped, matching the
  * Android side: the smallest negative integer has no positive counterpart.

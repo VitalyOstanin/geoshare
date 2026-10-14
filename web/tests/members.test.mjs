@@ -4,13 +4,16 @@ import { test } from 'node:test';
 import {
     colourIndex,
     freshestOf,
+    memberColour,
     memberInitial,
     memberName,
     orderedForNavigation,
     pictureAddress,
+    pinColour,
     positionDocuments,
     profileName,
     shortName,
+    STALE_COLOUR,
 } from '../public/lib/members.js';
 
 // One position per device: the id is the account and the device joined by a
@@ -185,4 +188,9 @@ test('the freshest position of a member is the one last heard from', () => {
 
     assert.equal(freshestOf(positions, 'anna').positionId, 'anna.new');
     assert.equal(freshestOf(positions, 'leo'), null);
+});
+
+test('a member is drawn in their own colour, and in grey once the position is old', () => {
+    assert.equal(pinColour('alice', false), memberColour('alice'));
+    assert.equal(pinColour('alice', true), STALE_COLOUR);
 });

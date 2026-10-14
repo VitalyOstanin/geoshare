@@ -7,7 +7,7 @@ import { followCardDevice } from './card-actions.js';
 import { centreOnce, lookAt, showMembers, shownPositions } from '../lib/map.js';
 import { batteryText } from '../lib/map-card.js';
 import { awaitingFollowTarget, followMode, followPaused, followTarget } from '../lib/map-follow.js';
-import { memberColour, memberName, orderedForNavigation, STALE_COLOUR } from '../lib/members.js';
+import { memberName, orderedForNavigation, pinColour } from '../lib/members.js';
 import { isGrey } from '../lib/false-places.js';
 import { watchingBesides, watchingMembers } from '../lib/watchers.js';
 import { WORDS } from '../lib/words.js';
@@ -364,10 +364,10 @@ function memberEntry(position, labels, pictures, shown, now) {
         : '';
 
     const stale = isGrey(position, now);
-    // The same expression the pin and the card use, rather than colour here
-    // and a filter in the stylesheet: one rule written two ways is one rule
-    // that can be half-changed.
-    const colour = stale ? STALE_COLOUR : memberColour(position.memberId);
+    // The same colour the pin and the card use, rather than colour here and a
+    // filter in the stylesheet: one rule written two ways is one rule that can
+    // be half-changed.
+    const colour = pinColour(position.memberId, stale);
     const label = labels.get(position.positionId) ?? position.memberId;
 
     // The same face the pin on the map carries, ringed in the colour of that

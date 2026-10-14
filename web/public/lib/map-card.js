@@ -6,7 +6,7 @@
 // element the caller handed to createMap, and reads the map's own state
 // (view.markers, view.selection) rather than drawing on it.
 
-import { STALE_COLOUR, memberColour, shortName } from './members.js';
+import { pinColour, shortName } from './members.js';
 import { showFace } from './faces.js';
 import { ageText, isStuck, positionAge, stuckCause, timeText } from './age.js';
 import { isGrey } from './false-places.js';
@@ -165,7 +165,7 @@ function groupList(view, entry, names, faces, now) {
         row.className = 'group-row';
 
         const stale = isGrey(member, now);
-        const colour = stale ? STALE_COLOUR : memberColour(member.memberId);
+        const colour = pinColour(member.memberId, stale);
         const label = nameOf(member, names);
 
         // The same circle the panel and the pin carry, so that one member is
@@ -276,7 +276,7 @@ function detailHeading(view, position, name, faces, now) {
     // Old means grey here as well as on the pin and in the strip: a card in
     // full colour beside a faded pin reads as a member who is there right now.
     const stale = isGrey(position, now);
-    const colour = stale ? STALE_COLOUR : memberColour(position.memberId);
+    const colour = pinColour(position.memberId, stale);
 
     const face = document.createElement('span');
 
