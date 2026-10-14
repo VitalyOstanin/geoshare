@@ -67,12 +67,12 @@ node -e '
 ' "https://raw.githubusercontent.com/firebase/firebase-js-sdk/firebase%40${v}/LICENSE" \
     > "${dir}/LICENSE.txt"
 
-# MapLibre GL JS: the module build, its two chunks and its styles. The worker
-# is started from the address of the library, so the three stay together.
+# MapLibre GL JS: the module build, its worker and its styles. The worker is
+# started from the address of the library, so the two stay together.
 v="$(version maplibre-gl)"
 dir="${VENDOR}/maplibre-gl-${v}"
 mkdir "${dir}"
-cp node_modules/maplibre-gl/dist/{maplibre-gl.mjs,maplibre-gl-shared.mjs,maplibre-gl-worker.mjs,maplibre-gl.css} "${dir}/"
+cp node_modules/maplibre-gl/dist/{maplibre-gl.mjs,maplibre-gl-worker.mjs,maplibre-gl.css} "${dir}/"
 cp node_modules/maplibre-gl/LICENSE.txt "${dir}/LICENSE.txt"
 
 # qr: the encoder alone, which is the package's index.js and imports nothing.

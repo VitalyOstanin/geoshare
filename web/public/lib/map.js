@@ -15,7 +15,7 @@
 // everything the worker cuts into tiles — every GeoJSON layer, the accuracy
 // ring among them — silently never appears. From here the worker is a plain
 // address and starts.
-import { Map as MapLibre, Marker, NavigationControl } from './vendor/maplibre-gl-6.9.0/maplibre-gl.mjs';
+import { Map as MapLibre, Marker, NavigationControl } from './vendor/maplibre-gl-6.14.0/maplibre-gl.mjs';
 
 import { STALE_COLOUR, freshestOf, memberColour, pinColour } from './members.js';
 import { showFace } from './faces.js';
