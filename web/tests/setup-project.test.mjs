@@ -219,6 +219,21 @@ test('a SHA-1 is posted as SHA_1', async () => {
     assert.equal(requests[1].body.certType, 'SHA_1');
 });
 
+test('fingerprints written as keytool prints them are posted bare, each with its type', async () => {
+    const { api, requests } = fakeFetch((method) =>
+        method === 'GET' ? [200, { certificates: [{ shaHash: SHA256 }] }] : [200, {}],
+    );
+    const colons = (hash) => hash.toUpperCase().match(/../gu).join(':');
+
+    const posted = await ensureFingerprints(api, APP_NAME, [colons(SHA1), colons(SHA256)]);
+
+    assert.deepEqual(posted, [SHA1]);
+    assert.deepEqual(
+        requests.filter((r) => r.method === 'POST').map((r) => r.body),
+        [{ shaHash: SHA1, certType: 'SHA_1' }],
+    );
+});
+
 test('the rules are released as new when there is no release yet', async () => {
     const { api, requests } = fakeFetch((method, url) =>
         url.endsWith('/rulesets') ? [200, { name: `projects/${PROJECT}/rulesets/r1` }] : [200, {}],

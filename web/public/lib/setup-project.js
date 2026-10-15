@@ -295,16 +295,20 @@ export async function ensureAndroidApp(api, projectId, packageName, sleep = real
     return { name: app.name, appId: app.appId, created: true };
 }
 
+/** A fingerprint as the API keeps it: lower-case hex, without the colons keytool prints. */
+const bareHash = (hash) => hash.replaceAll(':', '').toLowerCase();
+
 /**
- * Registers the signing fingerprints (hex strings) the app does not have yet,
- * and returns the ones it posted. A hash is told from its length: 40 digits
- * are SHA-1, anything else is taken for SHA-256.
+ * Registers the signing fingerprints the app does not have yet, and returns
+ * the ones it posted. They may come as keytool prints them, in colon-separated
+ * pairs. A hash is told from its length: 40 digits are SHA-1, anything else is
+ * taken for SHA-256.
  */
 export async function ensureFingerprints(api, androidAppName, fingerprints) {
     const url = `${FIREBASE}/${androidAppName}/sha`;
     const list = await api('GET', url);
-    const have = new Set((list?.certificates || []).map((c) => c.shaHash.toLowerCase()));
-    const missing = fingerprints.filter((hash) => !have.has(hash.toLowerCase()));
+    const have = new Set((list?.certificates || []).map((c) => bareHash(c.shaHash)));
+    const missing = fingerprints.map(bareHash).filter((hash) => !have.has(hash));
 
     for (const hash of missing) {
         await api('POST', url, { shaHash: hash, certType: hash.length === 40 ? 'SHA_1' : 'SHA_256' });
