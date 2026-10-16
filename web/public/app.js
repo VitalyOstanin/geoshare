@@ -192,6 +192,7 @@ function followTheGroup() {
     state.stopRoster ??= watchRoster((roster) => {
         state.roster = roster;
         readProjectGroup(roster);
+        followWatchers();
         drawGroup();
     });
 
@@ -205,13 +206,34 @@ function followTheGroup() {
         showPositions();
         render();
     });
+}
 
-    state.stopWatching ??= keepWatching(state.member.memberId, warnOf('watching'), notePageLooking);
+/** Whether the roster last read names this account. */
+function onRoster() {
+    return state.roster?.members.includes(state.member.memberId) === true;
+}
 
-    state.stopWatchers ??= watchWatchers(state.member.memberId, (watchers) => {
-        state.watchers = watchers;
-        render();
-    });
+/**
+ * Claims to be looking, and follows who else is, only while the roster names
+ * this account: the rules let nobody else read the claims or write one, and
+ * somebody outside the group would only be refused twice over.
+ */
+function followWatchers() {
+    if (onRoster()) {
+        state.stopWatching ??= keepWatching(state.member.memberId, warnOf('watching'), notePageLooking);
+        state.stopWatchers ??= watchWatchers(state.member.memberId, (watchers) => {
+            state.watchers = watchers;
+            render();
+        });
+
+        return;
+    }
+
+    state.stopWatching?.();
+    state.stopWatching = null;
+    state.stopWatchers?.();
+    state.stopWatchers = null;
+    state.watchers = [];
 }
 
 /** Stops following the roster and forgets it, and the mark read beside it. */
@@ -450,7 +472,7 @@ window.addEventListener('pagehide', () => {
 // does on a device. Nothing else runs then: the account has not changed, so the
 // sign-in listener stays quiet.
 window.addEventListener('pageshow', () => {
-    if (state.member) {
+    if (state.member && onRoster()) {
         state.stopWatching ??= keepWatching(state.member.memberId, warnOf('watching'), notePageLooking);
         render();
     }
