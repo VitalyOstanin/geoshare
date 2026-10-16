@@ -73,6 +73,7 @@ publishing run the Firebase command line on the machine itself, and need
 | 13 | `tools/coverage.sh`          | how much of the code the tests reach; fails under the floors CI checks too  |
 | 14 | `tools/test-instrumented.sh` | smoke tests on the emulator: start-up, settings, licences, connecting       |
 | 15 | `tools/shell-lint.sh`        | ShellCheck over every shell script, at the version in `versions.env`        |
+| 16 | `tools/page-stand.sh`        | the page against stand-in sign-in and Firestore, `--showcase` to fill them  |
 
 The rest of `tools/` — `coverage-floor.sh`, `project.sh`, `web-config.sh`,
 `setup-site.sh`, `read-cost.sh`, `device-log.sh`, `device-sky.sh`,
@@ -117,12 +118,18 @@ The scripts read these from the environment; none has to be set.
 | 19 | `TIMEOUT`             | `test-instrumented.sh`         | how long the instrumented run may take as a whole                  | `30m`                            |
 | 20 | `WEB_PORT`            | `serve-web.sh`                 | the port the page is served on                                     | `5000`                           |
 | 21 | `GRADLE_TIMEOUT`      | `gradle.sh`                    | how long one Gradle run may take as a whole                        | `60m`                            |
+| 22 | `STAND_WEB_PORT`      | `page-stand.sh`                | the port the stand's page is served on                             | `5000`                           |
+| 23 | `STAND_FIRESTORE_PORT`| `page-stand.sh`                | the port of the stand's Firestore emulator                         | `18080`                          |
+| 24 | `STAND_AUTH_PORT`     | `page-stand.sh`                | the port of the stand's sign-in emulator                           | `19099`                          |
+| 25 | `READY_TIMEOUT`       | `page-stand.sh`                | seconds to wait for the stand's emulators                          | `120`                            |
 
 The names of the podman resources — `POD_NAME`, `SERVICES_NAME`,
-`EMULATOR_NAME`, `SDK_IMAGE`, `EMULATOR_IMAGE`, `FIREBASE_IMAGE`,
+`EMULATOR_NAME`, `STAND_NAME`, `SDK_IMAGE`, `EMULATOR_IMAGE`, `FIREBASE_IMAGE`,
 `CACHE_VOLUME`, `KEY_VOLUME`, `NPM_VOLUME`, `MODULES_VOLUME` — can be changed
-too, which is only of use to keep two checkouts apart on one machine. The emulator ports are not
-variables: they are fixed in `firebase.json`.
+too, which is only of use to keep two checkouts apart on one machine. The ports of the
+emulators the Android stand talks to are not variables: they are fixed in
+`firebase.json`; only the page stand's are, since its browser reaches them from
+the machine.
 
 ## Releasing
 
