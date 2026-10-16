@@ -1,5 +1,8 @@
 # Local design artefacts, not part of the repository
 docs/superpowers/
+# Full-size screenshots tools/landing-shots.sh takes, the landing page's
+# pictures are made from
+/shots/
 
 # Android / Gradle
 .gradle/

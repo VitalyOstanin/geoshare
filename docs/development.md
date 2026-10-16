@@ -74,6 +74,9 @@ publishing run the Firebase command line on the machine itself, and need
 | 14 | `tools/test-instrumented.sh` | smoke tests on the emulator: start-up, settings, licences, connecting       |
 | 15 | `tools/shell-lint.sh`        | ShellCheck over every shell script, at the version in `versions.env`        |
 | 16 | `tools/page-stand.sh`        | the page against stand-in sign-in and Firestore, `--showcase` to fill them  |
+| 17 | `tools/landing-shots.sh`     | the application's screenshots for the landing page, full size, in `shots/`  |
+| 18 | `tools/landing-steps.sh`     | the setup page's first two steps for the landing page, into `shots/`        |
+| 19 | `tools/landing-images.sh`    | the landing page's pictures, three widths each, from `shots/`               |
 
 The rest of `tools/` — `coverage-floor.sh`, `project.sh`, `web-config.sh`,
 `setup-site.sh`, `read-cost.sh`, `device-log.sh`, `device-sky.sh`,
@@ -121,6 +124,11 @@ The scripts read these from the environment; none has to be set.
 | 22 | `STAND_FIRESTORE_PORT`| `page-stand.sh`                | the port of the stand's Firestore emulator                         | `18080`                          |
 | 23 | `STAND_AUTH_PORT`     | `page-stand.sh`                | the port of the stand's sign-in emulator                           | `19099`                          |
 | 24 | `READY_TIMEOUT`       | `page-stand.sh`                | seconds to wait for the stand's emulators                          | `120`                            |
+| 25 | `SHOTS_DIR`           | `landing-shots.sh`             | where the full-size screenshots go                                 | `shots/<date>`                   |
+| 26 | `SHOTS_DIR`           | `landing-steps.sh`             | the same, for the setup page's steps                               | `shots/<date>`                   |
+| 27 | `WAIT_TIMEOUT`        | `landing-shots.sh`             | seconds to wait for a screen to show what is tapped next           | `30`                             |
+| 28 | `SETUP_URL`           | `landing-steps.sh`             | the setup page the steps are taken from                            | the published setup page         |
+| 29 | `QUALITY`             | `landing-images.sh`            | WebP quality of the pictures                                       | `80`                             |
 
 The names of the podman resources — `POD_NAME`, `SERVICES_NAME`,
 `EMULATOR_NAME`, `STAND_NAME`, `SDK_IMAGE`, `EMULATOR_IMAGE`, `FIREBASE_IMAGE`,

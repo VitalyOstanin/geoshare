@@ -4,6 +4,9 @@
 //
 //     node firebase/emulator/showcase-seed.mjs
 //
+// SHOWCASE_FIRST_SHARE=1 leaves Anna sharing with nobody, so that signing in
+// as her brings up the question of whom to share with.
+//
 // It writes the same shapes seed.mjs does (group, profiles, grants, device
 // summaries, positions) and differs only in the data: four people in the
 // middle of Tallinn, positions a few minutes old and batteries at different
@@ -257,7 +260,10 @@ for (const member of MEMBERS) {
         updatedAt: timeValue(new Date(NOW).toISOString()),
     });
 
-    const readers = MEMBERS.filter((other) => other !== member).map((other) => ({
+    // Anna shares with nobody yet when the first-share question is to be on
+    // the screenshot: the app asks it only of a member whose grant is empty.
+    const asked = member.email === 'parent@geoshare.test' && process.env.SHOWCASE_FIRST_SHARE === '1';
+    const readers = (asked ? [] : MEMBERS.filter((other) => other !== member)).map((other) => ({
         uid: uids.get(other.email),
         until:
             member.email === LIMITED.from && other.email === LIMITED.to
