@@ -77,7 +77,7 @@ function kindOfStatus(status) {
 }
 
 /** Whether a call that failed this way may pass if it is made again. */
-function passing(error) {
+export function passing(error) {
     return error?.kind === 'network' || error?.kind === 'transient';
 }
 

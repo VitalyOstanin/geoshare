@@ -16,6 +16,7 @@ import {
     failure,
     failureKind,
     failureWord,
+    passing,
     waitOperation,
 } from '../public/lib/setup-project.js';
 
@@ -401,4 +402,16 @@ test('a setup config as the script writes it is taken, a broken one is not', () 
     assert.equal(setupConfigOf({ ...written, location: undefined }), null);
     assert.equal(setupConfigOf({ ...written, fingerprints: 'AB:CD' }), null);
     assert.equal(setupConfigOf({ ...written, fingerprints: [42] }), null);
+});
+
+test('only a network or transient failure is worth asking again', () => {
+    for (const kind of ['network', 'transient']) {
+        assert.equal(passing({ kind }), true);
+    }
+
+    for (const kind of ['denied', 'missing', 'timeout', 'other', undefined]) {
+        assert.equal(passing({ kind }), false);
+    }
+
+    assert.equal(passing(new Error('untagged')), false);
 });

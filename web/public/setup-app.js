@@ -18,6 +18,7 @@ import {
     failure,
     failureKind,
     failureWord,
+    passing,
     refusalText,
     setupConfigOf,
 } from './lib/setup-project.js';
@@ -425,8 +426,19 @@ async function pollSignIn(round) {
             $('s4-state').textContent = on ? words.s4On : words.s4Off;
             $('s4-state').className = on ? 'small ok' : 'small muted';
         }
-    } catch {
-        // The next poll tries again; a screen that shows nothing new is not wrong.
+    } catch (error) {
+        console.warn('Reading the sign-in state failed:', error);
+
+        // A refusal that repeating cannot cure (an expired token) ends the
+        // asking and says so; any other failure is tried again on the next poll.
+        if (!passing(error)) {
+            if (state.polling === round) {
+                $('s4-state').textContent = words[failureWord(failureKind(error))];
+                $('s4-state').className = 'small muted';
+            }
+
+            return;
+        }
     }
 
     if (state.polling === round) {
