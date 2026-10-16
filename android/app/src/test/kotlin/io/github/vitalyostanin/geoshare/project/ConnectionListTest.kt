@@ -45,31 +45,6 @@ class ConnectionListTest {
     }
 
     @Test
-    fun `the settings of an older build become the first connection`() {
-        val list = ConnectionList.migrated(
-            settingsJson = settings("family-project").toJson(),
-            group = "alice",
-        )
-
-        assertEquals(ConnectionList(listOf(family), selected = "family-project"), list)
-    }
-
-    @Test
-    fun `an older build that never named its group is in the inherited one`() {
-        val list = ConnectionList.migrated(
-            settingsJson = settings("family-project").toJson(),
-            group = null,
-        )
-
-        assertEquals(INHERITED, list?.connections?.single()?.group)
-    }
-
-    @Test
-    fun `unreadable settings of an older build migrate to nothing`() {
-        assertNull(ConnectionList.migrated(settingsJson = "{", group = "alice"))
-    }
-
-    @Test
     fun `a second connection to the same project replaces the group in it`() {
         val list = ConnectionList(listOf(family, hike), selected = "hike-project")
             .with(Connected(settings("family-project"), group = "carol"))

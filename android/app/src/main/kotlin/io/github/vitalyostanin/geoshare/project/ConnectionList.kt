@@ -131,19 +131,5 @@ data class ConnectionList(val connections: List<Connected>, val selected: String
 
             return ConnectionList(connections, selected).settled()
         }
-
-        /**
-         * What a build that knew a single project kept, as a list of one: its
-         * settings, and the group it wrote into — or the inherited group, for
-         * a device that never named one.
-         */
-        fun migrated(settingsJson: String, group: String?): ConnectionList? {
-            val settings = ProjectSettings.parse(settingsJson) ?: return null
-
-            return ConnectionList(
-                listOf(Connected(settings, group ?: INHERITED)),
-                settings.projectId,
-            )
-        }
     }
 }

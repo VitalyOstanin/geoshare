@@ -29,12 +29,6 @@ internal const val KEY_JOINED_AFTER_UNREADABLE = "list_unreadable_joined"
 private const val KEY_DEFAULT_PROJECT = "default_project"
 private const val TAG = "geoshare.connections"
 
-/** Where a build that knew a single project kept it, read once to carry it over. */
-private const val OLD_PROJECT_FILE = "family_project"
-private const val OLD_PROJECT_KEY = "settings"
-private const val OLD_GROUP_FILE = "group"
-private const val OLD_GROUP_KEY = "name"
-
 /**
  * The groups this device is in, each with the Firebase instance it is reached
  * through, and the one the screens show.
@@ -92,20 +86,16 @@ object Connections {
     }
 
     /**
-     * Reads back the groups kept on a previous run, or what a build that knew
-     * a single project kept, and starts an instance for each.
+     * Reads back the groups kept on a previous run and starts an instance for
+     * each.
      *
      * Called once, before anything else in the application touches Firebase.
      */
     fun start(context: Context) {
         val stored = files(context).readString(KEY_LIST, null)
         val list =
-            if (stored != null) {
-                ConnectionList.parse(stored).also {
-                    if (it == null) setAside(context, stored)
-                }
-            } else {
-                migrated(context)
+            ConnectionList.parse(stored ?: return).also {
+                if (it == null) setAside(context, stored)
             }
 
         if (list != null) {
@@ -269,29 +259,5 @@ object Connections {
         }
 
         return if (owner == projectId) FirebaseApp.DEFAULT_APP_NAME else projectId
-    }
-
-    /**
-     * What a build that knew a single project kept, as a list of one.
-     *
-     * The old files are left where they are: a device taken back to that
-     * build finds them still there.
-     */
-    private fun migrated(context: Context): ConnectionList? {
-        val settings =
-            context.getSharedPreferences(OLD_PROJECT_FILE, Context.MODE_PRIVATE)
-                .readString(OLD_PROJECT_KEY, null) ?: return null
-        val group =
-            context.getSharedPreferences(OLD_GROUP_FILE, Context.MODE_PRIVATE)
-                .readString(OLD_GROUP_KEY, null)
-        val list = ConnectionList.migrated(settings, group)
-
-        if (list == null) {
-            AppLog.w(TAG, "the settings an earlier build kept could not be read")
-        } else {
-            AppLog.i(TAG, "carried over the group an earlier build kept")
-        }
-
-        return list
     }
 }
