@@ -68,14 +68,17 @@ backend. Each group's data stays in a Firebase project of its own.
 ### Setting up a group
 
 The person setting the group up — the project owner — needs a Google account
-and a browser, no terminal:
+with 2-Step Verification turned on (the Firebase console asks for it from
+18 October 2026) and a browser, no terminal:
 
-1. Create a Firebase project in the [Firebase console](https://console.firebase.google.com/);
-   the free Spark plan is enough.
-2. Open the setup page, [geoshare-setup.web.app](https://geoshare-setup.web.app/),
-   sign in and pick the project. The page makes the database, the rules, the
-   Android and web apps and the group's own site, and walks through the two
-   steps only the console can do ([docs/console-steps.md](docs/console-steps.md)).
+1. Open the setup page, [geoshare-setup.web.app](https://geoshare-setup.web.app/).
+   Its first step sends you to the [Firebase console](https://console.firebase.google.com/)
+   to create a project and says what to pick there: the free Spark plan is
+   enough, and Google Analytics can be turned off.
+2. Back on the setup page, sign in and pick the project. The page makes the
+   database, the rules, the Android and web apps and the group's own site, and
+   walks through the two steps only the console can do
+   ([docs/console-steps.md](docs/console-steps.md)).
 3. The page ends with the connection link and its QR code.
 
 The project owner sees every member's places and history from the Firebase
@@ -94,7 +97,10 @@ describes it.
    required.
 2. Open the connection link from the invitation, or scan its QR code from the
    application's connection screen.
-3. Sign in with Google, with the address the invitation was made for.
+3. Sign in with Google, with the address the invitation was made for. The
+   first time, Google asks whether the group's address
+   (`<project>.firebaseapp.com`) may see your email address; it is the
+   group's own, so allow it.
 
 ## Privacy
 

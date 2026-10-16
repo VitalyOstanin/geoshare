@@ -8,7 +8,8 @@ export const WORDS_RU = {
     s1Title: 'Создайте проект Firebase',
     s1List: [
         'Откройте консоль Firebase под аккаунтом, которому будет принадлежать группа. ' +
-            'Если вы там впервые — примите условия.',
+            'Если вы там впервые — примите условия. С 18 октября 2026 года консоль пускает ' +
+            'только аккаунт с включённой двухэтапной проверкой.',
         'Нажмите «Создать проект», назовите его, например, «Семья».',
         'Google Analytics можно выключить — группе он не нужен.',
         'Дождитесь «Проект готов» и вернитесь на эту вкладку.',
@@ -63,7 +64,8 @@ export const WORDS_RU = {
     s4Off: 'ещё не включён',
     s4Checking: 'проверяю…',
     s4SignInHow: 'Get started → Google → Enable → название (например, «Семья») и почта поддержки → ' +
-        'Save.',
+        'Save. Окно «An identical OAuth client already exists» ожидаемо: приложение входит ' +
+        'через браузер, вход остаётся включённым — просто закройте его.',
     s4OpenProviders: 'Открыть способы входа',
     s4Redirect: '2. Адрес возврата страницы',
     s4RedirectHow:
@@ -92,7 +94,8 @@ export const WORDS_EN = {
     s1Title: 'Create a Firebase project',
     s1List: [
         'Open the Firebase console with the account that will own the group. ' +
-            'If this is your first time there, accept the terms.',
+            'If this is your first time there, accept the terms. From 18 October 2026 the ' +
+            'console only lets in an account with 2-Step Verification turned on.',
         'Start a new Firebase project and give it a name, for example “Family”.',
         'You can turn Google Analytics off — the group does not need it.',
         'Wait until the console says the project is ready, then come back to this tab.',
@@ -148,7 +151,8 @@ export const WORDS_EN = {
     s4Off: 'not turned on yet',
     s4Checking: 'checking…',
     s4SignInHow: 'Get started → Google → Enable → a name (for example, “Family”) and a support ' +
-        'email → Save.',
+        'email → Save. A dialog saying “An identical OAuth client already exists” is ' +
+        'expected: the app signs in through the browser and sign-in stays on — just close it.',
     s4OpenProviders: 'Open sign-in methods',
     s4Redirect: '2. The page’s redirect address',
     s4RedirectHow:
