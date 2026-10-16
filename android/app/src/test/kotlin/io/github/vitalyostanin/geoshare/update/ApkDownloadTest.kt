@@ -107,6 +107,30 @@ class ApkDownloadTest {
     }
 
     @Test
+    fun `an intact file of this release is reused without opening the network`() {
+        val kept = File(folder.root, "geoshare-0.2.0.apk").apply { writeBytes(BODY) }
+        val other = File(folder.root, "geoshare-0.1.0.apk").apply { writeText("old") }
+
+        val result = runBlocking {
+            downloadApk(release(), folder.root, { _, _ -> }) { error("must not download") }
+        }
+
+        assertEquals(ApkDownload.Done(kept), result)
+        assertFalse(other.exists())
+    }
+
+    @Test
+    fun `a file of this release with a wrong digest is downloaded again`() {
+        val altered = BODY.copyOf().also { it[10] = (it[10] + 1).toByte() }
+
+        File(folder.root, "geoshare-0.2.0.apk").writeBytes(altered)
+
+        val result = download(release()) as ApkDownload.Done
+
+        assertTrue(result.file.readBytes().contentEquals(BODY))
+    }
+
+    @Test
     fun `a cancelled download leaves no partial file`() {
         val midway = CompletableDeferred<Unit>()
         val never = object : InputStream() {

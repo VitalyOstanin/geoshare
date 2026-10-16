@@ -41,7 +41,10 @@ fun updateDirectory(cacheDir: File): File = File(cacheDir, UPDATE_DIRECTORY)
  * and SHA-256 GitHub announced, hashing while it writes. [onProgress] gets
  * the bytes received so far and the announced size after every chunk. Files
  * of earlier updates in [directory] are removed first, so it never holds
- * more than one APK. Cancelling the coroutine deletes the part already
+ * more than one APK. If [directory] already holds this release's file with
+ * the announced size and SHA-256, it is returned without touching the
+ * network, so a return from the install permission screen costs no second
+ * download. Cancelling the coroutine deletes the part already
  * written.
  *
  * Deliberately not gated by DownloadGate or DownloadPolicy: those keep the
@@ -61,9 +64,17 @@ internal suspend fun downloadApk(
     onProgress: (received: Long, total: Long) -> Unit,
     open: (url: String) -> InputStream,
 ): ApkDownload = withContext(Dispatchers.IO) {
+    val target = File(directory, updateFileName(release.version))
+
+    if (isIntactCopy(target, release.apk)) {
+        // Left by an earlier press of "Update" that ended at the install
+        // permission screen; only this release's file is spared.
+        directory.listFiles()?.forEach { if (it != target) it.delete() }
+        return@withContext ApkDownload.Done(target)
+    }
+
     clearDirectory(directory)
 
-    val target = File(directory, updateFileName(release.version))
     var kept = false
 
     try {
@@ -116,6 +127,33 @@ private inline fun writeVerified(
     }
 
     return verifier.verdict()
+}
+
+/**
+ * Whether [file] is already the whole of [asset]: right size and SHA-256,
+ * read once from disk. A part-downloaded or foreign file fails this and is
+ * replaced by a fresh download, never reused.
+ */
+private fun isIntactCopy(file: File, asset: ApkAsset): Boolean {
+    if (!file.isFile || file.length() != asset.size) return false
+
+    return try {
+        val verifier = ApkVerifier(asset)
+        val buffer = ByteArray(BUFFER_BYTES)
+
+        file.inputStream().use { stream ->
+            while (true) {
+                val count = stream.read(buffer)
+
+                if (count < 0) break
+                verifier.update(buffer, count)
+            }
+        }
+
+        verifier.verdict() == ApkVerdict.Intact
+    } catch (unreadable: IOException) {
+        false
+    }
 }
 
 private fun clearDirectory(directory: File) {
