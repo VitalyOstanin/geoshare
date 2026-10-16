@@ -3,6 +3,10 @@
     xmlns:tools="http://schemas.android.com/tools">
 
     <uses-permission android:name="android.permission.INTERNET" />
+    <!-- Lets the application hand the update it downloaded to the system's
+         installer; the member still has to allow it once, on a page of the
+         system's own, and confirm each installation there. -->
+    <uses-permission android:name="android.permission.REQUEST_INSTALL_PACKAGES" />
     <!-- The map library asks whether there is a connection before it goes
          looking for a tile it has no copy of. -->
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />

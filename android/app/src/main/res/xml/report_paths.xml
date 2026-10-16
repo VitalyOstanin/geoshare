@@ -1,5 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- The one directory the log report is handed out from; see ReportScreen. -->
+<!-- The directories handed out through the provider: the log report, see
+     ReportScreen, and the downloaded update, see startInstall. -->
 <paths>
     <cache-path name="report" path="report/" />
+    <cache-path name="update" path="update/" />
 </paths>

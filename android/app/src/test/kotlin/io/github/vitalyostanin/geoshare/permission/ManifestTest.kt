@@ -91,6 +91,9 @@ class ManifestTest {
                 // The screen comes on while the siren sounds.
                 "android.permission.WAKE_LOCK",
                 "android.permission.REQUEST_IGNORE_BATTERY_OPTIMIZATIONS",
+                // An update downloaded from the release is handed to the
+                // system installer.
+                "android.permission.REQUEST_INSTALL_PACKAGES",
             )
 
         val WANTED_QUERIES =
