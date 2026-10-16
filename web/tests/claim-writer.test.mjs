@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
+import { setImmediate as nextTurn } from 'node:timers/promises';
 
 import { claimWriter } from '../public/lib/claim-writer.js';
 
@@ -103,4 +104,67 @@ test('a withdrawal that fails is told, not thrown', async () => {
     await writer.withdraw();
 
     assert.deepEqual(failures, ['denied']);
+});
+
+test('a push after a withdrawal makes a new write though the old one is unanswered', async () => {
+    const time = clock();
+    const answers = [];
+    let writes = 0;
+    let removals = 0;
+    const writer = claimWriter(
+        () => {
+            writes++;
+
+            return new Promise((resolve) => answers.push(resolve));
+        },
+        async () => {
+            removals++;
+        },
+        () => {},
+        REFRESH,
+        time.now,
+    );
+
+    writer.push();
+    await writer.withdraw();
+    const second = writer.push();
+
+    answers[0]();
+    await nextTurn();
+    answers[1]();
+    await second;
+
+    assert.equal(writes, 2);
+    assert.equal(removals, 1);
+
+    // The label is written, so nothing is due before the refresh.
+    time.pass(MINUTE);
+    writer.pushWhenDue();
+    assert.equal(writes, 2);
+});
+
+test('a push waiting on an old write is dropped when another withdrawal comes', async () => {
+    const answers = [];
+    let writes = 0;
+    const writer = claimWriter(
+        () => {
+            writes++;
+
+            return new Promise((resolve) => answers.push(resolve));
+        },
+        async () => {},
+        () => {},
+        REFRESH,
+        clock().now,
+    );
+
+    writer.push();
+    await writer.withdraw();
+    writer.push();
+    await writer.withdraw();
+
+    answers[0]();
+    await nextTurn();
+
+    assert.equal(writes, 1);
 });
