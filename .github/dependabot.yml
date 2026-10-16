@@ -23,12 +23,6 @@ updates:
       gradle:
         patterns:
           - "*"
-    # Firestore 27 from firebase-bom 35 declares junit as a runtime
-    # dependency, which puts an EPL-1.0 library into the APK
-    # (firebase/firebase-android-sdk#8696). Lift once that is fixed.
-    ignore:
-      - dependency-name: "com.google.firebase:firebase-bom"
-        update-types: ["version-update:semver-major"]
 
   - package-ecosystem: "npm"
     directories:
