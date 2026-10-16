@@ -22,6 +22,16 @@ and the versions follow [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Fixed
+
+- Times of day follow the system's 24-hour setting, also where it differs
+  from the language: American English on a 24-hour clock shows "20:33", not
+  "8:33 PM".
+- The screens before a device is connected follow the chosen theme; in the
+  dark one the status bar's icons no longer sit white on a light ground.
+- The connection screen no longer says that the project owner sees a
+  history of places: none is kept.
+
 ## [0.1.1] - 2026-10-16
 
 The first release built in the open: its package carries attestations of
