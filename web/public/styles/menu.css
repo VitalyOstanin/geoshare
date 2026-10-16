@@ -127,7 +127,7 @@
 
 .card-close:hover,
 .close-cross:hover {
-    background: rgba(128, 128, 128, 0.2);
+    background: var(--hover);
 }
 
 /* The zoom buttons: white by the library's own stylesheet, and placed in the

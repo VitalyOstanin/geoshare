@@ -50,6 +50,15 @@
     --radius-pill: 999px;
     --shadow-low: 0 1px 4px rgba(0, 0, 0, 0.3);
     --shadow-high: 0 4px 16px rgba(0, 0, 0, 0.3);
+    /* Colours that read the same in both themes, so the dark theme does not
+       override them: the dimming behind a dialog, the wash under a pointer
+       over a close cross, the white edge that keeps a pin visible over any
+       map, and the dark toast with its white text. */
+    --scrim: rgba(0, 0, 0, 0.45);
+    --hover: rgba(128, 128, 128, 0.2);
+    --pin-edge: #ffffff;
+    --toast-surface: rgba(32, 32, 32, 0.88);
+    --on-toast: #ffffff;
 
     /* The same surfaces at night, named once and switched to in the two
        places below. A media query and an attribute cannot be asked for in one

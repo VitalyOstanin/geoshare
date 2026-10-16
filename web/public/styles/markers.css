@@ -62,7 +62,7 @@
     background: var(--pin, #1e88e5);
     /* The white edge is what keeps the pin visible over a dark road or a
        green park. */
-    box-shadow: 0 0 0 2px #ffffff, var(--shadow-low);
+    box-shadow: 0 0 0 2px var(--pin-edge), var(--shadow-low);
 }
 
 /* The point reaches eight pixels up into the head, so that the two read as
@@ -88,7 +88,7 @@
     background-color: #ffffff;
     background-size: cover;
     background-position: center;
-    box-shadow: 0 0 0 2px #ffffff;
+    box-shadow: 0 0 0 2px var(--pin-edge);
     display: flex;
     align-items: center;
     justify-content: center;

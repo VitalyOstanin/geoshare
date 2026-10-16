@@ -184,7 +184,7 @@
 }
 
 .mode-help::backdrop {
-    background: rgba(0, 0, 0, 0.45);
+    background: var(--scrim, rgba(0, 0, 0, 0.45));
 }
 
 /* The cross sits in the corner the title would otherwise run into. */

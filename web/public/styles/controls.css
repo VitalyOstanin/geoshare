@@ -133,8 +133,8 @@
     margin: 0;
     padding: 0.4rem 0.6rem;
     border-radius: var(--radius-small);
-    background: rgba(32, 32, 32, 0.88);
-    color: #ffffff;
+    background: var(--toast-surface);
+    color: var(--on-toast);
     font-size: var(--text-body);
 }
 

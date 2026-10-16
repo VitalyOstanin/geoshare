@@ -41,7 +41,7 @@
 /* A red ring around the head, outside its white edge. */
 .member-marker.sought .pin-body {
     box-shadow:
-        0 0 0 2px #ffffff,
+        0 0 0 2px var(--pin-edge),
         0 0 0 5px var(--alarm),
         var(--shadow-low);
 }
