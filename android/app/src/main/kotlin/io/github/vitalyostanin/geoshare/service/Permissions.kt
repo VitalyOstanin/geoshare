@@ -3,9 +3,8 @@ package io.github.vitalyostanin.geoshare.service
 import com.google.firebase.Timestamp
 import com.google.firebase.firestore.DocumentSnapshot
 import io.github.vitalyostanin.geoshare.project.GroupConnection
-import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.callbackFlow
+import kotlinx.coroutines.flow.map
 import java.time.Instant
 
 /**
@@ -17,25 +16,14 @@ import java.time.Instant
  * withdrawing one takes effect without any device having to write again.
  */
 fun ownSharedWith(memberId: String, connection: GroupConnection): Flow<Map<String, Instant>> =
-    callbackFlow {
-        val subscription =
-            grantsOf(connection)
-                .document(memberId)
-                .addSnapshotListener { snapshot, error ->
-                    if (error != null) {
-                        close(error)
-
-                        return@addSnapshotListener
-                    }
-
-                    trySend(snapshot?.let(::permissionsOf).orEmpty())
-                }
-
-        awaitClose { subscription.remove() }
+    grantsOf(connection)
+        .document(memberId)
+        .liveSnapshots()
+        .map(::permissionsOf)
         // The permissions shown are the ones this device may still read; refused,
         // it knows of none, and the screen should not offer to withdraw what it
         // cannot see.
-    }.comingBack("permissions", forgetting = { emptyMap() })
+        .comingBack("permissions", forgetting = { emptyMap() })
 
 /**
  * The permissions a grant carries: a reader, and the moment their permission

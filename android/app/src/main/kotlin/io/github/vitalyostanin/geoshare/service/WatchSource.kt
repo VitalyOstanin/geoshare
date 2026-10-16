@@ -3,9 +3,8 @@ package io.github.vitalyostanin.geoshare.service
 import io.github.vitalyostanin.geoshare.collection.WATCH_AHEAD
 import io.github.vitalyostanin.geoshare.collection.Watcher
 import io.github.vitalyostanin.geoshare.project.GroupConnection
-import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.callbackFlow
+import kotlinx.coroutines.flow.map
 import java.time.Instant
 
 /**
@@ -23,51 +22,35 @@ fun watchers(
     /** The document this device writes its own marker into, which is the one to ignore. */
     ownWatchId: String,
     connection: GroupConnection,
-): Flow<List<Watcher>> = callbackFlow {
-    val subscription =
-        watchOf(connection)
-            .addSnapshotListener { snapshot, error ->
-                if (error != null) {
-                    close(error)
+): Flow<List<Watcher>> = watchOf(connection)
+    .liveSnapshots()
+    .map { snapshot ->
+        snapshot.documents
+            // Our own marker says nothing about who is looking at us; answering
+            // it would keep the device awake for its own map. Only this device's
+            // marker is dropped: the member's other device looking at the map is
+            // somebody to be fresh for, and somebody the screen names.
+            .filter { it.id != ownWatchId }
+            .mapNotNull { document ->
+                val since = document.getTimestamp(WatchField.SINCE)
+                val member = document.getString(WatchField.MEMBER_ID)
 
-                    return@addSnapshotListener
+                if (since == null || member == null) {
+                    return@mapNotNull null
                 }
 
-                val looking =
-                    snapshot
-                        ?.documents
-                        .orEmpty()
-                        // Our own marker says nothing about who is looking
-                        // at us; answering it would keep the device awake
-                        // for its own map. Only this device's marker is
-                        // dropped: the member's other device looking at the
-                        // map is somebody to be fresh for, and somebody the
-                        // screen names.
-                        .filter { it.id != ownWatchId }
-                        .mapNotNull { document ->
-                            val since = document.getTimestamp(WatchField.SINCE)
-                            val member = document.getString(WatchField.MEMBER_ID)
-
-                            if (since == null || member == null) {
-                                return@mapNotNull null
-                            }
-
-                            Watcher(
-                                memberId = member,
-                                // The claim says when it was made; how long it
-                                // is good for is this device's to decide, from
-                                // a clock both sides share.
-                                until =
-                                Instant
-                                    .ofEpochSecond(since.seconds, since.nanoseconds.toLong())
-                                    .plus(WATCH_AHEAD),
-                            )
-                        }
-
-                trySend(looking)
+                Watcher(
+                    memberId = member,
+                    // The claim says when it was made; how long it
+                    // is good for is this device's to decide, from
+                    // a clock both sides share.
+                    until =
+                    Instant
+                        .ofEpochSecond(since.seconds, since.nanoseconds.toLong())
+                        .plus(WATCH_AHEAD),
+                )
             }
-
-    awaitClose { subscription.remove() }
+    }
     // Nobody is looking as far as a refused device can tell, and the strip
     // under the map should say so rather than name the watchers it last saw.
-}.comingBack("watch", forgetting = { emptyList() })
+    .comingBack("watch", forgetting = { emptyList() })

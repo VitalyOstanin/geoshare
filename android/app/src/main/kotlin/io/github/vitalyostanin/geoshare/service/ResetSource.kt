@@ -6,9 +6,8 @@ import io.github.vitalyostanin.geoshare.log.AppLog
 import io.github.vitalyostanin.geoshare.map.Reset
 import io.github.vitalyostanin.geoshare.map.resetOf
 import io.github.vitalyostanin.geoshare.project.GroupConnection
-import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.callbackFlow
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.tasks.await
 
 private const val TAG = "geoshare.resets"
@@ -27,20 +26,10 @@ private fun resetFrom(document: DocumentSnapshot): Reset? = resetOf(
  * The request standing for one device, or null while nobody has asked: followed
  * by the device itself, to forget, and by the asking screen, to see it done.
  */
-fun phoneReset(phoneId: String, connection: GroupConnection): Flow<Reset?> = callbackFlow {
-    val subscription =
-        resetsOf(connection).document(phoneId).addSnapshotListener { snapshot, error ->
-            if (error != null) {
-                close(error)
-
-                return@addSnapshotListener
-            }
-
-            trySend(snapshot?.takeIf { it.exists() }?.let(::resetFrom))
-        }
-
-    awaitClose { subscription.remove() }
-}.comingBack("reset", forgetting = { null })
+fun phoneReset(phoneId: String, connection: GroupConnection): Flow<Reset?> =
+    resetsOf(connection).document(phoneId).liveSnapshots().map { snapshot ->
+        snapshot.takeIf { it.exists() }?.let(::resetFrom)
+    }.comingBack("reset", forgetting = { null })
 
 /** Asks one device to forget its place; written whole, as a siren's call is. */
 suspend fun askReset(phoneId: String, askerId: String, connection: GroupConnection) {

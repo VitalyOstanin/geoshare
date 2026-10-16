@@ -6,9 +6,8 @@ import io.github.vitalyostanin.geoshare.log.AppLog
 import io.github.vitalyostanin.geoshare.map.Siren
 import io.github.vitalyostanin.geoshare.map.sirenOf
 import io.github.vitalyostanin.geoshare.project.GroupConnection
-import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.callbackFlow
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.tasks.await
 import java.time.Instant
 
@@ -40,20 +39,10 @@ private val ESTIMATE = DocumentSnapshot.ServerTimestampBehavior.ESTIMATE
  * is being called and to mark when it heard, and the caller's screen, to see
  * whether the device heard or gave it up as switched off.
  */
-fun phoneSiren(phoneId: String, connection: GroupConnection): Flow<Siren?> = callbackFlow {
-    val subscription =
-        sirensOf(connection).document(phoneId).addSnapshotListener { snapshot, error ->
-            if (error != null) {
-                close(error)
-
-                return@addSnapshotListener
-            }
-
-            trySend(snapshot?.takeIf { it.exists() }?.let(::sirenFrom))
-        }
-
-    awaitClose { subscription.remove() }
-}.comingBack("siren", forgetting = { null })
+fun phoneSiren(phoneId: String, connection: GroupConnection): Flow<Siren?> =
+    sirensOf(connection).document(phoneId).liveSnapshots().map { snapshot ->
+        snapshot.takeIf { it.exists() }?.let(::sirenFrom)
+    }.comingBack("siren", forgetting = { null })
 
 /**
  * Calls a siren on one device.

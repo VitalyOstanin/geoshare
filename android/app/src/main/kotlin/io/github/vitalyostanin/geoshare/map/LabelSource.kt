@@ -9,12 +9,12 @@ import io.github.vitalyostanin.geoshare.service.LabelField
 import io.github.vitalyostanin.geoshare.service.PhoneField
 import io.github.vitalyostanin.geoshare.service.comingBack
 import io.github.vitalyostanin.geoshare.service.labelsOf
+import io.github.vitalyostanin.geoshare.service.liveSnapshots
 import io.github.vitalyostanin.geoshare.service.phonesOf
 import io.github.vitalyostanin.geoshare.service.readString
 import kotlinx.coroutines.CancellationException
-import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.callbackFlow
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.onStart
 import kotlinx.coroutines.tasks.await
@@ -75,25 +75,13 @@ class LabelCache(context: Context) {
  * the member's other one, or on the page.
  */
 fun ownLabels(memberId: String, cache: LabelCache, connection: GroupConnection): Flow<Labels> =
-    callbackFlow {
-        val subscription =
-            labelsOf(connection)
-                .document(memberId)
-                .addSnapshotListener { snapshot, error ->
-                    if (error != null) {
-                        close(error)
-
-                        return@addSnapshotListener
-                    }
-
-                    val phones = snapshot?.get(LabelField.PHONES)
-                    val members = snapshot?.get(LabelField.MEMBERS)
-
-                    trySend(labelsFrom(phones, members))
-                }
-
-        awaitClose { subscription.remove() }
-    }.onEach { cache.write(memberId, it) }
+    labelsOf(connection)
+        .document(memberId)
+        .liveSnapshots()
+        .map { snapshot ->
+            labelsFrom(snapshot.get(LabelField.PHONES), snapshot.get(LabelField.MEMBERS))
+        }
+        .onEach { cache.write(memberId, it) }
         // Refused outright, the device is out of the group, and the names it gave
         // people there have no one left to name.
         .comingBack("labels", forgetting = { Labels() })

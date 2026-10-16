@@ -5,9 +5,8 @@ import io.github.vitalyostanin.geoshare.collection.FalsePlace
 import io.github.vitalyostanin.geoshare.collection.falsePlaceStands
 import io.github.vitalyostanin.geoshare.log.AppLog
 import io.github.vitalyostanin.geoshare.project.GroupConnection
-import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.callbackFlow
+import kotlinx.coroutines.flow.map
 
 private const val TAG = "geoshare.falseplaces"
 
@@ -25,27 +24,17 @@ private const val TAG = "geoshare.falseplaces"
  * somebody typed wrong in the console must not stop the rest of the list from
  * reaching the devices.
  */
-fun namedFalsePlaces(connection: GroupConnection): Flow<List<FalsePlace>> = callbackFlow {
-    val subscription =
-        falsePlacesOf(connection).addSnapshotListener { snapshot, error ->
-            if (error != null) {
-                close(error)
+fun namedFalsePlaces(connection: GroupConnection): Flow<List<FalsePlace>> =
+    falsePlacesOf(connection).liveSnapshots().map { snapshot ->
+        val places =
+            snapshot.documents
+                .mapNotNull { placeOf(it.id, it.data.orEmpty()) }
+                .take(FALSE_PLACES_KEPT)
 
-                return@addSnapshotListener
-            }
+        AppLog.i(TAG, "the group names ${places.size} false places")
 
-            val places =
-                snapshot?.documents.orEmpty()
-                    .mapNotNull { placeOf(it.id, it.data.orEmpty()) }
-                    .take(FALSE_PLACES_KEPT)
-
-            AppLog.i(TAG, "the group names ${places.size} false places")
-
-            trySend(places)
-        }
-
-    awaitClose { subscription.remove() }
-}.comingBack("false places")
+        places
+    }.comingBack("false places")
 
 /**
  * A document read as a place, or nothing where it is not one. Read from its

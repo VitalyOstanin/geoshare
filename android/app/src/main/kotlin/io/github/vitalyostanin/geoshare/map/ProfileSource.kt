@@ -8,6 +8,7 @@ import io.github.vitalyostanin.geoshare.service.GrantField
 import io.github.vitalyostanin.geoshare.service.ProfileField
 import io.github.vitalyostanin.geoshare.service.comingBack
 import io.github.vitalyostanin.geoshare.service.grantsOf
+import io.github.vitalyostanin.geoshare.service.liveSnapshots
 import io.github.vitalyostanin.geoshare.service.membersOf
 import io.github.vitalyostanin.geoshare.service.permissionsOf
 import io.github.vitalyostanin.geoshare.service.phonesOf
@@ -15,6 +16,7 @@ import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.callbackFlow
 import kotlinx.coroutines.flow.emptyFlow
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 
 private const val TAG = "geoshare.profiles"
@@ -58,29 +60,13 @@ fun ownProfileGone(connection: GroupConnection, memberId: String): Flow<Boolean>
  * without anybody reopening the screen. It costs one read per profile and then
  * nothing, because names change far more rarely than positions do.
  */
-fun memberProfiles(connection: GroupConnection): Flow<Map<String, MemberProfile>> = callbackFlow {
-    val subscription =
-        membersOf(connection)
-            .addSnapshotListener { snapshot, error ->
-                if (error != null) {
-                    close(error)
-
-                    return@addSnapshotListener
-                }
-
-                trySend(
-                    snapshot
-                        ?.documents
-                        .orEmpty()
-                        .mapNotNull(::profileOf)
-                        .associateBy { it.memberId },
-                )
-            }
-
-    awaitClose { subscription.remove() }
-    // Nobody to name once the collection is closed to this device: the names it
-    // holds are the members of a group it has been taken out of.
-}.comingBack("profiles", forgetting = { emptyMap() })
+fun memberProfiles(connection: GroupConnection): Flow<Map<String, MemberProfile>> =
+    membersOf(connection)
+        .liveSnapshots()
+        .map { snapshot -> snapshot.documents.mapNotNull(::profileOf).associateBy { it.memberId } }
+        // Nobody to name once the collection is closed to this device: the names it
+        // holds are the members of a group it has been taken out of.
+        .comingBack("profiles", forgetting = { emptyMap() })
 
 /**
  * A document turns into a profile, or into nothing.

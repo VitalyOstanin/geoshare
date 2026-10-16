@@ -26,10 +26,8 @@ import io.github.vitalyostanin.geoshare.project.PendingInvitation
 import io.github.vitalyostanin.geoshare.project.PendingInvitationStore
 import io.github.vitalyostanin.geoshare.project.SeenOnRoster
 import kotlinx.coroutines.CancellationException
-import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.callbackFlow
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.filterNot
 import kotlinx.coroutines.flow.map
@@ -77,30 +75,21 @@ fun groupRoster(connection: GroupConnection): Flow<Roster?> =
  * The roster itself turns a refusal into no group; whether this device was
  * taken off one needs the refusal told apart from a dropped connection.
  */
-fun rosterReads(connection: GroupConnection): Flow<RosterRead> = callbackFlow<RosterRead> {
-    val subscription =
-        connection.groupDocument.addSnapshotListener { snapshot, error ->
-            if (error != null) {
-                close(error)
+fun rosterReads(connection: GroupConnection): Flow<RosterRead> = connection.groupDocument
+    .liveSnapshots()
+    .map<DocumentSnapshot, RosterRead> { snapshot ->
+        RosterRead.Read(snapshot.takeIf { it.exists() }?.let(::rosterOf))
+    }.retryWhen { cause, attempt ->
+        val waiting = spread(listenAgainAfter(attempt))
 
-                return@addSnapshotListener
-            }
+        val failed = "could not read the roster of ${connection.projectId}"
 
-            trySend(RosterRead.Read(snapshot?.takeIf { it.exists() }?.let(::rosterOf)))
-        }
+        logFailure(TAG, "$failed; asking again in ${waiting.seconds} s", cause)
+        emit(if (refusedOutright(cause)) RosterRead.Refused else RosterRead.Unreachable)
+        delay(waiting.toMillis())
 
-    awaitClose { subscription.remove() }
-}.retryWhen { cause, attempt ->
-    val waiting = spread(listenAgainAfter(attempt))
-
-    val failed = "could not read the roster of ${connection.projectId}"
-
-    logFailure(TAG, "$failed; asking again in ${waiting.seconds} s", cause)
-    emit(if (refusedOutright(cause)) RosterRead.Refused else RosterRead.Unreachable)
-    delay(waiting.toMillis())
-
-    true
-}
+        true
+    }
 
 /**
  * Whether this device, signed in as [uid], is still in [connection]'s group,
@@ -258,22 +247,13 @@ data class MadeInvitation(
  * the administrator read it back yet: the screen then says nothing rather
  * than guess.
  */
-fun invitationStanding(code: String, connection: GroupConnection): Flow<Boolean?> = callbackFlow {
-    val subscription =
-        invitationsOf(connection).document(code).addSnapshotListener { snapshot, error ->
-            if (error != null) {
-                close(error)
-
-                return@addSnapshotListener
-            }
-
-            if (snapshot != null && !snapshot.metadata.isFromCache) {
-                trySend(snapshot.exists())
-            }
-        }
-
-    awaitClose { subscription.remove() }
-}.comingBack("invitation", forgetting = { null })
+fun invitationStanding(code: String, connection: GroupConnection): Flow<Boolean?> =
+    invitationsOf(connection)
+        .document(code)
+        .liveSnapshots()
+        .filterNot { it.metadata.isFromCache }
+        .map<DocumentSnapshot, Boolean?> { it.exists() }
+        .comingBack("invitation", forgetting = { null })
 
 /**
  * Makes an invitation, addressed to one account, and returns what a link to it

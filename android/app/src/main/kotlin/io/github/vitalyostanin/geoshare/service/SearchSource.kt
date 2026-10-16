@@ -13,9 +13,8 @@ import io.github.vitalyostanin.geoshare.map.searchOf
 import io.github.vitalyostanin.geoshare.project.GroupConnection
 import io.github.vitalyostanin.geoshare.trimText
 import kotlinx.coroutines.CancellationException
-import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.callbackFlow
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.tasks.await
 
 private const val TAG = "geoshare.searches"
@@ -32,26 +31,10 @@ private const val PHONE_NAME_LIMIT = 100
  * nobody's place. A refusal is read as no searches, which is what the device
  * showed before any of this existed.
  */
-fun groupSearches(connection: GroupConnection): Flow<Map<String, Search>> = callbackFlow {
-    val subscription =
-        searchesOf(connection).addSnapshotListener { snapshot, error ->
-            if (error != null) {
-                close(error)
-
-                return@addSnapshotListener
-            }
-
-            trySend(
-                snapshot
-                    ?.documents
-                    .orEmpty()
-                    .mapNotNull(::searchFrom)
-                    .associateBy { it.phoneId },
-            )
-        }
-
-    awaitClose { subscription.remove() }
-}.comingBack("searches", forgetting = { emptyMap() })
+fun groupSearches(connection: GroupConnection): Flow<Map<String, Search>> =
+    searchesOf(connection).liveSnapshots().map { snapshot ->
+        snapshot.documents.mapNotNull(::searchFrom).associateBy { it.phoneId }
+    }.comingBack("searches", forgetting = { emptyMap() })
 
 /**
  * A document turns into a search, or into nothing.
@@ -84,20 +67,10 @@ private val ESTIMATE = DocumentSnapshot.ServerTimestampBehavior.ESTIMATE
  * for, not who else in the group is, and one document costs it far less than
  * the collection every screen already follows.
  */
-fun ownSearch(phoneId: String, connection: GroupConnection): Flow<Search?> = callbackFlow {
-    val subscription =
-        searchesOf(connection).document(phoneId).addSnapshotListener { snapshot, error ->
-            if (error != null) {
-                close(error)
-
-                return@addSnapshotListener
-            }
-
-            trySend(snapshot?.takeIf { it.exists() }?.let(::searchFrom))
-        }
-
-    awaitClose { subscription.remove() }
-}.comingBack("own search", forgetting = { null })
+fun ownSearch(phoneId: String, connection: GroupConnection): Flow<Search?> =
+    searchesOf(connection).document(phoneId).liveSnapshots().map { snapshot ->
+        snapshot.takeIf { it.exists() }?.let(::searchFrom)
+    }.comingBack("own search", forgetting = { null })
 
 /** What is kept of a device's name at the moment a search is opened or renewed: nothing for none. */
 internal fun phoneNameField(phoneName: String?): Map<String, Any> = phoneName
