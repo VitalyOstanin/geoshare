@@ -130,12 +130,13 @@ jobs:
         # What release.yml publishes for each dated version of CHANGELOG.md:
         # the link definitions at the end of the file are not part of it.
         run: |
-          for version in $(sed -n 's/^## \[\([0-9][^]]*\)\] - .*/\1/p' CHANGELOG.md); do
-            if tools/release-notes.sh "${version}" | grep -E '^\[[^]]+\]: '; then
-              echo "::error::the notes of ${version} carry the link definitions above"
-              exit 1
-            fi
-          done
+          sed -n 's/^## \[\([0-9][^]]*\)\] - .*/\1/p' CHANGELOG.md |
+            while read -r version; do
+              if tools/release-notes.sh "${version}" | grep -E '^\[[^]]+\]: '; then
+                echo "::error::the notes of ${version} carry the link definitions above"
+                exit 1
+              fi
+            done
 
       - name: Check the shell scripts
         run: |
