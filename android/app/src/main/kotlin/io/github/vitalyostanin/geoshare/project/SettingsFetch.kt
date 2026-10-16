@@ -1,5 +1,6 @@
 package io.github.vitalyostanin.geoshare.project
 
+import io.github.vitalyostanin.geoshare.log.AppLog
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.io.ByteArrayOutputStream
@@ -20,22 +21,30 @@ private const val MAX_BODY_BYTES = 64 * 1024
 
 private const val SUCCESS_RANGE_START = 200
 private const val SUCCESS_RANGE_END_EXCLUSIVE = 300
+private const val TOO_MANY_REQUESTS = 429
+private const val SERVER_ERROR_START = 500
+private const val SERVER_ERROR_END_EXCLUSIVE = 600
+
+private const val TAG = "geoshare.settings-fetch"
 
 /** What downloading a group's settings from the site a [ConnectLink] names produced. */
 sealed interface SettingsFetch {
     data class Fetched(val settings: ProjectSettings) : SettingsFetch
 
-    /** No connection, DNS failure, a timeout — worth trying again once the network is back. */
+    /**
+     * No connection, DNS failure, a timeout, or a host that is overloaded
+     * (429, 5xx) — worth trying again once the network or the site is back.
+     */
     data object Offline : SettingsFetch
 
     /**
      * The site answered, but not with this project's settings: a non-2xx
-     * status, a body that is not JSON, a document [ProjectSettings.parse]
-     * refuses, or one naming a site other than [ConnectLink.site] — a site
-     * must never hand out another project's settings, whatever put them
-     * there. Kept apart from [Offline] even though today's screen shows both
-     * the same way, since a log line and later wording both want to know
-     * which one happened.
+     * status other than 429 and 5xx, a body that is not JSON, a document
+     * [ProjectSettings.parse] refuses, or one naming a site other than
+     * [ConnectLink.site] — a site must never hand out another project's
+     * settings, whatever put them there. Kept apart from [Offline] even
+     * though today's screen shows both the same way, since a log line and
+     * later wording both want to know which one happened.
      */
     data object NotAProject : SettingsFetch
 }
@@ -63,11 +72,24 @@ internal suspend fun fetchSettings(link: ConnectLink, transport: FetchTransport)
         val response = try {
             transport(link.settingsUrl)
         } catch (offline: IOException) {
+            AppLog.w(
+                TAG,
+                "the settings could not be downloaded: " +
+                    "${offline.javaClass.simpleName}: ${offline.message}",
+            )
+
             return@withContext SettingsFetch.Offline
         }
 
         if (response.status !in SUCCESS_RANGE_START until SUCCESS_RANGE_END_EXCLUSIVE) {
-            return@withContext SettingsFetch.NotAProject
+            AppLog.w(TAG, "the site answered ${response.status}, not the settings")
+
+            // An overloaded host says nothing about whether the project exists.
+            return@withContext if (response.status.isTransient()) {
+                SettingsFetch.Offline
+            } else {
+                SettingsFetch.NotAProject
+            }
         }
 
         val settings = ProjectSettings.parse(response.body)
@@ -79,6 +101,10 @@ internal suspend fun fetchSettings(link: ConnectLink, transport: FetchTransport)
 
         SettingsFetch.Fetched(settings)
     }
+
+/** 429 and 5xx are the host's state, not a verdict on the project; asking again may succeed. */
+private fun Int.isTransient(): Boolean =
+    this == TOO_MANY_REQUESTS || this in SERVER_ERROR_START until SERVER_ERROR_END_EXCLUSIVE
 
 /**
  * [FetchTransport]'s default: [url] is always `https://…/geoshare.json`

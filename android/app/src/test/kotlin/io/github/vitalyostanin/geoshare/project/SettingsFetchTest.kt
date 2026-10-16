@@ -41,6 +41,20 @@ class SettingsFetchTest {
     }
 
     @Test
+    fun `a 503 is an overloaded host, offline rather than the wrong site`() {
+        val result = fetch { RawResponse(status = 503, body = "") }
+
+        assertEquals(SettingsFetch.Offline, result)
+    }
+
+    @Test
+    fun `a 429 is offline too, being worth asking again`() {
+        val result = fetch { RawResponse(status = 429, body = "") }
+
+        assertEquals(SettingsFetch.Offline, result)
+    }
+
+    @Test
     fun `a body that is not json is refused the same way`() {
         val result = fetch { RawResponse(status = 200, body = "<html>not geoshare</html>") }
 
