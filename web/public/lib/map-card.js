@@ -137,6 +137,7 @@ function cardCloseButton(view) {
     close.type = 'button';
     close.className = 'card-close';
     close.setAttribute('aria-label', WORDS.close);
+    close.title = WORDS.close;
     close.addEventListener('click', () => {
         if (closeCards(view)) {
             view.onCardChange();

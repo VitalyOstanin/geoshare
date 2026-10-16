@@ -115,6 +115,7 @@ function closeCross(dismiss, document_) {
     close.type = 'button';
     close.textContent = '×';
     close.setAttribute('aria-label', WORDS.close);
+    close.title = WORDS.close;
     close.addEventListener('click', dismiss);
 
     return close;
