@@ -48,6 +48,7 @@ import io.github.vitalyostanin.geoshare.membership.Roster
 import io.github.vitalyostanin.geoshare.membership.Standing
 import io.github.vitalyostanin.geoshare.membership.howToLeave
 import io.github.vitalyostanin.geoshare.membership.standingIn
+import io.github.vitalyostanin.geoshare.update.UpdateBoard
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.launch
@@ -156,6 +157,7 @@ fun MapScreen(
     // to keep the top pin below it.
     var topCover by remember { mutableStateOf(0) }
     val panels = rememberOpenPanels()
+    UpdateEntry(panels)
     // Held by id rather than by value: the position keeps arriving, and a card
     // showing the one from when it was opened would quietly go stale.
     val opened = positions.firstOrNull { it.positionId == openedPositionId }
@@ -318,6 +320,7 @@ fun MapScreen(
                 displayName = ownDisplayName,
                 pictureUrl = ownPictureUrl,
                 onClick = { panels.settings = true },
+                updateAvailable = UpdateBoard.found != null,
                 modifier =
                 Modifier
                     .align(Alignment.TopEnd)

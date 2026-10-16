@@ -634,4 +634,26 @@
     <string name="downloads_channel_description">Asks before downloading while roaming</string>
     <string name="downloads_go">Download</string>
     <string name="downloads_not_now">Not now</string>
+
+    <!-- The notification that a newer release can be installed. -->
+    <string name="map_open_settings_update">Settings, a new version is available</string>
+    <string name="update_channel_name">Updates</string>
+    <string name="update_channel_description">Shown when a new version of the application is available.</string>
+    <string name="update_notification_title">Version %1$s is available</string>
+    <string name="update_notification_text">Tap to update</string>
+    <string name="update_auto">Check for updates automatically</string>
+    <string name="update_auto_hint">Once a day, from GitHub</string>
+    <string name="update_check">Check for updates</string>
+    <string name="update_latest">This is the latest version</string>
+    <string name="update_check_failed">Could not check for updates</string>
+    <string name="update_available">Version %1$s is available</string>
+    <string name="update_details">%1$d MB · released %2$s</string>
+    <string name="update_size_only">%1$d MB</string>
+    <string name="update_whats_new">What\'s new</string>
+    <string name="update_install">Update</string>
+    <string name="update_downloading">Downloading version %1$s</string>
+    <string name="update_progress">%1$d of %2$d MB</string>
+    <string name="update_cancel">Cancel</string>
+    <string name="update_damaged">The update file is damaged; download it again</string>
+    <string name="update_failed">Could not download the update</string>
 </resources>

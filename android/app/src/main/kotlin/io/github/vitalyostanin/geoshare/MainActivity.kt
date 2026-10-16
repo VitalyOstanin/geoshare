@@ -89,6 +89,10 @@ import io.github.vitalyostanin.geoshare.service.languageChosen
 import io.github.vitalyostanin.geoshare.service.languageTag
 import io.github.vitalyostanin.geoshare.service.refusalToStart
 import io.github.vitalyostanin.geoshare.service.startConditions
+import io.github.vitalyostanin.geoshare.update.EXTRA_OPEN_UPDATE
+import io.github.vitalyostanin.geoshare.update.UpdateBoard
+import io.github.vitalyostanin.geoshare.update.UpdateStore
+import io.github.vitalyostanin.geoshare.update.checkForUpdateIfDue
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.async
 import kotlinx.coroutines.flow.collect
@@ -195,6 +199,17 @@ class MainActivity : AppCompatActivity() {
         // says. Saying it here is what makes the padding below a decision
         // instead of a repair.
         enableEdgeToEdge()
+
+        // Once a day at most, however often the screen is opened; a failed
+        // check is not an event for the member.
+        UpdateBoard.refresh(UpdateStore(this), BuildConfig.VERSION_NAME)
+        lifecycleScope.launch { checkForUpdateIfDue(this@MainActivity) }
+
+        // A recreated activity still carries the intent it was opened with,
+        // and the notification has been acted on already.
+        if (savedInstanceState == null && intent.getBooleanExtra(EXTRA_OPEN_UPDATE, false)) {
+            UpdateBoard.openRequested = true
+        }
 
         listenForLinks(savedInstanceState)
 
@@ -805,6 +820,9 @@ class MainActivity : AppCompatActivity() {
     override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)
         setIntent(intent)
+        if (intent.getBooleanExtra(EXTRA_OPEN_UPDATE, false)) {
+            UpdateBoard.openRequested = true
+        }
         connectFlow.linkArrived(intent.dataString)
     }
 

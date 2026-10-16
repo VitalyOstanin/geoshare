@@ -561,4 +561,26 @@
     <string name="downloads_channel_description">Спрашивает перед загрузкой в роуминге</string>
     <string name="downloads_go">Скачать</string>
     <string name="downloads_not_now">Не сейчас</string>
+
+    <!-- Уведомление о том, что можно установить новую версию. -->
+    <string name="map_open_settings_update">Настройки, доступна новая версия</string>
+    <string name="update_channel_name">Обновления</string>
+    <string name="update_channel_description">Показывается, когда доступна новая версия приложения.</string>
+    <string name="update_notification_title">Доступна версия %1$s</string>
+    <string name="update_notification_text">Нажмите, чтобы обновить</string>
+    <string name="update_auto">Проверять обновления автоматически</string>
+    <string name="update_auto_hint">Раз в сутки, на GitHub</string>
+    <string name="update_check">Проверить обновления</string>
+    <string name="update_latest">Установлена последняя версия</string>
+    <string name="update_check_failed">Не удалось проверить обновления</string>
+    <string name="update_available">Доступна версия %1$s</string>
+    <string name="update_details">%1$d МБ · вышла %2$s</string>
+    <string name="update_size_only">%1$d МБ</string>
+    <string name="update_whats_new">Что нового</string>
+    <string name="update_install">Обновить</string>
+    <string name="update_downloading">Загрузка версии %1$s</string>
+    <string name="update_progress">%1$d из %2$d МБ</string>
+    <string name="update_cancel">Отмена</string>
+    <string name="update_damaged">Файл обновления повреждён, скачайте заново</string>
+    <string name="update_failed">Не удалось скачать обновление</string>
 </resources>

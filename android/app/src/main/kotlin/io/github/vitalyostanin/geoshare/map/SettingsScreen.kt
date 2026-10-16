@@ -60,7 +60,7 @@ import java.time.Instant
  * most taps land, and a row where only the switch answers ignores them.
  */
 @Composable
-private fun SwitchRow(
+internal fun SwitchRow(
     checked: Boolean,
     onCheckedChange: (Boolean) -> Unit,
     verticalPadding: Dp = 4.dp,
@@ -295,6 +295,10 @@ fun SettingsScreen(
             ) {
                 Text(text = stringResource(R.string.licences_open))
             }
+
+            HorizontalDivider()
+
+            UpdateSection()
 
             Text(
                 text = stringResource(R.string.app_version, BuildConfig.VERSION_NAME),

@@ -12,6 +12,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -29,6 +30,7 @@ import io.github.vitalyostanin.geoshare.collection.Watcher
 import io.github.vitalyostanin.geoshare.collection.watchingMembers
 import io.github.vitalyostanin.geoshare.membership.Leave
 import io.github.vitalyostanin.geoshare.membership.howToLeave
+import io.github.vitalyostanin.geoshare.update.UpdateBoard
 import java.time.Instant
 import kotlin.math.roundToInt
 
@@ -79,6 +81,21 @@ internal fun rememberOpenPanels(): OpenPanels = OpenPanels(
     reportState = rememberSaveable { mutableStateOf(false) },
     membersState = rememberSaveable { mutableStateOf(false) },
 )
+
+/**
+ * Opens the settings when the update notification was tapped
+ * ([UpdateBoard.openRequested]), where the update block is. The request is
+ * cleared once acted on, so that a recreated screen does not open them again.
+ */
+@Composable
+internal fun UpdateEntry(panels: OpenPanels) {
+    LaunchedEffect(UpdateBoard.openRequested) {
+        if (UpdateBoard.openRequested) {
+            panels.settings = true
+            UpdateBoard.openRequested = false
+        }
+    }
+}
 
 /**
  * The back gesture over the settings: whatever is drawn over them closes

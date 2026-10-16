@@ -50,6 +50,7 @@ import io.github.vitalyostanin.geoshare.log.AppLog
 import io.github.vitalyostanin.geoshare.map.logFailure
 import io.github.vitalyostanin.geoshare.map.stands
 import io.github.vitalyostanin.geoshare.project.Connections
+import io.github.vitalyostanin.geoshare.update.checkForUpdateIfDue
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -335,6 +336,7 @@ class SharingService : LifecycleService() {
         lastFix = anchorFrom(trail, Instant.now())
         falsePlaces = falsePlaceStore.read()
 
+        lifecycleScope.launch { checkForUpdatesDaily() }
         lifecycleScope.launch { keepTheFalsePlaces() }
         lifecycleScope.launch { noticeBeingCarried() }
         lifecycleScope.launch { keepWhatCountsAsCircling() }
@@ -911,6 +913,24 @@ class SharingService : LifecycleService() {
     }
 
     /**
+     * Looks for a newer release once a day for as long as the service runs.
+     *
+     * The service is what stays alive for days while the screen is rarely
+     * opened, so the check made at the screen's start would otherwise be the
+     * only one. [checkForUpdateIfDue] decides by the stored time of the last
+     * check, so a restart of the service does not ask GitHub again. It is
+     * looked at every hour rather than every day: a check the screen made an
+     * hour before this loop started would otherwise push the next one almost
+     * two days away.
+     */
+    private suspend fun checkForUpdatesDaily() {
+        while (true) {
+            checkForUpdateIfDue(this)
+            delay(UPDATE_LOOK_INTERVAL.toMillis())
+        }
+    }
+
+    /**
      * Keeps this group's idea of going round in circles up to date.
      *
      * Nothing is kept on disk for it: a device that has not reached the
@@ -1174,6 +1194,9 @@ class SharingService : LifecycleService() {
     companion object {
         /** How long a freshly started service waits for the account to be restored. */
         private val SESSION_WAIT: Duration = Duration.ofMinutes(1)
+
+        /** How often the daily update check looks whether its day is up. */
+        private val UPDATE_LOOK_INTERVAL: Duration = Duration.ofHours(1)
 
         const val ACTION_STOP = "io.github.vitalyostanin.geoshare.STOP"
 
