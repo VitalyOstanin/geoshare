@@ -65,6 +65,11 @@ data class ProjectSettings(
          * accepted — a group's site is written once and rarely touched
          * again, and a device running an older build has no way of being told
          * the document has moved past what it understands.
+         *
+         * Each field must carry its own JSON type: the version a whole number
+         * and the rest strings. A `"1"` for the version or a number for the
+         * project id is a document written by something else, and coercing it
+         * would start Firebase with a value nobody meant.
          */
         fun parse(json: String): ProjectSettings? {
             val document = try {
@@ -73,20 +78,21 @@ data class ProjectSettings(
                 return null
             }
 
-            if (document.optInt(FIELD_VERSION, -1) != VERSION) {
+            if (document.opt(FIELD_VERSION) != VERSION) {
                 return null
             }
 
-            val projectId = document.optString(FIELD_PROJECT_ID)
-            val applicationId = document.optString(FIELD_APPLICATION_ID)
-            val apiKey = document.optString(FIELD_API_KEY)
-            val gcmSenderId = document.optString(FIELD_GCM_SENDER_ID)
-            val site = document.optString(FIELD_SITE)
+            val projectId = document.opt(FIELD_PROJECT_ID) as? String
+            val applicationId = document.opt(FIELD_APPLICATION_ID) as? String
+            val apiKey = document.opt(FIELD_API_KEY) as? String
+            val gcmSenderId = document.opt(FIELD_GCM_SENDER_ID) as? String
+            val site = document.opt(FIELD_SITE) as? String
 
-            if (projectId.isBlank() ||
-                applicationId.isBlank() ||
-                apiKey.isBlank() ||
-                gcmSenderId.isBlank() ||
+            if (projectId.isNullOrBlank() ||
+                applicationId.isNullOrBlank() ||
+                apiKey.isNullOrBlank() ||
+                gcmSenderId.isNullOrBlank() ||
+                site == null ||
                 !site.matches(SITE_PATTERN)
             ) {
                 return null

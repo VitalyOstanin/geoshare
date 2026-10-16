@@ -37,6 +37,20 @@ class ProjectSettingsTest {
     }
 
     @Test
+    fun `a version written as a string is refused`() {
+        assertNull(ProjectSettings.parse(document.replace("\"version\": 1", "\"version\": \"1\"")))
+    }
+
+    @Test
+    fun `a project id written as a number is refused`() {
+        assertNull(
+            ProjectSettings.parse(
+                document.replace("\"projectId\": \"geoshare-example\"", "\"projectId\": 42"),
+            ),
+        )
+    }
+
+    @Test
     fun `a document missing a field is refused rather than started with a gap`() {
         assertNull(
             ProjectSettings.parse(
