@@ -327,7 +327,7 @@ private fun PendingInvitationAnswer(
     LaunchedEffect(connection, current.memberId) {
         // Kept for the sign-in to the group it invites
         // to, which need not be the one on the screen.
-        val kept = PendingInvitationStore.read(activity)
+        val kept = PendingInvitationStore.read(activity, connection.projectId)
 
         // One the rules already turned down is not tried again; the map
         // goes on saying so until the group is dropped or another link
@@ -336,7 +336,7 @@ private fun PendingInvitationAnswer(
 
         val pending =
             kept
-                ?.takeIf { it.isFor(connection.projectId) && !it.refused }
+                ?.takeIf { !it.refused }
                 ?: return@LaunchedEffect
 
         // Plainly another account: said before any
@@ -361,8 +361,10 @@ private fun PendingInvitationAnswer(
         // Refused by the rules: the invitation is marked so, and the map
         // says it in its own words. Anything else — no network — is the
         // general trouble line, and the invitation waits for another try.
-        answers.refusedJoin =
-            refusedJoinOf(PendingInvitationStore.read(activity), connection.projectId)
+        answers.refusedJoin = refusedJoinOf(
+            PendingInvitationStore.read(activity, connection.projectId),
+            connection.projectId,
+        )
         answers.groupTrouble = !joined && answers.refusedJoin == null
     }
 
@@ -372,7 +374,7 @@ private fun PendingInvitationAnswer(
             signedInAddress =
             ConnectLink.shortenedAddress(current.email.orEmpty()),
             onLater = {
-                PendingInvitationStore.clear(activity)
+                PendingInvitationStore.clear(activity, connection.projectId)
                 wrongAccount = null
             },
             onSwitchAccount = {

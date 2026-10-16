@@ -500,7 +500,7 @@ class MainActivity : AppCompatActivity() {
         val first = !Connections.connected
         val projectId = done.settings.projectId
 
-        PendingInvitationStore.save(this, pendingInvitationFor(done))
+        PendingInvitationStore.save(this, projectId, pendingInvitationFor(done))
         GroupNames.note(this, projectId, done.invitation?.groupName)
 
         if (Connections.of(projectId) == null) {

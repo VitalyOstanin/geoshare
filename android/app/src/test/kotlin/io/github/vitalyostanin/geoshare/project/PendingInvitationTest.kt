@@ -50,7 +50,6 @@ class PendingInvitationTest {
                 groupId = "group-1",
                 code = "ABCDEFGH",
                 invitedAddress = "ivan…@example.com",
-                projectId = "geoshare-example",
                 inviter = "Anya",
             ),
             pendingInvitationFor(done),
@@ -98,36 +97,11 @@ class PendingInvitationTest {
     }
 
     @Test
-    fun `the project an invitation is for survives the json`() {
-        val invitation = PendingInvitation("group-1", "ABCDEFGH", projectId = "geoshare-hike")
-
-        assertEquals(invitation, PendingInvitation.parse(invitation.toJson()))
-    }
-
-    // A device in two groups signs in to each on its own; an invitation to
-    // one is not to be spent on the sign-in to the other.
-    @Test
-    fun `an invitation is spent only on a sign-in to its own project`() {
-        val invitation = PendingInvitation("group-1", "ABCDEFGH", projectId = "geoshare-hike")
-
-        assertEquals(true, invitation.isFor("geoshare-hike"))
-        assertEquals(false, invitation.isFor("example-family"))
-    }
-
-    // Kept by a build that knew a single project: it can only have been for
-    // the project the device was in.
-    @Test
-    fun `an invitation kept without a project is for any`() {
-        assertEquals(true, PendingInvitation("group-1", "ABCDEFGH").isFor("example-family"))
-    }
-
-    @Test
     fun `the inviter and the refusal survive the json`() {
         val invitation =
             PendingInvitation(
                 "group-1",
                 "ABCDEFGH",
-                projectId = "geoshare-hike",
                 inviter = "Anya",
                 refused = true,
             )
@@ -135,8 +109,7 @@ class PendingInvitationTest {
         assertEquals(invitation, PendingInvitation.parse(invitation.toJson()))
     }
 
-    // Kept by a build from before the refusal was remembered: it is still to
-    // be tried.
+    // Written without the refusal: it is still to be tried.
     @Test
     fun `an invitation kept without the refusal is not refused`() {
         val parsed = PendingInvitation.parse("""{"groupId": "group-1", "code": "ABCDEFGH"}""")
@@ -150,19 +123,17 @@ class PendingInvitationTest {
             PendingInvitation(
                 "group-1",
                 "ABCDEFGH",
-                projectId = "geoshare-hike",
                 inviter = "Anya",
                 refused = true,
             )
 
         assertEquals(RefusedJoin("geoshare-hike", "Anya"), refusedJoinOf(refused, "geoshare-hike"))
-        assertNull(refusedJoinOf(refused, "example-family"))
     }
 
     @Test
     fun `an invitation still to be tried is not a refusal`() {
         val waiting =
-            PendingInvitation("group-1", "ABCDEFGH", projectId = "geoshare-hike", inviter = "Anya")
+            PendingInvitation("group-1", "ABCDEFGH", inviter = "Anya")
 
         assertNull(refusedJoinOf(waiting, "geoshare-hike"))
         assertNull(refusedJoinOf(null, "geoshare-hike"))

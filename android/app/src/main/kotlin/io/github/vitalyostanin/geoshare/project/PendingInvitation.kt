@@ -12,13 +12,12 @@ private const val TAG = "geoshare.project"
 private const val FIELD_GROUP_ID = "groupId"
 private const val FIELD_CODE = "code"
 private const val FIELD_TO = "to"
-private const val FIELD_PROJECT = "project"
 private const val FIELD_BY = "by"
 private const val FIELD_REFUSED = "refused"
 
 /**
  * An [Invitation]'s group and code, kept from [ConnectState.Done] until the
- * sign-in to [projectId] that follows it, so that sign-in can spend it the way
+ * sign-in to its project that follows it, so that sign-in can spend it the way
  * a group invitation is spent everywhere else. [invitedAddress] is the
  * shortened address the link names, kept so that an account which is plainly
  * not the one invited is told so before anything is written (ADR-0019).
@@ -33,8 +32,6 @@ data class PendingInvitation(
     val groupId: String,
     val code: String,
     val invitedAddress: String? = null,
-    /** The project it invites to; null when kept by a build that knew a single project. */
-    val projectId: String? = null,
     val inviter: String? = null,
     val refused: Boolean = false,
 ) {
@@ -42,17 +39,9 @@ data class PendingInvitation(
         .put(FIELD_GROUP_ID, groupId)
         .put(FIELD_CODE, code)
         .apply { invitedAddress?.let { put(FIELD_TO, it) } }
-        .apply { projectId?.let { put(FIELD_PROJECT, it) } }
         .apply { inviter?.let { put(FIELD_BY, it) } }
         .apply { if (refused) put(FIELD_REFUSED, true) }
         .toString()
-
-    /**
-     * Whether a sign-in to [projectId] is the one to spend this on: a device
-     * in several groups signs in to each on its own, and the code is good in
-     * one project only.
-     */
-    fun isFor(projectId: String): Boolean = this.projectId == null || this.projectId == projectId
 
     /**
      * Whether [signedInEmail] is plainly not the account this was made out
@@ -79,14 +68,13 @@ data class PendingInvitation(
             val groupId = document.optString(FIELD_GROUP_ID)
             val code = document.optString(FIELD_CODE)
             val invitedAddress = document.optString(FIELD_TO).ifBlank { null }
-            val projectId = document.optString(FIELD_PROJECT).ifBlank { null }
             val inviter = document.optString(FIELD_BY).ifBlank { null }
             val refused = document.optBoolean(FIELD_REFUSED, false)
 
             return if (groupId.isBlank() || code.isBlank()) {
                 null
             } else {
-                PendingInvitation(groupId, code, invitedAddress, projectId, inviter, refused)
+                PendingInvitation(groupId, code, invitedAddress, inviter, refused)
             }
         }
     }
@@ -105,7 +93,6 @@ fun pendingInvitationFor(done: ConnectState.Done): PendingInvitation? = done.inv
         it.groupId,
         it.code,
         it.invitedAddress,
-        done.settings.projectId,
         inviter = it.inviter,
     )
 }
@@ -118,24 +105,28 @@ fun pendingInvitationFor(done: ConnectState.Done): PendingInvitation? = done.inv
 data class RefusedJoin(val projectId: String, val inviter: String?)
 
 /** [RefusedJoin] for [pending], when it is one the rules turned down. */
-fun refusedJoinOf(pending: PendingInvitation?, projectId: String): RefusedJoin? = pending?.takeIf {
-    it.refused && it.isFor(projectId)
-}?.let { RefusedJoin(projectId, it.inviter) }
+fun refusedJoinOf(pending: PendingInvitation?, projectId: String): RefusedJoin? =
+    pending?.takeIf { it.refused }?.let { RefusedJoin(projectId, it.inviter) }
 
 /**
  * Where a [PendingInvitation] waits between [ConnectState.Done] writing it
  * and the sign-in to its project reading it back — [Connections.files]' own
- * file, beside the list of groups it was written together with.
+ * file, beside the list of groups it was written together with. Each project
+ * keeps its own, so connecting to one group does not drop an invitation to
+ * another still waiting for its sign-in.
  */
 object PendingInvitationStore {
-    /** Keeps [invitation] for the next start, or clears what was kept when there is none. */
-    fun save(context: Context, invitation: PendingInvitation?) {
+    /**
+     * Keeps [invitation] to [projectId]'s group for the next start, or clears
+     * what was kept there when there is none.
+     */
+    fun save(context: Context, projectId: String, invitation: PendingInvitation?) {
         val editor = Connections.files(context).edit()
 
         if (invitation == null) {
-            editor.remove(KEY_PENDING_INVITATION)
+            editor.remove(keyFor(projectId))
         } else {
-            editor.putString(KEY_PENDING_INVITATION, invitation.toJson())
+            editor.putString(keyFor(projectId), invitation.toJson())
         }
 
         // Committed rather than applied, as the list of groups it is written
@@ -144,10 +135,12 @@ object PendingInvitationStore {
         editor.commit()
     }
 
-    /** Reads back what [save] kept, without clearing it — [clear] does that once it is spent. */
-    fun read(context: Context): PendingInvitation? {
-        val kept = Connections.files(context)
-            .readString(KEY_PENDING_INVITATION, null) ?: return null
+    /**
+     * Reads back what [save] kept for [projectId], without clearing it —
+     * [clear] does that once it is spent.
+     */
+    fun read(context: Context, projectId: String): PendingInvitation? {
+        val kept = Connections.files(context).readString(keyFor(projectId), null) ?: return null
         val invitation = PendingInvitation.parse(kept)
 
         if (invitation == null) {
@@ -157,8 +150,10 @@ object PendingInvitationStore {
         return invitation
     }
 
-    /** Drops the pending invitation once it has been spent or refused outright. */
-    fun clear(context: Context) {
-        Connections.files(context).edit().remove(KEY_PENDING_INVITATION).apply()
+    /** Drops [projectId]'s pending invitation once it has been spent or refused outright. */
+    fun clear(context: Context, projectId: String) {
+        Connections.files(context).edit().remove(keyFor(projectId)).apply()
     }
+
+    private fun keyFor(projectId: String) = "$KEY_PENDING_INVITATION/$projectId"
 }

@@ -468,12 +468,12 @@ suspend fun consumePendingInvitation(
 ) {
     try {
         joinGroup(context, uid, Invitation(pending.groupId, pending.code), connection)
-        PendingInvitationStore.clear(context)
+        PendingInvitationStore.clear(context, connection.projectId)
     } catch (cancellation: CancellationException) {
         throw cancellation
     } catch (refusal: Exception) {
         if (refusedOutright(refusal)) {
-            PendingInvitationStore.save(context, pending.copy(refused = true))
+            PendingInvitationStore.save(context, connection.projectId, pending.copy(refused = true))
         }
 
         throw refusal

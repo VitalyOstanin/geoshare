@@ -80,8 +80,10 @@ internal suspend fun MainActivity.leave(connection: GroupConnection, how: Leave)
 
     // A refused invitation to the group is said on its map; with the
     // group gone there is nothing left to say it on.
-    if (refusedJoinOf(PendingInvitationStore.read(this), connection.projectId) != null) {
-        PendingInvitationStore.clear(this)
+    val kept = PendingInvitationStore.read(this, connection.projectId)
+
+    if (refusedJoinOf(kept, connection.projectId) != null) {
+        PendingInvitationStore.clear(this, connection.projectId)
     }
 
     return true
