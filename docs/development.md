@@ -168,6 +168,31 @@ the machine.
    `appVersionName` and notes without a date, then builds, signs, checks
    what the package says about itself and publishes it with its checksum and
    its bill of materials, `geoshare-<version>.cdx.json` in CycloneDX.
+5. Deploy the setup page from the tag, in a working copy checked out at it
+   (`git switch --detach v<version>`, nothing uncommitted): the site holds
+   the rules (`firebase/firestore.rules`), the files of a group's page
+   (`web/public`) and the fingerprints of the published key
+   (`android/release-fingerprints.txt`), and a new group gets whatever the
+   site was last deployed with, not what master says. Build it and deploy it:
+
+   ```sh
+   tools/setup-site.sh --client-id <web OAuth client id of the setup page>
+   firebase deploy --only hosting --project geoshare-setup \
+       --config build/setup-site/firebase.json
+   ```
+
+   The second command is the one `tools/setup-site.sh` prints when it ends.
+   The client id is not kept in the repository: it is the web OAuth client
+   the console made for the setup page's project, and the one the site
+   was last deployed with is the `clientId` of
+   `https://geoshare-setup.web.app/setup-config.json`. Without `--sha` the build
+   lists the fingerprints of `android/release-fingerprints.txt`.
+6. Check the deployed site. `https://geoshare-setup.web.app/firestore.rules`
+   must be the file at the tag (`curl -s` it and `diff` it with
+   `firebase/firestore.rules`), `setup-files.json` and `setup-config.json`
+   beside it must load, and the setup page at
+   `https://geoshare-setup.web.app/` must open and offer to sign in with
+   Google.
 
 ### Checking a release
 
@@ -203,6 +228,12 @@ bad release is not taken back by pointing at an older one:
    the bad one writes. The rules usually need no rollback at all, since a
    release only widens them (see
    [Updating a group's project](../firebase/README.md#updating-a-groups-project)).
+
+4. Deploy the setup page again from the tag of the previous release, as in the
+   releasing steps (`git switch --detach v<previous version>`,
+   `tools/setup-site.sh --client-id <id>`, then the `firebase deploy` it
+   prints), and check it the same way. Until then a new group is given the
+   rules and the page of the bad release.
 
 Nothing in the application is switched on or off from outside: there is no
 server of the project's own to hold such switches. A feature that misbehaves
