@@ -65,7 +65,7 @@ Firebase SDK in them requires); the build scripts do not need it.
 | 2  | `tools/test.sh`              | runs the Android unit tests                                                 |
 | 3  | `tools/lint.sh`              | formatting, length of functions (detekt) and Android lint                   |
 | 4  | `tools/rules.sh`             | security rules tests against the Firestore emulator                         |
-| 5  | `tools/web-test.sh`          | the tests of the page's own logic                                           |
+| 5  | `tools/web-test.sh`          | the tests of the page's own logic; `--watch` reruns them as files are saved |
 | 6  | `tools/js-lint.sh`           | ESLint over the page and the emulator scripts                               |
 | 7  | `tools/md-lint.sh`           | markdownlint over the documents                                             |
 | 8  | `tools/serve-web.sh`         | the page at 127.0.0.1:5000, with the headers and the policy Hosting sends   |

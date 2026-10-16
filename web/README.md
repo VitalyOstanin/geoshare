@@ -82,6 +82,10 @@ or talk to Firebase: a new script in neither fails the run, and so does a listed
 one the tests have started to load. `tests/stylesheets.mjs` is the helper that
 reads the page's stylesheets as one text for the tests that look into them.
 
+While editing, `tools/web-test.sh --watch` keeps the run going in the terminal
+and reruns the tests as files are saved; it cannot be combined with
+`--coverage`.
+
 Nothing here talks to Firebase: the rules the clients run into are covered by
 `tools/rules.sh` against the emulator instead.
 
