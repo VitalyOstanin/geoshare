@@ -202,7 +202,7 @@ is taken out by a release.
 | 4 | `docs/`     | architecture decisions, stories, console steps, project setup     |
 | 5 | `tools/`    | build, test, setup and release entry points                       |
 | 6 | `site/`     | the landing page in two languages, its pictures and fonts         |
-| 7 | `.github/`  | CI and release workflows, Dependabot settings                     |
+| 7 | `.github/`  | CI, release and landing page workflows, Dependabot settings       |
 
 ## Further reading
 
