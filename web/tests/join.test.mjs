@@ -16,6 +16,7 @@ import {
     shortenedAddress,
     siteFromHost,
 } from '../public/lib/join.js';
+import { cutToLimit } from '../public/lib/text.js';
 import { JOIN_EN } from '../public/lib/words/join-en.js';
 
 const HOST = 'imaginary-group.web.app';
@@ -326,4 +327,113 @@ test('nothing to compare either way is no mismatch', () => {
 
     assert.equal(isWrongAccount(bare, 'ivan.petrov@example.com'), false);
     assert.equal(isWrongAccount(named, undefined), false);
+});
+
+// ADR-0017: the link reads back as the captions it was made from, whatever
+// they hold. The generator is seeded (mulberry32), so a failure repeats.
+const EMOJI = '\u{1F600}';
+const PIECES = [
+    'a', 'b', 'Z', '7', 'Я', 'ж', 'é', ' ', '  ', '\t', '&', '#', '%', '=', '+', '?', '/', '…',
+    '%41', EMOJI,
+];
+
+function seeded(seed) {
+    let state = seed;
+
+    return () => {
+        state = (state + 0x6d2b79f5) | 0;
+        let t = Math.imul(state ^ (state >>> 15), 1 | state);
+
+        t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+
+        return ((t ^ (t >>> 14)) >>> 0) / 4_294_967_296;
+    };
+}
+
+function randomCaption(next) {
+    const kind = Math.floor(next() * 8);
+
+    if (kind === 0) {
+        return '';
+    }
+
+    if (kind === 1) {
+        return ' '.repeat(Math.floor(next() * 5));
+    }
+
+    let text = '';
+
+    for (let i = Math.floor(next() * 12); i > 0; i--) {
+        text += PIECES[Math.floor(next() * PIECES.length)];
+    }
+
+    return text;
+}
+
+// 59 to 61 units with an emoji covering, or just short of, the 60-unit limit.
+function captionAtTheLimit(next) {
+    const lead = next() < 0.5 ? ' '.repeat(Math.floor(next() * 3)) : '';
+    const tail = next() < 0.5 ? 'я'.repeat(Math.floor(next() * 3)) : '';
+    const blanks = next() < 0.5 ? ' ' : '';
+
+    return `${lead}${'a'.repeat(56 + Math.floor(next() * 5))}${blanks}${EMOJI}${tail}`;
+}
+
+function randomAddress(next) {
+    const letters = 'ivanпетров&#%';
+    let name = '';
+
+    for (let i = Math.floor(next() * 9); i > 0; i--) {
+        name += letters[Math.floor(next() * letters.length)];
+    }
+
+    const kind = Math.floor(next() * 3);
+    const domain = kind === 0
+        ? 'example.com'
+        : kind === 1
+            ? `${'d'.repeat(48 + Math.floor(next() * 8))}${EMOJI}.com`
+            : `${'x'.repeat(Math.floor(next() * 70))}.org`;
+
+    return next() < 0.1 ? name : `${name}@${domain}`;
+}
+
+// What parseInvitation keeps of a caption given whole: trimmed, cut without
+// splitting a pair, trimmed again, and nothing if blank.
+function kept(caption) {
+    if (caption === null) {
+        return '';
+    }
+
+    return cutToLimit(caption.trim(), 60).trim();
+}
+
+test('any captions and address read back as parseInvitation would keep them', () => {
+    const next = seeded(560);
+
+    for (let index = 0; index < 600; index++) {
+        const pick = () => (index % 2 === 0 ? captionAtTheLimit(next) : randomCaption(next));
+        const by = next() < 1 / 6 ? null : pick();
+        const name = next() < 1 / 6 ? null : pick();
+        const email = randomAddress(next);
+        const link = invitationLink({ site: 's', groupId: 'Kx9aQ2', code: '7FK3M9QA', by, name, email });
+        const label = `case ${index}: ${JSON.stringify({ by, name, email })}`;
+
+        assert.deepEqual(parseInvitation(new URL(link).hash), {
+            groupId: 'Kx9aQ2',
+            code: '7FK3M9QA',
+            by: kept(by),
+            name: kept(name),
+            to: kept(shortenedAddress(email)),
+        }, label);
+    }
+});
+
+test('an emoji on the sixtieth position is dropped whole or kept whole', () => {
+    const readBack = (by) => parseInvitation(new URL(invitationLink({
+        site: 's', groupId: 'g', code: 'c', by, name: null, email: 'ivan.petrov@example.com',
+    })).hash).by;
+
+    assert.equal(readBack(`${'a'.repeat(59)}${EMOJI}`), 'a'.repeat(59));
+    assert.equal(readBack(`${'a'.repeat(58)}${EMOJI}`), `${'a'.repeat(58)}${EMOJI}`);
+    assert.equal(readBack(`${'a'.repeat(60)}${EMOJI}`), 'a'.repeat(60));
 });

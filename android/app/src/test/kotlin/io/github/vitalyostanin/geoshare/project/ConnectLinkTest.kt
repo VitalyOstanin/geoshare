@@ -1,11 +1,64 @@
 package io.github.vitalyostanin.geoshare.project
 
+import io.github.vitalyostanin.geoshare.cutToLimit
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
 import org.junit.Test
 import java.net.URLEncoder
+import java.util.Random
 
 private const val SITE = "geoshare-example-abc123"
+
+private const val EMOJI = "\uD83D\uDE00"
+
+private val PIECES = listOf(
+    "a", "b", "Z", "7", "Я", "ж", "é", " ", "  ", "\t", "&", "#", "%", "=", "+", "?", "/", "…",
+    "%41", EMOJI,
+)
+
+/** A caption from [PIECES]: sometimes short or empty, sometimes of blanks only. */
+private fun randomCaption(random: Random): String = when (random.nextInt(8)) {
+    0 -> ""
+
+    1 -> " ".repeat(random.nextInt(5))
+
+    else -> buildString {
+        repeat(random.nextInt(12)) { append(PIECES[random.nextInt(PIECES.size)]) }
+    }
+}
+
+/**
+ * A caption of 59 to 61 UTF-16 units with an emoji put so that it covers, or
+ * ends just short of, the 60-unit limit, and blanks around it at times.
+ */
+private fun captionAtTheLimit(random: Random): String {
+    val before = 56 + random.nextInt(5)
+    val lead = if (random.nextBoolean()) " ".repeat(random.nextInt(3)) else ""
+    val tail = if (random.nextBoolean()) "я".repeat(random.nextInt(3)) else ""
+    val blanks = if (random.nextBoolean()) " " else ""
+
+    return lead + "a".repeat(before) + blanks + EMOJI + tail
+}
+
+/** An address whose shortened form reaches the limit, or stays short. */
+private fun randomAddress(random: Random): String {
+    val name =
+        buildString { repeat(random.nextInt(9)) { append("ivanпетров&#%"[random.nextInt(13)]) } }
+    val domain = when (random.nextInt(3)) {
+        0 -> "example.com"
+        1 -> "d".repeat(48 + random.nextInt(8)) + EMOJI + ".com"
+        else -> "x".repeat(random.nextInt(70)) + ".org"
+    }
+
+    return if (random.nextInt(10) == 0) name else "$name@$domain"
+}
+
+/**
+ * What [ConnectLink.parse] keeps of a caption it is given whole: trimmed, cut
+ * to the limit without splitting a pair, trimmed again, and nothing if blank.
+ */
+private fun kept(caption: String?): String? =
+    caption?.trim()?.let { cutToLimit(it, 60) }?.trim()?.takeIf { it.isNotEmpty() }
 
 class ConnectLinkTest {
     @Test
@@ -228,4 +281,64 @@ class ConnectLinkTest {
         assertEquals("i…@example.com", ConnectLink.shortenedAddress("ivan@example.com"))
         assertEquals("ivan…@example.com", ConnectLink.shortenedAddress("ivan.petrov@example.com"))
     }
+
+    @Test
+    fun `an emoji on the sixtieth position is dropped whole or kept whole`() {
+        val atTheEdge = "a".repeat(59) + EMOJI
+        val justInside = "a".repeat(58) + EMOJI
+        val outside = "a".repeat(60) + EMOJI
+
+        assertEquals("a".repeat(59), readBackInviter(atTheEdge))
+        assertEquals(justInside, readBackInviter(justInside))
+        assertEquals("a".repeat(60), readBackInviter(outside))
+    }
+
+    // ADR-0017: the link reads back as the captions it was made from, whatever
+    // they hold. A fixed seed keeps a failure the same on every run.
+    @Test
+    fun `any captions and address read back as parse would keep them`() {
+        val random = Random(560L)
+
+        repeat(600) { case ->
+            val atTheLimit = case % 2 == 0
+            val inviter = if (random.nextInt(6) == 0) {
+                null
+            } else {
+                if (atTheLimit) captionAtTheLimit(random) else randomCaption(random)
+            }
+            val groupName = if (random.nextInt(6) == 0) {
+                null
+            } else {
+                if (atTheLimit) captionAtTheLimit(random) else randomCaption(random)
+            }
+            val email = randomAddress(random)
+            val link = ConnectLink.invitationLink(
+                SITE,
+                "Kx9aQ2",
+                "7FK3M9QA",
+                inviter,
+                groupName,
+                email,
+            )
+
+            assertEquals(
+                "case $case: inviter=$inviter groupName=$groupName email=$email",
+                ConnectLink(
+                    site = SITE,
+                    invitation = Invitation(
+                        groupId = "Kx9aQ2",
+                        code = "7FK3M9QA",
+                        inviter = kept(inviter),
+                        groupName = kept(groupName),
+                        invitedAddress = kept(ConnectLink.shortenedAddress(email)),
+                    ),
+                ),
+                ConnectLink.parse(link),
+            )
+        }
+    }
+
+    private fun readBackInviter(inviter: String): String? = ConnectLink.parse(
+        ConnectLink.invitationLink(SITE, "g", "c", inviter, null, "ivan.petrov@example.com"),
+    )?.invitation?.inviter
 }
