@@ -13,6 +13,7 @@ English · [Русский](FAQ.ru.md)
 - [Does the author of geoshare see other groups' projects?](#does-the-author-of-geoshare-see-other-groups-projects)
 - [Where is the data kept?](#where-is-the-data-kept)
 - [What does it cost?](#what-does-it-cost)
+- [What is the setup page for?](#what-is-the-setup-page-for)
 - [Why is it not on Google Play?](#why-is-it-not-on-google-play)
 - [How do I update the application?](#how-do-i-update-the-application)
 - [Does it work on an iPhone?](#does-it-work-on-an-iphone)
@@ -80,6 +81,15 @@ Nothing. Everything runs on the free Spark plan of Firebase: a family with two
 devices uses about 5% of its daily reads and writes. Past a daily limit the
 database stops answering until the quota resets, so the project owner should
 keep an eye on usage; the [README](README.md#free-tier-limits) has the figures.
+
+## What is the setup page for?
+
+Convenience. The [setup page](https://geoshare-setup.web.app/) makes a new
+group's project from a browser, without a terminal. The same can be done from
+a terminal alone with [tools/project.sh](tools/project.sh)
+([docs/new-project.md](docs/new-project.md)), but either way a couple of steps
+have to be taken in the Firebase console
+([docs/console-steps.md](docs/console-steps.md)).
 
 ## Why is it not on Google Play?
 
