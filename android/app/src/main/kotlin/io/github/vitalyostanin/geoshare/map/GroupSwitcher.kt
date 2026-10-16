@@ -463,7 +463,11 @@ private fun GroupRow(
 
             DropdownMenu(expanded = menuOpen, onDismissRequest = { menuOpen = false }) {
                 DropdownMenuItem(
-                    text = { Text(text = stringResource(R.string.group_leave)) },
+                    text = {
+                        // Named: near the bottom of the sheet the menu opens
+                        // upwards, over the row above it.
+                        Text(text = stringResource(R.string.group_leave_named, choice.caption))
+                    },
                     onClick = {
                         menuOpen = false
                         onLeave()

@@ -406,6 +406,7 @@
 
     <string name="group_switcher_more">Ещё: %1$s</string>
     <string name="group_leave">Выйти из группы</string>
+    <string name="group_leave_named">Выйти из группы «%1$s»</string>
     <string name="group_leave_title">Выйти из группы «%1$s»?</string>
     <string name="group_leave_text">Участники перестанут видеть вас и ваши устройства. Вернуться можно будет только по новому приглашению.</string>
     <string name="group_leave_runs_it_text">Вы остаётесь в группе — её нельзя оставить без того, кто ею управляет. Группа будет убрана только с этого устройства.</string>

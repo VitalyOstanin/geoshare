@@ -475,6 +475,7 @@
          while it is the only one, from the settings (map/LeaveGroupDialog.kt). -->
     <string name="group_switcher_more">More for %1$s</string>
     <string name="group_leave">Leave the group</string>
+    <string name="group_leave_named">Leave “%1$s”</string>
     <string name="group_leave_title">Leave the group “%1$s”?</string>
     <string name="group_leave_text">Members will stop seeing you and your devices. Coming back takes a new invitation.</string>
     <string name="group_leave_runs_it_text">You stay in the group: it cannot be left without somebody running it. The group is removed from this device only.</string>
