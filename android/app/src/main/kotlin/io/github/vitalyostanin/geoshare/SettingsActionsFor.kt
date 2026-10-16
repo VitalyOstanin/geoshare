@@ -14,6 +14,8 @@ import io.github.vitalyostanin.geoshare.map.withShare
 import io.github.vitalyostanin.geoshare.map.withinAnswerWait
 import io.github.vitalyostanin.geoshare.map.writePhoneName
 import io.github.vitalyostanin.geoshare.membership.Roster
+import io.github.vitalyostanin.geoshare.membership.ownProjectGroup
+import io.github.vitalyostanin.geoshare.project.Connections
 import io.github.vitalyostanin.geoshare.project.GroupConnection
 import io.github.vitalyostanin.geoshare.project.RefusedJoin
 import io.github.vitalyostanin.geoshare.service.LanguageChoice
@@ -210,7 +212,15 @@ internal fun settingsActions(
         }
     },
     // Read when a screen without a group is shown, once: see readProjectMark.
-    onReadProjectMark = { readProjectMark(connection) },
+    // A mark naming this account's own group moves the device into it, and
+    // the screen follows the move rather than calling the project taken.
+    onReadProjectMark = {
+        readProjectMark(connection).also { mark ->
+            ownProjectGroup(mark, current.memberId, connection.group)?.let { own ->
+                Connections.moveTo(activity, connection.projectId, own)
+            }
+        }
+    },
     onMakeInvitation = { email ->
         activity.lifecycleScope.launch {
             answers.groupTrouble =

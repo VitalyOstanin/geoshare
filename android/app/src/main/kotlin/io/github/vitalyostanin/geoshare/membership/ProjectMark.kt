@@ -34,3 +34,15 @@ fun projectMarkOf(exists: Boolean, group: Any?): ProjectMark = when {
 
 /** Whether the screens say the project is taken instead of offering a group of its own. */
 fun ProjectMark.isTaken(): Boolean = this is ProjectMark.Taken
+
+/**
+ * The group to move into when the mark names one [memberId] founded, or null.
+ *
+ * A group is named after the account that made it, so such a mark is this
+ * account's own group — made on another device, or before the application
+ * was installed again — not somebody else's to ask an invitation for. Null
+ * when the device already looks at it, which is also the founder taken off
+ * their own roster: moving them there again would change nothing.
+ */
+fun ownProjectGroup(mark: ProjectMark, memberId: String, current: String): String? =
+    (mark as? ProjectMark.Taken)?.group?.takeIf { it == memberId && it != current }
