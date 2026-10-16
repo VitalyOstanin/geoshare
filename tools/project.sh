@@ -792,18 +792,79 @@ EOF
     fi
 }
 
-show() {
-    local project="$1" wait_google="$2" with_usage="$3"
-    local out="${REPO_ROOT}/build/project/${project}"
+# Prints the id of the project's Android app, or says that `create` has not
+# made one and stops the whole script. It is called inside $(...), so the
+# message goes to stderr and the failing status is what ends the caller.
+require_android_app() {
+    local project="$1"
 
-    echo "==> Android app"
     if [[ "$(app_count "${project}" ANDROID)" -eq 0 ]]; then
         echo "no Android app registered in ${project} yet; run \`create\` first" >&2
         exit 1
     fi
 
+    app_id "${project}" ANDROID
+}
+
+# Prints the id of the project's Hosting site, or says that `create` has not
+# made one and stops the whole script; see require_android_app().
+require_site() {
+    local project="$1" site_id
+
+    site_id="$(existing_site "${project}")"
+
+    if [[ -z "${site_id}" ]]; then
+        echo "no Hosting site in ${project} yet; run \`create\` first" >&2
+        exit 1
+    fi
+
+    echo "${site_id}"
+}
+
+# The result of `show` for --json: what is left to do by hand and whether the
+# project is done. The caller sends it to the JSON channel.
+show_result_json() {
+    local project="$1" site_id="$2" google_on="$3" usage_json="$4"
+
+    # shellcheck disable=SC2016 # ${...} in there is JavaScript's, not the shell's
+    PROJECT="${project}" SITE="${site_id}" GOOGLE_ON="${google_on}" USAGE="${usage_json}" \
+        PROVIDERS="$(console_link "https://console.firebase.google.com/project/${project}/authentication/providers")" \
+        node -e '
+const site = process.env.SITE;
+const googleOn = process.env.GOOGLE_ON === "1";
+
+const manualSteps = googleOn ? [] : [{
+    what: "Authentication, Sign-in method, Google, Enable, type the name " +
+        "of the group as the public-facing name, pick the support " +
+        "address, Save",
+    url: process.env.PROVIDERS,
+}];
+
+const result = {
+    projectId: process.env.PROJECT,
+    site,
+    connectLink: `https://${site}.web.app/join`,
+    settingsUrl: `https://${site}.web.app/geoshare.json`,
+    manualSteps,
+    done: googleOn,
+};
+
+if (process.env.USAGE) {
+    result.usage = JSON.parse(process.env.USAGE);
+}
+
+console.log(JSON.stringify(result, null, 2));
+'
+}
+
+show() {
+    local project="$1" wait_google="$2" with_usage="$3"
+    local out="${REPO_ROOT}/build/project/${project}"
+
+    echo "==> Android app"
+
     local android
-    android="$(app_id "${project}" ANDROID)"
+    android="$(require_android_app "${project}")"
     local hashes
     hashes="$(android_fingerprints "${project}" "${android}")"
 
@@ -816,12 +877,7 @@ show() {
 
     echo "==> Hosting site"
     local site_id
-    site_id="$(existing_site "${project}")"
-
-    if [[ -z "${site_id}" ]]; then
-        echo "no Hosting site in ${project} yet; run \`create\` first" >&2
-        exit 1
-    fi
+    site_id="$(require_site "${project}")"
     echo "    ${site_id}, https://${site_id}.web.app/"
 
     echo "==> page configuration"
@@ -914,35 +970,7 @@ EOF
     # back, by this function or anything else, so it stays out of manualSteps
     # and out of done either way.
     if (( json_mode )); then
-        # shellcheck disable=SC2016 # ${...} in there is JavaScript's, not the shell's
-        PROJECT="${project}" SITE="${site_id}" GOOGLE_ON="${google_on}" USAGE="${usage_json}" \
-            PROVIDERS="$(console_link "https://console.firebase.google.com/project/${project}/authentication/providers")" \
-            node -e '
-const site = process.env.SITE;
-const googleOn = process.env.GOOGLE_ON === "1";
-
-const manualSteps = googleOn ? [] : [{
-    what: "Authentication, Sign-in method, Google, Enable, type the name " +
-        "of the group as the public-facing name, pick the support " +
-        "address, Save",
-    url: process.env.PROVIDERS,
-}];
-
-const result = {
-    projectId: process.env.PROJECT,
-    site,
-    connectLink: `https://${site}.web.app/join`,
-    settingsUrl: `https://${site}.web.app/geoshare.json`,
-    manualSteps,
-    done: googleOn,
-};
-
-if (process.env.USAGE) {
-    result.usage = JSON.parse(process.env.USAGE);
-}
-
-console.log(JSON.stringify(result, null, 2));
-' >&3
+        show_result_json "${project}" "${site_id}" "${google_on}" "${usage_json}" >&3
     fi
 }
 
@@ -953,22 +981,13 @@ update() {
     local project="$1"
 
     echo "==> Android app"
-    if [[ "$(app_count "${project}" ANDROID)" -eq 0 ]]; then
-        echo "no Android app registered in ${project} yet; run \`create\` first" >&2
-        exit 1
-    fi
 
     local android
-    android="$(app_id "${project}" ANDROID)"
+    android="$(require_android_app "${project}")"
 
     echo "==> Hosting site"
     local site_id
-    site_id="$(existing_site "${project}")"
-
-    if [[ -z "${site_id}" ]]; then
-        echo "no Hosting site in ${project} yet; run \`create\` first" >&2
-        exit 1
-    fi
+    site_id="$(require_site "${project}")"
     echo "    ${site_id}, https://${site_id}.web.app/"
 
     deploy_site "${project}" "${android}" "${site_id}"
