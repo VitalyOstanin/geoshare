@@ -5,13 +5,7 @@ import { test } from 'node:test';
 const ROOT = new URL('../../', import.meta.url);
 const PUBLIC = new URL('web/public/', ROOT);
 const VENDOR = new URL('lib/vendor/', PUBLIC);
-// esbuild only rewrites MapLibre on its way into lib/vendor; the page loads
-// nothing of it.
-const BUILD_TOOLS = new Set(['esbuild']);
-const pins = Object.fromEntries(
-    Object.entries(JSON.parse(readFileSync(new URL('web/package.json', ROOT), 'utf8')).devDependencies)
-        .filter(([name]) => !BUILD_TOOLS.has(name)),
-);
+const pins = JSON.parse(readFileSync(new URL('web/package.json', ROOT), 'utf8')).devDependencies;
 const pinned = Object.entries(pins).map(([name, version]) => `${name}-${version}`);
 const RUN = 'run tools/vendor-web.sh and commit lib/vendor with the new pins';
 
