@@ -116,6 +116,13 @@ readonly MEMORY="${MEMORY:-6g}"
 # shellcheck disable=SC2034 # read by the scripts that source this one
 limit_args=(--cpus "${JOBS}" --memory "${MEMORY}")
 
+# The debug signing key lives in ~/.android and is generated on first use. In a
+# --rm container that means a new key every build, and the next install fails
+# with INSTALL_FAILED_UPDATE_INCOMPATIBLE against the copy already on the
+# device. A volume keeps one key.
+# shellcheck disable=SC2034 # read by the scripts that source this one
+readonly KEY_VOLUME="${KEY_VOLUME:-geoshare-android-home}"
+
 ensure_sdk_image() {
     if podman image exists "${SDK_IMAGE}"; then
         return 0

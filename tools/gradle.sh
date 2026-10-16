@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 # Runs Gradle tasks inside the container built from Containerfile.sdk.
 #
-# Every other Gradle script here goes through this one, so the cache volume and
-# the signing key volume are stated once.
+# Every other Gradle script here goes through this one, so the cache volume is
+# stated once; the signing key volume is in lib.sh, which signing.sh reads too.
 #
 #   tools/gradle.sh assembleDebug
 #   tools/gradle.sh testDebugUnitTest --info
@@ -14,11 +14,6 @@ source "$(dirname "${BASH_SOURCE[0]}")/lib.sh"
 # A named volume keeps the Gradle cache between runs; without it every build
 # re-downloads the whole dependency graph.
 readonly CACHE_VOLUME="${CACHE_VOLUME:-geoshare-gradle}"
-# The debug signing key lives in ~/.android and is generated on first use. In a
-# --rm container that means a new key every build, and the next install fails
-# with INSTALL_FAILED_UPDATE_INCOMPATIBLE against the copy already on the
-# device. A volume keeps one key.
-readonly KEY_VOLUME="${KEY_VOLUME:-geoshare-android-home}"
 
 env_args=()
 # Passed through so an instrumented run installs on the device it was aimed at,
