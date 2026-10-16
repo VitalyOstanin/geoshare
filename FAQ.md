@@ -10,6 +10,7 @@ English · [Русский](FAQ.ru.md)
 - [Does it work only on devices with Google services?](#does-it-work-only-on-devices-with-google-services)
 - [Who sees where I am?](#who-sees-where-i-am)
 - [Does the project owner see everything?](#does-the-project-owner-see-everything)
+- [Does the author of geoshare see other groups' projects?](#does-the-author-of-geoshare-see-other-groups-projects)
 - [Where is the data kept?](#where-is-the-data-kept)
 - [What does it cost?](#what-does-it-cost)
 - [Why is it not on Google Play?](#why-is-it-not-on-google-play)
@@ -60,6 +61,12 @@ Google itself does. In the application they see only what the members have
 shared with them, like anybody else. Whoever sets the project up should be
 somebody the group trusts with that; the application says so to everybody
 before they join.
+
+## Does the author of geoshare see other groups' projects?
+
+No. The author of the application cannot see the data in anybody else's
+Firebase project: access to a project is limited to the Google accounts it is
+given to.
 
 ## Where is the data kept?
 
