@@ -22,6 +22,13 @@ and the versions follow [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Added
+
+- The application looks for a new version once a day, says so in a
+  notification and with a dot on the settings button, and downloads and
+  installs it from the settings. The daily look can be switched off there;
+  the "Check for updates" button still works.
+
 ### Fixed
 
 - Times of day follow the system's 24-hour setting, also where it differs
