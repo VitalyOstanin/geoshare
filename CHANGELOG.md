@@ -17,9 +17,28 @@ and the versions follow [Semantic Versioning](https://semver.org/).
 ## Contents
 
 - [Unreleased](#unreleased)
+- [0.1.1](#011---2026-10-16)
 - [0.1.0](#010---2026-10-14)
 
 ## [Unreleased]
+
+## [0.1.1] - 2026-10-16
+
+The first release built in the open: its package carries attestations of
+where it was built and what from.
+
+### Changed
+
+- The application is built with Firebase BoM 35; the group's page runs on
+  Firebase 13 and MapLibre GL JS 6.14.0.
+- The setup page puts a group's page online four files at a time: about
+  half a minute instead of four.
+- The setup page names the account it signed in with, and its console links
+  open in that account rather than in the first one of the browser.
+- The setup page and the README say what the consoles will ask: 2-Step
+  Verification, the identical OAuth client notice and the consent screen of
+  the first sign-in.
+- `tools/project.sh` needs Node.js 20 or later instead of Python 3.
 
 ### Fixed
 
@@ -39,12 +58,29 @@ and the versions follow [Semantic Versioning](https://semver.org/).
   device off the member's list.
 - The setup page says that setup-config.json is broken instead of failing
   a step later.
+- A project owner who made the group on a device finds it on the group's
+  page and on another device, instead of being told the project already
+  has a group.
+- An invitation waiting for its sign-in is kept when another project is
+  connected.
+- A group taken off the device is signed out of before its project is
+  connected again.
+- "Leave the group" names the group it leaves.
+- The card that stands in place of the map scrolls on a device turned on
+  its side, and keeps the group name typed into it.
+- An account on no roster no longer says it has the map open.
+- The group's page reads a link with fields both before and after the `#`
+  the way the application does.
+- The setup page no longer fails a step on one poll lost to the network,
+  takes the settings of geoshare's own app in a project that holds another,
+  lists every page of the account's projects and registers fingerprints
+  written in colon-separated pairs.
 
 ### Project owners
 
-- `tools/project.sh update` brings the page's fix; the rules have not
-  changed, so it may come before or after the devices take the new
-  application.
+- `tools/project.sh update` brings the page's fixes and Firebase 13; the
+  rules have not changed, so it may come before or after the devices take
+  the new application.
 
 ## [0.1.0] - 2026-10-14
 
@@ -74,5 +110,6 @@ The first release.
 - Nothing to update: a project set up by the setup page or by
   `tools/project.sh` already has the rules and the page of this version.
 
-[Unreleased]: https://github.com/VitalyOstanin/geoshare/compare/v0.1.0...HEAD
+[Unreleased]: https://github.com/VitalyOstanin/geoshare/compare/v0.1.1...HEAD
+[0.1.1]: https://github.com/VitalyOstanin/geoshare/releases/tag/v0.1.1
 [0.1.0]: https://github.com/VitalyOstanin/geoshare/releases/tag/v0.1.0
