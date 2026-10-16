@@ -83,9 +83,13 @@ rules change with that in mind:
   tools/project.sh update <project-id>
   ```
 
-- Going back is the same with the earlier tag. Rules taken back past a
-  widening refuse what the newer application writes, so the devices go back
-  to the earlier application before the rules do.
+- Going back is the same with the earlier tag, but only for the rules, and
+  only once the devices have a fixing patch release. Android does not install
+  an earlier package over a later one, so the devices cannot go back to the
+  earlier application; rules taken back past a widening refuse what the newer
+  application writes. The fixing patch must not write what the earlier rules
+  refuse, and the rules go back after the devices have it. See
+  [Rolling back](../docs/development.md#rolling-back).
 
 ## Checking the rules
 
