@@ -52,6 +52,7 @@ import io.github.vitalyostanin.geoshare.map.stands
 import io.github.vitalyostanin.geoshare.project.Connections
 import io.github.vitalyostanin.geoshare.update.checkForUpdateIfDue
 import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.Job
@@ -222,6 +223,13 @@ class SharingService : LifecycleService() {
     private var trail: Trail = Trail()
 
     /**
+     * Completed once [trail], [lastKnown], [lastFix] and [falsePlaces] hold what
+     * the files had. They are read off the main thread, so the work that reads
+     * or extends them waits here instead of racing the read.
+     */
+    private val restored = CompletableDeferred<Unit>()
+
+    /**
      * The places this group says a false signal uses, and the copy of them
      * that survives the process being killed.
      *
@@ -331,22 +339,33 @@ class SharingService : LifecycleService() {
         lifecycleScope.launch { groups.follow() }
         radio.start()
 
-        trail = trailStore.read()
-        lastKnown = trail.fixes.lastOrNull()
-        lastFix = anchorFrom(trail, Instant.now())
-        falsePlaces = falsePlaceStore.read()
+        // Read off the main thread, and applied before anything that reads or
+        // appends to them is let go: the collection waits on [restored] and
+        // the keepers are only launched once it is complete, so a fix is never
+        // judged against an empty trail and the list a group sends is never
+        // overwritten by the older file.
+        lifecycleScope.launch {
+            val (remembered, places) =
+                withContext(Dispatchers.IO) { trailStore.read() to falsePlaceStore.read() }
 
-        lifecycleScope.launch { checkForUpdatesDaily() }
-        lifecycleScope.launch { keepTheFalsePlaces() }
-        lifecycleScope.launch { noticeBeingCarried() }
-        lifecycleScope.launch { keepWhatCountsAsCircling() }
-        lifecycleScope.launch { keepTheOrbits(this@SharingService) { radio.orbits = it } }
+            trail = remembered
+            lastKnown = trail.fixes.lastOrNull()
+            lastFix = anchorFrom(trail, Instant.now())
+            falsePlaces = places
+            restored.complete(Unit)
 
-        AppLog.i(
-            TAG,
-            "the device remembers ${trail.fixes.size} places it has been" +
-                if (lastFix == null) "" else ", and measures from the last of them",
-        )
+            AppLog.i(
+                TAG,
+                "the device remembers ${trail.fixes.size} places it has been" +
+                    if (lastFix == null) "" else ", and measures from the last of them",
+            )
+
+            launch { checkForUpdatesDaily() }
+            launch { keepTheFalsePlaces() }
+            launch { noticeBeingCarried() }
+            launch { keepWhatCountsAsCircling() }
+            launch { keepTheOrbits(this@SharingService) { radio.orbits = it } }
+        }
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
@@ -722,6 +741,7 @@ class SharingService : LifecycleService() {
 
         collection =
             lifecycleScope.launch {
+                restored.await()
                 launch { status.keepTelling() }
 
                 // A flipped source switch restarts the round like a new mode
