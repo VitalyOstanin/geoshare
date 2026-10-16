@@ -32,8 +32,10 @@ import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import androidx.core.os.LocaleListCompat
 import androidx.core.view.WindowCompat
+import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.lifecycleScope
+import androidx.lifecycle.repeatOnLifecycle
 import com.google.firebase.FirebaseApp
 import io.github.vitalyostanin.geoshare.auth.AuthState
 import io.github.vitalyostanin.geoshare.auth.SignInController
@@ -243,11 +245,16 @@ class MainActivity : AppCompatActivity() {
         // Reacts to Done wherever it is reached — the placeholder screen for
         // a device with no project yet, or the dialog offered over the map
         // for one switching to another — since accepting a link always ends
-        // the same way.
+        // the same way. Only while started: accepting ends in recreate(), which
+        // an activity already stopped would run against a window nobody sees,
+        // and a Done reached meanwhile is handled on return, the state being
+        // held by the flow.
         lifecycleScope.launch {
-            connectFlow.state.collect { state ->
-                if (state is ConnectState.Done) {
-                    acceptConnection(state)
+            repeatOnLifecycle(Lifecycle.State.STARTED) {
+                connectFlow.state.collect { state ->
+                    if (state is ConnectState.Done) {
+                        acceptConnection(state)
+                    }
                 }
             }
         }
