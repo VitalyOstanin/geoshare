@@ -23,7 +23,7 @@ export const WORDS_RU = {
         'Доступ действует около часа и нужен только на время настройки: страница ничего не ' +
         'хранит и никуда его не передаёт.',
     s2Auth: 'Войти через Google и разрешить',
-    s2Got: 'Доступ получен',
+    s2Got: (email) => (email ? `Доступ получен: ${email}` : 'Доступ получен'),
     s2Refused: (why) => `Доступ не получен: ${why}`,
     s2NoLibrary: 'Не удалось загрузить вход Google. Проверьте сеть и обновите страницу.',
     errNetwork: 'Нет связи с Google. Проверьте сеть и повторите.',
@@ -109,7 +109,7 @@ export const WORDS_EN = {
         'The access lasts about an hour and is only needed while you set up: the page ' +
         'stores nothing and sends it nowhere.',
     s2Auth: 'Sign in with Google and allow',
-    s2Got: 'Access granted',
+    s2Got: (email) => (email ? `Access granted: ${email}` : 'Access granted'),
     s2Refused: (why) => `Access not granted: ${why}`,
     s2NoLibrary: 'Could not load Google sign-in. Check your connection and reload the page.',
     errNetwork: 'Cannot reach Google. Check the network and try again.',

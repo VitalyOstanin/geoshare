@@ -197,10 +197,9 @@ async function gotToken(answer) {
     state.token = answer.access_token;
     state.api = makeApi(fetch, state.token);
     $('s2-error').hidden = true;
-    $('s2-got').textContent = words.s2Got;
-    $('s2-got').hidden = false;
-
     state.email = await accountEmail(state.api);
+    $('s2-got').textContent = words.s2Got(state.email);
+    $('s2-got').hidden = false;
 
     try {
         renderProjects(await listProjects(state.api));
