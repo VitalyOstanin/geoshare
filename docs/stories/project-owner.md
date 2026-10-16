@@ -69,9 +69,9 @@ Acceptance:
 ## OWN-04 Keep the rules and the page up to date
 
 - Status: done
-- ADR: 0003
-- Tests: —
-- Not covered: checked by hand on the projects in use
+- ADR: 0003, 0038
+- Tests: rules `owner-founding.test.mjs`, page `owner-rules.test.mjs`
+- Not covered: the deploy itself is checked by hand on the projects in use
 
 As a project owner I bring a project already in use up to the current rules
 and page with one command, so that the group gets fixes without being set up
@@ -81,6 +81,8 @@ Acceptance:
 
 - `tools/project.sh update <project>` deploys the rules, the page and
   `geoshare.json`;
+- the rules go out bound to the owner's account, so that only it can found
+  the project's group;
 - the data already in the database stays.
 
 ## OWN-05 See what the project spends of the free tier
@@ -135,9 +137,10 @@ Acceptance:
 ## OWN-09 Set up the project from a page in the browser
 
 - Status: done
-- ADR: 0033
+- ADR: 0033, 0038
 - Tests: page `setup-project.test.mjs` (the database, the apps and their
   fingerprints, the rules, a re-run that changes nothing),
+  `owner-rules.test.mjs` (the rules bound to the signed-in account),
   `setup-hosting.test.mjs` (the site, a taken site name, the page and
   `geoshare.json`)
 - Not covered: the "Create your own group" screen, the list of the account's
@@ -154,7 +157,8 @@ Acceptance:
   and opens the setup page;
 - the page lists the projects of the Google account it is allowed into and
   sets up the chosen one: the Firestore API, the database, the web and
-  Android applications with the fingerprints, the rules, the site named after
+  Android applications with the fingerprints, the rules (bound to the
+  account that signed in, which alone may found the group), the site named after
   the project, the page and `geoshare.json`;
 - run again on the same project, it changes nothing that is already there;
 - it stops with a plain reason when the site name is taken by another

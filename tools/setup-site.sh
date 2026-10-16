@@ -58,6 +58,7 @@ cp -r "${OUT}/public/group/." "${OUT}/public/"
 rm -r "${OUT}/public/group/setup.html" "${OUT}/public/group/setup-privacy.html" \
     "${OUT}/public/group/setup-app.js" \
     "${OUT}/public/group/lib/setup-project.js" "${OUT}/public/group/lib/setup-hosting.js" \
+    "${OUT}/public/group/lib/owner-rules.js" \
     "${OUT}/public/group/lib/qr-svg.js" "${OUT}/public/group/lib/vendor/qr-"*
 cp "${OUT}/public/setup.html" "${OUT}/public/index.html"
 cp "${REPO_ROOT}/firebase/firestore.rules" "${OUT}/public/firestore.rules"

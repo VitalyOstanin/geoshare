@@ -585,6 +585,52 @@ console.log(JSON.stringify({
 '
 }
 
+# The address of the account this runs as: --account, or else the firebase
+# command line's default account, read from the file the access token comes
+# from.
+owner_email() {
+    ACCOUNT="${account}" node -e '
+const fs = require("fs");
+const path = require("path");
+const os = require("os");
+
+let who = process.env.ACCOUNT;
+
+if (!who) {
+    who = JSON.parse(fs.readFileSync(
+        path.join(os.homedir(), ".config/configstore/firebase-tools.json"), "utf8")).user.email;
+}
+
+console.log(who);
+'
+}
+
+# Binds the founding of the group to the project owner in the copy of the
+# rules that is about to go out (ADR-0038), as the setup page does for the
+# rules it deploys. Both use the same module, so the two cannot disagree on
+# what a bound rule looks like.
+bind_rules_to_owner() {
+    local file="$1" email
+
+    email="$(owner_email)" || {
+        echo "cannot tell which account owns ${project}; pass --account" >&2
+        exit 1
+    }
+    RULES_FILE="${file}" OWNER="${email}" MODULE="${REPO_ROOT}/web/public/lib/owner-rules.js" node -e '
+const fs = require("fs");
+const { pathToFileURL } = require("url");
+
+import(pathToFileURL(process.env.MODULE)).then(({ rulesForOwner }) => {
+    const file = process.env.RULES_FILE;
+
+    fs.writeFileSync(file, rulesForOwner(fs.readFileSync(file, "utf8"), process.env.OWNER));
+}).catch((error) => {
+    console.error(error.message);
+    process.exit(1);
+});
+'
+}
+
 # Deploys this working copy's rules and page to the project, with the
 # application's settings beside the page as geoshare.json.
 deploy_site() {
@@ -607,6 +653,7 @@ deploy_site() {
     rm -f "${site}/web/public/firebase-config.js"
     cp -r "${REPO_ROOT}/firebase" "${site}/firebase"
     cp "${REPO_ROOT}/firebase.json" "${site}/firebase.json"
+    bind_rules_to_owner "${site}/firebase/firestore.rules"
     FIREBASE_PROJECT="${project}" FIREBASE_SITE="${site_id}" FIREBASE_ACCOUNT="${account}" \
         WEB_CONFIG_TARGET="${site}/web/public/firebase-config.js" \
         "${REPO_ROOT}/tools/web-config.sh"

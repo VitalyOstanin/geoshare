@@ -1,6 +1,6 @@
 # ADR-0036: A project holds one group, founded once
 
-- Status: Accepted
+- Status: Accepted, supplemented by 0038
 - Date: 2026-10-13
 
 ## Context

@@ -15,6 +15,8 @@ export const ALICE = 'alice-uid';
 export const BOB = 'bob-uid';
 export const STRANGER = 'stranger-uid';
 
+export const RULES_FILE = new URL('../../firestore.rules', import.meta.url);
+
 export let testEnv;
 
 // One document per device: the id is the account and the device joined by a
@@ -120,13 +122,14 @@ export const signedInAs = (email, verified = true) =>
 
 /**
  * The emulator for a file of tests, and the household every test starts from.
+ * [rules] are the repository's own unless a file means to test others.
  */
-export function setUpRules() {
+export function setUpRules(rules = readFileSync(RULES_FILE, 'utf8')) {
     before(async () => {
         testEnv = await initializeTestEnvironment({
             projectId: 'demo-geoshare',
             firestore: {
-                rules: readFileSync(new URL('../../firestore.rules', import.meta.url), 'utf8'),
+                rules,
             },
         });
     });

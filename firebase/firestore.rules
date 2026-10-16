@@ -133,6 +133,15 @@ service cloud.firestore {
         return request.resource.data.members.size() <= 50;
       }
 
+      // Who may found the group of a project (ADR-0038). Until it exists the
+      // project belongs to nobody the rules can name, and whoever knew the
+      // address of the site could found the group first and lock the project
+      // owner out. The owner's address is put in by whatever deploys these
+      // rules to a project; as they stand here, every account may.
+      function foundingAllowed() {
+        return true; // @project-owner
+      }
+
       // The group is made by the person who will run it, alone on the roster
       // and alone among its administrators. Nobody can conjure a group with
       // somebody else already in it.
@@ -152,6 +161,7 @@ service cloud.firestore {
       // after it has been founded cannot found another and spend them.
       function founding() {
         return request.auth != null &&
+               foundingAllowed() &&
                groupId == request.auth.uid &&
                !exists(/databases/$(database)/documents/project/group) &&
                existsAfter(/databases/$(database)/documents/project/group) &&

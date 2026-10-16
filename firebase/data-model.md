@@ -66,7 +66,9 @@ A project holds one group (ADR-0036). This document is created in the batch
 that founds it, naming it, and is never changed or deleted from a client; the
 founding is refused without it, and refused once it exists. Any signed-in
 account may read it by its path, so that a client offers founding only in a
-project that has no group yet; nobody may list the collection.
+project that has no group yet; nobody may list the collection. In a
+project deployed by the setup page or `tools/project.sh` only the project
+owner's verified Google address may found the group (ADR-0038).
 
 ## groups/{groupId}
 

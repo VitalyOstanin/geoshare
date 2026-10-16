@@ -43,5 +43,6 @@ date is the decision's.
 | 0033 | [A setup page finishes the group's project](0033-a-setup-page-finishes-the-project.md)                                 | Accepted                                     | 2026-10-05 |
 | 0034 | [The published key's fingerprints are listed in the repository](0034-the-published-key-is-listed-in-the-repository.md) | Accepted                                     | 2026-10-06 |
 | 0035 | [The page serves its libraries itself, one directory per version](0035-the-page-serves-its-libraries-itself.md)        | Accepted                                     | 2026-10-13 |
-| 0036 | [A project holds one group, founded once](0036-a-project-holds-one-group.md)                                           | Accepted                                     | 2026-10-13 |
+| 0036 | [A project holds one group, founded once](0036-a-project-holds-one-group.md)                                           | Accepted, supplemented by 0038               | 2026-10-13 |
 | 0037 | [Google Cloud Shell is not a supported place to set up a project](0037-google-cloud-shell-is-not-supported.md)         | Accepted                                     | 2026-10-16 |
+| 0038 | [The first group of a project is founded by its owner](0038-the-first-group-is-founded-by-the-project-owner.md)        | Accepted                                     | 2026-10-17 |

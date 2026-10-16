@@ -20,6 +20,7 @@ import {
     failureWord,
     setupConfigOf,
 } from './lib/setup-project.js';
+import { rulesForOwner } from './lib/owner-rules.js';
 import {
     ensureSite,
     appSettings,
@@ -285,7 +286,7 @@ async function runSteps() {
     const stepFns = [
         () => enableFirestoreApi(api, project.projectNumber),
         () => createDatabase(api, projectId, config.location),
-        () => deployServedRules(api, projectId),
+        () => deployServedRules(api, projectId, state.email),
         async () => {
             context.web = await ensureWebApp(api, projectId);
             context.android = await ensureAndroidApp(api, projectId, config.packageName);
@@ -312,15 +313,19 @@ async function runSteps() {
     return null;
 }
 
-/** Deploys the rules the page itself was served with. */
-async function deployServedRules(api, projectId) {
+/**
+ * Deploys the rules the page itself was served with, bound to [email]: the
+ * account that signed in here owns the project, and is the only one the rules
+ * let found its group (ADR-0038).
+ */
+async function deployServedRules(api, projectId, email) {
     const response = await fetch('firestore.rules');
 
     if (!response.ok) {
         throw new Error(`firestore.rules -> ${response.status}`);
     }
 
-    await deployRules(api, projectId, await response.text());
+    await deployRules(api, projectId, rulesForOwner(await response.text(), email));
 }
 
 /**
