@@ -89,6 +89,11 @@ test('an empty name resets and a long one is cut', () => {
     assert.equal(labelText('x'.repeat(LABEL_LIMIT + 10)).length, LABEL_LIMIT);
 });
 
+test('a name is trimmed by the set both clients share', () => {
+    assert.equal(labelText('\uFEFF  grandma \uFEFF'), 'grandma');
+    assert.equal(labelText('\u001Cgrandma\u001F'), '\u001Cgrandma\u001F');
+});
+
 test('a name cut inside an emoji does not end in half of it', () => {
     const cut = labelText('a'.repeat(LABEL_LIMIT - 1) + '\u{1F600}');
 

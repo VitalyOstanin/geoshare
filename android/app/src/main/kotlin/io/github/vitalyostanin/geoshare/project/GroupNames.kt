@@ -2,6 +2,7 @@ package io.github.vitalyostanin.geoshare.project
 
 import android.content.Context
 import io.github.vitalyostanin.geoshare.service.readString
+import io.github.vitalyostanin.geoshare.trimText
 
 private const val KEY_PREFIX = "group_caption/"
 
@@ -22,7 +23,7 @@ object GroupNames {
 
     /** Keeps [caption] for [projectId]'s group; a blank one says nothing new. */
     fun note(context: Context, projectId: String, caption: String?) {
-        val name = caption?.trim()
+        val name = caption?.let { trimText(it) }
 
         if (name.isNullOrEmpty() || name == of(context, projectId)) {
             return

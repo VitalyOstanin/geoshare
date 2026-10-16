@@ -11,6 +11,7 @@ import io.github.vitalyostanin.geoshare.map.idTail
 import io.github.vitalyostanin.geoshare.map.logFailure
 import io.github.vitalyostanin.geoshare.map.searchOf
 import io.github.vitalyostanin.geoshare.project.GroupConnection
+import io.github.vitalyostanin.geoshare.trimText
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.Flow
@@ -100,7 +101,7 @@ fun ownSearch(phoneId: String, connection: GroupConnection): Flow<Search?> = cal
 
 /** What is kept of a device's name at the moment a search is opened or renewed: nothing for none. */
 internal fun phoneNameField(phoneName: String?): Map<String, Any> = phoneName
-    ?.trim()
+    ?.let { trimText(it) }
     ?.let { cutToLimit(it, PHONE_NAME_LIMIT) }
     ?.ifEmpty { null }
     ?.let { mapOf(SearchField.PHONE_NAME to it) }

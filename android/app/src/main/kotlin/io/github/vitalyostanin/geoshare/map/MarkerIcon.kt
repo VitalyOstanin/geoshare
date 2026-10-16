@@ -11,6 +11,7 @@ import android.graphics.Path
 import android.graphics.Rect
 import android.graphics.RectF
 import android.util.TypedValue
+import io.github.vitalyostanin.geoshare.trimText
 import kotlin.math.abs
 import kotlin.math.min
 
@@ -133,7 +134,7 @@ fun faceSize(context: Context): Int = dpToPx(context, FACE_DP)
  * is still a pin of their colour.
  */
 fun memberInitial(name: String): String {
-    val trimmed = name.trim()
+    val trimmed = trimText(name)
 
     if (trimmed.isEmpty()) {
         return ""

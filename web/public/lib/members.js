@@ -2,6 +2,7 @@
 
 import { shortenedAddress } from './join.js';
 import { compareIds } from './order.js';
+import { trimText } from './text.js';
 import { WORDS } from './words.js';
 
 /** How many devices of one member this page will follow. The rules say the same. */
@@ -100,13 +101,13 @@ export function shortName(memberId) {
  * saw on the invitation, and more use to them than the start of an id.
  */
 export function profileName(name, email) {
-    const own = name?.trim();
+    const own = name && trimText(name);
 
     if (own) {
         return own;
     }
 
-    const address = email?.trim();
+    const address = email && trimText(email);
 
     return address ? shortenedAddress(address) : null;
 }
@@ -133,7 +134,7 @@ export function memberName(profile, memberId, own) {
  * on both clients.
  */
 export function memberInitial(name) {
-    return [...name.trim()].slice(0, 1).join('').toUpperCase();
+    return [...trimText(name)].slice(0, 1).join('').toUpperCase();
 }
 
 /** The host account pictures are kept on, and the only one drawn from. */

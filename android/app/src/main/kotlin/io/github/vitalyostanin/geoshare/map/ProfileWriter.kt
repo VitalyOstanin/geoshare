@@ -10,6 +10,7 @@ import io.github.vitalyostanin.geoshare.service.GrantField
 import io.github.vitalyostanin.geoshare.service.ProfileField
 import io.github.vitalyostanin.geoshare.service.grantsOf
 import io.github.vitalyostanin.geoshare.service.membersOf
+import io.github.vitalyostanin.geoshare.trimText
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.tasks.await
 import java.time.Instant
@@ -23,8 +24,10 @@ private const val TAG = "geoshare.profile"
  * saw on the invitation, and more use to them than the start of an id.
  */
 fun profileName(displayName: String?, email: String?): String? =
-    displayName?.trim()?.takeIf { it.isNotEmpty() }
-        ?: email?.trim()?.takeIf { it.isNotEmpty() }?.let(ConnectLink::shortenedAddress)
+    displayName?.let { trimText(it) }?.takeIf { it.isNotEmpty() }
+        ?: email?.let {
+            trimText(it)
+        }?.takeIf { it.isNotEmpty() }?.let(ConnectLink::shortenedAddress)
 
 /**
  * Says who this device's member is.

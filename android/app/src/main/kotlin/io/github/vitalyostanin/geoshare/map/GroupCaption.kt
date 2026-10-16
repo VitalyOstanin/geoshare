@@ -1,6 +1,7 @@
 package io.github.vitalyostanin.geoshare.map
 
 import io.github.vitalyostanin.geoshare.membership.Roster
+import io.github.vitalyostanin.geoshare.trimText
 
 /** How long a group's name may be, the rules' own limit (ADR-0016). */
 const val GROUP_NAME_LIMIT = 60
@@ -13,7 +14,7 @@ const val GROUP_NAME_LIMIT = 60
  * left blank founds a group with none of its own rather than one named the
  * empty string, which the rules would refuse anyway (`nameFits`).
  */
-fun groupNameText(typed: String): String? = typed.trim().take(GROUP_NAME_LIMIT).ifEmpty { null }
+fun groupNameText(typed: String): String? = trimText(typed).take(GROUP_NAME_LIMIT).ifEmpty { null }
 
 /**
  * What the group is called, on the panel and on the founding screen.
@@ -31,7 +32,7 @@ fun groupCaption(
     /** "%1$s's group" or its equivalent; %1$s takes the founder's name. */
     unnamedPattern: String,
 ): String {
-    val name = roster.name?.trim()
+    val name = roster.name?.let { trimText(it) }
 
     if (!name.isNullOrEmpty()) {
         return name

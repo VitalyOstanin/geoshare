@@ -1,6 +1,7 @@
 // What a group is called, on both clients' screens.
 
 import { memberName } from './members.js';
+import { trimText } from './text.js';
 import { WORDS } from './words.js';
 
 /**
@@ -13,7 +14,7 @@ import { WORDS } from './words.js';
  * an edge, and a caption with them would look like a mistake on screen.
  */
 export function groupCaption(roster, profiles, ownMemberId) {
-    const trimmed = typeof roster.name === 'string' ? roster.name.trim() : '';
+    const trimmed = typeof roster.name === 'string' ? trimText(roster.name) : '';
 
     if (trimmed !== '') {
         return trimmed;

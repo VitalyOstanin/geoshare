@@ -19,6 +19,7 @@ import {
 import { devicesOf, profileOf, rosterOf } from './group-data.js';
 import { pictureAddress, profileName } from './members.js';
 import { combinedGrants, phonesOf } from './phones.js';
+import { trimText } from './text.js';
 import {
     INVITATION_LASTS_MS,
     newInvitationCode,
@@ -65,7 +66,7 @@ export function watchRoster(onRoster) {
  * without the mark that tells everybody else it is taken.
  */
 export async function foundGroup(memberId, name = '') {
-    const trimmed = name.trim();
+    const trimmed = trimText(name);
 
     await writeBatch(store)
         .set(doc(store, 'groups', memberId), {
@@ -190,7 +191,7 @@ export function setRunning(memberId, runs) {
  * either rule allows on its own.
  */
 export function renameGroup(name) {
-    return updateDoc(doc(store, 'groups', currentGroup()), { name: name.trim() });
+    return updateDoc(doc(store, 'groups', currentGroup()), { name: trimText(name) });
 }
 
 /**

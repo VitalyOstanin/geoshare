@@ -92,6 +92,12 @@ class LabelsTest {
     }
 
     @Test
+    fun `a name is trimmed by the set both clients share`() {
+        assertEquals("grandma", labelText("\uFEFF  grandma \uFEFF"))
+        assertEquals("\u001Cgrandma\u001F", labelText("\u001Cgrandma\u001F"))
+    }
+
+    @Test
     fun `a name cut inside an emoji does not end in half of it`() {
         val half = "a".repeat(LABEL_LIMIT - 1)
 
