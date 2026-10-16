@@ -39,8 +39,6 @@ and signs in with Google. Members are invited later from the application.
   Firebase command line needs it, and the script reads its JSON with it too)
   and `curl`. `qrencode`, if it is there, adds a QR code of the connection
   link.
-- Or Google Cloud Shell in the project owner's browser: it has all of these,
-  and the project owner is already signed in to Google there.
 
 ## Before the first run
 
@@ -52,7 +50,7 @@ and signs in with Google. Members are invited later from the application.
    npx --yes "$firebase" login
    ```
 
-   In Cloud Shell or any shell without a browser of its own, the last line is
+   In a shell without a browser of its own, the last line is
    `npx --yes "$firebase" login --no-localhost`. This is the only
    sign-in the script needs. Run at a terminal without it, or with a sign-in
    that no longer works, the script starts this login itself and goes on once

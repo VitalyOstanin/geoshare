@@ -72,8 +72,8 @@
 # copy at another project would be a surprise at the next build.
 #
 # Needs a signed-in firebase command line (`firebase login`, or
-# `firebase login --no-localhost` from a shell without a browser of its own,
-# such as Google Cloud Shell) — the one sign-in in a browser the whole setup
+# `firebase login --no-localhost` from a shell without a browser of its own)
+# — the one sign-in in a browser the whole setup
 # asks for. Without it the script fails right away instead of waiting on a
 # prompt --non-interactive told the firebase command line not to show.
 set -euo pipefail
@@ -135,11 +135,6 @@ require_login() {
     elif firebase login:list --json 2> /dev/null | grep -q '"result"'; then
         reason="the firebase command line's sign-in no longer works"
         login+=(--reauth)
-    fi
-
-    # Google Cloud Shell has no browser of its own to come back to.
-    if [[ -n "${CLOUD_SHELL:-}" ]]; then
-        login+=(--no-localhost)
     fi
 
     # Signing in needs a person at a browser. Somebody at a terminal is helped
@@ -210,7 +205,7 @@ for (const entry of JSON.parse(raw.slice(raw.indexOf("{"))).result) {
 
     # The published key always, so the application from the releases page
     # signs in; the debug key besides when this machine can build, so does
-    # what is built here. Cloud Shell has no container to build in, and gets
+    # what is built here. A machine without podman cannot build, and gets
     # the first alone. Anywhere podman is, a failure to read the debug key
     # stops here: otherwise the debug build cannot sign in, and nothing would
     # say why.

@@ -114,14 +114,13 @@ The scripts read these from the environment; none has to be set.
 | 15 | `WEB_CONFIG_TARGET`   | `web-config.sh`                | where the page's configuration is written                          | `web/public/firebase-config.js`  |
 | 16 | `GEOSHARE_RELEASE_*`  | `sign-release.sh`              | the release key: keystore, alias, password                         | none; see the script's header    |
 | 17 | `HTTPS_PROXY`         | all containers (`lib.sh`)      | handed to image builds and containers when set                     | none                             |
-| 18 | `CLOUD_SHELL`         | `project.sh`                   | set by Google Cloud Shell; sign-in without a local browser         | none                             |
-| 19 | `TIMEOUT`             | `test-instrumented.sh`         | how long the instrumented run may take as a whole                  | `30m`                            |
-| 20 | `WEB_PORT`            | `serve-web.sh`                 | the port the page is served on                                     | `5000`                           |
-| 21 | `GRADLE_TIMEOUT`      | `gradle.sh`                    | how long one Gradle run may take as a whole                        | `60m`                            |
-| 22 | `STAND_WEB_PORT`      | `page-stand.sh`                | the port the stand's page is served on                             | `5000`                           |
-| 23 | `STAND_FIRESTORE_PORT`| `page-stand.sh`                | the port of the stand's Firestore emulator                         | `18080`                          |
-| 24 | `STAND_AUTH_PORT`     | `page-stand.sh`                | the port of the stand's sign-in emulator                           | `19099`                          |
-| 25 | `READY_TIMEOUT`       | `page-stand.sh`                | seconds to wait for the stand's emulators                          | `120`                            |
+| 18 | `TIMEOUT`             | `test-instrumented.sh`         | how long the instrumented run may take as a whole                  | `30m`                            |
+| 19 | `WEB_PORT`            | `serve-web.sh`                 | the port the page is served on                                     | `5000`                           |
+| 20 | `GRADLE_TIMEOUT`      | `gradle.sh`                    | how long one Gradle run may take as a whole                        | `60m`                            |
+| 21 | `STAND_WEB_PORT`      | `page-stand.sh`                | the port the stand's page is served on                             | `5000`                           |
+| 22 | `STAND_FIRESTORE_PORT`| `page-stand.sh`                | the port of the stand's Firestore emulator                         | `18080`                          |
+| 23 | `STAND_AUTH_PORT`     | `page-stand.sh`                | the port of the stand's sign-in emulator                           | `19099`                          |
+| 24 | `READY_TIMEOUT`       | `page-stand.sh`                | seconds to wait for the stand's emulators                          | `120`                            |
 
 The names of the podman resources — `POD_NAME`, `SERVICES_NAME`,
 `EMULATOR_NAME`, `STAND_NAME`, `SDK_IMAGE`, `EMULATOR_IMAGE`, `FIREBASE_IMAGE`,

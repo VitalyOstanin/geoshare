@@ -13,7 +13,6 @@ but the stories here are about the project, not about the group.
 - [OWN-05 See what the project spends of the free tier](#own-05-see-what-the-project-spends-of-the-free-tier)
 - [OWN-06 Look after several projects from one machine](#own-06-look-after-several-projects-from-one-machine)
 - [OWN-07 Remove the project](#own-07-remove-the-project)
-- [OWN-08 Set up the project without a prepared machine](#own-08-set-up-the-project-without-a-prepared-machine)
 - [OWN-09 Set up the project from a page in the browser](#own-09-set-up-the-project-from-a-page-in-the-browser)
 - [OWN-10 Use the published build without building one](#own-10-use-the-published-build-without-building-one)
 
@@ -132,23 +131,6 @@ Acceptance:
 - `tools/project.sh delete <project> --yes` asks Google to shut the project
   down, and does nothing without `--yes`;
 - the project can be restored for 30 days.
-
-## OWN-08 Set up the project without a prepared machine
-
-- Status: done
-- ADR: 0003, 0034
-- Tests: —
-- Not covered: not covered
-
-As a project owner who is not a programmer I set up the project from Google
-Cloud Shell in a browser, following one page, so that I need no computer of
-my own prepared for it.
-
-Acceptance:
-
-- `docs/new-project.md` leads from an empty account to the connection link;
-- the fingerprint of the key the published application is signed with is
-  known to the script without a build container.
 
 ## OWN-09 Set up the project from a page in the browser
 

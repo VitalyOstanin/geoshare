@@ -85,8 +85,8 @@ The project owner sees every member's places and history from the Firebase
 console, past the rules; the application says so to everybody before they
 join.
 
-[tools/project.sh](tools/project.sh) does the same from a terminal, for a
-developer or for Google Cloud Shell; [docs/new-project.md](docs/new-project.md)
+[tools/project.sh](tools/project.sh) does the same from a terminal, on a
+machine with Node.js 20 or later; [docs/new-project.md](docs/new-project.md)
 describes it.
 
 ### Joining

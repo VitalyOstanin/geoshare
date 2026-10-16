@@ -86,8 +86,8 @@ Firebase.
 Владелец проекта видит из консоли Firebase места и историю всех участников, в
 обход правил; приложение говорит об этом каждому до вступления.
 
-То же самое из терминала делает [tools/project.sh](tools/project.sh) — для
-разработчика или для Google Cloud Shell; описание в
+То же самое из терминала делает [tools/project.sh](tools/project.sh) — на
+машине с Node.js 20 или новее; описание в
 [docs/new-project.md](docs/new-project.md).
 
 ### Вступить в группу

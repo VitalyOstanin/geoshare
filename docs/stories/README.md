@@ -68,7 +68,7 @@ Each story names its records in `ADR`; the same links the other way round:
 |----|----------------------------------------------------------------------|------------------------------------------------------------------------|----------------------------------------------------------------|
 | 1  | [0001](../ADR/0001-one-build-settings-at-runtime.md)                 | One build for every group, project settings read at runtime            | OWN-03, MEM-01, GST-03                                         |
 | 2  | [0002](../ADR/0002-sign-in-through-the-browser.md)                   | Sign in with Google through the browser flow                           | MEM-01, DEV-04                                                 |
-| 3  | [0003](../ADR/0003-project-setup-by-script.md)                       | A group's project is set up by a script                                | OWN-01, OWN-02, OWN-03, OWN-04, OWN-08                         |
+| 3  | [0003](../ADR/0003-project-setup-by-script.md)                       | A group's project is set up by a script                                | OWN-01, OWN-02, OWN-03, OWN-04                                 |
 | 4  | [0004](../ADR/0004-firebase-as-the-shared-store.md)                  | Firestore as the shared store, with applications of our own            | MEM-07, DEV-01                                                 |
 | 5  | [0005](../ADR/0005-a-project-per-group.md)                           | Every group runs its own Firebase project                              | OWN-01, OWN-06                                                 |
 | 6  | [0006](../ADR/0006-maplibre-and-osm-tiles.md)                        | MapLibre on both clients, OpenStreetMap raster tiles                   | MEM-14                                                         |
@@ -99,9 +99,10 @@ Each story names its records in `ADR`; the same links the other way round:
 | 31 | [0031](../ADR/0031-a-refused-reader-asks-again.md)                   | A refused reader asks again when the granter says so                   | MEM-10, DEV-09                                                 |
 | 32 | [0032](../ADR/0032-scanning-an-invitation-with-camerax-and-zxing.md) | An invitation is scanned with CameraX and zxing                        | MEM-21                                                         |
 | 33 | [0033](../ADR/0033-a-setup-page-finishes-the-project.md)             | A setup page finishes the group's project                              | OWN-09                                                         |
-| 34 | [0034](../ADR/0034-the-published-key-is-listed-in-the-repository.md) | The published key's fingerprints are listed in the repository          | OWN-08, OWN-10                                                 |
+| 34 | [0034](../ADR/0034-the-published-key-is-listed-in-the-repository.md) | The published key's fingerprints are listed in the repository          | OWN-10                                                         |
 | 35 | [0035](../ADR/0035-the-page-serves-its-libraries-itself.md)          | The page serves its libraries itself, one directory per version        | — (how the page is built and served)                           |
 | 36 | [0036](../ADR/0036-a-project-holds-one-group.md)                     | A project holds one group, founded once                                | ADM-01                                                         |
+| 37 | [0037](../ADR/0037-google-cloud-shell-is-not-supported.md)           | Google Cloud Shell is not a supported place to set up a project        | —                                                              |
 
 Stories that rest on no record: OWN-07, OWN-10, ADM-10, ADM-11, MEM-06, MEM-11,
 MEM-12, MEM-15, MEM-22, DEV-05, DEV-06, DEV-12, DEV-13, DEV-14.

@@ -1,6 +1,7 @@
 # ADR-0003: A group's project is set up by a script
 
-- Status: Accepted; the project owner's path superseded by ADR-0033
+- Status: Accepted; the project owner's path superseded by ADR-0033, the
+  Cloud Shell fallback by ADR-0037
 - Date: 2026-09-30
 - Note: `tools/new-project.sh` named below is now `tools/project.sh create`
 
