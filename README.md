@@ -83,9 +83,8 @@ with 2-Step Verification turned on (the Firebase console asks for it from
    ([docs/console-steps.md](docs/console-steps.md)).
 3. The page ends with the connection link and its QR code.
 
-The project owner sees every member's places and history from the Firebase
-console, past the rules; the application says so to everybody before they
-join.
+The project owner sees every member's places from the Firebase console, past
+the rules; the application says so to everybody before they join.
 
 [tools/project.sh](tools/project.sh) does the same from a terminal, on a
 machine with Node.js 20 or later; [docs/new-project.md](docs/new-project.md)

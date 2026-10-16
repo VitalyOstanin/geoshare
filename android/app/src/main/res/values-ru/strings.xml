@@ -523,7 +523,7 @@
     <string name="connect_field_project">Проект</string>
     <string name="connect_field_site">Сайт</string>
     <string name="connect_from_link">указано в ссылке</string>
-    <string name="connect_confirm_storage">Данные группы хранятся в проекте Google Firebase того, кто её завёл. Он видит места и историю всех участников.</string>
+    <string name="connect_confirm_storage">Данные группы хранятся в проекте Google Firebase того, кто её завёл. Он может видеть, где находятся все участники.</string>
     <string name="connect_confirm_hint">Дальше вход через Google в браузере.</string>
     <string name="connect_confirm_hint_joining">Дальше приложение вступит в группу под текущим аккаунтом.</string>
     <string name="connect_cancel">Отмена</string>
