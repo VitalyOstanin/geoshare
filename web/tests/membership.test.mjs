@@ -9,6 +9,7 @@ import {
     UNGROUPED,
     UNRUN,
     offerWithoutGroup,
+    ownProjectGroup,
     invitationFrom,
     looksLikeACode,
     looksLikeAGroupName,
@@ -245,4 +246,15 @@ test('a mark that could not be read offers to make one, as the rules decide', ()
 
 test('a project whose group is marked offers only a way into it', () => {
     assert.equal(offerWithoutGroup(ALICE), GROUP_TAKEN);
+});
+
+// The founder made the group on a device; this browser still looks at another.
+test('a mark naming the account itself is its own group to move into', () => {
+    assert.equal(ownProjectGroup(ALICE, ALICE, 'family'), ALICE);
+});
+
+test('a mark naming somebody else, or the group already shown, moves nowhere', () => {
+    assert.equal(ownProjectGroup(ALICE, BOB, 'family'), null);
+    assert.equal(ownProjectGroup(ALICE, ALICE, ALICE), null);
+    assert.equal(ownProjectGroup(null, ALICE, 'family'), null);
 });

@@ -13,7 +13,15 @@ import {
 import { withFalsePlaces } from './lib/false-places.js';
 import { withPhones } from './lib/phones.js';
 import { withSearches, standingSearches } from './lib/searches.js';
-import { keepWatching, refusals, watchSignIn, watchWatchers } from './lib/store.js';
+import { ownProjectGroup } from './lib/membership.js';
+import {
+    currentGroup,
+    keepWatching,
+    refusals,
+    rememberGroup,
+    watchSignIn,
+    watchWatchers,
+} from './lib/store.js';
 import { watchPositions } from './lib/store-positions.js';
 import { lastProfileChange, profilesChanged } from './lib/refusals.js';
 import {
@@ -234,10 +242,20 @@ function readProjectGroup(roster) {
 
     state.projectGroup = null;
     projectGroupOf().then((group) => {
-        if (state.member === member) {
-            state.projectGroup = group;
-            drawGroup();
+        if (state.member !== member) {
+            return;
         }
+        const own = ownProjectGroup(group, member.memberId, currentGroup());
+
+        if (own !== null) {
+            rememberGroup(own);
+            stop();
+            start();
+
+            return;
+        }
+        state.projectGroup = group;
+        drawGroup();
     });
 }
 

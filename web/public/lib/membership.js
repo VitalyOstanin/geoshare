@@ -38,6 +38,16 @@ export function offerWithoutGroup(projectGroup) {
     return typeof projectGroup === 'string' && projectGroup !== '' ? GROUP_TAKEN : GROUP_FREE;
 }
 
+/**
+ * The group to move into when the project's mark names one this account
+ * founded, or null. A group is named after the account that made it, so such
+ * a mark is this account's own group, made on its device or in a browser that
+ * has since forgotten it — not somebody else's to ask an invitation for.
+ */
+export function ownProjectGroup(projectGroup, memberId, current) {
+    return projectGroup === memberId && projectGroup !== current ? projectGroup : null;
+}
+
 export function standingIn(roster, memberId) {
     if (roster === null || !roster.members.includes(memberId)) {
         return UNGROUPED;
