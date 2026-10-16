@@ -4,6 +4,7 @@ import android.content.Context
 import com.google.firebase.firestore.DocumentSnapshot
 import com.google.firebase.firestore.FieldValue
 import io.github.vitalyostanin.geoshare.R
+import io.github.vitalyostanin.geoshare.cutToLimit
 import io.github.vitalyostanin.geoshare.log.AppLog
 import io.github.vitalyostanin.geoshare.map.Search
 import io.github.vitalyostanin.geoshare.map.idTail
@@ -98,9 +99,9 @@ fun ownSearch(phoneId: String, connection: GroupConnection): Flow<Search?> = cal
 }.comingBack("own search", forgetting = { null })
 
 /** What is kept of a device's name at the moment a search is opened or renewed: nothing for none. */
-private fun phoneNameField(phoneName: String?): Map<String, Any> = phoneName
+internal fun phoneNameField(phoneName: String?): Map<String, Any> = phoneName
     ?.trim()
-    ?.take(PHONE_NAME_LIMIT)
+    ?.let { cutToLimit(it, PHONE_NAME_LIMIT) }
     ?.ifEmpty { null }
     ?.let { mapOf(SearchField.PHONE_NAME to it) }
     .orEmpty()

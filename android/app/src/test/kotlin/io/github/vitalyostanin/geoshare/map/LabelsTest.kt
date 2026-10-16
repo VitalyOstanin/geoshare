@@ -91,6 +91,13 @@ class LabelsTest {
         assertEquals(LABEL_LIMIT, labelText("x".repeat(LABEL_LIMIT + 10))?.length)
     }
 
+    @Test
+    fun `a name cut inside an emoji does not end in half of it`() {
+        val half = "a".repeat(LABEL_LIMIT - 1)
+
+        assertEquals(half, labelText(half + "\uD83D\uDE00"))
+    }
+
     // Two devices of one model that nobody named read the same everywhere; a
     // number after the name tells them apart, in the order of their ids so
     // that every screen numbers them alike.

@@ -17,6 +17,23 @@ class ConnectLinkTest {
     }
 
     @Test
+    fun `a cut that falls inside an emoji drops the whole emoji`() {
+        val link = ConnectLink.invitationLink(
+            site = SITE,
+            groupId = "g",
+            code = "c",
+            inviter = "a".repeat(59) + "\uD83D\uDE00",
+            groupName = null,
+            email = "ivan.petrov@example.com",
+        )
+
+        assertEquals("a".repeat(59), ConnectLink.parse(link)?.invitation?.inviter)
+        val typed = "a".repeat(59) + "%F0%9F%98%80"
+        val read = ConnectLink.parse("https://$SITE.web.app/join#g=g&c=c&by=$typed")
+        assertEquals("a".repeat(59), read?.invitation?.inviter)
+    }
+
+    @Test
     fun `a trailing slash after join is accepted`() {
         assertEquals(
             ConnectLink(site = SITE, invitation = null),

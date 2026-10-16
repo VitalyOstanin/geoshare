@@ -62,6 +62,22 @@ test('a caption longer than 60 characters is cut to 60', () => {
     assert.equal(invitation.by.length, 60);
 });
 
+test('a cut that falls inside an emoji drops the whole emoji', () => {
+    const link = invitationLink({
+        site: 's', groupId: 'g', code: 'c', by: `${'a'.repeat(59)}\u{1F600}`, name: null,
+        email: 'ivan.petrov@example.com',
+    });
+    const invitation = parseInvitation(new URL(link).hash);
+
+    assert.equal(invitation.by, 'a'.repeat(59));
+});
+
+test('a caption read off a link is not left ending in half an emoji', () => {
+    const invitation = parseInvitation(`#g=g&c=c&by=${'a'.repeat(59)}%F0%9F%98%80`);
+
+    assert.equal(invitation.by, 'a'.repeat(59));
+});
+
 test('a caption is trimmed of the whitespace around it', () => {
     const invitation = parseInvitation('#g=g&c=c&by=%20Alice%20');
 

@@ -1,5 +1,6 @@
 package io.github.vitalyostanin.geoshare.map
 
+import io.github.vitalyostanin.geoshare.cutToLimit
 import io.github.vitalyostanin.geoshare.service.deviceIdOf
 import io.github.vitalyostanin.geoshare.service.positionId
 
@@ -44,7 +45,7 @@ private fun namesFrom(value: Any?, limit: Int): Map<String, String> = (value as?
     .toMap()
 
 /** What is kept of a name somebody typed: nothing for an empty one, which resets the name. */
-fun labelText(typed: String): String? = typed.trim().take(LABEL_LIMIT).ifEmpty { null }
+fun labelText(typed: String): String? = cutToLimit(typed.trim(), LABEL_LIMIT).ifEmpty { null }
 
 /** The profiles with the names this member gave the people put in place of their own. */
 fun labelledProfiles(

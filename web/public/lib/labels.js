@@ -9,6 +9,7 @@
 import { compareIds } from './order.js';
 import { deviceIdOf } from './phones.js';
 import { keep, readKept } from './kept.js';
+import { cutToLimit } from './text.js';
 
 /** As much of a name as fits on a card. The application cuts it to the same. */
 export const LABEL_LIMIT = 40;
@@ -25,7 +26,7 @@ export const NO_LABELS = Object.freeze({ phones: new Map(), members: new Map() }
 
 /** What is kept of a name somebody typed: nothing for an empty one, which resets the name. */
 export function labelText(typed) {
-    const text = String(typed ?? '').trim().slice(0, LABEL_LIMIT);
+    const text = cutToLimit(String(typed ?? '').trim(), LABEL_LIMIT);
 
     return text === '' ? null : text;
 }

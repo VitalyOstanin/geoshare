@@ -14,6 +14,7 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.res.stringResource
 import io.github.vitalyostanin.geoshare.R
+import io.github.vitalyostanin.geoshare.cutToLimit
 
 /**
  * Asks for a name, with what it is called now to start from.
@@ -46,7 +47,7 @@ fun NameDialog(
                 )
                 OutlinedTextField(
                     value = typed,
-                    onValueChange = { typed = it.take(LABEL_LIMIT) },
+                    onValueChange = { typed = cutToLimit(it, LABEL_LIMIT) },
                     singleLine = true,
                 )
             }

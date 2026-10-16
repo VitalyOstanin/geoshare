@@ -89,6 +89,13 @@ test('an empty name resets and a long one is cut', () => {
     assert.equal(labelText('x'.repeat(LABEL_LIMIT + 10)).length, LABEL_LIMIT);
 });
 
+test('a name cut inside an emoji does not end in half of it', () => {
+    const cut = labelText('a'.repeat(LABEL_LIMIT - 1) + '\u{1F600}');
+
+    assert.equal(cut, 'a'.repeat(LABEL_LIMIT - 1));
+    assert.equal(labelText('a'.repeat(LABEL_LIMIT - 2) + '\u{1F600}').length, LABEL_LIMIT);
+});
+
 test('the names kept in the browser come back as they were', () => {
     const store = memoryStore();
     const labels = labelsFrom({ devices: { [`${HER}.phone`]: 'new phone' }, members: { [HER]: 'grandma' } });
