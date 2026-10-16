@@ -10,6 +10,8 @@
 const FIREBASE = 'https://firebase.googleapis.com/v1beta1';
 const HOSTING = 'https://firebasehosting.googleapis.com/v1beta1';
 const IDENTITY = 'https://identitytoolkit.googleapis.com/admin/v2';
+// One upload at a time took about two seconds a file, four minutes a page.
+const UPLOADS_AT_ONCE = 4;
 
 /** The address a hosting site is served from. */
 function siteUrl(siteId) {
@@ -133,11 +135,15 @@ export async function deploySite(api, siteId, files, config = {}) {
         files: hashes,
     });
 
-    for (const hash of populated.uploadRequiredHashes ?? []) {
-        const path = Object.keys(hashes).find((candidate) => hashes[candidate] === hash);
+    const pathOf = new Map(Object.entries(hashes).map(([path, hash]) => [hash, path]));
+    const queue = [...(populated.uploadRequiredHashes ?? [])];
+    const upload = async () => {
+        for (let hash = queue.shift(); hash !== undefined; hash = queue.shift()) {
+            await api('POST', `${populated.uploadUrl}/${hash}`, gzipped[pathOf.get(hash)], true);
+        }
+    };
 
-        await api('POST', `${populated.uploadUrl}/${hash}`, gzipped[path], true);
-    }
+    await Promise.all(Array.from({ length: UPLOADS_AT_ONCE }, upload));
 
     await api('PATCH', `${HOSTING}/${version.name}?update_mask=status`, { status: 'FINALIZED' });
     await api('POST', `${HOSTING}/sites/${siteId}/releases?versionName=${version.name}`, {});

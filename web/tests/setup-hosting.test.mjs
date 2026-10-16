@@ -197,6 +197,47 @@ test('only the hashes hosting asked for are uploaded', async () => {
     assert.match(populate.body.files['/index.html'], /^[0-9a-f]{64}$/);
 });
 
+test('no more than four files are uploaded at once, and every one is', async () => {
+    let running = 0;
+    let most = 0;
+    const api = fakeApi([
+        [/POST .*\/versions$/, { name: `sites/${PROJECT}/versions/v1` }],
+        [
+            /populateFiles$/,
+            (body) => ({
+                uploadUrl: 'https://upload.example/up',
+                uploadRequiredHashes: Object.values(body.files),
+            }),
+        ],
+        [
+            /POST https:\/\/upload\.example/,
+            async () => {
+                running += 1;
+                most = Math.max(most, running);
+                await new Promise((resolve) => setTimeout(resolve, 5));
+                running -= 1;
+
+                return {};
+            },
+        ],
+        [/PATCH /, {}],
+        [/POST .*\/releases/, {}],
+    ]);
+    const files = Object.fromEntries(
+        Array.from({ length: 10 }, (_, index) => [`/f${index}.txt`, `file ${index}`]),
+    );
+
+    await deploySite(api, PROJECT, files);
+
+    const populate = api.calls.find((call) => call.url.endsWith(':populateFiles'));
+    const uploaded = api.calls
+        .filter((call) => call.url.startsWith('https://upload.example'))
+        .map((call) => call.url.split('/').pop());
+
+    assert.equal(most, 4);
+    assert.deepEqual(uploaded.sort(), Object.values(populate.body.files).sort());
+});
+
 test('nothing is uploaded when hosting holds every file already', async () => {
     const api = deployApi(() => []);
 
