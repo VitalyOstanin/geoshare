@@ -39,6 +39,7 @@ import java.util.Locale
 fun LinkBanner(link: LinkState) {
     val since = link.since ?: return
     val locale = appLocale()
+    val clock24 = twentyFourHour()
 
     Card(
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
@@ -55,14 +56,14 @@ fun LinkBanner(link: LinkState) {
             )
             Column(modifier = Modifier.padding(horizontal = 12.dp, vertical = 10.dp)) {
                 Text(
-                    text = stringResource(R.string.link_lost, clockText(since, locale)),
+                    text = stringResource(R.string.link_lost, clockText(since, locale, clock24)),
                     style = MaterialTheme.typography.bodyMedium,
                     fontWeight = FontWeight.SemiBold,
                 )
                 Text(
                     text =
                     link.knownAt?.let {
-                        stringResource(R.string.link_known_at, clockText(it, locale))
+                        stringResource(R.string.link_known_at, clockText(it, locale, clock24))
                     } ?: stringResource(R.string.link_known_never),
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
@@ -80,20 +81,23 @@ fun LinkBanner(link: LinkState) {
 fun knownNote(): String? {
     val knownAt = LocalLink.current.takeIf { it.lost }?.knownAt ?: return null
 
-    return stringResource(R.string.known_at, clockText(knownAt, appLocale()))
+    return stringResource(R.string.known_at, clockText(knownAt, appLocale(), twentyFourHour()))
 }
 
 /** A time of day, with the date as well once it is not today's. */
-private fun clockText(moment: Instant, locale: Locale): String {
+private fun clockText(moment: Instant, locale: Locale, twentyFourHour: Boolean): String {
     val local = moment.atZone(ZoneId.systemDefault())
     val today = local.toLocalDate() == LocalDate.now()
 
     val format =
         if (today) {
-            DateTimeFormatter.ofLocalizedTime(FormatStyle.SHORT)
+            clockFormat(locale, twentyFourHour)
         } else {
-            DateTimeFormatter.ofLocalizedDateTime(FormatStyle.SHORT)
+            DateTimeFormatter.ofPattern(
+                dateAndClockPattern(FormatStyle.SHORT, locale, twentyFourHour),
+                locale,
+            )
         }
 
-    return local.format(format.withLocale(locale))
+    return local.format(format)
 }

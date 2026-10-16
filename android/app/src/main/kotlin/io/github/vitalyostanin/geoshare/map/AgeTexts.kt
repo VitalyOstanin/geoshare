@@ -16,9 +16,13 @@ import java.util.Locale
 private const val AGE_TICK_MS = 30_000L
 
 /** The moment itself, for the card a member opens rather than for the buttons. */
-internal fun momentText(moment: Instant, locale: Locale, zone: ZoneId): String = DateTimeFormatter
-    .ofLocalizedDateTime(FormatStyle.MEDIUM, FormatStyle.SHORT)
-    .withLocale(locale)
+internal fun momentText(
+    moment: Instant,
+    locale: Locale,
+    zone: ZoneId,
+    twentyFourHour: Boolean,
+): String = DateTimeFormatter
+    .ofPattern(dateAndClockPattern(FormatStyle.MEDIUM, locale, twentyFourHour), locale)
     .withZone(zone)
     .format(moment)
 
@@ -29,7 +33,7 @@ internal fun momentText(moment: Instant, locale: Locale, zone: ZoneId): String =
  */
 @Composable
 internal fun momentText(moment: Instant): String =
-    momentText(moment, appLocale(), ZoneId.systemDefault())
+    momentText(moment, appLocale(), ZoneId.systemDefault(), twentyFourHour())
 
 @Composable
 internal fun ageText(age: PositionAge): String = when (age) {

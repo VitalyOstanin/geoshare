@@ -6,6 +6,7 @@ import android.app.NotificationManager
 import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
+import android.text.format.DateFormat
 import androidx.core.app.NotificationCompat
 import androidx.core.content.getSystemService
 import io.github.vitalyostanin.geoshare.MainActivity
@@ -68,6 +69,7 @@ fun searchNotification(
                 endsAtText(
                     search.endsAt.atZone(ZoneId.systemDefault()),
                     context.resources.configuration.locales[0],
+                    DateFormat.is24HourFormat(context),
                 ),
             ),
         )

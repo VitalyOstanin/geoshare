@@ -303,7 +303,7 @@ private fun MemberButton(
                     text =
                     stringResource(
                         R.string.sought_until_short,
-                        soughtEndsShort(sought.endsAt, now, appLocale()),
+                        soughtEndsShort(sought.endsAt, now, appLocale(), twentyFourHour()),
                     ),
                     style = MaterialTheme.typography.bodySmall,
                     color = soughtWords(),

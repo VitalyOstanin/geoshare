@@ -43,14 +43,15 @@ internal fun soughtEndsShort(
     endsAt: Instant,
     now: Instant,
     locale: Locale,
+    twentyFourHour: Boolean,
     zone: ZoneId = ZoneId.systemDefault(),
 ): String {
     val ends = endsAt.atZone(zone)
 
     return if (ends.toLocalDate() == now.atZone(zone).toLocalDate()) {
-        clockFormat(locale).format(ends)
+        clockFormat(locale, twentyFourHour).format(ends)
     } else {
-        endsAtText(ends, locale)
+        endsAtText(ends, locale, twentyFourHour)
     }
 }
 

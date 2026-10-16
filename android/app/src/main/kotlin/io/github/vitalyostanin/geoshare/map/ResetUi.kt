@@ -42,7 +42,7 @@ fun resetText(reset: Reset, now: Instant): String? {
         return null
     }
 
-    val clock = clockFormat(appLocale())
+    val clock = clockFormat(appLocale(), twentyFourHour())
 
     return when (val state = resetState(reset, now)) {
         ResetState.Waiting -> stringResource(

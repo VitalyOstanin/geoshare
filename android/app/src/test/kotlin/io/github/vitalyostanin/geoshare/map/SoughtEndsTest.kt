@@ -19,6 +19,7 @@ class SoughtEndsTest {
                 Instant.parse("2026-10-12T22:33:00Z"),
                 now,
                 Locale.forLanguageTag("ru"),
+                true,
                 zone,
             ),
         )
@@ -27,8 +28,14 @@ class SoughtEndsTest {
     @Test
     fun `a search ending another day shows the day and the time`() {
         assertEquals(
-            endsAtText(Instant.parse("2026-10-13T01:05:00Z").atZone(zone), Locale.ENGLISH),
-            soughtEndsShort(Instant.parse("2026-10-13T01:05:00Z"), now, Locale.ENGLISH, zone),
+            endsAtText(Instant.parse("2026-10-13T01:05:00Z").atZone(zone), Locale.ENGLISH, false),
+            soughtEndsShort(
+                Instant.parse("2026-10-13T01:05:00Z"),
+                now,
+                Locale.ENGLISH,
+                false,
+                zone,
+            ),
         )
     }
 }
