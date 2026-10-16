@@ -73,8 +73,10 @@ for (const text of words.s1List) {
 }
 
 function show(step) {
-    for (let n = 1; n <= 5; n++) {
-        $(`step-${n}`).hidden = n !== step;
+    // The screens are found in the markup, so one added there needs no count
+    // here.
+    for (const section of document.querySelectorAll('section[id^="step-"]')) {
+        section.hidden = section.id !== `step-${step}`;
     }
 
     window.scrollTo(0, 0);
