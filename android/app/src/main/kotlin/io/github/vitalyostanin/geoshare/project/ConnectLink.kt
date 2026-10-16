@@ -1,6 +1,7 @@
 package io.github.vitalyostanin.geoshare.project
 
 import io.github.vitalyostanin.geoshare.cutToLimit
+import io.github.vitalyostanin.geoshare.trimText
 import java.net.URLDecoder
 import java.net.URLEncoder
 
@@ -119,8 +120,8 @@ data class ConnectLink(val site: String, val invitation: Invitation?) {
             val fields = listOf(
                 "g" to groupId,
                 "c" to code,
-                "by" to inviter?.trim()?.let { cutToLimit(it, CAPTION_MAX_LENGTH) },
-                "n" to groupName?.trim()?.let { cutToLimit(it, CAPTION_MAX_LENGTH) },
+                "by" to inviter?.let { trimText(it) }?.let { cutToLimit(it, CAPTION_MAX_LENGTH) },
+                "n" to groupName?.let { trimText(it) }?.let { cutToLimit(it, CAPTION_MAX_LENGTH) },
                 "to" to shortenedAddress(email),
             ).mapNotNull { (key, value) -> value?.takeIf { it.isNotEmpty() }?.let { key to it } }
 
@@ -196,7 +197,7 @@ data class ConnectLink(val site: String, val invitation: Invitation?) {
          * edited by whoever holds it — is cut down to size.
          */
         private fun caption(value: String?): String? {
-            val trimmed = value?.trim()
+            val trimmed = value?.let { trimText(it) }
 
             return if (trimmed.isNullOrEmpty()) null else cutToLimit(trimmed, CAPTION_MAX_LENGTH)
         }

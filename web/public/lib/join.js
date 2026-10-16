@@ -7,7 +7,7 @@
 // without one.
 
 import { invitationFrom } from './membership.js';
-import { cutToLimit } from './text.js';
+import { cutToLimit, trimText } from './text.js';
 
 /** The package the application is published under, for the intent link. */
 export const APP_PACKAGE = 'io.github.vitalyostanin.geoshare';
@@ -19,7 +19,7 @@ export const RELEASES_URL = 'https://github.com/VitalyOstanin/geoshare/releases'
 const CAPTION_LIMIT = 60;
 
 function capCaption(value) {
-    return value === null ? '' : cutToLimit(value.trim(), CAPTION_LIMIT);
+    return value === null ? '' : cutToLimit(trimText(value), CAPTION_LIMIT);
 }
 
 /**
