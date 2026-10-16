@@ -79,6 +79,7 @@ import io.github.vitalyostanin.geoshare.service.LanguageSetting
 import io.github.vitalyostanin.geoshare.service.SharingService
 import io.github.vitalyostanin.geoshare.service.SharingSetting
 import io.github.vitalyostanin.geoshare.service.SourcesSetting
+import io.github.vitalyostanin.geoshare.service.ThemeChoice
 import io.github.vitalyostanin.geoshare.service.ThemeSetting
 import io.github.vitalyostanin.geoshare.service.darkWanted
 import io.github.vitalyostanin.geoshare.service.dndAccessGranted
@@ -201,7 +202,13 @@ class MainActivity : AppCompatActivity() {
         // link is what moves the device past this, so the screens that paint
         // ConnectFlow's states are all there is to build here.
         if (!Connections.connected) {
-            setContent { ConnectOnly() }
+            // readSettings has not run on this path, so the choice is read
+            // from the setting itself rather than from appearance.
+            val theme = ThemeSetting(this).choice
+
+            paintWindow(darkWanted(theme, systemIsDark()))
+
+            setContent { ConnectOnly(theme) }
 
             return
         }
@@ -248,8 +255,14 @@ class MainActivity : AppCompatActivity() {
 
     /** All there is to show before the device is in any group: connecting to one. */
     @Composable
-    private fun ConnectOnly() {
-        MaterialTheme {
+    private fun ConnectOnly(theme: ThemeChoice) {
+        val dark = darkWanted(theme, isSystemInDarkTheme())
+
+        // Without the colours the screen stays light whatever the device is
+        // set to, and edge-to-edge turns the status bar icons white on it.
+        LaunchedEffect(dark) { paintWindow(dark) }
+
+        MaterialTheme(colorScheme = appColours(dark)) {
             Surface(modifier = Modifier.fillMaxSize()) {
                 val connectState by connectFlow.state.collectAsStateWithLifecycle()
 
