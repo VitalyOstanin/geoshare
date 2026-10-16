@@ -546,7 +546,7 @@ print(json.dumps({
     "manualSteps": [
         {
             "what": "Authentication, Sign-in method, Google, Enable, type the name "
-                    "of the group as the public-facing name, pick a support "
+                    "of the group as the public-facing name, pick the support "
                     "address, Save",
             "url": f"https://console.firebase.google.com/project/{project}"
                    "/authentication/providers",
@@ -694,8 +694,11 @@ Done with the part that runs from here. Two steps are left in the consoles:
 
   1. https://console.firebase.google.com/project/${project}/authentication/providers
 
-     Get started (the first time), then Google, Enable, pick the support
-     address, Save. The console makes the OAuth client for the page.
+     Get started (the first time), then Google, Enable, type the name of the
+     group as the public-facing name, pick the support address, Save. The
+     console makes the OAuth client for the page. A dialog saying "An
+     identical OAuth client already exists" for the Android app is expected
+     and harmless: the app signs in through the browser (docs/ADR/0002).
 
   2. https://console.cloud.google.com/auth/clients?project=${project}
 
@@ -808,11 +811,22 @@ ${project} still needs one step before it can sign phones in:
 
   https://console.firebase.google.com/project/${project}/authentication/providers
 
-  Authentication, Sign-in method, Google, Enable, type the name of the group as
-  the public-facing name, pick a support address, Save. Then run this command
-  again, or with --wait to have it wait here instead.
+  Get started (the first time), then Google, Enable, type the name of the
+  group as the public-facing name, pick the support address, Save. Then run
+  this command again, or with --wait to have it wait here instead.
 EOF
     fi
+
+    # Nothing here can read the redirect URI back, so it is only recalled, in
+    # either case, for the owner to tick off themselves.
+    cat <<EOF
+
+Not checked from here: https://${site_id}.web.app/__/auth/handler under
+Authorized redirect URIs of "Web client (auto created by Google Service)" in
+https://console.cloud.google.com/auth/clients?project=${project}
+Without it the page's sign-in ends in redirect_uri_mismatch; the app does not
+need it.
+EOF
 
     local usage_json=""
 
@@ -841,7 +855,7 @@ google_on = os.environ["GOOGLE_ON"] == "1"
 
 manual_steps = [] if google_on else [{
     "what": "Authentication, Sign-in method, Google, Enable, type the name "
-            "of the group as the public-facing name, pick a support "
+            "of the group as the public-facing name, pick the support "
             "address, Save",
     "url": f"https://console.firebase.google.com/project/{project}"
            "/authentication/providers",
