@@ -176,9 +176,12 @@ aboutLibraries {
 }
 
 // A test stuck on a delay or a lock would hold the run until somebody stops it
-// by hand. The whole suite takes a small part of this.
+// by hand. The whole suite takes a small part of this. JUnit 4 has no limit
+// of its own per test, so each test is logged as it starts: when the run is
+// stopped, the last one started is the one that hung.
 tasks.withType<Test>().configureEach {
     timeout.set(Duration.ofMinutes(10))
+    testLogging { events("started", "failed") }
     // LicenceHoldersTest reads the list the licences screen is built from.
     dependsOn("prepareLibraryDefinitionsDebug")
 }
