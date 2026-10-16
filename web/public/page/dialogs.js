@@ -3,6 +3,7 @@
 import { ageText, positionAge } from '../lib/age.js';
 import { outsideTheBox } from '../lib/outside-the-box.js';
 import { labelText } from '../lib/labels.js';
+import { nameFailureText } from '../lib/name-failure.js';
 import { percentText } from '../lib/percent.js';
 import { SPEAKING, WORDS } from '../lib/words.js';
 import { ADMINISTRATOR, standingIn } from '../lib/membership.js';
@@ -236,7 +237,7 @@ async function saveName(name) {
         console.error('labels:', error);
 
         if (state.naming === naming) {
-            sayNaming(WORDS.nameFailed(error?.code ?? error?.message ?? String(error)), false);
+            sayNaming(nameFailureText(WORDS, error), false);
         }
     }
 }

@@ -408,6 +408,12 @@ export const RU = {
     nameCancel: 'Отмена',
     nameSaving: 'Сохраняем…',
     nameFailed: (reason) => `Имя не сохранено: ${reason}`,
+    nameFailedDenied: 'у этой учётной записи нет прав его менять.',
+    nameFailedSignedOut: 'вы вышли из учётной записи, войдите заново.',
+    nameFailedOffline: 'нет связи со службой, повторите чуть позже.',
+    nameFailedSlow: 'служба слишком долго не отвечала.',
+    nameFailedBusy: 'слишком много запросов, повторите позже.',
+    nameFailedOther: 'что-то пошло не так, повторите.',
     unnamedDevice: 'Устройство',
 
     // A device in the panel that runs the group, and whether it is in touch.

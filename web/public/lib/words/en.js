@@ -408,6 +408,12 @@ export const EN = {
     nameCancel: 'Cancel',
     nameSaving: 'Saving…',
     nameFailed: (reason) => `The name was not saved: ${reason}`,
+    nameFailedDenied: 'this account may not change it.',
+    nameFailedSignedOut: 'you are signed out, sign in again.',
+    nameFailedOffline: 'the service cannot be reached, try again in a moment.',
+    nameFailedSlow: 'the service took too long to answer.',
+    nameFailedBusy: 'too many requests, try again later.',
+    nameFailedOther: 'something went wrong, try again.',
     unnamedDevice: 'Device',
 
     // A device in the panel that runs the group, and whether it is in touch.
