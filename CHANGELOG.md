@@ -42,7 +42,8 @@ and the versions follow [Semantic Versioning](https://semver.org/).
 ### Project owners
 
 - `tools/project.sh update` brings the check that only the project owner
-  founds the group (ADR-0038) and the page's fixes. The new rules refuse
+  founds the group (ADR-0038), the checks of the devices a member grants
+  and of the labels a member gives, and the page's fixes. The new rules refuse
   nothing the application in use writes, so it may come before or after the
   devices take the new application.
 

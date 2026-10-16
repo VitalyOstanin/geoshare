@@ -40,6 +40,14 @@ service cloud.firestore {
       return 100;
     }
 
+    // How long a label a member gave a device or a person may be. The clients
+    // cut it to 40 characters; the rule allows three times that, because it is
+    // not known whether the size of a string is counted in characters or in
+    // bytes, and a label of forty characters of any script must pass either way.
+    function longestLabel() {
+      return 120;
+    }
+
     // The one group this project holds (ADR-0036): a single document naming it.
     //
     // The data and the quotas of a project belong to one group, and whoever
@@ -724,7 +732,26 @@ service cloud.firestore {
                    request.resource.data.sharedWith.size() <= 50)) &&
                  (!('devices' in request.resource.data) ||
                   (request.resource.data.devices is list &&
-                   request.resource.data.devices.size() <= 10));
+                   request.resource.data.devices.size() <= 10 &&
+                   deviceIdsFit(request.resource.data.devices)));
+        }
+
+        // Each entry is a device id, which the readers join to the account to
+        // make the path of a document, so an entry must be a string and a short
+        // one: the clients write the id Android gives the device or a UUID, at
+        // most 36 characters, and the rule leaves room for either kind of id.
+        // A list cannot be walked either, so the ten places it can hold are
+        // each looked at, as the devices below are.
+        function deviceIdsFit(ids) {
+          return deviceIdFits(ids, 0) && deviceIdFits(ids, 1) && deviceIdFits(ids, 2) &&
+                 deviceIdFits(ids, 3) && deviceIdFits(ids, 4) && deviceIdFits(ids, 5) &&
+                 deviceIdFits(ids, 6) && deviceIdFits(ids, 7) && deviceIdFits(ids, 8) &&
+                 deviceIdFits(ids, 9);
+        }
+
+        function deviceIdFits(ids, n) {
+          return n >= ids.size() ||
+                 (ids[n] is string && ids[n].size() > 0 && ids[n].size() <= longestName());
         }
 
         function isOwner() {
@@ -841,7 +868,33 @@ service cloud.firestore {
                    request.resource.data.devices.size() <= 500)) &&
                  (!('members' in request.resource.data) ||
                   (request.resource.data.members is map &&
-                   request.resource.data.members.size() <= 50));
+                   request.resource.data.members.size() <= 50 &&
+                   membersLabelsFit(request.resource.data.members)));
+        }
+
+        // The names given to the people are looked at one by one, as the
+        // devices of a member are: a household of fifty is the most the map
+        // holds, and fifty places is what a rule can afford to look at. The
+        // names given to the devices (up to five hundred) cannot be looked at
+        // that way, so only their count is held.
+        function membersLabelsFit(names) {
+          let texts = names.values();
+
+          return labelFits(texts, 0) && labelFits(texts, 1) && labelFits(texts, 2) && labelFits(texts, 3) && labelFits(texts, 4) &&
+                 labelFits(texts, 5) && labelFits(texts, 6) && labelFits(texts, 7) && labelFits(texts, 8) && labelFits(texts, 9) &&
+                 labelFits(texts, 10) && labelFits(texts, 11) && labelFits(texts, 12) && labelFits(texts, 13) && labelFits(texts, 14) &&
+                 labelFits(texts, 15) && labelFits(texts, 16) && labelFits(texts, 17) && labelFits(texts, 18) && labelFits(texts, 19) &&
+                 labelFits(texts, 20) && labelFits(texts, 21) && labelFits(texts, 22) && labelFits(texts, 23) && labelFits(texts, 24) &&
+                 labelFits(texts, 25) && labelFits(texts, 26) && labelFits(texts, 27) && labelFits(texts, 28) && labelFits(texts, 29) &&
+                 labelFits(texts, 30) && labelFits(texts, 31) && labelFits(texts, 32) && labelFits(texts, 33) && labelFits(texts, 34) &&
+                 labelFits(texts, 35) && labelFits(texts, 36) && labelFits(texts, 37) && labelFits(texts, 38) && labelFits(texts, 39) &&
+                 labelFits(texts, 40) && labelFits(texts, 41) && labelFits(texts, 42) && labelFits(texts, 43) && labelFits(texts, 44) &&
+                 labelFits(texts, 45) && labelFits(texts, 46) && labelFits(texts, 47) && labelFits(texts, 48) && labelFits(texts, 49);
+        }
+
+        function labelFits(texts, n) {
+          return n >= texts.size() ||
+                 (texts[n] is string && texts[n].size() <= longestLabel());
         }
 
         function isSelf() {

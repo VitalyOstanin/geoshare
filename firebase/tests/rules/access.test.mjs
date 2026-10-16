@@ -1,6 +1,7 @@
 // What the security rules let each side do: access.
 
 import { describe, it, beforeEach } from 'node:test';
+import { randomUUID } from 'node:crypto';
 
 import { assertFails, assertSucceeds } from '@firebase/rules-unit-testing';
 import { collection, deleteDoc, doc, getDoc, getDocs, serverTimestamp, setDoc, updateDoc } from 'firebase/firestore';
@@ -294,6 +295,31 @@ describe('grants', () => {
         );
     });
 
+    // Task 563. The readers build the path of a document from each entry.
+    it('a grant naming devices by ordinary ids is accepted', async () => {
+        const db = testEnv.authenticatedContext(ALICE).firestore();
+
+        await assertSucceeds(
+            setDoc(
+                grantOf(db, ALICE),
+                someGrant({}, [randomUUID(), '0123456789abcdef', 'phone']),
+            ),
+        );
+    });
+
+    it('a grant naming a device by something that is not a string is refused', async () => {
+        const db = testEnv.authenticatedContext(ALICE).firestore();
+
+        await assertFails(setDoc(grantOf(db, ALICE), someGrant({}, ['phone', 7])));
+        await assertFails(setDoc(grantOf(db, ALICE), someGrant({}, [{ id: 'phone' }])));
+    });
+
+    it('a grant naming a device by a string that is too long is refused', async () => {
+        const db = testEnv.authenticatedContext(ALICE).firestore();
+
+        await assertFails(setDoc(grantOf(db, ALICE), someGrant({}, ['phone', 'x'.repeat(101)])));
+    });
+
     it('a grant sharing with more readers than a household holds is refused', async () => {
         const db = testEnv.authenticatedContext(ALICE).firestore();
         const readers = Object.fromEntries(
@@ -493,5 +519,29 @@ describe('labels', () => {
         const db = testEnv.authenticatedContext(STRANGER).firestore();
 
         await assertFails(setDoc(labelsOf(db, STRANGER), someLabels));
+    });
+
+    // Task 563. The names given to the people are weighed one by one.
+    it('names that are not strings, or are far too long, are refused', async () => {
+        const db = testEnv.authenticatedContext(ALICE).firestore();
+
+        await assertFails(setDoc(labelsOf(db, ALICE), { members: { [BOB]: 5 } }));
+        await assertFails(setDoc(labelsOf(db, ALICE), { members: { [BOB]: 'x'.repeat(121) } }));
+        await assertFails(
+            setDoc(labelsOf(db, ALICE), {
+                members: { [BOB]: 'grandma', [STRANGER]: 'x'.repeat(5000) },
+            }),
+        );
+    });
+
+    it('names of the longest length the clients write are accepted', async () => {
+        const db = testEnv.authenticatedContext(ALICE).firestore();
+
+        await assertSucceeds(
+            setDoc(labelsOf(db, ALICE), {
+                devices: { [`${BOB}.phone`]: 'я'.repeat(40) },
+                members: { [BOB]: 'я'.repeat(40) },
+            }),
+        );
     });
 });
