@@ -39,7 +39,8 @@ internal fun clockFormat(locale: Locale, twentyFourHour: Boolean): DateTimeForma
  * American English with a 24-hour clock, and a person who switched it expects
  * the hours to follow it. Letters inside single quotes are literal text and are
  * left alone. The no-break spaces CLDR puts around the day-period marker (U+00A0
- * and U+202F) go away together with the marker.
+ * and U+202F) go away together with the marker. The marker is the AM/PM letter
+ * `a` or, in locales such as zh-TW, the day-period letters `B` and `b`.
  */
 internal fun clockPattern(locale: Locale, twentyFourHour: Boolean): String {
     val base =
@@ -77,7 +78,7 @@ private fun unquotedLetters(pattern: String): String {
 
 private fun isClockSpace(c: Char): Boolean = c == ' ' || c == '\u00A0' || c == '\u202F'
 
-private fun toTwentyFourHour(pattern: String): String {
+internal fun toTwentyFourHour(pattern: String): String {
     val result = StringBuilder()
     var quoted = false
     var skipSpaces = false
@@ -92,7 +93,7 @@ private fun toTwentyFourHour(pattern: String): String {
 
             quoted -> result.append(c)
 
-            c == 'a' -> {
+            c == 'a' || c == 'b' || c == 'B' -> {
                 while (result.isNotEmpty() && isClockSpace(result.last())) {
                     result.setLength(result.length - 1)
                 }

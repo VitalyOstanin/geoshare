@@ -87,4 +87,15 @@ class DateTextsTest {
         assertTrue(russianTwelve, russianTwelve.contains("2:30"))
         assertTrue(russianTwelve, !russianTwelve.contains("14"))
     }
+
+    // CLDR writes the short time of some locales with a day period (`B`), for
+    // example "Bh:mm" in zh-TW; only `h` became `H` and "下午13:05" was shown.
+    @Test
+    fun `a day period letter goes away with the 12-hour clock`() {
+        assertEquals("H:mm", toTwentyFourHour("Bh:mm"))
+        assertEquals("H:mm", toTwentyFourHour("bh:mm"))
+        assertEquals("H:mm", toTwentyFourHour("h:mm a"))
+        assertEquals("H:mm", toTwentyFourHour("h:mm\u202FB"))
+        assertEquals("H 'B' mm", toTwentyFourHour("h 'B' mm"))
+    }
 }
