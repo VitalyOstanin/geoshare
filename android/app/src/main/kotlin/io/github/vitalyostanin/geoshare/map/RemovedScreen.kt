@@ -9,7 +9,9 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.statusBarsPadding
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Surface
@@ -20,6 +22,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -80,7 +83,7 @@ fun NoGroupScreen(
     modifier: Modifier = Modifier,
     readProjectMark: suspend () -> ProjectMark = { ProjectMark.Unknown },
 ) {
-    var groupName by remember { mutableStateOf("") }
+    var groupName by rememberSaveable { mutableStateOf("") }
     val taken = rememberProjectMark(readProjectMark).isTaken()
 
     CardOverTheMap(switcher = switcher, modifier = modifier) {
@@ -142,7 +145,12 @@ private fun CardOverTheMap(
     content: @Composable () -> Unit,
 ) {
     Surface(color = MaterialTheme.colorScheme.surface, modifier = modifier.fillMaxSize()) {
-        Box(contentAlignment = Alignment.TopCenter) {
+        // Scrolls: with the device on its side the card can be taller
+        // than the screen, and the buttons at its foot would be cut off.
+        Box(
+            contentAlignment = Alignment.TopCenter,
+            modifier = Modifier.verticalScroll(rememberScrollState()),
+        ) {
             Surface(
                 shape = RoundedCornerShape(16.dp),
                 tonalElevation = 1.dp,
@@ -150,7 +158,12 @@ private fun CardOverTheMap(
                 modifier =
                 Modifier
                     .statusBarsPadding()
-                    .padding(top = bannerOffset(switcher), start = 16.dp, end = 16.dp)
+                    .padding(
+                        top = bannerOffset(switcher),
+                        start = 16.dp,
+                        end = 16.dp,
+                        bottom = 16.dp,
+                    )
                     .fillMaxWidth(),
             ) {
                 content()
