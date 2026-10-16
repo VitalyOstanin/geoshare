@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import { readFile } from 'node:fs/promises';
+import { readdir, readFile } from 'node:fs/promises';
 import { test } from 'node:test';
 
 import { EN } from '../public/lib/words/en.js';
@@ -86,6 +86,78 @@ test('every word the markup is painted with has a place to be said again', async
     for (const id of ['sign-in-explanation', 'sign-in-button', 'sign-out-button',
         'theme-label', 'language-label']) {
         assert.ok(page.includes(`id="${id}"`), `the page has no ${id}`);
+    }
+});
+
+// Elements whose words are meant to stay as they are in every language.
+const LEFT_AS_WRITTEN = new Map([
+    // Each language is named in its own words, so a viewer looking for theirs finds it.
+    ['[data-language=ru]', 'Russian, named in Russian'],
+    ['[data-language=en]', 'English, named in English'],
+]);
+
+/** The name `state.js` gives an element of the markup: sign-in-button, signInButton. */
+const keyOf = (id) => id.replace(/-(\w)/g, (_, letter) => letter.toUpperCase());
+
+/**
+ * Every element of the markup that carries words a viewer can read or hear: some
+ * text of its own (a mark such as a cross counts: it is read aloud through an
+ * aria-label), or an aria-label or a title. An element with an id
+ * is found by it; the theme and language buttons have none, only a data attribute.
+ */
+function wordsOfMarkup(page) {
+    const found = [];
+
+    for (const match of page.matchAll(/<(\w+)([^>]*)>([^<]*)/g)) {
+        const [, , attributes, text] = match;
+        const id = /\sid="([^"]+)"/.exec(attributes)?.[1];
+        const data = /\sdata-(theme|language)="([^"]+)"/.exec(attributes);
+        const labelled = /\s(?:aria-label|title)="[^"]*\p{L}/u.test(attributes);
+
+        if (!id && !data) {
+            continue;
+        }
+
+        if (labelled || /\S/.test(text)) {
+            found.push(id
+                ? { selector: `#${id}`, id }
+                : { selector: `[data-${data[1]}=${data[2]}]`, kind: data[1] });
+        }
+    }
+
+    return found;
+}
+
+// Index.html is painted in English before anything runs. An element of it with
+// words and no place that says them again keeps English for a viewer reading
+// Russian, which nothing else on the page would show.
+test('every element of the markup with words is said again in the page language', async () => {
+    const page = await readFile(new URL('../public/index.html', import.meta.url), 'utf8');
+    const names = (await readdir(new URL('../public/page/', import.meta.url)))
+        .map((name) => `page/${name}`);
+    const said = (await Promise.all(['app.js', ...names].map(
+        (name) => readFile(new URL(`../public/${name}`, import.meta.url), 'utf8'),
+    ))).join('\n');
+    const found = wordsOfMarkup(page);
+
+    assert.ok(found.length > 10, 'the markup was not read');
+
+    for (const { selector, id, kind } of found) {
+        if (LEFT_AS_WRITTEN.has(selector)) {
+            continue;
+        }
+
+        const buttons = kind === 'theme' ? 'themeButtons' : 'languageButtons';
+        const place = id ? keyOf(id) : buttons;
+
+        const says = [
+            `elements\\.${place}\\.(?:textContent|title)\\s*=`,
+            `elements\\.${place}\\.setAttribute\\('aria-label'`,
+            `of elements\\.${place}\\)`,
+        ].join('|');
+
+        assert.match(said, new RegExp(says),
+            `${selector} has words in index.html that nothing says again`);
     }
 });
 
