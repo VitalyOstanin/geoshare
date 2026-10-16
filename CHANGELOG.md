@@ -32,6 +32,13 @@ and the versions follow [Semantic Versioning](https://semver.org/).
 - The connection screen no longer says that the project owner sees a
   history of places: none is kept.
 
+### Project owners
+
+- `tools/project.sh update` brings the check that only the project owner
+  founds the group (ADR-0038) and the page's fixes. The new rules refuse
+  nothing the application in use writes, so it may come before or after the
+  devices take the new application.
+
 ## [0.1.1] - 2026-10-16
 
 The first release built in the open: its package carries attestations of
