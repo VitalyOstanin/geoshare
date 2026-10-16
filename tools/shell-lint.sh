@@ -15,4 +15,4 @@ mapfile -t scripts < <(git ls-files '*.sh')
 # -x follows the `source` lines, so lib.sh is read with every script that
 # uses it.
 exec podman run --rm --network none -v "${REPO_ROOT}:/mnt:z,ro" -w /mnt \
-    "docker.io/koalaman/shellcheck:v${SHELLCHECK_VERSION}" -x "${scripts[@]}"
+    "docker.io/koalaman/shellcheck:v${SHELLCHECK_VERSION}@${SHELLCHECK_DIGEST}" -x "${scripts[@]}"
