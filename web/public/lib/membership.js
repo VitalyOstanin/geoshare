@@ -48,6 +48,32 @@ export function ownProjectGroup(projectGroup, memberId, current) {
     return projectGroup === memberId && projectGroup !== current ? projectGroup : null;
 }
 
+/**
+ * Reads the project's group mark and hands it to whichever of the two things
+ * the page does with it. Nothing waits on the read, so a failure — in the read
+ * itself or in what the page does with the answer — is passed to onFailure
+ * rather than left as a rejection nobody sees; the mark then stays as it was,
+ * which the screen already treats as no mark.
+ */
+export function followProjectGroup(read, handlers) {
+    const { isCurrent, memberId, current, onOwn, onOther, onFailure } = handlers;
+
+    return read()
+        .then((group) => {
+            if (!isCurrent()) {
+                return;
+            }
+            const own = ownProjectGroup(group, memberId, current());
+
+            if (own !== null) {
+                onOwn(own);
+            } else {
+                onOther(group);
+            }
+        })
+        .catch(onFailure);
+}
+
 export function standingIn(roster, memberId) {
     if (roster === null || !roster.members.includes(memberId)) {
         return UNGROUPED;

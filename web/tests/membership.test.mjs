@@ -9,6 +9,7 @@ import {
     UNGROUPED,
     UNRUN,
     offerWithoutGroup,
+    followProjectGroup,
     ownProjectGroup,
     invitationFrom,
     looksLikeACode,
@@ -257,4 +258,56 @@ test('a mark naming somebody else, or the group already shown, moves nowhere', (
     assert.equal(ownProjectGroup(ALICE, BOB, 'family'), null);
     assert.equal(ownProjectGroup(ALICE, ALICE, ALICE), null);
     assert.equal(ownProjectGroup(null, ALICE, 'family'), null);
+});
+
+function followed(read, overrides = {}) {
+    const calls = [];
+    const done = followProjectGroup(read, {
+        isCurrent: () => true,
+        memberId: ALICE,
+        current: () => 'family',
+        onOwn: (group) => calls.push(['own', group]),
+        onOther: (group) => calls.push(['other', group]),
+        onFailure: (error) => calls.push(['failure', error.message]),
+        ...overrides,
+    });
+
+    return { calls, done };
+}
+
+test('a mark that names somebody else is shown, one naming the account is moved into', async () => {
+    const other = followed(async () => BOB);
+    const own = followed(async () => ALICE);
+
+    await other.done;
+    await own.done;
+    assert.deepEqual(other.calls, [['other', BOB]]);
+    assert.deepEqual(own.calls, [['own', ALICE]]);
+});
+
+test('an answer for an account that has since gone is dropped', async () => {
+    const { calls, done } = followed(async () => ALICE, { isCurrent: () => false });
+
+    await done;
+    assert.deepEqual(calls, []);
+});
+
+test('a read that is refused is reported, not left as a rejection', async () => {
+    const { calls, done } = followed(async () => {
+        throw new Error('permission-denied');
+    });
+
+    await done;
+    assert.deepEqual(calls, [['failure', 'permission-denied']]);
+});
+
+test('a failure in what the page does with the mark is reported too', async () => {
+    const { calls, done } = followed(async () => BOB, {
+        onOther: () => {
+            throw new Error('draw failed');
+        },
+    });
+
+    await done;
+    assert.deepEqual(calls, [['failure', 'draw failed']]);
 });
