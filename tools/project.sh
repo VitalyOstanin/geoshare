@@ -640,6 +640,7 @@ create() {
     echo "==> Hosting site"
     local site_id
     site_id="$(hosting_site "${project}" "$(app_id "${project}" WEB)")"
+    echo "    ${site_id}, https://${site_id}.web.app/"
 
     # Sign-in with Google checks the application against these; without them
     # the first sign-in on a device fails with a developer error.
@@ -749,7 +750,7 @@ show() {
         echo "no Hosting site in ${project} yet; run \`create\` first" >&2
         exit 1
     fi
-    echo "    ${site_id}"
+    echo "    ${site_id}, https://${site_id}.web.app/"
 
     echo "==> page configuration"
     mkdir -p "${out}"
@@ -886,7 +887,7 @@ update() {
         echo "no Hosting site in ${project} yet; run \`create\` first" >&2
         exit 1
     fi
-    echo "    ${site_id}"
+    echo "    ${site_id}, https://${site_id}.web.app/"
 
     deploy_site "${project}" "${android}" "${site_id}"
 
