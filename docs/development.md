@@ -101,37 +101,42 @@ fingerprints are not the ones in
 
 The scripts read these from the environment; none has to be set.
 
-| #  | Variable              | Script                         | What it changes                                                    | Default                          |
-|----|-----------------------|--------------------------------|--------------------------------------------------------------------|----------------------------------|
-| 1  | `VARIANT`             | `build.sh`                     | `debug` or `release`                                               | `debug`                          |
-| 2  | `JOBS`                | all containers (`lib.sh`)      | CPUs a container may take                                          | `4`                              |
-| 3  | `MEMORY`              | all containers (`lib.sh`)      | memory a container may take                                        | `6g`                             |
-| 4  | `ANDROID_SERIAL`      | `gradle.sh`, `device-*.sh`     | the device to install on or read from                              | whatever adb picks               |
-| 5  | `EMULATOR_VARIANT`    | `run-emulator.sh` (`lib.sh`)   | system image: `google_apis`, or `default` for one without Google   | `google_apis`                    |
-| 6  | `BOOT_TIMEOUT`        | `run-emulator.sh`              | seconds to wait for the emulator to boot                           | `300`                            |
-| 7  | `READY_TIMEOUT`       | `run-services.sh`              | seconds to wait for the Firestore and sign-in emulators            | `120`                            |
-| 8  | `ADB_HOST_PORT`       | `lib.sh`                       | host port of the emulator's adb server, beside the machine's 5037  | `5038`                           |
-| 9  | `ADB_SERVER_SOCKET`   | `lib.sh`                       | the adb server the scripts talk to                                 | `tcp:127.0.0.1:$ADB_HOST_PORT`   |
-| 10 | `COST_SCRIPT`         | `read-cost.sh`                 | which measurement under `firebase/tests/cost/` runs                | `read-cost`                      |
-| 11 | `SIREN_SOUND_TARGET`  | `siren-sound.sh`               | where the generated siren sound is written                         | `android/.../raw/siren_sos.ogg`  |
-| 12 | `FIREBASE_PROJECT`    | `web-config.sh`                | the project the page is configured for                             | the working copy's default       |
-| 13 | `FIREBASE_SITE`       | `web-config.sh`                | its Hosting site, where not named after the project                | the project id                   |
-| 14 | `FIREBASE_ACCOUNT`    | `web-config.sh`                | the account the Firebase CLI acts as                               | the CLI's own                    |
-| 15 | `WEB_CONFIG_TARGET`   | `web-config.sh`                | where the page's configuration is written                          | `web/public/firebase-config.js`  |
-| 16 | `GEOSHARE_RELEASE_*`  | `sign-release.sh`              | the release key: keystore, alias, password                         | none; see the script's header    |
-| 17 | `HTTPS_PROXY`         | all containers (`lib.sh`)      | handed to image builds and containers when set                     | none                             |
-| 18 | `TIMEOUT`             | `test-instrumented.sh`         | how long the instrumented run may take as a whole                  | `30m`                            |
-| 19 | `WEB_PORT`            | `serve-web.sh`                 | the port the page is served on                                     | `5000`                           |
-| 20 | `GRADLE_TIMEOUT`      | `gradle.sh`                    | how long one Gradle run may take as a whole                        | `60m`                            |
-| 21 | `STAND_WEB_PORT`      | `page-stand.sh`                | the port the stand's page is served on                             | `5000`                           |
-| 22 | `STAND_FIRESTORE_PORT`| `page-stand.sh`                | the port of the stand's Firestore emulator                         | `18080`                          |
-| 23 | `STAND_AUTH_PORT`     | `page-stand.sh`                | the port of the stand's sign-in emulator                           | `19099`                          |
-| 24 | `READY_TIMEOUT`       | `page-stand.sh`                | seconds to wait for the stand's emulators                          | `120`                            |
-| 25 | `SHOTS_DIR`           | `landing-shots.sh`             | where the full-size screenshots go                                 | `shots/<date>`                   |
-| 26 | `SHOTS_DIR`           | `landing-steps.sh`             | the same, for the setup page's steps                               | `shots/<date>`                   |
-| 27 | `WAIT_TIMEOUT`        | `landing-shots.sh`             | seconds to wait for a screen to show what is tapped next           | `30`                             |
-| 28 | `SETUP_URL`           | `landing-steps.sh`             | the setup page the steps are taken from                            | the published setup page         |
-| 29 | `QUALITY`             | `landing-images.sh`            | WebP quality of the pictures                                       | `80`                             |
+| #  | Variable                  | Script                          | What it changes                                                   | Default                         |
+|----|---------------------------|---------------------------------|-------------------------------------------------------------------|---------------------------------|
+| 1  | `VARIANT`                 | `build.sh`                      | `debug` or `release`                                              | `debug`                         |
+| 2  | `JOBS`                    | all containers (`lib.sh`)       | CPUs a container may take                                         | `4`                             |
+| 3  | `MEMORY`                  | all containers (`lib.sh`)       | memory a container may take                                       | `6g`                            |
+| 4  | `ANDROID_SERIAL`          | `gradle.sh`, `device-*.sh`      | the device to install on or read from                             | whatever adb picks              |
+| 5  | `EMULATOR_VARIANT`        | `run-emulator.sh` (`lib.sh`)    | system image: `google_apis`, or `default` for one without Google  | `google_apis`                   |
+| 6  | `BOOT_TIMEOUT`            | `run-emulator.sh`               | seconds to wait for the emulator to boot                          | `300`                           |
+| 7  | `READY_TIMEOUT`           | `run-services.sh`               | seconds to wait for the Firestore and sign-in emulators           | `120`                           |
+| 8  | `ADB_HOST_PORT`           | `lib.sh`                        | host port of the emulator's adb server, beside the machine's 5037 | `5038`                          |
+| 9  | `ADB_SERVER_SOCKET`       | `lib.sh`                        | the adb server the scripts talk to                                | `tcp:127.0.0.1:$ADB_HOST_PORT`  |
+| 10 | `COST_SCRIPT`             | `read-cost.sh`                  | which measurement under `firebase/tests/cost/` runs               | `read-cost`                     |
+| 11 | `SIREN_SOUND_TARGET`      | `siren-sound.sh`                | where the generated siren sound is written                        | `android/.../raw/siren_sos.ogg` |
+| 12 | `FIREBASE_PROJECT`        | `web-config.sh`                 | the project the page is configured for                            | the working copy's default      |
+| 13 | `FIREBASE_SITE`           | `web-config.sh`                 | its Hosting site, where not named after the project               | the project id                  |
+| 14 | `FIREBASE_ACCOUNT`        | `web-config.sh`                 | the account the Firebase CLI acts as                              | the CLI's own                   |
+| 15 | `WEB_CONFIG_TARGET`       | `web-config.sh`                 | where the page's configuration is written                         | `web/public/firebase-config.js` |
+| 16 | `GEOSHARE_RELEASE_*`      | `sign-release.sh`               | the release key: keystore, alias, password                        | none; see the script's header   |
+| 17 | `HTTPS_PROXY`             | all containers (`lib.sh`)       | handed to image builds and containers when set                    | none                            |
+| 18 | `TIMEOUT`                 | `test-instrumented.sh`          | how long the instrumented run may take as a whole                 | `30m`                           |
+| 19 | `WEB_PORT`                | `serve-web.sh`                  | the port the page is served on                                    | `5000`                          |
+| 20 | `GRADLE_TIMEOUT`          | `gradle.sh`                     | how long one Gradle run may take as a whole                       | `60m`                           |
+| 21 | `STAND_WEB_PORT`          | `page-stand.sh`                 | the port the stand's page is served on                            | `5000`                          |
+| 22 | `STAND_FIRESTORE_PORT`    | `page-stand.sh`                 | the port of the stand's Firestore emulator                        | `18080`                         |
+| 23 | `STAND_AUTH_PORT`         | `page-stand.sh`                 | the port of the stand's sign-in emulator                          | `19099`                         |
+| 24 | `READY_TIMEOUT`           | `page-stand.sh`                 | seconds to wait for the stand's emulators                         | `120`                           |
+| 25 | `SHOTS_DIR`               | `landing-shots.sh`              | where the full-size screenshots go                                | `shots/<date>`                  |
+| 26 | `SHOTS_DIR`               | `landing-steps.sh`              | the same, for the setup page's steps                              | `shots/<date>`                  |
+| 27 | `WAIT_TIMEOUT`            | `landing-shots.sh`              | seconds to wait for a screen to show what is tapped next          | `30`                            |
+| 28 | `SETUP_URL`               | `landing-steps.sh`              | the setup page the steps are taken from                           | the published setup page        |
+| 29 | `QUALITY`                 | `landing-images.sh`             | WebP quality of the pictures                                      | `80`                            |
+| 30 | `AUTH_EMULATOR_HOST`      | `seed.mjs`, `showcase-seed.mjs` | `host:port` of the sign-in emulator the seed fills                | `127.0.0.1:9099`                |
+| 31 | `FIRESTORE_EMULATOR_HOST` | `seed.mjs`, `showcase-seed.mjs` | `host:port` of the Firestore emulator the seed fills              | `127.0.0.1:8080`                |
+| 32 | `GEOSHARE_PROJECT`        | `seed.mjs`, `showcase-seed.mjs` | project the seed writes; debug builds read only `demo-geoshare`   | `demo-geoshare`                 |
+| 33 | `GEOSHARE_GROUP`          | `seed.mjs`, `showcase-seed.mjs` | id of the group the seed creates                                  | `family`                        |
+| 34 | `SHOWCASE_FIRST_SHARE`    | `showcase-seed.mjs`             | `1`: one member's grant left empty, as `landing-shots.sh` asks    | unset: grants full              |
 
 The names of the podman resources — `POD_NAME`, `SERVICES_NAME`,
 `EMULATOR_NAME`, `STAND_NAME`, `SDK_IMAGE`, `EMULATOR_IMAGE`, `FIREBASE_IMAGE`,
