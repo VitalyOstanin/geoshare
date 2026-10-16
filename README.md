@@ -18,6 +18,8 @@ left. There is no server of its own to run or pay for: the devices and the page
 talk to Cloud Firestore directly, and the security rules are the whole of the
 backend. Each group's data stays in a Firebase project of its own.
 
+Common questions are answered in [FAQ.md](FAQ.md).
+
 ## Contents
 
 - [What it does](#what-it-does)
