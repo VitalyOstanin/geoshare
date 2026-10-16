@@ -17,6 +17,7 @@ import {
     failureKind,
     failureWord,
     passing,
+    retryPassing,
     waitOperation,
 } from '../public/lib/setup-project.js';
 
@@ -170,9 +171,9 @@ test('a 403 that never goes away is thrown after twenty attempts', async () => {
 });
 
 test('another failure of the database is thrown at once', async () => {
-    const { api, requests } = fakeFetch(() => [500, {}]);
+    const { api, requests } = fakeFetch(() => [400, {}]);
 
-    await assert.rejects(createDatabase(api, PROJECT, 'europe-north1', noSleep), (error) => error.status === 500);
+    await assert.rejects(createDatabase(api, PROJECT, 'europe-north1', noSleep), (error) => error.status === 400);
     assert.equal(requests.length, 1);
 });
 
@@ -414,4 +415,138 @@ test('only a network or transient failure is worth asking again', () => {
     }
 
     assert.equal(passing(new Error('untagged')), false);
+});
+
+test('a call that fails in a way that may pass is made again with a growing pause', async () => {
+    const sleeps = [];
+    let runs = 0;
+    const result = await retryPassing(
+        async () => {
+            runs++;
+
+            if (runs <= 3) {
+                throw failure('busy', 'transient');
+            }
+
+            return 'done';
+        },
+        async (ms) => sleeps.push(ms),
+        () => 1,
+    );
+
+    assert.equal(result, 'done');
+    assert.deepEqual(sleeps, [1000, 2000, 4000]);
+});
+
+test('the pause is cut by the random share, never below half', async () => {
+    const sleeps = [];
+
+    await assert.rejects(
+        retryPassing(
+            async () => {
+                throw failure('offline', 'network');
+            },
+            async (ms) => sleeps.push(ms),
+            () => 0,
+            3,
+        ),
+        (error) => error.kind === 'network',
+    );
+    assert.deepEqual(sleeps, [500, 1000]);
+});
+
+test('a call that is refused for good is not made again', async () => {
+    let runs = 0;
+
+    await assert.rejects(
+        retryPassing(
+            async () => {
+                runs++;
+                throw failure('no', 'denied');
+            },
+            noSleep,
+        ),
+        (error) => error.kind === 'denied',
+    );
+    assert.equal(runs, 1);
+});
+
+test('a single call of a step is made again after a 429 and given up after four runs', async () => {
+    const busy = fakeFetch((method, url, body, n) =>
+        n === 1 ? [429, {}] : [200, { apps: [{ name: 'n', appId: 'a' }] }],
+    );
+    const dead = fakeFetch(() => [503, {}]);
+
+    assert.equal((await ensureWebApp(busy.api, PROJECT, noSleep)).created, false);
+    assert.equal(busy.requests.length, 2);
+    assert.equal((await listProjects(busy.api, noSleep)).length, 0);
+    await assert.rejects(listProjects(dead.api, noSleep), (error) => error.status === 503);
+    assert.equal(dead.requests.length, 4);
+});
+
+test('a database POST that a busy server refused is made again', async () => {
+    const { api, requests } = fakeFetch((method, url, body, n) =>
+        n === 1 ? [503, {}] : [200, { done: true, response: {} }],
+    );
+
+    assert.equal(await createDatabase(api, PROJECT, 'europe-north1', noSleep), 'created');
+    assert.equal(requests.length, 2);
+});
+
+test('a rules release refused by a busy server is made again', async () => {
+    let releases = 0;
+    const { api } = fakeFetch((method, url) => {
+        if (url.endsWith('/rulesets')) {
+            return [200, { name: 'r' }];
+        }
+
+        releases++;
+
+        return releases === 1 ? [500, {}] : [200, {}];
+    });
+
+    assert.equal(await deployRules(api, PROJECT, 'x', noSleep), 'r');
+    assert.equal(releases, 2);
+});
+
+test('an operation that ended with an error is told by the code of its status', async () => {
+    const { api } = fakeFetch(() => [200, {}]);
+    const kinds = {
+        7: 'denied',
+        16: 'denied',
+        8: 'transient',
+        14: 'transient',
+        4: 'timeout',
+        5: 'missing',
+        3: 'other',
+    };
+
+    for (const [code, kind] of Object.entries(kinds)) {
+        const op = { name: 'o', done: true, error: { code: Number(code) } };
+
+        await assert.rejects(
+            waitOperation(api, 'https://base.test', op, noSleep),
+            (error) => error.kind === kind,
+        );
+    }
+});
+
+test('a web app made by a creation that failed on the way back is not made twice', async () => {
+    const app = { name: `projects/${PROJECT}/webApps/w`, appId: '1:1:web:w' };
+    let made = false;
+    const lost = fakeFetch((method) => {
+        if (method === 'POST') {
+            made = true;
+
+            return [503, {}];
+        }
+
+        return [200, made ? { apps: [app] } : {}];
+    });
+
+    assert.equal((await ensureWebApp(lost.api, PROJECT, noSleep)).created, false);
+    assert.deepEqual(
+        lost.requests.map((r) => r.method),
+        ['GET', 'POST', 'GET'],
+    );
 });

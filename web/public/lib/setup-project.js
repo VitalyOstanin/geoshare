@@ -21,7 +21,62 @@ const LOST_POLLS = 3;
 const DATABASE_ATTEMPTS = 20;
 const DATABASE_RETRY_MS = 15_000;
 
+/** A single call that failed in a way that may pass is made again this many times in all. */
+const CALL_ATTEMPTS = 4;
+const CALL_RETRY_MS = 1000;
+
 const realSleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+
+/**
+ * Runs `call` and, while it fails in a way that may pass (see `passing`), runs
+ * it again after a pause that doubles with every failure and is cut by a random
+ * share, so that clients refused together do not come back together. The last
+ * failure is thrown after `attempts` runs, and any other failure at once.
+ *
+ * The pause and the randomness are parameters so that a test waits for neither.
+ * `random` returns a number from 0 up to 1, as Math.random does.
+ */
+export async function retryPassing(
+    call,
+    sleep = realSleep,
+    random = Math.random,
+    attempts = CALL_ATTEMPTS,
+) {
+    for (let attempt = 1; ; attempt++) {
+        try {
+            return await call();
+        } catch (error) {
+            if (!passing(error) || attempt >= attempts) {
+                throw error;
+            }
+
+            const ceiling = CALL_RETRY_MS * 2 ** (attempt - 1);
+
+            await sleep(Math.floor(ceiling / 2 + (random() * ceiling) / 2));
+        }
+    }
+}
+
+/**
+ * The kind of a failure of an operation by its gRPC status code: the API says
+ * in `error.code` why the operation ended, and the page words it by the kind.
+ */
+function kindOfCode(code) {
+    switch (code) {
+        case 7:
+        case 16:
+            return 'denied';
+        case 8:
+        case 14:
+            return 'transient';
+        case 4:
+            return 'timeout';
+        case 5:
+            return 'missing';
+        default:
+            return 'other';
+    }
+}
 
 /**
  * setup-config.json as tools/setup-site.sh writes it, or null when it is not:
@@ -210,7 +265,7 @@ export async function waitOperation(api, base, op, sleep = realSleep) {
     }
 
     if (current.error) {
-        throw new Error(JSON.stringify(current.error));
+        throw failure(JSON.stringify(current.error), kindOfCode(current.error.code));
     }
 
     return current.response;
@@ -221,13 +276,16 @@ export async function waitOperation(api, base, op, sleep = realSleep) {
  * the list: an account with more than a hundred projects had the rest left
  * out of the choice.
  */
-export async function listProjects(api) {
+export async function listProjects(api, sleep = realSleep) {
     const projects = [];
     let pageToken = '';
 
     do {
         const token = pageToken ? `&pageToken=${encodeURIComponent(pageToken)}` : '';
-        const data = await api('GET', `${FIREBASE}/projects?pageSize=100${token}`);
+        const data = await retryPassing(
+            () => api('GET', `${FIREBASE}/projects?pageSize=100${token}`),
+            sleep,
+        );
 
         projects.push(...(data?.results || []));
         pageToken = data?.nextPageToken || '';
@@ -272,7 +330,7 @@ export function consoleLink(url, email) {
 export async function enableFirestoreApi(api, projectNumber, sleep = realSleep) {
     const service = 'firestore.googleapis.com';
     const url = `${SERVICE_USAGE}/projects/${projectNumber}/services/${service}:enable`;
-    const op = await api('POST', url, {});
+    const op = await retryPassing(() => api('POST', url, {}), sleep);
 
     if (!op.done) {
         await waitOperation(api, SERVICE_USAGE, op, sleep);
@@ -291,7 +349,10 @@ export async function createDatabase(api, projectId, location, sleep = realSleep
 
     for (let attempt = 1; ; attempt++) {
         try {
-            const op = await api('POST', url, { locationId: location, type: 'FIRESTORE_NATIVE' });
+            const op = await retryPassing(
+                () => api('POST', url, { locationId: location, type: 'FIRESTORE_NATIVE' }),
+                sleep,
+            );
 
             await waitOperation(api, FIRESTORE, op, sleep);
 
@@ -312,38 +373,46 @@ export async function createDatabase(api, projectId, location, sleep = realSleep
 }
 
 /** The web app of the project, the first one if several, created when there is none. */
-export async function ensureWebApp(api, projectId) {
-    const list = await api('GET', `${FIREBASE}/projects/${projectId}/webApps`);
-    const found = (list?.apps || [])[0];
+export async function ensureWebApp(api, projectId, sleep = realSleep) {
+    // The whole step is what is tried again, not the creation alone: a
+    // creation that failed on the way back may have made the app, and only a
+    // fresh look at the list keeps a second one from being made.
+    return retryPassing(async () => {
+        const list = await api('GET', `${FIREBASE}/projects/${projectId}/webApps`);
+        const found = (list?.apps || [])[0];
 
-    if (found) {
-        return { name: found.name, appId: found.appId, created: false };
-    }
+        if (found) {
+            return { name: found.name, appId: found.appId, created: false };
+        }
 
-    const op = await api('POST', `${FIREBASE}/projects/${projectId}/webApps`, {
-        displayName: 'geoshare page',
-    });
-    const app = await waitOperation(api, FIREBASE, op);
+        const op = await api('POST', `${FIREBASE}/projects/${projectId}/webApps`, {
+            displayName: 'geoshare page',
+        });
+        const app = await waitOperation(api, FIREBASE, op, sleep);
 
-    return { name: app.name, appId: app.appId, created: true };
+        return { name: app.name, appId: app.appId, created: true };
+    }, sleep);
 }
 
 /** The Android app of the package, created when the project has none. */
 export async function ensureAndroidApp(api, projectId, packageName, sleep = realSleep) {
-    const list = await api('GET', `${FIREBASE}/projects/${projectId}/androidApps`);
-    const found = (list?.apps || []).find((app) => app.packageName === packageName);
+    // Tried again as a whole, for the reason given at ensureWebApp.
+    return retryPassing(async () => {
+        const list = await api('GET', `${FIREBASE}/projects/${projectId}/androidApps`);
+        const found = (list?.apps || []).find((app) => app.packageName === packageName);
 
-    if (found) {
-        return { name: found.name, appId: found.appId, created: false };
-    }
+        if (found) {
+            return { name: found.name, appId: found.appId, created: false };
+        }
 
-    const op = await api('POST', `${FIREBASE}/projects/${projectId}/androidApps`, {
-        packageName,
-        displayName: 'geoshare',
-    });
-    const app = await waitOperation(api, FIREBASE, op, sleep);
+        const op = await api('POST', `${FIREBASE}/projects/${projectId}/androidApps`, {
+            packageName,
+            displayName: 'geoshare',
+        });
+        const app = await waitOperation(api, FIREBASE, op, sleep);
 
-    return { name: app.name, appId: app.appId, created: true };
+        return { name: app.name, appId: app.appId, created: true };
+    }, sleep);
 }
 
 /** A fingerprint as the API keeps it: lower-case hex, without the colons keytool prints. */
@@ -355,14 +424,16 @@ const bareHash = (hash) => hash.replaceAll(':', '').toLowerCase();
  * pairs. A hash is told from its length: 40 digits are SHA-1, anything else is
  * taken for SHA-256.
  */
-export async function ensureFingerprints(api, androidAppName, fingerprints) {
+export async function ensureFingerprints(api, androidAppName, fingerprints, sleep = realSleep) {
     const url = `${FIREBASE}/${androidAppName}/sha`;
-    const list = await api('GET', url);
+    const list = await retryPassing(() => api('GET', url), sleep);
     const have = new Set((list?.certificates || []).map((c) => bareHash(c.shaHash)));
     const missing = fingerprints.map(bareHash).filter((hash) => !have.has(hash));
 
     for (const hash of missing) {
-        await api('POST', url, { shaHash: hash, certType: hash.length === 40 ? 'SHA_1' : 'SHA_256' });
+        const body = { shaHash: hash, certType: hash.length === 40 ? 'SHA_1' : 'SHA_256' };
+
+        await retryPassing(() => api('POST', url, body), sleep);
     }
 
     return missing;
@@ -373,24 +444,31 @@ export async function ensureFingerprints(api, androidAppName, fingerprints) {
  * release is created, or, when one exists already (409), moved to the new
  * ruleset.
  */
-export async function deployRules(api, projectId, source) {
+export async function deployRules(api, projectId, source, sleep = realSleep) {
     const base = `${RULES}/projects/${projectId}`;
-    const ruleset = await api('POST', `${base}/rulesets`, {
-        source: { files: [{ name: 'firestore.rules', content: source }] },
-    });
+    const ruleset = await retryPassing(
+        () =>
+            api('POST', `${base}/rulesets`, {
+                source: { files: [{ name: 'firestore.rules', content: source }] },
+            }),
+        sleep,
+    );
     const release = {
         name: `projects/${projectId}/releases/cloud.firestore`,
         rulesetName: ruleset.name,
     };
 
     try {
-        await api('POST', `${base}/releases`, release);
+        await retryPassing(() => api('POST', `${base}/releases`, release), sleep);
     } catch (error) {
         if (error.status !== 409) {
             throw error;
         }
 
-        await api('PATCH', `${base}/releases/cloud.firestore`, { release });
+        await retryPassing(
+            () => api('PATCH', `${base}/releases/cloud.firestore`, { release }),
+            sleep,
+        );
     }
 
     return ruleset.name;
