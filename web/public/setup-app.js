@@ -18,6 +18,7 @@ import {
     failure,
     failureKind,
     failureWord,
+    refusalText,
     setupConfigOf,
 } from './lib/setup-project.js';
 import { rulesForOwner } from './lib/owner-rules.js';
@@ -190,7 +191,7 @@ function choose(project) {
 
 async function gotToken(answer) {
     if (answer.error) {
-        fail('s2-error', words.s2Refused(answer.error));
+        fail('s2-error', refusalText(words, answer.error));
 
         return;
     }
@@ -239,7 +240,7 @@ $('s2-auth').addEventListener('click', async () => {
         client_id: state.config.clientId,
         scope: SCOPES,
         callback: gotToken,
-        error_callback: (error) => fail('s2-error', words.s2Refused(error.type)),
+        error_callback: (error) => fail('s2-error', refusalText(words, error.type)),
     });
 
     client.requestAccessToken();

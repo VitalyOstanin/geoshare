@@ -24,7 +24,14 @@ export const WORDS_RU = {
         'хранит и никуда его не передаёт.',
     s2Auth: 'Войти через Google и разрешить',
     s2Got: (email) => (email ? `Доступ получен: ${email}` : 'Доступ получен'),
-    s2Refused: (why) => `Доступ не получен: ${why}`,
+    s2Refused: (code) => (code ? `Доступ не получен (${code}).` : 'Доступ не получен.'),
+    s2RefusedDenied: 'Доступ не получен: вы не разрешили доступ. Нажмите кнопку ещё раз и разрешите.',
+    s2RefusedClosed: 'Доступ не получен: окно входа закрыто до конца. Нажмите кнопку ещё раз.',
+    s2RefusedBlocked:
+        'Доступ не получен: браузер не открыл окно входа. Разрешите всплывающие окна для этой ' +
+        'страницы и нажмите кнопку ещё раз.',
+    s2RefusedSilent: 'Доступ не получен: Google требует войти вручную. Нажмите кнопку ещё раз.',
+    s2RefusedScope: 'Доступ не получен: Google не принял запрошенные права. Обновите страницу.',
     s2NoLibrary: 'Не удалось загрузить вход Google. Проверьте сеть и обновите страницу.',
     errNetwork: 'Нет связи с Google. Проверьте сеть и повторите.',
     errDenied: 'У аккаунта нет прав на это действие. Войдите тем аккаунтом, которому принадлежит проект.',
@@ -110,7 +117,14 @@ export const WORDS_EN = {
         'stores nothing and sends it nowhere.',
     s2Auth: 'Sign in with Google and allow',
     s2Got: (email) => (email ? `Access granted: ${email}` : 'Access granted'),
-    s2Refused: (why) => `Access not granted: ${why}`,
+    s2Refused: (code) => (code ? `Access not granted (${code}).` : 'Access not granted.'),
+    s2RefusedDenied: 'Access not granted: you did not allow it. Press the button again and allow.',
+    s2RefusedClosed: 'Access not granted: the sign-in window was closed early. Press the button again.',
+    s2RefusedBlocked:
+        'Access not granted: the browser did not open the sign-in window. Allow pop-ups for ' +
+        'this page and press the button again.',
+    s2RefusedSilent: 'Access not granted: Google needs you to sign in by hand. Press the button again.',
+    s2RefusedScope: 'Access not granted: Google did not accept the requested rights. Reload the page.',
     s2NoLibrary: 'Could not load Google sign-in. Check your connection and reload the page.',
     errNetwork: 'Cannot reach Google. Check the network and try again.',
     errDenied: 'The account has no rights for this action. Sign in with the account that owns the project.',

@@ -100,6 +100,25 @@ export function failureWord(kind) {
 }
 
 /**
+ * The words for a refusal of the Google sign-in. The codes are those of the
+ * token answer and of `error_callback` of Google Identity Services; a code not
+ * listed gets the general phrase with the code in brackets, for a report.
+ */
+export function refusalText(words, code) {
+    const keys = {
+        access_denied: 's2RefusedDenied',
+        popup_closed: 's2RefusedClosed',
+        popup_failed_to_open: 's2RefusedBlocked',
+        immediate_failed: 's2RefusedSilent',
+        interaction_required: 's2RefusedSilent',
+        invalid_scope: 's2RefusedScope',
+    };
+    const key = keys[code];
+
+    return key ? words[key] : words.s2Refused(code);
+}
+
+/**
  * The caller of the Google APIs for one token. An answer that is not a success
  * is thrown as an Error carrying `status` and the parsed body in `data`, since
  * the steps tell "already there" (409) and "not ready yet" (403) by the status.
