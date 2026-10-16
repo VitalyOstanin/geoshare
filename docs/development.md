@@ -54,7 +54,10 @@ Every build, test and lint runs in a container, so for those the machine
 needs only podman. Setting a project up, writing the page's configuration and
 publishing run the Firebase command line on the machine itself, and need
 `node` 20 or later with `npx` besides — the full list is in
-[new-project.md](new-project.md).
+[new-project.md](new-project.md). Running `npm test` or `npm run coverage` in
+`web/` or `firebase/tests/` directly on the machine needs `node` 24.12 or later
+(the `engines` of both manifests, as in the test container, and what the
+Firebase SDK in them requires); the build scripts do not need it.
 
 | #  | Command                      | What it does                                                                |
 |----|------------------------------|-----------------------------------------------------------------------------|
