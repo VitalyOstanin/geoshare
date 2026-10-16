@@ -28,12 +28,7 @@ export function followLink(onChange) {
  * stopped listening to is silent by choice, and the banner says that instead.
  */
 export function pauseLink() {
-    state.stopLink?.();
-    state.stopLink = null;
-    clearTimeout(state.linkTimer);
-    state.link = null;
-    state.linkShown = false;
-    drawLink();
+    unfollowLink();
     state.linkChanged?.();
 }
 

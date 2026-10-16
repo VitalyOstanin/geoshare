@@ -235,6 +235,11 @@ function followWatchers() {
         return;
     }
 
+    stopWatching();
+}
+
+/** Withdraws the claim to be looking and stops following who else is. */
+function stopWatching() {
     state.stopWatching?.();
     state.stopWatching = null;
     state.stopWatchers?.();
@@ -397,12 +402,7 @@ export function stop() {
     state.labels = NO_LABELS;
     closeNaming();
 
-    state.stopWatching?.();
-    state.stopWatching = null;
-
-    state.stopWatchers?.();
-    state.stopWatchers = null;
-    state.watchers = [];
+    stopWatching();
 
     forgetRoster();
     unfollowAttention();

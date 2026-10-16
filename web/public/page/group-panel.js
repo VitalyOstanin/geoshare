@@ -39,7 +39,7 @@ import {
     followSirens,
     sirenText,
 } from './siren-ui.js';
-import { askSearch, closeSearch, untilText } from './search-ui.js';
+import { askSearch, closeSearch, soughtUntilTag } from './search-ui.js';
 import { drawAdmin, openAdmin } from './admin-panel.js';
 import { followResets, resetButtonFor } from './reset-ui.js';
 import { cardDeviceId, redrawCardDevice } from './card-actions.js';
@@ -192,11 +192,7 @@ function phoneRow(phone, memberId, now, running, search) {
     }
 
     if (search) {
-        const until = document.createElement('span');
-
-        until.className = 'admin-about sought-until';
-        until.textContent = WORDS.soughtUntil(untilText(search.endsAt));
-        about.append(until);
+        about.append(soughtUntilTag(search));
     }
 
     // Last in the row: a device handed on, reset or lost stays in every

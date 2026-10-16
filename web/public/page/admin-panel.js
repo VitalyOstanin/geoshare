@@ -17,7 +17,7 @@ import { SPEAKING, WORDS } from '../lib/words.js';
 import { makeInvitation, removeMember, renameGroup, setRunning } from '../lib/store-group.js';
 import { elements, state } from './state.js';
 import { aboutThem, askConfirm, phoneText } from './dialogs.js';
-import { adminSearch, untilText } from './search-ui.js';
+import { adminSearch, soughtUntilTag } from './search-ui.js';
 import {
     closeOnClickOutside,
     drawGroup,
@@ -245,11 +245,7 @@ function adminPhoneRow(phone, line, now) {
         const search = standingSearches(state.searches, now).get(phone.phoneId) ?? null;
 
         if (search) {
-            const until = document.createElement('span');
-
-            until.className = 'admin-about sought-until';
-            until.textContent = WORDS.soughtUntil(untilText(search.endsAt));
-            about.append(until);
+            about.append(soughtUntilTag(search));
         }
 
         actions.append(searchButton(phone, line.memberId, search));

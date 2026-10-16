@@ -49,6 +49,28 @@ export function searchesChanged() {
     render();
 }
 
+/** The "sought until" note a device row carries while a search stands for it. */
+export function soughtUntilTag(search) {
+    const until = document.createElement('span');
+
+    until.className = 'admin-about sought-until';
+    until.textContent = WORDS.soughtUntil(untilText(search.endsAt));
+
+    return until;
+}
+
+/** The button that ends a search: the device is found. */
+function foundButton(search) {
+    const found = document.createElement('button');
+
+    found.type = 'button';
+    found.className = 'alarm-fill';
+    found.textContent = WORDS.searchFound;
+    found.addEventListener('click', () => tryGroupWrite(() => endSearch(search.phoneId)));
+
+    return found;
+}
+
 /** A moment a search ends at, the way a person reads a date and a time. */
 export function untilText(millis) {
     return new Date(millis).toLocaleString(SPEAKING, {
@@ -115,13 +137,7 @@ export function soughtLine(position) {
     line.append(until, who);
 
     if (runningTheGroup()) {
-        const found = document.createElement('button');
-
-        found.type = 'button';
-        found.className = 'alarm-fill';
-        found.textContent = WORDS.searchFound;
-        found.addEventListener('click', () => tryGroupWrite(() => endSearch(search.phoneId)));
-        line.append(found);
+        line.append(foundButton(search));
     }
 
     return line;
@@ -200,14 +216,7 @@ export function adminSearch(search) {
         askSearch(search.phoneId, search.memberId, phoneNameForSearch(search), true);
     });
 
-    const found = document.createElement('button');
-
-    found.type = 'button';
-    found.className = 'alarm-fill';
-    found.textContent = WORDS.searchFound;
-    found.addEventListener('click', () => tryGroupWrite(() => endSearch(search.phoneId)));
-
-    buttons.append(renew, found);
+    buttons.append(renew, foundButton(search));
     block.append(title, who, buttons);
 
     return block;
