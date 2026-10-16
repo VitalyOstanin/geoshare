@@ -34,7 +34,10 @@ export function watchFalsePlaces(onPlaces) {
     return onSnapshot(
         collection(store, 'groups', currentGroup(), 'falsePlaces'),
         (snapshot) => onPlaces(placesOf(snapshot.docs.map((document) => document.data()))),
-        () => onPlaces([]),
+        (error) => {
+            console.warn('false places:', error);
+            onPlaces([]);
+        },
     );
 }
 
@@ -69,7 +72,10 @@ export function watchSearches(onSearches) {
 
             onSearches(searches);
         },
-        () => onSearches(new Map()),
+        (error) => {
+            console.warn('searches:', error);
+            onSearches(new Map());
+        },
     );
 }
 
@@ -142,7 +148,10 @@ export function watchSiren(phoneId, onSiren) {
                 }),
             );
         },
-        () => onSiren(null),
+        (error) => {
+            console.warn('siren:', error);
+            onSiren(null);
+        },
     );
 }
 
@@ -182,7 +191,10 @@ export function watchReset(phoneId, onReset) {
                 }),
             );
         },
-        () => onReset(null),
+        (error) => {
+            console.warn('reset:', error);
+            onReset(null);
+        },
     );
 }
 
@@ -250,7 +262,10 @@ export function watchLabels(memberId, onLabels) {
     return onSnapshot(
         doc(store, 'groups', currentGroup(), 'labels', memberId),
         (snapshot) => onLabels(labelsFrom(snapshot.exists() ? snapshot.data() : null)),
-        () => onLabels(labelsFrom(null)),
+        (error) => {
+            console.warn('labels:', error);
+            onLabels(labelsFrom(null));
+        },
     );
 }
 

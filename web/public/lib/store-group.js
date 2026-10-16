@@ -41,7 +41,10 @@ export function watchRoster(onRoster) {
     return onSnapshot(
         doc(store, 'groups', currentGroup()),
         (snapshot) => onRoster(snapshot.exists() ? rosterOf(snapshot) : null),
-        () => onRoster(null),
+        (error) => {
+            console.warn('roster:', error);
+            onRoster(null);
+        },
     );
 }
 
@@ -91,7 +94,9 @@ export async function projectGroupOf() {
         const group = snapshot.exists() ? snapshot.data().group : null;
 
         return typeof group === 'string' && group !== '' ? group : null;
-    } catch {
+    } catch (error) {
+        console.warn('project group:', error);
+
         return null;
     }
 }
