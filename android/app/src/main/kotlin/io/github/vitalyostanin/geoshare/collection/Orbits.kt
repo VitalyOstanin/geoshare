@@ -201,9 +201,58 @@ private const val NEXT_FIELD = 4
 private const val ID_END = 3
 private const val EPOCH_END = 23
 
+/** The first line of a record carries three fields after the epoch: the clock terms. */
+private const val FIELDS_ON_FIRST_LINE = 3
+
+/** Every following line carries four fields. */
+private const val FIELDS_PER_LINE = 4
+
+/** A GPS or Galileo record continues for five lines, a GLONASS one for three. */
+private const val ORBIT_LINES = 5
+private const val GLONASS_AXIS_LINES = 3
+
+/**
+ * The fields of a GPS or Galileo record in the order RINEX lays them out,
+ * counted from the first clock term. Index 3 is the issue of data (IODE),
+ * which is not used and so has no name here, and after the last orbit term
+ * come the codes, then the week.
+ */
+private const val CLOCK_BIAS = 0
+private const val CLOCK_DRIFT = 1
+private const val CLOCK_DRIFT_RATE = 2
+private const val CRS = 4
+private const val DELTA_N = 5
+private const val M0 = 6
+private const val CUC = 7
+private const val ECCENTRICITY = 8
+private const val CUS = 9
+private const val SQRT_A = 10
+private const val TIME_OF_EPHEMERIS = 11
+private const val CIC = 12
+private const val OMEGA0 = 13
+private const val CIS = 14
+private const val I0 = 15
+private const val CRC = 16
+private const val OMEGA = 17
+private const val OMEGA_DOT = 18
+private const val I_DOT = 19
+
 /** The clock and orbit terms come first, the week two fields after them. */
 private const val PARAMETERS = 20
 private const val WEEK_FIELD = 21
+
+/** The columns of a GLONASS axis line, the same on all three. */
+private const val POSITION_COLUMN = 0
+private const val VELOCITY_COLUMN = 1
+private const val PULL_COLUMN = 2
+
+/** The fourth column is the health on the first axis and the channel on the second. */
+private const val HEALTH_COLUMN = 3
+private const val CHANNEL_COLUMN = 3
+private const val HEALTHY = 0.0
+private const val FIRST_AXIS = 0
+private const val SECOND_AXIS = 1
+private const val THIRD_AXIS = 2
 
 private fun orbitOf(record: List<String>): Orbit? {
     val first = record[0]
@@ -211,8 +260,10 @@ private fun orbitOf(record: List<String>): Orbit? {
     val id = first.substring(1, ID_END).trim().toIntOrNull() ?: return null
     val clockAt = gpsSecondsOf(first.substring(ID_END, EPOCH_END)) ?: return null
 
-    val values = (0 until 3).map { field(first, FIRST_FIELD + it * FIELD) } +
-        (1..5).flatMap { line -> (0 until 4).map { field(record[line], NEXT_FIELD + it * FIELD) } }
+    val values = (0 until FIELDS_ON_FIRST_LINE).map { field(first, FIRST_FIELD + it * FIELD) } +
+        (1..ORBIT_LINES).flatMap { line ->
+            (0 until FIELDS_PER_LINE).map { field(record[line], NEXT_FIELD + it * FIELD) }
+        }
 
     if (values.take(PARAMETERS).any { it == null }) {
         return null
@@ -225,25 +276,25 @@ private fun orbitOf(record: List<String>): Orbit? {
         constellation = constellation,
         id = id,
         clockSeconds = clockAt,
-        clockBias = v[0],
-        clockDrift = v[1],
-        clockDriftRate = v[2],
-        crs = v[4],
-        deltaN = v[5],
-        m0 = v[6],
-        cuc = v[7],
-        eccentricity = v[8],
-        cus = v[9],
-        sqrtA = v[10],
-        orbitSeconds = week * SECONDS_IN_A_WEEK + v[11],
-        cic = v[12],
-        omega0 = v[13],
-        cis = v[14],
-        i0 = v[15],
-        crc = v[16],
-        omega = v[17],
-        omegaDot = v[18],
-        iDot = v[19],
+        clockBias = v[CLOCK_BIAS],
+        clockDrift = v[CLOCK_DRIFT],
+        clockDriftRate = v[CLOCK_DRIFT_RATE],
+        crs = v[CRS],
+        deltaN = v[DELTA_N],
+        m0 = v[M0],
+        cuc = v[CUC],
+        eccentricity = v[ECCENTRICITY],
+        cus = v[CUS],
+        sqrtA = v[SQRT_A],
+        orbitSeconds = week * SECONDS_IN_A_WEEK + v[TIME_OF_EPHEMERIS],
+        cic = v[CIC],
+        omega0 = v[OMEGA0],
+        cis = v[CIS],
+        i0 = v[I0],
+        crc = v[CRC],
+        omega = v[OMEGA],
+        omegaDot = v[OMEGA_DOT],
+        iDot = v[I_DOT],
     )
 }
 
@@ -259,29 +310,31 @@ private fun glonassOrbitOf(record: List<String>): GlonassOrbit? {
         ?.plus(GPS_AHEAD_OF_UTC_SECONDS) ?: return null
     val clockBias = field(first, FIRST_FIELD) ?: return null
     val frequencyBias = field(first, FIRST_FIELD + FIELD) ?: return null
-    val axes = (1..3).map { line ->
-        (0 until 4).map { field(record[line], NEXT_FIELD + it * FIELD) ?: return null }
+    val axes = (1..GLONASS_AXIS_LINES).map { line ->
+        (0 until FIELDS_PER_LINE).map {
+            field(record[line], NEXT_FIELD + it * FIELD) ?: return null
+        }
     }
 
-    if (axes[0][3] != 0.0) {
+    if (axes[FIRST_AXIS][HEALTH_COLUMN] != HEALTHY) {
         return null
     }
 
     fun vector(column: Int) = Ecef(
-        axes[0][column] * METRES_IN_A_KILOMETRE,
-        axes[1][column] * METRES_IN_A_KILOMETRE,
-        axes[2][column] * METRES_IN_A_KILOMETRE,
+        axes[FIRST_AXIS][column] * METRES_IN_A_KILOMETRE,
+        axes[SECOND_AXIS][column] * METRES_IN_A_KILOMETRE,
+        axes[THIRD_AXIS][column] * METRES_IN_A_KILOMETRE,
     )
 
     return GlonassOrbit(
         id = id,
-        channel = axes[1][3].toInt(),
+        channel = axes[SECOND_AXIS][CHANNEL_COLUMN].toInt(),
         orbitSeconds = at,
         clockBias = clockBias,
         frequencyBias = frequencyBias,
-        position = vector(0),
-        velocity = vector(1),
-        pull = vector(2),
+        position = vector(POSITION_COLUMN),
+        velocity = vector(VELOCITY_COLUMN),
+        pull = vector(PULL_COLUMN),
     )
 }
 
