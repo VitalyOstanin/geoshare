@@ -69,10 +69,25 @@ node -e '
 
 # MapLibre GL JS: the module build, its worker and its styles. The worker is
 # started from the address of the library, so the two stay together.
+#
+# Both scripts are brought down to the syntax of the oldest browser the page
+# is for: MapLibre 6 is written with class static blocks, and a browser
+# without them (Chrome before 94) refuses the whole module before a line of
+# the page runs. Only the syntax is rewritten; the code stays MapLibre's own.
+readonly OLDEST_BROWSER="chrome86"
 v="$(version maplibre-gl)"
 dir="${VENDOR}/maplibre-gl-${v}"
 mkdir "${dir}"
-cp node_modules/maplibre-gl/dist/{maplibre-gl.mjs,maplibre-gl-worker.mjs,maplibre-gl.css} "${dir}/"
+cp node_modules/maplibre-gl/dist/maplibre-gl.css "${dir}/"
+for name in maplibre-gl maplibre-gl-worker; do
+    node_modules/.bin/esbuild "node_modules/maplibre-gl/dist/${name}.mjs" \
+        --target="${OLDEST_BROWSER}" --format=esm --legal-comments=inline \
+        --log-level=warning --outfile="${dir}/${name}.mjs"
+done
+if grep -l 'static{' "${dir}"/*.mjs; then
+    echo "MapLibre still holds a class static block" >&2
+    exit 1
+fi
 cp node_modules/maplibre-gl/LICENSE.txt "${dir}/LICENSE.txt"
 
 # qr: the encoder alone, which is the package's index.js and imports nothing.
