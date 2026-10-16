@@ -1,15 +1,11 @@
 package io.github.vitalyostanin.geoshare.service
 
 import android.app.Notification
-import android.app.NotificationChannel
 import android.app.NotificationManager
-import android.app.PendingIntent
 import android.content.Context
-import android.content.Intent
 import android.text.format.DateFormat
 import androidx.core.app.NotificationCompat
 import androidx.core.content.getSystemService
-import io.github.vitalyostanin.geoshare.MainActivity
 import io.github.vitalyostanin.geoshare.R
 import io.github.vitalyostanin.geoshare.map.Search
 import io.github.vitalyostanin.geoshare.map.endsAtText
@@ -36,21 +32,9 @@ fun searchNotification(
 ): Notification {
     createSearchChannel(context)
 
-    val open =
-        PendingIntent.getActivity(
-            context,
-            0,
-            Intent(context, MainActivity::class.java),
-            PendingIntent.FLAG_IMMUTABLE,
-        )
+    val open = openAppIntent(context)
 
-    val found =
-        PendingIntent.getService(
-            context,
-            0,
-            Intent(context, SharingService::class.java).setAction(SharingService.ACTION_FOUND),
-            PendingIntent.FLAG_IMMUTABLE,
-        )
+    val found = serviceAction(context, SharingService.ACTION_FOUND, REQUEST_FOUND)
 
     return NotificationCompat
         .Builder(context, CHANNEL_ID)
@@ -102,14 +86,11 @@ fun cancelSearchNotification(context: Context, projectId: String? = null) {
 }
 
 private fun createSearchChannel(context: Context) {
-    val channel =
-        NotificationChannel(
-            CHANNEL_ID,
-            context.getString(R.string.sought_channel_name),
-            NotificationManager.IMPORTANCE_HIGH,
-        ).apply {
-            description = context.getString(R.string.sought_channel_description)
-        }
-
-    context.getSystemService<NotificationManager>()?.createNotificationChannel(channel)
+    ensureChannel(
+        context,
+        CHANNEL_ID,
+        R.string.sought_channel_name,
+        NotificationManager.IMPORTANCE_HIGH,
+        R.string.sought_channel_description,
+    )
 }

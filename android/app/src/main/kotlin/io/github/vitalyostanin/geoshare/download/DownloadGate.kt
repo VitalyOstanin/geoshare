@@ -1,6 +1,5 @@
 package io.github.vitalyostanin.geoshare.download
 
-import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.app.PendingIntent
 import android.content.BroadcastReceiver
@@ -12,6 +11,7 @@ import androidx.core.app.NotificationCompat
 import androidx.core.content.getSystemService
 import io.github.vitalyostanin.geoshare.R
 import io.github.vitalyostanin.geoshare.log.AppLog
+import io.github.vitalyostanin.geoshare.service.ensureChannel
 import java.time.Instant
 
 const val DOWNLOAD_NOTIFICATION_ID = 6
@@ -106,12 +106,12 @@ private fun kindOf(capabilities: NetworkCapabilities): NetworkKind = when {
 private fun ask(context: Context, question: RoamingQuestion) {
     val manager = context.getSystemService<NotificationManager>() ?: return
 
-    manager.createNotificationChannel(
-        NotificationChannel(
-            CHANNEL_ID,
-            context.getString(R.string.downloads_channel_name),
-            NotificationManager.IMPORTANCE_LOW,
-        ).apply { description = context.getString(R.string.downloads_channel_description) },
+    ensureChannel(
+        context,
+        CHANNEL_ID,
+        R.string.downloads_channel_name,
+        NotificationManager.IMPORTANCE_LOW,
+        R.string.downloads_channel_description,
     )
 
     val notification =

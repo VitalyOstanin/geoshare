@@ -1,7 +1,6 @@
 package io.github.vitalyostanin.geoshare.update
 
 import android.Manifest
-import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.app.PendingIntent
 import android.content.Context
@@ -13,6 +12,7 @@ import androidx.core.content.getSystemService
 import io.github.vitalyostanin.geoshare.MainActivity
 import io.github.vitalyostanin.geoshare.R
 import io.github.vitalyostanin.geoshare.permission.granted
+import io.github.vitalyostanin.geoshare.service.ensureChannel
 
 /** The extra that tells [MainActivity] the notification was tapped: show the update. */
 const val EXTRA_OPEN_UPDATE = "open_update"
@@ -67,14 +67,11 @@ private fun notificationsAllowed(context: Context): Boolean = (
     NotificationManagerCompat.from(context).areNotificationsEnabled()
 
 private fun createUpdateChannel(context: Context) {
-    val channel =
-        NotificationChannel(
-            CHANNEL_ID,
-            context.getString(R.string.update_channel_name),
-            NotificationManager.IMPORTANCE_DEFAULT,
-        ).apply {
-            description = context.getString(R.string.update_channel_description)
-        }
-
-    context.getSystemService<NotificationManager>()?.createNotificationChannel(channel)
+    ensureChannel(
+        context,
+        CHANNEL_ID,
+        R.string.update_channel_name,
+        NotificationManager.IMPORTANCE_DEFAULT,
+        R.string.update_channel_description,
+    )
 }

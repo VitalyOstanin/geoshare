@@ -1,15 +1,11 @@
 package io.github.vitalyostanin.geoshare.service
 
 import android.app.Notification
-import android.app.NotificationChannel
 import android.app.NotificationManager
-import android.app.PendingIntent
 import android.content.Context
-import android.content.Intent
 import android.widget.RemoteViews
 import androidx.core.app.NotificationCompat
 import androidx.core.content.getSystemService
-import io.github.vitalyostanin.geoshare.MainActivity
 import io.github.vitalyostanin.geoshare.R
 import io.github.vitalyostanin.geoshare.map.SIREN_SECONDS
 import java.time.Duration
@@ -40,21 +36,9 @@ fun sirenNotification(
 ): Notification {
     createSirenChannel(context)
 
-    val open =
-        PendingIntent.getActivity(
-            context,
-            0,
-            Intent(context, MainActivity::class.java),
-            PendingIntent.FLAG_IMMUTABLE,
-        )
+    val open = openAppIntent(context)
 
-    val turnOff =
-        PendingIntent.getService(
-            context,
-            1,
-            Intent(context, SharingService::class.java).setAction(SharingService.ACTION_SIREN_OFF),
-            PendingIntent.FLAG_IMMUTABLE,
-        )
+    val turnOff = serviceAction(context, SharingService.ACTION_SIREN_OFF, REQUEST_SIREN_OFF)
 
     val title = context.getString(R.string.siren_notification_title, callerName)
     val text =
@@ -107,14 +91,10 @@ fun cancelSirenNotification(context: Context) {
 }
 
 private fun createSirenChannel(context: Context) {
-    val channel =
-        NotificationChannel(
-            CHANNEL_ID,
-            context.getString(R.string.siren_channel),
-            NotificationManager.IMPORTANCE_HIGH,
-        ).apply {
-            setSound(null, null)
-        }
-
-    context.getSystemService<NotificationManager>()?.createNotificationChannel(channel)
+    ensureChannel(
+        context,
+        CHANNEL_ID,
+        R.string.siren_channel,
+        NotificationManager.IMPORTANCE_HIGH,
+    ) { setSound(null, null) }
 }

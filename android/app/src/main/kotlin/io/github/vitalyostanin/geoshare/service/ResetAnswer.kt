@@ -1,15 +1,11 @@
 package io.github.vitalyostanin.geoshare.service
 
 import android.app.Notification
-import android.app.NotificationChannel
 import android.app.NotificationManager
-import android.app.PendingIntent
 import android.content.Context
-import android.content.Intent
 import android.text.format.DateFormat
 import androidx.core.app.NotificationCompat
 import androidx.core.content.getSystemService
-import io.github.vitalyostanin.geoshare.MainActivity
 import io.github.vitalyostanin.geoshare.R
 import io.github.vitalyostanin.geoshare.log.AppLog
 import io.github.vitalyostanin.geoshare.map.clockFormat
@@ -146,24 +142,15 @@ suspend fun answerResets(
 }
 
 private fun resetNotification(context: Context, name: String, at: Instant): Notification {
-    val channel =
-        NotificationChannel(
-            CHANNEL_ID,
-            context.getString(R.string.reset_channel_name),
-            NotificationManager.IMPORTANCE_LOW,
-        ).apply {
-            description = context.getString(R.string.reset_channel_description)
-        }
+    ensureChannel(
+        context,
+        CHANNEL_ID,
+        R.string.reset_channel_name,
+        NotificationManager.IMPORTANCE_LOW,
+        R.string.reset_channel_description,
+    )
 
-    context.getSystemService<NotificationManager>()?.createNotificationChannel(channel)
-
-    val open =
-        PendingIntent.getActivity(
-            context,
-            0,
-            Intent(context, MainActivity::class.java),
-            PendingIntent.FLAG_IMMUTABLE,
-        )
+    val open = openAppIntent(context)
 
     return NotificationCompat
         .Builder(context, CHANNEL_ID)
