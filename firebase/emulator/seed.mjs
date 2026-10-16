@@ -7,24 +7,19 @@
 // Written against the emulators' own REST interfaces rather than against a
 // library: no credentials exist here, an owner token is whatever the emulator
 // is told, and the alternative is an npm install for four requests.
-const AUTH = process.env.AUTH_EMULATOR_HOST ?? '127.0.0.1:9099';
-const FIRESTORE = process.env.FIRESTORE_EMULATOR_HOST ?? '127.0.0.1:8080';
-// Pointing the Firebase library at an emulator changes the host it calls, not
-// the project it calls about, so the debug build carries this same id as its
-// stand-in settings (see StandInServices.kt) rather than one read out of a
-// file: seeding any other name fills a database nothing reads, and the
-// screens come up empty with the rules refusing every read.
-const PROJECT = process.env.GEOSHARE_PROJECT ?? 'demo-geoshare';
-const GROUP = process.env.GEOSHARE_GROUP ?? 'family';
-
-// The same password for all of them: the sign-in screen of a build pointed at
-// the emulator offers the accounts as buttons, and nobody types this.
-const PASSWORD = 'geoshare';
-
-// A permission without an end, written as one far enough away to read as
-// never: the rules compare a timestamp, and a missing value would have to be
-// a case of its own in every one of them.
-const FOREVER = '9999-12-31T00:00:00Z';
+import {
+    GROUP,
+    PASSWORD,
+    FOREVER,
+    authUrl,
+    call,
+    write,
+    stringValue,
+    timeValue,
+    sharedWith,
+    writeGroup,
+    writeProfile,
+} from './rest.mjs';
 
 const MEMBERS = [
     { email: 'parent@geoshare.test', name: 'Parent', device: 'emulator' },
@@ -47,27 +42,6 @@ const PLACES = {
     'spouse@geoshare.test': { latitude: 61.0327, longitude: 4.403 },
     'child@geoshare.test': { latitude: 61.0295, longitude: 4.4108 },
 };
-
-const authUrl = (path) => `http://${AUTH}/identitytoolkit.googleapis.com/v1/${path}?key=fake-api-key`;
-
-const documentUrl = (path) =>
-    `http://${FIRESTORE}/v1/projects/${PROJECT}/databases/(default)/documents/${path}`;
-
-async function call(url, body) {
-    const response = await fetch(url, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', Authorization: 'Bearer owner' },
-        body: JSON.stringify(body),
-    });
-
-    const answer = await response.json();
-
-    if (!response.ok) {
-        throw new Error(`${url}: ${answer.error?.message ?? response.status}`);
-    }
-
-    return answer;
-}
 
 /**
  * The account as it is, created if the emulator has not seen it before, and
@@ -115,27 +89,6 @@ async function accountOf(email) {
     }
 }
 
-/** A whole document, replaced rather than merged: the seed is the truth here. */
-async function write(path, fields) {
-    const response = await fetch(documentUrl(path), {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json', Authorization: 'Bearer owner' },
-        body: JSON.stringify({ fields }),
-    });
-
-    if (!response.ok) {
-        throw new Error(`${path}: ${await response.text()}`);
-    }
-}
-
-const stringValue = (value) => ({ stringValue: value });
-const timeValue = (value) => ({ timestampValue: value });
-
-/** Who may read this member's positions, and until when. Kept in the grant alone. */
-const sharedWith = (readers) => ({
-    mapValue: { fields: Object.fromEntries(readers.map((uid) => [uid, timeValue(FOREVER)])) },
-});
-
 const uids = new Map();
 
 for (const member of MEMBERS) {
@@ -148,23 +101,12 @@ const roster = MEMBERS.map((member) => uids.get(member.email));
 // emulator can make an invitation and watch somebody use it. A roster with
 // nobody running it is the household that predates invitations, and that one
 // is edited from the console.
-await write(`groups/${GROUP}`, {
-    members: { arrayValue: { values: roster.map(stringValue) } },
-    admins: { arrayValue: { values: [stringValue(roster[0])] } },
-});
-
-// The mark that the project has its group (ADR-0036): without it a build
-// pointed at the emulator would offer to found a second one.
-await write('project/group', { group: stringValue(GROUP) });
+await writeGroup(roster, roster[0]);
 
 for (const member of MEMBERS) {
     const uid = uids.get(member.email);
 
-    await write(`groups/${GROUP}/members/${uid}`, {
-        displayName: stringValue(member.name),
-        photoUrl: { nullValue: null },
-        updatedAt: timeValue(new Date().toISOString()),
-    });
+    await writeProfile(uid, member.name, new Date().toISOString());
 
     // Apart from the profile, which everybody in the group reads: who may
     // watch and which devices they would be watching are for the member and
@@ -172,7 +114,11 @@ for (const member of MEMBERS) {
     await write(`groups/${GROUP}/grants/${uid}`, {
         // Everyone else in the household, so that a build pointed at the
         // emulator has something to read on its first launch.
-        sharedWith: sharedWith(roster.filter((reader) => reader !== uid)),
+        sharedWith: sharedWith(
+            roster
+                .filter((reader) => reader !== uid)
+                .map((reader) => ({ uid: reader, until: FOREVER })),
+        ),
         // Which documents hold this member's positions: the collection cannot
         // be listed, so a reader learns the devices from here.
         devices: { arrayValue: { values: [stringValue(member.device)] } },

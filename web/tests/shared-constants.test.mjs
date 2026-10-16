@@ -207,7 +207,7 @@ test('a member without a name is shown by as much of the id', () => {
 test('a permission without an end ends on the same day everywhere', () => {
     const forever = quotedDate(kotlin('map/ShareSpan.kt', 'FOREVER'));
 
-    assert.equal(quotedDate(javascript('firebase/emulator/seed.mjs', 'FOREVER')), forever);
+    assert.equal(quotedDate(javascript('firebase/emulator/rest.mjs', 'FOREVER')), forever);
     assert.equal(quotedDate(javascript('firebase/tests/rules/helpers.mjs', 'FOREVER')), forever);
 });
 

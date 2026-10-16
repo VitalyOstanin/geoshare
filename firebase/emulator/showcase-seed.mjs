@@ -18,18 +18,22 @@
 //
 // Written against the emulators' own REST interfaces, like seed.mjs: no
 // credentials exist here and an owner token is whatever the emulator is told.
-const AUTH = process.env.AUTH_EMULATOR_HOST ?? '127.0.0.1:9099';
-const FIRESTORE = process.env.FIRESTORE_EMULATOR_HOST ?? '127.0.0.1:8080';
-// The debug build carries this same project id (see StandInServices.kt);
-// seeding any other name fills a database nothing reads.
-const PROJECT = process.env.GEOSHARE_PROJECT ?? 'demo-geoshare';
-const GROUP = process.env.GEOSHARE_GROUP ?? 'family';
-
-// The same password for all of them, as in seed.mjs.
-const PASSWORD = 'geoshare';
-
-// A permission without an end, written as one far enough away to read as never.
-const FOREVER = '9999-12-31T00:00:00Z';
+import {
+    AUTH,
+    FIRESTORE,
+    PROJECT,
+    GROUP,
+    PASSWORD,
+    FOREVER,
+    authUrl,
+    call,
+    write,
+    stringValue,
+    timeValue,
+    sharedWith,
+    writeGroup,
+    writeProfile,
+} from './rest.mjs';
 
 const NOW = Date.now();
 const MINUTE = 60 * 1000;
@@ -131,27 +135,6 @@ const ADMIN = 'parent@geoshare.test';
 // screenshots that shows a countdown.
 const LIMITED = { from: 'mia@geoshare.test', to: 'leo@geoshare.test', until: NOW + 3 * HOUR };
 
-const authUrl = (path) => `http://${AUTH}/identitytoolkit.googleapis.com/v1/${path}?key=fake-api-key`;
-
-const documentUrl = (path) =>
-    `http://${FIRESTORE}/v1/projects/${PROJECT}/databases/(default)/documents/${path}`;
-
-async function call(url, body) {
-    const response = await fetch(url, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', Authorization: 'Bearer owner' },
-        body: JSON.stringify(body),
-    });
-
-    const answer = await response.json();
-
-    if (!response.ok) {
-        throw new Error(`${url}: ${answer.error?.message ?? response.status}`);
-    }
-
-    return answer;
-}
-
 /**
  * The account with the id it is given, created if the emulator has not seen it
  * before, and carrying the name it is known by.
@@ -195,29 +178,6 @@ async function account({ localId, email, name }) {
     return id;
 }
 
-/** A whole document, replaced rather than merged: the seed is the truth here. */
-async function write(path, fields) {
-    const response = await fetch(documentUrl(path), {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json', Authorization: 'Bearer owner' },
-        body: JSON.stringify({ fields }),
-    });
-
-    if (!response.ok) {
-        throw new Error(`${path}: ${await response.text()}`);
-    }
-}
-
-const stringValue = (value) => ({ stringValue: value });
-const timeValue = (value) => ({ timestampValue: value });
-
-/** Who may read this member's positions, and until when. Kept in the grant alone. */
-const sharedWith = (readers) => ({
-    mapValue: {
-        fields: Object.fromEntries(readers.map(({ uid, until }) => [uid, timeValue(until)])),
-    },
-});
-
 // Everything the emulators hold goes first. seed.mjs runs when they start and
 // has already made parent@ under an id of its own choosing, which would give
 // Anna the wrong colour; and its household would otherwise share the map.
@@ -242,23 +202,12 @@ for (const member of MEMBERS) {
 
 const roster = MEMBERS.map((member) => uids.get(member.email));
 
-await write(`groups/${GROUP}`, {
-    members: { arrayValue: { values: roster.map(stringValue) } },
-    admins: { arrayValue: { values: [stringValue(uids.get(ADMIN))] } },
-});
-
-// The mark that the project has its group (ADR-0036): without it a build
-// pointed at the emulator would offer to found a second one.
-await write('project/group', { group: stringValue(GROUP) });
+await writeGroup(roster, uids.get(ADMIN));
 
 for (const member of MEMBERS) {
     const uid = uids.get(member.email);
 
-    await write(`groups/${GROUP}/members/${uid}`, {
-        displayName: stringValue(member.name),
-        photoUrl: { nullValue: null },
-        updatedAt: timeValue(new Date(NOW).toISOString()),
-    });
+    await writeProfile(uid, member.name, new Date(NOW).toISOString());
 
     // Anna shares with nobody yet when the first-share question is to be on
     // the screenshot: the app asks it only of a member whose grant is empty.
