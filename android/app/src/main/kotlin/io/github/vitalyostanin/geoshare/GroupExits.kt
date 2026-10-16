@@ -7,7 +7,6 @@ import io.github.vitalyostanin.geoshare.membership.Leave
 import io.github.vitalyostanin.geoshare.project.Connections
 import io.github.vitalyostanin.geoshare.project.GroupConnection
 import io.github.vitalyostanin.geoshare.project.PendingInvitationStore
-import io.github.vitalyostanin.geoshare.project.refusedJoinOf
 import io.github.vitalyostanin.geoshare.service.LeavingHere
 import io.github.vitalyostanin.geoshare.service.forgetPhone
 import io.github.vitalyostanin.geoshare.service.leaveGroup
@@ -77,14 +76,12 @@ internal suspend fun MainActivity.leave(connection: GroupConnection, how: Leave)
 
     connection.auth.signOut()
     Connections.remove(this, connection.projectId)
+    Connections.dropLingeringSession(this, connection.projectId)
 
-    // A refused invitation to the group is said on its map; with the
-    // group gone there is nothing left to say it on.
-    val kept = PendingInvitationStore.read(this, connection.projectId)
-
-    if (refusedJoinOf(kept, connection.projectId) != null) {
-        PendingInvitationStore.clear(this, connection.projectId)
-    }
+    // An invitation kept for the group's sign-in, taken up or refused, has
+    // nothing left to be spent on or said on: connecting to the project again
+    // starts from the link opened then.
+    PendingInvitationStore.clear(this, connection.projectId)
 
     return true
 }

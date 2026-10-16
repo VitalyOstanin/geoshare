@@ -2,6 +2,7 @@ package io.github.vitalyostanin.geoshare.project
 
 import android.content.Context
 import com.google.firebase.FirebaseApp
+import com.google.firebase.auth.FirebaseAuth
 import io.github.vitalyostanin.geoshare.log.AppLog
 import io.github.vitalyostanin.geoshare.service.readString
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -160,6 +161,31 @@ object Connections {
         SignInStarted.forget(context, projectId)
 
         AppLog.i(TAG, "no longer in $projectId")
+    }
+
+    /**
+     * Signs out of [projectId]'s instance when this process still runs one
+     * with a session in it, though the project is not on the list.
+     *
+     * The instance outlives the group being dropped (see [remove]), and the
+     * session in it has been seen to come back after the sign-out: a project
+     * connected again would then write under the old account, into the group
+     * of a fresh invitation, while the screen asks who to sign in as.
+     */
+    fun dropLingeringSession(context: Context, projectId: String) {
+        if (of(projectId) != null) {
+            return
+        }
+
+        val owner = files(context).readString(KEY_DEFAULT_PROJECT, null) ?: return
+        val name = if (owner == projectId) FirebaseApp.DEFAULT_APP_NAME else projectId
+        val app = FirebaseApp.getApps(context).firstOrNull { it.name == name } ?: return
+        val auth = FirebaseAuth.getInstance(app)
+
+        if (auth.currentUser != null) {
+            AppLog.w(TAG, "a session in $projectId outlived the group; signing out of it")
+            auth.signOut()
+        }
     }
 
     /**

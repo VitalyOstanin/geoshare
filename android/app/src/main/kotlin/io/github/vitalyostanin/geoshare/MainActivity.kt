@@ -504,6 +504,10 @@ class MainActivity : AppCompatActivity() {
         GroupNames.note(this, projectId, done.invitation?.groupName)
 
         if (Connections.of(projectId) == null) {
+            // Whoever comes in is the one chosen on the sign-in page next,
+            // not an account left over from the group's last time here.
+            Connections.dropLingeringSession(this, projectId)
+
             // The invitation's group from the start: the inherited one is not
             // there in a project of its own, and the service would write into
             // it, refused, until the invitation is spent.
