@@ -14,6 +14,7 @@ export const elements = {
     signInButton: document.querySelector('#sign-in-button'),
     signInWaiting: document.querySelector('#sign-in-waiting-text'),
     signInError: document.querySelector('#sign-in-error'),
+    signOutError: document.querySelector('#sign-out-error'),
     map: document.querySelector('#map'),
     card: document.querySelector('#card'),
     followButton: document.querySelector('#follow-button'),

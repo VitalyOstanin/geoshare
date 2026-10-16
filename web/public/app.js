@@ -33,7 +33,13 @@ import {
 } from './lib/store-group.js';
 import { watchFalsePlaces, watchLabels, watchSearches } from './lib/store-search.js';
 import { AGE_TICK_MS, SIGNED_IN_KEY, elements, state } from './page/state.js';
-import { FULL_SCREEN, showFollowMenu, showFullScreen, showMenu } from './page/menus.js';
+import {
+    FULL_SCREEN,
+    onSignOutRefused,
+    showFollowMenu,
+    showFullScreen,
+    showMenu,
+} from './page/menus.js';
 import { drawGroup } from './page/group-panel.js';
 import { closeAdmin } from './page/admin-panel.js';
 import { askName, closeNaming } from './page/dialogs.js';
@@ -235,6 +241,10 @@ function followWatchers() {
     state.stopWatchers = null;
     state.watchers = [];
 }
+
+// A sign-out the account refused leaves the session alive, and the claim
+// withdrawn ahead of it is made again.
+onSignOutRefused(followWatchers);
 
 /** Stops following the roster and forgets it, and the mark read beside it. */
 function forgetRoster() {

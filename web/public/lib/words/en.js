@@ -249,6 +249,9 @@ export const EN = {
     signInMisconfigured: 'This page is not set up for sign-in yet.',
     signInFailed: 'Sign-in did not go through. Try again.',
 
+    // What the account menu says when signing out did not happen.
+    signOutFailed: 'Could not sign out. Try again.',
+
     // The words index.html is written with. Kept here as well as there so that
     // a page read in the other language has them: the markup is the first
     // paint, and these replace it as soon as the modules run.

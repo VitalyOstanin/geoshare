@@ -263,6 +263,9 @@ export const RU = {
     signInMisconfigured: 'Эта страница пока не настроена для входа.',
     signInFailed: 'Войти не удалось. Попробуйте ещё раз.',
 
+    // Что меню аккаунта говорит, когда выйти не удалось.
+    signOutFailed: 'Выйти не удалось. Попробуйте ещё раз.',
+
     // The words index.html is written with.
     signInExplanation: 'Войдите в тот аккаунт Google, под которым вы делитесь геопозицией с группой.',
     signInAction: 'Войти через Google',

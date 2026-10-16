@@ -11,6 +11,7 @@ import { applyTheme, readTheme, writeTheme } from '../lib/theme.js';
 import { readLanguage, writeLanguage } from '../lib/language.js';
 import { SPEAKING, WORDS } from '../lib/words.js';
 import { leave, signIn, signInReturned } from '../lib/store.js';
+import { signOutOf } from '../lib/sign-out.js';
 import { elements, state } from './state.js';
 import { drawGroup } from './group-panel.js';
 
@@ -54,15 +55,33 @@ signInReturned().catch((error) => {
 });
 
 elements.signOutButton.addEventListener('click', async () => {
-    // The claim to be watching is taken back first: once signed out, the rules
-    // refuse this page the delete, and every device would stay in its
-    // fifteen-second mode until the claim went stale. The withdrawal settles
-    // either way, so a refused one does not keep the account signed in.
-    const withdrawn = state.stopWatching?.();
+    elements.signOutError.hidden = true;
+
+    const withdraw = state.stopWatching;
     state.stopWatching = null;
-    await withdrawn;
-    await leave();
+
+    const refusal = await signOutOf({
+        stopWatching: withdraw,
+        leave,
+        resume: () => resumeAfterRefusedSignOut(),
+    });
+
+    if (refusal) {
+        console.warn('sign-out failed', refusal);
+        elements.signOutError.textContent = WORDS.signOutFailed;
+        elements.signOutError.hidden = false;
+    }
 });
+
+let resumeAfterRefusedSignOut = () => {};
+
+/**
+ * Registers what makes the page watch again after a sign-out that was refused:
+ * the session is still alive, and nothing else would bring the claim back.
+ */
+export function onSignOutRefused(resume) {
+    resumeAfterRefusedSignOut = resume;
+}
 
 // How long the name of a newly chosen mode stands beside its mark.
 export const FOLLOW_ANNOUNCE_MS = 2500;
