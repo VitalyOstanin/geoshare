@@ -104,7 +104,7 @@
 /* The count of the members a group has no room for: the colour of the head,
    so that it reads as part of the marker rather than as another face. */
 .pin-face.more {
-    color: var(--pin, #5c6bc0);
+    color: var(--pin, #1e88e5);
     font-size: 0.95rem;
     font-weight: 700;
 }
