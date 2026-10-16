@@ -73,7 +73,8 @@ node -e '
 # Both scripts are brought down to the syntax of the oldest browser the page
 # is for: MapLibre 6 is written with class static blocks, and a browser
 # without them (Chrome before 94) refuses the whole module before a line of
-# the page runs. Only the syntax is rewritten; the code stays MapLibre's own.
+# the page runs. The few newer built-ins it calls are put at the head of each
+# (tools/maplibre-polyfills.js); the code is otherwise MapLibre's own.
 readonly OLDEST_BROWSER="chrome86"
 v="$(version maplibre-gl)"
 dir="${VENDOR}/maplibre-gl-${v}"
@@ -82,6 +83,7 @@ cp node_modules/maplibre-gl/dist/maplibre-gl.css "${dir}/"
 for name in maplibre-gl maplibre-gl-worker; do
     node_modules/.bin/esbuild "node_modules/maplibre-gl/dist/${name}.mjs" \
         --target="${OLDEST_BROWSER}" --format=esm --legal-comments=inline \
+        --banner:js="$(cat /src/tools/maplibre-polyfills.js)" \
         --log-level=warning --outfile="${dir}/${name}.mjs"
 done
 if grep -l 'static{' "${dir}"/*.mjs; then
