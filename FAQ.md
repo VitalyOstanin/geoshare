@@ -28,7 +28,7 @@ friends. Anyone who finds it useful is welcome to use it.
 ## Can I rely on it in an emergency?
 
 No. It is a non-commercial project and comes with no obligations of any kind.
-If it helps somebody find a lost phone, the author will be glad, but there is
+If it helps somebody find a lost device, the author will be glad, but there is
 no guarantee that it will.
 
 ## Has every feature been thoroughly tested?
