@@ -414,6 +414,11 @@ service cloud.firestore {
         // Only under a group that exists: the sign-in is open to any Google
         // account, and without this one could write a claim under every
         // made-up group id there is and fill the family's project with them.
+        //
+        // This is the one write open to an account outside the group, where
+        // ADR-0036 says such an account writes nothing: a single code of eight
+        // characters under its own id, which opens nothing unless the code is
+        // an invitation the group made.
         function groupExists() {
           return exists(/databases/$(database)/documents/groups/$(groupId));
         }
