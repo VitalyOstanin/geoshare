@@ -6,6 +6,8 @@
 
 import {
     makeApi,
+    accountEmail,
+    consoleLink,
     listProjects,
     enableFirestoreApi,
     createDatabase,
@@ -42,6 +44,8 @@ const SCOPES = [
     'https://www.googleapis.com/auth/firebase',
     'https://www.googleapis.com/auth/datastore',
     'https://www.googleapis.com/auth/service.management',
+    // Only to open the console links of step 4 in this same account.
+    'https://www.googleapis.com/auth/userinfo.email',
 ].join(' ');
 const GIS_URL = 'https://accounts.google.com/gsi/client';
 const SIGN_IN_POLL_MS = 5000;
@@ -49,7 +53,7 @@ const SIGN_IN_POLL_MS = 5000;
 const GENERATED = ['/geoshare.json', '/firebase-config.js'];
 
 const $ = (id) => document.getElementById(id);
-const state = { config: null, token: null, api: null, project: null, polling: null };
+const state = { config: null, token: null, api: null, email: null, project: null, polling: null };
 
 for (const element of document.querySelectorAll('[data-text]')) {
     element.textContent = words[element.dataset.text];
@@ -195,6 +199,8 @@ async function gotToken(answer) {
     $('s2-error').hidden = true;
     $('s2-got').textContent = words.s2Got;
     $('s2-got').hidden = false;
+
+    state.email = await accountEmail(state.api);
 
     try {
         renderProjects(await listProjects(state.api));
@@ -427,8 +433,10 @@ function startStep4() {
 
     // The group's page signs in through its own site (authDomain), named after the project.
     $('s4-uri').textContent = `https://${id}.web.app/__/auth/handler`;
-    $('s4-providers').href = `${consoleBase}project/${id}/authentication/providers`;
-    $('s4-credentials').href = `https://console.cloud.google.com/apis/credentials?project=${id}`;
+    $('s4-providers').href = consoleLink(
+        `${consoleBase}project/${id}/authentication/providers`, state.email);
+    $('s4-credentials').href = consoleLink(
+        `https://console.cloud.google.com/auth/clients?project=${id}`, state.email);
     $('s4-state').textContent = words.s4Checking;
     show(4);
     const round = {};

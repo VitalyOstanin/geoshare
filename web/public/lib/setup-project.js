@@ -217,6 +217,38 @@ export async function listProjects(api) {
     return projects;
 }
 
+/**
+ * The address of the account that granted the token, or null when Google
+ * does not say. It is only put into the console links, so that they open in
+ * that account rather than in the browser's first one; nothing keeps it.
+ */
+export async function accountEmail(api) {
+    try {
+        const data = await api('GET', 'https://www.googleapis.com/oauth2/v3/userinfo');
+
+        return typeof data?.email === 'string' && data.email ? data.email : null;
+    } catch {
+        return null;
+    }
+}
+
+/**
+ * A console link that opens in the given account. A browser signed into
+ * several accounts opens a bare link in its first one, where a project of
+ * another account reads as missing.
+ */
+export function consoleLink(url, email) {
+    if (!email) {
+        return url;
+    }
+
+    const link = new URL(url);
+
+    link.searchParams.set('authuser', email);
+
+    return link.toString();
+}
+
 /** Turns Firestore on for the project; enabling a service already on is a no-op. */
 export async function enableFirestoreApi(api, projectNumber, sleep = realSleep) {
     const service = 'firestore.googleapis.com';

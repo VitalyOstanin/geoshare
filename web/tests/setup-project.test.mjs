@@ -10,6 +10,8 @@ import {
     ensureWebApp,
     listProjects,
     makeApi,
+    accountEmail,
+    consoleLink,
     setupConfigOf,
     failure,
     failureKind,
@@ -103,6 +105,26 @@ test('the projects of every page of the list are read', async () => {
 
     assert.deepEqual(await listProjects(api), [{ projectId: PROJECT }, { projectId: 'second' }]);
     assert.equal(requests.length, 2);
+});
+
+test('the account address is read from userinfo, and is null when Google does not give it', async () => {
+    const given = fakeFetch(() => [200, { sub: '1', email: 'owner@example.com' }]);
+    const without = fakeFetch(() => [200, { sub: '1' }]);
+    const refused = fakeFetch(() => [401, { error: 'invalid_token' }]);
+
+    assert.equal(await accountEmail(given.api), 'owner@example.com');
+    assert.equal(given.requests[0].url, 'https://www.googleapis.com/oauth2/v3/userinfo');
+    assert.equal(await accountEmail(without.api), null);
+    assert.equal(await accountEmail(refused.api), null);
+});
+
+test('a console link names the account, and stays as it was without one', () => {
+    const providers = `https://console.firebase.google.com/project/${PROJECT}/authentication/providers`;
+    const clients = `https://console.cloud.google.com/auth/clients?project=${PROJECT}`;
+
+    assert.equal(consoleLink(providers, 'owner+1@example.com'), `${providers}?authuser=owner%2B1%40example.com`);
+    assert.equal(consoleLink(clients, 'owner@example.com'), `${clients}&authuser=owner%40example.com`);
+    assert.equal(consoleLink(clients, null), clients);
 });
 
 test('enabling Firestore waits only for an operation that is not done', async () => {
