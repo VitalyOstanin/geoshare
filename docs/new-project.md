@@ -35,8 +35,10 @@ and signs in with Google. Members are invited later from the application.
 
 ## Where to run it
 
-- A machine with this repository, `bash`, `node` with `npx`, `python3` and
-  `curl`.
+- A machine with this repository, `bash`, `node` 20 or later with `npx` (the
+  Firebase command line needs it, and the script reads its JSON with it too)
+  and `curl`. `qrencode`, if it is there, adds a QR code of the connection
+  link.
 - Or Google Cloud Shell in the project owner's browser: it has all of these,
   and the project owner is already signed in to Google there.
 

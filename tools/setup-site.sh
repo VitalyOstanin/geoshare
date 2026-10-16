@@ -63,53 +63,73 @@ cp "${OUT}/public/setup.html" "${OUT}/public/index.html"
 cp "${REPO_ROOT}/firebase/firestore.rules" "${OUT}/public/firestore.rules"
 
 SETUP_CLIENT_ID="${client_id}" SETUP_PACKAGE="${PACKAGE_NAME}" SETUP_LOCATION="${LOCATION}" \
-    python3 - "${OUT}" "${REPO_ROOT}/firebase.json" "${sha_given[@]}" <<'EOF'
-import json, os, pathlib, sys
+    node - "${OUT}" "${REPO_ROOT}/firebase.json" "${sha_given[@]}" <<'EOF'
+const fs = require("fs");
+const path = require("path");
 
-out = pathlib.Path(sys.argv[1])
-public = out / "public"
-hosting = json.loads(pathlib.Path(sys.argv[2]).read_text())["hosting"]
-fingerprints = sys.argv[3:]
+const [out, firebaseJson, ...fingerprints] = process.argv.slice(2);
+const pub = path.join(out, "public");
+const hosting = JSON.parse(fs.readFileSync(firebaseJson, "utf8")).hosting;
 
-# Everything a group's page is made of; the setup page fetches each from
-# group/<path> and deploys it as <path>.
-group = public / "group"
-paths = sorted(
-    "/" + str(path.relative_to(group))
-    for path in group.rglob("*")
-    if path.is_file() and not any(part.startswith(".") for part in path.relative_to(group).parts)
-)
+// Everything a group's page is made of; the setup page fetches each from
+// group/<path> and deploys it as <path>.
+const group = path.join(pub, "group");
+const paths = [];
 
-(public / "setup-files.json").write_text(json.dumps({"paths": paths, "hosting": hosting}, indent=2) + "\n")
-(public / "setup-config.json").write_text(json.dumps({
-    "clientId": os.environ["SETUP_CLIENT_ID"],
-    "packageName": os.environ["SETUP_PACKAGE"],
-    "location": os.environ["SETUP_LOCATION"],
-    "fingerprints": fingerprints,
-    "consoleUrl": "https://console.firebase.google.com/",
-}, indent=2) + "\n")
+(function walk(dir, rel) {
+    for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
+        if (entry.name.startsWith(".")) {
+            continue;
+        }
+        const relPath = `${rel}/${entry.name}`;
 
-# The group's policy, widened for the setup page alone: Google Identity
-# Services is served from accounts.google.com, and the page calls the
-# Firebase, Firestore, Service Usage, Rules and Hosting APIs, the upload host
-# of Hosting among them.
-policy = next(h["value"] for rule in hosting["headers"] for h in rule["headers"]
-              if h["key"] == "Content-Security-Policy")
-policy = policy.replace("script-src 'self'", "script-src 'self' https://accounts.google.com", 1)
-policy = policy.replace("style-src 'self'", "style-src 'self' https://accounts.google.com", 1)
-policy = policy.replace("connect-src 'self'", "connect-src 'self' https://accounts.google.com", 1)
-site_hosting = json.loads(json.dumps(hosting))
-site_hosting.pop("target", None)
-site_hosting["public"] = "public"
-for rule in site_hosting["headers"]:
-    for header in rule["headers"]:
-        if header["key"] == "Content-Security-Policy":
-            header["value"] = policy
-# /join belongs to a group's site, not to this one.
-site_hosting["rewrites"] = []
-(out / "firebase.json").write_text(json.dumps({"hosting": site_hosting}, indent=2) + "\n")
+        if (entry.isDirectory()) {
+            walk(path.join(dir, entry.name), relPath);
+        } else if (entry.isFile()) {
+            paths.push(relPath);
+        }
+    }
+})(group, "");
+paths.sort((a, b) => (a < b ? -1 : a > b ? 1 : 0));
 
-print(f"==> {len(paths)} files for a group's site", file=sys.stderr)
+const write = (file, value) => fs.writeFileSync(file, `${JSON.stringify(value, null, 2)}\n`);
+
+write(path.join(pub, "setup-files.json"), { paths, hosting });
+write(path.join(pub, "setup-config.json"), {
+    clientId: process.env.SETUP_CLIENT_ID,
+    packageName: process.env.SETUP_PACKAGE,
+    location: process.env.SETUP_LOCATION,
+    fingerprints,
+    consoleUrl: "https://console.firebase.google.com/",
+});
+
+// The group's policy, widened for the setup page alone: Google Identity
+// Services is served from accounts.google.com, and the page calls the
+// Firebase, Firestore, Service Usage, Rules and Hosting APIs, the upload host
+// of Hosting among them.
+let policy = hosting.headers.flatMap((rule) => rule.headers)
+    .find((h) => h.key === "Content-Security-Policy").value;
+
+policy = policy.replace("script-src 'self'", "script-src 'self' https://accounts.google.com");
+policy = policy.replace("style-src 'self'", "style-src 'self' https://accounts.google.com");
+policy = policy.replace("connect-src 'self'", "connect-src 'self' https://accounts.google.com");
+
+const siteHosting = structuredClone(hosting);
+
+delete siteHosting.target;
+siteHosting.public = "public";
+for (const rule of siteHosting.headers) {
+    for (const header of rule.headers) {
+        if (header.key === "Content-Security-Policy") {
+            header.value = policy;
+        }
+    }
+}
+// /join belongs to a group's site, not to this one.
+siteHosting.rewrites = [];
+write(path.join(out, "firebase.json"), { hosting: siteHosting });
+
+console.error(`==> ${paths.length} files for a group's site`);
 EOF
 
 echo "==> deploy: firebase deploy --only hosting --project geoshare-setup --config ${OUT#"${REPO_ROOT}"/}/firebase.json" >&2

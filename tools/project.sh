@@ -198,13 +198,12 @@ fingerprints() {
 
     if [[ -n "${from}" ]]; then
         firebase apps:android:sha:list "$(app_id "${from}" ANDROID)" --project "${from}" --json |
-            python3 -c '
-import json, sys
+            node -e '
+const raw = require("fs").readFileSync(0, "utf8");
 
-raw = sys.stdin.read()
-
-for entry in json.loads(raw[raw.index("{"):])["result"]:
-    print(entry["shaHash"])
+for (const entry of JSON.parse(raw.slice(raw.indexOf("{"))).result) {
+    console.log(entry.shaHash);
+}
 '
         return
     fi
@@ -241,11 +240,10 @@ apps_of() {
     [[ "${platform}" == "WEB" ]] && kind="webApps"
 
     api_get "https://firebase.googleapis.com/v1beta1/projects/${project}/${kind}" |
-        python3 -c '
-import json, sys
-
-for app in json.load(sys.stdin).get("apps", []):
-    print(app["appId"])
+        node -e '
+for (const app of JSON.parse(require("fs").readFileSync(0, "utf8")).apps ?? []) {
+    console.log(app.appId);
+}
 '
 }
 # The fingerprints the Android app already knows: sign-in checks the calling
@@ -261,11 +259,10 @@ android_fingerprints() {
     local project="$1" android="$2"
 
     api_get "https://firebase.googleapis.com/v1beta1/projects/${project}/androidApps/${android}/sha" |
-        python3 -c '
-import json, sys
-
-for entry in json.load(sys.stdin).get("certificates", []):
-    print(entry["shaHash"])
+        node -e '
+for (const entry of JSON.parse(require("fs").readFileSync(0, "utf8")).certificates ?? []) {
+    console.log(entry.shaHash);
+}
 '
 }
 
@@ -305,21 +302,23 @@ access_token_fresh() {
 remember_access_token() {
     local stored
 
-    stored="$(ACCOUNT="${account}" python3 -c '
-import json, os, time
+    stored="$(ACCOUNT="${account}" node -e '
+const fs = require("fs");
+const path = require("path");
+const os = require("os");
 
-path = os.path.expanduser("~/.config/configstore/firebase-tools.json")
-store = json.load(open(path))
-wanted = os.environ["ACCOUNT"].lower()
+const store = JSON.parse(fs.readFileSync(
+    path.join(os.homedir(), ".config/configstore/firebase-tools.json"), "utf8"));
+const wanted = process.env.ACCOUNT.toLowerCase();
 
-# The default account sits at the top of the file, every one added with
-# login:add in additionalAccounts beside it, each with tokens of its own.
-accounts = [store] + store.get("additionalAccounts", [])
-match = [a for a in accounts if not wanted or a["user"]["email"].lower() == wanted]
-tokens = match[0]["tokens"]
-print(tokens["access_token"])
-# expires_at is in milliseconds since the epoch.
-print(int(tokens.get("expires_at", 0) / 1000 - time.time()))
+// The default account sits at the top of the file, every one added with
+// login:add in additionalAccounts beside it, each with tokens of its own.
+const accounts = [store, ...(store.additionalAccounts ?? [])];
+const match = accounts.filter((a) => !wanted || a.user.email.toLowerCase() === wanted);
+const tokens = match[0].tokens;
+console.log(tokens.access_token);
+// expires_at is in milliseconds since the epoch.
+console.log(Math.trunc((tokens.expires_at ?? 0) / 1000 - Date.now() / 1000));
 ')"
     ACCESS_TOKEN="${stored%%$'\n'*}"
     ACCESS_TOKEN_UNTIL=$((SECONDS + ${stored##*$'\n'}))
@@ -421,15 +420,13 @@ google_sign_in_enabled() {
         return 1
     fi
 
-    enabled="$(python3 -c '
-import json, sys
-
-# JSON leaves out a false boolean, so a provider that was switched off
-# again comes back without the field.
-print(json.loads(sys.stdin.read()).get("enabled", False))
+    enabled="$(node -e '
+// JSON leaves out a false boolean, so a provider that was switched off
+// again comes back without the field.
+console.log(JSON.parse(require("fs").readFileSync(0, "utf8")).enabled === true);
 ' <<< "${body}")"
 
-    [[ "${enabled}" == "True" ]]
+    [[ "${enabled}" == "true" ]]
 }
 
 # The Hosting site already made for the project, empty if it has none yet.
@@ -439,13 +436,11 @@ existing_site() {
     local project="$1"
 
     api_get "https://firebasehosting.googleapis.com/v1beta1/projects/${project}/sites" |
-        python3 -c '
-import json, sys
-
-sites = json.load(sys.stdin).get("sites", [])
-default = [s for s in sites if s.get("type") == "DEFAULT_SITE"]
-chosen = (default or sites)[:1]
-print(chosen[0]["name"].rsplit("/", 1)[1] if chosen else "")
+        node -e '
+const sites = JSON.parse(require("fs").readFileSync(0, "utf8")).sites ?? [];
+const defaults = sites.filter((s) => s.type === "DEFAULT_SITE");
+const chosen = (defaults.length ? defaults : sites)[0];
+console.log(chosen ? chosen.name.split("/").pop() : "");
 '
 }
 # The Hosting site the page is served from, made if the project has none.
@@ -489,21 +484,19 @@ app_settings() {
     local project="$1" android="$2" site_id="$3"
 
     firebase apps:sdkconfig ANDROID "${android}" --project "${project}" --json |
-        SITE_ID="${site_id}" python3 -c '
-import json, os, sys
+        SITE_ID="${site_id}" node -e '
+const raw = require("fs").readFileSync(0, "utf8");
+const config = JSON.parse(JSON.parse(raw.slice(raw.indexOf("{"))).result.fileContents);
+const client = config.client[0];
 
-raw = sys.stdin.read()
-config = json.loads(json.loads(raw[raw.index("{"):])["result"]["fileContents"])
-client = config["client"][0]
-
-print(json.dumps({
-    "version": 1,
-    "projectId": config["project_info"]["project_id"],
-    "applicationId": client["client_info"]["mobilesdk_app_id"],
-    "apiKey": client["api_key"][0]["current_key"],
-    "gcmSenderId": config["project_info"]["project_number"],
-    "site": os.environ["SITE_ID"],
-}, indent=2))
+console.log(JSON.stringify({
+    version: 1,
+    projectId: config.project_info.project_id,
+    applicationId: client.client_info.mobilesdk_app_id,
+    apiKey: client.api_key[0].current_key,
+    gcmSenderId: config.project_info.project_number,
+    site: process.env.SITE_ID,
+}, null, 2));
 '
 }
 
@@ -526,40 +519,74 @@ print_connect_link() {
     fi
 }
 
+# A console link that opens in the account this runs as. A browser signed
+# into several Google accounts opens a bare link in its first one, where a
+# project of another account reads as missing. Without --account it is the
+# firebase command line's default account, read from the same file the
+# access token comes from.
+console_link() {
+    local url="$1"
+
+    URL="${url}" ACCOUNT="${account}" node -e '
+const fs = require("fs");
+const path = require("path");
+const os = require("os");
+
+let who = process.env.ACCOUNT;
+
+if (!who) {
+    try {
+        who = JSON.parse(fs.readFileSync(
+            path.join(os.homedir(), ".config/configstore/firebase-tools.json"), "utf8")).user.email;
+    } catch {
+        who = "";
+    }
+}
+
+const link = new URL(process.env.URL);
+
+if (who) {
+    link.searchParams.set("authuser", who);
+}
+console.log(link.toString());
+'
+}
+
 # The manual steps left after `create`, and the JSON --json ends with once it
 # is done. Built from the same two console steps the human-readable message
 # below spells out, so the two never drift apart.
 create_result_json() {
     local project="$1" site="$2"
 
-    PROJECT="${project}" SITE="${site}" python3 -c '
-import json, os
+    # shellcheck disable=SC2016 # ${...} in there is JavaScript's, not the shell's
+    PROJECT="${project}" SITE="${site}" \
+        PROVIDERS="$(console_link "https://console.firebase.google.com/project/${project}/authentication/providers")" \
+        CLIENTS="$(console_link "https://console.cloud.google.com/auth/clients?project=${project}")" \
+        node -e '
+const project = process.env.PROJECT;
+const site = process.env.SITE;
 
-project = os.environ["PROJECT"]
-site = os.environ["SITE"]
-
-print(json.dumps({
-    "projectId": project,
-    "site": site,
-    "connectLink": f"https://{site}.web.app/join",
-    "settingsUrl": f"https://{site}.web.app/geoshare.json",
-    "manualSteps": [
+console.log(JSON.stringify({
+    projectId: project,
+    site,
+    connectLink: `https://${site}.web.app/join`,
+    settingsUrl: `https://${site}.web.app/geoshare.json`,
+    manualSteps: [
         {
-            "what": "Authentication, Sign-in method, Google, Enable, type the name "
-                    "of the group as the public-facing name, pick the support "
-                    "address, Save",
-            "url": f"https://console.firebase.google.com/project/{project}"
-                   "/authentication/providers",
+            what: "Authentication, Sign-in method, Google, Enable, type the name " +
+                "of the group as the public-facing name, pick the support " +
+                "address, Save",
+            url: process.env.PROVIDERS,
         },
         {
-            "what": "Open \"Web client (auto created by Google Service)\", "
-                    f"add https://{site}.web.app/__/auth/handler under "
-                    "Authorized redirect URIs, Save",
-            "url": f"https://console.cloud.google.com/auth/clients?project={project}",
+            what: "Open \"Web client (auto created by Google Service)\", " +
+                `add https://${site}.web.app/__/auth/handler under ` +
+                "Authorized redirect URIs, Save",
+            url: process.env.CLIENTS,
         },
     ],
-    "done": False,
-}, indent=2))
+    done: false,
+}, null, 2));
 '
 }
 
@@ -692,7 +719,7 @@ create() {
 
 Done with the part that runs from here. Two steps are left in the consoles:
 
-  1. https://console.firebase.google.com/project/${project}/authentication/providers
+  1. $(console_link "https://console.firebase.google.com/project/${project}/authentication/providers")
 
      Get started (the first time), then Google, Enable, type the name of the
      group as the public-facing name, pick the support address, Save. The
@@ -700,7 +727,7 @@ Done with the part that runs from here. Two steps are left in the consoles:
      identical OAuth client already exists" for the Android app is expected
      and harmless: the app signs in through the browser (docs/ADR/0002).
 
-  2. https://console.cloud.google.com/auth/clients?project=${project}
+  2. $(console_link "https://console.cloud.google.com/auth/clients?project=${project}")
 
      Open "Web client (auto created by Google Service)", add
      https://${site_id}.web.app/__/auth/handler under Authorized redirect URIs,
@@ -809,7 +836,7 @@ EOF
 
 ${project} still needs one step before it can sign phones in:
 
-  https://console.firebase.google.com/project/${project}/authentication/providers
+  $(console_link "https://console.firebase.google.com/project/${project}/authentication/providers")
 
   Get started (the first time), then Google, Enable, type the name of the
   group as the public-facing name, pick the support address, Save. Then run
@@ -823,7 +850,7 @@ EOF
 
 Not checked from here: https://${site_id}.web.app/__/auth/handler under
 Authorized redirect URIs of "Web client (auto created by Google Service)" in
-https://console.cloud.google.com/auth/clients?project=${project}
+$(console_link "https://console.cloud.google.com/auth/clients?project=${project}")
 Without it the page's sign-in ends in redirect_uri_mismatch; the app does not
 need it.
 EOF
@@ -845,35 +872,34 @@ EOF
     # back, by this function or anything else, so it stays out of manualSteps
     # and out of done either way.
     if (( json_mode )); then
+        # shellcheck disable=SC2016 # ${...} in there is JavaScript's, not the shell's
         PROJECT="${project}" SITE="${site_id}" GOOGLE_ON="${google_on}" USAGE="${usage_json}" \
-            python3 -c '
-import json, os
+            PROVIDERS="$(console_link "https://console.firebase.google.com/project/${project}/authentication/providers")" \
+            node -e '
+const site = process.env.SITE;
+const googleOn = process.env.GOOGLE_ON === "1";
 
-project = os.environ["PROJECT"]
-site = os.environ["SITE"]
-google_on = os.environ["GOOGLE_ON"] == "1"
+const manualSteps = googleOn ? [] : [{
+    what: "Authentication, Sign-in method, Google, Enable, type the name " +
+        "of the group as the public-facing name, pick the support " +
+        "address, Save",
+    url: process.env.PROVIDERS,
+}];
 
-manual_steps = [] if google_on else [{
-    "what": "Authentication, Sign-in method, Google, Enable, type the name "
-            "of the group as the public-facing name, pick the support "
-            "address, Save",
-    "url": f"https://console.firebase.google.com/project/{project}"
-           "/authentication/providers",
-}]
+const result = {
+    projectId: process.env.PROJECT,
+    site,
+    connectLink: `https://${site}.web.app/join`,
+    settingsUrl: `https://${site}.web.app/geoshare.json`,
+    manualSteps,
+    done: googleOn,
+};
 
-result = {
-    "projectId": project,
-    "site": site,
-    "connectLink": f"https://{site}.web.app/join",
-    "settingsUrl": f"https://{site}.web.app/geoshare.json",
-    "manualSteps": manual_steps,
-    "done": google_on,
+if (process.env.USAGE) {
+    result.usage = JSON.parse(process.env.USAGE);
 }
 
-if os.environ["USAGE"]:
-    result["usage"] = json.loads(os.environ["USAGE"])
-
-print(json.dumps(result, indent=2))
+console.log(JSON.stringify(result, null, 2));
 ' >&3
     fi
 }
@@ -906,10 +932,8 @@ update() {
     deploy_site "${project}" "${android}" "${site_id}"
 
     if (( json_mode )); then
-        PROJECT="${project}" SITE="${site_id}" python3 -c '
-import json, os
-
-print(json.dumps({"projectId": os.environ["PROJECT"], "site": os.environ["SITE"], "deployed": True}))
+        PROJECT="${project}" SITE="${site_id}" node -e '
+console.log(JSON.stringify({ projectId: process.env.PROJECT, site: process.env.SITE, deployed: true }));
 ' >&3
     fi
 }
@@ -944,20 +968,18 @@ delete_project() {
 ${project} is shut down: unusable now, deleted for good in 30 days. Until
 then its owner can bring it back:
 
-  https://console.cloud.google.com/cloud-resource-manager?pendingDeletion=true
+  $(console_link "https://console.cloud.google.com/cloud-resource-manager?pendingDeletion=true")
 EOF
 
     if (( json_mode )); then
-        PROJECT="${project}" python3 -c '
-import json, os
-from datetime import datetime, timedelta, timezone
+        PROJECT="${project}" node -e '
+const until = new Date(Date.now() + 30 * 24 * 3600 * 1000);
 
-until = datetime.now(timezone.utc).replace(microsecond=0) + timedelta(days=30)
-print(json.dumps({
-    "projectId": os.environ["PROJECT"],
-    "deleteRequested": True,
-    "restorableUntil": until.strftime("%Y-%m-%dT%H:%M:%SZ"),
-}))
+console.log(JSON.stringify({
+    projectId: process.env.PROJECT,
+    deleteRequested: true,
+    restorableUntil: until.toISOString().replace(/\.\d+Z$/, "Z"),
+}));
 ' >&3
     fi
 }
@@ -987,148 +1009,193 @@ usage_report() {
     TOKEN="${token}" PROJECT="${project}" FORMAT="${format}" DAYS="${days}" \
         READS="${FREE_READS_PER_DAY}" WRITES="${FREE_WRITES_PER_DAY}" \
         DELETES="${FREE_DELETES_PER_DAY}" STORED="${FREE_STORED_BYTES}" \
-        python3 - <<'EOF'
-import json, os, sys, urllib.parse, urllib.request
-from datetime import datetime, timedelta, timezone
-from zoneinfo import ZoneInfo
+        node - <<'EOF'
+const project = process.env.PROJECT;
+const token = process.env.TOKEN;
+const LA = "America/Los_Angeles";
+const now = new Date(Math.floor(Date.now() / 1000) * 1000);
 
-project = os.environ["PROJECT"]
-token = os.environ["TOKEN"]
-now = datetime.now(timezone.utc).replace(microsecond=0)
-quota_day = (
-    now.astimezone(ZoneInfo("America/Los_Angeles"))
-    .replace(hour=0, minute=0, second=0)
-    .astimezone(timezone.utc)
-)
+// The calendar day and wall time of a moment in Los Angeles.
+function wallIn(zone, moment) {
+    const parts = new Intl.DateTimeFormat("en-US", {
+        timeZone: zone, hourCycle: "h23",
+        year: "numeric", month: "numeric", day: "numeric",
+        hour: "numeric", minute: "numeric", second: "numeric",
+    }).formatToParts(moment);
+    const part = Object.fromEntries(parts.map((p) => [p.type, Number(p.value)]));
 
+    return part;
+}
 
-def stamp(moment):
-    return moment.strftime("%Y-%m-%dT%H:%M:%SZ")
+function offsetOf(moment) {
+    const w = wallIn(LA, moment);
 
+    return Date.UTC(w.year, w.month - 1, w.day, w.hour, w.minute, w.second) - moment.getTime();
+}
 
-def series(metric, start, aligner, period, end=None):
-    end = end or now
-    query = urllib.parse.urlencode({
-        "filter": f'metric.type = "{metric}"',
+// Midnight in Los Angeles of the given calendar day; a day past the end of
+// the month rolls over, as Date.UTC does.
+function midnight(year, month, day) {
+    const wall = Date.UTC(year, month - 1, day);
+    let moment = wall - offsetOf(new Date(wall));
+
+    moment = wall - offsetOf(new Date(moment));
+
+    return new Date(moment);
+}
+
+const today = wallIn(LA, now);
+const quotaDay = midnight(today.year, today.month, today.day);
+
+function stamp(moment) {
+    return moment.toISOString().replace(/\.\d+Z$/, "Z");
+}
+
+const pad = (n) => String(n).padStart(2, "0");
+const WEEKDAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+const localDay = (m) => `${m.getFullYear()}-${pad(m.getMonth() + 1)}-${pad(m.getDate())}`;
+const localTime = (m) => `${pad(m.getHours())}:${pad(m.getMinutes())}`;
+
+async function series(metric, start, aligner, period, end = now) {
+    const query = new URLSearchParams({
+        "filter": `metric.type = "${metric}"`,
         "interval.startTime": stamp(start),
         "interval.endTime": stamp(end),
-        "aggregation.alignmentPeriod": f"{max(period, 60)}s",
+        "aggregation.alignmentPeriod": `${Math.max(period, 60)}s`,
         "aggregation.perSeriesAligner": aligner,
         "aggregation.crossSeriesReducer": "REDUCE_SUM",
-    })
-    request = urllib.request.Request(
-        f"https://monitoring.googleapis.com/v3/projects/{project}/timeSeries?{query}",
-        headers={"Authorization": f"Bearer {token}"},
-    )
-    with urllib.request.urlopen(request, timeout=60) as response:
-        found = json.load(response).get("timeSeries", [])
+    });
+    const response = await fetch(
+        `https://monitoring.googleapis.com/v3/projects/${project}/timeSeries?${query}`,
+        { headers: { Authorization: `Bearer ${token}` }, signal: AbortSignal.timeout(60000) },
+    );
 
-    # Newest first; a metric nothing has been counted in yet has no series.
-    points = [point["value"] for one in found for point in one["points"]]
-    return [float(next(iter(value.values()))) for value in points]
+    if (!response.ok) {
+        throw new Error(`Cloud Monitoring answered HTTP ${response.status} for ${metric}`);
+    }
 
+    const found = (await response.json()).timeSeries ?? [];
 
-def counted(metric, start=None, end=None):
-    start = start or quota_day
-    period = int(((end or now) - start).total_seconds())
-    return int(sum(series(metric, start, "ALIGN_SUM", period, end)))
-
-
-def progress(line):
-    # Each question to Cloud Monitoring takes a moment, and a dozen of them in
-    # a row would otherwise read as the script having stopped.
-    print(f"    {line}", file=sys.stderr, flush=True)
-
-
-# Each earlier quota day asked for on its own, from one Pacific midnight to
-# the next, so that no window straddles a reset.
-earlier = []
-for back in range(int(os.environ["DAYS"]), 0, -1):
-    start = (quota_day.astimezone(ZoneInfo("America/Los_Angeles")) - timedelta(days=back)).replace(
-        hour=0, minute=0, second=0).astimezone(timezone.utc)
-    end = (start.astimezone(ZoneInfo("America/Los_Angeles")) + timedelta(days=1)).replace(
-        hour=0, minute=0, second=0).astimezone(timezone.utc)
-    progress(f"Firestore on {start.astimezone().strftime('%a %Y-%m-%d')}")
-    earlier.append({
-        "from": stamp(start),
-        "reads": counted("firestore.googleapis.com/document/read_count", start, end),
-        "writes": counted("firestore.googleapis.com/document/write_count", start, end),
-        "deletes": counted("firestore.googleapis.com/document/delete_count", start, end),
-    })
-
-
-def latest(metric):
-    values = series(metric, now - timedelta(days=2), "ALIGN_MAX", 3600)
-    return int(values[0]) if values else 0
-
-
-progress("Firestore today")
-firestore = {
-    "reads": {"used": counted("firestore.googleapis.com/document/read_count"),
-              "limit": int(os.environ["READS"])},
-    "writes": {"used": counted("firestore.googleapis.com/document/write_count"),
-               "limit": int(os.environ["WRITES"])},
-    "deletes": {"used": counted("firestore.googleapis.com/document/delete_count"),
-                "limit": int(os.environ["DELETES"])},
-    "storedBytes": {"used": latest("firestore.googleapis.com/storage/data_and_index_storage_bytes"),
-                    "limit": int(os.environ["STORED"])},
+    // Newest first; a metric nothing has been counted in yet has no series.
+    return found.flatMap((one) => one.points).map((point) => Number(Object.values(point.value)[0]));
 }
 
-progress("Hosting")
-hosting = {
-    "sentBytesThisMonth": {"used": latest("firebasehosting.googleapis.com/network/monthly_sent"),
-                           "limit": latest("firebasehosting.googleapis.com/network/monthly_sent_limit")},
-    "storedBytes": {"used": latest("firebasehosting.googleapis.com/storage/total_bytes"),
-                    "limit": latest("firebasehosting.googleapis.com/storage/limit")},
+async function counted(metric, start = quotaDay, end = now) {
+    const period = Math.trunc((end - start) / 1000);
+    const values = await series(metric, start, "ALIGN_SUM", period, end);
+
+    return Math.trunc(values.reduce((sum, value) => sum + value, 0));
 }
 
-report = {
-    "projectId": project,
-    "quotaDayFrom": stamp(quota_day),
-    "firestore": firestore,
-    "earlierDays": earlier,
-    "hosting": hosting,
+async function latest(metric) {
+    const values = await series(metric, new Date(now - 2 * 24 * 3600 * 1000), "ALIGN_MAX", 3600);
+
+    return values.length ? Math.trunc(values[0]) : 0;
 }
 
-if os.environ["FORMAT"] == "json":
-    print(json.dumps(report))
-    sys.exit()
+function progress(line) {
+    // Each question to Cloud Monitoring takes a moment, and a dozen of them in
+    // a row would otherwise read as the script having stopped.
+    process.stderr.write(`    ${line}\n`);
+}
 
+async function main() {
+    // Each earlier quota day asked for on its own, from one Pacific midnight
+    // to the next, so that no window straddles a reset.
+    const earlier = [];
 
-def size(value):
-    for unit in ("B", "KiB", "MiB", "GiB"):
-        if value < 1024 or unit == "GiB":
-            return f"{value:.0f} {unit}" if unit == "B" else f"{value:.1f} {unit}"
-        value /= 1024
+    for (let back = Number(process.env.DAYS); back > 0; back--) {
+        const start = midnight(today.year, today.month, today.day - back);
+        const end = midnight(today.year, today.month, today.day - back + 1);
 
+        progress(`Firestore on ${WEEKDAYS[start.getDay()]} ${localDay(start)}`);
+        earlier.push({
+            from: stamp(start),
+            reads: await counted("firestore.googleapis.com/document/read_count", start, end),
+            writes: await counted("firestore.googleapis.com/document/write_count", start, end),
+            deletes: await counted("firestore.googleapis.com/document/delete_count", start, end),
+        });
+    }
 
-def share(entry):
-    return f"{100 * entry['used'] / entry['limit']:.1f}%" if entry["limit"] else "?"
+    progress("Firestore today");
+    const firestore = {
+        reads: { used: await counted("firestore.googleapis.com/document/read_count"),
+            limit: Number(process.env.READS) },
+        writes: { used: await counted("firestore.googleapis.com/document/write_count"),
+            limit: Number(process.env.WRITES) },
+        deletes: { used: await counted("firestore.googleapis.com/document/delete_count"),
+            limit: Number(process.env.DELETES) },
+        storedBytes: { used: await latest("firestore.googleapis.com/storage/data_and_index_storage_bytes"),
+            limit: Number(process.env.STORED) },
+    };
 
+    progress("Hosting");
+    const hosting = {
+        sentBytesThisMonth: { used: await latest("firebasehosting.googleapis.com/network/monthly_sent"),
+            limit: await latest("firebasehosting.googleapis.com/network/monthly_sent_limit") },
+        storedBytes: { used: await latest("firebasehosting.googleapis.com/storage/total_bytes"),
+            limit: await latest("firebasehosting.googleapis.com/storage/limit") },
+    };
 
-since = quota_day.astimezone().strftime("%Y-%m-%d %H:%M")
-rows = [
-    (f"Firestore reads since {since}", report["firestore"]["reads"], str),
-    ("Firestore writes", report["firestore"]["writes"], str),
-    ("Firestore deletes", report["firestore"]["deletes"], str),
-    ("Firestore stored data", report["firestore"]["storedBytes"], size),
-    ("Hosting transfer this month", report["hosting"]["sentBytesThisMonth"], size),
-    ("Hosting storage", report["hosting"]["storedBytes"], size),
-]
+    const report = {
+        projectId: project,
+        quotaDayFrom: stamp(quotaDay),
+        firestore,
+        earlierDays: earlier,
+        hosting,
+    };
 
-for what, entry, shown in rows:
-    print(f"{what:<42} {shown(entry['used']):>11} of {shown(entry['limit']):>11}  {share(entry):>6}")
+    if (process.env.FORMAT === "json") {
+        console.log(JSON.stringify(report));
 
-if earlier:
-    print()
-    print(f"{'quota day from':<18} {'reads':>13} {'writes':>13} {'deletes':>13}")
-    for day in earlier:
-        start = datetime.strptime(day["from"], "%Y-%m-%dT%H:%M:%SZ").replace(tzinfo=timezone.utc)
-        cells = [
-            f"{day[kind]} {100 * day[kind] / int(os.environ[kind.upper()]):.0f}%"
-            for kind in ("reads", "writes", "deletes")
-        ]
-        print(f"{start.astimezone().strftime('%a %Y-%m-%d %H:%M'):<18} {cells[0]:>13} {cells[1]:>13} {cells[2]:>13}")
+        return;
+    }
+
+    const size = (value) => {
+        for (const unit of ["B", "KiB", "MiB", "GiB"]) {
+            if (value < 1024 || unit === "GiB") {
+                return unit === "B" ? `${value.toFixed(0)} ${unit}` : `${value.toFixed(1)} ${unit}`;
+            }
+            value /= 1024;
+        }
+    };
+    const share = (entry) => (entry.limit ? `${(100 * entry.used / entry.limit).toFixed(1)}%` : "?");
+    const since = `${localDay(quotaDay)} ${localTime(quotaDay)}`;
+    const rows = [
+        [`Firestore reads since ${since}`, firestore.reads, String],
+        ["Firestore writes", firestore.writes, String],
+        ["Firestore deletes", firestore.deletes, String],
+        ["Firestore stored data", firestore.storedBytes, size],
+        ["Hosting transfer this month", hosting.sentBytesThisMonth, size],
+        ["Hosting storage", hosting.storedBytes, size],
+    ];
+
+    for (const [what, entry, shown] of rows) {
+        console.log(`${what.padEnd(42)} ${shown(entry.used).padStart(11)} of ` +
+            `${shown(entry.limit).padStart(11)}  ${share(entry).padStart(6)}`);
+    }
+
+    if (earlier.length) {
+        console.log();
+        console.log(`${"quota day from".padEnd(18)} ${"reads".padStart(13)} ` +
+            `${"writes".padStart(13)} ${"deletes".padStart(13)}`);
+
+        for (const day of earlier) {
+            const start = new Date(day.from);
+            const cells = ["reads", "writes", "deletes"].map((kind) =>
+                `${day[kind]} ${(100 * day[kind] / Number(process.env[kind.toUpperCase()])).toFixed(0)}%`);
+            const label = `${WEEKDAYS[start.getDay()]} ${localDay(start)} ${localTime(start)}`;
+
+            console.log(`${label.padEnd(18)} ${cells[0].padStart(13)} ${cells[1].padStart(13)} ` +
+                `${cells[2].padStart(13)}`);
+        }
+    }
+}
+
+main().catch((error) => {
+    console.error(error.message);
+    process.exit(1);
+});
 EOF
 }
 

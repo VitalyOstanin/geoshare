@@ -53,7 +53,7 @@ so a working device never looks like a stopped one.
 Every build, test and lint runs in a container, so for those the machine
 needs only podman. Setting a project up, writing the page's configuration and
 publishing run the Firebase command line on the machine itself, and need
-`node` with `npx` and `python3` besides — the full list is in
+`node` 20 or later with `npx` besides — the full list is in
 [new-project.md](new-project.md).
 
 | #  | Command                      | What it does                                                                |
