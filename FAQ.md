@@ -6,6 +6,7 @@ English · [Русский](FAQ.ru.md)
 
 - [What is it?](#what-is-it)
 - [Can I rely on it in an emergency?](#can-i-rely-on-it-in-an-emergency)
+- [Has every feature been thoroughly tested?](#has-every-feature-been-thoroughly-tested)
 - [Does it work only on devices with Google services?](#does-it-work-only-on-devices-with-google-services)
 - [Who sees where I am?](#who-sees-where-i-am)
 - [Does the project owner see everything?](#does-the-project-owner-see-everything)
@@ -27,6 +28,11 @@ friends. Anyone who finds it useful is welcome to use it.
 No. It is a non-commercial project and comes with no obligations of any kind.
 If it helps somebody find a lost phone, the author will be glad, but there is
 no guarantee that it will.
+
+## Has every feature been thoroughly tested?
+
+No. These are the first releases. The author has checked everything with
+care, but mistakes are possible.
 
 ## Does it work only on devices with Google services?
 
