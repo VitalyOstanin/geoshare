@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 # Makes the landing page's pictures from the full-size screenshots that
-# tools/landing-shots.sh and tools/landing-steps.sh take.
+# tools/landing-shots.sh and tools/landing-steps.sh take, and the header
+# picture tools/landing-hero.sh takes.
 #
 # Each picture comes in three widths, so that a phone screen of high density
 # gets one sharp enough and a narrow one does not download the largest; the
@@ -67,4 +68,17 @@ for language in en ru; do
 
         echo "==> ${language}, ${theme}"
     done
+done
+
+# The header picture, when tools/landing-hero.sh has taken one: a single width
+# with its transparency kept, the same file for the landing page and the README.
+for theme in light dark; do
+    hero="${shots}/hero/hero-${theme}.png"
+    if [[ ! -f "${hero}" ]]; then
+        continue
+    fi
+    magick "${hero}" -strip -quality "${QUALITY}" -define webp:alpha-quality=100 \
+        "${SITE}/hero-${theme}.webp"
+    cp "${SITE}/hero-${theme}.webp" "${REPO_ROOT}/docs/images/hero-${theme}.webp"
+    echo "==> hero, ${theme}"
 done

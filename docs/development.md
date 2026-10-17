@@ -79,7 +79,8 @@ Firebase SDK in them requires); the build scripts do not need it.
 | 16 | `tools/page-stand.sh`        | the page against stand-in sign-in and Firestore, `--showcase` to fill them  |
 | 17 | `tools/landing-shots.sh`     | the application's screenshots for the landing page, full size, in `shots/`  |
 | 18 | `tools/landing-steps.sh`     | the setup page's first two steps for the landing page, into `shots/`        |
-| 19 | `tools/landing-images.sh`    | the landing page's pictures, three widths each, from `shots/`               |
+| 19 | `tools/landing-hero.sh`      | the header picture of the README and the landing page, into `shots/`        |
+| 20 | `tools/landing-images.sh`    | the landing page's pictures, three widths each, from `shots/`               |
 
 The rest of `tools/` — `coverage-floor.sh`, `project.sh`, `web-config.sh`,
 `setup-site.sh`, `read-cost.sh`, `device-log.sh`, `device-sky.sh`,
@@ -129,14 +130,15 @@ The scripts read these from the environment; none has to be set.
 | 24 | `READY_TIMEOUT`           | `page-stand.sh`                 | seconds to wait for the stand's emulators                         | `120`                           |
 | 25 | `SHOTS_DIR`               | `landing-shots.sh`              | where the full-size screenshots go                                | `shots/<date>`                  |
 | 26 | `SHOTS_DIR`               | `landing-steps.sh`              | the same, for the setup page's steps                              | `shots/<date>`                  |
-| 27 | `WAIT_TIMEOUT`            | `landing-shots.sh`              | seconds to wait for a screen to show what is tapped next          | `30`                            |
-| 28 | `SETUP_URL`               | `landing-steps.sh`              | the setup page the steps are taken from                           | the published setup page        |
-| 29 | `QUALITY`                 | `landing-images.sh`             | WebP quality of the pictures                                      | `80`                            |
-| 30 | `AUTH_EMULATOR_HOST`      | `seed.mjs`, `showcase-seed.mjs` | `host:port` of the sign-in emulator the seed fills                | `127.0.0.1:9099`                |
-| 31 | `FIRESTORE_EMULATOR_HOST` | `seed.mjs`, `showcase-seed.mjs` | `host:port` of the Firestore emulator the seed fills              | `127.0.0.1:8080`                |
-| 32 | `GEOSHARE_PROJECT`        | `seed.mjs`, `showcase-seed.mjs` | project the seed writes; debug builds read only `demo-geoshare`   | `demo-geoshare`                 |
-| 33 | `GEOSHARE_GROUP`          | `seed.mjs`, `showcase-seed.mjs` | id of the group the seed creates                                  | `family`                        |
-| 34 | `SHOWCASE_FIRST_SHARE`    | `showcase-seed.mjs`             | `1`: one member's grant left empty, as `landing-shots.sh` asks    | unset: grants full              |
+| 27 | `SHOTS_DIR`               | `landing-hero.sh`               | the same, for the header picture                                  | `shots/<date>`                  |
+| 28 | `WAIT_TIMEOUT`            | `screens.sh`                    | seconds to wait for a screen to show what is tapped next          | `30`                            |
+| 29 | `SETUP_URL`               | `landing-steps.sh`              | the setup page the steps are taken from                           | the published setup page        |
+| 30 | `QUALITY`                 | `landing-images.sh`             | WebP quality of the pictures                                      | `80`                            |
+| 31 | `AUTH_EMULATOR_HOST`      | `seed.mjs`, `showcase-seed.mjs` | `host:port` of the sign-in emulator the seed fills                | `127.0.0.1:9099`                |
+| 32 | `FIRESTORE_EMULATOR_HOST` | `seed.mjs`, `showcase-seed.mjs` | `host:port` of the Firestore emulator the seed fills              | `127.0.0.1:8080`                |
+| 33 | `GEOSHARE_PROJECT`        | `seed.mjs`, `showcase-seed.mjs` | project the seed writes; debug builds read only `demo-geoshare`   | `demo-geoshare`                 |
+| 34 | `GEOSHARE_GROUP`          | `seed.mjs`, `showcase-seed.mjs` | id of the group the seed creates                                  | `family`                        |
+| 35 | `SHOWCASE_FIRST_SHARE`    | `showcase-seed.mjs`             | `1`: one member's grant left empty, as `landing-shots.sh` asks    | unset: grants full              |
 
 The names of the podman resources — `POD_NAME`, `SERVICES_NAME`,
 `EMULATOR_NAME`, `STAND_NAME`, `SDK_IMAGE`, `EMULATOR_IMAGE`, `FIREBASE_IMAGE`,

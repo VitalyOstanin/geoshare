@@ -1,0 +1,46 @@
+<!doctype html>
+<!--
+  The header picture of the README and the landing page: the page in a browser
+  window at the back, the tablet and the phone laid over its corners. Drawn by
+  tools/landing-hero.sh with a transparent background, from page-<theme>.png
+  (1440x900), tablet-<theme>.png (2560x1600) and phone-<theme>.png (1080x2400)
+  beside this file; ?t=dark picks the dark frames and the dark bezels.
+-->
+<meta charset="utf-8">
+<title>hero</title>
+<style>
+  :root { --bar: #f1f1f4; --pill: #ffffff; --url: #444; --bezel: #202226; }
+  :root.dark { --bar: #2b2c31; --pill: #1d1e22; --url: #ccc; --bezel: #3a3d44; }
+  html, body { margin: 0; background: transparent; }
+  #stage { position: relative; width: 1600px; height: 900px; font-family: "Noto Sans", sans-serif; }
+  .browser { position: absolute; left: 250px; top: 30px; width: 1080px; border-radius: 10px; overflow: hidden;
+             box-shadow: 0 18px 50px rgba(0,0,0,.28); background: var(--bar); }
+  .bar { height: 38px; display: flex; align-items: center; gap: 8px; padding: 0 14px; }
+  .dot { width: 12px; height: 12px; border-radius: 50%; }
+  .pill { margin-left: 22px; flex: 1; height: 24px; border-radius: 12px; background: var(--pill); color: var(--url);
+          font-size: 14px; display: flex; align-items: center; padding-left: 14px; }
+  .browser img { display: block; width: 1080px; height: 675px; }
+  .tablet { position: absolute; left: 40px; top: 430px; width: 640px; height: 400px; padding: 18px;
+            border-radius: 28px; background: var(--bezel); box-shadow: 0 18px 50px rgba(0,0,0,.35); }
+  .phone { position: absolute; left: 1240px; top: 200px; width: 300px; height: 667px; padding: 10px 10px 11px;
+           border-radius: 44px; background: var(--bezel); box-shadow: 0 18px 50px rgba(0,0,0,.35); }
+  .tablet img, .phone img { display: block; width: 100%; height: 100%; }
+  .tablet img { border-radius: 12px; }
+  .phone img { border-radius: 34px; }
+</style>
+<div id="stage">
+  <div class="browser">
+    <div class="bar">
+      <span class="dot" style="background:#ff5f57"></span><span class="dot" style="background:#febc2e"></span><span class="dot" style="background:#28c840"></span>
+      <span class="pill">your-group.web.app</span>
+    </div>
+    <img id="page" alt="">
+  </div>
+  <div class="tablet"><img id="tablet" alt=""></div>
+  <div class="phone"><img id="phone" alt=""></div>
+</div>
+<script>
+  const t = new URLSearchParams(location.search).get('t') || 'light';
+  if (t === 'dark') document.documentElement.classList.add('dark');
+  for (const id of ['page', 'tablet', 'phone']) document.getElementById(id).src = `${id}-${t}.png`;
+</script>
