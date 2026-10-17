@@ -25,6 +25,26 @@ and the versions follow [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Changed
+
+- "Update" over a network switched off under Downloads, roaming among them,
+  first asks, with the update's size, "Download" or "Not now" (ADR-0039).
+
+### Fixed
+
+- A person who is not the project owner and tries to create the group in an
+  empty project is told that only the project owner can create it and to ask
+  them for an invitation, instead of a general refused write; the map's
+  screen for a device without a group shows the refusal too.
+- A member who already shares their place is no longer asked whom to share
+  it with when the application starts on a slow connection.
+
+### Project owners
+
+- `tools/project.sh update` brings the page's line for a refused founding.
+  The rules do not change, so it may come before or after the devices take
+  the new application.
+
 ## [0.2.0] - 2026-10-17
 
 ### Added

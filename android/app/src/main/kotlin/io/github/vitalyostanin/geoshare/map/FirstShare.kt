@@ -40,10 +40,16 @@ import io.github.vitalyostanin.geoshare.service.grantsOf
 import io.github.vitalyostanin.geoshare.service.permissionsOf
 import io.github.vitalyostanin.geoshare.service.readBoolean
 import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.tasks.await
+import java.time.Instant
 
 private const val TAG = "geoshare.firstshare"
 private const val FILE = "first_share"
+
+/** How many times the grant is read while this device's own write to it is unconfirmed. */
+private const val GRANT_READS = 5
+private const val GRANT_READ_PAUSE_MS = 1_000L
 
 /** The span the question offers first: long enough for a walk, short enough to lapse by itself. */
 private val FIRST_SPAN = ShareSpan.Day
@@ -71,18 +77,38 @@ class FirstShareAsked(context: Context) {
  *
  * Asked of the server alone: a copy from the cache, or a refusal read as an
  * empty list, would put the question to somebody who has long answered it.
- * Null when the server could not be asked.
+ * A read made while this device's own write to the grant is unconfirmed is
+ * asked again (see [sharesNothing]). Null when the server could not be asked
+ * or never answered without that write.
  */
-private suspend fun nothingShared(memberId: String, connection: GroupConnection): Boolean? = try {
-    val grant = grantsOf(connection).document(memberId).get(Source.SERVER).await()
+private suspend fun nothingShared(memberId: String, connection: GroupConnection): Boolean? {
+    try {
+        repeat(GRANT_READS) {
+            val grant = grantsOf(connection).document(memberId).get(Source.SERVER).await()
 
-    permissionsOf(grant).isEmpty()
-} catch (cancellation: CancellationException) {
-    throw cancellation
-} catch (error: Exception) {
-    logFailure(TAG, "could not read whom the place is shown to", error)
-    null
+            sharesNothing(grant.metadata.hasPendingWrites(), permissionsOf(grant))?.let {
+                return it
+            }
+            delay(GRANT_READ_PAUSE_MS)
+        }
+    } catch (cancellation: CancellationException) {
+        throw cancellation
+    } catch (error: Exception) {
+        logFailure(TAG, "could not read whom the place is shown to", error)
+    }
+
+    return null
 }
+
+/**
+ * What one read of the grant says about whether nothing is shared yet.
+ *
+ * Null while the read carries this device's own unconfirmed write: signing
+ * in adds the device to the grant, and until the server confirms it the read
+ * can hold that write alone, without the permissions the server has.
+ */
+internal fun sharesNothing(pendingWrites: Boolean, permissions: Map<String, Instant>): Boolean? =
+    if (pendingWrites) null else permissions.isEmpty()
 
 /**
  * Asks, once per group, whom to show this member's place to.
