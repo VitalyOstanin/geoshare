@@ -3,13 +3,11 @@ package io.github.vitalyostanin.geoshare.service
 import android.content.Context
 import android.content.Intent
 import android.content.pm.ServiceInfo
-import android.location.LocationManager
 import androidx.core.app.ServiceCompat
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.LifecycleService
 import androidx.lifecycle.lifecycleScope
 import io.github.vitalyostanin.geoshare.collection.Accuracy
-import io.github.vitalyostanin.geoshare.collection.Answered
 import io.github.vitalyostanin.geoshare.collection.Asked
 import io.github.vitalyostanin.geoshare.collection.CircleLimits
 import io.github.vitalyostanin.geoshare.collection.CollectionMode
@@ -26,16 +24,12 @@ import io.github.vitalyostanin.geoshare.collection.SkySays
 import io.github.vitalyostanin.geoshare.collection.Trail
 import io.github.vitalyostanin.geoshare.collection.anchorFrom
 import io.github.vitalyostanin.geoshare.collection.andThen
-import io.github.vitalyostanin.geoshare.collection.answeredBy
 import io.github.vitalyostanin.geoshare.collection.choiceFor
 import io.github.vitalyostanin.geoshare.collection.chooseMode
-import io.github.vitalyostanin.geoshare.collection.driftedWhilePutDown
 import io.github.vitalyostanin.geoshare.collection.fenceMoves
 import io.github.vitalyostanin.geoshare.collection.foundBy
 import io.github.vitalyostanin.geoshare.collection.judge
 import io.github.vitalyostanin.geoshare.collection.knows
-import io.github.vitalyostanin.geoshare.collection.networkAnswerStands
-import io.github.vitalyostanin.geoshare.collection.noteOf
 import io.github.vitalyostanin.geoshare.collection.orbitReference
 import io.github.vitalyostanin.geoshare.collection.otherRadiosAreDue
 import io.github.vitalyostanin.geoshare.collection.remembering
@@ -43,8 +37,6 @@ import io.github.vitalyostanin.geoshare.collection.rescueAccuracy
 import io.github.vitalyostanin.geoshare.collection.rescueAfter
 import io.github.vitalyostanin.geoshare.collection.said
 import io.github.vitalyostanin.geoshare.collection.sameAnswer
-import io.github.vitalyostanin.geoshare.collection.saysMoreThan
-import io.github.vitalyostanin.geoshare.collection.shouldWrite
 import io.github.vitalyostanin.geoshare.collection.whomToAsk
 import io.github.vitalyostanin.geoshare.log.AppLog
 import io.github.vitalyostanin.geoshare.map.logFailure
@@ -76,29 +68,6 @@ import java.time.Instant
 import java.time.LocalTime
 
 private const val TAG = "geoshare.service"
-
-/**
- * A position as it goes into the document: where the device was, and whether
- * the cable was in it at the moment that was decided.
- *
- * The pair rather than the fix alone, because the same place written with the
- * cable newly in is a different document, while the same place written with
- * nothing changed is not.
- */
-private data class Written(
-    val fix: Fix,
-    val charging: Boolean,
-    /**
-     * Whether the receiver had not settled when the fix was taken.
-     *
-     * Carried beside the fix rather than worked out again at the write: the
-     * count of satellites it rests on belongs to the epoch the fix came out
-     * of, and by the time the document is put together the receiver has moved
-     * on. It is part of what makes two writes the same write, so a device whose
-     * receiver settles while it stands still says so once.
-     */
-    val settling: Boolean = false,
-)
 
 /**
  * The part of the application that keeps running: it holds the position up to
@@ -161,17 +130,13 @@ class SharingService : LifecycleService() {
 
     /**
      * The fix left out just before this one, kept so that the next one can
-     * agree with it.
-     */
-    private var candidate: Fix? = null
-
-    /**
-     * How many answers in a row the filter has left out.
+     * agree with it, and how many answers in a row the filter has left out.
      *
      * A device being fed a false signal is answered promptly and wrongly, so
-     * this counts up while the device looks perfectly healthy and says nothing.
+     * the count goes up while the device looks perfectly healthy and says
+     * nothing.
      */
-    private var jumpsInARow: Int = 0
+    private var jumpRun = JumpRun()
 
     /** When the towers and the Wi-Fi were last asked in place of the satellites. */
     private var askedTheOtherRadiosAt: Instant? = null
@@ -554,51 +519,48 @@ class SharingService : LifecycleService() {
 
                     used = sources.uses(judged.whence)
 
-                    if (judged.leftOutAsJump(jumpsOn)) {
-                        candidate = fix
-                        jumpsInARow += 1
-                    } else if (used) {
-                        candidate = null
-                        jumpsInARow = 0
-                    }
+                    jumpRun = jumpRun.after(fix, judged.leftOutAsJump(jumpsOn), used)
 
                     judged
                 },
-                worthWriting = { !it.leftOutAsJump(jumpsOn) && used },
+                worthWriting = { outcomeOf(it, jumpsOn, used) == Outcome.GoesOn },
                 write = { writeAndRemember(writer, fix, mode, it, always) },
             )
 
-        if (judged.leftOutAsJump(jumpsOn)) {
-            tellThemAnswersAreBeingLeftOut(writer, judged.jump?.name.orEmpty())
+        return when (outcomeOf(judged, jumpsOn, used)) {
+            Outcome.LeftOutAsJump -> {
+                tellThemAnswersAreBeingLeftOut(writer, judged.jump?.name.orEmpty())
 
-            askTheOtherRadios(writer, mode)
+                askTheOtherRadios(writer, mode)
 
-            return false
+                false
+            }
+
+            // Left out the same way a jump is, and for a reason of the same
+            // kind: the member has said this is not a source to take into
+            // account. So it moves no marker, becomes no last position and
+            // reaches nobody — while staying in the log, where the question of
+            // what the provider was saying is answered.
+            Outcome.LeftOutBySource -> {
+                AppLog.i(
+                    TAG,
+                    "left out a position found by ${judged.whence.said}: " +
+                        "this device was told not to take that source into account",
+                )
+
+                // The switch as well as the fact, because "a source was
+                // switched off" answers none of what a member opens the card
+                // for.
+                tellThemAnswersAreBeingLeftOut(
+                    writer,
+                    "$LEFT_OUT_BY_SOURCE:${choiceFor(judged.whence)?.name.orEmpty()}",
+                )
+
+                false
+            }
+
+            Outcome.GoesOn -> wrote
         }
-
-        // Left out the same way a jump is, and for a reason of the same kind:
-        // the member has said this is not a source to take into account. So it
-        // moves no marker, becomes no last position and reaches nobody — while
-        // staying in the log, where the question of what the provider was
-        // saying is answered.
-        if (!used) {
-            AppLog.i(
-                TAG,
-                "left out a position found by ${judged.whence.said}: " +
-                    "this device was told not to take that source into account",
-            )
-
-            // The switch as well as the fact, because "a source was switched
-            // off" answers none of what a member opens the card for.
-            tellThemAnswersAreBeingLeftOut(
-                writer,
-                "$LEFT_OUT_BY_SOURCE:${choiceFor(judged.whence)?.name.orEmpty()}",
-            )
-
-            return false
-        }
-
-        return wrote
     }
 
     /**
@@ -622,7 +584,7 @@ class SharingService : LifecycleService() {
         val grounds =
             Grounds(
                 lastFix = lastFix,
-                candidate = candidate,
+                candidate = jumpRun.candidate,
                 satellites = lastSatellitePosition(this),
                 networkSays = opinion.said,
                 now = Instant.now(),
@@ -653,7 +615,7 @@ class SharingService : LifecycleService() {
         judged: Judgement,
         always: Boolean,
     ): Boolean {
-        if (!always && !shouldWrite(lastFix, fix, mode)) {
+        if (!passesTheFilter(always, lastFix, fix, mode)) {
             return false
         }
 
@@ -697,12 +659,8 @@ class SharingService : LifecycleService() {
         judging.withLock { sayAgainInTurn(writer, mode) }
 
     private suspend fun sayAgainInTurn(writer: EveryGroup, mode: CollectionMode): Boolean {
-        val known = lastFix ?: lastKnown ?: return false
-        // The same position said again carries the same note about the
-        // receiver: it is a statement about the answer, and the answer has not
-        // changed. Worked out afresh here it would say something about an
-        // epoch this position never came out of.
-        val written = Written(known, status.charging(), lastWritten?.settling == true)
+        val written = sayAgainOf(lastFix, lastKnown, lastWritten, status.charging()) ?: return false
+        val known = written.fix
 
         // Not weighed against what the member shares: this is the position
         // they have already shared, said again so that the marker does not go
@@ -975,15 +933,9 @@ class SharingService : LifecycleService() {
      * into the run would break the very shape the run is kept for.
      */
     private fun rememberTheShapeOfIt(fix: Fix, trusted: Boolean) {
-        if (trusted || answeredBy(noteOf(fix.reported?.alongside)) == Answered.Assistance) {
-            return
+        if (belongsInTheShape(fix, trusted)) {
+            lately = lately.andThen(fix)
         }
-
-        if (fix.from != null && fix.from != LocationManager.GPS_PROVIDER) {
-            return
-        }
-
-        lately = lately.andThen(fix)
     }
 
     /**
@@ -1002,7 +954,7 @@ class SharingService : LifecycleService() {
      * is seventy kilometres away and is caught by the speed rule again.
      */
     private suspend fun askTheOtherRadios(writer: EveryGroup, mode: CollectionMode) {
-        if (!otherRadiosAreDue(jumpsInARow, askedTheOtherRadiosAt, Instant.now())) {
+        if (!otherRadiosAreDue(jumpRun.inARow, askedTheOtherRadiosAt, Instant.now())) {
             return
         }
 
@@ -1010,11 +962,24 @@ class SharingService : LifecycleService() {
         // turn into a scan on every fix.
         askedTheOtherRadiosAt = Instant.now()
 
-        AppLog.w(TAG, "$jumpsInARow answers in a row left out; asking the towers and the Wi-Fi")
+        AppLog.w(
+            TAG,
+            "${jumpRun.inARow} answers in a row left out; asking the towers and the Wi-Fi",
+        )
 
         val asked = opinion.answerNow()
+        val verdict =
+            verdictOnTheOtherRadios(
+                asked,
+                lastFix,
+                falsePlaces,
+                carried.putDown,
+                carried.carrying(),
+                Instant.now(),
+                awakeFor(),
+            )
 
-        if (!networkAnswerStands(asked, Instant.now(), falsePlaces, awakeFor())) {
+        if (verdict == OtherRadiosVerdict.NothingToPutInItsPlace) {
             AppLog.w(TAG, "the other radios had nothing to put in its place: ${saying(asked)}")
 
             return
@@ -1031,21 +996,18 @@ class SharingService : LifecycleService() {
         // whichever answers first is the one that arrives. An answer that
         // merely repeats a place already written, only wider, would move the
         // marker half a kilometre and widen the circle around it for nothing.
-        if (!saysMoreThan(fix, lastFix, Instant.now(), awakeFor())) {
+        if (verdict == OtherRadiosVerdict.RepeatsWhatIsWritten) {
             AppLog.i(TAG, "the other radios repeated what is written, only wider: ${saying(fix)}")
 
             return
         }
 
-        // The one rule that is asked of this answer too, and the reason is
-        // what a field measurement showed: a device lying at home was offered
-        // a place four kilometres away, and the answer that came back from
-        // the other radios stood within two metres of the false one just
-        // rejected.
-        // Whatever built it, it was not a receiver that had been carried
-        // there, and the sensors are the thing that says so. Everything else
-        // the filter asks stays waived, as above.
-        if (driftedWhilePutDown(carried.putDown, fix, carried.carrying())) {
+        // The one rule of the filter that is asked of this answer too, and the
+        // reason is what a field measurement showed: a device lying at home was
+        // offered a place four kilometres away, and the answer that came back
+        // from the other radios stood within two metres of the false one just
+        // rejected. Everything else the filter asks stays waived, as above.
+        if (verdict == OtherRadiosVerdict.WalkedAway) {
             AppLog.w(
                 TAG,
                 "the other radios walked away from a device nobody touched too: ${saying(fix)}",
@@ -1056,7 +1018,7 @@ class SharingService : LifecycleService() {
 
         AppLog.i(TAG, "standing on what the other radios say: ${saying(fix)}")
 
-        jumpsInARow = 0
+        jumpRun = JumpRun()
         writeIfWorth(writer, fix, mode, always = true, trusted = true)
     }
 
@@ -1108,9 +1070,8 @@ class SharingService : LifecycleService() {
      */
     private fun forgetThePlace() {
         lastFix = null
-        candidate = null
         lastWritten = null
-        jumpsInARow = 0
+        jumpRun = JumpRun()
 
         AppLog.i(TAG, "forgetting the last place, as asked")
     }
