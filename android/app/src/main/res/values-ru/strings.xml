@@ -54,10 +54,10 @@
     <string name="map_age_just_now">только что</string>
     <string name="map_detail_from_you">%1$s от вас</string>
     <string name="map_detail_position_ago">позиция %1$s</string>
-    <string name="map_detail_online_ago">в сети %1$s</string>
+    <string name="map_detail_online_ago">на связи %1$s</string>
     <string name="map_detail_unsent">ждёт сети</string>
-    <string name="map_detail_stuck_sentence">В сети %1$s, но новое место не принято.</string>
-    <string name="map_detail_stuck_silent_sentence">В сети %1$s, но новых мест от устройства не приходило.</string>
+    <string name="map_detail_stuck_sentence">На связи %1$s, но новое место не принято.</string>
+    <string name="map_detail_stuck_silent_sentence">На связи %1$s, но новых мест от устройства не приходило.</string>
     <string name="map_detail_left_out_lead">Отброшено: %1$s, причина:</string>
     <string name="map_detail_false_place_lead">Позиция, скорее всего, ложная:</string>
     <string name="map_detail_false_place_and_after">Эта позиция и ещё %1$d после неё — в</string>
@@ -66,7 +66,7 @@
     <string name="map_detail_expand">Вытянуть карточку до подробностей</string>
     <string name="map_detail_collapse">Свернуть карточку до сводки</string>
     <string name="map_detail_at">Время позиции</string>
-    <string name="map_detail_online">В сети</string>
+    <string name="map_detail_online">На связи</string>
     <string name="map_detail_mode">Режим</string>
     <string name="map_detail_found_by">Откуда позиция</string>
     <string name="map_detail_width">Точность</string>

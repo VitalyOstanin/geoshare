@@ -66,7 +66,7 @@ export const EN = {
 
     // The card a marker opens.
     at: 'Taken at',
-    online: 'Online',
+    online: 'In touch',
     mode: 'Mode',
     position: 'Position',
     unknown: 'unknown',
@@ -86,22 +86,22 @@ export const EN = {
 
     // The summary under the name: what a card is opened for most often — how
     // far the member is, when their position was taken and when the device was
-    // last online, how much charge is left. The distance is measured from the
+    // last in touch, how much charge is left. The distance is measured from the
     // freshest place of the viewer's own devices, and is missing when there is
     // nothing to measure from.
     fromYou: (distance) => `${distance} from you`,
     positionAgo: (age) => `position ${age}`,
-    onlineAgo: (age) => `online ${age}`,
+    onlineAgo: (age) => `in touch ${age}`,
 
     // The warnings as one paragraph, each only while it is true: the device is
-    // online and no new position has been accepted for half an hour or more;
+    // in touch and no new position has been accepted for half an hour or more;
     // positions are being rejected; the receiver has not settled since the
     // device was switched on and answers narrowly and wrongly.
     falsePlaceLead: 'The position is most likely false:',
     falsePlaceAndAfter: (count) => `This position and ${count} more after it are in`,
     falsePlaceWhere: 'a known spoofed area',
-    stuckSentence: (age) => `Online ${age}, but no new location has been accepted.`,
-    stuckSilentSentence: (age) => `Online ${age}, but the device has sent no new location.`,
+    stuckSentence: (age) => `In touch ${age}, but no new location has been accepted.`,
+    stuckSilentSentence: (age) => `In touch ${age}, but the device has sent no new location.`,
     leftOutLead: (answers) => `Rejected ${answers}:`,
     settlingSentence: 'The receiver had not settled since the device was switched on.',
 
