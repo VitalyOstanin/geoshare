@@ -154,6 +154,12 @@ img {
   list-style: none;
 }
 
+/* A grid that is the page's column too keeps the column's margins. */
+.wrap.grid {
+  margin-inline: auto;
+  padding-inline: 24px;
+}
+
 figure { margin: 0; }
 
 figcaption {
