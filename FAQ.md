@@ -23,8 +23,8 @@ English · [Русский](FAQ.ru.md)
 
 ## What is it?
 
-First of all, a pet project: written by one person for their own family and
-friends. Anyone who finds it useful is welcome to use it.
+A pet project: written by one person for their own family and friends.
+Anyone who finds it useful is welcome to use it.
 
 ## Can I rely on it in an emergency?
 
