@@ -73,7 +73,11 @@ header.wrap {
   text-decoration: none;
 }
 
-.brand svg { color: var(--accent); }
+/* The application's icon, at its own size rather than the column's width. */
+.brand img {
+  width: 28px;
+  height: 28px;
+}
 
 nav {
   display: flex;
