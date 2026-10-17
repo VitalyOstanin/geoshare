@@ -6,24 +6,7 @@
 // different answers.
 
 import { isStale, isStuck } from './age.js';
-import { WORDS, SPEAKING } from './words.js';
-
-/** The radius the distance is measured on: the mean sphere the width uses. */
-const EARTH_RADIUS_METRES = 6_371_008.8;
-
-const RADIANS_IN_A_DEGREE = Math.PI / 180;
-
-/** Where metres stop being the unit worth writing and kilometres start. */
-const METRES_IN_A_KILOMETRE = 1000;
-
-/** How a tenth of a kilometre is arrived at: hundreds of metres, then back. */
-const METRES_IN_A_TENTH = 100;
-const TENTHS_IN_A_KILOMETRE = 10;
-
-const TENTHS = new Intl.NumberFormat(SPEAKING, {
-    minimumFractionDigits: 1,
-    maximumFractionDigits: 1,
-});
+import { haversineMetres, metresOrKilometres } from './units.js';
 
 /**
  * Where the viewer is: the freshest place any of their own devices has written.
@@ -56,18 +39,9 @@ export function ownPlace(positions, ownMemberId, now) {
     );
 }
 
-/** Haversine: good to a few metres at any distance a family is spread over. */
+/** The metres between two positions, over the sphere the width is drawn on. */
 export function metresBetween(from, to) {
-    const fromLatitude = from.latitude * RADIANS_IN_A_DEGREE;
-    const toLatitude = to.latitude * RADIANS_IN_A_DEGREE;
-    const northwards = toLatitude - fromLatitude;
-    const eastwards = (to.longitude - from.longitude) * RADIANS_IN_A_DEGREE;
-
-    const a =
-        Math.sin(northwards / 2) ** 2
-        + Math.cos(fromLatitude) * Math.cos(toLatitude) * Math.sin(eastwards / 2) ** 2;
-
-    return 2 * EARTH_RADIUS_METRES * Math.asin(Math.sqrt(Math.min(a, 1)));
+    return haversineMetres(from.latitude, from.longitude, to.latitude, to.longitude);
 }
 
 /**
@@ -93,13 +67,5 @@ export function distanceFromViewer(position, positions, ownMemberId, now) {
  * Unlike a width, nought metres is an answer: two devices on one table.
  */
 export function distanceText(metres) {
-    const whole = Math.round(metres);
-
-    if (whole < METRES_IN_A_KILOMETRE) {
-        return WORDS.widthMetres(whole);
-    }
-
-    return WORDS.widthKilometres(
-        TENTHS.format(Math.round(metres / METRES_IN_A_TENTH) / TENTHS_IN_A_KILOMETRE),
-    );
+    return metresOrKilometres(metres, 0);
 }

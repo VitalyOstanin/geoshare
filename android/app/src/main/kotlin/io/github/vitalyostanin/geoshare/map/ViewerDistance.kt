@@ -1,21 +1,7 @@
 package io.github.vitalyostanin.geoshare.map
 
-import io.github.vitalyostanin.geoshare.collection.EARTH_RADIUS_METRES
+import io.github.vitalyostanin.geoshare.collection.haversineMetres
 import java.time.Instant
-import kotlin.math.asin
-import kotlin.math.cos
-import kotlin.math.min
-import kotlin.math.pow
-import kotlin.math.roundToLong
-import kotlin.math.sin
-import kotlin.math.sqrt
-
-/** Where metres stop being the unit worth writing and kilometres start. */
-private const val METRES_IN_A_KILOMETRE = 1_000.0
-
-/** How a tenth of a kilometre is arrived at: hundreds of metres, then back. */
-private const val METRES_IN_A_TENTH = 100.0
-private const val TENTHS_IN_A_KILOMETRE = 10.0
 
 /**
  * Where the viewer is: the freshest place any of their own devices has written.
@@ -38,19 +24,9 @@ fun ownPlace(positions: List<MemberPosition>, ownMemberId: String, now: Instant)
                 !isStuck(it.positionAt, it.knownAt, now)
         }.maxByOrNull { it.positionAt }
 
-/** Haversine: good to a few metres at any distance a family is spread over. */
-fun metresBetween(from: MemberPosition, to: MemberPosition): Double {
-    val fromLatitude = Math.toRadians(from.latitude)
-    val toLatitude = Math.toRadians(to.latitude)
-    val northwards = toLatitude - fromLatitude
-    val eastwards = Math.toRadians(to.longitude - from.longitude)
-
-    val a =
-        sin(northwards / 2).pow(2) +
-            cos(fromLatitude) * cos(toLatitude) * sin(eastwards / 2).pow(2)
-
-    return 2 * EARTH_RADIUS_METRES * asin(sqrt(min(a, 1.0)))
-}
+/** The metres between two positions. */
+fun metresBetween(from: MemberPosition, to: MemberPosition): Double =
+    haversineMetres(from.latitude, from.longitude, to.latitude, to.longitude)
 
 /**
  * How far [position] is from the viewer, in metres, or null when the card has
@@ -80,14 +56,4 @@ fun distanceFromViewer(
  *
  * Unlike a width, nought metres is an answer: two devices on one table.
  */
-fun distanceUnits(metres: Double): PositionWidth {
-    val whole = metres.roundToLong()
-
-    if (whole < METRES_IN_A_KILOMETRE) {
-        return PositionWidth.Metres(whole)
-    }
-
-    return PositionWidth.Kilometres(
-        (metres / METRES_IN_A_TENTH).roundToLong() / TENTHS_IN_A_KILOMETRE,
-    )
-}
+fun distanceUnits(metres: Double): PositionWidth = metresOrKilometres(metres, 0)

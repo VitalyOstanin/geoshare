@@ -1,13 +1,11 @@
 package io.github.vitalyostanin.geoshare.map
 
+import io.github.vitalyostanin.geoshare.collection.EARTH_RADIUS_METRES
 import kotlin.math.PI
 import kotlin.math.abs
 import kotlin.math.cos
 import kotlin.math.max
 import kotlin.math.sin
-
-/** The radius of the globe in metres, as the mean sphere everybody draws on. */
-private const val EARTH_RADIUS_METRES = 6_371_008.8
 
 /**
  * How many corners the ring is drawn with.

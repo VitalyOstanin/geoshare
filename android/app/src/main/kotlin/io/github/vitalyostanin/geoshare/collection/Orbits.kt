@@ -193,8 +193,6 @@ private const val RECORD_LINES = 8
 /** A GLONASS record is its first line and three more, one per axis. */
 private const val GLONASS_RECORD_LINES = 4
 
-private const val METRES_IN_A_KILOMETRE = 1_000.0
-
 private const val FIELD = 19
 private const val FIRST_FIELD = 23
 private const val NEXT_FIELD = 4

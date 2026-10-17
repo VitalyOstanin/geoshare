@@ -2,12 +2,6 @@ package io.github.vitalyostanin.geoshare.collection
 
 import java.time.Duration
 import java.time.Instant
-import kotlin.math.asin
-import kotlin.math.cos
-import kotlin.math.min
-import kotlin.math.pow
-import kotlin.math.sin
-import kotlin.math.sqrt
 
 data class Fix(
     val latitude: Double,
@@ -150,24 +144,6 @@ fun sameAnswer(before: Fix?, next: Fix): Boolean = before != null &&
     before.latitude == next.latitude &&
     before.longitude == next.longitude
 
-/**
- * The radius the distances here are measured on, in metres: the mean sphere,
- * the same one the page measures on.
- */
-const val EARTH_RADIUS_METRES: Double = 6_371_008.8
-
-/** Haversine: the fixes compared here are metres apart, not continents. */
-fun distanceMetres(from: Fix, to: Fix): Double {
-    val fromLatitude = Math.toRadians(from.latitude)
-    val toLatitude = Math.toRadians(to.latitude)
-    val deltaLatitude = toLatitude - fromLatitude
-    val deltaLongitude = Math.toRadians(to.longitude - from.longitude)
-
-    val a =
-        sin(deltaLatitude / 2).pow(2) +
-            cos(fromLatitude) * cos(toLatitude) * sin(deltaLongitude / 2).pow(2)
-
-    // Rounding carries a past one for points on opposite sides of the Earth;
-    // capped, so that asin is never asked for what it has no answer to.
-    return 2 * EARTH_RADIUS_METRES * asin(sqrt(min(a, 1.0)))
-}
+/** The metres between two fixes. */
+fun distanceMetres(from: Fix, to: Fix): Double =
+    haversineMetres(from.latitude, from.longitude, to.latitude, to.longitude)

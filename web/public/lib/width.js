@@ -5,14 +5,7 @@
 // width that read one way on a device and another in a browser would be read as
 // two different answers.
 
-import { WORDS, SPEAKING } from './words.js';
-
-/** Where metres stop being the unit worth writing and kilometres start. */
-const METRES_IN_A_KILOMETRE = 1000;
-
-/** How a tenth of a kilometre is arrived at: hundreds of metres, then back. */
-const METRES_IN_A_TENTH = 100;
-const TENTHS_IN_A_KILOMETRE = 10;
+import { EARTH_RADIUS_METRES, metresOrKilometres } from './units.js';
 
 /**
  * Below this a width is written in the calm colour, above it in the ochre one.
@@ -21,9 +14,6 @@ const TENTHS_IN_A_KILOMETRE = 10;
  * naming a block, which is the difference the colour is there to show.
  */
 const WIDTH_WORTH_NOTICING_METRES = 100;
-
-/** The radius of the globe in metres, as the mean sphere everybody draws on. */
-const EARTH_RADIUS_METRES = 6_371_008.8;
 
 /**
  * How many corners the ring is drawn with.
@@ -41,12 +31,6 @@ const DEGREES_IN_A_RADIAN = 180 / Math.PI;
 /** How far north and south a drawn point may go. */
 const POLE = 90;
 
-/** Kilometres are written to one place; two would be reading the noise. */
-const TENTHS = new Intl.NumberFormat(SPEAKING, {
-    minimumFractionDigits: 1,
-    maximumFractionDigits: 1,
-});
-
 /**
  * The width of an answer as it is written on a card.
  *
@@ -55,18 +39,10 @@ const TENTHS = new Intl.NumberFormat(SPEAKING, {
  * four-digit count of metres is read one digit at a time.
  */
 export function widthText(metres) {
-    const whole = Math.round(metres);
-
-    if (whole < METRES_IN_A_KILOMETRE) {
-        // A width is a radius, and a radius of nought metres is a claim no
-        // receiver makes. Anything that rounds down to it is the narrowest
-        // answer there is rather than no answer at all.
-        return WORDS.widthMetres(Math.max(whole, 1));
-    }
-
-    return WORDS.widthKilometres(
-        TENTHS.format(Math.round(metres / METRES_IN_A_TENTH) / TENTHS_IN_A_KILOMETRE),
-    );
+    // A width is a radius, and a radius of nought metres is a claim no
+    // receiver makes. Anything that rounds down to it is the narrowest answer
+    // there is rather than no answer at all.
+    return metresOrKilometres(metres, 1);
 }
 
 /** Whether a width is wide enough to be worth saying so in the colour. */

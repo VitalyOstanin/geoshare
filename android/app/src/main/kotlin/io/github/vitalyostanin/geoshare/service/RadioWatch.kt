@@ -21,6 +21,7 @@ import io.github.vitalyostanin.geoshare.collection.Epochs
 import io.github.vitalyostanin.geoshare.collection.Fix
 import io.github.vitalyostanin.geoshare.collection.Gain
 import io.github.vitalyostanin.geoshare.collection.Interference
+import io.github.vitalyostanin.geoshare.collection.METRES_IN_A_KILOMETRE
 import io.github.vitalyostanin.geoshare.collection.Measurement
 import io.github.vitalyostanin.geoshare.collection.NavMessage
 import io.github.vitalyostanin.geoshare.collection.NavSoFar
@@ -66,7 +67,6 @@ import java.time.Instant
 import java.util.Locale
 
 private const val TAG = "geoshare.radio"
-private const val METRES_IN_A_KILOMETRE = 1_000.0
 
 /**
  * How many epochs are held at once.

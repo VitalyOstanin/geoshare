@@ -1,13 +1,9 @@
 package io.github.vitalyostanin.geoshare.map
 
+import io.github.vitalyostanin.geoshare.collection.METRES_IN_A_KILOMETRE
+import io.github.vitalyostanin.geoshare.collection.METRES_IN_A_TENTH
+import io.github.vitalyostanin.geoshare.collection.TENTHS_IN_A_KILOMETRE
 import kotlin.math.roundToLong
-
-/** Where metres stop being the unit worth writing and kilometres start. */
-private const val METRES_IN_A_KILOMETRE = 1_000.0
-
-/** How a tenth of a kilometre is arrived at: hundreds of metres, then back. */
-private const val METRES_IN_A_TENTH = 100.0
-private const val TENTHS_IN_A_KILOMETRE = 10.0
 
 /**
  * Below this a width is written in the calm colour, above it in the ochre one.
@@ -39,14 +35,25 @@ sealed interface PositionWidth {
  * decide whether the marker means a room, a courtyard or a district, and a
  * four-digit count of metres is read one digit at a time.
  */
-fun positionWidth(metres: Double): PositionWidth {
+fun positionWidth(metres: Double): PositionWidth =
+    // A width is a radius, and a radius of nought metres is a claim no
+    // receiver makes. Anything that rounds down to it is the narrowest
+    // answer there is rather than no answer at all.
+    metresOrKilometres(metres, 1)
+
+/**
+ * A length in the unit worth naming: whole metres up to a kilometre and
+ * kilometres to one place above it.
+ *
+ * [minMetres] is the least a figure in metres may say: a width passes one,
+ * and a distance passes nought, because two devices on one table are nought
+ * metres apart.
+ */
+fun metresOrKilometres(metres: Double, minMetres: Long): PositionWidth {
     val whole = metres.roundToLong()
 
     if (whole < METRES_IN_A_KILOMETRE) {
-        // A width is a radius, and a radius of nought metres is a claim no
-        // receiver makes. Anything that rounds down to it is the narrowest
-        // answer there is rather than no answer at all.
-        return PositionWidth.Metres(whole.coerceAtLeast(1))
+        return PositionWidth.Metres(whole.coerceAtLeast(minMetres))
     }
 
     return PositionWidth.Kilometres(

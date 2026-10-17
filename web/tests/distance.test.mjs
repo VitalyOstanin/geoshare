@@ -100,12 +100,14 @@ test('two answers inside each other\'s width still get a figure', () => {
 
 test('a distance is said in whole metres, nought included', () => {
     assert.equal(distanceText(0.06), '0 m');
+    assert.equal(distanceText(0.2), '0 m');
     assert.equal(distanceText(39.6), '40 m');
     assert.equal(distanceText(999.4), '999 m');
 });
 
 test('a distance past a kilometre is said in kilometres to one place', () => {
     assert.equal(distanceText(999.6), '1.0 km');
+    assert.equal(distanceText(1049), '1.0 km');
     assert.equal(distanceText(2345), '2.3 km');
 });
 

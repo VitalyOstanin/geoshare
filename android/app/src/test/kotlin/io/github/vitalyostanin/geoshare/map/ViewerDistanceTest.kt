@@ -118,6 +118,7 @@ class ViewerDistanceTest {
     @Test
     fun `a distance is said in whole metres, nought included`() {
         assertEquals(PositionWidth.Metres(0), distanceUnits(0.06))
+        assertEquals(PositionWidth.Metres(0), distanceUnits(0.2))
         assertEquals(PositionWidth.Metres(40), distanceUnits(39.6))
         assertEquals(PositionWidth.Metres(999), distanceUnits(999.4))
     }
@@ -125,6 +126,7 @@ class ViewerDistanceTest {
     @Test
     fun `a distance past a kilometre is said in kilometres to one place`() {
         assertEquals(PositionWidth.Kilometres(1.0), distanceUnits(999.6))
+        assertEquals(PositionWidth.Kilometres(1.0), distanceUnits(1_049.0))
         assertEquals(PositionWidth.Kilometres(2.3), distanceUnits(2_345.0))
     }
 
