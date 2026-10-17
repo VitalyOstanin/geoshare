@@ -121,7 +121,7 @@ jobs:
         run: npm run coverage
 
       - name: Lint the JavaScript
-        run: npx --yes "eslint@${ESLINT_VERSION}" web firebase
+        run: npx --yes -p "eslint@${ESLINT_VERSION}" -p "@eslint/js@${ESLINT_JS_VERSION}" eslint web firebase
 
       - name: Lint the Markdown
         run: npx --yes "markdownlint-cli2@${MARKDOWNLINT_CLI2_VERSION}"
