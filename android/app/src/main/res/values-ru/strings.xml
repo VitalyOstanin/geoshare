@@ -577,6 +577,9 @@
     <string name="update_details">%1$d МБ · вышла %2$s</string>
     <string name="update_size_only">%1$d МБ</string>
     <string name="update_whats_new">Что нового</string>
+    <string name="update_notes_title">Версия %1$s</string>
+    <string name="update_notes_github">Открыть на GitHub</string>
+    <string name="update_notes_close">Закрыть</string>
     <string name="update_install">Обновить</string>
     <string name="update_downloading">Загрузка версии %1$s</string>
     <string name="update_progress">%1$d из %2$d МБ</string>

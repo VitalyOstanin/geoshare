@@ -221,8 +221,8 @@ Acceptance:
 
 - Status: done
 - ADR: —
-- Tests: Android `UpdateRulesTest`, `UpdateCheckTest`, `LatestReleaseTest`, `ReleaseCheckTest`, `ApkVerifierTest`, `ApkDownloadTest`, `UpdateBlockStateTest`, `BootReceiverTest` (the service starts again after an update)
-- Not covered: the networks allowed by the member (MEM-20) do not apply to the update; the application does not compare signing keys itself; the system installer's screen and the permission page, which no test opens
+- Tests: Android `UpdateRulesTest`, `UpdateCheckTest`, `LatestReleaseTest`, `ReleaseCheckTest`, `ApkVerifierTest`, `ApkDownloadTest`, `UpdateBlockStateTest`, `ReleaseNotesTest`, `BootReceiverTest` (the service starts again after an update)
+- Not covered: the networks allowed by the member (MEM-20) do not apply to the update; the application does not compare signing keys itself; the system installer's screen, the permission page and the "What's new" window, which no test opens
 
 As a member I let the application learn about a new published build and
 install it, so that I do not have to look for updates.
@@ -237,6 +237,10 @@ Acceptance:
 - a release newer than the application is announced once, by a notification
   that opens the settings, and the settings button carries a dot while it is
   waiting;
+- "What's new" shows the release's changes in a window, in the
+  application's language, without the part meant for project owners; a
+  release with no Russian text shows its English one, and one with no text
+  at all opens its page on GitHub;
 - the APK is downloaded when the member presses "Update", with progress and
   a way to cancel, and is kept only if its size and SHA-256 are those the
   release announces; a release without them is no update;

@@ -44,6 +44,15 @@ class LatestReleaseTest {
     }
 
     @Test
+    fun `the body is kept as the release notes`() {
+        val body = "{\"body\":\"### Added\\n\\n- One.\","
+        val json = release().replaceFirst("{", body)
+
+        assertEquals("### Added\n\n- One.", LatestRelease.parse(json)!!.notes)
+        assertEquals("", LatestRelease.parse(release())!!.notes)
+    }
+
+    @Test
     fun `a tag without the leading v is taken as it is`() {
         assertEquals("0.2.0", LatestRelease.parse(release(tag = "\"0.2.0\""))!!.version)
     }

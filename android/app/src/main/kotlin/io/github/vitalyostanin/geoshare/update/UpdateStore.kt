@@ -16,6 +16,7 @@ private const val KEY_PUBLISHED = "found_published"
 private const val KEY_APK_URL = "found_apk_url"
 private const val KEY_APK_SIZE = "found_apk_size"
 private const val KEY_APK_SHA256 = "found_apk_sha256"
+private const val KEY_NOTES = "found_notes"
 
 /** The value [KEY_PUBLISHED] holds when GitHub gave no readable date. */
 private const val NO_DATE = Long.MIN_VALUE
@@ -89,6 +90,7 @@ class UpdateStore(context: Context) : UpdateRecord {
             pageUrl = store.readString(KEY_PAGE, null).orEmpty(),
             publishedAt = published.takeIf { it != NO_DATE }?.let(Instant::ofEpochMilli),
             apk = ApkAsset(apkUrl, store.readLong(KEY_APK_SIZE, 0), sha256),
+            notes = store.readString(KEY_NOTES, null).orEmpty(),
         )
     }
 
@@ -101,6 +103,7 @@ class UpdateStore(context: Context) : UpdateRecord {
                 remove(KEY_APK_URL)
                 remove(KEY_APK_SIZE)
                 remove(KEY_APK_SHA256)
+                remove(KEY_NOTES)
             } else {
                 putString(KEY_VERSION, release.version)
                 putString(KEY_PAGE, release.pageUrl)
@@ -108,6 +111,7 @@ class UpdateStore(context: Context) : UpdateRecord {
                 putString(KEY_APK_URL, release.apk.url)
                 putLong(KEY_APK_SIZE, release.apk.size)
                 putString(KEY_APK_SHA256, release.apk.sha256)
+                putString(KEY_NOTES, release.notes)
             }
         }.apply()
     }

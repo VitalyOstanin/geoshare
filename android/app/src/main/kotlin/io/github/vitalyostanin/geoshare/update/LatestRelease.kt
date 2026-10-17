@@ -14,13 +14,15 @@ data class ApkAsset(val url: String, val size: Long, val sha256: String)
  * What the app needs of GitHub's "latest release" answer: the [version]
  * (the tag without its leading `v`), the release [pageUrl] ("What's new"),
  * when it was [publishedAt] (null if GitHub gave no readable date) and the
- * [apk] to install.
+ * [apk] to install. [notes] is the release's raw `body` (the changelog text,
+ * see [ReleaseNotes.parse]); empty if the release has none.
  */
 data class LatestRelease(
     val version: String,
     val pageUrl: String,
     val publishedAt: Instant?,
     val apk: ApkAsset,
+    val notes: String = "",
 ) {
     companion object {
         private const val APK_SUFFIX = ".apk"
@@ -64,6 +66,7 @@ data class LatestRelease(
                 pageUrl = document.optString("html_url"),
                 publishedAt = parseInstant(document.optString("published_at")),
                 apk = ApkAsset(url, size, digest),
+                notes = document.optString("body"),
             )
         }
 

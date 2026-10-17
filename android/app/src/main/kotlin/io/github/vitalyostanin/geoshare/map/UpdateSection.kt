@@ -29,6 +29,7 @@ import io.github.vitalyostanin.geoshare.BuildConfig
 import io.github.vitalyostanin.geoshare.R
 import io.github.vitalyostanin.geoshare.update.ApkDownload
 import io.github.vitalyostanin.geoshare.update.LatestRelease
+import io.github.vitalyostanin.geoshare.update.ReleaseNotes
 import io.github.vitalyostanin.geoshare.update.UpdateBlockState
 import io.github.vitalyostanin.geoshare.update.UpdateBoard
 import io.github.vitalyostanin.geoshare.update.UpdateNote
@@ -68,6 +69,10 @@ internal fun UpdateSection() {
         )
     }
     var job by remember { mutableStateOf<Job?>(null) }
+    var shownNotes by remember { mutableStateOf<Pair<LatestRelease, ReleaseNotes>?>(null) }
+    val language = appLocale().language
+
+    ShownNotes(shownNotes, context, onDismiss = { shownNotes = null })
 
     SwitchRow(
         checked = auto,
@@ -99,7 +104,13 @@ internal fun UpdateSection() {
             state = UpdateBlockState.Checking
             scope.launch { state = afterManualCheck(checkForUpdateNow(context)) }
         },
-        onWhatsNew = { openPage(context, it.pageUrl) },
+        onWhatsNew = { release ->
+            // A release whose text yields no sections still has its page,
+            // which is what the button did before the dialog.
+            val notes = ReleaseNotes.parse(release.notes, language)
+
+            if (notes == null) openPage(context, release.pageUrl) else shownNotes = release to notes
+        },
         onUpdate = { release ->
             state = startDownload(release)
             job = scope.launch { state = download(context, release) { state = it } }
@@ -108,6 +119,23 @@ internal fun UpdateSection() {
             job?.cancel()
             state = afterCancel(release)
         },
+    )
+}
+
+/** The notes dialog of the release the member asked about, if one is open. */
+@Composable
+private fun ShownNotes(
+    shown: Pair<LatestRelease, ReleaseNotes>?,
+    context: Context,
+    onDismiss: () -> Unit,
+) {
+    if (shown == null) return
+
+    ReleaseNotesDialog(
+        version = shown.first.version,
+        notes = shown.second,
+        onOpenPage = { openPage(context, shown.first.pageUrl) },
+        onDismiss = onDismiss,
     )
 }
 
@@ -256,7 +284,7 @@ private fun releaseDetails(release: LatestRelease): String {
     return stringResource(R.string.update_details, size, day)
 }
 
-/** "What's new": the release page in the browser; a device with none just does nothing. */
+/** The release page in the browser; a device with none just does nothing. */
 private fun openPage(context: Context, url: String) {
     if (!url.startsWith("https://")) return
 
