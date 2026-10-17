@@ -53,7 +53,7 @@ fun appColours(dark: Boolean): ColorScheme = if (dark) {
  * the pin's red; at night that red is too dark to read on a dark surface, so
  * the words take a lighter one while the fills behind white words keep theirs.
  */
-fun soughtWords(dark: Boolean): Color = if (dark) Color(0xFFEF5350) else Color(SOUGHT_COLOUR)
+fun soughtWords(dark: Boolean): Color = if (dark) Color(0xFFFF6F6F) else Color(SOUGHT_COLOUR)
 
 /** [soughtWords] for the theme the screen is drawn in. */
 @Composable

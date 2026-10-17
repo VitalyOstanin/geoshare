@@ -300,3 +300,64 @@ test('the page reads only fields the device writes', () => {
         }
     }
 });
+
+/** The first `--name: #rrggbb` a stylesheet declares, or the one after `from`. */
+function cssToken(file, name, from = '') {
+    const text = source(file);
+    const start = from === '' ? 0 : text.indexOf(from);
+
+    assert.ok(start >= 0, `${file} has ${from}`);
+
+    const pattern = new RegExp(String.raw`--${name}:\s*(#[0-9a-f]{6})\b`, 'iu');
+    const found = pattern.exec(text.slice(start));
+
+    assert.ok(found, `${file} declares --${name}`);
+
+    return found[1].toLowerCase();
+}
+
+/** A property of the Material scheme, `primary = Color(0xFF1E88E5)`, in the given branch. */
+function schemeColour(branch, name) {
+    const text = source(KOTLIN + 'AppColours.kt');
+    const split = text.indexOf('} else {', text.indexOf('fun appColours'));
+    const body = branch === 'dark' ? text.slice(0, split) : text.slice(split);
+    const found = new RegExp(String.raw`\b${name} = Color\(0xFF(\w{6})\)`, 'u').exec(body);
+
+    assert.ok(found, `${name} is set in the ${branch} scheme`);
+
+    return `#${found[1]}`.toLowerCase();
+}
+
+test('the accent is the same blue, by day and by night', () => {
+    assert.equal(schemeColour('light', 'primary'), cssToken('web/public/styles/base.css', 'link'));
+    assert.equal(
+        schemeColour('dark', 'primary'),
+        cssToken('web/public/styles/base.css', 'night-link'),
+    );
+});
+
+test('an error is the same red, by day and by night', () => {
+    assert.equal(schemeColour('light', 'error'), cssToken('web/public/styles/base.css', 'error'));
+    assert.equal(
+        schemeColour('dark', 'error'),
+        cssToken('web/public/styles/base.css', 'night-error'),
+    );
+});
+
+test('a search is the same red on the pin and in words, by day and by night', () => {
+    const [pin] = kotlinColours(kotlin('map/MarkerIcon.kt', 'SOUGHT_COLOUR'));
+    const css = 'web/public/styles/search.css';
+
+    assert.equal(pin, cssToken(css, 'alarm'));
+    assert.equal(pin, cssToken(css, 'alarm-text'));
+
+    const words = source(KOTLIN + 'AppColours.kt').match(
+        /fun soughtWords\(dark: Boolean\): Color = if \(dark\) Color\(0xFF(\w{6})\)/u,
+    );
+
+    assert.ok(words, 'soughtWords names its night colour');
+    assert.equal(
+        `#${words[1]}`.toLowerCase(),
+        cssToken(css, 'alarm-text', 'prefers-color-scheme: dark'),
+    );
+});
