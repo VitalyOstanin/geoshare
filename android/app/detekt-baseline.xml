@@ -2,8 +2,6 @@
 <SmellBaseline>
   <ManuallySuppressedIssues/>
   <CurrentIssues>
-    <ID>LongMethod:AdminPanel.kt:@Composable fun AdminPanel</ID>
-    <ID>LongMethod:AdminRows.kt:@Composable private fun AdminPhoneRow</ID>
     <ID>LongMethod:ConnectScreen.kt:@Composable private fun NotConnected</ID>
     <ID>LongMethod:DetailNotices.kt:@Composable internal fun DetailWarnings</ID>
     <ID>LongMethod:FirstShare.kt:@Composable private fun FirstShareDialog</ID>

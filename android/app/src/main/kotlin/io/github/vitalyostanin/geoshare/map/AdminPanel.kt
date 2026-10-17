@@ -1,46 +1,15 @@
 package io.github.vitalyostanin.geoshare.map
 
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.WindowInsets
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.safeDrawing
-import androidx.compose.foundation.layout.windowInsetsPadding
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.text.KeyboardOptions
-import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.HorizontalDivider
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.Surface
-import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.key
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
-import androidx.compose.runtime.setValue
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.input.KeyboardType
-import androidx.compose.ui.unit.dp
-import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import io.github.vitalyostanin.geoshare.R
-import io.github.vitalyostanin.geoshare.membership.ADDRESS_LIMIT
 import io.github.vitalyostanin.geoshare.membership.Roster
-import io.github.vitalyostanin.geoshare.membership.looksLikeAnAddress
-import io.github.vitalyostanin.geoshare.membership.runsTheGroup
 import io.github.vitalyostanin.geoshare.service.MadeInvitation
 import io.github.vitalyostanin.geoshare.service.deviceIdOf
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.flowOf
-import kotlinx.coroutines.launch
 import java.time.Duration
 import java.time.Instant
 
@@ -118,234 +87,27 @@ fun AdminPanel(
     // dialog's own title: what the invitation names is the same group this
     // screen is already showing, under the same caption.
     val caption = groupCaption(roster, profiles, stringResource(R.string.group_name_unnamed))
-    var givingUp by remember { mutableStateOf(false) }
-    var helpOpen by remember { mutableStateOf(false) }
-    // The dialog for the group's own name: open or not, what is typed in it
-    // so far, and how the last write to it came out.
-    var renaming by remember { mutableStateOf(false) }
-    var renameText by remember { mutableStateOf("") }
-    var renameTrouble by remember { mutableStateOf<WriteOutcome?>(null) }
-    var renameBusy by remember { mutableStateOf(false) }
-    // The dialog that asks for the address to invite: open or not, and what
-    // has been typed into it so far. Reopened by "make another invitation" as
-    // well as by the button that offers the first one, so it is held apart
-    // from [invitation] rather than inferred from it.
-    var inviting by remember { mutableStateOf(false) }
-    var invitationEmail by remember { mutableStateOf("") }
-    // The member about to be removed and the name the dialog calls them by.
-    var removing by remember { mutableStateOf<Pair<String, String>?>(null) }
-    // Which device is being asked about, in which of the two ways, and the
-    // length picked so far -- held apart from whether the write is refused,
-    // so a refusal on one device's search does not linger once a different one
-    // is opened.
-    val searching = rememberAskedWrite<SearchAsk>()
-    var searchHours by remember { mutableStateOf(DEFAULT_SEARCH_HOURS) }
+    val state = rememberAdminPanelState()
     val scope = rememberCoroutineScope()
-
-    // The siren of every device this panel offers to ring, followed while it
-    // is open: a call rung from anywhere else shows on its row as well.
-    val ringable =
-        remember(lines, ownPhoneId) {
-            lines.flatMap { it.phones }.map { it.phoneId }.filter { it != ownPhoneId }.toSet()
-        }
-    val sirens by remember(ringable) { sirensOf(ringable, sirenOf) }
-        .collectAsStateWithLifecycle(initialValue = emptyMap())
-    val ringing = rememberAskedWrite<SirenAsk>()
-    val sirenNow by sirenClock(sirens)
-
-    // The requests to forget a place on the same devices, followed the same
-    // way, so a reset asked from anywhere shows on its row too.
-    val resets by remember(ringable) { resetsOf(ringable, resetOf) }
-        .collectAsStateWithLifecycle(initialValue = emptyMap())
-    val resetting = rememberAskedWrite<PhoneLine>()
-
-    fun writeRename() {
-        val name = groupNameText(renameText) ?: return
-
-        renameBusy = true
-        scope.launch {
-            val outcome = onRenameGroup(name)
-
-            renameBusy = false
-
-            if (outcome == WriteOutcome.DONE) {
-                renaming = false
-                renameTrouble = null
-            } else {
-                renameTrouble = outcome
-            }
-        }
-    }
-
-    fun askSearch(phone: PhoneLine, memberName: String, renew: Boolean) {
-        searching.ask(SearchAsk(phone, memberName, renew))
-        searchHours = DEFAULT_SEARCH_HOURS
-    }
-
-    Surface(modifier = modifier.fillMaxSize()) {
-        // Scrolled and inset the way the settings screen is, and for the same
-        // reasons: one row per member runs off a device, and the title has to
-        // clear the clock.
-        Column(
-            modifier =
-            Modifier
-                .windowInsetsPadding(WindowInsets.safeDrawing)
-                .verticalScroll(rememberScrollState()),
-        ) {
-            AdminHeader(
-                caption = caption,
-                onRename =
-                {
-                    renameText = roster.name.orEmpty()
-                    renameTrouble = null
-                    renaming = true
-                }.takeIf { runsTheGroup(roster, ownMemberId) },
-                onHelp = { helpOpen = true },
-                onClose = onClose,
-            )
-
-            HorizontalDivider()
-
-            for (line in lines) {
-                val lineName = line.displayName ?: unnamedMember(line.memberId)
-
-                AdminMemberRow(
-                    line = line,
-                    now = now,
-                    searches = standing,
-                    ownPhoneId = ownPhoneId,
-                    onMakeAdmin = { onSetRunning(line.memberId, true) },
-                    onStopRunning = {
-                        if (line.isYou) givingUp = true else onSetRunning(line.memberId, false)
-                    },
-                    onRemove = { removing = line.memberId to lineName },
-                    onSearch = { phone -> askSearch(phone, lineName, renew = false) },
-                    onEndSearch = { phoneId -> scope.launch { onEndSearch(phoneId) } },
-                    sirens = sirens,
-                    sirenNow = sirenNow,
-                    onSiren = { phone ->
-                        ringing.ask(SirenAsk(lineName, listOf(phone), phone.phoneId))
-                    },
-                    onStopSiren = { phoneId -> scope.launch { onStopSiren(phoneId) } },
-                    resets = resets,
-                    onReset = { phone -> resetting.ask(phone) },
-                )
-            }
-
-            AdminSearchSummaries(
-                standing = standing,
-                lines = lines,
-                profiles = profiles,
-                ownMemberId = ownMemberId,
-                onRenew = { phone, name -> askSearch(phone, name, renew = true) },
-                onEndSearch = { phoneId -> scope.launch { onEndSearch(phoneId) } },
-            )
-
-            HorizontalDivider()
-
-            AdminInvitationSection(
-                invitation = invitation,
-                invitationStanding = invitationStanding,
-                link = InvitationLink(site, profiles[ownMemberId]?.displayName, roster.name),
-                now = now,
-                trouble = trouble,
-                onOpenInvitation = {
-                    invitationEmail = ""
-                    inviting = true
-                },
-            )
-        }
-    }
-
-    if (helpOpen) {
-        AdminHelpSheet(onClose = { helpOpen = false })
-    }
-
-    if (renaming) {
-        RenameGroupDialog(
-            text = renameText,
-            onTextChange = { renameText = it },
-            trouble = renameTrouble,
-            busy = renameBusy,
-            onSave = ::writeRename,
-            onDismiss = { renaming = false },
-        )
-    }
-
-    if (inviting) {
-        InvitationDialog(
+    val live = rememberAdminLive(lines, ownPhoneId, sirenOf, resetOf)
+    val invite = AdminInvite(invitation, invitationStanding, site, trouble)
+    val shown =
+        AdminShown(
+            roster = roster,
+            profiles = profiles,
+            lines = lines,
+            standing = standing,
             caption = caption,
-            email = invitationEmail,
-            onEmailChange = { invitationEmail = it },
-            onCreate = { address ->
-                inviting = false
-                onMakeInvitation(address)
-            },
-            onDismiss = { inviting = false },
-        )
-    }
-
-    if (givingUp) {
-        GiveUpDialog(
-            onGiveUp = {
-                givingUp = false
-                onSetRunning(ownMemberId, false)
-            },
-            onDismiss = { givingUp = false },
-        )
-    }
-
-    removing?.let { (memberId, name) ->
-        RemoveMemberDialog(
-            name = name,
-            onRemove = {
-                removing = null
-                onRemoveMember(memberId)
-            },
-            onDismiss = { removing = null },
-        )
-    }
-
-    ringing.asked?.let { ask ->
-        SirenDialog(
-            memberName = ask.name,
-            phones = ask.phones,
-            selected = ask.selected,
-            onSelect = { ringing.change(ask.copy(selected = it)) },
+            ownMemberId = ownMemberId,
+            ownPhoneId = ownPhoneId,
             now = now,
-            trouble = ringing.trouble,
-            busy = ringing.busy,
-            onGo = { ringing.write { onCallSiren(it.selected) } },
-            onCancel = ringing::cancel,
+            invite = invite,
+            live = live,
         )
-    }
+    val writes = AdminWrites(onRenameGroup, onSearch, onCallSiren, onAskReset)
 
-    resetting.asked?.let { phone ->
-        ResetDialog(
-            phoneName = phone.name,
-            trouble = resetting.trouble,
-            busy = resetting.busy,
-            onGo = { resetting.write { onAskReset(it.phoneId) } },
-            onCancel = resetting::cancel,
-        )
-    }
-
-    searching.asked?.let { ask ->
-        SearchDialog(
-            memberName = ask.memberName,
-            phoneName = ask.phone.name,
-            renew = ask.renew,
-            hours = searchHours,
-            onHoursChange = { searchHours = it },
-            now = now,
-            trouble = searching.trouble,
-            busy = searching.busy,
-            onGo = {
-                searching.write { onSearch(it.phone.phoneId, it.phone.name, it.renew, searchHours) }
-            },
-            onCancel = searching::cancel,
-        )
-    }
+    AdminPanelBody(shown, state, scope, onSetRunning, onEndSearch, onStopSiren, onClose, modifier)
+    AdminPanelDialogs(state, shown, scope, writes, onMakeInvitation, onRemoveMember, onSetRunning)
 }
 
 /**
@@ -381,12 +143,6 @@ internal fun sirenText(siren: Siren, state: SirenState, phones: List<PhoneLine>)
         SirenState.Over -> null
     }
 }
-
-/** Which device is being asked about, whose member it is, and in which of the two ways. */
-private data class SearchAsk(val phone: PhoneLine, val memberName: String, val renew: Boolean)
-
-/** Whose device is about to be rung, and which of their devices is picked. */
-private data class SirenAsk(val name: String, val phones: List<PhoneLine>, val selected: String)
 
 /** What the clipboard calls what it is holding, where a system shows the name. */
 internal const val CLIPBOARD_SAYS = "geoshare"

@@ -144,77 +144,134 @@ private fun AdminPhoneRow(
         modifier = Modifier.fillMaxWidth().padding(top = 4.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        Column(modifier = Modifier.weight(1f)) {
+        AdminPhoneStatus(
+            phone = phone,
+            now = now,
+            search = search,
+            own = own,
+            siren = siren,
+            sirenNow = sirenNow,
+            reset = reset,
+            modifier = Modifier.weight(1f),
+        )
+
+        AdminPhoneButtons(
+            search = search,
+            own = own,
+            mayLookFor = mayLookFor,
+            siren = siren,
+            sirenNow = sirenNow,
+            onSearch = onSearch,
+            onEndSearch = onEndSearch,
+            onSiren = onSiren,
+            onStopSiren = onStopSiren,
+            onReset = onReset,
+        )
+    }
+}
+
+/**
+ * The left side of a device's line: what the device says of itself, then the
+ * search, the call and the request to forget its place, each only while it
+ * stands. Takes its width from [modifier], since it sits in a row it does not
+ * know about.
+ */
+@Composable
+private fun AdminPhoneStatus(
+    phone: PhoneLine,
+    now: Instant,
+    search: Search?,
+    own: Boolean,
+    siren: Siren?,
+    sirenNow: Instant,
+    reset: Reset?,
+    modifier: Modifier = Modifier,
+) {
+    Column(modifier = modifier) {
+        Text(
+            text =
+            if (own) {
+                stringResource(R.string.admin_phone_this, phone.name)
+            } else {
+                phoneText(phone, now)
+            },
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+
+        if (search != null) {
             Text(
                 text =
-                if (own) {
-                    stringResource(R.string.admin_phone_this, phone.name)
-                } else {
-                    phoneText(phone, now)
-                },
+                stringResource(
+                    R.string.sought_until,
+                    endsAtText(search.endsAt.atZone(ZoneId.systemDefault())),
+                ),
                 style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                color = soughtWords(),
             )
+        }
 
-            if (search != null) {
-                Text(
-                    text =
-                    stringResource(
-                        R.string.sought_until,
-                        endsAtText(search.endsAt.atZone(ZoneId.systemDefault())),
-                    ),
-                    style = MaterialTheme.typography.bodySmall,
-                    color = soughtWords(),
-                )
-            }
+        val sirenState = siren?.let { sirenState(it, sirenNow) }
 
-            val sirenState = siren?.let { sirenState(it, sirenNow) }
-
-            if (siren != null && sirenState != null) {
-                sirenText(siren, sirenState, listOf(phone))?.let {
-                    Text(
-                        text = it,
-                        style = MaterialTheme.typography.bodySmall,
-                        fontWeight = FontWeight.SemiBold,
-                        color = soughtWords(),
-                    )
-                }
-            }
-
-            reset?.let { resetText(it, now) }?.let {
+        if (siren != null && sirenState != null) {
+            sirenText(siren, sirenState, listOf(phone))?.let {
                 Text(
                     text = it,
                     style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    fontWeight = FontWeight.SemiBold,
+                    color = soughtWords(),
                 )
             }
         }
 
-        Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-            // Before the siren and plain, as on the page: the quiet one of
-            // the buttons that reach into this device. Offered where the siren
-            // is, since this device's own place is reset from its settings.
-            if (!own) {
-                ResetButton(onClick = onReset)
-            }
+        reset?.let { resetText(it, now) }?.let {
+            Text(
+                text = it,
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
+    }
+}
 
-            val sirenState = siren?.let { sirenState(it, sirenNow) }
-            val sounding = sirenState is SirenState.Waiting || sirenState is SirenState.Sounding
+/** The right side of a device's line: the round buttons that reach into it. */
+@Composable
+private fun AdminPhoneButtons(
+    search: Search?,
+    own: Boolean,
+    mayLookFor: Boolean,
+    siren: Siren?,
+    sirenNow: Instant,
+    onSearch: () -> Unit,
+    onEndSearch: () -> Unit,
+    onSiren: () -> Unit,
+    onStopSiren: () -> Unit,
+    onReset: () -> Unit,
+) {
+    Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+        // Before the siren and plain, as on the page: the quiet one of
+        // the buttons that reach into this device. Offered where the siren
+        // is, since this device's own place is reset from its settings.
+        if (!own) {
+            ResetButton(onClick = onReset)
+        }
 
-            // Round and red, as on the page: the one button in the row that
-            // makes this device sound loud. A call already going is stopped
-            // from here even on a row that could not have rung it.
-            if (sounding || !own) {
-                SirenButton(sounding = sounding, onCall = onSiren, onStop = onStopSiren)
-            }
+        val sirenState = siren?.let { sirenState(it, sirenNow) }
+        val sounding = sirenState is SirenState.Waiting || sirenState is SirenState.Sounding
 
-            if (mayLookFor) {
-                SearchButton(
-                    standing = search != null,
-                    enabled = !LocalLink.current.lost,
-                    onClick = if (search != null) onEndSearch else onSearch,
-                )
-            }
+        // Round and red, as on the page: the one button in the row that
+        // makes this device sound loud. A call already going is stopped
+        // from here even on a row that could not have rung it.
+        if (sounding || !own) {
+            SirenButton(sounding = sounding, onCall = onSiren, onStop = onStopSiren)
+        }
+
+        if (mayLookFor) {
+            SearchButton(
+                standing = search != null,
+                enabled = !LocalLink.current.lost,
+                onClick = if (search != null) onEndSearch else onSearch,
+            )
         }
     }
 }
