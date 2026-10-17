@@ -64,9 +64,10 @@ flowchart LR
 
 ## A project and its group
 
-A project holds one group (ADR-0036). The group is founded once, by the first
-account to do it, in a batch that also writes `project/group`; the rules refuse
-a second founding, and refuse any change to the mark or its deletion from a
+A project holds one group (ADR-0036). The group is founded once, by the
+project owner (ADR-0038): the rules, as deployed, accept the founding only
+from the verified address of the owner's Google account. It is written in a
+batch that also writes `project/group`; the rules refuse a second founding, and refuse any change to the mark or its deletion from a
 client. A device signed in to a project whose group it is not in reads the mark
 and is offered only joining by an invitation.
 
@@ -96,7 +97,7 @@ set up before 2026-10-13 gets its mark written once by hand
    secret: the rules guard the data.
 4. The device signs in with Google, then reads the mark and the group, and
    either joins by the invitation or, in an empty project, offers to found
-   the group.
+   the group; the rules let only the project owner do it.
 
 The page needs no such step: it is served by the site of its project, beside a
 `firebase-config.js` written when the site was deployed.

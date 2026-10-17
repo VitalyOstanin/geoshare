@@ -234,9 +234,12 @@ Android does not install a package over one with a higher version code, so a
 bad release is not taken back by pointing at an older one:
 
 1. Revert the change on master and release it as the next patch version,
-   following the steps above. Devices update to it like to any other.
+   following the steps above. Devices are offered it within a day, as any
+   other release; on 0.1.1 and earlier it is installed by hand.
 2. Mark the bad release on GitHub as a pre-release and say in its notes what
-   is wrong, so that nobody new installs it.
+   is wrong, so that nobody new installs it. Do it first: the application
+   asks for the latest release, which GitHub never answers with a
+   pre-release, so from then on no device is offered the bad one.
 3. If the release changed the rules or the page, each project owner checks out
    the tag of the previous release and runs `tools/project.sh update` from it,
    once the devices have the fixed release: the older rules may refuse what
