@@ -74,7 +74,7 @@ internal fun AdminInvitation(
     /** The clock the invitation is held against: one that has run out admits nobody. */
     now: Instant,
     link: String?,
-    onOpenInvite: () -> Unit,
+    onOpenInvitation: () -> Unit,
 ) {
     val context = LocalContext.current
     var qrOpen by remember { mutableStateOf(false) }
@@ -82,7 +82,7 @@ internal fun AdminInvitation(
     // Used or run out, the link is taken away: one that admits nobody would
     // only be handed on to somebody who then cannot get in.
     if (invitation != null && (standing == false || !now.isBefore(invitation.expiresAt))) {
-        InvitationOver(invitation, used = standing == false, onOpenInvite = onOpenInvite)
+        InvitationOver(invitation, used = standing == false, onOpenInvitation = onOpenInvitation)
     } else if (invitation != null && link != null) {
         Text(
             text =
@@ -128,7 +128,7 @@ internal fun AdminInvitation(
         SendOrCopyLink(link = link)
 
         TextButton(
-            onClick = onOpenInvite,
+            onClick = onOpenInvitation,
             modifier = Modifier.padding(horizontal = 8.dp),
         ) {
             Text(text = stringResource(R.string.group_make_another_invitation))
@@ -138,7 +138,7 @@ internal fun AdminInvitation(
             modifier = Modifier.fillMaxWidth().padding(horizontal = 8.dp),
             horizontalArrangement = Arrangement.Start,
         ) {
-            TextButton(onClick = onOpenInvite) {
+            TextButton(onClick = onOpenInvitation) {
                 Text(text = stringResource(R.string.group_make_invitation))
             }
         }
@@ -187,7 +187,11 @@ private fun SendOrCopyLink(link: String) {
  * when it ran out, and the way to make the next one.
  */
 @Composable
-private fun InvitationOver(invitation: MadeInvitation, used: Boolean, onOpenInvite: () -> Unit) {
+private fun InvitationOver(
+    invitation: MadeInvitation,
+    used: Boolean,
+    onOpenInvitation: () -> Unit,
+) {
     Text(
         text =
         stringResource(
@@ -213,7 +217,7 @@ private fun InvitationOver(invitation: MadeInvitation, used: Boolean, onOpenInvi
     )
 
     TextButton(
-        onClick = onOpenInvite,
+        onClick = onOpenInvitation,
         modifier = Modifier.padding(horizontal = 8.dp),
     ) {
         Text(

@@ -117,7 +117,7 @@ internal fun AdminInvitationSection(
     link: InvitationLink,
     now: Instant,
     trouble: Boolean,
-    onOpenInvite: () -> Unit,
+    onOpenInvitation: () -> Unit,
 ) {
     // Keyed as a whole: collectAsStateWithLifecycle keeps the last value across a
     // new flow, and a fresh code would go on reading as the spent one.
@@ -141,7 +141,7 @@ internal fun AdminInvitationSection(
                 groupName = link.groupName,
             )
         },
-        onOpenInvite = onOpenInvite,
+        onOpenInvitation = onOpenInvitation,
     )
 
     if (trouble) {

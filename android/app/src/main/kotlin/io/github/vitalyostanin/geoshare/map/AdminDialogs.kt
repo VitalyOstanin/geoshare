@@ -100,7 +100,7 @@ internal fun RenameGroupDialog(
  * names, and a code with none would let in whoever holds it.
  */
 @Composable
-internal fun InviteDialog(
+internal fun InvitationDialog(
     caption: String,
     email: String,
     onEmailChange: (String) -> Unit,

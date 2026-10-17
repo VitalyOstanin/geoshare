@@ -248,7 +248,7 @@
     margin-top: 0.6rem;
 }
 
-.naming #invite-email {
+.naming #invitation-email {
     box-sizing: border-box;
     width: 100%;
     margin-top: 0.6rem;
@@ -260,13 +260,13 @@
     font: inherit;
 }
 
-#invite-note {
+#invitation-note {
     margin: 0.5rem 0 0;
     font-size: var(--text-small);
     opacity: 0.8;
 }
 
-#invite-buttons {
+#invitation-buttons {
     display: flex;
     justify-content: flex-end;
     gap: 0.3rem;
@@ -275,7 +275,7 @@
 
 #naming-buttons button,
 #rename-buttons button,
-#invite-buttons button {
+#invitation-buttons button {
     border: 1px solid var(--edge);
     border-radius: var(--radius-small);
     padding: 0.3rem 0.6rem;

@@ -131,7 +131,7 @@ fun AdminPanel(
     // well as by the button that offers the first one, so it is held apart
     // from [invitation] rather than inferred from it.
     var inviting by remember { mutableStateOf(false) }
-    var inviteEmail by remember { mutableStateOf("") }
+    var invitationEmail by remember { mutableStateOf("") }
     // The member about to be removed and the name the dialog calls them by.
     var removing by remember { mutableStateOf<Pair<String, String>?>(null) }
     // Which device is being asked about, in which of the two ways, and the
@@ -249,8 +249,8 @@ fun AdminPanel(
                 link = InvitationLink(site, profiles[ownMemberId]?.displayName, roster.name),
                 now = now,
                 trouble = trouble,
-                onOpenInvite = {
-                    inviteEmail = ""
+                onOpenInvitation = {
+                    invitationEmail = ""
                     inviting = true
                 },
             )
@@ -273,10 +273,10 @@ fun AdminPanel(
     }
 
     if (inviting) {
-        InviteDialog(
+        InvitationDialog(
             caption = caption,
-            email = inviteEmail,
-            onEmailChange = { inviteEmail = it },
+            email = invitationEmail,
+            onEmailChange = { invitationEmail = it },
             onCreate = { address ->
                 inviting = false
                 onMakeInvitation(address)

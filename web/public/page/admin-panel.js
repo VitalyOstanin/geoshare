@@ -324,12 +324,12 @@ function drawRename() {
  * from the last invitation: an address is not typed twice by mistake the way
  * a group's own name might be left standing.
  */
-function openInvite() {
-    elements.inviteEmail.value = '';
-    drawInvite();
+function openInvitation() {
+    elements.invitationEmail.value = '';
+    drawInvitation();
 
-    if (!elements.invite.open) {
-        elements.invite.showModal();
+    if (!elements.invitation.open) {
+        elements.invitation.showModal();
     }
 }
 
@@ -339,15 +339,15 @@ function openInvite() {
  * (`looksLikeAnEmail`), and the button says so before the write is asked for
  * rather than after it is refused.
  */
-function drawInvite() {
-    elements.inviteTitle.textContent = WORDS.groupInviteTitle(
+function drawInvitation() {
+    elements.invitationTitle.textContent = WORDS.groupInviteTitle(
         groupCaption(state.roster, state.profiles, state.member.memberId),
     );
-    elements.inviteEmail.placeholder = WORDS.groupInviteEmailLabel;
-    elements.inviteNote.textContent = WORDS.groupInviteNote;
-    elements.inviteCreate.textContent = WORDS.groupInviteCreate;
-    elements.inviteCancel.textContent = WORDS.nameCancel;
-    elements.inviteCreate.disabled = !looksLikeAnEmail(elements.inviteEmail.value.trim());
+    elements.invitationEmail.placeholder = WORDS.groupInviteEmailLabel;
+    elements.invitationNote.textContent = WORDS.groupInviteNote;
+    elements.invitationCreate.textContent = WORDS.groupInviteCreate;
+    elements.invitationCancel.textContent = WORDS.nameCancel;
+    elements.invitationCreate.disabled = !looksLikeAnEmail(elements.invitationEmail.value.trim());
 }
 
 elements.adminClose.addEventListener('click', closeAdmin);
@@ -363,17 +363,17 @@ elements.renameSave.addEventListener('click', () => {
 });
 closeOnClickOutside(elements.rename, () => elements.rename.close());
 
-elements.inviteEmail.addEventListener('input', drawInvite);
-elements.inviteCancel.addEventListener('click', () => elements.invite.close());
-elements.inviteCreate.addEventListener('click', () => {
-    const email = elements.inviteEmail.value.trim();
+elements.invitationEmail.addEventListener('input', drawInvitation);
+elements.invitationCancel.addEventListener('click', () => elements.invitation.close());
+elements.invitationCreate.addEventListener('click', () => {
+    const email = elements.invitationEmail.value.trim();
 
-    elements.invite.close();
+    elements.invitation.close();
     tryGroupWrite(async () => {
         state.invitation = await makeInvitation(state.member.memberId, email);
     });
 });
-closeOnClickOutside(elements.invite, () => elements.invite.close());
+closeOnClickOutside(elements.invitation, () => elements.invitation.close());
 
 // The escape key closes a dialog on its own, so only the dark behind the
 // window is left to answer for: a click there closes it the way a tap beside a
@@ -395,7 +395,7 @@ elements.admin.addEventListener('click', (event) => {
     }
 });
 
-elements.adminMakeInvitation.addEventListener('click', openInvite);
+elements.adminMakeInvitation.addEventListener('click', openInvitation);
 
 elements.adminShare.addEventListener('click', async () => {
     const link = currentInvitationLink();
