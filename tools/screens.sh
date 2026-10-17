@@ -206,6 +206,10 @@ set_screen() {
     adb_e root > /dev/null
     sleep 3
     adb_e shell setprop persist.sys.timezone Europe/Tallinn
+    # System UI lays the status bar out for the size and density it started
+    # with; after a few changes in one run of the emulator it draws the clock
+    # and the icons cut in half. Started again, it lays them out afresh.
+    restart_system_ui
     adb_e shell settings put global sysui_demo_allowed 1
     local command
     for command in \
@@ -219,11 +223,26 @@ set_screen() {
     done
 }
 
+restart_system_ui() {
+    adb_e shell pkill -f com.android.systemui || true
+    local deadline=$((SECONDS + WAIT_TIMEOUT))
+    until adb_e shell pidof com.android.systemui > /dev/null 2>&1; do
+        if ((SECONDS >= deadline)); then
+            echo "error: System UI did not come back in ${WAIT_TIMEOUT}s" >&2
+            return 1
+        fi
+        sleep 1
+    done
+    # Its first frames still come from the old layout.
+    sleep 5
+}
+
 restore_screen() {
     adb_e shell am broadcast -a com.android.systemui.demo -e command exit > /dev/null
     adb_e shell wm size reset
     adb_e shell wm density reset
     adb_e shell cmd uimode night no > /dev/null
+    restart_system_ui
 }
 
 # The showcase household afresh; with --first-share, Anna shares with nobody
