@@ -1,0 +1,662 @@
+{
+  "comment": "Connection links as ConnectLink.parse (Kotlin) reads them; web/tests/join.test.mjs holds invitationTyped (join.js) to the same list. expected is null, or the site and the invitation: null for the owner's link, which invitationTyped reports as no invitation.",
+  "cases": [
+    {
+      "name": "the owner's link alone",
+      "text": "https://imaginary-group.web.app/join",
+      "expected": {
+        "site": "imaginary-group",
+        "invitation": null
+      }
+    },
+    {
+      "name": "the owner's link with a trailing slash",
+      "text": "https://imaginary-group.web.app/join/",
+      "expected": {
+        "site": "imaginary-group",
+        "invitation": null
+      }
+    },
+    {
+      "name": "the owner's link with an empty query",
+      "text": "https://imaginary-group.web.app/join?",
+      "expected": {
+        "site": "imaginary-group",
+        "invitation": null
+      }
+    },
+    {
+      "name": "the owner's link with an empty fragment",
+      "text": "https://imaginary-group.web.app/join#",
+      "expected": {
+        "site": "imaginary-group",
+        "invitation": null
+      }
+    },
+    {
+      "name": "the owner's link with a stray query",
+      "text": "https://imaginary-group.web.app/join?utm_source=chat",
+      "expected": {
+        "site": "imaginary-group",
+        "invitation": null
+      }
+    },
+    {
+      "name": "a bare invitation in the fragment",
+      "text": "https://imaginary-group.web.app/join#g=grp&c=ABCDEFGH",
+      "expected": {
+        "site": "imaginary-group",
+        "invitation": {
+          "groupId": "grp",
+          "code": "ABCDEFGH",
+          "inviter": null,
+          "groupName": null,
+          "invitedAddress": null
+        }
+      }
+    },
+    {
+      "name": "every field, text around, a full stop after",
+      "text": "Join us: https://imaginary-group.web.app/join#g=grp&c=ABCDEFGH&by=Alice&n=Family&to=al…@x.com. See you!",
+      "expected": {
+        "site": "imaginary-group",
+        "invitation": {
+          "groupId": "grp",
+          "code": "ABCDEFGH",
+          "inviter": "Alice",
+          "groupName": "Family",
+          "invitedAddress": "al…@x.com"
+        }
+      }
+    },
+    {
+      "name": "the other host and a slash after join",
+      "text": "https://imaginary-group.firebaseapp.com/join/#g=grp&c=ABCDEFGH",
+      "expected": {
+        "site": "imaginary-group",
+        "invitation": {
+          "groupId": "grp",
+          "code": "ABCDEFGH",
+          "inviter": null,
+          "groupName": null,
+          "invitedAddress": null
+        }
+      }
+    },
+    {
+      "name": "the invitation in the query",
+      "text": "https://imaginary-group.web.app/join?g=grp&c=ABCDEFGH&by=Bob",
+      "expected": {
+        "site": "imaginary-group",
+        "invitation": {
+          "groupId": "grp",
+          "code": "ABCDEFGH",
+          "inviter": "Bob",
+          "groupName": null,
+          "invitedAddress": null
+        }
+      }
+    },
+    {
+      "name": "the fragment wins over the query",
+      "text": "https://imaginary-group.web.app/join?g=old&c=OLDCODE1#g=grp&by=Anna",
+      "expected": {
+        "site": "imaginary-group",
+        "invitation": {
+          "groupId": "grp",
+          "code": "OLDCODE1",
+          "inviter": "Anna",
+          "groupName": null,
+          "invitedAddress": null
+        }
+      }
+    },
+    {
+      "name": "a plus is a space",
+      "text": "https://imaginary-group.web.app/join#g=grp&c=ABCDEFGH&n=Home+Sweet",
+      "expected": {
+        "site": "imaginary-group",
+        "invitation": {
+          "groupId": "grp",
+          "code": "ABCDEFGH",
+          "inviter": null,
+          "groupName": "Home Sweet",
+          "invitedAddress": null
+        }
+      }
+    },
+    {
+      "name": "an encoded plus stays a plus",
+      "text": "https://imaginary-group.web.app/join#g=grp&c=AB%2BCD",
+      "expected": {
+        "site": "imaginary-group",
+        "invitation": {
+          "groupId": "grp",
+          "code": "AB+CD",
+          "inviter": null,
+          "groupName": null,
+          "invitedAddress": null
+        }
+      }
+    },
+    {
+      "name": "a percent sign written as %25",
+      "text": "https://imaginary-group.web.app/join#g=grp&c=ABCDEFGH&n=100%25+sure",
+      "expected": {
+        "site": "imaginary-group",
+        "invitation": {
+          "groupId": "grp",
+          "code": "ABCDEFGH",
+          "inviter": null,
+          "groupName": "100% sure",
+          "invitedAddress": null
+        }
+      }
+    },
+    {
+      "name": "Cyrillic written as percent escapes",
+      "text": "https://imaginary-group.web.app/join#g=grp&c=ABCDEFGH&by=%D0%90%D0%BD%D0%BD%D0%B0",
+      "expected": {
+        "site": "imaginary-group",
+        "invitation": {
+          "groupId": "grp",
+          "code": "ABCDEFGH",
+          "inviter": "Анна",
+          "groupName": null,
+          "invitedAddress": null
+        }
+      }
+    },
+    {
+      "name": "Cyrillic written as it is",
+      "text": "https://imaginary-group.web.app/join#g=grp&c=ABCDEFGH&by=Анна",
+      "expected": {
+        "site": "imaginary-group",
+        "invitation": {
+          "groupId": "grp",
+          "code": "ABCDEFGH",
+          "inviter": "Анна",
+          "groupName": null,
+          "invitedAddress": null
+        }
+      }
+    },
+    {
+      "name": "a surrogate pair as percent escapes",
+      "text": "https://imaginary-group.web.app/join#g=grp&c=ABCDEFGH&n=Cat%F0%9F%90%88",
+      "expected": {
+        "site": "imaginary-group",
+        "invitation": {
+          "groupId": "grp",
+          "code": "ABCDEFGH",
+          "inviter": null,
+          "groupName": "Cat🐈",
+          "invitedAddress": null
+        }
+      }
+    },
+    {
+      "name": "a surrogate pair as it is, in the group id",
+      "text": "https://imaginary-group.web.app/join#g=😀&c=ABCDEFGH",
+      "expected": {
+        "site": "imaginary-group",
+        "invitation": {
+          "groupId": "😀",
+          "code": "ABCDEFGH",
+          "inviter": null,
+          "groupName": null,
+          "invitedAddress": null
+        }
+      }
+    },
+    {
+      "name": "a caption cut inside a surrogate pair drops the pair",
+      "text": "https://imaginary-group.web.app/join#g=grp&c=ABCDEFGH&n=aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa%F0%9F%98%80",
+      "expected": {
+        "site": "imaginary-group",
+        "invitation": {
+          "groupId": "grp",
+          "code": "ABCDEFGH",
+          "inviter": null,
+          "groupName": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "invitedAddress": null
+        }
+      }
+    },
+    {
+      "name": "a caption of 70 characters is cut to 60",
+      "text": "https://imaginary-group.web.app/join#g=grp&c=ABCDEFGH&by=xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+      "expected": {
+        "site": "imaginary-group",
+        "invitation": {
+          "groupId": "grp",
+          "code": "ABCDEFGH",
+          "inviter": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+          "groupName": null,
+          "invitedAddress": null
+        }
+      }
+    },
+    {
+      "name": "a caption is trimmed",
+      "text": "https://imaginary-group.web.app/join#g=grp&c=ABCDEFGH&by=%20Alice%20&n=%C2%A0Home",
+      "expected": {
+        "site": "imaginary-group",
+        "invitation": {
+          "groupId": "grp",
+          "code": "ABCDEFGH",
+          "inviter": "Alice",
+          "groupName": "Home",
+          "invitedAddress": null
+        }
+      }
+    },
+    {
+      "name": "a blank caption is dropped",
+      "text": "https://imaginary-group.web.app/join#g=grp&c=ABCDEFGH&by=%20%20&n=&to=%09",
+      "expected": {
+        "site": "imaginary-group",
+        "invitation": {
+          "groupId": "grp",
+          "code": "ABCDEFGH",
+          "inviter": null,
+          "groupName": null,
+          "invitedAddress": null
+        }
+      }
+    },
+    {
+      "name": "an invalid UTF-8 byte becomes the replacement character",
+      "text": "https://imaginary-group.web.app/join#g=grp&c=ABCDEFGH&n=a%FFb",
+      "expected": {
+        "site": "imaginary-group",
+        "invitation": {
+          "groupId": "grp",
+          "code": "ABCDEFGH",
+          "inviter": null,
+          "groupName": "a�b",
+          "invitedAddress": null
+        }
+      }
+    },
+    {
+      "name": "a closing bracket and a full stop after the link",
+      "text": "(see https://imaginary-group.web.app/join#g=grp&c=ABCDEFGH).",
+      "expected": {
+        "site": "imaginary-group",
+        "invitation": {
+          "groupId": "grp",
+          "code": "ABCDEFGH",
+          "inviter": null,
+          "groupName": null,
+          "invitedAddress": null
+        }
+      }
+    },
+    {
+      "name": "angle brackets and a question mark around the link",
+      "text": "<https://imaginary-group.web.app/join#g=grp&c=ABCDEFGH>?",
+      "expected": {
+        "site": "imaginary-group",
+        "invitation": {
+          "groupId": "grp",
+          "code": "ABCDEFGH",
+          "inviter": null,
+          "groupName": null,
+          "invitedAddress": null
+        }
+      }
+    },
+    {
+      "name": "quotes and a semicolon after the link",
+      "text": "\"https://imaginary-group.web.app/join#g=grp&c=ABCDEFGH\";",
+      "expected": {
+        "site": "imaginary-group",
+        "invitation": {
+          "groupId": "grp",
+          "code": "ABCDEFGH",
+          "inviter": null,
+          "groupName": null,
+          "invitedAddress": null
+        }
+      }
+    },
+    {
+      "name": "punctuation inside a value is kept",
+      "text": "https://imaginary-group.web.app/join#g=grp&c=ABCDEFGH&by=A.B,&to=a@b.com,",
+      "expected": {
+        "site": "imaginary-group",
+        "invitation": {
+          "groupId": "grp",
+          "code": "ABCDEFGH",
+          "inviter": "A.B,",
+          "groupName": null,
+          "invitedAddress": "a@b.com"
+        }
+      }
+    },
+    {
+      "name": "a second hash belongs to the last value",
+      "text": "https://imaginary-group.web.app/join#g=grp&c=ABCDEFGH#more",
+      "expected": {
+        "site": "imaginary-group",
+        "invitation": {
+          "groupId": "grp",
+          "code": "ABCDEFGH#more",
+          "inviter": null,
+          "groupName": null,
+          "invitedAddress": null
+        }
+      }
+    },
+    {
+      "name": "a pair without an equals sign is skipped",
+      "text": "https://imaginary-group.web.app/join#g=grp&flag&c=ABCDEFGH",
+      "expected": {
+        "site": "imaginary-group",
+        "invitation": {
+          "groupId": "grp",
+          "code": "ABCDEFGH",
+          "inviter": null,
+          "groupName": null,
+          "invitedAddress": null
+        }
+      }
+    },
+    {
+      "name": "the last of two equal keys wins",
+      "text": "https://imaginary-group.web.app/join#g=a&g=b&c=ABCDEFGH",
+      "expected": {
+        "site": "imaginary-group",
+        "invitation": {
+          "groupId": "b",
+          "code": "ABCDEFGH",
+          "inviter": null,
+          "groupName": null,
+          "invitedAddress": null
+        }
+      }
+    },
+    {
+      "name": "a code is taken as written, lower case and dashes too",
+      "text": "https://imaginary-group.web.app/join#g=grp&c=abcd-efgh",
+      "expected": {
+        "site": "imaginary-group",
+        "invitation": {
+          "groupId": "grp",
+          "code": "abcd-efgh",
+          "inviter": null,
+          "groupName": null,
+          "invitedAddress": null
+        }
+      }
+    },
+    {
+      "name": "a new line ends the link",
+      "text": "https://imaginary-group.web.app/join#g=grp&c=ABCDEFGH\nsecond line",
+      "expected": {
+        "site": "imaginary-group",
+        "invitation": {
+          "groupId": "grp",
+          "code": "ABCDEFGH",
+          "inviter": null,
+          "groupName": null,
+          "invitedAddress": null
+        }
+      }
+    },
+    {
+      "name": "a no-break space does not end the link",
+      "text": "https://imaginary-group.web.app/join#g=grp&c=ABCDEFGH\u00a0thanks",
+      "expected": {
+        "site": "imaginary-group",
+        "invitation": {
+          "groupId": "grp",
+          "code": "ABCDEFGH\u00a0thanks",
+          "inviter": null,
+          "groupName": null,
+          "invitedAddress": null
+        }
+      }
+    },
+    {
+      "name": "a group id of a no-break space is blank, as Char.isWhitespace has it",
+      "text": "https://imaginary-group.web.app/join#g=%C2%A0&c=ABCDEFGH",
+      "expected": null
+    },
+    {
+      "name": "a group id of a narrow no-break space is blank",
+      "text": "https://imaginary-group.web.app/join#g=%E2%80%AF&c=ABCDEFGH",
+      "expected": null
+    },
+    {
+      "name": "a group id of a byte order mark is not blank",
+      "text": "https://imaginary-group.web.app/join#g=%EF%BB%BF&c=ABCDEFGH",
+      "expected": {
+        "site": "imaginary-group",
+        "invitation": {
+          "groupId": "\ufeff",
+          "code": "ABCDEFGH",
+          "inviter": null,
+          "groupName": null,
+          "invitedAddress": null
+        }
+      }
+    },
+    {
+      "name": "a group id of ordinary blanks is refused",
+      "text": "https://imaginary-group.web.app/join#g=%20%09&c=ABCDEFGH",
+      "expected": null
+    },
+    {
+      "name": "an empty group id is refused",
+      "text": "https://imaginary-group.web.app/join#g=&c=ABCDEFGH",
+      "expected": null
+    },
+    {
+      "name": "an empty code is refused",
+      "text": "https://imaginary-group.web.app/join#g=grp&c=",
+      "expected": null
+    },
+    {
+      "name": "both fields empty are refused",
+      "text": "https://imaginary-group.web.app/join#g=&c=",
+      "expected": null
+    },
+    {
+      "name": "a group without a code is refused",
+      "text": "https://imaginary-group.web.app/join#g=grp",
+      "expected": null
+    },
+    {
+      "name": "a code without a group is refused",
+      "text": "https://imaginary-group.web.app/join#c=ABCDEFGH",
+      "expected": null
+    },
+    {
+      "name": "a malformed escape drops the group, so the invitation is refused",
+      "text": "https://imaginary-group.web.app/join#g=%ZZ&c=ABCDEFGH",
+      "expected": null
+    },
+    {
+      "name": "a malformed escape in the only field leaves the owner's link",
+      "text": "https://imaginary-group.web.app/join#g=%ZZ",
+      "expected": {
+        "site": "imaginary-group",
+        "invitation": null
+      }
+    },
+    {
+      "name": "a malformed escape in a caption drops the caption",
+      "text": "https://imaginary-group.web.app/join#g=grp&c=ABCDEFGH&by=%ZZ&n=Home",
+      "expected": {
+        "site": "imaginary-group",
+        "invitation": {
+          "groupId": "grp",
+          "code": "ABCDEFGH",
+          "inviter": null,
+          "groupName": "Home",
+          "invitedAddress": null
+        }
+      }
+    },
+    {
+      "name": "an incomplete escape at the end drops the field",
+      "text": "https://imaginary-group.web.app/join#g=grp&c=ABCDEFGH&n=50%",
+      "expected": {
+        "site": "imaginary-group",
+        "invitation": {
+          "groupId": "grp",
+          "code": "ABCDEFGH",
+          "inviter": null,
+          "groupName": null,
+          "invitedAddress": null
+        }
+      }
+    },
+    {
+      "name": "an escape of one digit drops the field",
+      "text": "https://imaginary-group.web.app/join#g=grp&c=ABCDEFGH&n=5%4",
+      "expected": {
+        "site": "imaginary-group",
+        "invitation": {
+          "groupId": "grp",
+          "code": "ABCDEFGH",
+          "inviter": null,
+          "groupName": null,
+          "invitedAddress": null
+        }
+      }
+    },
+    {
+      "name": "a key is not decoded",
+      "text": "https://imaginary-group.web.app/join#%67=grp&c=ABCDEFGH",
+      "expected": null
+    },
+    {
+      "name": "a key is case sensitive",
+      "text": "https://imaginary-group.web.app/join#G=grp&c=ABCDEFGH",
+      "expected": null
+    },
+    {
+      "name": "a site id starting with a digit is refused",
+      "text": "https://1imaginary-group.web.app/join#g=grp&c=ABCDEFGH",
+      "expected": null
+    },
+    {
+      "name": "a site id in upper case is refused",
+      "text": "https://Imaginary-Group.web.app/join#g=grp&c=ABCDEFGH",
+      "expected": null
+    },
+    {
+      "name": "a site id with digits and hyphens inside",
+      "text": "https://a1-b2.web.app/join#g=grp&c=ABCDEFGH",
+      "expected": {
+        "site": "a1-b2",
+        "invitation": {
+          "groupId": "grp",
+          "code": "ABCDEFGH",
+          "inviter": null,
+          "groupName": null,
+          "invitedAddress": null
+        }
+      }
+    },
+    {
+      "name": "a one-letter site id",
+      "text": "https://a.web.app/join",
+      "expected": {
+        "site": "a",
+        "invitation": null
+      }
+    },
+    {
+      "name": "a scheme in upper case is refused",
+      "text": "HTTPS://imaginary-group.web.app/join#g=grp&c=ABCDEFGH",
+      "expected": null
+    },
+    {
+      "name": "http is refused",
+      "text": "http://imaginary-group.web.app/join#g=grp&c=ABCDEFGH",
+      "expected": null
+    },
+    {
+      "name": "another host is refused",
+      "text": "https://example.com/join#g=grp&c=ABCDEFGH",
+      "expected": null
+    },
+    {
+      "name": "a host with more after it is refused",
+      "text": "https://imaginary-group.web.app.example.com/join#g=grp&c=ABCDEFGH",
+      "expected": null
+    },
+    {
+      "name": "a path in upper case is refused",
+      "text": "https://imaginary-group.web.app/JOIN#g=grp&c=ABCDEFGH",
+      "expected": null
+    },
+    {
+      "name": "a path that only starts with join is refused",
+      "text": "https://imaginary-group.web.app/joinx#g=grp&c=ABCDEFGH",
+      "expected": null
+    },
+    {
+      "name": "a path below join is refused",
+      "text": "https://imaginary-group.web.app/join/extra#g=grp&c=ABCDEFGH",
+      "expected": null
+    },
+    {
+      "name": "another page is refused",
+      "text": "https://imaginary-group.web.app/other#g=grp&c=ABCDEFGH",
+      "expected": null
+    },
+    {
+      "name": "no path is refused",
+      "text": "https://imaginary-group.web.app/",
+      "expected": null
+    },
+    {
+      "name": "only the first link is read, and it is not an invitation",
+      "text": "https://imaginary-group.web.app/other https://imaginary-group.web.app/join#g=grp&c=ABCDEFGH",
+      "expected": null
+    },
+    {
+      "name": "only the first link is read, and it is one",
+      "text": "https://imaginary-group.web.app/join#g=one&c=ABCDEFGH https://other-site.web.app/join#g=two&c=ZZZZZZZZ",
+      "expected": {
+        "site": "imaginary-group",
+        "invitation": {
+          "groupId": "one",
+          "code": "ABCDEFGH",
+          "inviter": null,
+          "groupName": null,
+          "invitedAddress": null
+        }
+      }
+    },
+    {
+      "name": "a link inside another address is found",
+      "text": "https://evil.example.com/https://imaginary-group.web.app/join#g=grp&c=ABCDEFGH",
+      "expected": {
+        "site": "imaginary-group",
+        "invitation": {
+          "groupId": "grp",
+          "code": "ABCDEFGH",
+          "inviter": null,
+          "groupName": null,
+          "invitedAddress": null
+        }
+      }
+    },
+    {
+      "name": "text with no link",
+      "text": "thanks!",
+      "expected": null
+    },
+    {
+      "name": "empty text",
+      "text": "",
+      "expected": null
+    }
+  ]
+}

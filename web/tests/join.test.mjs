@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
 import { test } from 'node:test';
 
 import {
@@ -437,3 +438,32 @@ test('an emoji on the sixtieth position is dropped whole or kept whole', () => {
     assert.equal(readBack(`${'a'.repeat(58)}${EMOJI}`), `${'a'.repeat(58)}${EMOJI}`);
     assert.equal(readBack(`${'a'.repeat(60)}${EMOJI}`), 'a'.repeat(60));
 });
+
+// The cases ConnectLinkTest reads too: what the application's ConnectLink.parse
+// makes of a text, the page's invitationTyped has to make the same of it. The
+// one difference is the owner's link, which has no invitation to report.
+const CONNECT_LINKS = JSON.parse(
+    readFileSync(new URL('./fixtures/connect-links.json', import.meta.url), 'utf8'),
+);
+
+for (const { name, text, expected } of CONNECT_LINKS.cases) {
+    test(`the shared link cases: ${name}`, () => {
+        const invitation = expected === null ? null : expected.invitation;
+        const typed = invitationTyped(text);
+
+        if (invitation === null) {
+            assert.equal(typed, null);
+
+            return;
+        }
+
+        assert.deepEqual(typed, {
+            site: expected.site,
+            groupId: invitation.groupId,
+            code: invitation.code,
+            by: invitation.inviter ?? '',
+            name: invitation.groupName ?? '',
+            to: invitation.invitedAddress ?? '',
+        });
+    });
+}

@@ -73,24 +73,63 @@ export function parseInvitation(hash) {
 }
 
 /**
- * Where a link found in pasted text ends, and what it carries after `/join`:
- * a query, a fragment, or both, either of which may hold the invitation.
- *
- * The query is read too, not only the fragment invitationLink writes: the
- * application's own deep link moves the fields there (see buildIntentUrl),
- * and a person forwarding that link — from a browser's address bar rather
- * than the page's own button — pastes the query form. Either Hosting host
- * is accepted, and `/join/` as well as `/join`, as the application does
- * (ConnectLink.parse).
+ * A link found in pasted text: the site id and everything after the slash that
+ * follows the host. Written as ConnectLink's LINK_PATTERN is, so that both
+ * find the same link in the same text: lower case only, a site id that starts
+ * with a letter, and white space meaning what it means to java.util.regex
+ * (ASCII only, so a no-break space does not end a link) rather than to
+ * JavaScript's \s.
  */
 const PASTED_LINK = new RegExp(
-    String.raw`https://([a-z0-9-]+)\.(?:web\.app|firebaseapp\.com)/join/?`
-        + String.raw`(?:\?([^\s#]*))?(?:#([^\s]*))?`,
-    'iu',
+    String.raw`https://([a-z][a-z0-9-]*)\.(?:web\.app|firebaseapp\.com)/([^ \t\n\v\f\r]*)`,
+    'u',
 );
 
 /** Punctuation a messenger tacks onto a link it autolinks, trimmed off the end. */
 const TRAILING_PUNCTUATION = /[).,;:!?\]}'"<>]+$/u;
+
+/**
+ * What Kotlin's isBlank() calls blank: Char.isWhitespace, which on the JVM is
+ * Character.isWhitespace or Character.isSpaceChar — the controls U+0009..000D
+ * and U+001C..001F and every space, line and paragraph separator, the
+ * no-break ones included. Not the set trimText strips (that one keeps
+ * U+001C..001F and strips U+FEFF).
+ */
+const BLANK = /^[\t-\r\u001C-\u001F\p{Z}]*$/u;
+
+/**
+ * [value] percent-decoded as java.net.URLDecoder does it (a plus is a space),
+ * or null when it holds a percent sign that is not followed by two hex digits,
+ * which URLDecoder refuses and ConnectLink drops the field for. URLSearchParams
+ * would keep such a value as it stands.
+ */
+function decodeField(value) {
+    if (/%(?![0-9a-fA-F]{2})/u.test(value)) {
+        return null;
+    }
+
+    return new URLSearchParams(`x=${value}`).get('x');
+}
+
+/**
+ * The fields of a query or a fragment, read as ConnectLink.fieldsOf reads
+ * them: the key is taken as it is written, not decoded, a pair whose value
+ * cannot be decoded is dropped, and the last of two equal keys wins.
+ */
+function fieldsOf(part) {
+    const fields = new Map();
+
+    for (const pair of part.split('&')) {
+        const eq = pair.indexOf('=');
+        const value = eq < 0 ? null : decodeField(pair.slice(eq + 1));
+
+        if (value !== null) {
+            fields.set(pair.slice(0, eq), value);
+        }
+    }
+
+    return fields;
+}
 
 /**
  * An invitation read out of whatever was pasted into the "join" field
@@ -100,33 +139,60 @@ const TRAILING_PUNCTUATION = /[).,;:!?\]}'"<>]+$/u;
  *
  * A link rarely arrives alone — a forwarded message carries a messenger's own
  * signature around it — so PASTED_LINK looks for the address inside the text
- * rather than asking the whole field to be one. The invited address is not
- * capped a second time: the sender wrote nothing that parseInvitation did not
- * already trim and cut short.
+ * rather than asking the whole field to be one. The link is read exactly as
+ * ConnectLink.parse reads it, apart from the one thing the two are for: this
+ * returns null for the project owner's link, which carries no invitation,
+ * where the application returns the link without one. The query is read too,
+ * not only the fragment invitationLink writes: the application's own deep
+ * link moves the fields there (see buildIntentUrl), and a person forwarding
+ * that link pastes the query form. Where both carry a field, the fragment's
+ * wins. The invited address is not capped a second time: the sender wrote
+ * nothing that parseInvitation did not already trim and cut short.
  */
 export function invitationTyped(text) {
     const found = PASTED_LINK.exec(text);
 
-    if (found !== null) {
-        const [, site, query = '', fragment] = found;
-        // Both halves are read, as the application reads them (ConnectLink.parse):
-        // the join page hands a link over with the invitation in the query, a
-        // link shared as it is keeps it after the #. The fragment comes first,
-        // so that where both carry a field its value is the one taken; what
-        // follows the link in the text sticks to whichever half ends it.
-        const parts = fragment === undefined
-            ? [query.replace(TRAILING_PUNCTUATION, '')]
-            : [fragment.replace(TRAILING_PUNCTUATION, ''), query];
-        const invitation = parseInvitation(parts.filter(Boolean).join('&'));
+    if (found === null) {
+        const typed = invitationFrom(text);
 
-        return invitation === null ? null : { site, ...invitation };
+        return typed === null
+            ? null
+            : { site: null, groupId: typed.group, code: typed.code, by: '', name: '', to: '' };
     }
 
-    const typed = invitationFrom(text);
+    const [, site, rawTail] = found;
+    const rest = rawTail.replace(TRAILING_PUNCTUATION, '');
+    const hash = rest.indexOf('#');
+    const beforeHash = hash >= 0 ? rest.slice(0, hash) : rest;
+    const fragment = hash >= 0 ? rest.slice(hash + 1) : '';
+    const question = beforeHash.indexOf('?');
+    const path = question >= 0 ? beforeHash.slice(0, question) : beforeHash;
+    const query = question >= 0 ? beforeHash.slice(question + 1) : '';
 
-    return typed === null
-        ? null
-        : { site: null, groupId: typed.group, code: typed.code, by: '', name: '', to: '' };
+    if (path !== 'join' && path !== 'join/') {
+        return null;
+    }
+
+    const fields = new Map([...fieldsOf(query), ...fieldsOf(fragment)]);
+    const groupId = fields.get('g');
+    const code = fields.get('c');
+
+    if (groupId === undefined && code === undefined) {
+        return null;
+    }
+
+    if (groupId === undefined || code === undefined || BLANK.test(groupId) || BLANK.test(code)) {
+        return null;
+    }
+
+    return {
+        site,
+        groupId,
+        code,
+        by: capCaption(fields.get('by') ?? null),
+        name: capCaption(fields.get('n') ?? null),
+        to: capCaption(fields.get('to') ?? null),
+    };
 }
 
 /**

@@ -1,15 +1,25 @@
 package io.github.vitalyostanin.geoshare.project
 
 import io.github.vitalyostanin.geoshare.cutToLimit
+import org.json.JSONObject
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
+import org.junit.Assert.assertTrue
 import org.junit.Test
+import java.io.File
 import java.net.URLEncoder
 import java.util.Random
 
 private const val SITE = "geoshare-example-abc123"
 
 private const val EMOJI = "\uD83D\uDE00"
+
+/**
+ * The cases the join page's `invitationTyped` is held to as well
+ * (`web/tests/join.test.mjs`). Relative to the module, which is where Gradle
+ * runs these tests from.
+ */
+private const val SHARED_CASES = "../../web/tests/fixtures/connect-links.json"
 
 private val PIECES = listOf(
     "a", "b", "Z", "7", "Я", "ж", "é", " ", "  ", "\t", "&", "#", "%", "=", "+", "?", "/", "…",
@@ -337,6 +347,51 @@ class ConnectLinkTest {
             )
         }
     }
+
+    @Test
+    fun `every case the join page shares is read as the file says`() {
+        val cases = JSONObject(File(SHARED_CASES).readText()).getJSONArray("cases")
+
+        assertTrue("$SHARED_CASES holds no cases", cases.length() > 0)
+
+        for (index in 0 until cases.length()) {
+            val case = cases.getJSONObject(index)
+            val expected = if (case.isNull(
+                    "expected",
+                )
+            ) {
+                null
+            } else {
+                linkOf(case.getJSONObject("expected"))
+            }
+
+            assertEquals(
+                case.getString("name"),
+                expected,
+                ConnectLink.parse(case.getString("text")),
+            )
+        }
+    }
+
+    private fun linkOf(json: JSONObject): ConnectLink {
+        val invitation = if (json.isNull("invitation")) null else json.getJSONObject("invitation")
+
+        return ConnectLink(
+            site = json.getString("site"),
+            invitation = invitation?.let {
+                Invitation(
+                    groupId = it.getString("groupId"),
+                    code = it.getString("code"),
+                    inviter = it.optStringOrNull("inviter"),
+                    groupName = it.optStringOrNull("groupName"),
+                    invitedAddress = it.optStringOrNull("invitedAddress"),
+                )
+            },
+        )
+    }
+
+    private fun JSONObject.optStringOrNull(key: String): String? =
+        if (isNull(key)) null else getString(key)
 
     private fun readBackInviter(inviter: String): String? = ConnectLink.parse(
         ConnectLink.invitationLink(SITE, "g", "c", inviter, null, "ivan.petrov@example.com"),
