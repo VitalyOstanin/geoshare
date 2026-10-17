@@ -3,8 +3,10 @@
 # and the length is the only thing this run has to say.
 #
 # Held to the same 60 lines as the page's JavaScript, blank lines and comments
-# not counted. The functions already longer are listed in detekt-baseline.xml
-# and come off it as they are split; a new one fails the check.
+# not counted. A new function longer than that fails the check. The two left
+# in detekt-baseline.xml stay there on purpose: reasonsExplained is a list of
+# entries and settingsActions a table of callbacks, with no logic to split
+# out, and cut into pieces each reads worse than whole.
 complexity:
   active: true
   CognitiveComplexMethod:

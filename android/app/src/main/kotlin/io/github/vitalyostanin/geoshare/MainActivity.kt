@@ -395,16 +395,23 @@ class MainActivity : AppCompatActivity() {
                         }
                 }
 
-                unfinished?.let { projectId ->
-                    if (state is AuthState.SignedIn) {
-                        UnfinishedSignIn(
-                            caption = GroupNames.of(this, projectId) ?: projectId,
-                            onSignIn = { signInAgain(projectId) },
-                            onShown = { unfinished = null },
-                        )
-                    }
-                }
+                UnfinishedNotice(
+                    projectId = unfinished.takeIf { state is AuthState.SignedIn },
+                    onShown = { unfinished = null },
+                )
             }
+        }
+    }
+
+    /** The sign-in that did not finish, said once the map of the group gone back to is up. */
+    @Composable
+    private fun UnfinishedNotice(projectId: String?, onShown: () -> Unit) {
+        projectId?.let {
+            UnfinishedSignIn(
+                caption = GroupNames.of(this, it) ?: it,
+                onSignIn = { signInAgain(it) },
+                onShown = onShown,
+            )
         }
     }
 

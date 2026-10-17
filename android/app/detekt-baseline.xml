@@ -2,13 +2,7 @@
 <SmellBaseline>
   <ManuallySuppressedIssues/>
   <CurrentIssues>
-    <ID>LongMethod:FirstShare.kt:@Composable private fun FirstShareDialog</ID>
-    <ID>LongMethod:LeaveGroupDialog.kt:@Composable fun LeaveGroupDialog</ID>
-    <ID>LongMethod:LicencesScreen.kt:@Composable fun LicencesScreen</ID>
-    <ID>LongMethod:MainActivity.kt:MainActivity$@Composable private fun GroupsScreen</ID>
-    <ID>LongMethod:QrScanDialog.kt:@Composable private fun Scanner</ID>
     <ID>LongMethod:ReasonExplained.kt:fun reasonsExplained: List&lt;ReasonExplained></ID>
-    <ID>LongMethod:ReportScreen.kt:@Composable fun ReportScreen</ID>
     <ID>LongMethod:SettingsActionsFor.kt:internal fun settingsActions: SettingsActions</ID>
   </CurrentIssues>
 </SmellBaseline>

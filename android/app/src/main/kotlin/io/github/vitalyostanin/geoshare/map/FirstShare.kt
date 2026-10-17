@@ -158,39 +158,13 @@ private fun FirstShareDialog(
         title = { Text(text = stringResource(R.string.first_share_title)) },
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                Column(
-                    modifier =
-                    Modifier.heightIn(max = 280.dp).verticalScroll(rememberScrollState()),
-                ) {
-                    for (reader in readers) {
-                        val on = reader.memberId in chosen
-
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            modifier =
-                            Modifier
-                                .fillMaxWidth()
-                                .toggleable(
-                                    value = on,
-                                    role = Role.Checkbox,
-                                    onValueChange = { wanted ->
-                                        chosen =
-                                            if (wanted) {
-                                                chosen + reader.memberId
-                                            } else {
-                                                chosen - reader.memberId
-                                            }
-                                    },
-                                ),
-                        ) {
-                            Checkbox(checked = on, onCheckedChange = null)
-                            Text(
-                                text = reader.displayName,
-                                modifier = Modifier.padding(start = 12.dp),
-                            )
-                        }
-                    }
-                }
+                ReaderList(
+                    readers = readers,
+                    chosen = chosen,
+                    onToggle = { id, wanted ->
+                        chosen = if (wanted) chosen + id else chosen - id
+                    },
+                )
 
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
@@ -219,6 +193,40 @@ private fun FirstShareDialog(
             }
         },
     )
+}
+
+/** The readers as a scrollable list of checkboxes, each toggled by a tap on its row. */
+@Composable
+private fun ReaderList(
+    readers: List<MemberProfile>,
+    chosen: Set<String>,
+    onToggle: (String, Boolean) -> Unit,
+) {
+    Column(
+        modifier = Modifier.heightIn(max = 280.dp).verticalScroll(rememberScrollState()),
+    ) {
+        for (reader in readers) {
+            val on = reader.memberId in chosen
+
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                modifier =
+                Modifier
+                    .fillMaxWidth()
+                    .toggleable(
+                        value = on,
+                        role = Role.Checkbox,
+                        onValueChange = { wanted -> onToggle(reader.memberId, wanted) },
+                    ),
+            ) {
+                Checkbox(checked = on, onCheckedChange = null)
+                Text(
+                    text = reader.displayName,
+                    modifier = Modifier.padding(start = 12.dp),
+                )
+            }
+        }
+    }
 }
 
 /**

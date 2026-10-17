@@ -43,6 +43,7 @@ import androidx.core.content.FileProvider
 import io.github.vitalyostanin.geoshare.BuildConfig
 import io.github.vitalyostanin.geoshare.R
 import io.github.vitalyostanin.geoshare.log.AppLog
+import io.github.vitalyostanin.geoshare.log.IssueDraft
 import io.github.vitalyostanin.geoshare.log.Known
 import io.github.vitalyostanin.geoshare.log.buildIssue
 import io.github.vitalyostanin.geoshare.log.scrubLog
@@ -117,10 +118,7 @@ fun ReportScreen(
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
     var description by remember { mutableStateOf("") }
-    // Read and scrubbed off the main thread: the log is up to a quarter of a megabyte.
-    val log by produceState(initialValue = "") {
-        value = withContext(Dispatchers.IO) { scrubLog(readLog(), known) }
-    }
+    val log = rememberScrubbedLog(known, readLog)
     val draft =
         remember(description, log) {
             buildIssue(description, BuildConfig.VERSION_NAME, Build.VERSION.SDK_INT, log)
@@ -133,72 +131,109 @@ fun ReportScreen(
                 .windowInsetsPadding(WindowInsets.safeDrawing)
                 .verticalScroll(rememberScrollState()),
         ) {
-            Row(
-                modifier = Modifier.fillMaxWidth().padding(start = 16.dp, top = 8.dp, end = 8.dp),
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                Text(
-                    text = stringResource(R.string.report_title),
-                    style = MaterialTheme.typography.titleLarge,
-                    modifier = Modifier.weight(1f),
-                )
-
-                TextButton(onClick = onClose) {
-                    Text(text = stringResource(R.string.accuracy_back))
-                }
-            }
+            ReportHeader(onClose = onClose)
 
             HorizontalDivider()
 
-            Column(
-                modifier = Modifier.padding(16.dp),
-                verticalArrangement = Arrangement.spacedBy(12.dp),
-            ) {
-                OutlinedTextField(
-                    value = description,
-                    onValueChange = { description = it },
-                    label = { Text(text = stringResource(R.string.report_what_went_wrong)) },
-                    minLines = 3,
-                    modifier = Modifier.fillMaxWidth(),
-                )
-
-                Text(
-                    text = stringResource(R.string.report_what_is_sent),
-                    style = MaterialTheme.typography.titleMedium,
-                )
-
-                // Opened at its end: the last lines are the ones about the trouble.
-                val tailScroll = rememberScrollState()
-
-                LaunchedEffect(draft.tail) { tailScroll.scrollTo(tailScroll.maxValue) }
-
-                Text(
-                    text = draft.tail,
-                    style = MaterialTheme.typography.bodySmall,
-                    fontFamily = FontFamily.Monospace,
-                    modifier =
-                    Modifier
-                        .fillMaxWidth()
-                        .heightIn(max = 240.dp)
-                        .verticalScroll(tailScroll),
-                )
-
-                Button(
-                    onClick = { openIssue(context, draft.url) },
-                    modifier = Modifier.fillMaxWidth(),
-                ) {
-                    Text(text = stringResource(R.string.report_open_issue))
-                }
-
-                OutlinedButton(
-                    onClick = { scope.launch { shareLog(context, log) } },
-                    modifier = Modifier.fillMaxWidth(),
-                ) {
-                    Text(text = stringResource(R.string.report_share_log))
-                }
-            }
+            ReportBody(
+                description = description,
+                onDescriptionChange = { description = it },
+                draft = draft,
+                onOpenIssue = { openIssue(context, draft.url) },
+                onShareLog = { scope.launch { shareLog(context, log) } },
+            )
         }
     }
+}
+
+/**
+ * The log, read and scrubbed off the main thread: it is up to a quarter of a
+ * megabyte. Empty until it is in.
+ */
+@Composable
+private fun rememberScrubbedLog(known: Known, readLog: () -> String): String {
+    val log by produceState(initialValue = "") {
+        value = withContext(Dispatchers.IO) { scrubLog(readLog(), known) }
+    }
+
+    return log
+}
+
+/** The title of the screen and the button that leads back. */
+@Composable
+private fun ReportHeader(onClose: () -> Unit) {
+    Row(
+        modifier = Modifier.fillMaxWidth().padding(start = 16.dp, top = 8.dp, end = 8.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Text(
+            text = stringResource(R.string.report_title),
+            style = MaterialTheme.typography.titleLarge,
+            modifier = Modifier.weight(1f),
+        )
+
+        TextButton(onClick = onClose) {
+            Text(text = stringResource(R.string.accuracy_back))
+        }
+    }
+}
+
+/** The member's description, the part of the log that is sent, and the two ways to send it. */
+@Composable
+private fun ReportBody(
+    description: String,
+    onDescriptionChange: (String) -> Unit,
+    draft: IssueDraft,
+    onOpenIssue: () -> Unit,
+    onShareLog: () -> Unit,
+) {
+    Column(
+        modifier = Modifier.padding(16.dp),
+        verticalArrangement = Arrangement.spacedBy(12.dp),
+    ) {
+        OutlinedTextField(
+            value = description,
+            onValueChange = onDescriptionChange,
+            label = { Text(text = stringResource(R.string.report_what_went_wrong)) },
+            minLines = 3,
+            modifier = Modifier.fillMaxWidth(),
+        )
+
+        Text(
+            text = stringResource(R.string.report_what_is_sent),
+            style = MaterialTheme.typography.titleMedium,
+        )
+
+        LogTail(tail = draft.tail)
+
+        Button(onClick = onOpenIssue, modifier = Modifier.fillMaxWidth()) {
+            Text(text = stringResource(R.string.report_open_issue))
+        }
+
+        OutlinedButton(onClick = onShareLog, modifier = Modifier.fillMaxWidth()) {
+            Text(text = stringResource(R.string.report_share_log))
+        }
+    }
+}
+
+/** The part of the log that goes into the issue, opened at its end. */
+@Composable
+private fun LogTail(tail: String) {
+    // Opened at its end: the last lines are the ones about the trouble.
+    val tailScroll = rememberScrollState()
+
+    LaunchedEffect(tail) { tailScroll.scrollTo(tailScroll.maxValue) }
+
+    Text(
+        text = tail,
+        style = MaterialTheme.typography.bodySmall,
+        fontFamily = FontFamily.Monospace,
+        modifier =
+        Modifier
+            .fillMaxWidth()
+            .heightIn(max = 240.dp)
+            .verticalScroll(tailScroll),
+    )
 }
 
 private fun openIssue(context: Context, url: String) {

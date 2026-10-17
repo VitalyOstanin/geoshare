@@ -100,9 +100,29 @@ internal fun licenceLines(json: String): List<LicenceLine> = Libs
  */
 @Composable
 fun LicencesScreen(onClose: () -> Unit, modifier: Modifier = Modifier) {
+    val lines = rememberLicenceLines()
+    var shown by remember { mutableStateOf<LicenceLine?>(null) }
+
+    Surface(modifier = modifier.fillMaxSize()) {
+        Column(modifier = Modifier.windowInsetsPadding(WindowInsets.safeDrawing)) {
+            LicencesHeader(onClose = onClose)
+
+            HorizontalDivider()
+
+            LicenceList(lines = lines.orEmpty(), onOpen = { shown = it })
+        }
+    }
+
+    shown?.let { line -> LicenceDialog(line = line, onDismiss = { shown = null }) }
+}
+
+/**
+ * The lines of the screen, read off the main thread: the list carries the full
+ * text of every licence. Null until they are in.
+ */
+@Composable
+private fun rememberLicenceLines(): List<LicenceLine>? {
     val resources = LocalContext.current.resources
-    // Read off the main thread: the list carries the full text of every
-    // licence.
     val lines by produceState<List<LicenceLine>?>(initialValue = null) {
         value =
             withContext(Dispatchers.IO) {
@@ -114,67 +134,72 @@ fun LicencesScreen(onClose: () -> Unit, modifier: Modifier = Modifier) {
                 licenceLines(json)
             }
     }
-    var shown by remember { mutableStateOf<LicenceLine?>(null) }
 
-    Surface(modifier = modifier.fillMaxSize()) {
-        Column(modifier = Modifier.windowInsetsPadding(WindowInsets.safeDrawing)) {
-            Row(
-                modifier = Modifier.fillMaxWidth().padding(start = 16.dp, top = 8.dp, end = 8.dp),
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                Text(
-                    text = stringResource(R.string.licences_title),
-                    style = MaterialTheme.typography.titleLarge,
-                    modifier = Modifier.weight(1f),
-                )
+    return lines
+}
 
-                TextButton(onClick = onClose) {
-                    Text(text = stringResource(R.string.settings_close))
-                }
-            }
+/** The title of the screen and the button that closes it. */
+@Composable
+private fun LicencesHeader(onClose: () -> Unit) {
+    Row(
+        modifier = Modifier.fillMaxWidth().padding(start = 16.dp, top = 8.dp, end = 8.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Text(
+            text = stringResource(R.string.licences_title),
+            style = MaterialTheme.typography.titleLarge,
+            modifier = Modifier.weight(1f),
+        )
 
-            HorizontalDivider()
-
-            LazyColumn {
-                item {
-                    Text(
-                        text = stringResource(R.string.licences_intro),
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp),
-                    )
-
-                    HorizontalDivider()
-                }
-
-                items(lines.orEmpty(), key = { "${it.name}:${it.version}" }) { line ->
-                    LicenceRow(line = line, onOpen = { shown = line })
-
-                    HorizontalDivider()
-                }
-            }
+        TextButton(onClick = onClose) {
+            Text(text = stringResource(R.string.settings_close))
         }
     }
+}
 
-    shown?.let { line ->
-        AlertDialog(
-            onDismissRequest = { shown = null },
-            title = { Text(text = line.name) },
-            text = {
-                Text(
-                    text = line.text,
-                    style = MaterialTheme.typography.bodySmall,
-                    fontFamily = FontFamily.Monospace,
-                    modifier = Modifier.verticalScroll(rememberScrollState()),
-                )
-            },
-            confirmButton = {
-                TextButton(onClick = { shown = null }) {
-                    Text(text = stringResource(R.string.settings_close))
-                }
-            },
-        )
+/** The introduction and, under it, a row for every library. */
+@Composable
+private fun LicenceList(lines: List<LicenceLine>, onOpen: (LicenceLine) -> Unit) {
+    LazyColumn {
+        item {
+            Text(
+                text = stringResource(R.string.licences_intro),
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp),
+            )
+
+            HorizontalDivider()
+        }
+
+        items(lines, key = { "${it.name}:${it.version}" }) { line ->
+            LicenceRow(line = line, onOpen = { onOpen(line) })
+
+            HorizontalDivider()
+        }
     }
+}
+
+/** The full texts of one library's licences. */
+@Composable
+private fun LicenceDialog(line: LicenceLine, onDismiss: () -> Unit) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text(text = line.name) },
+        text = {
+            Text(
+                text = line.text,
+                style = MaterialTheme.typography.bodySmall,
+                fontFamily = FontFamily.Monospace,
+                modifier = Modifier.verticalScroll(rememberScrollState()),
+            )
+        },
+        confirmButton = {
+            TextButton(onClick = onDismiss) {
+                Text(text = stringResource(R.string.settings_close))
+            }
+        },
+    )
 }
 
 /** A library: its name and version on one line, its licences as labels under it. */

@@ -193,41 +193,47 @@ private fun Scanner(onFound: (String) -> Unit, onDismiss: () -> Unit) {
 
         Square(found = found != null)
 
-        Column(
-            modifier =
-            Modifier
-                .fillMaxSize()
-                .windowInsetsPadding(WindowInsets.safeDrawing)
-                .padding(16.dp),
-            horizontalAlignment = Alignment.CenterHorizontally,
-        ) {
-            Text(
-                text = stringResource(R.string.qr_scan_title),
-                style = MaterialTheme.typography.titleMedium,
-                color = Color.White,
-                modifier = Modifier.fillMaxWidth(),
-            )
+        ScannerOverlay(found = found, foreign = foreign, onDismiss = onDismiss)
+    }
+}
 
-            Box(modifier = Modifier.weight(1f))
+/** The title over the square, and under it what is being said and the way out. */
+@Composable
+private fun ScannerOverlay(found: Scanned.Link?, foreign: Boolean, onDismiss: () -> Unit) {
+    Column(
+        modifier =
+        Modifier
+            .fillMaxSize()
+            .windowInsetsPadding(WindowInsets.safeDrawing)
+            .padding(16.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+    ) {
+        Text(
+            text = stringResource(R.string.qr_scan_title),
+            style = MaterialTheme.typography.titleMedium,
+            color = Color.White,
+            modifier = Modifier.fillMaxWidth(),
+        )
 
-            val (line, colour) =
-                when {
-                    found != null -> foundLine(found) to FOUND
-                    foreign -> stringResource(R.string.qr_scan_foreign) to FOREIGN
-                    else -> stringResource(R.string.qr_scan_hint) to Color.White
-                }
+        Box(modifier = Modifier.weight(1f))
 
-            Text(
-                text = line,
-                style = MaterialTheme.typography.bodyMedium,
-                color = colour,
-                textAlign = TextAlign.Center,
-                modifier = Modifier.fillMaxWidth().padding(bottom = 16.dp),
-            )
-
-            TextButton(onClick = onDismiss) {
-                Text(text = stringResource(R.string.connect_cancel), color = Color.White)
+        val (line, colour) =
+            when {
+                found != null -> foundLine(found) to FOUND
+                foreign -> stringResource(R.string.qr_scan_foreign) to FOREIGN
+                else -> stringResource(R.string.qr_scan_hint) to Color.White
             }
+
+        Text(
+            text = line,
+            style = MaterialTheme.typography.bodyMedium,
+            color = colour,
+            textAlign = TextAlign.Center,
+            modifier = Modifier.fillMaxWidth().padding(bottom = 16.dp),
+        )
+
+        TextButton(onClick = onDismiss) {
+            Text(text = stringResource(R.string.connect_cancel), color = Color.White)
         }
     }
 }

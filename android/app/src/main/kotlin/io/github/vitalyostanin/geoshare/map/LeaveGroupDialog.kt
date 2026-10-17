@@ -39,28 +39,7 @@ fun LeaveGroupDialog(ask: LeaveAsk, onLeave: suspend () -> Boolean, onDismiss: (
     AlertDialog(
         onDismissRequest = onDismiss,
         title = { Text(text = stringResource(R.string.group_leave_title, ask.caption)) },
-        text = {
-            Column {
-                Text(
-                    text =
-                    stringResource(
-                        when (ask.how) {
-                            Leave.ROSTER -> R.string.group_leave_text
-                            Leave.DEVICE_ONLY -> R.string.group_leave_runs_it_text
-                            Leave.NOT_ON_ROSTER -> R.string.group_leave_not_on_roster_text
-                        },
-                    ),
-                )
-
-                if (trouble) {
-                    Text(
-                        text = stringResource(R.string.group_leave_refused),
-                        color = MaterialTheme.colorScheme.error,
-                        modifier = Modifier.padding(top = 8.dp),
-                    )
-                }
-            }
-        },
+        text = { LeaveText(how = ask.how, trouble = trouble) },
         confirmButton = {
             TextButton(
                 onClick = {
@@ -97,4 +76,29 @@ fun LeaveGroupDialog(ask: LeaveAsk, onLeave: suspend () -> Boolean, onDismiss: (
             }
         },
     )
+}
+
+/** What leaving does for the member, plus the refusal notice once [trouble] is set. */
+@Composable
+private fun LeaveText(how: Leave, trouble: Boolean) {
+    Column {
+        Text(
+            text =
+            stringResource(
+                when (how) {
+                    Leave.ROSTER -> R.string.group_leave_text
+                    Leave.DEVICE_ONLY -> R.string.group_leave_runs_it_text
+                    Leave.NOT_ON_ROSTER -> R.string.group_leave_not_on_roster_text
+                },
+            ),
+        )
+
+        if (trouble) {
+            Text(
+                text = stringResource(R.string.group_leave_refused),
+                color = MaterialTheme.colorScheme.error,
+                modifier = Modifier.padding(top = 8.dp),
+            )
+        }
+    }
 }
