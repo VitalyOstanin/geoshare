@@ -109,6 +109,8 @@ myself, so that the group is never left to one person.
 Acceptance:
 
 - any administrator can make any member an administrator;
+- any administrator can take the role from another administrator, the
+  founder excepted;
 - an administrator can stop running the group while another one stays;
 - nobody but the founder can take the founder off the roster or off the
   administrators.
