@@ -1,9 +1,10 @@
 // What the security rules let each side do: running.
 
+import assert from 'node:assert/strict';
 import { describe, it, beforeEach } from 'node:test';
 
 import { assertFails, assertSucceeds } from '@firebase/rules-unit-testing';
-import { doc, setDoc, updateDoc } from 'firebase/firestore';
+import { arrayRemove, doc, getDoc, setDoc, updateDoc } from 'firebase/firestore';
 
 import { setUpRules, ALICE, BOB, testEnv, groupDoc, plantAnAdministrator } from './helpers.mjs';
 
@@ -180,6 +181,63 @@ describe('running a group whose owner is named in it', () => {
 
         await assertSucceeds(updateDoc(household(db), { admins: [] }));
         await assertSucceeds(updateDoc(household(db), { members: [ALICE, BOB] }));
+    });
+});
+
+// Two administrators writing at the same moment: each write is checked
+// against the roster as it stands when it lands, so the pair cannot leave the
+// group with nobody to run it.
+describe('two administrators writing at once', () => {
+    const OWNER = 'owner-uid';
+    const household = (db) => doc(db, 'groups/household');
+
+    // The owner is off the roster, or the rules would let the group stand
+    // with nobody named and the race would have nothing to show.
+    beforeEach(async () => {
+        await testEnv.withSecurityRulesDisabled(async (context) => {
+            await setDoc(household(context.firestore()), {
+                name: 'household',
+                members: [ALICE, BOB],
+                admins: [ALICE, BOB],
+                owner: OWNER,
+            });
+        });
+    });
+
+    // The rules-free context hands back nothing of its own, so the list is
+    // carried out of it.
+    const adminsAfter = async () => {
+        let admins;
+        await testEnv.withSecurityRulesDisabled(async (context) => {
+            admins = (await getDoc(household(context.firestore()))).data().admins;
+        });
+        return admins;
+    };
+
+    it('each taking the other off leaves one administrator', async () => {
+        const alice = testEnv.authenticatedContext(ALICE).firestore();
+        const bob = testEnv.authenticatedContext(BOB).firestore();
+
+        const outcomes = await Promise.allSettled([
+            updateDoc(household(alice), { admins: arrayRemove(BOB) }),
+            updateDoc(household(bob), { admins: arrayRemove(ALICE) }),
+        ]);
+
+        assert.equal(outcomes.filter((o) => o.status === 'fulfilled').length, 1);
+        assert.equal((await adminsAfter()).length, 1);
+    });
+
+    it('each resigning leaves the group with an administrator', async () => {
+        const alice = testEnv.authenticatedContext(ALICE).firestore();
+        const bob = testEnv.authenticatedContext(BOB).firestore();
+
+        const outcomes = await Promise.allSettled([
+            updateDoc(household(alice), { admins: arrayRemove(ALICE) }),
+            updateDoc(household(bob), { admins: arrayRemove(BOB) }),
+        ]);
+
+        assert.equal(outcomes.filter((o) => o.status === 'fulfilled').length, 1);
+        assert.ok((await adminsAfter()).length >= 1);
     });
 });
 
