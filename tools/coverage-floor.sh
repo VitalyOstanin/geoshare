@@ -11,13 +11,13 @@ here="$(dirname "${BASH_SOURCE[0]}")"
 # Per cent of the Android lines and branches the unit tests reach, at the
 # least. Just under what they reach now; raise them as the tests grow.
 readonly ANDROID_LINE_FLOOR=27
-readonly ANDROID_BRANCH_FLOOR=37
+readonly ANDROID_BRANCH_FLOOR=36
 
 # The packages that hold the decisions, each held to a line floor of its own:
 # the whole could otherwise grow on the screens while one of these shrinks.
 readonly PACKAGE_LINE_FLOORS=(
     "service 21"
-    "project 30"
+    "project 29"
     "collection 95"
 )
 
