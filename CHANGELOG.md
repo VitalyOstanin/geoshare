@@ -19,10 +19,13 @@ and the versions follow [Semantic Versioning](https://semver.org/).
 ## Contents
 
 - [Unreleased](#unreleased)
+- [0.2.0](#020---2026-10-17)
 - [0.1.1](#011---2026-10-16)
 - [0.1.0](#010---2026-10-14)
 
 ## [Unreleased]
+
+## [0.2.0] - 2026-10-17
 
 ### Added
 
@@ -139,6 +142,7 @@ The first release.
 - Nothing to update: a project set up by the setup page or by
   `tools/project.sh` already has the rules and the page of this version.
 
-[Unreleased]: https://github.com/VitalyOstanin/geoshare/compare/v0.1.1...HEAD
+[Unreleased]: https://github.com/VitalyOstanin/geoshare/compare/v0.2.0...HEAD
+[0.2.0]: https://github.com/VitalyOstanin/geoshare/releases/tag/v0.2.0
 [0.1.1]: https://github.com/VitalyOstanin/geoshare/releases/tag/v0.1.1
 [0.1.0]: https://github.com/VitalyOstanin/geoshare/releases/tag/v0.1.0
