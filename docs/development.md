@@ -81,6 +81,7 @@ Firebase SDK in them requires); the build scripts do not need it.
 | 18 | `tools/landing-steps.sh`     | the setup page's first two steps for the landing page, into `shots/`        |
 | 19 | `tools/landing-hero.sh`      | the header picture of the README and the landing page, into `shots/`        |
 | 20 | `tools/landing-images.sh`    | the landing page's pictures, three widths each, from `shots/`               |
+| 21 | `tools/landing-compare.py`   | the new pictures beside the committed ones, on one page, before committing  |
 
 The rest of `tools/` — `coverage-floor.sh`, `project.sh`, `web-config.sh`,
 `setup-site.sh`, `read-cost.sh`, `device-log.sh`, `device-sky.sh`,
@@ -170,10 +171,12 @@ the machine.
 4. Take every screenshot and video again from the commit that will be
    released, not just the ones of the screens that changed: build it
    (`tools/build.sh`, the debug build the scripts install), run
-   `tools/landing-shots.sh` and `tools/landing-hero.sh`, then
+   `tools/landing-shots.sh`, `tools/landing-hero.sh` and
+   `tools/landing-steps.sh` (the setup page's steps), then
    `tools/landing-images.sh` for the landing page and the READMEs. A picture
    that shows an older screen is wrong even when nothing on it was meant to
-   change.
+   change. `tools/landing-compare.py` puts the new set beside the committed
+   one on a page to look through before the pictures are committed.
 5. Run the package that will be published. The checks build and test the
    debug build only, and R8 shrinks the release one: a class that Firestore
    or reflection reaches only at run time can be removed without any check
