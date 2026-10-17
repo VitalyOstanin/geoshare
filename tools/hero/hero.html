@@ -9,16 +9,25 @@
 <meta charset="utf-8">
 <title>hero</title>
 <style>
-  :root { --bar: #f1f1f4; --pill: #ffffff; --url: #444; --bezel: #202226; }
-  :root.dark { --bar: #2b2c31; --pill: #1d1e22; --url: #ccc; --bezel: #3a3d44; }
+  /* Google Chrome's frame: the tab strip, then the toolbar with the address field. */
+  :root { --strip: #dee1e6; --tab: #ffffff; --field: #f1f3f4; --text: #202124; --icon: #5f6368; --bezel: #202226; }
+  :root.dark { --strip: #202124; --tab: #35363a; --field: #202124; --text: #e8eaed; --icon: #9aa0a6; --bezel: #3a3d44; }
   html, body { margin: 0; background: transparent; }
   #stage { position: relative; width: 1600px; height: 900px; font-family: "Noto Sans", sans-serif; }
   .browser { position: absolute; left: 250px; top: 30px; width: 1080px; border-radius: 10px; overflow: hidden;
-             box-shadow: 0 18px 50px rgba(0,0,0,.28); background: var(--bar); }
-  .bar { height: 38px; display: flex; align-items: center; gap: 8px; padding: 0 14px; }
-  .dot { width: 12px; height: 12px; border-radius: 50%; }
-  .pill { margin-left: 22px; flex: 1; height: 24px; border-radius: 12px; background: var(--pill); color: var(--url);
-          font-size: 14px; display: flex; align-items: center; padding-left: 14px; }
+             box-shadow: 0 18px 50px rgba(0,0,0,.28); background: var(--strip); color: var(--text); }
+  .browser svg { display: block; flex: none; }
+  .strip { height: 36px; display: flex; align-items: flex-end; padding-left: 8px; }
+  .tab { width: 236px; height: 30px; box-sizing: border-box; display: flex; align-items: center; gap: 8px;
+         padding: 0 10px 0 12px; border-radius: 8px 8px 0 0; background: var(--tab); font-size: 12px; }
+  .tab span { flex: 1; }
+  .newtab { margin: 0 0 4px 8px; }
+  .window { margin-left: auto; align-self: stretch; display: flex; }
+  .window svg { width: 46px; height: 36px; }
+  .toolbar { height: 40px; display: flex; align-items: center; gap: 4px; padding: 0 8px; background: var(--tab); }
+  .toolbar > svg { margin: 0 6px; }
+  .field { flex: 1; height: 30px; margin: 0 8px; display: flex; align-items: center; gap: 10px; padding-left: 12px;
+           border-radius: 15px; background: var(--field); font-size: 14px; }
   .browser img { display: block; width: 1080px; height: 675px; }
   .tablet { position: absolute; left: 40px; top: 430px; width: 640px; height: 400px; padding: 18px;
             border-radius: 28px; background: var(--bezel); box-shadow: 0 18px 50px rgba(0,0,0,.35); }
@@ -30,9 +39,29 @@
 </style>
 <div id="stage">
   <div class="browser">
-    <div class="bar">
-      <span class="dot" style="background:#ff5f57"></span><span class="dot" style="background:#febc2e"></span><span class="dot" style="background:#28c840"></span>
-      <span class="pill">your-group.web.app</span>
+    <div class="strip">
+      <div class="tab">
+        <svg width="16" height="16" viewBox="0 0 108 108"><rect width="108" height="108" rx="20" fill="#1e88e5"/><g stroke="#fff" stroke-width="5"><circle cx="38" cy="34" r="10" fill="#43a047"/><circle cx="72" cy="52" r="10" fill="#f9a825"/><circle cx="46" cy="74" r="10" fill="#e53935"/></g></svg>
+        <span>geoshare</span>
+        <svg width="16" height="16" viewBox="0 0 16 16" stroke="var(--icon)" stroke-width="1.6" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M4.5 4.5l7 7M11.5 4.5l-7 7"/></svg>
+      </div>
+      <svg class="newtab" width="20" height="20" viewBox="0 0 20 20" stroke="var(--icon)" stroke-width="1.6" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M10 4v12M4 10h12"/></svg>
+      <div class="window">
+        <svg viewBox="0 0 46 36" stroke="var(--icon)" stroke-width="1.6" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M18 18h10"/></svg>
+        <svg viewBox="0 0 46 36" stroke="var(--icon)" stroke-width="1.6" fill="none" stroke-linecap="round" stroke-linejoin="round"><rect x="18" y="13" width="10" height="10"/></svg>
+        <svg viewBox="0 0 46 36" stroke="var(--icon)" stroke-width="1.6" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13l10 10M28 13l-10 10"/></svg>
+      </div>
+    </div>
+    <div class="toolbar">
+      <svg width="20" height="20" viewBox="0 0 20 20" stroke="var(--icon)" stroke-width="1.6" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M16 10H4M9 5l-5 5 5 5"/></svg>
+      <svg width="20" height="20" viewBox="0 0 20 20" stroke="var(--icon)" stroke-width="1.6" fill="none" stroke-linecap="round" stroke-linejoin="round" stroke-opacity="0.45"><path d="M4 10h12M11 5l5 5-5 5"/></svg>
+      <svg width="20" height="20" viewBox="0 0 20 20" stroke="var(--icon)" stroke-width="1.6" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M15.5 10a5.5 5.5 0 1 1-1.6-3.9M15.5 3.5v3.2h-3.2"/></svg>
+      <div class="field">
+        <svg width="16" height="16" viewBox="0 0 16 16" stroke="var(--icon)" stroke-width="1.6" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M2 5h7M12 5h2M2 11h2M7 11h7"/><circle cx="10.5" cy="5" r="1.6"/><circle cx="5.5" cy="11" r="1.6"/></svg>
+        your-group.web.app
+      </div>
+      <svg width="20" height="20" viewBox="0 0 20 20"><circle cx="10" cy="10" r="9" fill="#8ab4f8"/></svg>
+      <svg width="20" height="20" viewBox="0 0 20 20" fill="var(--icon)"><circle cx="10" cy="4.5" r="1.5"/><circle cx="10" cy="10" r="1.5"/><circle cx="10" cy="15.5" r="1.5"/></svg>
     </div>
     <img id="page" alt="">
   </div>
