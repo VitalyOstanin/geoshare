@@ -6,6 +6,7 @@ Notes for an AI agent working in this repository.
 
 - [Stories, records and tests change together](#stories-records-and-tests-change-together)
 - [The README in two languages](#the-readme-in-two-languages)
+- [Before a release](#before-a-release)
 
 ## Stories, records and tests change together
 
@@ -37,3 +38,13 @@ other in the same commit: what the project does, how to get it and how to
 set a group up must never read differently in the two. The screenshots are
 shared, and each language keeps its own wording rather than a word-for-word
 translation.
+
+## Before a release
+
+Two steps of [Releasing](docs/development.md#releasing) are never skipped,
+however small the release:
+
+1. every document is read through again and brought up to date with what
+   the release changes, not only the ones a change obviously touches;
+2. every screenshot and video is taken again from the commit that will be
+   released, the landing page's and the READMEs' alike.

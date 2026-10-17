@@ -157,20 +157,33 @@ the machine.
    `tools/project.sh update`, and in which order
    ([Updating a group's project](../firebase/README.md#updating-a-groups-project)).
    `tools/release-notes.sh <version>` prints what the release will say.
-3. Run the package that will be published. The checks build and test the
+3. Read every document through against what the release changes, and bring
+   it up to date in the same commit as the version: both READMEs and both
+   FAQs, `SECURITY.md`, `CONTRIBUTING.md`, `GLOSSARY.md`, `docs/`, the
+   stories and their statuses, `firebase/README.md` and the landing page in
+   `site/`. What the application does, what it asks for and which servers it
+   talks to must read the same in all of them.
+4. Take every screenshot and video again from the commit that will be
+   released, not just the ones of the screens that changed: build it
+   (`tools/build.sh`, the debug build the scripts install), run
+   `tools/landing-shots.sh` and `tools/landing-hero.sh`, then
+   `tools/landing-images.sh` for the landing page and the READMEs. A picture
+   that shows an older screen is wrong even when nothing on it was meant to
+   change.
+5. Run the package that will be published. The checks build and test the
    debug build only, and R8 shrinks the release one: a class that Firestore
    or reflection reaches only at run time can be removed without any check
    noticing. Build and sign it, `VARIANT=release tools/build.sh` and then
    `tools/sign-release.sh`, install `build/geoshare-<version>.apk` on a
    device or on the emulator of `tools/run-emulator.sh`, and go through
    starting, connecting to a group and seeing positions on the map.
-4. Tag the commit on master with an annotated tag, `git tag -a v<version>`,
+6. Tag the commit on master with an annotated tag, `git tag -a v<version>`,
    and push the tag. `release.yml` runs the checks of `ci.yml`, refuses a
    lightweight tag, a tag off master, a tag that differs from
    `appVersionName` and notes without a date, then builds, signs, checks
    what the package says about itself and publishes it with its checksum and
    its bill of materials, `geoshare-<version>.cdx.json` in CycloneDX.
-5. Deploy the setup page from the tag, in a working copy checked out at it
+7. Deploy the setup page from the tag, in a working copy checked out at it
    (`git switch --detach v<version>`, nothing uncommitted): the site holds
    the rules (`firebase/firestore.rules`), the files of a group's page
    (`web/public`) and the fingerprints of the published key
@@ -189,7 +202,7 @@ the machine.
    was last deployed with is the `clientId` of
    `https://geoshare-setup.web.app/setup-config.json`. Without `--sha` the build
    lists the fingerprints of `android/release-fingerprints.txt`.
-6. Check the deployed site. `https://geoshare-setup.web.app/firestore.rules`
+8. Check the deployed site. `https://geoshare-setup.web.app/firestore.rules`
    must be the file at the tag (`curl -s` it and `diff` it with
    `firebase/firestore.rules`), `setup-files.json` and `setup-config.json`
    beside it must load, and the setup page at
