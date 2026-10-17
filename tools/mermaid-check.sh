@@ -21,8 +21,16 @@ cd "${root}"
 
 if (($# > 0)); then
     files=("$@")
-else
+elif git rev-parse --is-inside-work-tree >/dev/null 2>&1; then
     mapfile -t files < <(git ls-files '*.md')
+else
+    # A copy of the tree without its history, as a build machine gets it: the
+    # documents are looked for on disk, past what the linter leaves out too.
+    mapfile -t files < <(find . -name '*.md' \
+        -not -path '*/node_modules/*' -not -path '*/build/*' \
+        -not -path './web/public/lib/vendor/*' \
+        -not -path './docs/__check/*' -not -path './docs/superpowers/*' \
+        -not -path './shots/*' | sed 's|^\./||' | sort)
 fi
 
 # Only the documents with a diagram are handed over; the renderer has nothing
