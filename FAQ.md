@@ -112,10 +112,17 @@ GitHub and installed by hand.
 
 ## How do I update the application?
 
-By hand, for now: the application does not check for new versions itself.
-Download the new release from the
-[releases page](https://github.com/VitalyOstanin/geoshare/releases) and
-install it over the old one; the groups and settings stay.
+From the settings. Once a day the application asks GitHub whether a new
+version has been released; when one has, a notification says so and a dot
+appears on the settings button. "Update" there downloads it, checks it
+against the checksum the release gives, and hands it to Android's installer;
+the groups and settings stay. The first time, Android asks to allow
+geoshare to install applications. The daily check can be switched off in
+the settings; "Check for updates" asks at once.
+
+Version 0.1.1 and earlier do not check for updates: download the new release
+from the [releases page](https://github.com/VitalyOstanin/geoshare/releases)
+once and install it over the old one.
 
 ## Does it work on an iPhone?
 
