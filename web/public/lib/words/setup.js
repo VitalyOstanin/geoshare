@@ -91,8 +91,8 @@ export const WORDS_RU = {
     s5Open: 'Открыть в приложении geoshare',
     s5Camera: 'Страница открыта на компьютере? Наведите камеру устройства:',
     s5Foot: (site) =>
-        `Карта группы на компьютере: ${site}. Доступ, выданный этой странице, можно отозвать ` +
-        'в настройках аккаунта Google — группе он больше не нужен.',
+        `Карта группы на компьютере: ${site}. Доступ, выданный этой странице, отозван. ` +
+        'Если аккаунт Google ещё показывает его, удалите его в настройках аккаунта.',
 };
 
 export const WORDS_EN = {
@@ -185,6 +185,6 @@ export const WORDS_EN = {
     s5Open: 'Open in the geoshare app',
     s5Camera: 'Is this page open on a computer? Point your device’s camera at it:',
     s5Foot: (site) =>
-        `The group’s map on a computer: ${site}. The access given to this page can be ` +
-        'revoked in your Google account settings — the group no longer needs it.',
+        `The group’s map on a computer: ${site}. The access given to this page has been ` +
+        'withdrawn; if your Google account still lists it, remove it in the account settings.',
 };

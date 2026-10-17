@@ -36,6 +36,7 @@ import {
 import { qrSvg } from './lib/qr-svg.js';
 import { spokenLanguage } from './lib/language.js';
 import { WORDS_EN, WORDS_RU } from './lib/words/setup.js';
+import { releaseToken } from './lib/setup-token.js';
 
 // The words come in one object per language with the same keys (lib/words/setup.js);
 // the one the browser asks for is picked here.
@@ -488,6 +489,14 @@ $('s4-next').addEventListener('click', () => {
     $('s5-qr').replaceChildren(qrSvg(document, link));
     $('s5-foot').textContent = words.s5Foot(`${id}.web.app`);
     show(5);
+
+    // Screen 5 has no way back, so no step can be repeated: the token is of no use now.
+    releaseToken(state, window.google?.accounts?.oauth2, console.warn);
+});
+
+// A tab closed on an earlier screen takes the token with it too.
+window.addEventListener('pagehide', () => {
+    releaseToken(state, window.google?.accounts?.oauth2, console.warn);
 });
 
 $('s1-console').textContent = words.s1Console;
