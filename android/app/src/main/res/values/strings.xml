@@ -262,6 +262,9 @@
          administrator cannot be taken from - and which of them it was is not
          something a refusal says. -->
     <string name="group_refused">The database refused that. The invitation may have run out, or the group may already exist.</string>
+    <!-- The founding refused: only the project owner may found the first
+         group (ADR-0038). -->
+    <string name="group_found_refused">Only the project owner can create the group. Ask them to create it and send you an invitation.</string>
     <!-- The group's own name (ADR-0016): asked for when it is founded, shown
          and changed from the panel afterwards. -->
     <string name="group_name_label">Group name</string>
@@ -654,6 +657,12 @@
     <string name="update_notes_github">Open on GitHub</string>
     <string name="update_notes_close">Close</string>
     <string name="update_install">Update</string>
+    <!-- Asked when "Update" is pressed on a network switched off under
+         Downloads (ADR-0039); %1$d is the size in megabytes. -->
+    <string name="update_ask_title">Download the update?</string>
+    <string name="update_ask_wifi">The update is %1$d MB, and downloads over Wi-Fi are switched off under Downloads.</string>
+    <string name="update_ask_mobile">The update is %1$d MB, and downloads over the mobile network are switched off under Downloads.</string>
+    <string name="update_ask_roaming">The update is %1$d MB, and the device is roaming: downloads in roaming are switched off under Downloads.</string>
     <string name="update_downloading">Downloading version %1$s</string>
     <string name="update_progress">%1$d of %2$d MB</string>
     <string name="update_cancel">Cancel</string>

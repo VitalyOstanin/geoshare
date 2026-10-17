@@ -47,9 +47,9 @@ fun updateDirectory(cacheDir: File): File = File(cacheDir, UPDATE_DIRECTORY)
  * download. Cancelling the coroutine deletes the part already
  * written.
  *
- * Deliberately not gated by DownloadGate or DownloadPolicy: those keep the
- * map's bulk fetching off a metered network, whereas this download starts
- * only when a member presses "Update", on whatever network they are on.
+ * Not gated here: it starts only when a member presses "Update", and the
+ * settings ask first over a network switched off under Downloads
+ * (asksBeforeUpdate, ADR-0039).
  */
 suspend fun downloadApk(
     release: LatestRelease,

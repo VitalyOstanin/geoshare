@@ -293,6 +293,7 @@ private fun SettingsUpperSections(
         ownMemberId = ownMemberId,
         profiles = profiles,
         trouble = settings.groupTrouble,
+        foundRefused = settings.foundRefused,
         onFoundGroup = actions.onFoundGroup,
         readProjectMark = actions.onReadProjectMark,
         onJoinGroup = actions.onJoinGroup,

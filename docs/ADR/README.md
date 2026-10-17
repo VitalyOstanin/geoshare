@@ -46,3 +46,4 @@ date is the decision's.
 | 0036 | [A project holds one group, founded once](0036-a-project-holds-one-group.md)                                           | Accepted, supplemented by 0038               | 2026-10-13 |
 | 0037 | [Google Cloud Shell is not a supported place to set up a project](0037-google-cloud-shell-is-not-supported.md)         | Accepted                                     | 2026-10-16 |
 | 0038 | [The first group of a project is founded by its owner](0038-the-first-group-is-founded-by-the-project-owner.md)        | Accepted                                     | 2026-10-17 |
+| 0039 | [An update asks before it comes down over a network switched off](0039-an-update-asks-over-a-network-switched-off.md)  | Accepted                                     | 2026-10-17 |

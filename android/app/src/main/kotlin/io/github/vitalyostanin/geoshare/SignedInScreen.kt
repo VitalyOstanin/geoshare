@@ -317,6 +317,7 @@ private fun settingsStateOf(
     invitation = answers.invitation,
     site = connection.settings.site,
     groupTrouble = answers.groupTrouble,
+    foundRefused = answers.foundRefused,
     refusedJoin = answers.refusedJoin,
     phoneName =
     grants[memberId]?.phones?.get(activity.device.id)?.name,
@@ -447,6 +448,7 @@ private fun PendingInvitationAnswer(
             PendingInvitationStore.read(activity, connection.projectId),
             connection.projectId,
         )
+        answers.foundRefused = false
         answers.groupTrouble = !joined && answers.refusedJoin == null
     }
 

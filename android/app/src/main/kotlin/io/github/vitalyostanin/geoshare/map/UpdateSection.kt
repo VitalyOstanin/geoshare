@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
@@ -27,6 +28,10 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import io.github.vitalyostanin.geoshare.BuildConfig
 import io.github.vitalyostanin.geoshare.R
+import io.github.vitalyostanin.geoshare.download.DownloadSetting
+import io.github.vitalyostanin.geoshare.download.NetworkKind
+import io.github.vitalyostanin.geoshare.download.asksBeforeUpdate
+import io.github.vitalyostanin.geoshare.download.networkKind
 import io.github.vitalyostanin.geoshare.update.ApkDownload
 import io.github.vitalyostanin.geoshare.update.LatestRelease
 import io.github.vitalyostanin.geoshare.update.ReleaseNotes
@@ -70,31 +75,31 @@ internal fun UpdateSection() {
     }
     var job by remember { mutableStateOf<Job?>(null) }
     var shownNotes by remember { mutableStateOf<Pair<LatestRelease, ReleaseNotes>?>(null) }
+    var asked by remember { mutableStateOf<Pair<LatestRelease, NetworkKind>?>(null) }
     val language = appLocale().language
+    val begin = { release: LatestRelease ->
+        state = startDownload(release)
+        job = scope.launch { state = download(context, release) { state = it } }
+    }
 
     ShownNotes(shownNotes, context, onDismiss = { shownNotes = null })
-
-    SwitchRow(
-        checked = auto,
-        onCheckedChange = {
-            auto = it
-            store.autoCheck = it
-            UpdateBoard.refresh(store, BuildConfig.VERSION_NAME)
-            // The block follows the switch at once, as the dot does; a
-            // download already under way is left to finish or be cancelled.
-            if (state is UpdateBlockState.Idle || state is UpdateBlockState.Available) {
-                state = initialUpdateState(store.found.takeIf { _ -> it }, BuildConfig.VERSION_NAME)
-            }
+    AskedNetwork(
+        asked,
+        onGo = { release ->
+            asked = null
+            begin(release)
         },
-        verticalPadding = 8.dp,
-    ) {
-        Column(modifier = Modifier.weight(1f)) {
-            Text(text = stringResource(R.string.update_auto))
-            Text(
-                text = stringResource(R.string.update_auto_hint),
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
+        onDismiss = { asked = null },
+    )
+
+    AutoCheckSwitch(checked = auto) {
+        auto = it
+        store.autoCheck = it
+        UpdateBoard.refresh(store, BuildConfig.VERSION_NAME)
+        // The block follows the switch at once, as the dot does; a
+        // download already under way is left to finish or be cancelled.
+        if (state is UpdateBlockState.Idle || state is UpdateBlockState.Available) {
+            state = initialUpdateState(store.found.takeIf { _ -> it }, BuildConfig.VERSION_NAME)
         }
     }
 
@@ -112,14 +117,34 @@ internal fun UpdateSection() {
             if (notes == null) openPage(context, release.pageUrl) else shownNotes = release to notes
         },
         onUpdate = { release ->
-            state = startDownload(release)
-            job = scope.launch { state = download(context, release) { state = it } }
+            val on = networkKind(context)
+
+            if (asksBeforeUpdate(on, DownloadSetting(context).allowed)) {
+                asked = release to on
+            } else {
+                begin(release)
+            }
         },
         onCancel = { release ->
             job?.cancel()
             state = afterCancel(release)
         },
     )
+}
+
+/** The switch for the daily check, with what it does under its name. */
+@Composable
+private fun AutoCheckSwitch(checked: Boolean, onCheckedChange: (Boolean) -> Unit) {
+    SwitchRow(checked = checked, onCheckedChange = onCheckedChange, verticalPadding = 8.dp) {
+        Column(modifier = Modifier.weight(1f)) {
+            Text(text = stringResource(R.string.update_auto))
+            Text(
+                text = stringResource(R.string.update_auto_hint),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
+    }
 }
 
 /** The notes dialog of the release the member asked about, if one is open. */
@@ -136,6 +161,43 @@ private fun ShownNotes(
         notes = shown.second,
         onOpenPage = { openPage(context, shown.first.pageUrl) },
         onDismiss = onDismiss,
+    )
+}
+
+/**
+ * The question before an update comes down over a network switched off
+ * under Downloads (ADR-0039), if one is open: the size and which network,
+ * then "Download" or "Not now".
+ */
+@Composable
+private fun AskedNetwork(
+    asked: Pair<LatestRelease, NetworkKind>?,
+    onGo: (LatestRelease) -> Unit,
+    onDismiss: () -> Unit,
+) {
+    if (asked == null) return
+
+    val (release, on) = asked
+    val text = when (on) {
+        NetworkKind.WiFi -> R.string.update_ask_wifi
+        NetworkKind.Roaming -> R.string.update_ask_roaming
+        else -> R.string.update_ask_mobile
+    }
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text(text = stringResource(R.string.update_ask_title)) },
+        text = { Text(text = stringResource(text, megabytes(release.apk.size))) },
+        confirmButton = {
+            TextButton(onClick = { onGo(release) }) {
+                Text(text = stringResource(R.string.downloads_go))
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) {
+                Text(text = stringResource(R.string.downloads_not_now))
+            }
+        },
     )
 }
 

@@ -247,6 +247,8 @@ private fun BoxScope.MapSurface(scene: MapScene) {
             onFoundGroup = scene.actions.onFoundGroup,
             onJoin = scene.groups.onJoin,
             readProjectMark = scene.actions.onReadProjectMark,
+            trouble = scene.settings.groupTrouble,
+            foundRefused = scene.settings.foundRefused,
         )
     }
 }

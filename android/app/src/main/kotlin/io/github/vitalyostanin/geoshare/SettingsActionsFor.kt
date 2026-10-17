@@ -5,6 +5,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.listSaver
 import androidx.compose.runtime.setValue
 import androidx.lifecycle.lifecycleScope
+import com.google.firebase.firestore.FirebaseFirestoreException
 import io.github.vitalyostanin.geoshare.auth.AuthState
 import io.github.vitalyostanin.geoshare.download.DownloadSetting
 import io.github.vitalyostanin.geoshare.map.SettingsActions
@@ -34,6 +35,7 @@ import io.github.vitalyostanin.geoshare.service.openSearch
 import io.github.vitalyostanin.geoshare.service.phoneReset
 import io.github.vitalyostanin.geoshare.service.phoneSiren
 import io.github.vitalyostanin.geoshare.service.readProjectMark
+import io.github.vitalyostanin.geoshare.service.refusedOutright
 import io.github.vitalyostanin.geoshare.service.removeFromGroup
 import io.github.vitalyostanin.geoshare.service.renameGroup
 import io.github.vitalyostanin.geoshare.service.renewSearch
@@ -60,6 +62,14 @@ internal class GroupAnswers {
      * the button is owed an answer.
      */
     var groupTrouble by mutableStateOf(false)
+
+    /**
+     * Whether the rules refused the founding of the group, which they allow
+     * only to the project owner (ADR-0038) and only while no group exists:
+     * the screen says so in place of the general line. Cleared by every
+     * other write.
+     */
+    var foundRefused by mutableStateOf(false)
 
     /**
      * The invitation this device came with, when the rules turned it down:
@@ -200,15 +210,26 @@ internal fun settingsActions(
     // in.
     onFoundGroup = { name ->
         activity.lifecycleScope.launch {
+            // Only the rules' own refusal gets the owner's line (ADR-0038);
+            // anything else is the general one.
+            var denied = false
+
             answers.groupTrouble =
                 !activity.withGroup("found a group") {
-                    foundGroup(
-                        activity,
-                        current.memberId,
-                        name,
-                        connection = connection,
-                    )
+                    try {
+                        foundGroup(
+                            activity,
+                            current.memberId,
+                            name,
+                            connection = connection,
+                        )
+                    } catch (refusal: FirebaseFirestoreException) {
+                        denied = refusedOutright(refusal)
+
+                        throw refusal
+                    }
                 }
+            answers.foundRefused = denied
         }
     },
     // Read when a screen without a group is shown, once: see readProjectMark.
@@ -223,6 +244,7 @@ internal fun settingsActions(
     },
     onMakeInvitation = { email ->
         activity.lifecycleScope.launch {
+            answers.foundRefused = false
             answers.groupTrouble =
                 !activity.withGroup("made an invitation") {
                     answers.invitation =
@@ -236,6 +258,7 @@ internal fun settingsActions(
     },
     onJoinGroup = { invited ->
         activity.lifecycleScope.launch {
+            answers.foundRefused = false
             answers.groupTrouble =
                 !activity.withGroup("joined a group") {
                     joinGroup(
@@ -253,6 +276,7 @@ internal fun settingsActions(
     onPasteLink = activity.connectFlow::pasteLink,
     onRemoveMember = { memberId ->
         activity.lifecycleScope.launch {
+            answers.foundRefused = false
             answers.groupTrouble =
                 !activity.withGroup("removed a member") {
                     roster()?.let {
@@ -263,6 +287,7 @@ internal fun settingsActions(
     },
     onSetRunning = { memberId, runs ->
         activity.lifecycleScope.launch {
+            answers.foundRefused = false
             answers.groupTrouble =
                 !activity.withGroup("changed who runs the group") {
                     setRunning(memberId, runs, connection = connection)

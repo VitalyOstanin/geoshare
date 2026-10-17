@@ -42,8 +42,9 @@ Acceptance:
   founding from the verified address of the owner's Google account alone, so
   anybody else who signs in first is refused and the project stays empty for
   the owner; the screens of the device and the page still offer the founding
-  to every account in an empty project and show the refusal as a failed write,
-  with no word that the founding is the owner's;
+  to every account in an empty project, since they cannot tell who the owner
+  is, and say on a refusal that only the project owner can create the group
+  and that the person should ask them for an invitation;
 - a person without a group in a project that has one is told so, and that a
   group of their own needs a project of its own, and is offered only an
   invitation.

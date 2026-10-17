@@ -396,6 +396,9 @@ export const EN = {
     // code that has run out, a group already made, a member the last
     // administrator cannot be taken from — and which of them it was is not
     // something a refusal says.
+    groupFoundDenied:
+        'Only the project owner can create the group. Ask them to create it and send you an '
+        + 'invitation.',
     groupRefused: 'The database refused that. The invitation may have run out, or the group '
         + 'may already exist.',
 

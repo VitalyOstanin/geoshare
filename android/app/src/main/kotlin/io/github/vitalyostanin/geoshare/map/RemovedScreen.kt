@@ -72,7 +72,9 @@ fun RemovedScreen(removed: RemovedGroup, switcher: Boolean, modifier: Modifier =
  * typed or `null` when the field is left empty, and [onJoin] asks for a link
  * to join one by. Where the project's mark says it has a group already
  * ([readProjectMark], read once), only the second is offered, since the first
- * would be refused.
+ * would be refused. [trouble] says the founding was refused, and
+ * [foundRefused] that the rules refused it: only the project owner may found
+ * the first group (ADR-0038).
  */
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
@@ -82,6 +84,8 @@ fun NoGroupScreen(
     onJoin: () -> Unit,
     modifier: Modifier = Modifier,
     readProjectMark: suspend () -> ProjectMark = { ProjectMark.Unknown },
+    trouble: Boolean = false,
+    foundRefused: Boolean = false,
 ) {
     var groupName by rememberSaveable { mutableStateOf("") }
     val taken = rememberProjectMark(readProjectMark).isTaken()
@@ -128,6 +132,18 @@ fun NoGroupScreen(
                 TextButton(onClick = onJoin) {
                     Text(text = stringResource(R.string.group_removed_join))
                 }
+            }
+
+            if (trouble) {
+                Text(
+                    text =
+                    stringResource(
+                        if (foundRefused) R.string.group_found_refused else R.string.group_refused,
+                    ),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.error,
+                    modifier = Modifier.padding(top = 8.dp),
+                )
             }
         }
     }

@@ -64,4 +64,25 @@ class DownloadPolicyTest {
         assertFalse(mayAskAgain(declined, declined.plus(Duration.ofHours(23))))
         assertTrue(mayAskAgain(declined, declined.plus(Duration.ofDays(1))))
     }
+
+    // The member pressed "Update", so a network they allowed just goes; one
+    // they switched off, at home or in roaming, is asked about rather than
+    // waited on, and with no network there is nothing to ask.
+    @Test
+    fun `an update asks only over a network switched off`() {
+        val wifiOnly = setOf(DownloadNetwork.WiFi)
+
+        assertFalse(asksBeforeUpdate(NetworkKind.WiFi, DEFAULT_DOWNLOAD_NETWORKS))
+        assertFalse(asksBeforeUpdate(NetworkKind.Mobile, DEFAULT_DOWNLOAD_NETWORKS))
+        assertTrue(asksBeforeUpdate(NetworkKind.Roaming, DEFAULT_DOWNLOAD_NETWORKS))
+        assertTrue(asksBeforeUpdate(NetworkKind.Mobile, wifiOnly))
+        assertTrue(asksBeforeUpdate(NetworkKind.WiFi, setOf(DownloadNetwork.Mobile)))
+        assertFalse(
+            asksBeforeUpdate(
+                NetworkKind.Roaming,
+                DEFAULT_DOWNLOAD_NETWORKS + DownloadNetwork.Roaming,
+            ),
+        )
+        assertFalse(asksBeforeUpdate(NetworkKind.None, emptySet()))
+    }
 }

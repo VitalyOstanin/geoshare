@@ -430,8 +430,11 @@ function freshestPositionOf(memberId) {
  * at once — a code that has run out, a group already made, a member the last
  * administrator cannot be taken from — and a refusal names none of them. So
  * the page says what it can and leaves the roster on screen as it stands.
+ *
+ * A write whose refusal has one likely cause can name it: `deniedText` stands
+ * in for the general words when the rules answer `permission-denied`.
  */
-export async function tryGroupWrite(write) {
+export async function tryGroupWrite(write, deniedText = null) {
     state.groupTrouble = null;
     state.groupSaid = null;
 
@@ -447,7 +450,10 @@ export async function tryGroupWrite(write) {
     try {
         await write();
     } catch (error) {
-        state.groupTrouble = troubleOf(error);
+        state.groupTrouble =
+            deniedText !== null && error?.code === 'permission-denied'
+                ? deniedText
+                : troubleOf(error);
     }
 
     drawGroup();
@@ -463,10 +469,12 @@ function regroup() {
 }
 
 elements.groupFound.addEventListener('click', () =>
+    // Only the project owner may found the first group (ADR-0038), so a
+    // refusal here most likely means the person is not them.
     tryGroupWrite(async () => {
         await foundGroup(state.member.memberId, elements.groupFoundName.value);
         regroup();
-    }),
+    }, WORDS.groupFoundDenied),
 );
 
 elements.groupAdmin.addEventListener('click', () => {

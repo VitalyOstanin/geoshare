@@ -237,6 +237,7 @@
     <string name="group_keep_running">Оставить</string>
     <string name="group_unrun">Группу никто не ведёт, её состав задаётся в консоли Firebase.</string>
     <string name="group_refused">База отказала. Возможно, приглашение истекло или группа уже создана.</string>
+    <string name="group_found_refused">Создать группу может только владелец проекта. Попросите его создать группу и прислать вам приглашение.</string>
     <string name="group_name_label">Название группы</string>
     <string name="group_name_optional_label">Название группы (необязательно)</string>
     <string name="group_name_rename">Переименовать</string>
@@ -581,6 +582,10 @@
     <string name="update_notes_github">Открыть на GitHub</string>
     <string name="update_notes_close">Закрыть</string>
     <string name="update_install">Обновить</string>
+    <string name="update_ask_title">Скачать обновление?</string>
+    <string name="update_ask_wifi">Обновление весит %1$d МБ, а загрузки по Wi-Fi выключены в разделе «Загрузки».</string>
+    <string name="update_ask_mobile">Обновление весит %1$d МБ, а загрузки по сотовой сети выключены в разделе «Загрузки».</string>
+    <string name="update_ask_roaming">Обновление весит %1$d МБ, а устройство в роуминге: загрузки в роуминге выключены в разделе «Загрузки».</string>
     <string name="update_downloading">Загрузка версии %1$s</string>
     <string name="update_progress">%1$d из %2$d МБ</string>
     <string name="update_cancel">Отмена</string>

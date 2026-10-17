@@ -56,6 +56,8 @@ fun GroupSection(
     profiles: Map<String, MemberProfile>,
     /** Whether the last write to the group was refused. */
     trouble: Boolean,
+    /** Whether that refusal was of founding the group, which only the project owner may do. */
+    foundRefused: Boolean,
     onFoundGroup: (String?) -> Unit,
     /** Whether the project already has a group, read once when the way in is shown. */
     readProjectMark: suspend () -> ProjectMark,
@@ -111,7 +113,10 @@ fun GroupSection(
         // and none of them says which reason it was.
         if (trouble) {
             Text(
-                text = stringResource(R.string.group_refused),
+                text =
+                stringResource(
+                    if (foundRefused) R.string.group_found_refused else R.string.group_refused,
+                ),
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.error,
                 modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),

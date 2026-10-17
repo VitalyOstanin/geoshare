@@ -220,9 +220,9 @@ Acceptance:
 ## DEV-13 Update itself
 
 - Status: done
-- ADR: —
-- Tests: Android `UpdateRulesTest`, `UpdateCheckTest`, `LatestReleaseTest`, `ReleaseCheckTest`, `ApkVerifierTest`, `ApkDownloadTest`, `UpdateBlockStateTest`, `ReleaseNotesTest`, `BootReceiverTest` (the service starts again after an update)
-- Not covered: the networks allowed by the member (MEM-20) do not apply to the update; the application does not compare signing keys itself; the system installer's screen, the permission page and the "What's new" window, which no test opens
+- ADR: 0039
+- Tests: Android `UpdateRulesTest`, `UpdateCheckTest`, `DownloadPolicyTest`, `LatestReleaseTest`, `ReleaseCheckTest`, `ApkVerifierTest`, `ApkDownloadTest`, `UpdateBlockStateTest`, `ReleaseNotesTest`, `BootReceiverTest` (the service starts again after an update)
+- Not covered: the question before an update over a network switched off, which no test opens; the application does not compare signing keys itself; the system installer's screen, the permission page and the "What's new" window, which no test opens
 
 As a member I let the application learn about a new published build and
 install it, so that I do not have to look for updates.
@@ -244,6 +244,8 @@ Acceptance:
 - the APK is downloaded when the member presses "Update", with progress and
   a way to cancel, and is kept only if its size and SHA-256 are those the
   release announces; a release without them is no update;
+- over a network switched off under Downloads (MEM-20), roaming among them,
+  "Update" first asks, with the update's size, "Download" or "Not now";
 - the downloaded file is handed to the system's installer; if the
   application is not yet allowed to install applications, the system's page
   for that opens first;

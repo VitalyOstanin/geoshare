@@ -359,7 +359,7 @@ Acceptance:
 ### MEM-20 Choose which networks the application downloads over
 
 - Status: done
-- ADR: 0022
+- ADR: 0022, 0039
 - Tests: Android `DownloadPolicyTest`
 
 As a member I choose whether the application downloads its own files over
@@ -370,7 +370,9 @@ Acceptance:
 
 - out of the box Wi-Fi and the home network are on, roaming off;
 - in roaming I am asked each time, "Download" or "Not now";
-- the map and the positions go over any network.
+- the map and the positions go over any network;
+- an update pressed for over a network switched off asks first, with its
+  size, "Download" or "Not now".
 
 ### MEM-21 Join by scanning a QR code
 

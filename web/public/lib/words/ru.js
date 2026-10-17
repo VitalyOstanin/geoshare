@@ -397,6 +397,9 @@ export const RU = {
         + `${counted(count, 'доступно', 'доступны', 'доступны')} вам`,
 
     // What a refused write says.
+    groupFoundDenied:
+        'Создать группу может только владелец проекта. Попросите его создать группу и прислать '
+        + 'вам приглашение.',
     groupRefused: 'База отказала. Возможно, приглашение истекло или группа уже создана.',
 
     // Naming a device or a person for oneself, from the card.

@@ -96,6 +96,8 @@ data class SettingsState(
      * be guessing if it named one of them.
      */
     val groupTrouble: Boolean,
+    /** Whether the refused write was the founding of the group: the owner's line. */
+    val foundRefused: Boolean = false,
     /** The invitation this device came with, when the rules refused it. */
     val refusedJoin: RefusedJoin? = null,
     /** What this device's owner named it for everybody, if they did. */

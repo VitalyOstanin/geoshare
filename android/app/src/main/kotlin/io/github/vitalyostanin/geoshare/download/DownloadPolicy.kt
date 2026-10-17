@@ -10,6 +10,8 @@ import java.time.Instant
 // to fetch in the background later. The map is fetched because the member
 // opened it, and the places shared with the group are a few kilobytes that
 // the whole application exists for; neither waits on a network choice.
+// An update is downloaded because the member pressed for it, but tens of
+// megabytes over a network they switched off are asked about first.
 
 /** The kinds of network the member chooses between. */
 enum class DownloadNetwork { WiFi, Mobile, Roaming }
@@ -82,3 +84,12 @@ fun downloadVerdict(on: NetworkKind, allowed: Set<DownloadNetwork>): DownloadVer
 /** Whether the member may be asked again, having last said "not now" at [declinedAt]. */
 fun mayAskAgain(declinedAt: Instant?, now: Instant): Boolean =
     declinedAt == null || !now.isBefore(declinedAt.plus(ASK_AGAIN_AFTER))
+
+/**
+ * Whether the member is asked before an update they pressed for comes down
+ * over [on] (ADR-0039): over a network they switched off, roaming included.
+ * The press is theirs, but the size is not on the button. With no network
+ * there is nothing to ask about; the download fails on its own.
+ */
+fun asksBeforeUpdate(on: NetworkKind, allowed: Set<DownloadNetwork>): Boolean =
+    on != NetworkKind.None && downloadVerdict(on, allowed) != DownloadVerdict.Go
