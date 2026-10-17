@@ -104,14 +104,23 @@ write(path.join(pub, "setup-config.json"), {
     consoleUrl: "https://console.firebase.google.com/",
 });
 
-// The group's policy, widened for the setup page alone: Google Identity
+// The group's policy, adjusted for the setup page alone: Google Identity
 // Services is served from accounts.google.com, and the page calls the
 // Firebase, Firestore, Service Usage, Rules and Hosting APIs, the upload host
-// of Hosting among them.
+// of Hosting among them. The page never loads the Google API loader that the
+// map page's sign-in uses, so apis.google.com is dropped from script-src.
+// style-src keeps 'unsafe-inline': setup.html carries its own <style> block
+// and a style attribute, and the Google Identity Services guide asks for no
+// more than https://accounts.google.com/gsi/style there. Trusted Types are not
+// required: the page has no HTML sinks, but loadGis() assigns a plain string
+// to script.src, which the requirement would block.
 let policy = hosting.headers.flatMap((rule) => rule.headers)
     .find((h) => h.key === "Content-Security-Policy").value;
 
-policy = policy.replace("script-src 'self'", "script-src 'self' https://accounts.google.com");
+policy = policy.replace(
+    "script-src 'self' https://apis.google.com",
+    "script-src 'self' https://accounts.google.com",
+);
 policy = policy.replace("style-src 'self'", "style-src 'self' https://accounts.google.com");
 policy = policy.replace("connect-src 'self'", "connect-src 'self' https://accounts.google.com");
 
@@ -126,6 +135,14 @@ for (const rule of siteHosting.headers) {
         }
     }
 }
+// The files under group/ are data for the setup page to fetch and deploy, not
+// pages of this site. A sandbox without allow-scripts keeps them from running
+// should anyone open one. The rule comes last and repeats the whole policy,
+// since a header of the same name from a later rule replaces an earlier one.
+siteHosting.headers.push({
+    source: "/group/**",
+    headers: [{ key: "Content-Security-Policy", value: `${policy}; sandbox` }],
+});
 // /join belongs to a group's site, not to this one.
 siteHosting.rewrites = [];
 write(path.join(out, "firebase.json"), { hosting: siteHosting });
