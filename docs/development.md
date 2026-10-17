@@ -152,11 +152,15 @@ the machine.
 
 1. Raise `appVersionName` in `android/gradle.properties`; the version code is
    worked out from it, 0.1.0 being 100.
-2. Give the version's section of [CHANGELOG.md](../CHANGELOG.md) its date
-   and say under **Project owners** whether the release needs
-   `tools/project.sh update`, and in which order
+2. Give the version's section of [CHANGELOG.md](../CHANGELOG.md) and of
+   [CHANGELOG.ru.md](../CHANGELOG.ru.md) its date, the same in both, and say
+   under **Project owners** (**Владельцам проектов**) whether the release
+   needs `tools/project.sh update`, and in which order
    ([Updating a group's project](../firebase/README.md#updating-a-groups-project)).
-   `tools/release-notes.sh <version>` prints what the release will say.
+   The two say the same; the application shows its members the one in its
+   own language, without the part for project owners.
+   `tools/release-notes.sh <version>` prints what the release will say, the
+   Russian section folded under the English one.
 3. Read every document through against what the release changes, and bring
    it up to date in the same commit as the version: both READMEs and both
    FAQs, `SECURITY.md`, `CONTRIBUTING.md`, `GLOSSARY.md`, `docs/`, the

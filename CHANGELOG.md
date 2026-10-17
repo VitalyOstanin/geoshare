@@ -1,5 +1,7 @@
 # Changelog
 
+English · [Русский](CHANGELOG.ru.md)
+
 What changed in each release of the application, and what the project owner
 of a group has to do after it. The section of a version is what its page on
 the releases page says; the release is refused while the section is missing
@@ -28,6 +30,8 @@ and the versions follow [Semantic Versioning](https://semver.org/).
   notification and with a dot on the settings button, and downloads and
   installs it from the settings. The daily look can be switched off there;
   the "Check for updates" button still works.
+- "What's new" shows what the new version changes, in the application's
+  language, before it is installed.
 
 ### Fixed
 

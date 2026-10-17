@@ -37,7 +37,9 @@ Russian; each links to the other at the top. A change to one changes the
 other in the same commit: what the project does, how to get it and how to
 set a group up must never read differently in the two. The screenshots are
 shared, and each language keeps its own wording rather than a word-for-word
-translation.
+translation. `CHANGELOG.md` and `CHANGELOG.ru.md` go together the same way:
+the application shows a member the section in its own language, so an entry
+in one is an entry in the other in the same commit.
 
 ## Before a release
 
