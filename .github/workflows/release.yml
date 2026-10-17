@@ -21,6 +21,11 @@ permissions:
 jobs:
   checks:
     uses: ./.github/workflows/ci.yml
+    # What the checks' own jobs ask for, the id-token of the coverage upload
+    # included: a called workflow gets no more than its caller grants.
+    permissions:
+      contents: read
+      id-token: write
 
   release:
     needs: checks

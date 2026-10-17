@@ -1,5 +1,7 @@
 # geoshare
 
+[![codecov](https://codecov.io/gh/VitalyOstanin/geoshare/graph/badge.svg?branch=master)](https://codecov.io/gh/VitalyOstanin/geoshare)
+
 English · [Русский](README.ru.md)
 
 <picture>
