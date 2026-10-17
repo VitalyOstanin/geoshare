@@ -189,7 +189,14 @@ the machine.
    lightweight tag, a tag off master, a tag that differs from
    `appVersionName` and notes without a date, then builds, signs, checks
    what the package says about itself and publishes it with its checksum and
-   its bill of materials, `geoshare-<version>.cdx.json` in CycloneDX.
+   its bill of materials, `geoshare-<version>.cdx.json` in CycloneDX. The
+   job that signs waits for the project owner: the release key lives in the
+   `release` environment, which asks for approval of every run that reaches
+   it. Once the checks pass, open the run on the Actions page, press
+   **Review deployments**, tick `release` and press **Approve and deploy**.
+   The stop is deliberate: the application offers a published release to
+   every device that updates itself, and the approval is the last look
+   before the key is used.
 7. Deploy the setup page from the tag, in a working copy checked out at it
    (`git switch --detach v<version>`, nothing uncommitted): the site holds
    the rules (`firebase/firestore.rules`), the files of a group's page
