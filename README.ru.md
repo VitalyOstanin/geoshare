@@ -1,4 +1,4 @@
-# geoshare
+# <img src="web/public/favicon.svg" width="40" alt=""> geoshare
 
 [English](README.md) · Русский
 
