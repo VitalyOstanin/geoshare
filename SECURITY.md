@@ -8,6 +8,7 @@
 - [What not to send](#what-not-to-send)
 - [What happens next](#what-happens-next)
 - [What counts as a vulnerability](#what-counts-as-a-vulnerability)
+- [What the setup site is trusted with](#what-the-setup-site-is-trusted-with)
 
 ## Supported versions
 
@@ -59,3 +60,21 @@ Not a vulnerability: anything that needs the project owner's own Google
 account or the Firebase console, since the owner holds the whole project by
 design; and failures that only stop the application or the page from working
 — open an ordinary issue for those.
+
+## What the setup site is trusted with
+
+The setup page sets up a new group's project with its project owner's own
+token, and what it deploys there, the Firestore rules and the group's page,
+it takes from the setup site as the site serves them at that moment
+(ADR-0033). Nothing checks them against the repository on the way. Whoever
+holds the Hosting project of the setup site therefore decides the rules and
+the page of every group set up while they hold it; groups set up before are
+not touched, and `tools/project.sh update` deploys from a working copy of the
+repository, not from the site.
+
+To check a group set up through the site, compare its rules with the
+repository: `curl -s https://geoshare-setup.web.app/firestore.rules` against
+`firebase/firestore.rules` at the release tag, as the release steps in
+[docs/development.md](docs/development.md) do. The rules deployed to the
+group's own project are the same file with the project owner's address
+written in.
