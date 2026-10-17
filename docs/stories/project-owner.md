@@ -64,7 +64,8 @@ Acceptance:
 
 - the script ends with `https://<site>.web.app/join` and a QR code of it;
 - the device that opens the link fetches the settings and asks to sign in;
-- the first signed-in person founds the group (ADM-01).
+- the project owner, signed in with the account that deployed the rules,
+  founds the group (ADM-01); another account is refused (ADR 0038).
 
 ## OWN-04 Keep the rules and the page up to date
 

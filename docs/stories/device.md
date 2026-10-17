@@ -219,19 +219,32 @@ Acceptance:
 
 ## DEV-13 Update itself
 
-- Status: planned
+- Status: done
 - ADR: —
-- Tests: —
-- Not covered: planned
+- Tests: Android `UpdateRulesTest`, `UpdateCheckTest`, `LatestReleaseTest`, `ReleaseCheckTest`, `ApkVerifierTest`, `ApkDownloadTest`, `UpdateBlockStateTest`, `BootReceiverTest` (the service starts again after an update)
+- Not covered: the networks allowed by the member (MEM-20) do not apply to the update; the application does not compare signing keys itself; the system installer's screen and the permission page, which no test opens
 
 As a member I let the application learn about a new published build and
 install it, so that I do not have to look for updates.
 
 Acceptance:
 
-- asks about once a day, over the networks allowed (MEM-20);
-- installs only a build signed with the same key;
-- starts the service again after the install.
+- asks GitHub for the latest release about once a day, from the screen's
+  start and from the sharing service, which looks every hour and asks only
+  when the last check is a day old;
+- the daily look can be switched off in the settings; "Check for updates"
+  asks at once and works either way;
+- a release newer than the application is announced once, by a notification
+  that opens the settings, and the settings button carries a dot while it is
+  waiting;
+- the APK is downloaded when the member presses "Update", with progress and
+  a way to cancel, and is kept only if its size and SHA-256 are those the
+  release announces; a release without them is no update;
+- the downloaded file is handed to the system's installer; if the
+  application is not yet allowed to install applications, the system's page
+  for that opens first;
+- the sharing service starts again after the update, as it does after a
+  boot, unless the device refuses it.
 
 ## DEV-14 Use the location services of Huawei devices
 

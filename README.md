@@ -121,6 +121,10 @@ describes it.
 - The project owner reads everything from the Firebase console, past the
   rules: whoever sets the project up should be somebody the group trusts
   with that.
+- The application asks GitHub once a day whether a newer release exists
+  (switchable off in the settings) and downloads the package from there when
+  you press "Update". GitHub sees the device's address and that it asked;
+  nothing about the group, the places or the account is sent.
 - The document model and the reasons behind every rule are in
   [firebase/data-model.md](firebase/data-model.md), and the rules are held to
   them by tests run against the Firestore emulator.

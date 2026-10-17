@@ -13,8 +13,9 @@
 ## Supported versions
 
 Fixes go into the latest release of the Android application and the current
-page and rules in `master`. Earlier releases are not updated: install the
-latest one.
+page and rules in `master`. Earlier releases are not updated: the releases
+after 0.1.1 offer the latest version themselves; on 0.1.1 and earlier install
+the latest one by hand.
 
 ## Reporting a vulnerability
 
@@ -55,6 +56,15 @@ changing another member's devices, names or grants; the page or the
 application running code or loading data from a link that is not the
 group's own project; a position or a name leaving the device anywhere other
 than the group's Firebase project.
+
+The one exception to running code from elsewhere is the update: the
+application asks GitHub for the latest release of this repository, downloads
+its APK over https from GitHub's own hosts, holds it against the size and the
+SHA-256 digest GitHub states for it, and only then hands it to the system's
+installer, which refuses a package signed with a different key than the
+installed one. Installing anything else, getting past that check, or
+substituting the answer so that another package is installed is a
+vulnerability.
 
 Not a vulnerability: anything that needs the project owner's own Google
 account or the Firebase console, since the owner holds the whole project by

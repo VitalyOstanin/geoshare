@@ -105,7 +105,7 @@ The page needs no such step: it is served by the site of its project, beside a
 
 | №   | Client      | Built from                          | Talks to                                    | Notes                                                                     |
 |-----|-------------|-------------------------------------|---------------------------------------------|---------------------------------------------------------------------------|
-| 1   | Application | `android/`, Kotlin and Compose      | every project it has a connection to        | publishes positions; collection modes keep the writes within the quota    |
+| 1   | Application | `android/`, Kotlin and Compose      | its projects; GitHub, for updates           | publishes positions; collection modes keep the writes within the quota    |
 | 2   | Page        | `web/public/`, JavaScript, no build | the project whose site serves it            | watches and administers; publishes no position                            |
 | 3   | Setup page  | `web/public/setup.html`             | the Google APIs of the project being set up | runs with the project owner's own token, on the setup site                |
 | 4   | Rules       | `firebase/firestore.rules`          | —                                           | the only guard of the data; deployed to each project by its project owner |
@@ -143,4 +143,4 @@ against it for 30 days.
 | 1   | OpenStreetMap tile servers | the map's raster tiles (ADR-0006)                   | which tiles a client draws, so roughly where it looks |
 | 2   | Google sign-in             | the members' accounts (ADR-0002)                    | that the account signed in to this project            |
 | 3   | Orbit files                | holding the sky against published orbits (ADR-0023) | that the device downloaded them                       |
-| 4   | GitHub Releases            | the application package and its checksums           | who downloaded a release                              |
+| 4   | GitHub Releases            | the daily update check, the package, checksums      | device address; that it checked or downloaded         |

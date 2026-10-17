@@ -103,8 +103,8 @@ Each story names its records in `ADR`; the same links the other way round:
 | 35 | [0035](../ADR/0035-the-page-serves-its-libraries-itself.md)            | The page serves its libraries itself, one directory per version        | — (how the page is built and served)                           |
 | 36 | [0036](../ADR/0036-a-project-holds-one-group.md)                       | A project holds one group, founded once                                | ADM-01                                                         |
 | 37 | [0037](../ADR/0037-google-cloud-shell-is-not-supported.md)             | Google Cloud Shell is not a supported place to set up a project        | —                                                              |
-| 38 | [0038](../ADR/0038-the-first-group-is-founded-by-the-project-owner.md) | The first group of a project is founded by its owner                   | OWN-04, OWN-09                                                 |
+| 38 | [0038](../ADR/0038-the-first-group-is-founded-by-the-project-owner.md) | The first group of a project is founded by its owner                   | OWN-04, OWN-09, ADM-01                                         |
 
 Stories that rest on no record: OWN-07, OWN-10, ADM-10, ADM-11, MEM-06, MEM-11,
-MEM-12, MEM-15, MEM-22, DEV-05, DEV-06, DEV-12, DEV-13, DEV-14.
+MEM-12, MEM-15, MEM-22, DEV-05, DEV-06, DEV-12, DEV-14.
 They are either planned, or follow from a record named by a neighbouring story.

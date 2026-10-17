@@ -22,11 +22,12 @@ administrator does too; the stories here are what only an administrator does.
 ## ADM-01 Found the group
 
 - Status: done
-- ADR: 0009, 0016, 0019, 0036
-- Tests: rules `membership.test.mjs` (membership; the name of a group; the one group of a project); Android `MembershipTest`, `GroupCaptionTest`; page `group-name.test.mjs`, `membership.test.mjs`
+- ADR: 0009, 0016, 0019, 0036, 0038
+- Tests: rules `membership.test.mjs` (membership; the name of a group; the one group of a project), `owner-founding.test.mjs` (only the project owner founds); Android `MembershipTest`, `GroupCaptionTest`; page `group-name.test.mjs`, `membership.test.mjs`
 
-As the first person to sign in to a new project I found the group, giving it a
-name if I like, so that there is a group to invite the others to.
+As the project owner, signed in to a new project with the Google account that
+deployed its rules, I found the group, giving it a name if I like, so that
+there is a group to invite the others to.
 
 Acceptance:
 
@@ -37,6 +38,12 @@ Acceptance:
 - both the device and the page can found it;
 - a project is founded once: the founding writes `project/group`, and once
   that names a group nobody else can found one;
+- only the project owner founds the group: the rules, as deployed, accept the
+  founding from the verified address of the owner's Google account alone, so
+  anybody else who signs in first is refused and the project stays empty for
+  the owner; the screens of the device and the page still offer the founding
+  to every account in an empty project and show the refusal as a failed write,
+  with no word that the founding is the owner's;
 - a person without a group in a project that has one is told so, and that a
   group of their own needs a project of its own, and is offered only an
   invitation.
