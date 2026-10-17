@@ -109,11 +109,12 @@ write(path.join(pub, "setup-config.json"), {
 // Firebase, Firestore, Service Usage, Rules and Hosting APIs, the upload host
 // of Hosting among them. The page never loads the Google API loader that the
 // map page's sign-in uses, so apis.google.com is dropped from script-src.
-// style-src keeps 'unsafe-inline': setup.html carries its own <style> block
-// and a style attribute, and the Google Identity Services guide asks for no
-// more than https://accounts.google.com/gsi/style there. Trusted Types are not
-// required: the page has no HTML sinks, but loadGis() assigns a plain string
-// to script.src, which the requirement would block.
+// style-src drops 'unsafe-inline': setup.html keeps its styles in
+// styles/setup.css, and the Google Identity Services guide asks for no more
+// than https://accounts.google.com/gsi/style there. Trusted Types are not
+// required: the guide says nothing about the library working under
+// require-trusted-types-for, and loadGis() assigns a plain string to
+// script.src, which the requirement would block.
 let policy = hosting.headers.flatMap((rule) => rule.headers)
     .find((h) => h.key === "Content-Security-Policy").value;
 
@@ -121,7 +122,10 @@ policy = policy.replace(
     "script-src 'self' https://apis.google.com",
     "script-src 'self' https://accounts.google.com",
 );
-policy = policy.replace("style-src 'self'", "style-src 'self' https://accounts.google.com");
+policy = policy.replace(
+    "style-src 'self' 'unsafe-inline'",
+    "style-src 'self' https://accounts.google.com/gsi/style",
+);
 policy = policy.replace("connect-src 'self'", "connect-src 'self' https://accounts.google.com");
 
 const siteHosting = structuredClone(hosting);

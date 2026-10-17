@@ -1,0 +1,61 @@
+/* base.css makes the body a fixed-height column for the map; this
+   page is a document that scrolls. */
+body { height: auto; min-height: 100dvh; }
+main { margin: 0 auto; max-width: 28rem; width: 100%; box-sizing: border-box;
+       padding: 1.5rem; display: flex; flex-direction: column; gap: 1.1rem; }
+main > section { display: flex; flex-direction: column; gap: 1.1rem; }
+section[hidden] { display: none; }
+/* The QR code keeps white around it in the dark theme too: a camera
+   reads dark modules on light. */
+.qr { width: 168px; height: 168px; border: 1px solid var(--edge);
+      border-radius: 8px; overflow: hidden; }
+.qr svg { display: block; width: 100%; height: 100%; }
+.kicker { font-size: var(--text-body); font-weight: 600; color: var(--link);
+          letter-spacing: 0.02em; text-transform: uppercase; }
+h1 { margin: 0; font-size: 1.5rem; font-weight: 600; }
+p, ol { margin: 0; line-height: 1.45; }
+ol { padding-left: 1.25rem; display: flex; flex-direction: column; gap: 0.6rem; }
+.muted { opacity: 0.8; }
+.small { font-size: var(--text-body); }
+.button { box-sizing: border-box; min-height: 3rem; display: flex; align-items: center;
+          justify-content: center; border-radius: 1.5rem; padding: 0 1.2rem;
+          font: inherit; font-weight: 600; text-decoration: none; cursor: pointer;
+          border: 1px solid var(--edge); background: transparent; color: var(--link); }
+.button.primary { border-color: var(--link); background: var(--link);
+                  color: var(--on-link); }
+.button:disabled { border-color: var(--off-fill); background: var(--off-fill);
+                   color: var(--on-off); cursor: default; }
+.card { display: flex; flex-direction: column; gap: 0.6rem; padding: 1rem;
+        border-radius: 0.75rem; border: 1px solid var(--edge); }
+.card.centered { align-items: center; }
+.card.active { border: 2px solid var(--link); }
+.row { display: flex; gap: 0.5rem; align-items: center; justify-content: space-between; }
+.ok { color: var(--charging); font-weight: 600; }
+.bad { color: var(--error); }
+code { padding: 0.6rem; border-radius: 0.5rem; background: var(--off-fill);
+       overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0;
+       flex-grow: 1; font-size: var(--text-body); }
+label.choice { display: flex; gap: 0.75rem; align-items: center; padding: 0.9rem 1rem;
+               border-radius: 0.75rem; border: 1px solid var(--edge); cursor: pointer; }
+label.choice:has(input:checked) { border: 2px solid var(--link); }
+label.choice input, label.tick input { width: 1.25rem; height: 1.25rem; margin: 0; }
+label.tick { display: flex; gap: 0.6rem; align-items: center; }
+.choice-text { display: flex; flex-direction: column; }
+.choice-name { font-weight: 600; }
+#choices, #steps { display: flex; flex-direction: column; gap: 0.5rem; }
+#steps { gap: 0; border-radius: 0.75rem; border: 1px solid var(--edge); }
+.line { display: flex; gap: 0.75rem; align-items: center; padding: 0.75rem 1rem;
+        border-bottom: 1px solid var(--edge); }
+.line:last-child { border-bottom: 0; }
+.line .mark { width: 1.4rem; height: 1.4rem; flex-shrink: 0; border-radius: 50%;
+              display: flex; align-items: center; justify-content: center;
+              font-size: var(--text-body); font-weight: 700;
+              background: var(--off-fill); color: var(--on-off); }
+.line.running .mark { background: var(--link); color: var(--on-link); }
+.line.done .mark { background: var(--charging); color: #fff; }
+.line.failed .mark { background: var(--error); color: #fff; }
+.line.pending { opacity: 0.75; }
+.privacy { align-self: center; margin-top: 0.5rem; color: inherit; }
+p.muted a { color: var(--link); }
+.line-text { display: flex; flex-direction: column; }
+.line .why { font-size: var(--text-body); color: var(--error); overflow-wrap: anywhere; }
