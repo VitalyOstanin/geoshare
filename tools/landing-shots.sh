@@ -112,6 +112,9 @@ take() {
     tap "${says[group_invite_address]}"
     adb_e shell input text "${INVITEE}"
     tap "${says[group_invite_create]}"
+    # The invitation is drawn once the database has it; scrolling before that
+    # stops at the end of the screen as it was, above the QR code.
+    wait_for --prefix "${says[invitation]}" > /dev/null
     scroll_to_end
     wait_for "${says[group_make_another_invitation]}" > /dev/null
     shoot "${language}/invitation-${theme}" 2
