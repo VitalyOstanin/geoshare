@@ -13,7 +13,6 @@
     <ID>LongMethod:LicencesScreen.kt:@Composable fun LicencesScreen</ID>
     <ID>LongMethod:MainActivity.kt:MainActivity$@Composable private fun GroupsScreen</ID>
     <ID>LongMethod:MapOverlays.kt:@Composable internal fun OverTheSettings</ID>
-    <ID>LongMethod:MapScreen.kt:@Composable fun MapScreen</ID>
     <ID>LongMethod:MarkerIcon.kt:private fun pinBitmap: Bitmap</ID>
     <ID>LongMethod:MemberButtons.kt:@Composable internal fun MemberButtons</ID>
     <ID>LongMethod:MyPhonesScreen.kt:@Composable fun MyPhonesScreen</ID>
