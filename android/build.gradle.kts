@@ -29,6 +29,24 @@ plugins {
     alias(libs.plugins.detekt) apply false
 }
 
+// The lowest version of a build tool's library without its known
+// vulnerabilities, the same as the build script's floors above, which are
+// read before anything in this file is.
+val toolFloors =
+    mapOf(
+        "org.bouncycastle:bcprov-jdk18on" to "1.86",
+        "org.bouncycastle:bcpkix-jdk18on" to "1.86",
+        "org.bouncycastle:bcutil-jdk18on" to "1.86",
+        "com.fasterxml.jackson.core:jackson-core" to "2.22.3",
+        "com.fasterxml.jackson.core:jackson-databind" to "2.22.3",
+        "org.bitbucket.b_c:jose4j" to "0.9.7",
+        "org.jdom:jdom2" to "2.0.6.1",
+        "org.apache.commons:commons-lang3" to "3.21.0",
+        "org.apache.httpcomponents:httpclient" to "4.5.14",
+        "ch.qos.logback:logback-core" to "1.5.38",
+        "ch.qos.logback:logback-classic" to "1.5.38",
+    )
+
 // Read out here because inside the blocks below `libs` would be looked up on
 // the project being configured, which has no version catalogue.
 val ktlintVersion = libs.versions.ktlint.get()
@@ -44,13 +62,29 @@ allprojects {
         version.set(ktlintVersion)
     }
 
-    // ktlint's own command line brings Logback 1.3, whose fixes are only in
-    // 1.5; the two halves of Logback have to be the same version.
-    configurations.matching { it.name.startsWith("ktlint") }.configureEach {
+    // The same libraries reach the Android lint run and ktlint through
+    // configurations of their own, which the build script's floors above do
+    // not cover; ktlint's command line brings Logback 1.3, whose fixes are in
+    // 1.5 only. A version below its floor is raised, never one above lowered.
+    // Local copies, so that the rule holds no reference to this script.
+    val floors = toolFloors
+    // Dotted release numbers part by part; a version with anything but
+    // numbers in it is left as it is.
+    val olderThan = { version: String, than: String ->
+        val have = version.split('.').map { it.toIntOrNull() }
+        val want = than.split('.').map { it.toInt() }
+        val parts = maxOf(have.size, want.size)
+        val pairs = (0 until parts).map { (have.getOrElse(it) { 0 }) to want.getOrElse(it) { 0 } }
+        val differ = pairs.firstOrNull { (x, y) -> x != y }
+        null !in have && differ != null && differ.first!! < differ.second
+    }
+    configurations.configureEach {
         resolutionStrategy.eachDependency {
-            if (requested.group == "ch.qos.logback") {
-                useVersion("1.5.38")
-                because("Logback 1.3 has known vulnerabilities fixed in 1.5 only")
+            val floor = floors["${requested.group}:${requested.name}"]
+            val asked = requested.version
+            if (floor != null && asked != null && olderThan(asked, floor)) {
+                useVersion(floor)
+                because("$asked has known vulnerabilities fixed by $floor")
             }
         }
     }
