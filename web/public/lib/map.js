@@ -104,6 +104,13 @@ const FACE_STEP = 28;
 const FACE_INSET = 6;
 
 /**
+ * Where the tiles come from. The device draws the same ones; its copy of this
+ * address is `tileUrl` in android/gradle.properties, and a test holds the two
+ * together.
+ */
+const TILE_URL = 'https://tile.openstreetmap.org/{z}/{x}/{y}.png';
+
+/**
  * The tiles, in the two shades a browser asks for.
  *
  * A tile is a picture drawn on the server, so its colours cannot be changed
@@ -117,7 +124,7 @@ const STYLE = {
     sources: {
         osm: {
             type: 'raster',
-            tiles: ['https://tile.openstreetmap.org/{z}/{x}/{y}.png'],
+            tiles: [TILE_URL],
             tileSize: 256,
             maxzoom: 19,
             attribution: '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',

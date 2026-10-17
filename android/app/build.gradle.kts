@@ -54,6 +54,32 @@ val setupPageUrl: String =
         }
     }
 
+// The same goes for the other addresses a fork may want to change: they end up
+// in the generated BuildConfig, between quotes, and in a style document that
+// is JSON, so a quote, a backslash or a space in one breaks the build far from
+// the cause.
+val tileUrl: String =
+    providers.gradleProperty("tileUrl").get().also {
+        require(
+            Regex("""^https://[^"\\\s]+$""").matches(it) &&
+                listOf("{z}", "{x}", "{y}").all(it::contains),
+        ) {
+            "tileUrl must be an https address with {z}, {x} and {y} in it, not '$it'"
+        }
+    }
+val issuePageUrl: String =
+    providers.gradleProperty("issuePageUrl").get().also {
+        require(Regex("""^https://[^"\\\s?#]+$""").matches(it)) {
+            "issuePageUrl must be an https address without a query, not '$it'"
+        }
+    }
+val orbitsUrl: String =
+    providers.gradleProperty("orbitsUrl").get().also {
+        require(Regex("""^https://[^"\\\s%]+/$""").matches(it)) {
+            "orbitsUrl must be an https address ending in /, not '$it'"
+        }
+    }
+
 // Coverage is counted only when asked for, with -Pcoverage: the agent that
 // counts it slows every test run, and an ordinary run has no use for the
 // numbers. tools/coverage.sh is what passes it.
@@ -74,6 +100,9 @@ android {
         versionCode = appVersionCode
         versionName = appVersionName
         buildConfigField("String", "SETUP_PAGE_URL", "\"$setupPageUrl\"")
+        buildConfigField("String", "TILE_URL", "\"$tileUrl\"")
+        buildConfigField("String", "ISSUE_PAGE_URL", "\"$issuePageUrl\"")
+        buildConfigField("String", "ORBITS_URL", "\"$orbitsUrl\"")
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
 
         ndk {

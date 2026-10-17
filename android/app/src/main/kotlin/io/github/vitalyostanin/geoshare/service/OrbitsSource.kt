@@ -1,6 +1,7 @@
 package io.github.vitalyostanin.geoshare.service
 
 import android.content.Context
+import io.github.vitalyostanin.geoshare.BuildConfig
 import io.github.vitalyostanin.geoshare.R
 import io.github.vitalyostanin.geoshare.collection.Orbits
 import io.github.vitalyostanin.geoshare.collection.orbitsOf
@@ -55,7 +56,7 @@ private val NAMES =
 /** Where the file of [day] is published under [name]. */
 fun orbitsUrl(name: String, day: LocalDate): String = String.format(
     Locale.ROOT,
-    "https://igs.bkg.bund.de/root_ftp/IGS/BRDC/%04d/%03d/%s_%04d%03d0000_01D_MN.rnx.gz",
+    "${BuildConfig.ORBITS_URL}%04d/%03d/%s_%04d%03d0000_01D_MN.rnx.gz",
     day.year,
     day.dayOfYear,
     name,

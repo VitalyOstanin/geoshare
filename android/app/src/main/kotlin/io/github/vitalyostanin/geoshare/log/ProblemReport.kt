@@ -1,11 +1,12 @@
 package io.github.vitalyostanin.geoshare.log
 
+import io.github.vitalyostanin.geoshare.BuildConfig
 import io.github.vitalyostanin.geoshare.project.percentEncoded
 
 /** The longest address the issue page is handed; browsers and servers refuse much past this. */
 const val ISSUE_URL_LIMIT: Int = 6000
 
-private const val ISSUE_PAGE = "https://github.com/VitalyOstanin/geoshare/issues/new"
+private val ISSUE_PAGE: String = BuildConfig.ISSUE_PAGE_URL
 private const val DEFAULT_TITLE = "Problem report"
 private const val TITLE_LIMIT = 100
 private const val DESCRIPTION_LIMIT = 600

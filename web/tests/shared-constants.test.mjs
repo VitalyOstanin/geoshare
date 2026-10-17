@@ -361,3 +361,12 @@ test('a search is the same red on the pin and in words, by day and by night', ()
         cssToken(css, 'alarm-text', 'prefers-color-scheme: dark'),
     );
 });
+
+test('the map is drawn from the same tiles on the device and on the page', () => {
+    const properties = source('android/gradle.properties');
+    const [, device] = /^tileUrl=(.+)$/mu.exec(properties);
+
+    const page = javascript('web/public/lib/map.js', 'TILE_URL').replaceAll("'", '');
+
+    assert.equal(device.trim(), page);
+});
