@@ -200,6 +200,9 @@ async function gotToken(answer) {
         return;
     }
 
+    // A token from an earlier sign-in is dropped, not revoked: revoke() takes
+    // back the whole consent to the app, and the new token with it. The old
+    // one runs out by itself.
     state.token = answer.access_token;
     state.api = makeApi(fetch, state.token);
     $('s2-error').hidden = true;
