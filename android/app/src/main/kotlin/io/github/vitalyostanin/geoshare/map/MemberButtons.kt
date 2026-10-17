@@ -106,43 +106,11 @@ internal fun MemberButtons(
     val shown = members.take(onStrip)
     val rest = members.drop(onStrip)
 
-    // How bright the ring around every card is while the strip is waiting to
-    // be answered. It fades in and out on its own rather than sitting at one
-    // strength, because a border that simply appeared and stayed would be
-    // missed by anybody not looking at the strip at that exact moment — the
-    // whole reason it is a card being chosen from rather than a mode already
-    // running.
-    val ringAlpha =
-        if (awaitingTarget) {
-            val blink = rememberInfiniteTransition(label = "followTargetRing")
-
-            blink.animateFloat(
-                initialValue = 0.35f,
-                targetValue = 1f,
-                animationSpec =
-                infiniteRepeatable(
-                    animation = tween(durationMillis = 700),
-                    repeatMode = RepeatMode.Reverse,
-                ),
-                label = "followTargetRingAlpha",
-            ).value
-        } else {
-            null
-        }
+    val ringAlpha = followTargetRingAlpha(awaitingTarget)
 
     Column(modifier = modifier) {
         if (awaitingTarget) {
-            Surface(
-                color = MaterialTheme.colorScheme.inverseSurface,
-                contentColor = MaterialTheme.colorScheme.inverseOnSurface,
-                modifier = Modifier.fillMaxWidth(),
-            ) {
-                Text(
-                    text = stringResource(R.string.map_follow_awaiting_banner),
-                    style = MaterialTheme.typography.bodyMedium,
-                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
-                )
-            }
+            AwaitingBanner()
         }
 
         Row(
@@ -195,6 +163,49 @@ internal fun MemberButtons(
                 onSelect(positionId)
             },
             onClose = { onShowAll(false) },
+        )
+    }
+}
+
+/**
+ * How bright the ring around every card is while the strip is waiting to be
+ * answered, or null while it is not.
+ *
+ * It fades in and out on its own rather than sitting at one strength, because
+ * a border that simply appeared and stayed would be missed by anybody not
+ * looking at the strip at that exact moment — the whole reason it is a card
+ * being chosen from rather than a mode already running.
+ */
+@Composable
+private fun followTargetRingAlpha(awaitingTarget: Boolean): Float? = if (awaitingTarget) {
+    val blink = rememberInfiniteTransition(label = "followTargetRing")
+
+    blink.animateFloat(
+        initialValue = 0.35f,
+        targetValue = 1f,
+        animationSpec =
+        infiniteRepeatable(
+            animation = tween(durationMillis = 700),
+            repeatMode = RepeatMode.Reverse,
+        ),
+        label = "followTargetRingAlpha",
+    ).value
+} else {
+    null
+}
+
+/** The line over the strip saying a member is to be chosen off it. */
+@Composable
+private fun AwaitingBanner() {
+    Surface(
+        color = MaterialTheme.colorScheme.inverseSurface,
+        contentColor = MaterialTheme.colorScheme.inverseOnSurface,
+        modifier = Modifier.fillMaxWidth(),
+    ) {
+        Text(
+            text = stringResource(R.string.map_follow_awaiting_banner),
+            style = MaterialTheme.typography.bodyMedium,
+            modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
         )
     }
 }

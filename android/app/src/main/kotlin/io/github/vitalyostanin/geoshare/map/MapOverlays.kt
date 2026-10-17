@@ -287,67 +287,125 @@ internal fun OverTheSettings(
         AccuracyScreen(settings = settings, actions = actions, onClose = onCloseAccuracy)
     }
 
-    // The devices are read from this member's own grant, which the member
-    // always may read.
     if (myPhonesOpen) {
-        MyPhonesScreen(
-            phones =
-            phoneLines(
-                ownMemberId,
-                settings.grants[ownMemberId]?.phones.orEmpty(),
-                labels,
-                seenAt,
-            ),
+        MyPhonesOverSettings(
+            settings = settings,
+            actions = actions,
+            ownMemberId = ownMemberId,
             ownPhoneId = ownPhoneId,
+            labels = labels,
             now = now,
-            sirenOf = actions.sirenOf,
-            onCallSiren = actions.onCallSiren,
-            onStopSiren = actions.onStopSiren,
-            resetOf = actions.resetOf,
-            onAskReset = actions.onAskReset,
-            onForgetPhone = actions.onForgetPhone,
-            groupNames =
-            groups.choices.filter { it.leave != Leave.NOT_ON_ROSTER }.map { it.caption },
-            groupCaption =
-            groups.choices
-                .firstOrNull { it.projectId == groups.selected }
-                ?.caption
-                ?.takeIf { switcherShown(groups.choices.size) },
             searches = searches,
-            mayLookFor = runsTheGroup,
-            onSearch = actions.onSearch,
-            onEndSearch = actions.onEndSearch,
+            seenAt = seenAt,
+            groups = groups,
+            runsTheGroup = runsTheGroup,
             onClose = onCloseMyPhones,
         )
     }
 
     if (adminOpen && runsTheGroup) {
-        AdminPanel(
-            roster = settings.roster ?: Roster(),
+        AdminOverSettings(
+            settings = settings,
+            actions = actions,
             profiles = profiles,
-            grants = settings.grants,
             ownMemberId = ownMemberId,
+            ownPhoneId = ownPhoneId,
             labels = labels,
             now = now,
-            invitation = settings.invitation,
-            site = settings.site,
-            trouble = settings.groupTrouble,
             searches = searches,
             seenAt = seenAt,
-            onMakeInvitation = actions.onMakeInvitation,
-            onRemoveMember = actions.onRemoveMember,
-            onSetRunning = actions.onSetRunning,
-            onRenameGroup = actions.onRenameGroup,
-            onSearch = actions.onSearch,
-            onEndSearch = actions.onEndSearch,
-            ownPhoneId = ownPhoneId,
-            sirenOf = actions.sirenOf,
-            onCallSiren = actions.onCallSiren,
-            onStopSiren = actions.onStopSiren,
-            resetOf = actions.resetOf,
-            onAskReset = actions.onAskReset,
-            invitationStanding = actions.invitationStanding,
             onClose = onCloseAdmin,
         )
     }
+}
+
+/** The member's own devices, drawn over the settings. */
+@Composable
+private fun MyPhonesOverSettings(
+    settings: SettingsState,
+    actions: SettingsActions,
+    ownMemberId: String,
+    ownPhoneId: String?,
+    labels: Labels,
+    now: Instant,
+    searches: Map<String, Search>,
+    seenAt: Map<String, Instant>,
+    groups: GroupSwitch,
+    runsTheGroup: Boolean,
+    onClose: () -> Unit,
+) {
+    // The devices are read from this member's own grant, which the member
+    // always may read.
+    MyPhonesScreen(
+        phones =
+        phoneLines(
+            ownMemberId,
+            settings.grants[ownMemberId]?.phones.orEmpty(),
+            labels,
+            seenAt,
+        ),
+        ownPhoneId = ownPhoneId,
+        now = now,
+        sirenOf = actions.sirenOf,
+        onCallSiren = actions.onCallSiren,
+        onStopSiren = actions.onStopSiren,
+        resetOf = actions.resetOf,
+        onAskReset = actions.onAskReset,
+        onForgetPhone = actions.onForgetPhone,
+        groupNames =
+        groups.choices.filter { it.leave != Leave.NOT_ON_ROSTER }.map { it.caption },
+        groupCaption =
+        groups.choices
+            .firstOrNull { it.projectId == groups.selected }
+            ?.caption
+            ?.takeIf { switcherShown(groups.choices.size) },
+        searches = searches,
+        mayLookFor = runsTheGroup,
+        onSearch = actions.onSearch,
+        onEndSearch = actions.onEndSearch,
+        onClose = onClose,
+    )
+}
+
+/** The administrator's panel, drawn over the settings. */
+@Composable
+private fun AdminOverSettings(
+    settings: SettingsState,
+    actions: SettingsActions,
+    profiles: Map<String, MemberProfile>,
+    ownMemberId: String,
+    ownPhoneId: String?,
+    labels: Labels,
+    now: Instant,
+    searches: Map<String, Search>,
+    seenAt: Map<String, Instant>,
+    onClose: () -> Unit,
+) {
+    AdminPanel(
+        roster = settings.roster ?: Roster(),
+        profiles = profiles,
+        grants = settings.grants,
+        ownMemberId = ownMemberId,
+        labels = labels,
+        now = now,
+        invitation = settings.invitation,
+        site = settings.site,
+        trouble = settings.groupTrouble,
+        searches = searches,
+        seenAt = seenAt,
+        onMakeInvitation = actions.onMakeInvitation,
+        onRemoveMember = actions.onRemoveMember,
+        onSetRunning = actions.onSetRunning,
+        onRenameGroup = actions.onRenameGroup,
+        onSearch = actions.onSearch,
+        onEndSearch = actions.onEndSearch,
+        ownPhoneId = ownPhoneId,
+        sirenOf = actions.sirenOf,
+        onCallSiren = actions.onCallSiren,
+        onStopSiren = actions.onStopSiren,
+        resetOf = actions.resetOf,
+        onAskReset = actions.onAskReset,
+        invitationStanding = actions.invitationStanding,
+        onClose = onClose,
+    )
 }

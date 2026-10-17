@@ -3,6 +3,7 @@ package io.github.vitalyostanin.geoshare
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.State
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -12,6 +13,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.lifecycleScope
 import io.github.vitalyostanin.geoshare.auth.AuthState
 import io.github.vitalyostanin.geoshare.collection.Constellation
+import io.github.vitalyostanin.geoshare.collection.Watcher
 import io.github.vitalyostanin.geoshare.download.DownloadSetting
 import io.github.vitalyostanin.geoshare.download.DownloadState
 import io.github.vitalyostanin.geoshare.log.AppLog
@@ -20,10 +22,13 @@ import io.github.vitalyostanin.geoshare.map.GroupChoice
 import io.github.vitalyostanin.geoshare.map.GroupSwitch
 import io.github.vitalyostanin.geoshare.map.KeepWatching
 import io.github.vitalyostanin.geoshare.map.LabelKind
+import io.github.vitalyostanin.geoshare.map.Labels
+import io.github.vitalyostanin.geoshare.map.LinkState
 import io.github.vitalyostanin.geoshare.map.LocalLink
 import io.github.vitalyostanin.geoshare.map.MapScreen
 import io.github.vitalyostanin.geoshare.map.MemberGrant
 import io.github.vitalyostanin.geoshare.map.MemberProfile
+import io.github.vitalyostanin.geoshare.map.MembersInView
 import io.github.vitalyostanin.geoshare.map.PublishProfile
 import io.github.vitalyostanin.geoshare.map.Search
 import io.github.vitalyostanin.geoshare.map.SettingsActions
@@ -98,98 +103,175 @@ internal fun SignedInScreen(
     current: AuthState.SignedIn,
     kept: KeptChoices,
 ) {
-    val profiles by rememberMemberProfiles()
-    val searches by rememberSearches()
-    val grants by rememberMemberGrants(profiles, current.memberId)
-    val ownDocument =
-        remember(current.memberId) {
-            positionId(current.memberId, activity.device.id)
-        }
-    val onTheMap by rememberMemberPositions(grants, ownDocument, searches, profiles)
-    val labels by rememberOwnLabels(current.memberId)
-    val sharedWith by rememberOwnSharedWith(current.memberId)
-    val rosterSeen by rememberRosterSeen()
-    val roster = rosterSeen.roster
+    val reads = rememberGroupReads(activity, current.memberId)
+    val answers = rememberSaveable(saver = GroupAnswers.Saver) { GroupAnswers() }
     // A project with no group of this account's own in it yet refuses the
     // profile, the claim to be looking and the first share alike; they wait
     // for the group rather than be written and refused on every return.
-    val outside = rosterSeen.outside(current.memberId)
-    val link by rememberDatabaseLink()
-    val answers = rememberSaveable(saver = GroupAnswers.Saver) { GroupAnswers() }
+    val outside = reads.rosterSeen.value.outside(current.memberId)
 
     SignedInEffects(activity, connection, current, answers, outside)
 
-    // The other half of the same collection: this
-    // device says it is looking, and reads who else is.
-    val watching by rememberWatchers(current.memberId, activity.device.id)
+    SignedInMap(activity, connection, current, kept, answers, reads)
+}
 
+/**
+ * What [SignedInScreen] watches in the group, each as the [State] it comes
+ * from: the map reads them where it draws, and a callback handed down reads
+ * the latest rather than the value of the composition that made it.
+ */
+private class GroupReads(
+    val profiles: State<Map<String, MemberProfile>?>,
+    val searches: State<Map<String, Search>>,
+    val grants: State<Map<String, MemberGrant>>,
+    val onTheMap: State<MembersInView>,
+    val labels: State<Labels>,
+    val sharedWith: State<Map<String, Instant>>,
+    val rosterSeen: State<RosterSeen>,
+    val link: State<LinkState>,
+    val watching: State<List<Watcher>>,
+    val groupChoices: State<List<GroupChoice>>,
+    val downloadSetting: DownloadSetting,
+    val downloads: State<DownloadState>,
+)
+
+/** Starts every read of the group that the signed-in screen shows. */
+@Composable
+private fun rememberGroupReads(activity: MainActivity, memberId: String): GroupReads {
+    val profiles = rememberMemberProfiles()
+    val searches = rememberSearches()
+    val grants = rememberMemberGrants(profiles.value, memberId)
+    val ownDocument = remember(memberId) { positionId(memberId, activity.device.id) }
     // Watched rather than read once: the answer to the roaming question is
     // written by a receiver while this screen may be open.
     val everyGroup by Connections.all.collectAsStateWithLifecycle()
-    val groupChoices by rememberGroupChoices(everyGroup, activity.device.id)
     val downloadSetting = remember { DownloadSetting(activity) }
-    val downloads by remember { downloadSetting.changes() }
-        .collectAsStateWithLifecycle(downloadSetting.state())
+
+    return GroupReads(
+        profiles = profiles,
+        searches = searches,
+        grants = grants,
+        onTheMap =
+        rememberMemberPositions(grants.value, ownDocument, searches.value, profiles.value),
+        labels = rememberOwnLabels(memberId),
+        sharedWith = rememberOwnSharedWith(memberId),
+        rosterSeen = rememberRosterSeen(),
+        link = rememberDatabaseLink(),
+        // The other half of the same collection: this device says it is
+        // looking, and reads who else is.
+        watching = rememberWatchers(memberId, activity.device.id),
+        groupChoices = rememberGroupChoices(everyGroup, activity.device.id),
+        downloadSetting = downloadSetting,
+        downloads = remember { downloadSetting.changes() }
+            .collectAsStateWithLifecycle(downloadSetting.state()),
+    )
+}
+
+/** The map with the settings sheet and the first-share question over it. */
+@Composable
+private fun SignedInMap(
+    activity: MainActivity,
+    connection: GroupConnection,
+    current: AuthState.SignedIn,
+    kept: KeptChoices,
+    answers: GroupAnswers,
+    reads: GroupReads,
+) {
+    val profiles = reads.profiles.value
+    val searches = reads.searches.value
+    val labels = reads.labels.value
+    val onTheMap = reads.onTheMap.value
 
     // Whether the database answers, told to every screen below the map
     // rather than passed down through each of them.
-    CompositionLocalProvider(LocalLink provides link) {
+    CompositionLocalProvider(LocalLink provides reads.link.value) {
         MapScreen(
             // Called what this member called them, where
             // they did; the rest of the screen never
             // needs to know which name is whose.
             positions =
-            labelledPositions(onTheMap.positions, labels, grants, searches),
+            labelledPositions(onTheMap.positions, labels, reads.grants.value, searches),
             // Those whose position this device is refused:
             // an empty map with a reason is not the same
             // thing as an empty map without one.
             outOfReach = onTheMap.outOfReach,
             profiles = labelledProfiles(profiles.orEmpty(), labels),
-            watchers = watching,
+            watchers = reads.watching.value,
             ownMemberId = current.memberId,
             ownPhoneId = positionId(current.memberId, activity.device.id),
             ownDisplayName = current.displayName,
             ownPictureUrl = current.pictureUrl,
             searches = searches,
-            settings =
-            settingsStateOf(
-                activity = activity,
-                connection = connection,
-                memberId = current.memberId,
-                kept = kept,
-                answers = answers,
-                sharedWith = sharedWith,
-                downloads = downloads,
-                rosterSeen = rosterSeen,
-                grants = grants,
-                searches = searches,
-            ),
-            actions =
-            settingsActions(
-                activity = activity,
-                connection = connection,
-                current = current,
-                answers = answers,
-                sharedWith = { sharedWith },
-                roster = { roster },
-                downloadSetting = downloadSetting,
-                onSharingOn = kept.onSharingOn,
-                onJumpsFiltered = kept.onJumpsFiltered,
-                onSourcesLeftOut = kept.onSourcesLeftOut,
-                onTheme = kept.onTheme,
-                onStartupSet = kept.onStartupSet,
-            ),
+            settings = settingsStateFrom(activity, connection, current, kept, answers, reads),
+            actions = settingsActionsFrom(activity, connection, current, kept, answers, reads),
             labels = labels,
             onLabel = labelWriter(activity, current.memberId, connection),
-            groups = groupSwitch(activity, connection, groupChoices),
+            groups = groupSwitch(activity, connection, reads.groupChoices.value),
         )
 
         // Once per group, over the map: whom to show this member's place to,
         // while nobody has been given it yet.
-        if (!outside) {
-            AskFirstShare(activity, connection, current.memberId, profiles, sharedWith)
+        if (!reads.rosterSeen.value.outside(current.memberId)) {
+            AskFirstShare(
+                activity,
+                connection,
+                current.memberId,
+                profiles,
+                reads.sharedWith.value,
+            )
         }
     }
+}
+
+/** [settingsStateOf] for the values [reads] holds now. */
+private fun settingsStateFrom(
+    activity: MainActivity,
+    connection: GroupConnection,
+    current: AuthState.SignedIn,
+    kept: KeptChoices,
+    answers: GroupAnswers,
+    reads: GroupReads,
+): SettingsState = settingsStateOf(
+    activity = activity,
+    connection = connection,
+    memberId = current.memberId,
+    kept = kept,
+    answers = answers,
+    sharedWith = reads.sharedWith.value,
+    downloads = reads.downloads.value,
+    rosterSeen = reads.rosterSeen.value,
+    grants = reads.grants.value,
+    searches = reads.searches.value,
+)
+
+/**
+ * [settingsActions] for the group [reads] holds. The shared-with list is read
+ * when an action runs; the roster is the one this composition saw.
+ */
+private fun settingsActionsFrom(
+    activity: MainActivity,
+    connection: GroupConnection,
+    current: AuthState.SignedIn,
+    kept: KeptChoices,
+    answers: GroupAnswers,
+    reads: GroupReads,
+): SettingsActions {
+    val roster = reads.rosterSeen.value.roster
+
+    return settingsActions(
+        activity = activity,
+        connection = connection,
+        current = current,
+        answers = answers,
+        sharedWith = { reads.sharedWith.value },
+        roster = { roster },
+        downloadSetting = reads.downloadSetting,
+        onSharingOn = kept.onSharingOn,
+        onJumpsFiltered = kept.onJumpsFiltered,
+        onSourcesLeftOut = kept.onSourcesLeftOut,
+        onTheme = kept.onTheme,
+        onStartupSet = kept.onStartupSet,
+    )
 }
 
 /** Keeps a name this member gives a person or a device, in the activity's scope so a closed dialog does not drop it. */

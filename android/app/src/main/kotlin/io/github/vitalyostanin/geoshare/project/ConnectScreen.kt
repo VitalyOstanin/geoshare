@@ -193,12 +193,38 @@ private fun NotConnected(
     // wondering where their groups went.
     val unreadable = onCancel == null && remember { Connections.unreadableListKept(context) }
 
+    NotConnectedIntro(unreadable, joining = onCancel != null, showError = showError)
+
+    var scanning by rememberSaveable { mutableStateOf(false) }
+
+    ScanOrPaste(
+        onScan = { scanning = true },
+        onPaste = { onPasteLink(clipboardText(context)) },
+        onCancel = onCancel,
+    )
+
+    OwnGroupOffer(onCreate = { creating = true })
+
+    if (scanning) {
+        QrScanDialog(
+            onFound = { link ->
+                scanning = false
+                onPasteLink(link)
+            },
+            onDismiss = { scanning = false },
+        )
+    }
+}
+
+/** The title on screen А and the lines under it, among them what went wrong with a paste. */
+@Composable
+private fun NotConnectedIntro(unreadable: Boolean, joining: Boolean, showError: Boolean) {
     Text(
         text =
         stringResource(
             when {
                 unreadable -> R.string.connect_unreadable_title
-                onCancel == null -> R.string.connect_not_connected_title
+                !joining -> R.string.connect_not_connected_title
                 else -> R.string.connect_join_title
             },
         ),
@@ -225,19 +251,19 @@ private fun NotConnected(
             textAlign = TextAlign.Center,
         )
     }
+}
 
-    var scanning by rememberSaveable { mutableStateOf(false) }
-
+/** The ways to bring an invitation in on screen А, and the way back when [onCancel] is given. */
+@Composable
+private fun ScanOrPaste(onScan: () -> Unit, onPaste: () -> Unit, onCancel: (() -> Unit)?) {
     // The scanner first: an invitation is most often shown on the
     // administrator's screen right next to this one. The camera comes on
     // only once it is pressed.
-    Button(onClick = { scanning = true }) {
+    Button(onClick = onScan) {
         Text(text = stringResource(R.string.connect_scan_qr))
     }
 
-    FilledTonalButton(
-        onClick = { onPasteLink(clipboardText(context)) },
-    ) {
+    FilledTonalButton(onClick = onPaste) {
         Text(text = stringResource(R.string.connect_paste_link))
     }
 
@@ -246,7 +272,11 @@ private fun NotConnected(
             Text(text = stringResource(R.string.connect_cancel))
         }
     }
+}
 
+/** What is offered to someone with no invitation, under the divider on screen А. */
+@Composable
+private fun OwnGroupOffer(onCreate: () -> Unit) {
     HorizontalDivider(modifier = Modifier.padding(top = 16.dp))
 
     Text(
@@ -256,18 +286,8 @@ private fun NotConnected(
         textAlign = TextAlign.Center,
     )
 
-    OutlinedButton(onClick = { creating = true }) {
+    OutlinedButton(onClick = onCreate) {
         Text(text = stringResource(R.string.connect_own_group_button))
-    }
-
-    if (scanning) {
-        QrScanDialog(
-            onFound = { link ->
-                scanning = false
-                onPasteLink(link)
-            },
-            onDismiss = { scanning = false },
-        )
     }
 }
 

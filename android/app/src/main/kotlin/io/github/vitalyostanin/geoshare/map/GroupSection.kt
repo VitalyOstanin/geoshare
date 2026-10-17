@@ -172,7 +172,6 @@ private fun WayIn(
     onPasteLink: (String) -> Unit,
 ) {
     var typed by remember { mutableStateOf("") }
-    var groupName by remember { mutableStateOf("") }
     var scanning by remember { mutableStateOf(false) }
     val pasted = wayInPaste(typed)
     val taken = rememberProjectMark(readProjectMark).isTaken()
@@ -192,50 +191,10 @@ private fun WayIn(
     )
 
     if (!taken) {
-        // Optional: a group founded with the field left empty gets no name of its
-        // own and is shown by its founder's instead (ADR-0016).
-        OutlinedTextField(
-            value = groupName,
-            onValueChange = { groupName = it.take(GROUP_NAME_LIMIT) },
-            label = { Text(text = stringResource(R.string.group_name_optional_label)) },
-            singleLine = true,
-            modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 4.dp),
-        )
-
-        Row(
-            modifier = Modifier.fillMaxWidth().padding(horizontal = 8.dp),
-            horizontalArrangement = Arrangement.Start,
-        ) {
-            TextButton(onClick = { onFoundGroup(groupNameText(groupName)) }) {
-                Text(text = stringResource(R.string.group_found))
-            }
-        }
+        FoundGroupOffer(onFoundGroup = onFoundGroup)
     }
 
-    // Nothing is capitalised for the person typing: half of a "group.code"
-    // pair is an account id, where an upper case letter and a lower case one
-    // belong to two different accounts, and a pasted link is case-sensitive
-    // throughout. The code's own half of the older shape is put into upper
-    // case where it is read, which is after [wayInPaste] has told the two
-    // apart.
-    //
-    // The icon at the end reads the link off another screen's QR code and
-    // puts it here, to be joined by the button below like a pasted one.
-    OutlinedTextField(
-        value = typed,
-        onValueChange = { typed = it },
-        label = { Text(text = stringResource(R.string.group_code_label)) },
-        trailingIcon = {
-            IconButton(onClick = { scanning = true }) {
-                Icon(
-                    painter = painterResource(R.drawable.ic_qr_scan),
-                    contentDescription = stringResource(R.string.connect_scan_qr),
-                )
-            }
-        },
-        singleLine = true,
-        modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 4.dp),
-    )
+    CodeField(typed = typed, onTyped = { typed = it }, onScan = { scanning = true })
 
     if (scanning) {
         QrScanDialog(
@@ -265,6 +224,60 @@ private fun WayIn(
             Text(text = stringResource(R.string.group_join))
         }
     }
+}
+
+/** The field for a group's name and the button that founds the group, for [WayIn]. */
+@Composable
+private fun FoundGroupOffer(onFoundGroup: (String?) -> Unit) {
+    var groupName by remember { mutableStateOf("") }
+
+    // Optional: a group founded with the field left empty gets no name of its
+    // own and is shown by its founder's instead (ADR-0016).
+    OutlinedTextField(
+        value = groupName,
+        onValueChange = { groupName = it.take(GROUP_NAME_LIMIT) },
+        label = { Text(text = stringResource(R.string.group_name_optional_label)) },
+        singleLine = true,
+        modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 4.dp),
+    )
+
+    Row(
+        modifier = Modifier.fillMaxWidth().padding(horizontal = 8.dp),
+        horizontalArrangement = Arrangement.Start,
+    ) {
+        TextButton(onClick = { onFoundGroup(groupNameText(groupName)) }) {
+            Text(text = stringResource(R.string.group_found))
+        }
+    }
+}
+
+/** The field for an invitation, typed, pasted or read off a QR code, for [WayIn]. */
+@Composable
+private fun CodeField(typed: String, onTyped: (String) -> Unit, onScan: () -> Unit) {
+    // Nothing is capitalised for the person typing: half of a "group.code"
+    // pair is an account id, where an upper case letter and a lower case one
+    // belong to two different accounts, and a pasted link is case-sensitive
+    // throughout. The code's own half of the older shape is put into upper
+    // case where it is read, which is after [wayInPaste] has told the two
+    // apart.
+    //
+    // The icon at the end reads the link off another screen's QR code and
+    // puts it here, to be joined by the button below like a pasted one.
+    OutlinedTextField(
+        value = typed,
+        onValueChange = onTyped,
+        label = { Text(text = stringResource(R.string.group_code_label)) },
+        trailingIcon = {
+            IconButton(onClick = onScan) {
+                Icon(
+                    painter = painterResource(R.drawable.ic_qr_scan),
+                    contentDescription = stringResource(R.string.connect_scan_qr),
+                )
+            }
+        },
+        singleLine = true,
+        modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 4.dp),
+    )
 }
 
 /** The roster itself, with what the person looking at it may do. */

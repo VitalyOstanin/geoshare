@@ -251,40 +251,54 @@ fun groupIcon(
 private class Circle(val picture: Bitmap?, val text: String, val textColour: Int, val fade: Boolean)
 
 /**
- * The drawing itself, whether it is one member or several.
- *
- * A group is the same pin with a longer head: the head is a capsule, so its
- * ends stay round however many circles are put in it, and a single member is
- * the case where the capsule is as wide as it is tall — a circle.
+ * Every measurement the drawing of a pin rests on, worked out before the
+ * bitmap exists: the bitmap's own size is one of the results, so nothing can
+ * be drawn until all of it is known.
  */
-private fun pinBitmap(
+private class PinLayout(
+    val head: Int,
+    val step: Int,
+    val faceSide: Int,
+    val point: Int,
+    val pointHalf: Int,
+    val pointInset: Int,
+    val edge: Int,
+    val down: Int,
+    val ring: Int,
+    val framed: Int,
+    val headWidth: Int,
+    val textPaint: Paint,
+    val metrics: Paint.FontMetrics,
+    val labelWidth: Int,
+    val labelHeight: Int,
+    val soughtPaint: Paint,
+    val soughtMetrics: Paint.FontMetrics,
+    val soughtWidth: Int,
+    val soughtHeight: Int,
+    val soughtStack: Int,
+    val width: Int,
+    val headTop: Int,
+    val height: Int,
+)
+
+/** Measures a pin for [circleCount] circles, [label] and the optional [soughtMark] and frame. */
+private fun measurePin(
     context: Context,
     label: String,
-    body: Int,
-    circles: List<Circle>,
-    /** The word to ring the head with and write above the name, or null to draw neither. */
-    soughtMark: String? = null,
-    /**
-     * The colour to frame the name in, or null for none: the member whose card
-     * is open stands on top of any neighbour in the same spot, and their name
-     * lying over the neighbour's read as one line with it.
-     */
-    frame: Int? = null,
-): Bitmap {
+    circleCount: Int,
+    soughtMark: String?,
+    framedName: Boolean,
+): PinLayout {
     val head = dpToPx(context, PIN_HEAD_DP)
     val step = dpToPx(context, FACE_STEP_DP)
-    val faceSide = dpToPx(context, FACE_DP)
-    val point = dpToPx(context, PIN_POINT_DP)
-    val pointHalf = dpToPx(context, PIN_POINT_HALF_DP)
-    val pointInset = dpToPx(context, PIN_POINT_INSET_DP)
     val edge = dpToPx(context, PIN_EDGE_DP)
     val gap = dpToPx(context, LABEL_GAP_DP)
     val across = dpToPx(context, LABEL_PADDING_ACROSS_DP)
     val down = dpToPx(context, LABEL_PADDING_DOWN_DP)
     val ring = if (soughtMark != null) dpToPx(context, SOUGHT_RING_DP) else 0
-    val framed = if (frame != null) dpToPx(context, LABEL_FRAME_DP) else 0
+    val framed = if (framedName) dpToPx(context, LABEL_FRAME_DP) else 0
 
-    val headWidth = head + step * (circles.size - 1).coerceAtLeast(0)
+    val headWidth = head + step * (circleCount - 1).coerceAtLeast(0)
 
     val textPaint = labelPaint(context, LABEL_TEXT_COLOUR)
 
@@ -309,7 +323,57 @@ private fun pinBitmap(
 
     val width = maxOf(labelWidth + framed * 2, soughtWidth, headWidth + (edge + ring) * 2)
     val headTop = soughtStack + framed + labelHeight + framed + gap + edge + ring
-    val height = headTop + head + point
+    val point = dpToPx(context, PIN_POINT_DP)
+
+    return PinLayout(
+        head = head,
+        step = step,
+        faceSide = dpToPx(context, FACE_DP),
+        point = point,
+        pointHalf = dpToPx(context, PIN_POINT_HALF_DP),
+        pointInset = dpToPx(context, PIN_POINT_INSET_DP),
+        edge = edge,
+        down = down,
+        ring = ring,
+        framed = framed,
+        headWidth = headWidth,
+        textPaint = textPaint,
+        metrics = metrics,
+        labelWidth = labelWidth,
+        labelHeight = labelHeight,
+        soughtPaint = soughtPaint,
+        soughtMetrics = soughtMetrics,
+        soughtWidth = soughtWidth,
+        soughtHeight = soughtHeight,
+        soughtStack = soughtStack,
+        width = width,
+        headTop = headTop,
+        height = headTop + head + point,
+    )
+}
+
+/**
+ * The drawing itself, whether it is one member or several.
+ *
+ * A group is the same pin with a longer head: the head is a capsule, so its
+ * ends stay round however many circles are put in it, and a single member is
+ * the case where the capsule is as wide as it is tall — a circle.
+ */
+private fun pinBitmap(
+    context: Context,
+    label: String,
+    body: Int,
+    circles: List<Circle>,
+    /** The word to ring the head with and write above the name, or null to draw neither. */
+    soughtMark: String? = null,
+    /**
+     * The colour to frame the name in, or null for none: the member whose card
+     * is open stands on top of any neighbour in the same spot, and their name
+     * lying over the neighbour's read as one line with it.
+     */
+    frame: Int? = null,
+): Bitmap {
+    val layout = measurePin(context, label, circles.size, soughtMark, frame != null)
 
     // Handed the screen's metrics rather than left at the default: the library
     // reads the density off the bitmap to work out how many of its own pixels
@@ -318,35 +382,56 @@ private fun pinBitmap(
     val bitmap =
         Bitmap.createBitmap(
             context.resources.displayMetrics,
-            width,
-            height,
+            layout.width,
+            layout.height,
             Bitmap.Config.ARGB_8888,
         )
 
     val canvas = Canvas(bitmap)
-    val middle = width / 2f
+    val middle = layout.width / 2f
     val corner = dpToPx(context, LABEL_CORNER_DP).toFloat()
 
+    drawPinNames(canvas, layout, label, soughtMark, frame, middle, corner)
+    drawPinHead(context, canvas, layout, body, circles, soughtMark, middle)
+
+    return bitmap
+}
+
+/** The name, and above it the sought capsule if there is one, centred on [middle]. */
+private fun drawPinNames(
+    canvas: Canvas,
+    layout: PinLayout,
+    label: String,
+    soughtMark: String?,
+    frame: Int?,
+    middle: Float,
+    corner: Float,
+) {
     if (soughtMark != null) {
         val capsule =
-            RectF(middle - soughtWidth / 2f, 0f, middle + soughtWidth / 2f, soughtHeight.toFloat())
+            RectF(
+                middle - layout.soughtWidth / 2f,
+                0f,
+                middle + layout.soughtWidth / 2f,
+                layout.soughtHeight.toFloat(),
+            )
 
         drawSoughtCapsule(
             canvas,
             capsule,
             corner,
             soughtMark,
-            down - soughtMetrics.ascent,
-            soughtPaint,
+            layout.down - layout.soughtMetrics.ascent,
+            layout.soughtPaint,
         )
     }
 
-    val labelTop = (soughtStack + framed).toFloat()
+    val labelTop = (layout.soughtStack + layout.framed).toFloat()
     val labelBox = RectF(
-        middle - labelWidth / 2f,
+        middle - layout.labelWidth / 2f,
         labelTop,
-        middle + labelWidth / 2f,
-        labelTop + labelHeight,
+        middle + layout.labelWidth / 2f,
+        labelTop + layout.labelHeight,
     )
 
     drawLabel(
@@ -354,22 +439,36 @@ private fun pinBitmap(
         labelBox,
         corner,
         frame,
-        framed,
+        layout.framed,
         label,
-        labelTop + down - metrics.ascent,
-        textPaint,
+        labelTop + layout.down - layout.metrics.ascent,
+        layout.textPaint,
     )
+}
 
-    val headCentre = headTop + head / 2f
+/** The head: the sought ring, the white edge, the body and the circles in it. */
+private fun drawPinHead(
+    context: Context,
+    canvas: Canvas,
+    layout: PinLayout,
+    body: Int,
+    circles: List<Circle>,
+    soughtMark: String?,
+    middle: Float,
+) {
+    val head = layout.head
+    val headWidth = layout.headWidth
+    val edge = layout.edge
+    val headCentre = layout.headTop + head / 2f
     val shape =
         pinShape(
             centreX = middle,
             centreY = headCentre,
             width = headWidth.toFloat(),
             height = head.toFloat(),
-            pointHalf = pointHalf.toFloat(),
-            point = point.toFloat(),
-            inset = pointInset.toFloat(),
+            pointHalf = layout.pointHalf.toFloat(),
+            point = layout.point.toFloat(),
+            inset = layout.pointInset.toFloat(),
         )
 
     if (soughtMark != null) {
@@ -379,7 +478,7 @@ private fun pinBitmap(
             headCentre,
             headWidth / 2f + edge,
             head / 2f + edge,
-            ring.toFloat(),
+            layout.ring.toFloat(),
         )
     }
 
@@ -395,12 +494,18 @@ private fun pinBitmap(
     canvas.drawPath(shape, outline)
     canvas.drawPath(shape, Paint(Paint.ANTI_ALIAS_FLAG).apply { color = body })
 
-    val faceInset = (head - faceSide) / 2f
-    val first = middle - headWidth / 2f + faceInset + faceSide / 2f
+    val faceInset = (head - layout.faceSide) / 2f
+    val first = middle - headWidth / 2f + faceInset + layout.faceSide / 2f
 
-    drawFaces(context, canvas, circles, first, step.toFloat(), headCentre, faceSide / 2f)
-
-    return bitmap
+    drawFaces(
+        context,
+        canvas,
+        circles,
+        first,
+        layout.step.toFloat(),
+        headCentre,
+        layout.faceSide / 2f,
+    )
 }
 
 /** The paint the name and the sought word are written with: the same size and weight, in [colour]. */

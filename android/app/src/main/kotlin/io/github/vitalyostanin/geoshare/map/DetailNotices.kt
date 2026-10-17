@@ -16,6 +16,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.LinkAnnotation
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.TextLinkStyles
@@ -154,19 +155,7 @@ internal fun DetailWarnings(member: MemberPosition, now: Instant) {
     // they are counted into its sentence rather than given one of their own.
     val refusedHere = member.inFalsePlace && count != null &&
         member.leftOutReason == JumpReason.FalsePlace.name
-    val falsePlaceLead =
-        when {
-            refusedHere -> stringResource(R.string.map_detail_false_place_and_after, count)
-            member.inFalsePlace -> stringResource(R.string.map_detail_false_place_lead)
-            else -> null
-        }
-    val falsePlace =
-        if (refusedHere) {
-            stringResource(R.string.map_detail_false_place_where)
-        } else {
-            stringResource(leftOutReasonLabel(JumpReason.FalsePlace.name))
-                .replaceFirstChar { it.lowercase(locale) }
-        }
+    val (falsePlaceLead, falsePlace) = falsePlaceWords(member, count.takeIf { refusedHere }, locale)
     val reasonLink =
         LinkAnnotation.Clickable(
             tag = "reason",
@@ -174,37 +163,12 @@ internal fun DetailWarnings(member: MemberPosition, now: Instant) {
         ) { helpOpen = true }
 
     val paragraph =
-        buildAnnotatedString {
-            falsePlaceLead?.let {
-                append(it)
-                append(' ')
-                withLink(reasonLink) { append(falsePlace) }
-                append('.')
-            }
-
-            stuckSentence?.let {
-                if (length > 0) append(' ')
-
-                append(it)
-            }
-
-            if (lead != null && !refusedHere) {
-                if (length > 0) append(' ')
-
-                append(lead)
-                append(' ')
-                withLink(reasonLink) {
-                    append(reason.replaceFirstChar { it.lowercase(locale) })
-                }
-                append('.')
-            }
-
-            settling?.let {
-                if (length > 0) append(' ')
-
-                append(it)
-            }
-        }
+        warningParagraph(
+            sentences = WarningSentences(falsePlaceLead, falsePlace, stuckSentence, lead, settling),
+            reason = reason.replaceFirstChar { it.lowercase(locale) },
+            reasonLink = reasonLink,
+            refusedHere = refusedHere,
+        )
 
     Text(
         text = paragraph,
@@ -215,6 +179,86 @@ internal fun DetailWarnings(member: MemberPosition, now: Instant) {
 
     if (helpOpen) {
         ReasonHelp(onClose = { helpOpen = false })
+    }
+}
+
+/**
+ * How the false place is told: the lead sentence, null when the member is not
+ * in one, and the words the link on it carries. [refusedCount] is the answers
+ * refused for lying there, when they are counted into its sentence.
+ */
+@Composable
+private fun falsePlaceWords(
+    member: MemberPosition,
+    refusedCount: Int?,
+    locale: Locale,
+): Pair<String?, String> {
+    val lead =
+        when {
+            refusedCount != null ->
+                stringResource(R.string.map_detail_false_place_and_after, refusedCount)
+
+            member.inFalsePlace -> stringResource(R.string.map_detail_false_place_lead)
+
+            else -> null
+        }
+    val where =
+        if (refusedCount != null) {
+            stringResource(R.string.map_detail_false_place_where)
+        } else {
+            stringResource(leftOutReasonLabel(JumpReason.FalsePlace.name))
+                .replaceFirstChar { it.lowercase(locale) }
+        }
+
+    return lead to where
+}
+
+/** The sentences [warningParagraph] puts together, each null while it is not true. */
+private class WarningSentences(
+    val falsePlaceLead: String?,
+    val falsePlace: String,
+    val stuck: String?,
+    val leftOutLead: String?,
+    val settling: String?,
+)
+
+/**
+ * The sentences in the order they are read, one space between those that are
+ * there. The false place and the left-out answers each end in a link on their
+ * reason; [refusedHere] means the first already counted the second.
+ */
+private fun warningParagraph(
+    sentences: WarningSentences,
+    reason: String,
+    reasonLink: LinkAnnotation,
+    refusedHere: Boolean,
+): AnnotatedString = buildAnnotatedString {
+    sentences.falsePlaceLead?.let {
+        append(it)
+        append(' ')
+        withLink(reasonLink) { append(sentences.falsePlace) }
+        append('.')
+    }
+
+    sentences.stuck?.let {
+        if (length > 0) append(' ')
+
+        append(it)
+    }
+
+    if (sentences.leftOutLead != null && !refusedHere) {
+        if (length > 0) append(' ')
+
+        append(sentences.leftOutLead)
+        append(' ')
+        withLink(reasonLink) { append(reason) }
+        append('.')
+    }
+
+    sentences.settling?.let {
+        if (length > 0) append(' ')
+
+        append(it)
     }
 }
 

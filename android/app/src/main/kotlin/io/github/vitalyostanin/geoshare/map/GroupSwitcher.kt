@@ -392,19 +392,7 @@ private fun GroupRow(
     onClick: () -> Unit,
     onLeave: () -> Unit,
 ) {
-    var menuOpen by remember { mutableStateOf(false) }
-
-    val details =
-        buildList {
-            if (choice.removed) add(stringResource(R.string.group_switcher_removed))
-            choice.members?.let {
-                add(pluralStringResource(R.plurals.map_group_count, it, it))
-            }
-            // What stands in the group shown is on the map already; only the
-            // others need it said here.
-            if (!current && choice.siren) add(stringResource(R.string.group_switcher_siren))
-            if (!current && choice.search) add(stringResource(R.string.group_switcher_search))
-        }
+    val details = groupDetails(choice, current)
 
     Row(
         horizontalArrangement = Arrangement.spacedBy(12.dp),
@@ -451,29 +439,50 @@ private fun GroupRow(
             )
         }
 
-        Box {
-            val more = stringResource(R.string.group_switcher_more, choice.caption)
+        GroupMenu(caption = choice.caption, onLeave = onLeave)
+    }
+}
 
-            IconButton(
-                onClick = { menuOpen = true },
-                modifier = Modifier.semantics { contentDescription = more },
-            ) {
-                Text(text = "⋮", style = MaterialTheme.typography.titleMedium)
-            }
+/** The small print under a group's name in the list, as far as there is any. */
+@Composable
+private fun groupDetails(choice: GroupChoice, current: Boolean): List<String> = buildList {
+    if (choice.removed) add(stringResource(R.string.group_switcher_removed))
+    choice.members?.let {
+        add(pluralStringResource(R.plurals.map_group_count, it, it))
+    }
+    // What stands in the group shown is on the map already; only the
+    // others need it said here.
+    if (!current && choice.siren) add(stringResource(R.string.group_switcher_siren))
+    if (!current && choice.search) add(stringResource(R.string.group_switcher_search))
+}
 
-            DropdownMenu(expanded = menuOpen, onDismissRequest = { menuOpen = false }) {
-                DropdownMenuItem(
-                    text = {
-                        // Named: near the bottom of the sheet the menu opens
-                        // upwards, over the row above it.
-                        Text(text = stringResource(R.string.group_leave_named, choice.caption))
-                    },
-                    onClick = {
-                        menuOpen = false
-                        onLeave()
-                    },
-                )
-            }
+/** The "more" button at the end of a group's row and the menu that leaves the group. */
+@Composable
+private fun GroupMenu(caption: String, onLeave: () -> Unit) {
+    var menuOpen by remember { mutableStateOf(false) }
+
+    Box {
+        val more = stringResource(R.string.group_switcher_more, caption)
+
+        IconButton(
+            onClick = { menuOpen = true },
+            modifier = Modifier.semantics { contentDescription = more },
+        ) {
+            Text(text = "⋮", style = MaterialTheme.typography.titleMedium)
+        }
+
+        DropdownMenu(expanded = menuOpen, onDismissRequest = { menuOpen = false }) {
+            DropdownMenuItem(
+                text = {
+                    // Named: near the bottom of the sheet the menu opens
+                    // upwards, over the row above it.
+                    Text(text = stringResource(R.string.group_leave_named, caption))
+                },
+                onClick = {
+                    menuOpen = false
+                    onLeave()
+                },
+            )
         }
     }
 }
