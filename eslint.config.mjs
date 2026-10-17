@@ -5,7 +5,16 @@
 // page under web/ and the emulator scripts under firebase/ — written the same
 // way. They had drifted into opposite quoting conventions, which is the sort
 // of difference that makes a file look foreign to whoever opens it next.
+import { realpathSync } from 'node:fs';
+import { createRequire } from 'node:module';
+
+// The linter is fetched by npx beside @eslint/js (tools/js-lint.sh), not
+// installed under this directory, so the set is found next to the running
+// eslint rather than by a bare import from here.
+const js = createRequire(realpathSync(process.argv[1]))('@eslint/js');
+
 export default [
+    js.configs.recommended,
     {
         // Written by tools/web-config.sh out of the Firebase project itself,
         // and not in the repository at all. Beside it, the map library as its

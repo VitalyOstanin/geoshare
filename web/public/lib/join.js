@@ -95,6 +95,8 @@ const TRAILING_PUNCTUATION = /[).,;:!?\]}'"<>]+$/u;
  * no-break ones included. Not the set trimText strips (that one keeps
  * U+001C..001F and strips U+FEFF).
  */
+// The controls are the point of this set, which is what the rule would forbid.
+// eslint-disable-next-line no-control-regex
 const BLANK = /^[\t-\r\u001C-\u001F\p{Z}]*$/u;
 
 /**

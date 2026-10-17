@@ -28,4 +28,5 @@ fi
 exec podman run --rm --http-proxy=false "${limit_args[@]}" \
     -v "${REPO_ROOT}:/src:z" -v "${NPM_VOLUME:-geoshare-npm}:/npm" -w /src \
     "${FIREBASE_IMAGE}" \
-    npx --yes "eslint@${ESLINT_VERSION}" web firebase "${args[@]}" "$@"
+    npx --yes -p "eslint@${ESLINT_VERSION}" -p "@eslint/js@${ESLINT_JS_VERSION}" \
+    eslint web firebase "${args[@]}" "$@"
