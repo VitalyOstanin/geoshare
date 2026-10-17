@@ -13,13 +13,10 @@
     <ID>LongMethod:MapOverlays.kt:@Composable internal fun OverTheSettings</ID>
     <ID>LongMethod:MarkerIcon.kt:private fun pinBitmap: Bitmap</ID>
     <ID>LongMethod:MemberButtons.kt:@Composable internal fun MemberButtons</ID>
-    <ID>LongMethod:MyPhonesScreen.kt:@Composable fun MyPhonesScreen</ID>
     <ID>LongMethod:QrScanDialog.kt:@Composable private fun Scanner</ID>
     <ID>LongMethod:ReasonExplained.kt:fun reasonsExplained: List&lt;ReasonExplained></ID>
     <ID>LongMethod:ReportScreen.kt:@Composable fun ReportScreen</ID>
     <ID>LongMethod:SettingsActionsFor.kt:internal fun settingsActions: SettingsActions</ID>
-    <ID>LongMethod:SettingsScreen.kt:@Composable fun SettingsScreen</ID>
-    <ID>LongMethod:SettingsScreen.kt:@Composable private fun AidingSection</ID>
     <ID>LongMethod:SignedInScreen.kt:@Composable internal fun SignedInScreen</ID>
   </CurrentIssues>
 </SmellBaseline>

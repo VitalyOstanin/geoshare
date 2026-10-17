@@ -222,89 +222,25 @@ fun SettingsScreen(
 
             HorizontalDivider()
 
-            SharingSection(settings = settings, actions = actions)
-
-            HorizontalDivider()
-
-            BackgroundWorkSection(
-                batteryUnrestricted = settings.batteryUnrestricted,
-                sirenThroughSilence = settings.sirenThroughSilence,
-                startupScreen = settings.startupScreen,
-                startupSet = settings.startupSet,
-                onAllowBattery = actions.onAllowBattery,
-                onAllowSirenThroughSilence = actions.onAllowSirenThroughSilence,
-                onOpenStartup = actions.onOpenStartup,
-                onStartupSetChange = actions.onStartupSetChange,
-            )
-
-            HorizontalDivider()
-
-            GroupSection(
-                roster = settings.roster,
-                ownMemberId = ownMemberId,
+            SettingsUpperSections(
+                settings = settings,
+                actions = actions,
                 profiles = profiles,
-                trouble = settings.groupTrouble,
-                onFoundGroup = actions.onFoundGroup,
-                readProjectMark = actions.onReadProjectMark,
-                onJoinGroup = actions.onJoinGroup,
-                onPasteLink = actions.onPasteLink,
+                ownMemberId = ownMemberId,
+                now = now,
                 onOpenAdmin = onOpenAdmin,
                 onOpenMyPhones = onOpenMyPhones,
                 onLeaveGroup = onLeaveGroup,
                 removed = removed,
             )
 
-            HorizontalDivider()
-
-            VisibilitySection(
-                profiles = profiles,
-                ownMemberId = ownMemberId,
-                sharedWith = settings.sharedWith,
-                now = now,
-                onShare = actions.onShare,
-            )
-
-            HorizontalDivider()
-
-            ThisDeviceSection(settings = settings, actions = actions)
-
-            HorizontalDivider()
-
-            AccuracyRow(settings = settings, onOpen = onOpenAccuracy)
-
-            HorizontalDivider()
-
-            TextButton(
-                onClick = { signingOut = true },
-                modifier = Modifier.padding(horizontal = 8.dp),
-            ) {
-                Text(text = stringResource(R.string.sign_out_action))
-            }
-
-            HorizontalDivider()
-
-            ReportRow(onOpen = onOpenReport)
-
-            HorizontalDivider()
-
-            // Last, under signing out: read once if ever, and the version
-            // under it is what somebody reporting a fault is asked for.
-            TextButton(
-                onClick = onOpenLicences,
-                modifier = Modifier.padding(horizontal = 8.dp),
-            ) {
-                Text(text = stringResource(R.string.licences_open))
-            }
-
-            HorizontalDivider()
-
-            UpdateSection()
-
-            Text(
-                text = stringResource(R.string.app_version, BuildConfig.VERSION_NAME),
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier.padding(start = 16.dp, end = 16.dp, bottom = 16.dp),
+            SettingsLowerSections(
+                settings = settings,
+                actions = actions,
+                onOpenAccuracy = onOpenAccuracy,
+                onOpenLicences = onOpenLicences,
+                onOpenReport = onOpenReport,
+                onSignOut = { signingOut = true },
             )
         }
     }
@@ -317,6 +253,122 @@ fun SettingsScreen(
             onDismiss = { signingOut = false },
         )
     }
+}
+
+/**
+ * What is set before anything else: sharing, the work kept up in the
+ * background, the group and who sees the device in it.
+ */
+@Composable
+private fun SettingsUpperSections(
+    settings: SettingsState,
+    actions: SettingsActions,
+    profiles: Map<String, MemberProfile>,
+    ownMemberId: String,
+    now: Instant,
+    onOpenAdmin: () -> Unit,
+    onOpenMyPhones: () -> Unit,
+    onLeaveGroup: (() -> Unit)?,
+    removed: RemovedGroup?,
+) {
+    SharingSection(settings = settings, actions = actions)
+
+    HorizontalDivider()
+
+    BackgroundWorkSection(
+        batteryUnrestricted = settings.batteryUnrestricted,
+        sirenThroughSilence = settings.sirenThroughSilence,
+        startupScreen = settings.startupScreen,
+        startupSet = settings.startupSet,
+        onAllowBattery = actions.onAllowBattery,
+        onAllowSirenThroughSilence = actions.onAllowSirenThroughSilence,
+        onOpenStartup = actions.onOpenStartup,
+        onStartupSetChange = actions.onStartupSetChange,
+    )
+
+    HorizontalDivider()
+
+    GroupSection(
+        roster = settings.roster,
+        ownMemberId = ownMemberId,
+        profiles = profiles,
+        trouble = settings.groupTrouble,
+        onFoundGroup = actions.onFoundGroup,
+        readProjectMark = actions.onReadProjectMark,
+        onJoinGroup = actions.onJoinGroup,
+        onPasteLink = actions.onPasteLink,
+        onOpenAdmin = onOpenAdmin,
+        onOpenMyPhones = onOpenMyPhones,
+        onLeaveGroup = onLeaveGroup,
+        removed = removed,
+    )
+
+    HorizontalDivider()
+
+    VisibilitySection(
+        profiles = profiles,
+        ownMemberId = ownMemberId,
+        sharedWith = settings.sharedWith,
+        now = now,
+        onShare = actions.onShare,
+    )
+
+    HorizontalDivider()
+}
+
+/**
+ * What is read once if ever: this device, accuracy, signing out, the report,
+ * the licences and the version.
+ */
+@Composable
+private fun SettingsLowerSections(
+    settings: SettingsState,
+    actions: SettingsActions,
+    onOpenAccuracy: () -> Unit,
+    onOpenLicences: () -> Unit,
+    onOpenReport: () -> Unit,
+    onSignOut: () -> Unit,
+) {
+    ThisDeviceSection(settings = settings, actions = actions)
+
+    HorizontalDivider()
+
+    AccuracyRow(settings = settings, onOpen = onOpenAccuracy)
+
+    HorizontalDivider()
+
+    TextButton(
+        onClick = onSignOut,
+        modifier = Modifier.padding(horizontal = 8.dp),
+    ) {
+        Text(text = stringResource(R.string.sign_out_action))
+    }
+
+    HorizontalDivider()
+
+    ReportRow(onOpen = onOpenReport)
+
+    HorizontalDivider()
+
+    // Last, under signing out: read once if ever, and the version
+    // under it is what somebody reporting a fault is asked for.
+    TextButton(
+        onClick = onOpenLicences,
+        modifier = Modifier.padding(horizontal = 8.dp),
+    ) {
+        Text(text = stringResource(R.string.licences_open))
+    }
+
+    HorizontalDivider()
+
+    UpdateSection()
+
+    Text(
+        text = stringResource(R.string.app_version, BuildConfig.VERSION_NAME),
+        style = MaterialTheme.typography.bodySmall,
+        color = MaterialTheme.colorScheme.onSurfaceVariant,
+        modifier = Modifier.padding(start = 16.dp, end = 16.dp, bottom = 16.dp),
+    )
 }
 
 /** The title of the screen and the way back to the map. */
@@ -565,7 +617,6 @@ private fun JumpsSection(settings: SettingsState, actions: SettingsActions) {
 private fun AidingSection(doubted: Set<Constellation>, onForgetAiding: () -> AidingErasure) {
     var asking by remember { mutableStateOf(false) }
     var erasure by remember { mutableStateOf(AidingErasure.Untouched) }
-    val note = aidingErasureNote(erasure)
 
     Text(
         text = stringResource(R.string.aiding_title),
@@ -580,32 +631,57 @@ private fun AidingSection(doubted: Set<Constellation>, onForgetAiding: () -> Aid
         modifier = Modifier.padding(start = 16.dp, end = 16.dp, bottom = 4.dp),
     )
 
-    // The one row on this screen that is not an answer the member gave: the
-    // service watched half an hour of epochs to write it, and it is here
-    // rather than on the map because the button that answers it is here.
-    if (doubted.isNotEmpty()) {
-        // Named through a mapping rather than inside joinToString: the words
-        // come from the resources, and only an inline call keeps that
-        // readable to the compose compiler.
-        val named =
-            inOrder(doubted)
-                .map { system -> stringResource(constellationLabel(system)) }
-                .joinToString(", ")
+    AidingWastedNote(doubted)
 
-        Text(
-            text = stringResource(R.string.aiding_wasted, named),
-            style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.error,
-            modifier = Modifier.padding(start = 16.dp, end = 16.dp, bottom = 4.dp),
+    AidingForgetRow(erasure = erasure, onAsk = { asking = true })
+
+    if (asking) {
+        AidingConfirmDialog(
+            onDismiss = { asking = false },
+            onConfirm = {
+                asking = false
+                erasure = onForgetAiding()
+            },
         )
     }
+}
+
+/**
+ * The one row on this screen that is not an answer the member gave: the
+ * service watched half an hour of epochs to write it, and it is here rather
+ * than on the map because the button that answers it is here.
+ */
+@Composable
+private fun AidingWastedNote(doubted: Set<Constellation>) {
+    if (doubted.isEmpty()) return
+
+    // Named through a mapping rather than inside joinToString: the words
+    // come from the resources, and only an inline call keeps that
+    // readable to the compose compiler.
+    val named =
+        inOrder(doubted)
+            .map { system -> stringResource(constellationLabel(system)) }
+            .joinToString(", ")
+
+    Text(
+        text = stringResource(R.string.aiding_wasted, named),
+        style = MaterialTheme.typography.bodyMedium,
+        color = MaterialTheme.colorScheme.error,
+        modifier = Modifier.padding(start = 16.dp, end = 16.dp, bottom = 4.dp),
+    )
+}
+
+/** The button that forgets the orbits, and what the receiver answered to it. */
+@Composable
+private fun AidingForgetRow(erasure: AidingErasure, onAsk: () -> Unit) {
+    val note = aidingErasureNote(erasure)
 
     Row(
         modifier = Modifier.fillMaxWidth().padding(start = 8.dp, end = 16.dp, bottom = 8.dp),
         horizontalArrangement = Arrangement.spacedBy(12.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        TextButton(onClick = { asking = true }) {
+        TextButton(onClick = onAsk) {
             Text(text = stringResource(R.string.aiding_forget))
         }
 
@@ -622,32 +698,30 @@ private fun AidingSection(doubted: Set<Constellation>, onForgetAiding: () -> Aid
             )
         }
     }
+}
 
-    // Asked before it is done rather than undone afterwards: the receiver
-    // cannot be given its orbits back, and the minutes without a position
-    // that follow are what a member has to agree to beforehand.
-    if (asking) {
-        AlertDialog(
-            onDismissRequest = { asking = false },
-            title = { Text(text = stringResource(R.string.aiding_confirm_title)) },
-            text = { Text(text = stringResource(R.string.aiding_confirm_text)) },
-            confirmButton = {
-                TextButton(
-                    onClick = {
-                        asking = false
-                        erasure = onForgetAiding()
-                    },
-                ) {
-                    Text(text = stringResource(R.string.aiding_forget))
-                }
-            },
-            dismissButton = {
-                TextButton(onClick = { asking = false }) {
-                    Text(text = stringResource(R.string.aiding_keep))
-                }
-            },
-        )
-    }
+/**
+ * Asked before it is done rather than undone afterwards: the receiver cannot
+ * be given its orbits back, and the minutes without a position that follow are
+ * what a member has to agree to beforehand.
+ */
+@Composable
+private fun AidingConfirmDialog(onDismiss: () -> Unit, onConfirm: () -> Unit) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text(text = stringResource(R.string.aiding_confirm_title)) },
+        text = { Text(text = stringResource(R.string.aiding_confirm_text)) },
+        confirmButton = {
+            TextButton(onClick = onConfirm) {
+                Text(text = stringResource(R.string.aiding_forget))
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) {
+                Text(text = stringResource(R.string.aiding_keep))
+            }
+        },
+    )
 }
 
 /**
