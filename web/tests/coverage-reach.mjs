@@ -5,9 +5,12 @@
 // report and the list fails the run, and so does a listed file the tests have
 // started to load, so the list only ever gets shorter.
 //
+// It also prints how many scripts and lines that leaves out of the figures.
+//
 //   node tests/coverage-reach.mjs build/lcov.info    (from web/)
 import { readFile, readdir } from 'node:fs/promises';
 import { join, relative } from 'node:path';
+import { countLines, reachSummary } from './reach-summary.mjs';
 
 const PUBLIC = 'public';
 const VENDOR = 'public/lib/vendor';
@@ -49,7 +52,17 @@ const added = unreached.filter((path) => !listed.has(path));
 const gone = [...listed].filter((path) => !all.includes(path)).sort();
 const nowReached = [...listed].filter((path) => all.includes(path) && reached.has(path)).sort();
 
-console.log(`${unreached.length} of the page's scripts are not loaded by any test`);
+const lineCounts = new Map();
+
+for (const path of all) {
+    lineCounts.set(path, countLines(await readFile(join(PUBLIC, path), 'utf8')));
+}
+
+console.log(reachSummary({
+    total: all.length,
+    unreachedLines: unreached.map((path) => lineCounts.get(path)),
+    allLines: [...lineCounts.values()].reduce((sum, n) => sum + n, 0),
+}));
 
 for (const path of added) {
     console.error(`not loaded by any test and not in ${LIST}: ${path}`);
