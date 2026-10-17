@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 108 108">
+  <!-- A few streets and three members on them, in the colours the map gives
+       members. The Android launcher icon is the same drawing. -->
+  <rect width="108" height="108" rx="20" fill="#1e88e5"/>
+  <g stroke="#fff" stroke-opacity="0.35" stroke-width="2.5" fill="none" stroke-linecap="round">
+    <path d="M10 40L98 28"/><path d="M34 8L50 100"/><path d="M62 30L82 100"/><path d="M8 76C30 70 60 82 100 70"/>
+  </g>
+  <g stroke="#fff" stroke-width="3.5">
+    <circle cx="38" cy="34" r="9" fill="#43a047"/>
+    <circle cx="72" cy="52" r="9" fill="#f9a825"/>
+    <circle cx="46" cy="74" r="9" fill="#e53935"/>
+  </g>
+</svg>
