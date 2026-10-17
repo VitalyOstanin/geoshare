@@ -29,12 +29,6 @@ jobs:
   android:
     runs-on: ubuntu-24.04
     timeout-minutes: 30
-    # Writing an id-token is what the Codecov upload below proves itself
-    # with, in place of a long-lived secret; a job's own block resets the
-    # rest to none, so reading the contents is said again.
-    permissions:
-      contents: read
-      id-token: write
 
     steps:
       - name: Checkout
@@ -73,17 +67,6 @@ jobs:
       - name: Coverage floor
         run: tools/coverage-floor.sh
 
-      - name: Send the coverage to Codecov
-        # The master branch only, the one the badge shows; an outage on their
-        # side is no reason to fail the checks.
-        if: github.ref == 'refs/heads/master'
-        uses: codecov/codecov-action@303a32d7a59b442fa8d48b6a1cc6825c09c847a5 # v7.1.1
-        with:
-          use_oidc: true
-          files: android/app/build/reports/coverage/test/debug/report.xml
-          flags: android
-          fail_ci_if_error: false
-
       - name: Keep the reports of a failed run
         # Only on failure, and kept for three days: storage is counted against
         # the account's allowance while the repository is private.
@@ -103,12 +86,6 @@ jobs:
   web:
     runs-on: ubuntu-24.04
     timeout-minutes: 15
-    # Writing an id-token is what the Codecov upload below proves itself
-    # with, in place of a long-lived secret; a job's own block resets the
-    # rest to none, so reading the contents is said again.
-    permissions:
-      contents: read
-      id-token: write
 
     steps:
       - name: Checkout
@@ -142,17 +119,6 @@ jobs:
       - name: The page's tests and their coverage floors
         working-directory: web
         run: npm run coverage
-
-      - name: Send the coverage to Codecov
-        # The master branch only, the one the badge shows; an outage on their
-        # side is no reason to fail the checks.
-        if: github.ref == 'refs/heads/master'
-        uses: codecov/codecov-action@303a32d7a59b442fa8d48b6a1cc6825c09c847a5 # v7.1.1
-        with:
-          use_oidc: true
-          files: web/build/lcov.info
-          flags: web
-          fail_ci_if_error: false
 
       - name: Lint the JavaScript
         run: npx --yes -p "eslint@${ESLINT_VERSION}" -p "@eslint/js@${ESLINT_JS_VERSION}" eslint web firebase
