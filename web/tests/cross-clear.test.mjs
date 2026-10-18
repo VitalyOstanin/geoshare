@@ -48,10 +48,23 @@ test('the text of a card stops before the cross that closes it', async () => {
 test('each line that can reach the corner keeps that distance', async () => {
     const styles = await stylesheet();
 
-    for (const selector of ['.detail-more', '.group h2', '.group-back',
+    for (const selector of ['.group h2', '.group-back',
         '.mode-help h2', '.admin h2']) {
         const rule = new RegExp(`\\${selector.replace(' ', ' ')} \\{[^}]*(?:padding|margin)-right:\\s*var\\(--cross-clear\\)`);
 
         assert.match(styles, rule, `${selector} does not keep clear of the cross`);
     }
+});
+
+// A member's card has two buttons over its corner, the cross and the chevron
+// beside it: the heading stops before both, not only before the cross.
+test('the heading of a member\'s card stops before both buttons in its corner', async () => {
+    const styles = await stylesheet();
+
+    assert.match(
+        styles,
+        /\.detail-head \{[^}]*padding-right:\s*calc\(var\(--cross-clear\) \+ 2rem\)/,
+        'the heading of the card does not keep clear of the chevron',
+    );
+    assert.match(styles, /\.detail-more \{[^}]*right:\s*calc\(0\.4rem \+ 1\.75rem \+ 0\.25rem\)/);
 });

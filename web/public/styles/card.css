@@ -1,10 +1,12 @@
 /* The face the marker carries, repeated on the card: a card opened from the
    panel should be recognisably the person whose pin is on the map. */
+/* Clear of the two buttons over the corner: the cross, and the chevron beside it. */
 .detail-head {
     display: flex;
     align-items: center;
     gap: 0.6rem;
     margin-bottom: 0.5rem;
+    padding-right: calc(var(--cross-clear) + 2rem);
 }
 
 /* The names give way to the button beside them rather than push it out; the
@@ -125,19 +127,42 @@
     color: inherit;
 }
 
-/* Beside the name, clear of the cross over the corner of the card. */
+/* A chevron in the corner, left of the cross and drawn the way the cross is:
+   a circle of the same size on the same line, and two strokes of the same
+   weight. Down while the details are hidden, up once they show. */
 .detail-more {
-    flex: none;
-    align-self: flex-start;
-    margin-left: auto;
-    margin-right: var(--cross-clear);
-    padding: 0.2rem 0;
+    position: absolute;
+    top: 0.4rem;
+    right: calc(0.4rem + 1.75rem + 0.25rem);
+    width: 1.75rem;
+    height: 1.75rem;
     border: 0;
+    border-radius: 50%;
+    padding: 0;
     background: none;
-    color: var(--link);
-    font: inherit;
-    font-size: var(--text-body);
+    color: inherit;
+    font-size: 0;
     cursor: pointer;
+}
+
+.detail-more::before {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 0.5rem;
+    height: 0.5rem;
+    border-right: 1.5px solid currentcolor;
+    border-bottom: 1.5px solid currentcolor;
+    transform: translate(-50%, -70%) rotate(45deg);
+}
+
+.detail-more[aria-expanded='true']::before {
+    transform: translate(-50%, -30%) rotate(-135deg);
+}
+
+.detail-more:hover {
+    background: var(--hover);
 }
 
 .detail-more:focus-visible {

@@ -257,9 +257,9 @@ function detail(view, position, name, faces, now) {
     const details = detailTable(position);
     const more = moreButton(view, details);
 
-    // Beside the name rather than under the details: opened, the details
-    // reach the bottom of the card, and a button below them had to be
-    // scrolled to.
+    // Up in the corner beside the cross rather than under the details:
+    // opened, the details reach the bottom of the card, and a button below
+    // them had to be scrolled to.
     heading.append(more);
     card.append(details);
 
@@ -306,7 +306,14 @@ function detailHeading(view, position, name, faces, now) {
     return heading;
 }
 
-/** The button that opens and closes the details, remembering the choice for the next card. */
+/**
+ * The button that opens and closes the details, remembering the choice for the
+ * next card.
+ *
+ * A chevron beside the cross rather than a word under the name: the card's
+ * two buttons that change the card itself are drawn alike and sit together.
+ * The word is still what a reader listening to the page hears.
+ */
 function moreButton(view, details) {
     const more = document.createElement('button');
 
@@ -319,7 +326,10 @@ function moreButton(view, details) {
     const showDetails = (open) => {
         details.hidden = !open;
         more.setAttribute('aria-expanded', String(open));
-        more.textContent = open ? WORDS.fewerDetails : WORDS.moreDetails;
+        const word = open ? WORDS.fewerDetails : WORDS.moreDetails;
+
+        more.setAttribute('aria-label', word);
+        more.title = word;
     };
 
     showDetails(view.detailsOpen);

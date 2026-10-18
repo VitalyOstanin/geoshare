@@ -26,6 +26,12 @@ and the versions follow [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Changed
+
+- On the page, a member's card opens and closes its details with a chevron
+  beside the cross in its corner, drawn like the cross, instead of the words
+  "More details" and "Fewer details" beside the name.
+
 ### Fixed
 
 - On the page, a member picked in the list or the panel of a page that had
