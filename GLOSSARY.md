@@ -164,7 +164,7 @@ project's own description of who it is for.
 
 | №   | Term        | Means                                                                                                                                                                                                      | Defined in                                                                        |
 |-----|-------------|------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|-----------------------------------------------------------------------------------|
-| 1   | watch claim | A document saying that one device had the map open, written per device and read by the whole group. It carries the moment it was made, by the server's clock; the devices add the three minutes themselves | `firestore.rules`, `match /watch/{watchId}`; `android/.../collection/Watching.kt` |
+| 1   | watch claim | A document saying that one device had the map open, written per device and read by the whole group. It carries the moment it was made, by the server's clock; the devices add the seven minutes themselves | `firestore.rules`, `match /watch/{watchId}`; `android/.../collection/Watching.kt` |
 | 2   | watcher     | A member behind a claim that has not run out — what the strip under the map names                                                                                                                          | `Watching.kt`, `web/public/lib/watchers.js`                                       |
 | 3   | stale       | A position half an hour old, counted from the moment the server stamped it. The marker is drawn grey, and every mode that asks for anything has to write again before that                                 | `android/.../collection/Freshness.kt`, `web/public/lib/age.js`                    |
 | 4   | following   | How the map moves itself: after one member, after everybody, or not at all                                                                                                                                 | `web/public/lib/following.js`, `android/.../map/Following.kt`                     |
@@ -262,9 +262,10 @@ and by whoever holds an unexpired permission in the owner's grant.
 
 **Watch claim** — `groups/{groupId}/watch/{uid}.{deviceId}`. Fields:
 `memberId`, `since` (the server's clock). Written by the device looking,
-refreshed every minute while the map is up, and deleted when it is closed. A
+refreshed every five minutes while the map is up and touched now and then,
+and deleted when it is closed or left untouched for five minutes (ADR-0040). A
 claim nobody deleted stays in the database and simply stops counting: the
-readers work out who is looking by leaving out claims older than three minutes,
+readers work out who is looking by leaving out claims older than seven minutes,
 rather than by anything arriving at the moment one runs out.
 
 **Invitation** — `groups/{groupId}/invitations/{code}`. Fields: `createdBy`,

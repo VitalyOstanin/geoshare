@@ -18,11 +18,14 @@
 ## Содержание
 
 - [Unreleased](#unreleased)
+- [0.3.0](#030---2026-10-18)
 - [0.2.0](#020---2026-10-17)
 - [0.1.1](#011---2026-10-16)
 - [0.1.0](#010---2026-10-14)
 
 ## [Unreleased]
+
+## [0.3.0] - 2026-10-18
 
 ### Добавлено
 
@@ -168,7 +171,8 @@
 - Обновлять нечего: проект, настроенный страницей настройки или
   `tools/project.sh`, уже содержит правила и страницу этой версии.
 
-[Unreleased]: https://github.com/VitalyOstanin/geoshare/compare/v0.2.0...HEAD
+[Unreleased]: https://github.com/VitalyOstanin/geoshare/compare/v0.3.0...HEAD
+[0.3.0]: https://github.com/VitalyOstanin/geoshare/releases/tag/v0.3.0
 [0.2.0]: https://github.com/VitalyOstanin/geoshare/releases/tag/v0.2.0
 [0.1.1]: https://github.com/VitalyOstanin/geoshare/releases/tag/v0.1.1
 [0.1.0]: https://github.com/VitalyOstanin/geoshare/releases/tag/v0.1.0
