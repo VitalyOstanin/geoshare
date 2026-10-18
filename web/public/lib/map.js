@@ -22,7 +22,7 @@ import { showFace } from './faces.js';
 
 import { isGrey } from './false-places.js';
 import { clusterMembers, facesShown } from './clusters.js';
-import { FOLLOW_NONE } from './following.js';
+import { FOLLOW_NONE, catchUpTo } from './following.js';
 import { markerTapped, openMember, selectedPositionId, shownPositionIds } from './selection.js';
 import { HIGHEST, markerOrder } from './stacking.js';
 import { accuracyRing } from './width.js';
@@ -236,6 +236,13 @@ function newView(map, onCardChange, cardElement) {
         // The rectangle "follow everybody" last fitted the map to, so that a
         // rectangle barely different from it does not nudge the view again.
         followedBounds: null,
+        // The member last picked in the strip or the panel, when, and where
+        // the map was sent: a fresher position of theirs a moment later takes
+        // the map on there (catchUpTo). Null once a hand moves the map.
+        lookedAt: null,
+        // Positions arrived while the map was flying: following them waits
+        // for the map to stop.
+        followDue: false,
         // Asked to name a device or a person, from the card: `(kind, key)`,
         // where kind is `devices` or `members`. Set by the page; a card with
         // nobody to ask offers no names.
@@ -294,6 +301,15 @@ function listenToTheMap(view) {
                 // itself.
                 view.onCardChange();
             }
+
+            // Positions that came in while the map was on its way were drawn
+            // just now and not yet followed: a page woken by a tap gets the
+            // member's fresh place in the middle of the flight to the old one.
+            if (view.followDue) {
+                view.followDue = false;
+                applyFollowMode(view);
+                catchUp(view);
+            }
         }, 0);
     });
 
@@ -305,6 +321,7 @@ function listenToTheMap(view) {
     // itself.
     map.on('movestart', (event) => {
         if (event.originalEvent) {
+            view.lookedAt = null;
             pauseFollowing(view);
         }
     });
@@ -396,11 +413,27 @@ export function showMembers(view, positions, names, faces, ownMemberId, now) {
     // grouping at the height of a flight joins members the destination tells
     // apart. The moveend at the end draws what is kept above.
     if (view.map.isMoving()) {
+        view.followDue = true;
         return;
     }
 
     draw(view, view.last);
     applyFollowMode(view);
+    catchUp(view);
+}
+
+/** Takes the map on to a member just picked who has turned out to be elsewhere. */
+function catchUp(view) {
+    const position = catchUpTo(view.lookedAt, view.last?.positions ?? [], Date.now());
+
+    if (position === null) {
+        return;
+    }
+
+    const { latitude, longitude } = position;
+
+    view.lookedAt = { ...view.lookedAt, latitude, longitude };
+    view.map.flyTo({ center: [position.longitude, position.latitude] });
 }
 
 function draw(view, { positions, names, faces, now }) {
@@ -914,6 +947,12 @@ export function lookAt(view, position) {
         center: [position.longitude, position.latitude],
         zoom: Math.max(view.map.getZoom(), START_ZOOM, closeEnoughForTheRing(view, position)),
     });
+    view.lookedAt = {
+        positionId: position.positionId,
+        at: Date.now(),
+        latitude: position.latitude,
+        longitude: position.longitude,
+    };
 
     const key = markerKeyFor(view, position.positionId);
 

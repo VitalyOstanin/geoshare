@@ -26,6 +26,12 @@ and the versions follow [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Fixed
+
+- On the page, a member picked in the list or the panel of a page that had
+  paused is no longer shown at the place it last knew them: when their
+  fresh position comes in a moment later, the map goes on to it.
+
 ## [0.3.0] - 2026-10-18
 
 ### Added

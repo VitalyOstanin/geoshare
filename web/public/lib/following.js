@@ -101,3 +101,40 @@ export function boundsAreClose(one, other, tolerance = BOUNDS_TOLERANCE_DEGREES)
 export function targetPosition(positions, target) {
     return positions.find((position) => position.positionId === target) ?? null;
 }
+
+/**
+ * How long after a member is picked a fresher position of theirs still takes
+ * the map there.
+ *
+ * A page woken by the very tap that picks a member flies to where it last
+ * knew them, and the database answers with where they are a second or two
+ * later, while the map is still on its way: without this, the map lands on
+ * the old place and the marker walks off it. Half a minute covers that
+ * answer on a slow connection; past it, a member moving takes the map along
+ * only in the "one" mode.
+ */
+export const CATCH_UP_MS = 30_000;
+
+/**
+ * The fresher position of a member just picked, or `null` when the map is
+ * already where they are.
+ *
+ * `lookedAt` is who was picked, when, and the point the map was sent to;
+ * `null` when nobody was, or the viewer has since moved the map by hand.
+ */
+export function catchUpTo(lookedAt, positions, now) {
+    if (lookedAt === null || now - lookedAt.at >= CATCH_UP_MS) {
+        return null;
+    }
+
+    const position = targetPosition(positions, lookedAt.positionId);
+
+    if (
+        position === null
+        || (position.latitude === lookedAt.latitude && position.longitude === lookedAt.longitude)
+    ) {
+        return null;
+    }
+
+    return position;
+}

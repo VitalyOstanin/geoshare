@@ -3,9 +3,11 @@ import { test } from 'node:test';
 
 import {
     BOUNDS_TOLERANCE_DEGREES,
+    CATCH_UP_MS,
     PAUSE_AFTER_A_GESTURE_MS,
     boundsAreClose,
     boundsOf,
+    catchUpTo,
     isPaused,
     targetPosition,
 } from '../public/lib/following.js';
@@ -105,4 +107,33 @@ test('the target position is found by its positionId', () => {
 // in the set the caller passes in; the map has nothing to centre on.
 test('a target absent from the set has no position', () => {
     assert.equal(targetPosition([at('a', 1, 2)], 'missing'), null);
+});
+
+// A tap that wakes the page flies to the old place; the fresh one follows.
+test('a member just picked who turns out to be elsewhere takes the map there', () => {
+    const lookedAt = { positionId: 'olga', at: 1000, latitude: 59.43, longitude: 24.75 };
+    const moved = at('olga', 59.44, 24.76);
+
+    assert.equal(catchUpTo(lookedAt, [at('mark', 59.0, 24.0), moved], 2000), moved);
+});
+
+test('a member still where the map was sent leaves it alone', () => {
+    const lookedAt = { positionId: 'olga', at: 1000, latitude: 59.43, longitude: 24.75 };
+
+    assert.equal(catchUpTo(lookedAt, [at('olga', 59.43, 24.75)], 2000), null);
+});
+
+test('the catching up ends with its time, and never starts without a pick', () => {
+    const lookedAt = { positionId: 'olga', at: 1000, latitude: 59.43, longitude: 24.75 };
+    const moved = [at('olga', 59.44, 24.76)];
+
+    assert.notEqual(catchUpTo(lookedAt, moved, 1000 + CATCH_UP_MS - 1), null);
+    assert.equal(catchUpTo(lookedAt, moved, 1000 + CATCH_UP_MS), null);
+    assert.equal(catchUpTo(null, moved, 1000), null);
+});
+
+test('a member picked who has dropped out of the set is not chased', () => {
+    const lookedAt = { positionId: 'olga', at: 1000, latitude: 59.43, longitude: 24.75 };
+
+    assert.equal(catchUpTo(lookedAt, [at('mark', 59.0, 24.0)], 2000), null);
 });
