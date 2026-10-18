@@ -30,7 +30,8 @@ and the versions follow [Semantic Versioning](https://semver.org/).
 
 - On the page, a member's card opens and closes its details with a chevron
   beside the cross in its corner, drawn like the cross, instead of the words
-  "More details" and "Fewer details" beside the name.
+  "More details" and "Fewer details" beside the name. It points the way the
+  card moves: up to open the details, down to fold them away.
 
 ### Fixed
 

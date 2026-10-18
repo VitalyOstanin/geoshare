@@ -129,7 +129,9 @@
 
 /* A chevron in the corner, left of the cross and drawn the way the cross is:
    a circle of the same size on the same line, and two strokes of the same
-   weight. Down while the details are hidden, up once they show. */
+   weight. The card stands on the panel and grows upwards as the details open,
+   so the chevron points the way it will move: up while they are hidden, down
+   once they show. */
 .detail-more {
     position: absolute;
     top: 0.4rem;
@@ -154,11 +156,11 @@
     height: 0.5rem;
     border-right: 1.5px solid currentcolor;
     border-bottom: 1.5px solid currentcolor;
-    transform: translate(-50%, -70%) rotate(45deg);
+    transform: translate(-50%, -30%) rotate(-135deg);
 }
 
 .detail-more[aria-expanded='true']::before {
-    transform: translate(-50%, -30%) rotate(-135deg);
+    transform: translate(-50%, -70%) rotate(45deg);
 }
 
 .detail-more:hover {
