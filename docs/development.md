@@ -152,7 +152,9 @@ the machine.
 ## Releasing
 
 1. Raise `appVersionName` in `android/gradle.properties`; the version code is
-   worked out from it, 0.1.0 being 100.
+   worked out from it, 0.1.0 being 100. Raise `PAGE_VERSION` in
+   `web/public/lib/version.js` to the same: the page names it in its reports,
+   and a test fails while the two differ.
 2. Give the version's section of [CHANGELOG.md](../CHANGELOG.md) and of
    [CHANGELOG.ru.md](../CHANGELOG.ru.md) its date, the same in both, and say
    under **Project owners** (**Владельцам проектов**) whether the release

@@ -79,7 +79,7 @@ rules change with that in mind:
   first:
 
   ```sh
-  git checkout v0.2.0
+  git checkout v0.3.0
   tools/project.sh update <project-id>
   ```
 
