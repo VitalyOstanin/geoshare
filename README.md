@@ -1,6 +1,6 @@
 # <img src="web/public/favicon.svg" width="40" align="absmiddle" alt=""> geoshare
 
-English · [Русский](README.ru.md)
+English · [Русский](README.ru.md) · [Website](https://vitalyostanin.github.io/geoshare/)
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="docs/images/hero-dark.webp">
