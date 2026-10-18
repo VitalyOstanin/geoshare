@@ -7,6 +7,7 @@ import android.graphics.drawable.ColorDrawable
 import android.net.Uri
 import android.os.Bundle
 import android.provider.Settings
+import android.view.MotionEvent
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
@@ -43,6 +44,7 @@ import io.github.vitalyostanin.geoshare.auth.SignInFailure
 import io.github.vitalyostanin.geoshare.auth.SignInScreen
 import io.github.vitalyostanin.geoshare.auth.UnfinishedSignIn
 import io.github.vitalyostanin.geoshare.log.AppLog
+import io.github.vitalyostanin.geoshare.map.Attention
 import io.github.vitalyostanin.geoshare.map.GroupSwitch
 import io.github.vitalyostanin.geoshare.map.GroupSwitcher
 import io.github.vitalyostanin.geoshare.map.UnansweredException
@@ -835,6 +837,18 @@ class MainActivity : AppCompatActivity() {
 
     // The session is watched only while the screen is up: nothing else in the
     // application reads it yet, and the service will keep its own watch.
+
+    /**
+     * Every touch anywhere on the screen, told to [Attention] before it goes
+     * where it was meant for: a map nobody touches stops counting as looked
+     * at after a few minutes.
+     */
+    override fun dispatchTouchEvent(event: MotionEvent): Boolean {
+        Attention.noticed()
+
+        return super.dispatchTouchEvent(event)
+    }
+
     override fun onStart() {
         super.onStart()
 

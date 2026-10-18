@@ -47,3 +47,4 @@ date is the decision's.
 | 0037 | [Google Cloud Shell is not a supported place to set up a project](0037-google-cloud-shell-is-not-supported.md)         | Accepted                                     | 2026-10-16 |
 | 0038 | [The first group of a project is founded by its owner](0038-the-first-group-is-founded-by-the-project-owner.md)        | Accepted                                     | 2026-10-17 |
 | 0039 | [An update asks before it comes down over a network switched off](0039-an-update-asks-over-a-network-switched-off.md)  | Accepted                                     | 2026-10-17 |
+| 0040 | [A map nobody touches stops claiming that somebody is looking](0040-an-untouched-map-stops-claiming-a-look.md)         | Accepted                                     | 2026-10-18 |

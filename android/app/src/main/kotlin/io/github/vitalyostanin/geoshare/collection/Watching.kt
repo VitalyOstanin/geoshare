@@ -40,6 +40,27 @@ val WATCH_REFRESH: Duration = Duration.ofMinutes(5)
  */
 val WATCH_RETRY: Duration = Duration.ofSeconds(30)
 
+/**
+ * How long the map may go untouched before it stops counting as somebody
+ * looking.
+ *
+ * A map on a screen that never goes dark — a device on a charger with the
+ * screen kept on, or one nobody locked — would otherwise hold every device of
+ * the group in the thirty-second mode around the clock, the most expensive
+ * thing the group does. Five minutes, the same as the page (`IDLE_AFTER_MS` in
+ * `web/public/lib/store.js`): whoever follows somebody home touches the map
+ * now and then, and a forgotten one stops costing soon after.
+ */
+val IDLE_AFTER: Duration = Duration.ofMinutes(5)
+
+/**
+ * How much longer a map last touched at [touchedAt] counts as looked at, at
+ * [now]; both on one monotonic clock, in milliseconds. Zero once it no longer
+ * does.
+ */
+fun lookedAtFor(touchedAt: Long, now: Long): Duration =
+    Duration.ofMillis((IDLE_AFTER.toMillis() - (now - touchedAt)).coerceAtLeast(0))
+
 /** A member who says they are looking, and until when the claim counts. */
 data class Watcher(val memberId: String, val until: Instant)
 

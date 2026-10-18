@@ -40,7 +40,7 @@ Acceptance:
 ## DEV-02 Collect faster while somebody watches
 
 - Status: done
-- ADR: 0010
+- ADR: 0010, 0040
 - Tests: rules `access.test.mjs` (watch); Android `WatchingTest`, `ModeSelectionTest`, `CollectionModeTest`
 
 As a member I let my device collect fast only while somebody has the map open,
@@ -48,8 +48,10 @@ so that the battery is spent when it is worth it.
 
 Acceptance:
 
-- a viewer renews a watch claim every minute; a claim older than three
+- a viewer renews a watch claim every five minutes; a claim older than seven
   minutes stops counting;
+- a map nobody has touched for five minutes, in the application or on the
+  page, withdraws its claim, and the next touch makes it again;
 - a device that sees a live claim on itself switches to the viewing mode.
 
 ## DEV-03 Spend little while standing still

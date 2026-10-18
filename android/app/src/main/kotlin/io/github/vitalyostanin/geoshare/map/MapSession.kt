@@ -14,6 +14,7 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.repeatOnLifecycle
+import io.github.vitalyostanin.geoshare.collection.IDLE_AFTER
 import io.github.vitalyostanin.geoshare.collection.Watcher
 import io.github.vitalyostanin.geoshare.membership.RosterSeen
 import io.github.vitalyostanin.geoshare.membership.rosterSeen
@@ -29,6 +30,7 @@ import io.github.vitalyostanin.geoshare.service.rosterReads
 import io.github.vitalyostanin.geoshare.service.watchers
 import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.withContext
 import java.time.Instant
 
@@ -357,7 +359,9 @@ fun PublishProfile(
  *
  * Tied to the resumed state rather than to the composition: a map left behind
  * a lock screen is not somebody looking, and keeping the claim alive there
- * would hold every other device in its fifteen-second mode for nothing.
+ * would hold every other device in its fifteen-second mode for nothing. Nor
+ * is a map nobody has touched for [IDLE_AFTER] on a screen that stays lit;
+ * the next touch claims again.
  */
 @Composable
 fun KeepWatching(memberId: String, deviceId: String) {
@@ -368,20 +372,30 @@ fun KeepWatching(memberId: String, deviceId: String) {
         val writer = WatchWriter(memberId, deviceId, connection)
 
         owner.repeatOnLifecycle(Lifecycle.State.RESUMED) {
-            // Said twice on purpose: once to the other members through the
-            // database, and once to this device's own collection, which never
-            // hears the first because a device ignores its own claim.
-            MapOnScreen.opened()
+            // Coming back to the map is somebody looking at it.
+            Attention.noticed()
 
-            try {
-                writer.keepLooking()
-            } finally {
-                MapOnScreen.closed()
+            Attention.looking().collectLatest { looking ->
+                if (!looking) {
+                    return@collectLatest
+                }
 
-                // The claim is being withdrawn because this coroutine was
-                // cancelled, so the withdrawal needs a scope that survives the
-                // cancellation to reach the database at all.
-                withContext(NonCancellable) { writer.stopLooking() }
+                // Said twice on purpose: once to the other members through
+                // the database, and once to this device's own collection,
+                // which never hears the first because a device ignores its
+                // own claim.
+                MapOnScreen.opened()
+
+                try {
+                    writer.keepLooking()
+                } finally {
+                    MapOnScreen.closed()
+
+                    // The claim is being withdrawn because this coroutine was
+                    // cancelled, so the withdrawal needs a scope that survives
+                    // the cancellation to reach the database at all.
+                    withContext(NonCancellable) { writer.stopLooking() }
+                }
             }
         }
     }

@@ -2,6 +2,7 @@ package io.github.vitalyostanin.geoshare.collection
 
 import org.junit.Assert.assertEquals
 import org.junit.Test
+import java.time.Duration
 import java.time.Instant
 
 class WatchingTest {
@@ -129,5 +130,23 @@ class WatchingTest {
     @Test
     fun `no groups at all is no watching`() {
         assertEquals(emptyList<Instant>(), watchedInAnyGroup(emptyList()))
+    }
+
+    // A map on a screen kept lit, with nobody touching it, held the whole group
+    // in the thirty-second mode around the clock: the look ends five minutes
+    // after the last touch, as it does on the page.
+    @Test
+    fun `a map touched a moment ago is looked at for the rest of the five minutes`() {
+        assertEquals(Duration.ofMinutes(5), lookedAtFor(touchedAt = 1_000, now = 1_000))
+        assertEquals(Duration.ofMinutes(4), lookedAtFor(touchedAt = 1_000, now = 61_000))
+    }
+
+    @Test
+    fun `a map untouched for five minutes or more is not looked at`() {
+        assertEquals(Duration.ZERO, lookedAtFor(touchedAt = 0, now = IDLE_AFTER.toMillis()))
+        assertEquals(
+            Duration.ZERO,
+            lookedAtFor(touchedAt = 0, now = Duration.ofHours(20).toMillis()),
+        )
     }
 }

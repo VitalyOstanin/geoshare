@@ -37,6 +37,10 @@ and the versions follow [Semantic Versioning](https://semver.org/).
 
 ### Fixed
 
+- A map left in front on a screen that stays lit, with nobody touching it,
+  no longer keeps every device of the group collecting every thirty seconds:
+  after five minutes without a touch it stops counting as somebody looking,
+  as the page already did (ADR-0040).
 - A person who is not the project owner and tries to create the group in an
   empty project is told that only the project owner can create it and to ask
   them for an invitation, instead of a general refused write; the map's
