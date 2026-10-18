@@ -69,11 +69,7 @@ take() {
     seed
     adb_e shell pm clear "${PACKAGE}" > /dev/null
     adb_e shell cmd locale set-app-locales "${PACKAGE}" --locales en-GB
-    if [[ "${theme}" == "dark" ]]; then
-        adb_e shell cmd uimode night yes > /dev/null
-    else
-        adb_e shell cmd uimode night no > /dev/null
-    fi
+    set_theme "${theme}"
     adb_e shell am start -n "${PACKAGE}/.MainActivity" > /dev/null
     sleep 3
 

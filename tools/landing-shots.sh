@@ -32,6 +32,9 @@ source "${REPO_ROOT}/tools/screens.sh"
 
 # The address the invitation on the pictures is made for.
 readonly INVITEE="sofia@example.com"
+# Seconds after which a siren nobody answered reads as unanswered: the
+# application's SIREN_FRESH, and a little more.
+readonly SIREN_STALE_AFTER=65
 
 bring_up_stand
 
@@ -52,7 +55,7 @@ take() {
         map_follow_menu_all_title admin_title search_start search_hours_6 \
         search_go siren_hint siren_go siren_stop_short group_make_invitation \
         group_invite_address group_invite_create group_make_another_invitation \
-        settings_close map_open_settings; do
+        settings_close map_open_settings siren_status_no_answer; do
         says[${key}]="$(words "${language}" "${key}")"
     done
     # Up to the address, which the screen shortens.
@@ -63,11 +66,7 @@ take() {
     seed --first-share
     adb_e shell pm clear "${PACKAGE}" > /dev/null
     adb_e shell cmd locale set-app-locales "${PACKAGE}" --locales "${locale}"
-    if [[ "${theme}" == "dark" ]]; then
-        adb_e shell cmd uimode night yes > /dev/null
-    else
-        adb_e shell cmd uimode night no > /dev/null
-    fi
+    set_theme "${theme}"
     adb_e shell am start -n "${PACKAGE}/.MainActivity" > /dev/null
     # Asked again once the application is up: on the first start after a
     # clear it has been seen to come up in the device's language instead.
@@ -105,8 +104,16 @@ take() {
     tap "${says[search_go]}"
     tap --near "Redmi Note 13" "${says[siren_hint]}"
     tap "${says[siren_go]}"
+    local siren_called="${SECONDS}"
     wait_for "${says[siren_stop_short]}" > /dev/null
     shoot "${language}/siren-${theme}" 1
+
+    # The invitation's picture shows the siren unanswered, as every run sees
+    # it once the call has gone stale; a quick run would catch it still
+    # waiting. The wait is longer than wait_for's, so most of it is a sleep.
+    local stale=$((siren_called + SIREN_STALE_AFTER - SECONDS))
+    ((stale <= 0)) || sleep "${stale}"
+    wait_for "${says[siren_status_no_answer]//%1\$s/Redmi Note 13}" > /dev/null
 
     tap_below "${says[group_make_invitation]}"
     tap "${says[group_invite_address]}"

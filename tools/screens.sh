@@ -211,7 +211,15 @@ set_screen() {
     # and the icons cut in half. Started again, it lays them out afresh.
     restart_system_ui
     adb_e shell settings put global sysui_demo_allowed 1
+    demo_status_bar
+}
+
+# The status bar's demo mode, entered afresh. A change of theme draws the bar
+# anew and loses most of it: the clock stops at the time it was, and the
+# notifications' icon comes back.
+demo_status_bar() {
     local command
+    adb_e shell am broadcast -a com.android.systemui.demo -e command exit > /dev/null
     for command in \
         "enter" \
         "clock -e hhmm 0941" \
@@ -221,6 +229,21 @@ set_screen() {
         # shellcheck disable=SC2086 # the demo command and its extras, split on purpose
         adb_e shell am broadcast -a com.android.systemui.demo -e command ${command} > /dev/null
     done
+}
+
+# The system's light or dark theme, and the demo mode again after it. The
+# other theme comes first, so that the bar is always drawn anew before the
+# demo mode is entered: on a bar left as it was, the demo's Wi-Fi icon has
+# been seen beside the one already there.
+set_theme() {
+    local night=no other=yes
+    [[ "$1" == "dark" ]] && night=yes other=no
+    adb_e shell cmd uimode night "${other}" > /dev/null
+    # The bar is drawn anew a moment after the change, not at once.
+    sleep 2
+    adb_e shell cmd uimode night "${night}" > /dev/null
+    sleep 2
+    demo_status_bar
 }
 
 restart_system_ui() {
