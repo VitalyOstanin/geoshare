@@ -25,6 +25,11 @@ and the versions follow [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Added
+
+- "Project website" at the end of the settings opens the project's website,
+  its Russian page on a device in Russian.
+
 ### Changed
 
 - "Update" over a network switched off under Downloads, roaming among them,

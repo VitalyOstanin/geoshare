@@ -138,6 +138,9 @@
     <string name="report_what_is_sent">What is sent</string>
     <string name="report_open_issue">Open issue</string>
     <string name="report_share_log">Share the full log</string>
+    <string name="website_open">Project website</string>
+    <!-- The website's page in the application's language, after its address: empty for English. -->
+    <string name="website_page"></string>
     <string name="licences_open">Open source licences</string>
     <string name="licences_title">Licences</string>
     <string name="licences_intro">geoshare is distributed under the MIT licence. It includes these libraries:</string>

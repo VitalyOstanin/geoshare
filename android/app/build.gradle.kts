@@ -73,6 +73,12 @@ val issuePageUrl: String =
             "issuePageUrl must be an https address without a query, not '$it'"
         }
     }
+val websiteUrl: String =
+    providers.gradleProperty("websiteUrl").get().also {
+        require(Regex("""^https://[^"\\\s?#]+/$""").matches(it)) {
+            "websiteUrl must be an https address ending in /, not '$it'"
+        }
+    }
 val orbitsUrl: String =
     providers.gradleProperty("orbitsUrl").get().also {
         require(Regex("""^https://[^"\\\s%]+/$""").matches(it)) {
@@ -102,6 +108,7 @@ android {
         buildConfigField("String", "SETUP_PAGE_URL", "\"$setupPageUrl\"")
         buildConfigField("String", "TILE_URL", "\"$tileUrl\"")
         buildConfigField("String", "ISSUE_PAGE_URL", "\"$issuePageUrl\"")
+        buildConfigField("String", "WEBSITE_URL", "\"$websiteUrl\"")
         buildConfigField("String", "ORBITS_URL", "\"$orbitsUrl\"")
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
 

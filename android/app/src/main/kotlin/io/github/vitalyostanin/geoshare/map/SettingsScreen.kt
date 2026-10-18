@@ -1,5 +1,8 @@
 package io.github.vitalyostanin.geoshare.map
 
+import android.content.ActivityNotFoundException
+import android.content.Intent
+import android.net.Uri
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -353,6 +356,8 @@ private fun SettingsLowerSections(
 
     // Last, under signing out: read once if ever, and the version
     // under it is what somebody reporting a fault is asked for.
+    WebsiteButton()
+
     TextButton(
         onClick = onOpenLicences,
         modifier = Modifier.padding(horizontal = 8.dp),
@@ -370,6 +375,26 @@ private fun SettingsLowerSections(
         color = MaterialTheme.colorScheme.onSurfaceVariant,
         modifier = Modifier.padding(start = 16.dp, end = 16.dp, bottom = 16.dp),
     )
+}
+
+/** The project's website in the browser, its page in the application's language. */
+@Composable
+private fun WebsiteButton() {
+    val context = LocalContext.current
+    val url = BuildConfig.WEBSITE_URL + stringResource(R.string.website_page)
+
+    TextButton(
+        onClick = {
+            try {
+                context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url)))
+            } catch (missing: ActivityNotFoundException) {
+                // No browser: nothing to show, and nothing worth an error line.
+            }
+        },
+        modifier = Modifier.padding(horizontal = 8.dp),
+    ) {
+        Text(text = stringResource(R.string.website_open))
+    }
 }
 
 /** The title of the screen and the way back to the map. */

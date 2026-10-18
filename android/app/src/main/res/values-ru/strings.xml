@@ -121,6 +121,8 @@
     <string name="report_what_is_sent">Что отправляется</string>
     <string name="report_open_issue">Открыть обращение</string>
     <string name="report_share_log">Отправить весь журнал</string>
+    <string name="website_open">Сайт проекта</string>
+    <string name="website_page">ru/</string>
     <string name="licences_open">Лицензии открытого ПО</string>
     <string name="licences_title">Лицензии</string>
     <string name="licences_intro">geoshare распространяется по лицензии MIT. В приложение входят библиотеки:</string>
