@@ -73,10 +73,13 @@ header.wrap {
   text-decoration: none;
 }
 
-/* The application's icon, at its own size rather than the column's width. */
+/* The application's icon, at its own size rather than the column's width,
+   centred on the lower-case letters of the name rather than on its line box,
+   which the font's ascent lifts above them. */
 .brand img {
   width: 28px;
   height: 28px;
+  transform: translateY(0.1em);
 }
 
 nav {
