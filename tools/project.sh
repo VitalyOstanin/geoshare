@@ -90,6 +90,10 @@ export npm_config_loglevel=error
 # has to match it, or sign-in refuses the application.
 readonly PACKAGE_NAME="io.github.vitalyostanin.geoshare"
 
+# Where the firebase command line keeps the accounts it is signed into and
+# their tokens; read here for the default account and the access token.
+readonly FIREBASE_STORE="${HOME}/.config/configstore/firebase-tools.json"
+
 # The fingerprints of the key the published builds are signed with.
 readonly RELEASE_FINGERPRINTS="android/release-fingerprints.txt"
 
@@ -97,6 +101,27 @@ readonly RELEASE_FINGERPRINTS="android/release-fingerprints.txt"
 # region is inside the free plan; this one is close to the family it was made
 # for.
 readonly DEFAULT_LOCATION="europe-north1"
+
+# How long the script waits for things that are switched on elsewhere: tries
+# and the pause between them, in seconds. The messages that say how long the
+# wait is are worked out from these, so changing a number changes the text.
+readonly API_ATTEMPTS="${API_ATTEMPTS:-30}"
+readonly API_PAUSE="${API_PAUSE:-10}"
+readonly DB_ATTEMPTS="${DB_ATTEMPTS:-20}"
+readonly DB_PAUSE="${DB_PAUSE:-30}"
+readonly GOOGLE_ATTEMPTS="${GOOGLE_ATTEMPTS:-80}"
+readonly GOOGLE_PAUSE="${GOOGLE_PAUSE:-15}"
+
+# The wait of the given tries and pause, as "N minute(s)" for a message.
+wait_minutes() {
+    local minutes=$(($1 * $2 / 60))
+
+    if ((minutes == 1)); then
+        echo "1 minute"
+    else
+        echo "${minutes} minutes"
+    fi
+}
 
 firebase() {
     # --non-interactive is global to the firebase command line and every
@@ -297,13 +322,10 @@ access_token_fresh() {
 remember_access_token() {
     local stored
 
-    stored="$(ACCOUNT="${account}" node -e '
+    stored="$(ACCOUNT="${account}" STORE="${FIREBASE_STORE}" node -e '
 const fs = require("fs");
-const path = require("path");
-const os = require("os");
 
-const store = JSON.parse(fs.readFileSync(
-    path.join(os.homedir(), ".config/configstore/firebase-tools.json"), "utf8"));
+const store = JSON.parse(fs.readFileSync(process.env.STORE, "utf8"));
 const wanted = process.env.ACCOUNT.toLowerCase();
 
 // The default account sits at the top of the file, every one added with
@@ -374,7 +396,7 @@ enable_api() {
     # The switch takes a while to reach the service behind it.
     local attempt
 
-    for attempt in $(seq 1 30); do
+    for attempt in $(seq 1 "${API_ATTEMPTS}"); do
         if curl -sf -H @<(bearer "${token}") \
             "https://serviceusage.googleapis.com/v1/projects/${project}/services/${api}" |
             grep -q '"state": "ENABLED"'; then
@@ -382,7 +404,7 @@ enable_api() {
         fi
 
         echo "    waiting for ${api} (${attempt})"
-        sleep 10
+        sleep "${API_PAUSE}"
     done
 
     echo "${api} is still not on" >&2
@@ -522,21 +544,8 @@ print_connect_link() {
 console_link() {
     local url="$1"
 
-    URL="${url}" ACCOUNT="${account}" node -e '
-const fs = require("fs");
-const path = require("path");
-const os = require("os");
-
-let who = process.env.ACCOUNT;
-
-if (!who) {
-    try {
-        who = JSON.parse(fs.readFileSync(
-            path.join(os.homedir(), ".config/configstore/firebase-tools.json"), "utf8")).user.email;
-    } catch {
-        who = "";
-    }
-}
+    URL="${url}" WHO="$(owner_email 2>/dev/null || true)" node -e '
+const who = process.env.WHO;
 
 const link = new URL(process.env.URL);
 
@@ -547,9 +556,40 @@ console.log(link.toString());
 '
 }
 
+# The wording of the two console steps, kept here once. The messages of
+# `create` and `show` and the manualSteps of their --json output all take it
+# from these functions; the long form for a person to read is
+# docs/console-steps.md, and the page's own setup text is in
+# web/public/lib/words/setup.js. When the console changes, change these three.
+step_google_text() {
+    echo "Get started (the first time), then Google, Enable, type the name of" \
+        "the group as the public-facing name, pick the support address, Save."
+}
+
+step_redirect_text() {
+    local site="$1"
+
+    echo "Open \"Web client (auto created by Google Service)\", add" \
+        "https://${site}.web.app/__/auth/handler under Authorized redirect" \
+        "URIs, Save."
+}
+
+# Why step 2 cannot be skipped; only the page needs the address, not the app.
+step_redirect_why() {
+    echo "The page signs in through its own domain rather than firebaseapp.com" \
+        "(see tools/web-config.sh), and the client the console makes for step 1" \
+        "only lists the firebaseapp.com one; without this the page's sign-in" \
+        "ends in redirect_uri_mismatch."
+}
+
+# An indented, wrapped paragraph for the human-readable messages.
+indent_wrapped() {
+    fold -s -w 72 | sed 's/^/     /'
+}
+
 # The manual steps left after `create`, and the JSON --json ends with once it
-# is done. Built from the same two console steps the human-readable message
-# below spells out, so the two never drift apart.
+# is done. Built from the same step texts the human-readable message below
+# prints, so the two never drift apart.
 create_result_json() {
     local project="$1" site="$2"
 
@@ -557,6 +597,7 @@ create_result_json() {
     PROJECT="${project}" SITE="${site}" \
         PROVIDERS="$(console_link "https://console.firebase.google.com/project/${project}/authentication/providers")" \
         CLIENTS="$(console_link "https://console.cloud.google.com/auth/clients?project=${project}")" \
+        WHAT_GOOGLE="$(step_google_text)" WHAT_REDIRECT="$(step_redirect_text "${site}")" \
         node -e '
 const project = process.env.PROJECT;
 const site = process.env.SITE;
@@ -568,15 +609,11 @@ console.log(JSON.stringify({
     settingsUrl: `https://${site}.web.app/geoshare.json`,
     manualSteps: [
         {
-            what: "Authentication, Sign-in method, Google, Enable, type the name " +
-                "of the group as the public-facing name, pick the support " +
-                "address, Save",
+            what: process.env.WHAT_GOOGLE,
             url: process.env.PROVIDERS,
         },
         {
-            what: "Open \"Web client (auto created by Google Service)\", " +
-                `add https://${site}.web.app/__/auth/handler under ` +
-                "Authorized redirect URIs, Save",
+            what: process.env.WHAT_REDIRECT,
             url: process.env.CLIENTS,
         },
     ],
@@ -589,16 +626,13 @@ console.log(JSON.stringify({
 # command line's default account, read from the file the access token comes
 # from.
 owner_email() {
-    ACCOUNT="${account}" node -e '
+    ACCOUNT="${account}" STORE="${FIREBASE_STORE}" node -e '
 const fs = require("fs");
-const path = require("path");
-const os = require("os");
 
 let who = process.env.ACCOUNT;
 
 if (!who) {
-    who = JSON.parse(fs.readFileSync(
-        path.join(os.homedir(), ".config/configstore/firebase-tools.json"), "utf8")).user.email;
+    who = JSON.parse(fs.readFileSync(process.env.STORE, "utf8")).user.email;
 }
 
 console.log(who);
@@ -743,41 +777,38 @@ create() {
         # A freshly switched on API still answers 403 for a few minutes.
         local attempt
 
-        for attempt in $(seq 1 20); do
+        for attempt in $(seq 1 "${DB_ATTEMPTS}"); do
             if firebase firestore:databases:create "(default)" --location "${location}" \
                 --project "${project}"; then
                 break
             fi
 
-            [[ "${attempt}" -lt 20 ]] || exit 1
-            echo "    the database is not ready to be made yet, again in 30 s (${attempt})"
-            sleep 30
+            [[ "${attempt}" -lt "${DB_ATTEMPTS}" ]] || exit 1
+            echo "    the database is not ready to be made yet, again in ${DB_PAUSE} s (${attempt})"
+            sleep "${DB_PAUSE}"
         done
     fi
 
     deploy_site "${project}" "${android}" "${site_id}"
 
+    echo
+    echo "Done with the part that runs from here. Two steps are left in the consoles:"
+    echo
+    echo "  1. $(console_link "https://console.firebase.google.com/project/${project}/authentication/providers")"
+    echo
+    step_google_text | indent_wrapped
+    echo "     A dialog saying \"An identical OAuth client already exists\" for the"
+    echo "     Android app is expected and harmless: the app signs in through the"
+    echo "     browser (docs/ADR/0002)."
+    echo
+    echo "  2. $(console_link "https://console.cloud.google.com/auth/clients?project=${project}")"
+    echo
+    step_redirect_text "${site_id}" | indent_wrapped
+    step_redirect_why | indent_wrapped
+    echo
+    echo "More on both steps: docs/console-steps.md."
+    echo
     cat <<EOF
-
-Done with the part that runs from here. Two steps are left in the consoles:
-
-  1. $(console_link "https://console.firebase.google.com/project/${project}/authentication/providers")
-
-     Get started (the first time), then Google, Enable, type the name of the
-     group as the public-facing name, pick the support address, Save. The
-     console makes the OAuth client for the page. A dialog saying "An
-     identical OAuth client already exists" for the Android app is expected
-     and harmless: the app signs in through the browser (docs/ADR/0002).
-
-  2. $(console_link "https://console.cloud.google.com/auth/clients?project=${project}")
-
-     Open "Web client (auto created by Google Service)", add
-     https://${site_id}.web.app/__/auth/handler under Authorized redirect URIs,
-     Save. The page signs in through its own domain rather than
-     firebaseapp.com (see tools/web-config.sh), and the client made in step 1
-     only lists the firebaseapp.com one; without this the page's sign-in ends
-     in redirect_uri_mismatch.
-
 Then run:
 
   tools/project.sh show ${project}
@@ -829,14 +860,13 @@ show_result_json() {
     # shellcheck disable=SC2016 # ${...} in there is JavaScript's, not the shell's
     PROJECT="${project}" SITE="${site_id}" GOOGLE_ON="${google_on}" USAGE="${usage_json}" \
         PROVIDERS="$(console_link "https://console.firebase.google.com/project/${project}/authentication/providers")" \
+        WHAT_GOOGLE="$(step_google_text)" \
         node -e '
 const site = process.env.SITE;
 const googleOn = process.env.GOOGLE_ON === "1";
 
 const manualSteps = googleOn ? [] : [{
-    what: "Authentication, Sign-in method, Google, Enable, type the name " +
-        "of the group as the public-facing name, pick the support " +
-        "address, Save",
+    what: process.env.WHAT_GOOGLE,
     url: process.env.PROVIDERS,
 }];
 
@@ -893,12 +923,12 @@ show() {
         google_on=1
         echo "    already on"
     elif (( wait_google )); then
-        echo "    not on yet, waiting up to 20 minutes"
+        echo "    not on yet, waiting up to $(wait_minutes "${GOOGLE_ATTEMPTS}" "${GOOGLE_PAUSE}")"
 
         local attempt
 
-        for attempt in $(seq 1 80); do
-            sleep 15
+        for attempt in $(seq 1 "${GOOGLE_ATTEMPTS}"); do
+            sleep "${GOOGLE_PAUSE}"
 
             if google_sign_in_enabled "${project}"; then
                 google_on=1
@@ -909,7 +939,7 @@ show() {
         done
 
         if (( ! google_on )); then
-            echo "sign-in with Google is still off in ${project} after 20 minutes" >&2
+            echo "sign-in with Google is still off in ${project} after $(wait_minutes "${GOOGLE_ATTEMPTS}" "${GOOGLE_PAUSE}")" >&2
             exit 1
         fi
 
@@ -936,22 +966,18 @@ ${project} still needs one step before it can sign phones in:
 
   $(console_link "https://console.firebase.google.com/project/${project}/authentication/providers")
 
-  Get started (the first time), then Google, Enable, type the name of the
-  group as the public-facing name, pick the support address, Save. Then run
-  this command again, or with --wait to have it wait here instead.
 EOF
+        step_google_text | fold -s -w 74 | sed 's/^/  /'
+        echo "  Then run this command again, or with --wait to have it wait here instead."
     fi
 
     # Nothing here can read the redirect URI back, so it is only recalled, in
     # either case, for the owner to tick off themselves.
-    cat <<EOF
-
-Not checked from here: https://${site_id}.web.app/__/auth/handler under
-Authorized redirect URIs of "Web client (auto created by Google Service)" in
-$(console_link "https://console.cloud.google.com/auth/clients?project=${project}")
-Without it the page's sign-in ends in redirect_uri_mismatch; the app does not
-need it.
-EOF
+    echo
+    echo "Not checked from here, in" \
+        "$(console_link "https://console.cloud.google.com/auth/clients?project=${project}")"
+    step_redirect_text "${site_id}" | fold -s -w 74
+    echo "Without it the page's sign-in ends in redirect_uri_mismatch; the app does not need it."
 
     local usage_json=""
 

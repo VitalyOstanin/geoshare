@@ -79,13 +79,13 @@ PHRASES = [
 ]
 
 
-def midi_to_freq(m):
+def midi_to_freq(m: float) -> float:
     return 440.0 * (2.0 ** ((m - 69) / 12.0))
 
 
 # ------------------------------------------------------------- wav i/o ----
 
-def read_wav_float(path):
+def read_wav_float(path: str) -> tuple[np.ndarray, int]:
     with wave.open(path, "rb") as wf:
         assert wf.getsampwidth() == 2, path
         n = wf.getnframes()
@@ -95,7 +95,7 @@ def read_wav_float(path):
     return data, sr
 
 
-def write_wav_int16(path, data, sr=SR):
+def write_wav_int16(path: str, data: np.ndarray, sr: int = SR) -> None:
     data = np.clip(data, -1.0, 1.0)
     ints = (data * 32767.0).astype("<i2")
     with wave.open(path, "wb") as wf:
@@ -105,14 +105,14 @@ def write_wav_int16(path, data, sr=SR):
         wf.writeframes(ints.tobytes())
 
 
-def run(cmd):
+def run(cmd: list[str]) -> None:
     subprocess.run(["timeout", "120"] + cmd, check=True,
                     stdout=subprocess.DEVNULL, stderr=subprocess.PIPE)
 
 
 # ------------------------------------------------------- 1. modulator -----
 
-def synth_flite(text, out_path):
+def synth_flite(text: str, out_path: str) -> None:
     run([
         "ffmpeg", "-y", "-loglevel", "error",
         "-f", "lavfi", "-i", f"flite=text='{text}':voice=slt",
@@ -120,7 +120,7 @@ def synth_flite(text, out_path):
     ])
 
 
-def trim_silence(data, thresh_db=-45.0, win=221):
+def trim_silence(data: np.ndarray, thresh_db: float = -45.0, win: int = 221) -> np.ndarray:
     thresh = 10.0 ** (thresh_db / 20.0)
     n = len(data)
     if n == 0:
@@ -140,7 +140,7 @@ def trim_silence(data, thresh_db=-45.0, win=221):
     return data[start:end]
 
 
-def apply_rubberband_chain(src, dst, tempo):
+def apply_rubberband_chain(src: str, dst: str, tempo: float) -> list[float]:
     """Apply rubberband tempo change, chaining stages if tempo falls
     outside librubberband's usable [0.25, 4] range."""
     stages = []
@@ -172,7 +172,7 @@ def apply_rubberband_chain(src, dst, tempo):
     return stages
 
 
-def fit_length(data, target_len):
+def fit_length(data: np.ndarray, target_len: int) -> np.ndarray:
     n = len(data)
     if n == target_len:
         return data
@@ -181,7 +181,7 @@ def fit_length(data, target_len):
     return np.concatenate([data, np.zeros(target_len - n)])
 
 
-def speech(text, name, words_dir):
+def speech(text: str, name: str, words_dir: str) -> np.ndarray:
     """Synthesise and trim one phrase (or, for melody timing, one word)."""
     raw = os.path.join(words_dir, f"vocal-phrase-raw-{name}.wav")
     synth_flite(text, raw)
@@ -189,7 +189,7 @@ def speech(text, name, words_dir):
     return trim_silence(data)
 
 
-def stretched(data, target, name, words_dir):
+def stretched(data: np.ndarray, target: int, name: str, words_dir: str) -> tuple[np.ndarray, float]:
     trim = os.path.join(words_dir, f"vocal-phrase-trim-{name}.wav")
     out = os.path.join(words_dir, f"vocal-phrase-stretch-{name}.wav")
     write_wav_int16(trim, data)
@@ -200,11 +200,11 @@ def stretched(data, target, name, words_dir):
 
 # --------------------------------------------------------- 2. carrier -----
 
-def hann(n):
+def hann(n: int) -> np.ndarray:
     return 0.5 - 0.5 * np.cos(2.0 * np.pi * np.arange(n) / n)
 
 
-def harmonic_gain(inst_freq_k):
+def harmonic_gain(inst_freq_k: np.ndarray) -> np.ndarray:
     """Linear fade over the last 2 kHz before the hard limit."""
     g = np.ones_like(inst_freq_k)
     fade = (inst_freq_k > HARMONIC_FADE_START_HZ)
@@ -218,7 +218,7 @@ def harmonic_gain(inst_freq_k):
     return g
 
 
-def noise_weight_from_modulator(modulator, length):
+def noise_weight_from_modulator(modulator: np.ndarray, length: int) -> np.ndarray:
     """Per-frame high-frequency-energy ratio of the modulator, expanded
     to a per-sample noise-amplitude envelope."""
     n = len(modulator)
@@ -250,7 +250,9 @@ def noise_weight_from_modulator(modulator, length):
     return weight
 
 
-def pitch_contour(length, words, notes, words_dir):
+def pitch_contour(
+    length: int, words: list[str], notes: list[int], words_dir: str
+) -> tuple[np.ndarray, np.ndarray]:
     """Place each melody note where its word would start in a spoken
     performance: synthesise the words on their own just to measure their
     relative lengths, then split the (already phrase-stretched) modulator
@@ -273,7 +275,7 @@ def pitch_contour(length, words, notes, words_dir):
     return f0 * 2.0 ** (vibrato / 1200.0), bounds
 
 
-def carrier(f0):
+def carrier(f0: np.ndarray) -> np.ndarray:
     phase = np.cumsum(2.0 * np.pi * f0 / SR)
     out = np.zeros(len(f0))
     for k in range(1, int(HARMONIC_LIMIT_HZ / f0.min()) + 2):
@@ -283,7 +285,7 @@ def carrier(f0):
     return out
 
 
-def highpass(x, fc):
+def highpass(x: np.ndarray, fc: float) -> np.ndarray:
     """A true one-pole recursive IIR high-pass (unlike song.py's FIR
     approximation): applied twice, it strips the low end from the dry
     speech kept under the vocoded voice without smearing its transients."""
@@ -297,7 +299,7 @@ def highpass(x, fc):
 
 # --------------------------------------------------------- 3. vocoder -----
 
-def stft_frames(x):
+def stft_frames(x: np.ndarray) -> tuple[np.ndarray, int, int]:
     pad_len = FRAME // 2
     xp = np.concatenate([np.zeros(pad_len), x, np.zeros(FRAME)])
     n_frames = 1 + (len(xp) - FRAME) // HOP
@@ -305,7 +307,13 @@ def stft_frames(x):
     return xp[idx], len(xp), pad_len
 
 
-def envelope_from_magnitude(mag, freqs, n_bands=48, f_lo=100.0, f_hi=10000.0):
+def envelope_from_magnitude(
+    mag: np.ndarray,
+    freqs: np.ndarray,
+    n_bands: int = 48,
+    f_lo: float = 100.0,
+    f_hi: float = 10000.0,
+) -> np.ndarray:
     edges = np.geomspace(f_lo, f_hi, n_bands + 1)
     centers = np.sqrt(edges[:-1] * edges[1:])
     n_frames = mag.shape[0]
@@ -323,7 +331,7 @@ def envelope_from_magnitude(mag, freqs, n_bands=48, f_lo=100.0, f_hi=10000.0):
     return env
 
 
-def vocode(modulator, carrier_signal):
+def vocode(modulator: np.ndarray, carrier_signal: np.ndarray) -> np.ndarray:
     length = max(len(modulator), len(carrier_signal))
     modulator = fit_length(modulator, length)
     carrier_signal = fit_length(carrier_signal, length)
@@ -361,7 +369,7 @@ def vocode(modulator, carrier_signal):
 
 # ---------------------------------------------------------- 4. polish -----
 
-def apply_fades(data, sr=SR):
+def apply_fades(data: np.ndarray, sr: int = SR) -> np.ndarray:
     n = len(data)
     fi = min(int(round(FADE_IN_S * sr)), n)
     fo = min(int(round(FADE_OUT_S * sr)), n)
@@ -373,7 +381,7 @@ def apply_fades(data, sr=SR):
     return out
 
 
-def comb_filter(x, delay_samples, feedback):
+def comb_filter(x: np.ndarray, delay_samples: int, feedback: float) -> np.ndarray:
     x = list(x)
     n = len(x)
     y = [0.0] * n
@@ -390,7 +398,7 @@ def comb_filter(x, delay_samples, feedback):
     return np.array(y)
 
 
-def allpass_filter(x, delay_samples, g):
+def allpass_filter(x: np.ndarray, delay_samples: int, g: float) -> np.ndarray:
     x = list(x)
     n = len(x)
     y = [0.0] * n
@@ -408,7 +416,7 @@ def allpass_filter(x, delay_samples, g):
     return np.array(y)
 
 
-def reverb(data, sr=SR, wet=0.20):
+def reverb(data: np.ndarray, sr: int = SR, wet: float = 0.20) -> np.ndarray:
     delays_ms = [29.7, 37.1, 41.1, 43.7]
     combs = [comb_filter(data, max(1, int(round(d * sr / 1000.0))), 0.7)
              for d in delays_ms]
@@ -417,7 +425,7 @@ def reverb(data, sr=SR, wet=0.20):
     return (1.0 - wet) * data + wet * wet_sig
 
 
-def peak_normalize(data, target_dbfs=-3.0):
+def peak_normalize(data: np.ndarray, target_dbfs: float = -3.0) -> np.ndarray:
     peak = np.max(np.abs(data))
     if peak < 1e-9:
         return data
@@ -427,7 +435,7 @@ def peak_normalize(data, target_dbfs=-3.0):
 
 # --------------------------------------------------------------- render ---
 
-def render(words_dir):
+def render(words_dir: str) -> np.ndarray:
     """Sing the four lyric phrases over the trailing word gap of each cycle,
     returning the mixed, reverbed, peak-normalised vocal layer.
 

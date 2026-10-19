@@ -113,6 +113,17 @@ fi
 # and MEMORY, rather than by default: the machine has other work to do.
 readonly JOBS="${JOBS:-4}"
 readonly MEMORY="${MEMORY:-6g}"
+# podman would reject a bad value only when the container starts, with its own
+# wording that does not name the variable.
+require_whole_number JOBS
+if [[ "${JOBS}" -lt 1 ]]; then
+    echo "error: JOBS='${JOBS}' must be at least 1" >&2
+    exit 1
+fi
+if [[ ! "${MEMORY}" =~ ^[0-9]+[bkmg]?$ ]]; then
+    echo "error: MEMORY='${MEMORY}' is not a size such as 512m or 6g" >&2
+    exit 1
+fi
 # shellcheck disable=SC2034 # read by the scripts that source this one
 limit_args=(--cpus "${JOBS}" --memory "${MEMORY}")
 

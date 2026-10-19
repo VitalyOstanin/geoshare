@@ -19,6 +19,7 @@ readonly PACKAGE_LINE_FLOORS=(
     "service 21"
     "project 29"
     "collection 95"
+    "map 9"
 )
 
 report="${here}/../android/app/build/reports/coverage/test/debug/report.xml"
