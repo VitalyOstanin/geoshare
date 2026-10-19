@@ -344,7 +344,7 @@ function moreButton(view, details) {
 
 /**
  * The line under the name: how far, how old the position, how long since the
- * device was online, and the charge.
+ * device was in touch, and the charge.
  *
  * The two ages side by side because under a spoof they are hours apart, and a
  * card naming only one of them is read as naming the other.
@@ -388,7 +388,7 @@ function summary(view, position, now) {
  * What is wrong with the position, as one paragraph, or null when nothing is.
  *
  * Each sentence only while it is true: a marker left behind by a device that is
- * still online, answers being rejected, a receiver that has not settled. Put
+ * still in touch, answers being rejected, a receiver that has not settled. Put
  * together rather than as rows, because they are read as one account of why
  * the marker should not be trusted.
  */

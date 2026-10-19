@@ -1,6 +1,10 @@
 // The words of the setup page, one object per language with the same keys.
 // They live apart from setup-app.js so a test can compare the two; the page
 // picks one by the language the browser asks for.
+//
+// The two console steps in s4* are a short form of docs/console-steps.md (the
+// full text) and of step_google_text / step_redirect_text in tools/project.sh;
+// when the console changes, change all three.
 
 export const WORDS_RU = {
     title: 'Geoshare: заведение группы',
@@ -39,6 +43,7 @@ export const WORDS_RU = {
     errMissing: 'Не найден нужный файл или ресурс. Обновите страницу и повторите.',
     errOther: 'Не удалось выполнить шаг. Повторите; если повторяется, подробности в консоли браузера.',
     s2NoConfig: 'Не удалось прочитать setup-config.json рядом со страницей.',
+    s2BadConfig: 'Файл setup-config.json рядом со страницей повреждён или заполнен не полностью.',
     s2Pick: 'Выберите проект группы',
     s2NoProjects: 'В этом аккаунте нет проектов Firebase. Вернитесь к шагу 1.',
     s2Go: (name) => `Настроить «${name}»`,
@@ -132,6 +137,7 @@ export const WORDS_EN = {
     errMissing: 'A needed file or resource was not found. Reload the page and try again.',
     errOther: 'The step failed. Try again; if it repeats, the details are in the browser console.',
     s2NoConfig: 'Could not read setup-config.json next to the page.',
+    s2BadConfig: 'The setup-config.json next to the page is damaged or incomplete.',
     s2Pick: 'Choose the group’s project',
     s2NoProjects: 'This account has no Firebase projects. Go back to step 1.',
     s2Go: (name) => `Set up “${name}”`,

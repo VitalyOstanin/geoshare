@@ -15,17 +15,18 @@
 // everything the worker cuts into tiles — every GeoJSON layer, the accuracy
 // ring among them — silently never appears. From here the worker is a plain
 // address and starts.
-import { Map as MapLibre, Marker, NavigationControl } from './vendor/maplibre-gl-6.14.0/maplibre-gl.mjs';
+import { Map as MapLibre, Marker, NavigationControl } from './vendor/maplibre-gl-6.15.0/maplibre-gl.mjs';
 
 import { STALE_COLOUR, freshestOf, memberColour, pinColour } from './members.js';
 import { showFace } from './faces.js';
 
 import { isGrey } from './false-places.js';
 import { clusterMembers, facesShown } from './clusters.js';
-import { FOLLOW_NONE, catchUpTo } from './following.js';
+import { FOLLOW_NONE, catchUpTo, followAfterCatchingUp } from './following.js';
 import { markerTapped, openMember, selectedPositionId, shownPositionIds } from './selection.js';
 import { HIGHEST, markerOrder } from './stacking.js';
 import { accuracyRing } from './width.js';
+import { RADIANS_IN_A_DEGREE } from './units.js';
 import { WORDS } from './words.js';
 import {
     applyFollowMode,
@@ -307,8 +308,7 @@ function listenToTheMap(view) {
             // member's fresh place in the middle of the flight to the old one.
             if (view.followDue) {
                 view.followDue = false;
-                applyFollowMode(view);
-                catchUp(view);
+                followTheDrawing(view);
             }
         }, 0);
     });
@@ -418,13 +418,27 @@ export function showMembers(view, positions, names, faces, ownMemberId, now) {
     }
 
     draw(view, view.last);
-    applyFollowMode(view);
-    catchUp(view);
+    followTheDrawing(view);
+}
+
+/**
+ * Moves the map after fresh positions are drawn: on to a member just picked,
+ * or else the way the follow mode asks — never both, see followAfterCatchingUp.
+ */
+function followTheDrawing(view) {
+    const positions = view.last?.positions ?? [];
+    const now = Date.now();
+
+    if (followAfterCatchingUp(view.lookedAt, positions, now)) {
+        applyFollowMode(view);
+    } else {
+        catchUp(view, positions, now);
+    }
 }
 
 /** Takes the map on to a member just picked who has turned out to be elsewhere. */
-function catchUp(view) {
-    const position = catchUpTo(view.lookedAt, view.last?.positions ?? [], Date.now());
+function catchUp(view, positions, now) {
+    const position = catchUpTo(view.lookedAt, positions, now);
 
     if (position === null) {
         return;
@@ -1004,7 +1018,7 @@ export function closeEnoughForTheRing(view, position) {
     const canvas = view.map.getCanvas();
     const side = Math.min(canvas.clientWidth, canvas.clientHeight);
     const wanted = (2 * metres) / (side * RING_SHARE_OF_THE_VIEW);
-    const across = EQUATOR_METRES_PER_PIXEL * Math.cos((position.latitude * Math.PI) / 180);
+    const across = EQUATOR_METRES_PER_PIXEL * Math.cos(position.latitude * RADIANS_IN_A_DEGREE);
 
     return Math.min(Math.log2(across / wanted), CLOSEST_ZOOM);
 }

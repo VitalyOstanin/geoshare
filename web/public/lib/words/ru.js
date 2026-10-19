@@ -330,6 +330,7 @@ export const RU = {
     myPhonesNone: 'С этого аккаунта ещё ни одно устройство не делилось позицией',
     phoneRemove: 'Удалить устройство',
     helpOpen: 'Справка',
+    accountButton: 'Аккаунт',
     helpClose: 'Понятно',
     reportOpen: 'Сообщить о проблеме',
     reportTitle: 'Сообщить о проблеме',

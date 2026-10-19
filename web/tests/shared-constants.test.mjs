@@ -370,3 +370,23 @@ test('the map is drawn from the same tiles on the device and on the page', () =>
 
     assert.equal(device.trim(), page);
 });
+
+test('the page reports problems to the issue page the device is built with', () => {
+    const properties = source('android/gradle.properties');
+    const [, device] = /^issuePageUrl=(.+)$/mu.exec(properties);
+
+    const page = javascript('web/public/lib/unexpected.js', 'NEW_ISSUE').replaceAll("'", '');
+
+    assert.equal(device.trim(), page);
+});
+
+test('the page links the releases of the repository the device checks for updates', () => {
+    const properties = source('android/gradle.properties');
+    const [, latest] = /^latestReleaseUrl=(.+)$/mu.exec(properties);
+    const [, repository] = /^https:\/\/api\.github\.com\/repos\/([^/]+\/[^/]+)\/releases\/latest$/u
+        .exec(latest.trim());
+
+    const page = javascript('web/public/lib/join.js', 'RELEASES_URL').replaceAll("'", '');
+
+    assert.equal(page, `https://github.com/${repository}/releases`);
+});

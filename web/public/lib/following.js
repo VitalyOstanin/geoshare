@@ -138,3 +138,19 @@ export function catchUpTo(lookedAt, positions, now) {
 
     return position;
 }
+
+/**
+ * Whether the follow mode may move the map after a drawing, given the
+ * catching up that drawing calls for.
+ *
+ * Both run on the same fresh positions, and a pick does not leave "everybody":
+ * letting both move the map fitted it round the household and flew it off to
+ * the member in the same breath, and the rectangle then remembered as fitted
+ * was one the map never reached, so the next batch close to it fitted nothing.
+ * In "one" the two went to the same point twice. The member just asked about
+ * wins while the map is still catching up with them; the mode takes over once
+ * that is done.
+ */
+export function followAfterCatchingUp(lookedAt, positions, now) {
+    return catchUpTo(lookedAt, positions, now) === null;
+}

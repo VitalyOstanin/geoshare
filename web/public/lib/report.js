@@ -3,6 +3,7 @@
 // Nothing is sent from here; the address opens GitHub's own form, filled in,
 // and the viewer submits it there or does not.
 
+import { cutToLimit } from './text.js';
 import { NEW_ISSUE } from './unexpected.js';
 import { PAGE_VERSION } from './version.js';
 
@@ -21,7 +22,7 @@ export function issueTitle(description) {
         .map((line) => line.trim())
         .find((line) => line !== '');
 
-    return first ? first.slice(0, TITLE_LIMIT) : DEFAULT_TITLE;
+    return first ? cutToLimit(first, TITLE_LIMIT) : DEFAULT_TITLE;
 }
 
 function body(description, browser, tail) {
@@ -45,7 +46,7 @@ function body(description, browser, tail) {
  * shortest answer is found by bisection, as in the application.
  */
 export function buildIssue(description, browser, log, limit = ISSUE_URL_LIMIT) {
-    const written = description.trim().slice(0, DESCRIPTION_LIMIT);
+    const written = cutToLimit(description.trim(), DESCRIPTION_LIMIT);
     const all = log.filter((line) => line !== '');
 
     // Encoding never makes a character shorter: lines that alone pass the

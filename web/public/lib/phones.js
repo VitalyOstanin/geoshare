@@ -5,6 +5,8 @@
 // and whether it is on a cable are not a place, and the filter that holds a
 // position back when the answers look forged has nothing to say about them.
 
+import { cutToLimit } from './text.js';
+
 /**
  * The member a device's id belongs to: the part before the dot. An id with no
  * dot in it, from before positions were kept per device, is the member's own.
@@ -54,7 +56,7 @@ export function phonesOf(data) {
 }
 
 function shortText(value) {
-    return typeof value === 'string' && value !== '' ? value.slice(0, NAME_LIMIT) : null;
+    return typeof value === 'string' && value !== '' ? cutToLimit(value, NAME_LIMIT) : null;
 }
 
 function percent(value) {

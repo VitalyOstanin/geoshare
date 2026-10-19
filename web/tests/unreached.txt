@@ -16,8 +16,6 @@ lib/join-words.js
 lib/map-card.js
 lib/map-follow.js
 lib/map.js
-lib/store-positions.js
-lib/store.js
 page/admin-panel.js
 page/card-actions.js
 page/card-place.js

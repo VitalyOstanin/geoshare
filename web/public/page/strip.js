@@ -7,7 +7,7 @@ import { followCardDevice } from './card-actions.js';
 import { centreOnce, lookAt, showMembers, shownPositions } from '../lib/map.js';
 import { batteryText } from '../lib/map-card.js';
 import { awaitingFollowTarget, followMode, followPaused, followTarget } from '../lib/map-follow.js';
-import { memberName, orderedForNavigation, pinColour } from '../lib/members.js';
+import { accountInitial, memberName, orderedForNavigation, pinColour } from '../lib/members.js';
 import { isGrey } from '../lib/false-places.js';
 import { watchingBesides, watchingMembers } from '../lib/watchers.js';
 import { WORDS } from '../lib/words.js';
@@ -25,7 +25,7 @@ import { placeCard } from './card-place.js';
  */
 export function showAccount(member) {
     elements.accountName.textContent = member.name ?? WORDS.signedIn;
-    elements.accountInitial.textContent = (member.name ?? '?').slice(0, 1).toUpperCase();
+    elements.accountInitial.textContent = accountInitial(member.name);
 
     // The letter and the picture share one cell, the letter drawn over it:
     // shown together, the letter lands on the face as a dark mark.
@@ -153,10 +153,12 @@ function showFollow(labels) {
     }
 
     elements.followCaption.textContent = caption;
-    elements.followButton.setAttribute(
-        'aria-label',
-        missing ? `${caption}. ${WORDS.followTargetMissing}` : caption,
-    );
+    // The caption is shown only while the mode changes, so the title is what a
+    // pointer resting on the button finds the rest of the time.
+    const described = missing ? `${caption}. ${WORDS.followTargetMissing}` : caption;
+
+    elements.followButton.setAttribute('aria-label', described);
+    elements.followButton.title = described;
     elements.followButton.classList.toggle('active', mode !== FOLLOW_NONE);
     elements.followButton.classList.toggle('paused', followPaused(state.view));
     elements.followButton.classList.toggle('missing', missing);

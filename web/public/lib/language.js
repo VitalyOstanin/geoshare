@@ -64,9 +64,7 @@ export function spokenLanguage(language = readLanguage(), asked = askedFor()) {
 
 /** What the browser asks for, where there is a browser to ask. */
 function askedFor() {
-    try {
-        return globalThis.navigator.languages ?? [globalThis.navigator.language];
-    } catch {
-        return [];
-    }
+    const nav = globalThis.navigator;
+
+    return nav ? (nav.languages ?? [nav.language]) : [];
 }

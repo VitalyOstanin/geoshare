@@ -290,7 +290,10 @@ not have to pan by hand.
 
 Acceptance:
 
-- dragging the map holds the camera for 20 seconds, then following resumes.
+- dragging the map holds the camera for 20 seconds, then following resumes;
+- on the page, a member picked in the strip who turns out to be elsewhere
+  takes the map there within half a minute, and the follow mode waits until
+  the map has caught up rather than moving it a second way.
 
 ### MEM-16 Name people and devices for myself
 

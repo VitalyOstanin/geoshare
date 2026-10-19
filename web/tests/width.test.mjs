@@ -44,7 +44,7 @@ test('a hundred metres is where the colour changes', () => {
 test('the ring is closed', () => {
     const ring = accuracyRing(61.03268, 4.403, 100);
 
-    assert.deepEqual(ring[0], ring[ring.length - 1]);
+    assert.deepEqual(ring[0], ring.at(-1));
 });
 
 // A hundred metres north of sixty degrees is the same hundred metres east, and

@@ -13,6 +13,7 @@
 
 import { isStale } from './age.js';
 import { metresBetween } from './distance.js';
+import { placeable } from './position-data.js';
 
 /** How many places the page will weigh. The devices keep the same number. */
 const PLACES_KEPT = 50;
@@ -29,8 +30,7 @@ export function placeOf(data) {
     const { latitude, longitude, radiusMetres } = data ?? {};
 
     if (
-        typeof latitude !== 'number' || latitude < -90 || latitude > 90
-        || typeof longitude !== 'number' || longitude < -180 || longitude > 180
+        !placeable(latitude, -90) || !placeable(longitude, -180)
         || typeof radiusMetres !== 'number' || radiusMetres <= 0 || radiusMetres > WIDEST_METRES
     ) {
         return null;

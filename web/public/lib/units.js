@@ -10,13 +10,13 @@ import { WORDS, SPEAKING } from './words.js';
 export const EARTH_RADIUS_METRES = 6_371_008.8;
 
 /** Where metres stop being the unit worth writing and kilometres start. */
-export const METRES_IN_A_KILOMETRE = 1000;
+const METRES_IN_A_KILOMETRE = 1000;
 
 /** How a tenth of a kilometre is arrived at: hundreds of metres, then back. */
-export const METRES_IN_A_TENTH = 100;
-export const TENTHS_IN_A_KILOMETRE = 10;
+const METRES_IN_A_TENTH = 100;
+const TENTHS_IN_A_KILOMETRE = 10;
 
-const RADIANS_IN_A_DEGREE = Math.PI / 180;
+export const RADIANS_IN_A_DEGREE = Math.PI / 180;
 
 /** Kilometres are written to one place; two would be reading the noise. */
 const TENTHS = new Intl.NumberFormat(SPEAKING, {

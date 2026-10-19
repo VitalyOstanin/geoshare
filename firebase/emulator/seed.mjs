@@ -9,8 +9,8 @@
 // is told, and the alternative is an npm install for four requests.
 import {
     GROUP,
-    PASSWORD,
     FOREVER,
+    accountOf,
     authUrl,
     call,
     write,
@@ -63,30 +63,6 @@ async function account(email, displayName) {
     await call(authUrl('accounts:update'), { localId, displayName, emailVerified: true });
 
     return localId;
-}
-
-async function accountOf(email) {
-    try {
-        const created = await call(authUrl('accounts:signUp'), {
-            email,
-            password: PASSWORD,
-            returnSecureToken: true,
-        });
-
-        return created.localId;
-    } catch (error) {
-        if (!`${error}`.includes('EMAIL_EXISTS')) {
-            throw error;
-        }
-
-        const known = await call(authUrl('accounts:signInWithPassword'), {
-            email,
-            password: PASSWORD,
-            returnSecureToken: true,
-        });
-
-        return known.localId;
-    }
 }
 
 const uids = new Map();

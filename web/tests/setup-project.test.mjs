@@ -12,6 +12,7 @@ import {
     makeApi,
     accountEmail,
     consoleLink,
+    readSetupConfig,
     setupConfigOf,
     consoleBaseOf,
     failure,
@@ -20,6 +21,7 @@ import {
     passing,
     retryPassing,
     waitOperation,
+    latestRound,
 } from '../public/lib/setup-project.js';
 
 import { WORDS_EN, WORDS_RU } from '../public/lib/words/setup.js';
@@ -281,7 +283,7 @@ test('a release that exists already is moved to the new ruleset by a PATCH', asy
 
     await deployRules(api, PROJECT, 'rules text');
 
-    const patch = requests[requests.length - 1];
+    const patch = requests.at(-1);
 
     assert.equal(patch.method, 'PATCH');
     assert.match(patch.url, /releases\/cloud.firestore$/);
@@ -566,4 +568,79 @@ test('a web app made by a creation that failed on the way back is not made twice
         lost.requests.map((r) => r.method),
         ['GET', 'POST', 'GET'],
     );
+});
+
+test('reading the setup config tells a missing file from a broken one and logs the cause', async () => {
+    const good = {
+        clientId: '000000000000-example.apps.googleusercontent.com',
+        packageName: 'io.github.vitalyostanin.geoshare',
+        location: 'europe-north1',
+        fingerprints: [],
+    };
+    const read = async (value) => {
+        const logged = [];
+        const result = await readSetupConfig(
+            async () => {
+                if (value instanceof Error) {
+                    throw value;
+                }
+
+                return value;
+            },
+            (...args) => logged.push(args),
+        );
+
+        return { result, logged };
+    };
+
+    assert.deepEqual((await read(good)).result, { config: good, problem: null });
+    assert.equal((await read(good)).logged.length, 0);
+
+    const missing = await read(failure('setup-config.json -> 404', 'missing'));
+    assert.equal(missing.result.problem, 'missing');
+    assert.equal(missing.logged.length, 1);
+
+    const notJson = await read(new SyntaxError('Unexpected token'));
+    assert.equal(notJson.result.problem, 'invalid');
+    assert.equal(notJson.logged.length, 1);
+
+    const empty = await read({});
+    assert.deepEqual(empty.result, { config: null, problem: 'invalid' });
+    assert.equal(empty.logged.length, 1);
+});
+
+// OWN-09: a second sign-in on the projects screen must not get the projects
+// of the first account.
+test('an answer to an earlier sign-in that arrives after a later one is dropped', async () => {
+    const rounds = latestRound();
+    const shown = [];
+    let answerFirst;
+    const firstAnswer = new Promise((resolve) => {
+        answerFirst = resolve;
+    });
+
+    async function signIn(projects) {
+        const current = rounds.start();
+        const answer = await projects;
+
+        if (current()) {
+            shown.push(answer);
+        }
+    }
+
+    const first = signIn(firstAnswer);
+    await signIn(Promise.resolve(['second-account-project']));
+    answerFirst(['first-account-project']);
+    await first;
+
+    assert.deepEqual(shown, [['second-account-project']]);
+});
+
+test('the only sign-in so far stays current until another one starts', () => {
+    const rounds = latestRound();
+    const current = rounds.start();
+
+    assert.equal(current(), true);
+    rounds.start();
+    assert.equal(current(), false);
 });

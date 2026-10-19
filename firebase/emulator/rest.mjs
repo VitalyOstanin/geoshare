@@ -93,3 +93,41 @@ export async function writeProfile(uid, displayName, updatedAt) {
         updatedAt: timeValue(updatedAt),
     });
 }
+
+/**
+ * The id of the account with this address, created if the emulator has not
+ * seen it before. One that exists already is not an error, it is signed in to
+ * learn its id, so a second run changes nothing it should not.
+ *
+ * With a localId the account is created under that id, which is an
+ * administrator's call in Identity Toolkit; the emulator honours it for the
+ * owner token every request here carries. Meeting that id taken counts as
+ * existing, too.
+ */
+export async function accountOf(email, { localId } = {}) {
+    try {
+        const created = await call(authUrl('accounts:signUp'), {
+            ...(localId ? { localId } : {}),
+            email,
+            password: PASSWORD,
+            returnSecureToken: true,
+        });
+
+        return created.localId;
+    } catch (error) {
+        const taken = `${error}`.includes('EMAIL_EXISTS')
+            || (localId && `${error}`.includes('DUPLICATE_LOCAL_ID'));
+
+        if (!taken) {
+            throw error;
+        }
+
+        const known = await call(authUrl('accounts:signInWithPassword'), {
+            email,
+            password: PASSWORD,
+            returnSecureToken: true,
+        });
+
+        return known.localId;
+    }
+}

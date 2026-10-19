@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import { test } from 'node:test';
 
 import {
+    accountInitial,
     colourIndex,
     freshestOf,
     memberColour,
@@ -97,6 +98,22 @@ test('the initial is the first letter of the name, in capitals', () => {
 
 test('a name with nothing in it leaves no initial', () => {
     assert.equal(memberInitial('   '), '');
+});
+
+// The account button takes its letter the same way, rather than by the first
+// code unit, which splits an emoji and keeps a leading space.
+test('the account initial skips leading spaces', () => {
+    assert.equal(accountInitial(' аня'), 'А');
+});
+
+test('the account initial keeps a name opening with an emoji whole', () => {
+    assert.equal(accountInitial('😀 Аня'), '😀');
+});
+
+test('an account without a usable name shows a question mark', () => {
+    assert.equal(accountInitial(undefined), '?');
+    assert.equal(accountInitial(''), '?');
+    assert.equal(accountInitial('  '), '?');
 });
 
 // A profile is written by the member it describes, so an address in it can be

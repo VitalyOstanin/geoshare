@@ -15,7 +15,7 @@ const DEVICES_PER_MEMBER = 10;
  * stay where the eye left them.
  */
 export function orderedForNavigation(positions, ownMemberId) {
-    return [...positions].sort((left, right) => {
+    return positions.toSorted((left, right) => {
         const own = Number(left.memberId === ownMemberId) - Number(right.memberId === ownMemberId);
 
         if (own !== 0) {
@@ -135,6 +135,18 @@ export function memberName(profile, memberId, own) {
  */
 export function memberInitial(name) {
     return [...trimText(name)].slice(0, 1).join('').toUpperCase();
+}
+
+/**
+ * The letter on the account button, which is the signed-in account's own
+ * name rather than a member's.
+ *
+ * Taken as a member's initial is, so a name opening with an emoji or a space
+ * does not leave half a pair or a blank circle; a name with nothing in it is
+ * the same as no name, and shows a question mark.
+ */
+export function accountInitial(name) {
+    return memberInitial(name ?? '') || '?';
 }
 
 /** The host account pictures are kept on, and the only one drawn from. */

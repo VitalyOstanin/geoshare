@@ -8,6 +8,7 @@ import {
     boundsAreClose,
     boundsOf,
     catchUpTo,
+    followAfterCatchingUp,
     isPaused,
     targetPosition,
 } from '../public/lib/following.js';
@@ -136,4 +137,16 @@ test('a member picked who has dropped out of the set is not chased', () => {
     const lookedAt = { positionId: 'olga', at: 1000, latitude: 59.43, longitude: 24.75 };
 
     assert.equal(catchUpTo(lookedAt, [at('mark', 59.0, 24.0)], 2000), null);
+});
+
+// MEM-15: a pick does not leave "everybody", and a drawing that catches up
+// with the member picked must not also fit the map round the household.
+test('the follow mode waits while the map catches up with a member just picked', () => {
+    const lookedAt = { positionId: 'olga', at: 1000, latitude: 59.43, longitude: 24.75 };
+    const moved = [at('olga', 59.44, 24.76), at('mark', 59.0, 24.0)];
+
+    assert.equal(followAfterCatchingUp(lookedAt, moved, 2000), false);
+    assert.equal(followAfterCatchingUp(lookedAt, moved, 1000 + CATCH_UP_MS), true);
+    assert.equal(followAfterCatchingUp(lookedAt, [at('olga', 59.43, 24.75)], 2000), true);
+    assert.equal(followAfterCatchingUp(null, moved, 2000), true);
 });

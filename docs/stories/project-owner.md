@@ -140,7 +140,8 @@ Acceptance:
 - Status: done
 - ADR: 0033, 0038
 - Tests: page `setup-project.test.mjs` (the database, the apps and their
-  fingerprints, the rules, a re-run that changes nothing),
+  fingerprints, the rules, a re-run that changes nothing, a late answer to
+  an earlier sign-in that is dropped),
   `owner-rules.test.mjs` (the rules bound to the signed-in account),
   `setup-hosting.test.mjs` (the site, a taken site name, the page and
   `geoshare.json`)

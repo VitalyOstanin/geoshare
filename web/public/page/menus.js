@@ -337,6 +337,8 @@ function sayMarkup() {
     elements.settingsClose.setAttribute('aria-label', WORDS.close);
     elements.mapHelp.title = WORDS.helpOpen;
     elements.mapHelp.setAttribute('aria-label', WORDS.helpOpen);
+    elements.accountButton.title = WORDS.accountButton;
+    elements.accountButton.setAttribute('aria-label', WORDS.accountButton);
     // The group section says its own words, since what stands there depends on
     // the roster rather than on the markup alone.
     drawGroup();

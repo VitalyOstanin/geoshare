@@ -13,7 +13,7 @@
     },
     "devDependencies": {
         "firebase": "13.0.0",
-        "maplibre-gl": "6.14.0",
+        "maplibre-gl": "6.15.0",
         "qr": "0.7.2"
     },
     "overrides": {

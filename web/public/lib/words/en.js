@@ -323,6 +323,7 @@ export const EN = {
     myPhonesNone: 'No device has shared its position from this account yet',
     phoneRemove: 'Remove device',
     helpOpen: 'Help',
+    accountButton: 'Account',
     helpClose: 'Got it',
     reportOpen: 'Report a problem',
     reportTitle: 'Report a problem',

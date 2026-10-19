@@ -485,3 +485,52 @@ export async function deployRules(api, projectId, source, sleep = realSleep) {
 
     return ruleset.name;
 }
+
+/**
+ * Reads setup-config.json through the given reader and says what went wrong
+ * when it cannot be used: 'missing' for a file that is not there or not
+ * reachable, 'invalid' for a file that came but is not JSON or not a config.
+ * The cause is handed to `log`, so a broken file is visible in the console
+ * and does not pass for an absent one.
+ */
+export async function readSetupConfig(readJson, log) {
+    let value;
+
+    try {
+        value = await readJson('setup-config.json');
+    } catch (error) {
+        log('Reading setup-config.json failed:', error);
+
+        return { config: null, problem: error instanceof SyntaxError ? 'invalid' : 'missing' };
+    }
+
+    const config = setupConfigOf(value);
+
+    if (!config) {
+        log('setup-config.json is not a valid config:', value);
+
+        return { config: null, problem: 'invalid' };
+    }
+
+    return { config, problem: null };
+}
+
+/**
+ * Tells whether an answer still belongs to the latest of several overlapping
+ * requests. start() opens a new round and returns a check that stays true only
+ * until the next start(): the page signs in again while the projects of the
+ * first account are still on their way, and without the check their late
+ * answer would replace the list of the second account.
+ */
+export function latestRound() {
+    let latest = 0;
+
+    return {
+        start() {
+            latest += 1;
+            const round = latest;
+
+            return () => round === latest;
+        },
+    };
+}

@@ -4,7 +4,7 @@
 // where the Firebase library would fail later with an error of its own.
 
 /** The fields the page cannot reach its project without. */
-export const REQUIRED_FIELDS = ['projectId', 'appId', 'apiKey', 'authDomain'];
+const REQUIRED_FIELDS = ['projectId', 'appId', 'apiKey', 'authDomain'];
 
 /**
  * What is wrong with [config], or null when nothing is.

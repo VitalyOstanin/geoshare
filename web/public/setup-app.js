@@ -20,8 +20,10 @@ import {
     failureWord,
     passing,
     refusalText,
+    readSetupConfig,
     setupConfigOf,
     consoleBaseOf,
+    latestRound,
 } from './lib/setup-project.js';
 import { rulesForOwner } from './lib/owner-rules.js';
 import {
@@ -194,6 +196,10 @@ function choose(project) {
     $('s2-go').disabled = false;
 }
 
+// The "s2-auth" button stays open after a sign-in, so a second account can
+// sign in while the answers for the first are still on their way.
+const signIns = latestRound();
+
 async function gotToken(answer) {
     if (answer.error) {
         fail('s2-error', refusalText(words, answer.error));
@@ -204,17 +210,33 @@ async function gotToken(answer) {
     // A token from an earlier sign-in is dropped, not revoked: revoke() takes
     // back the whole consent to the app, and the new token with it. The old
     // one runs out by itself.
+    const current = signIns.start();
     state.token = answer.access_token;
     state.api = makeApi(fetch, state.token);
     $('s2-error').hidden = true;
-    state.email = await accountEmail(state.api);
+
+    const email = await accountEmail(state.api);
+
+    // An answer for an earlier account is dropped: its projects would refuse
+    // the token now held with 403 on the first step of the setup.
+    if (!current()) {
+        return;
+    }
+
+    state.email = email;
     $('s2-got').textContent = words.s2Got(state.email);
     $('s2-got').hidden = false;
 
     try {
-        renderProjects(await listProjects(state.api));
+        const projects = await listProjects(state.api);
+
+        if (current()) {
+            renderProjects(projects);
+        }
     } catch (error) {
-        fail('s2-error', describe(error));
+        if (current()) {
+            fail('s2-error', describe(error));
+        }
     }
 }
 
@@ -222,14 +244,14 @@ $('s2-go').textContent = words.s2Go0;
 $('s2-auth').addEventListener('click', async () => {
     $('s2-error').hidden = true;
 
-    try {
-        state.config ??= setupConfigOf(await readJson('setup-config.json'));
-    } catch {
-        state.config = null;
+    let problem = null;
+
+    if (!state.config) {
+        ({ config: state.config, problem } = await readSetupConfig(readJson, console.warn));
     }
 
     if (!state.config) {
-        fail('s2-error', words.s2NoConfig);
+        fail('s2-error', problem === 'invalid' ? words.s2BadConfig : words.s2NoConfig);
 
         return;
     }

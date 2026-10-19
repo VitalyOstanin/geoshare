@@ -23,8 +23,8 @@ import {
     FIRESTORE,
     PROJECT,
     GROUP,
-    PASSWORD,
     FOREVER,
+    accountOf,
     authUrl,
     call,
     write,
@@ -148,30 +148,7 @@ const LIMITED = { from: 'mia@geoshare.test', to: 'leo@geoshare.test', until: NOW
  * The address is marked verified, as a Google account's always is.
  */
 async function account({ localId, email, name }) {
-    let id;
-
-    try {
-        const created = await call(authUrl('accounts:signUp'), {
-            localId,
-            email,
-            password: PASSWORD,
-            returnSecureToken: true,
-        });
-
-        id = created.localId;
-    } catch (error) {
-        if (!`${error}`.includes('EMAIL_EXISTS') && !`${error}`.includes('DUPLICATE_LOCAL_ID')) {
-            throw error;
-        }
-
-        const known = await call(authUrl('accounts:signInWithPassword'), {
-            email,
-            password: PASSWORD,
-            returnSecureToken: true,
-        });
-
-        id = known.localId;
-    }
+    const id = await accountOf(email, { localId });
 
     await call(authUrl('accounts:update'), { localId: id, displayName: name, emailVerified: true });
 

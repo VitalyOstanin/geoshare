@@ -110,3 +110,10 @@ test('a device id is split at the first dot only', () => {
 test('an id from before positions were kept per device is the member\'s own', () => {
     assert.equal(memberIdOf('u1'), 'u1');
 });
+
+// An emoji across the limit goes whole rather than leaving its first half.
+test('a device name is not cut between the halves of an emoji', () => {
+    const phones = phonesOf({ phone: { name: `${'a'.repeat(39)}😀` } });
+
+    assert.equal(phones.get('phone').name, 'a'.repeat(39));
+});

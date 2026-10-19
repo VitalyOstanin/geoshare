@@ -76,3 +76,16 @@ test('the page log keeps warnings and errors, cleaned and bounded', () => {
     assert.equal(pageLog().length, PAGE_LOG_LINES);
     assert.match(pageLog().at(-1), /warn n209$/);
 });
+
+// The cut falling inside an emoji used to leave its first half, which the
+// address carries as a replacement character.
+test('the title and the description are not cut between the halves of an emoji', () => {
+    const emoji = '😀';
+
+    assert.equal(issueTitle('a'.repeat(99) + emoji), 'a'.repeat(99));
+
+    const draft = buildIssue('a'.repeat(599) + emoji, 'Firefox 140 · Linux', ['first']);
+
+    assert.ok(!draft.url.includes('%EF%BF%BD'));
+    assert.ok(new URL(draft.url).searchParams.get('body').startsWith(`${'a'.repeat(599)}\n\n`));
+});
