@@ -128,11 +128,12 @@ jobs:
 
       - name: Lint the JavaScript
         # The same packages as tools/js-lint.sh: the configuration loads the
-        # @stylistic and import-x plugins, and fails without them.
+        # @stylistic, import-x and promise plugins, and fails without them.
         run: >-
           npx --yes -p "eslint@${ESLINT_VERSION}" -p "@eslint/js@${ESLINT_JS_VERSION}"
           -p "@stylistic/eslint-plugin@${STYLISTIC_VERSION}"
           -p "eslint-plugin-import-x@${IMPORT_X_VERSION}"
+          -p "eslint-plugin-promise@${PROMISE_VERSION}"
           eslint web firebase tools/project
 
       - name: Lint the Markdown

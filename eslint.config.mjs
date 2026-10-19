@@ -8,7 +8,7 @@
 import { realpathSync } from 'node:fs';
 import { createRequire } from 'node:module';
 
-// The linter is fetched by npx beside @eslint/js and the two plugins
+// The linter is fetched by npx beside @eslint/js and the plugins
 // (tools/js-lint.sh), not installed under this directory, so they are found
 // next to the running eslint rather than by a bare import from here.
 const besideEslint = createRequire(realpathSync(process.argv[1]));
@@ -17,6 +17,7 @@ const js = besideEslint('@eslint/js');
 const stylisticModule = besideEslint('@stylistic/eslint-plugin');
 const stylistic = stylisticModule.default ?? stylisticModule;
 const { importX, createNodeResolver } = besideEslint('eslint-plugin-import-x');
+const promise = besideEslint('eslint-plugin-promise');
 
 export default [
     js.configs.recommended,
@@ -70,6 +71,16 @@ export default [
             // by the lint, so only paths of the repository are checked.
             'import-x/no-unresolved': ['error', { ignore: ['^@firebase/', '^firebase/'] }],
             'import-x/named': 'error',
+        },
+    },
+    {
+        // A promise nobody awaits fails without a word unless it is caught, and
+        // a then() inside a then() hides which of them a failure came from.
+        files: ['**/*.js', '**/*.mjs'],
+        plugins: { promise },
+        rules: {
+            'promise/catch-or-return': ['error', { allowFinally: true }],
+            'promise/no-nesting': 'error',
         },
     },
     {
