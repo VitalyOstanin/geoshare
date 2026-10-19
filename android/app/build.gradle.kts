@@ -307,8 +307,8 @@ dependencies {
     // answers every call with a default rather than parsing anything.
     testImplementation(libs.org.json)
 
-    // The smoke tests on the emulator: the application starts, and the
-    // settings and licences screens draw. The manifest artefact adds the empty
+    // The instrumented tests on the emulator: the application starts, and its
+    // screens draw and answer. The manifest artefact adds the empty
     // activity a Compose rule without an activity of its own draws into.
     androidTestImplementation(platform(libs.compose.bom))
     androidTestImplementation(libs.compose.ui.test.junit4)

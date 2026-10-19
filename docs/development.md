@@ -74,7 +74,7 @@ Firebase SDK in them requires); the build scripts do not need it.
 | 11 | `tools/run-services.sh`       | stand-in Firestore and sign-in, filled with stand-in data                   |
 | 12 | `tools/run-emulator.sh`       | a headless Android emulator; with the line above, a stand without a project |
 | 13 | `tools/coverage.sh`           | how much of the code the tests reach; fails under the floors CI checks too  |
-| 14 | `tools/test-instrumented.sh`  | smoke tests on the emulator: start-up, settings, licences, connecting       |
+| 14 | `tools/test-instrumented.sh`  | instrumented tests on the emulator; `instrumented.yml` runs them weekly too |
 | 15 | `tools/shell-lint.sh`         | ShellCheck over every shell script, at the version in `versions.env`        |
 | 16 | `tools/page-stand.sh`         | the page against stand-in sign-in and Firestore, `--showcase` to fill them  |
 | 17 | `tools/landing-shots.sh`      | the application's screenshots for the landing page, full size, in `shots/`  |
@@ -296,15 +296,15 @@ is taken out by a release.
 
 ## Layout
 
-| # | Directory   | Contents                                                          |
-|---|-------------|-------------------------------------------------------------------|
-| 1 | `android/`  | Kotlin and Jetpack Compose application, Gradle build              |
-| 2 | `web/`      | the map page and the setup page, plain JavaScript with MapLibre   |
-| 3 | `firebase/` | security rules, indexes, document model, rules tests              |
-| 4 | `docs/`     | architecture decisions, stories, console steps, project setup     |
-| 5 | `tools/`    | build, test, setup and release entry points                       |
-| 6 | `site/`     | the landing page in two languages, its pictures and fonts         |
-| 7 | `.github/`  | CI, release, landing page and dependency workflows, Dependabot    |
+| # | Directory   | Contents                                                                           |
+|---|-------------|------------------------------------------------------------------------------------|
+| 1 | `android/`  | Kotlin and Jetpack Compose application, Gradle build                               |
+| 2 | `web/`      | the map page and the setup page, plain JavaScript with MapLibre                    |
+| 3 | `firebase/` | security rules, indexes, document model, rules tests                               |
+| 4 | `docs/`     | architecture decisions, stories, console steps, project setup                      |
+| 5 | `tools/`    | build, test, setup and release entry points                                        |
+| 6 | `site/`     | the landing page in two languages, its pictures and fonts                          |
+| 7 | `.github/`  | CI, instrumented tests, release, landing page and dependency workflows, Dependabot |
 
 ## Further reading
 

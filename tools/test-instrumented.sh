@@ -1,6 +1,8 @@
 #!/usr/bin/env bash
-# Runs the instrumented smoke tests on the headless emulator: the application
-# starts, and the settings, licences and connection screens draw.
+# Runs the instrumented tests on the headless emulator: the application
+# starts, and its screens, from the map and the settings to the administrator's
+# panel, draw and answer. CI runs the same set weekly and on demand
+# (.github/workflows/instrumented.yml).
 #
 # Starts the emulator when it is not running and stops it afterwards; one left
 # running for a try-out is used as it is and left running.

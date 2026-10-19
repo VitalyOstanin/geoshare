@@ -1,0 +1,96 @@
+name: Instrumented tests
+
+# The instrumented tests tools/test-instrumented.sh runs locally, on an
+# emulator the runner starts. Not on every push: booting the emulator and
+# driving the whole set takes far longer than the other checks, so they run
+# once a week and by hand before a release or after a change to the screens.
+
+on:
+  workflow_dispatch:
+  schedule:
+    # Monday morning, so that a week of changes is caught before the next one
+    # starts.
+    - cron: '30 4 * * 1'
+
+permissions:
+  contents: read
+
+# A run started by hand while the weekly one is in flight tests the same tree.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  connected:
+    runs-on: ubuntu-24.04
+    # The emulator alone may take up to ten minutes to boot.
+    timeout-minutes: 60
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Read the pinned versions
+        # The same file the images and Gradle read. Only the assignments:
+        # comments and blank lines are not valid in GITHUB_ENV.
+        run: grep -E '^[A-Z][A-Z0-9_]*=' tools/versions.env >> "$GITHUB_ENV"
+
+      - name: Setup Java and the Android SDK
+        uses: ./.github/actions/android-setup
+
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@3f5f9adaf7d9fecd50b5935e54106014257a94e6 # v6.4.0
+        with:
+          cache-read-only: ${{ github.ref != 'refs/heads/master' }}
+
+      - name: Enable KVM
+        # Without it the emulator falls back to software emulation, far too
+        # slow to boot within the timeout.
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
+
+      - name: Run the instrumented tests
+        uses: ReactiveCircus/android-emulator-runner@a421e43855164a8197daf9d8d40fe71c6996bb0d # v2.38.0
+        with:
+          # The same system image and device as the local emulator of
+          # tools/run-emulator.sh.
+          api-level: ${{ env.ANDROID_EMULATOR_API }}
+          target: google_apis
+          arch: x86_64
+          profile: pixel_6
+          working-directory: android
+          script: ./gradlew --no-daemon connectedDebugAndroidTest
+
+      - name: Tests ran and passed
+        # The task succeeds when its test engine cannot reach the device at
+        # all, with no test run, so the report is read rather than the exit
+        # code trusted, as tools/test-instrumented.sh does.
+        if: ${{ !cancelled() }}
+        run: |
+          report=android/app/build/reports/androidTests/connected/debug/index.html
+          counter() {
+              grep -s -A1 "id=\"$1\"" "${report}" \
+                  | sed -n 's/.*class="counter">\([0-9]*\)<.*/\1/p' || true
+          }
+          tests="$(counter tests)"
+          failures="$(counter failures)"
+          echo "${tests:-no} tests, ${failures:-no} failures"
+          if [[ "${tests:-0}" -eq 0 || "${failures:-1}" -ne 0 ]]; then
+              echo "::error::the run did not pass: see the connected-reports artifact"
+              exit 1
+          fi
+
+      - name: Keep the report
+        # On every outcome: a passing weekly run is the record of what ran.
+        # Kept for a week, until the next run.
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: connected-reports
+          path: |
+            android/app/build/reports/androidTests
+            android/app/build/outputs/androidTest-results
+          if-no-files-found: ignore
+          retention-days: 7
