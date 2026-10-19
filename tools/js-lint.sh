@@ -31,4 +31,4 @@ exec podman run --rm --http-proxy=false "${limit_args[@]}" \
     npx --yes -p "eslint@${ESLINT_VERSION}" -p "@eslint/js@${ESLINT_JS_VERSION}" \
     -p "@stylistic/eslint-plugin@${STYLISTIC_VERSION}" \
     -p "eslint-plugin-import-x@${IMPORT_X_VERSION}" \
-    eslint web firebase "${args[@]}" "$@"
+    eslint web firebase tools/project "${args[@]}" "$@"

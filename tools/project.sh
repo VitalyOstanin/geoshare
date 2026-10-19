@@ -94,6 +94,11 @@ readonly PACKAGE_NAME="io.github.vitalyostanin.geoshare"
 # their tokens; read here for the default account and the access token.
 readonly FIREBASE_STORE="${HOME}/.config/configstore/firebase-tools.json"
 
+# The JavaScript half of this script: the parsing of what the firebase command
+# line and the Google APIs answer, and the results --json prints, linted and
+# tested apart from the shell.
+readonly PROJECT_JS="${REPO_ROOT}/tools/project"
+
 # The fingerprints of the key the published builds are signed with.
 readonly RELEASE_FINGERPRINTS="android/release-fingerprints.txt"
 
@@ -129,6 +134,12 @@ firebase() {
     # than being repeated at each call site: a prompt this script cannot
     # answer becomes a failure instead of a hang.
     npx --yes "firebase-tools@${FIREBASE_TOOLS_VERSION}" --non-interactive "${account_args[@]}" "$@"
+}
+
+# One task of tools/project/cli.mjs: a reading of an answer on standard input,
+# or a result for --json. The tasks are listed at the top of that file.
+project_js() {
+    node "${PROJECT_JS}/cli.mjs" "$@"
 }
 
 usage() {
@@ -218,13 +229,7 @@ fingerprints() {
 
     if [[ -n "${from}" ]]; then
         firebase apps:android:sha:list "$(app_id "${from}" ANDROID)" --project "${from}" --json |
-            node -e '
-const raw = require("fs").readFileSync(0, "utf8");
-
-for (const entry of JSON.parse(raw.slice(raw.indexOf("{"))).result) {
-    console.log(entry.shaHash);
-}
-'
+            project_js sha-list
         return
     fi
 
@@ -260,11 +265,7 @@ apps_of() {
     [[ "${platform}" == "WEB" ]] && kind="webApps"
 
     api_get "https://firebase.googleapis.com/v1beta1/projects/${project}/${kind}" |
-        node -e '
-for (const app of JSON.parse(require("fs").readFileSync(0, "utf8")).apps ?? []) {
-    console.log(app.appId);
-}
-'
+        project_js app-ids
 }
 # The fingerprints the Android app already knows: sign-in checks the calling
 # application against these, so an app with none of them yet cannot sign
@@ -279,11 +280,7 @@ android_fingerprints() {
     local project="$1" android="$2"
 
     api_get "https://firebase.googleapis.com/v1beta1/projects/${project}/androidApps/${android}/sha" |
-        node -e '
-for (const entry of JSON.parse(require("fs").readFileSync(0, "utf8")).certificates ?? []) {
-    console.log(entry.shaHash);
-}
-'
+        project_js certificates
 }
 
 # The Firebase command line's own access token, kept fresh at
@@ -322,21 +319,7 @@ access_token_fresh() {
 remember_access_token() {
     local stored
 
-    stored="$(ACCOUNT="${account}" STORE="${FIREBASE_STORE}" node -e '
-const fs = require("fs");
-
-const store = JSON.parse(fs.readFileSync(process.env.STORE, "utf8"));
-const wanted = process.env.ACCOUNT.toLowerCase();
-
-// The default account sits at the top of the file, every one added with
-// login:add in additionalAccounts beside it, each with tokens of its own.
-const accounts = [store, ...(store.additionalAccounts ?? [])];
-const match = accounts.filter((a) => !wanted || a.user.email.toLowerCase() === wanted);
-const tokens = match[0].tokens;
-console.log(tokens.access_token);
-// expires_at is in milliseconds since the epoch.
-console.log(Math.trunc((tokens.expires_at ?? 0) / 1000 - Date.now() / 1000));
-')"
+    stored="$(project_js access-token --store "${FIREBASE_STORE}" --account "${account}")"
     ACCESS_TOKEN="${stored%%$'\n'*}"
     ACCESS_TOKEN_UNTIL=$((SECONDS + ${stored##*$'\n'}))
 }
@@ -437,11 +420,7 @@ google_sign_in_enabled() {
         return 1
     fi
 
-    enabled="$(node -e '
-// JSON leaves out a false boolean, so a provider that was switched off
-// again comes back without the field.
-console.log(JSON.parse(require("fs").readFileSync(0, "utf8")).enabled === true);
-' <<< "${body}")"
+    enabled="$(project_js google-on <<< "${body}")"
 
     [[ "${enabled}" == "true" ]]
 }
@@ -453,12 +432,7 @@ existing_site() {
     local project="$1"
 
     api_get "https://firebasehosting.googleapis.com/v1beta1/projects/${project}/sites" |
-        node -e '
-const sites = JSON.parse(require("fs").readFileSync(0, "utf8")).sites ?? [];
-const defaults = sites.filter((s) => s.type === "DEFAULT_SITE");
-const chosen = (defaults.length ? defaults : sites)[0];
-console.log(chosen ? chosen.name.split("/").pop() : "");
-'
+        project_js site
 }
 # The Hosting site the page is served from, made if the project has none.
 #
@@ -501,20 +475,7 @@ app_settings() {
     local project="$1" android="$2" site_id="$3"
 
     firebase apps:sdkconfig ANDROID "${android}" --project "${project}" --json |
-        SITE_ID="${site_id}" node -e '
-const raw = require("fs").readFileSync(0, "utf8");
-const config = JSON.parse(JSON.parse(raw.slice(raw.indexOf("{"))).result.fileContents);
-const client = config.client[0];
-
-console.log(JSON.stringify({
-    version: 1,
-    projectId: config.project_info.project_id,
-    applicationId: client.client_info.mobilesdk_app_id,
-    apiKey: client.api_key[0].current_key,
-    gcmSenderId: config.project_info.project_number,
-    site: process.env.SITE_ID,
-}, null, 2));
-'
+        project_js app-settings --site "${site_id}"
 }
 
 # The link the project owner opens on their own device to connect the
@@ -544,16 +505,7 @@ print_connect_link() {
 console_link() {
     local url="$1"
 
-    URL="${url}" WHO="$(owner_email 2>/dev/null || true)" node -e '
-const who = process.env.WHO;
-
-const link = new URL(process.env.URL);
-
-if (who) {
-    link.searchParams.set("authuser", who);
-}
-console.log(link.toString());
-'
+    project_js console-link --url "${url}" --who "$(owner_email 2>/dev/null || true)"
 }
 
 # The wording of the two console steps, kept here once. The messages of
@@ -593,50 +545,18 @@ indent_wrapped() {
 create_result_json() {
     local project="$1" site="$2"
 
-    # shellcheck disable=SC2016 # ${...} in there is JavaScript's, not the shell's
-    PROJECT="${project}" SITE="${site}" \
-        PROVIDERS="$(console_link "https://console.firebase.google.com/project/${project}/authentication/providers")" \
-        CLIENTS="$(console_link "https://console.cloud.google.com/auth/clients?project=${project}")" \
-        WHAT_GOOGLE="$(step_google_text)" WHAT_REDIRECT="$(step_redirect_text "${site}")" \
-        node -e '
-const project = process.env.PROJECT;
-const site = process.env.SITE;
-
-console.log(JSON.stringify({
-    projectId: project,
-    site,
-    connectLink: `https://${site}.web.app/join`,
-    settingsUrl: `https://${site}.web.app/geoshare.json`,
-    manualSteps: [
-        {
-            what: process.env.WHAT_GOOGLE,
-            url: process.env.PROVIDERS,
-        },
-        {
-            what: process.env.WHAT_REDIRECT,
-            url: process.env.CLIENTS,
-        },
-    ],
-    done: false,
-}, null, 2));
-'
+    project_js create-result --project "${project}" --site "${site}" \
+        --step "$(step_google_text)" \
+        --url "$(console_link "https://console.firebase.google.com/project/${project}/authentication/providers")" \
+        --step "$(step_redirect_text "${site}")" \
+        --url "$(console_link "https://console.cloud.google.com/auth/clients?project=${project}")"
 }
 
 # The address of the account this runs as: --account, or else the firebase
 # command line's default account, read from the file the access token comes
 # from.
 owner_email() {
-    ACCOUNT="${account}" STORE="${FIREBASE_STORE}" node -e '
-const fs = require("fs");
-
-let who = process.env.ACCOUNT;
-
-if (!who) {
-    who = JSON.parse(fs.readFileSync(process.env.STORE, "utf8")).user.email;
-}
-
-console.log(who);
-'
+    project_js owner-email --store "${FIREBASE_STORE}" --account "${account}"
 }
 
 # Binds the founding of the group to the project owner in the copy of the
@@ -650,19 +570,7 @@ bind_rules_to_owner() {
         echo "cannot tell which account owns ${project}; pass --account" >&2
         exit 1
     }
-    RULES_FILE="${file}" OWNER="${email}" MODULE="${REPO_ROOT}/web/public/lib/owner-rules.js" node -e '
-const fs = require("fs");
-const { pathToFileURL } = require("url");
-
-import(pathToFileURL(process.env.MODULE)).then(({ rulesForOwner }) => {
-    const file = process.env.RULES_FILE;
-
-    fs.writeFileSync(file, rulesForOwner(fs.readFileSync(file, "utf8"), process.env.OWNER));
-}).catch((error) => {
-    console.error(error.message);
-    process.exit(1);
-});
-'
+    project_js bind-rules --file "${file}" --owner "${email}"
 }
 
 # Deploys this working copy's rules and page to the project, with the
@@ -857,34 +765,10 @@ require_site() {
 show_result_json() {
     local project="$1" site_id="$2" google_on="$3" usage_json="$4"
 
-    # shellcheck disable=SC2016 # ${...} in there is JavaScript's, not the shell's
-    PROJECT="${project}" SITE="${site_id}" GOOGLE_ON="${google_on}" USAGE="${usage_json}" \
-        PROVIDERS="$(console_link "https://console.firebase.google.com/project/${project}/authentication/providers")" \
-        WHAT_GOOGLE="$(step_google_text)" \
-        node -e '
-const site = process.env.SITE;
-const googleOn = process.env.GOOGLE_ON === "1";
-
-const manualSteps = googleOn ? [] : [{
-    what: process.env.WHAT_GOOGLE,
-    url: process.env.PROVIDERS,
-}];
-
-const result = {
-    projectId: process.env.PROJECT,
-    site,
-    connectLink: `https://${site}.web.app/join`,
-    settingsUrl: `https://${site}.web.app/geoshare.json`,
-    manualSteps,
-    done: googleOn,
-};
-
-if (process.env.USAGE) {
-    result.usage = JSON.parse(process.env.USAGE);
-}
-
-console.log(JSON.stringify(result, null, 2));
-'
+    project_js show-result --project "${project}" --site "${site_id}" \
+        --google "${google_on}" --usage "${usage_json}" \
+        --step "$(step_google_text)" \
+        --url "$(console_link "https://console.firebase.google.com/project/${project}/authentication/providers")"
 }
 
 show() {
@@ -1019,9 +903,7 @@ update() {
     deploy_site "${project}" "${android}" "${site_id}"
 
     if (( json_mode )); then
-        PROJECT="${project}" SITE="${site_id}" node -e '
-console.log(JSON.stringify({ projectId: process.env.PROJECT, site: process.env.SITE, deployed: true }));
-' >&3
+        project_js update-result --project "${project}" --site "${site_id}" >&3
     fi
 }
 
@@ -1059,15 +941,7 @@ then its owner can bring it back:
 EOF
 
     if (( json_mode )); then
-        PROJECT="${project}" node -e '
-const until = new Date(Date.now() + 30 * 24 * 3600 * 1000);
-
-console.log(JSON.stringify({
-    projectId: process.env.PROJECT,
-    deleteRequested: true,
-    restorableUntil: until.toISOString().replace(/\.\d+Z$/, "Z"),
-}));
-' >&3
+        project_js delete-result --project "${project}" >&3
     fi
 }
 
@@ -1096,194 +970,7 @@ usage_report() {
     TOKEN="${token}" PROJECT="${project}" FORMAT="${format}" DAYS="${days}" \
         READS="${FREE_READS_PER_DAY}" WRITES="${FREE_WRITES_PER_DAY}" \
         DELETES="${FREE_DELETES_PER_DAY}" STORED="${FREE_STORED_BYTES}" \
-        node - <<'EOF'
-const project = process.env.PROJECT;
-const token = process.env.TOKEN;
-const LA = "America/Los_Angeles";
-const now = new Date(Math.floor(Date.now() / 1000) * 1000);
-
-// The calendar day and wall time of a moment in Los Angeles.
-function wallIn(zone, moment) {
-    const parts = new Intl.DateTimeFormat("en-US", {
-        timeZone: zone, hourCycle: "h23",
-        year: "numeric", month: "numeric", day: "numeric",
-        hour: "numeric", minute: "numeric", second: "numeric",
-    }).formatToParts(moment);
-    const part = Object.fromEntries(parts.map((p) => [p.type, Number(p.value)]));
-
-    return part;
-}
-
-function offsetOf(moment) {
-    const w = wallIn(LA, moment);
-
-    return Date.UTC(w.year, w.month - 1, w.day, w.hour, w.minute, w.second) - moment.getTime();
-}
-
-// Midnight in Los Angeles of the given calendar day; a day past the end of
-// the month rolls over, as Date.UTC does.
-function midnight(year, month, day) {
-    const wall = Date.UTC(year, month - 1, day);
-    let moment = wall - offsetOf(new Date(wall));
-
-    moment = wall - offsetOf(new Date(moment));
-
-    return new Date(moment);
-}
-
-const today = wallIn(LA, now);
-const quotaDay = midnight(today.year, today.month, today.day);
-
-function stamp(moment) {
-    return moment.toISOString().replace(/\.\d+Z$/, "Z");
-}
-
-const pad = (n) => String(n).padStart(2, "0");
-const WEEKDAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
-const localDay = (m) => `${m.getFullYear()}-${pad(m.getMonth() + 1)}-${pad(m.getDate())}`;
-const localTime = (m) => `${pad(m.getHours())}:${pad(m.getMinutes())}`;
-
-async function series(metric, start, aligner, period, end = now) {
-    const query = new URLSearchParams({
-        "filter": `metric.type = "${metric}"`,
-        "interval.startTime": stamp(start),
-        "interval.endTime": stamp(end),
-        "aggregation.alignmentPeriod": `${Math.max(period, 60)}s`,
-        "aggregation.perSeriesAligner": aligner,
-        "aggregation.crossSeriesReducer": "REDUCE_SUM",
-    });
-    const response = await fetch(
-        `https://monitoring.googleapis.com/v3/projects/${project}/timeSeries?${query}`,
-        { headers: { Authorization: `Bearer ${token}` }, signal: AbortSignal.timeout(60000) },
-    );
-
-    if (!response.ok) {
-        throw new Error(`Cloud Monitoring answered HTTP ${response.status} for ${metric}`);
-    }
-
-    const found = (await response.json()).timeSeries ?? [];
-
-    // Newest first; a metric nothing has been counted in yet has no series.
-    return found.flatMap((one) => one.points).map((point) => Number(Object.values(point.value)[0]));
-}
-
-async function counted(metric, start = quotaDay, end = now) {
-    const period = Math.trunc((end - start) / 1000);
-    const values = await series(metric, start, "ALIGN_SUM", period, end);
-
-    return Math.trunc(values.reduce((sum, value) => sum + value, 0));
-}
-
-async function latest(metric) {
-    const values = await series(metric, new Date(now - 2 * 24 * 3600 * 1000), "ALIGN_MAX", 3600);
-
-    return values.length ? Math.trunc(values[0]) : 0;
-}
-
-function progress(line) {
-    // Each question to Cloud Monitoring takes a moment, and a dozen of them in
-    // a row would otherwise read as the script having stopped.
-    process.stderr.write(`    ${line}\n`);
-}
-
-async function main() {
-    // Each earlier quota day asked for on its own, from one Pacific midnight
-    // to the next, so that no window straddles a reset.
-    const earlier = [];
-
-    for (let back = Number(process.env.DAYS); back > 0; back--) {
-        const start = midnight(today.year, today.month, today.day - back);
-        const end = midnight(today.year, today.month, today.day - back + 1);
-
-        progress(`Firestore on ${WEEKDAYS[start.getDay()]} ${localDay(start)}`);
-        earlier.push({
-            from: stamp(start),
-            reads: await counted("firestore.googleapis.com/document/read_count", start, end),
-            writes: await counted("firestore.googleapis.com/document/write_count", start, end),
-            deletes: await counted("firestore.googleapis.com/document/delete_count", start, end),
-        });
-    }
-
-    progress("Firestore today");
-    const firestore = {
-        reads: { used: await counted("firestore.googleapis.com/document/read_count"),
-            limit: Number(process.env.READS) },
-        writes: { used: await counted("firestore.googleapis.com/document/write_count"),
-            limit: Number(process.env.WRITES) },
-        deletes: { used: await counted("firestore.googleapis.com/document/delete_count"),
-            limit: Number(process.env.DELETES) },
-        storedBytes: { used: await latest("firestore.googleapis.com/storage/data_and_index_storage_bytes"),
-            limit: Number(process.env.STORED) },
-    };
-
-    progress("Hosting");
-    const hosting = {
-        sentBytesThisMonth: { used: await latest("firebasehosting.googleapis.com/network/monthly_sent"),
-            limit: await latest("firebasehosting.googleapis.com/network/monthly_sent_limit") },
-        storedBytes: { used: await latest("firebasehosting.googleapis.com/storage/total_bytes"),
-            limit: await latest("firebasehosting.googleapis.com/storage/limit") },
-    };
-
-    const report = {
-        projectId: project,
-        quotaDayFrom: stamp(quotaDay),
-        firestore,
-        earlierDays: earlier,
-        hosting,
-    };
-
-    if (process.env.FORMAT === "json") {
-        console.log(JSON.stringify(report));
-
-        return;
-    }
-
-    const size = (value) => {
-        for (const unit of ["B", "KiB", "MiB", "GiB"]) {
-            if (value < 1024 || unit === "GiB") {
-                return unit === "B" ? `${value.toFixed(0)} ${unit}` : `${value.toFixed(1)} ${unit}`;
-            }
-            value /= 1024;
-        }
-    };
-    const share = (entry) => (entry.limit ? `${(100 * entry.used / entry.limit).toFixed(1)}%` : "?");
-    const since = `${localDay(quotaDay)} ${localTime(quotaDay)}`;
-    const rows = [
-        [`Firestore reads since ${since}`, firestore.reads, String],
-        ["Firestore writes", firestore.writes, String],
-        ["Firestore deletes", firestore.deletes, String],
-        ["Firestore stored data", firestore.storedBytes, size],
-        ["Hosting transfer this month", hosting.sentBytesThisMonth, size],
-        ["Hosting storage", hosting.storedBytes, size],
-    ];
-
-    for (const [what, entry, shown] of rows) {
-        console.log(`${what.padEnd(42)} ${shown(entry.used).padStart(11)} of ` +
-            `${shown(entry.limit).padStart(11)}  ${share(entry).padStart(6)}`);
-    }
-
-    if (earlier.length) {
-        console.log();
-        console.log(`${"quota day from".padEnd(18)} ${"reads".padStart(13)} ` +
-            `${"writes".padStart(13)} ${"deletes".padStart(13)}`);
-
-        for (const day of earlier) {
-            const start = new Date(day.from);
-            const cells = ["reads", "writes", "deletes"].map((kind) =>
-                `${day[kind]} ${(100 * day[kind] / Number(process.env[kind.toUpperCase()])).toFixed(0)}%`);
-            const label = `${WEEKDAYS[start.getDay()]} ${localDay(start)} ${localTime(start)}`;
-
-            console.log(`${label.padEnd(18)} ${cells[0].padStart(13)} ${cells[1].padStart(13)} ` +
-                `${cells[2].padStart(13)}`);
-        }
-    }
-}
-
-main().catch((error) => {
-    console.error(error.message);
-    process.exit(1);
-});
-EOF
+        node "${PROJECT_JS}/usage.mjs"
 }
 
 [[ $# -ge 2 ]] || usage

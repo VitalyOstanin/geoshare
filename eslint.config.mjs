@@ -62,7 +62,7 @@ export default [
         // shows once a browser loads them. Circles are left alone: the page's
         // parts import app.js back for its state and handlers, which the
         // modules reach only once everything is loaded.
-        files: ['web/**/*.js', 'web/**/*.mjs', 'firebase/**/*.mjs'],
+        files: ['web/**/*.js', 'web/**/*.mjs', 'firebase/**/*.mjs', 'tools/project/**/*.mjs'],
         plugins: { 'import-x': importX },
         settings: { 'import-x/resolver-next': [createNodeResolver()] },
         rules: {
@@ -100,6 +100,7 @@ export default [
                 console: 'readonly',
                 URL: 'readonly',
                 URLSearchParams: 'readonly',
+                TextDecoder: 'readonly',
                 ResizeObserver: 'readonly',
                 atob: 'readonly',
                 Blob: 'readonly',
@@ -120,6 +121,21 @@ export default [
                 setTimeout: 'readonly',
                 URL: 'readonly',
                 btoa: 'readonly',
+            },
+        },
+    },
+    {
+        // The JavaScript half of tools/project.sh, run by node on the machine
+        // that looks after a group's project.
+        files: ['tools/project/**/*.mjs'],
+        languageOptions: {
+            globals: {
+                AbortSignal: 'readonly',
+                console: 'readonly',
+                fetch: 'readonly',
+                process: 'readonly',
+                URL: 'readonly',
+                URLSearchParams: 'readonly',
             },
         },
     },

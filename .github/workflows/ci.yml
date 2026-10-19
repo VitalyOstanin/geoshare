@@ -127,7 +127,13 @@ jobs:
         run: npm run coverage
 
       - name: Lint the JavaScript
-        run: npx --yes -p "eslint@${ESLINT_VERSION}" -p "@eslint/js@${ESLINT_JS_VERSION}" eslint web firebase
+        # The same packages as tools/js-lint.sh: the configuration loads the
+        # @stylistic and import-x plugins, and fails without them.
+        run: >-
+          npx --yes -p "eslint@${ESLINT_VERSION}" -p "@eslint/js@${ESLINT_JS_VERSION}"
+          -p "@stylistic/eslint-plugin@${STYLISTIC_VERSION}"
+          -p "eslint-plugin-import-x@${IMPORT_X_VERSION}"
+          eslint web firebase tools/project
 
       - name: Lint the Markdown
         run: npx --yes "markdownlint-cli2@${MARKDOWNLINT_CLI2_VERSION}"
