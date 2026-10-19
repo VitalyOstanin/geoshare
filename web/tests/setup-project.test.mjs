@@ -13,6 +13,7 @@ import {
     accountEmail,
     consoleLink,
     setupConfigOf,
+    consoleBaseOf,
     failure,
     failureKind,
     failureWord,
@@ -403,6 +404,22 @@ test('a setup config as the script writes it is taken, a broken one is not', () 
     assert.equal(setupConfigOf({ ...written, location: undefined }), null);
     assert.equal(setupConfigOf({ ...written, fingerprints: 'AB:CD' }), null);
     assert.equal(setupConfigOf({ ...written, fingerprints: [42] }), null);
+});
+
+test('the console address defaults and always ends with a slash', () => {
+    const written = {
+        clientId: 'x.apps.googleusercontent.com',
+        packageName: 'io.github.vitalyostanin.geoshare',
+        location: 'europe-north1',
+        fingerprints: [],
+    };
+    const base = 'https://console.firebase.google.com/';
+    const custom = 'https://c.example/fb';
+
+    assert.equal(consoleBaseOf(setupConfigOf({ ...written, consoleUrl: undefined })), base);
+    assert.equal(consoleBaseOf(null), base);
+    assert.equal(consoleBaseOf({ ...written, consoleUrl: custom }), `${custom}/`);
+    assert.equal(consoleBaseOf({ ...written, consoleUrl: `${custom}/` }), `${custom}/`);
 });
 
 test('only a network or transient failure is worth asking again', () => {

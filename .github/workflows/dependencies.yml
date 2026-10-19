@@ -47,22 +47,18 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          # The token has write access, and the Gradle run that follows runs
+          # plugin and dependency code, which has no use for it. The submission
+          # authenticates through the action's own token input instead.
+          persist-credentials: false
 
       - name: Read the pinned versions
         run: grep -E '^[A-Z][A-Z0-9_]*=' tools/versions.env >> "$GITHUB_ENV"
 
-      - name: Setup Java
-        uses: actions/setup-java@b843ebf9b913146b38da2eaa7aeddf76074ae1ad # v6.1.0
-        with:
-          distribution: temurin
-          java-version: ${{ env.JDK_VERSION }}
-
-      - name: Setup the Android SDK
+      - name: Setup Java and the Android SDK
         # The Android plugin needs the platform to configure the project at all.
-        uses: android-actions/setup-android@be39fa834029ff78f1a44aa3bb0819b8fc2bd8fd # v4.0.4
-        with:
-          log-accepted-android-sdk-licenses: false
-          packages: 'platforms;${{ env.ANDROID_PLATFORM }} build-tools;${{ env.ANDROID_BUILD_TOOLS }}'
+        uses: ./.github/actions/android-setup
 
       - name: Generate and submit the dependency graph
         uses: gradle/actions/dependency-submission@3f5f9adaf7d9fecd50b5935e54106014257a94e6 # v6.4.0
@@ -70,28 +66,176 @@ jobs:
           build-root-directory: android
           cache-read-only: true
 
-  # On a pull request only the vulnerabilities it introduces are reported; on
-  # master and on the schedule, all of them.
+  # The two scan jobs below follow Google's reusable workflows
+  # (osv-scanner-reusable-pr.yml and osv-scanner-reusable.yml at v2.7.0) step
+  # for step. They are spelled out here because a job that calls a reusable
+  # workflow cannot set timeout-minutes, and the called files set none, which
+  # leaves the six-hour default for a scan that takes a minute or two.
+
+  # On a pull request only the vulnerabilities it introduces are reported: the
+  # target branch and the pull request are scanned in turn and the two results
+  # compared.
   osv-scan-pr:
     if: github.event_name == 'pull_request'
-    uses: google/osv-scanner-action/.github/workflows/osv-scanner-reusable-pr.yml@b1d267aea5211fa648d9d442fa64b90dbdcbdd36 # v2.7.0
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
     permissions:
       actions: read
       contents: read
       security-events: write
-    with:
-      scan-args: |-
-        --lockfile=web/package-lock.json
-        --lockfile=firebase/tests/package-lock.json
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          # The target branch is checked out next, so the history is needed and
+          # the credentials stay for that git checkout.
+          fetch-depth: 0
+
+      - name: Checkout the target branch
+        run: git checkout "$GITHUB_BASE_REF"
+
+      - name: Scan the target branch
+        id: scan-old
+        uses: google/osv-scanner-action/osv-scanner-action@b1d267aea5211fa648d9d442fa64b90dbdcbdd36 # v2.7.0
+        env:
+          GOTOOLCHAIN: auto
+        # The scanner exits non-zero both on vulnerabilities, which the reporter
+        # acts on, and on a failed scan; the check below tells them apart.
+        continue-on-error: true
+        with:
+          scan-args: |-
+            --format=json
+            --output=old-results.json
+            --lockfile=web/package-lock.json
+            --lockfile=firebase/tests/package-lock.json
+
+      - name: Checkout the pull request
+        # -f in case the scanner changed anything, which it should not.
+        run: git checkout -f "$GITHUB_SHA"
+
+      - name: Scan the pull request
+        id: scan-new
+        uses: google/osv-scanner-action/osv-scanner-action@b1d267aea5211fa648d9d442fa64b90dbdcbdd36 # v2.7.0
+        env:
+          GOTOOLCHAIN: auto
+        continue-on-error: true
+        with:
+          scan-args: |-
+            --format=json
+            --output=new-results.json
+            --lockfile=web/package-lock.json
+            --lockfile=firebase/tests/package-lock.json
+
+      # A scan that fails writes no results file, and the reporter treats a
+      # missing --new file as "no new vulnerabilities" and exits 0, so a change
+      # that stops the scanner from completing would pass as a clean diff. Only
+      # scans that produced results are compared.
+      - name: Check that both scans completed
+        if: ${{ steps.scan-old.outcome == 'failure' || steps.scan-new.outcome == 'failure' }}
+        env:
+          OLD_OUTCOME: ${{ steps.scan-old.outcome }}
+          NEW_OUTCOME: ${{ steps.scan-new.outcome }}
+        run: |
+          status=0
+          if [ "${OLD_OUTCOME}" = "failure" ] && [ ! -s old-results.json ]; then
+            echo "::error::OSV-Scanner failed on the target branch without writing old-results.json."
+            status=1
+          fi
+          if [ "${NEW_OUTCOME}" = "failure" ] && [ ! -s new-results.json ]; then
+            echo "::error::OSV-Scanner failed on this branch without writing new-results.json."
+            status=1
+          fi
+          if [ "${status}" -ne 0 ]; then
+            echo "::error::A scan did not complete, so the two results cannot be compared."
+          fi
+          exit "${status}"
+
+      - name: Report the new vulnerabilities
+        uses: google/osv-scanner-action/osv-reporter-action@b1d267aea5211fa648d9d442fa64b90dbdcbdd36 # v2.7.0
+        with:
+          scan-args: |-
+            --output=results.sarif
+            --old=old-results.json
+            --new=new-results.json
+            --gh-annotations=true
+            --fail-on-vuln=true
+
+      - name: Keep the results
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: osv-scanner-results
+          path: |
+            results.sarif
+            old-results.json
+            new-results.json
+          retention-days: 5
+
+      - name: Upload to code scanning
+        if: ${{ !cancelled() }}
+        uses: github/codeql-action/upload-sarif@6f2ac81f5cd81fe351a197ba0b00d91d03cd2aee # v4.39.0
+        with:
+          sarif_file: results.sarif
 
   osv-scan:
     if: github.event_name != 'pull_request'
-    uses: google/osv-scanner-action/.github/workflows/osv-scanner-reusable.yml@b1d267aea5211fa648d9d442fa64b90dbdcbdd36 # v2.7.0
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
     permissions:
       actions: read
       contents: read
       security-events: write
-    with:
-      scan-args: |-
-        --lockfile=web/package-lock.json
-        --lockfile=firebase/tests/package-lock.json
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Scan
+        id: scan
+        uses: google/osv-scanner-action/osv-scanner-action@b1d267aea5211fa648d9d442fa64b90dbdcbdd36 # v2.7.0
+        env:
+          GOTOOLCHAIN: auto
+        continue-on-error: true
+        with:
+          scan-args: |-
+            --output=results.json
+            --format=json
+            --lockfile=web/package-lock.json
+            --lockfile=firebase/tests/package-lock.json
+
+      # A scan that fails writes no results file, and the reporter treats a
+      # missing file as "no vulnerabilities" and exits 0, which would turn a
+      # failed scan into a passing check.
+      - name: Check that the scan completed
+        if: ${{ steps.scan.outcome == 'failure' }}
+        run: |
+          if [ ! -s results.json ]; then
+            echo "::error::OSV-Scanner failed without writing results.json, so there is nothing to report."
+            exit 1
+          fi
+
+      - name: Report the vulnerabilities
+        uses: google/osv-scanner-action/osv-reporter-action@b1d267aea5211fa648d9d442fa64b90dbdcbdd36 # v2.7.0
+        with:
+          scan-args: |-
+            --output=results.sarif
+            --new=results.json
+            --gh-annotations=false
+            --fail-on-vuln=true
+
+      - name: Keep the results
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: osv-scanner-results
+          path: results.sarif
+          retention-days: 5
+
+      - name: Upload to code scanning
+        if: ${{ !cancelled() }}
+        uses: github/codeql-action/upload-sarif@6f2ac81f5cd81fe351a197ba0b00d91d03cd2aee # v4.39.0
+        with:
+          sarif_file: results.sarif

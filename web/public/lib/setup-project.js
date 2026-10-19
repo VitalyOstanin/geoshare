@@ -104,6 +104,18 @@ export function setupConfigOf(value) {
 }
 
 /**
+ * The console address with a slash at the end, to append a path to. The link
+ * is optional in the config (and the config itself may be missing), so this is
+ * the one place that supplies the default.
+ */
+export function consoleBaseOf(config) {
+    const url = config?.consoleUrl;
+    const filled = typeof url === 'string' && url.trim().length > 0;
+
+    return (filled ? url.trim() : 'https://console.firebase.google.com/').replace(/\/?$/, '/');
+}
+
+/**
  * An Error tagged with what went wrong in terms the page can put into words:
  * 'network', 'denied', 'timeout', 'missing', 'transient' or 'other'. The text
  * of the Error stays technical, for the console; the page shows a phrase

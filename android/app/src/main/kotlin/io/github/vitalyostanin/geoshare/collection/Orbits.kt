@@ -1,6 +1,7 @@
 package io.github.vitalyostanin.geoshare.collection
 
 import java.time.LocalDateTime
+import java.time.YearMonth
 import java.time.ZoneOffset
 import kotlin.math.abs
 import kotlin.math.atan2
@@ -255,8 +256,8 @@ private const val THIRD_AXIS = 2
 private fun orbitOf(record: List<String>): Orbit? {
     val first = record[0]
     val constellation = if (first[0] == 'G') Constellation.Gps else Constellation.Galileo
-    val id = first.substring(1, ID_END).trim().toIntOrNull() ?: return null
-    val clockAt = gpsSecondsOf(first.substring(ID_END, EPOCH_END)) ?: return null
+    val id = idOf(first) ?: return null
+    val clockAt = epochOf(first) ?: return null
 
     val values = (0 until FIELDS_ON_FIRST_LINE).map { field(first, FIRST_FIELD + it * FIELD) } +
         (1..ORBIT_LINES).flatMap { line ->
@@ -303,9 +304,8 @@ private fun orbitOf(record: List<String>): Orbit? {
  */
 private fun glonassOrbitOf(record: List<String>): GlonassOrbit? {
     val first = record[0]
-    val id = first.substring(1, ID_END).trim().toIntOrNull() ?: return null
-    val at = gpsSecondsOf(first.substring(ID_END, EPOCH_END))
-        ?.plus(GPS_AHEAD_OF_UTC_SECONDS) ?: return null
+    val id = idOf(first) ?: return null
+    val at = epochOf(first)?.plus(GPS_AHEAD_OF_UTC_SECONDS) ?: return null
     val clockBias = field(first, FIRST_FIELD) ?: return null
     val frequencyBias = field(first, FIRST_FIELD + FIELD) ?: return null
     val axes = (1..GLONASS_AXIS_LINES).map { line ->
@@ -347,7 +347,27 @@ private fun field(line: String, from: Int): Double? {
         .toDoubleOrNull()
 }
 
-/** " 2026 09 15 02 00 00" as seconds on the GPS scale. */
+/**
+ * The satellite number of a record, or null where its first line is cut
+ * before the epoch: such a line holds neither a whole number nor a moment.
+ */
+private fun idOf(first: String): Int? =
+    if (first.length < EPOCH_END) null else first.substring(1, ID_END).trim().toIntOrNull()
+
+private fun epochOf(first: String): Double? =
+    if (first.length < EPOCH_END) null else gpsSecondsOf(first.substring(ID_END, EPOCH_END))
+
+/** RINEX writes the year in four digits, and no orbit is older than the GPS scale. */
+private const val LAST_YEAR = 9999
+private const val MONTHS = 12
+private const val HOURS = 24
+private const val MINUTES = 60
+
+/**
+ * " 2026 09 15 02 00 00" as seconds on the GPS scale, or null where the
+ * numbers name no moment: LocalDateTime throws on a thirteenth month or a
+ * 31 September, and one such record must not cost the rest of the file.
+ */
 private fun gpsSecondsOf(epoch: String): Double? {
     val parts = epoch.trim().split(Regex("\\s+")).mapNotNull { it.toIntOrNull() }
 
@@ -355,7 +375,22 @@ private fun gpsSecondsOf(epoch: String): Double? {
         return null
     }
 
-    val at = LocalDateTime.of(parts[0], parts[1], parts[2], parts[3], parts[4], parts[5])
+    val (year, month, day) = parts
+    val (hour, minute, second) = parts.drop(3)
+
+    if (year !in GPS_START.year..LAST_YEAR || month !in 1..MONTHS) {
+        return null
+    }
+
+    if (day !in 1..YearMonth.of(year, month).lengthOfMonth() || hour !in 0 until HOURS) {
+        return null
+    }
+
+    if (minute !in 0 until MINUTES || second !in 0 until MINUTES) {
+        return null
+    }
+
+    val at = LocalDateTime.of(year, month, day, hour, minute, second)
 
     return (at.toEpochSecond(ZoneOffset.UTC) - GPS_START.toEpochSecond(ZoneOffset.UTC)).toDouble()
 }

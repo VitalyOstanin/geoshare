@@ -4,6 +4,7 @@ import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertNull
 import org.junit.Test
+import java.util.Random
 
 /**
  * The file is a cut of the broadcast orbits published for 15.09.2026: every
@@ -99,5 +100,115 @@ class OrbitsTest {
         )
 
         assertEquals(0, read.size)
+    }
+
+    private val fixture = javaClass.classLoader!!.getResourceAsStream("orbits-2026-09-15.rnx")!!
+        .bufferedReader()
+        .readLines()
+
+    // The first record after the header, a Galileo one, which the tests
+    // below break and put after the header again.
+    private val galileoRecord = fixture.subList(4, 12)
+
+    private fun headerAnd(vararg records: List<String>): Sequence<String> =
+        (fixture.subList(0, 4) + records.flatMap { it }).asSequence()
+
+    private fun withFirstLine(record: List<String>, first: String) = listOf(first) + record.drop(1)
+
+    @Test
+    fun `a record whose first line ends before its epoch is passed over`() {
+        val read = orbitsOf(
+            headerAnd(
+                withFirstLine(galileoRecord, "G05 2026 09 15"),
+                withFirstLine(galileoRecord, "G"),
+                galileoRecord,
+            ),
+        )
+
+        assertEquals(1, read.size)
+    }
+
+    @Test
+    fun `a record dated in a thirteenth month is passed over`() {
+        val first = galileoRecord[0].replaceRange(9, 11, "13")
+
+        val read = orbitsOf(headerAnd(withFirstLine(galileoRecord, first), galileoRecord))
+
+        assertEquals(1, read.size)
+    }
+
+    @Test
+    fun `a record dated at hour 25 or on 31 September is passed over`() {
+        val lateHour = galileoRecord[0].replaceRange(15, 17, "25")
+        val noSuchDay = galileoRecord[0].replaceRange(12, 14, "31")
+        val read = orbitsOf(
+            headerAnd(
+                withFirstLine(galileoRecord, lateHour),
+                withFirstLine(galileoRecord, noSuchDay),
+                galileoRecord,
+            ),
+        )
+
+        assertEquals(1, read.size)
+    }
+
+    // The file comes off the network, so whatever arrives must read as some
+    // orbits, never as an exception that loses the whole day.
+    @Test
+    fun `any broken file reads as orbits`() {
+        val random = Random(635L)
+        val records = fixture.indices.filter { it >= 4 && fixture[it].firstOrNull() != ' ' }
+
+        repeat(500) { case ->
+            val lines = fixture.toMutableList()
+
+            repeat(1 + random.nextInt(6)) { change ->
+                val picked = if (random.nextBoolean()) {
+                    records[random.nextInt(records.size)]
+                } else {
+                    4 + random.nextInt(lines.size - 4)
+                }
+                val at = picked.coerceAtMost(lines.lastIndex)
+
+                broken(lines, at, (case + change) % 5, random)
+            }
+
+            try {
+                orbitsOf(lines.asSequence())
+            } catch (thrown: Exception) {
+                throw AssertionError("case $case threw", thrown)
+            }
+        }
+    }
+
+    /** One of five ways a line goes wrong in transit: cut, garbled, lost, doubled or misdated. */
+    private fun broken(lines: MutableList<String>, at: Int, kind: Int, random: Random) {
+        val line = lines[at]
+        val awkward = "0123456789 -+.DEexR"
+
+        when (kind) {
+            0 -> lines[at] = line.take(random.nextInt(line.length + 1))
+
+            1 -> if (line.isNotEmpty()) {
+                val chars = StringBuilder(line)
+
+                repeat(1 + random.nextInt(4)) {
+                    val column = random.nextInt(minOf(chars.length, 80))
+                    chars.setCharAt(column, awkward[random.nextInt(awkward.length)])
+                }
+                lines[at] = chars.toString()
+            }
+
+            2 -> lines.removeAt(at)
+
+            3 -> lines.add(at, line)
+
+            else -> if (line.length >= 17) {
+                val value = if (random.nextBoolean()) "13" else "99"
+                val column = if (random.nextBoolean()) 9 else 15
+
+                lines[at] = line.replaceRange(column, column + 2, value)
+            }
+        }
     }
 }

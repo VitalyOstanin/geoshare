@@ -45,6 +45,14 @@ class TrailTest {
         assertTrue(trail.knows(home(61)))
     }
 
+    // The trail is in the order of writing; the stamps come from two clocks.
+    @Test
+    fun `visits written out of order across two hours still make a place familiar`() {
+        val trail = Trail(listOf(home(120), home(0), home(60)))
+
+        assertTrue(trail.knows(home(121)))
+    }
+
     @Test
     fun `a place three hundred metres away is the same place`() {
         val trail = Trail(listOf(home(0), home(30), home(60)))

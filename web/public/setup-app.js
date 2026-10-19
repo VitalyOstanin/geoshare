@@ -21,6 +21,7 @@ import {
     passing,
     refusalText,
     setupConfigOf,
+    consoleBaseOf,
 } from './lib/setup-project.js';
 import { rulesForOwner } from './lib/owner-rules.js';
 import {
@@ -452,7 +453,7 @@ async function pollSignIn(round) {
 
 function startStep4() {
     const id = state.project.projectId;
-    const consoleBase = state.config.consoleUrl.replace(/\/?$/, '/');
+    const consoleBase = consoleBaseOf(state.config);
 
     // The group's page signs in through its own site (authDomain), named after the project.
     $('s4-uri').textContent = `https://${id}.web.app/__/auth/handler`;
@@ -507,8 +508,8 @@ fetch('setup-config.json')
     .then((response) => (response.ok ? response.json() : null))
     .then((config) => {
         state.config = setupConfigOf(config);
-        $('s1-console').href = config?.consoleUrl || 'https://console.firebase.google.com/';
+        $('s1-console').href = consoleBaseOf(config);
     })
     .catch(() => {
-        $('s1-console').href = 'https://console.firebase.google.com/';
+        $('s1-console').href = consoleBaseOf(null);
     });

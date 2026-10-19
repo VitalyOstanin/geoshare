@@ -66,7 +66,14 @@ fun Trail.knows(place: Fix): Boolean {
         return false
     }
 
-    return Duration.between(visits.first().takenAt, visits.last().takenAt) >= FAMILIAR_SPREAD
+    // The fixes are in the order they were written, not the order they were
+    // taken: a network answer carries the device clock and a satellite one the
+    // GNSS time, so the first and the last of them may be neither oldest nor
+    // newest.
+    val oldest = visits.minOf { it.takenAt }
+    val newest = visits.maxOf { it.takenAt }
+
+    return Duration.between(oldest, newest) >= FAMILIAR_SPREAD
 }
 
 /**
