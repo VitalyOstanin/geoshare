@@ -53,7 +53,7 @@ Acceptance:
 
 - Status: done
 - ADR: 0016, 0019
-- Tests: rules `membership.test.mjs` (the name of a group); Android `GroupSwitcherTest`
+- Tests: rules `membership.test.mjs` (the name of a group); Android `GroupSwitcherTest`, `AdminPanelTest`
 - Not covered: that the new name reaches the other screens without a restart
 
 As an administrator I rename the group from the group panel, so that the
@@ -68,7 +68,7 @@ Acceptance:
 
 - Status: done
 - ADR: 0015, 0017, 0018, 0019, 0025
-- Tests: rules `membership.test.mjs` (invitations; a code is spent by joining; joining on an invitation made out to an address); Android `AdminInvitationTest`, `InvitationQrTest`, `ConnectLinkTest`; page `link.test.mjs`, `join.test.mjs`
+- Tests: rules `membership.test.mjs` (invitations; a code is spent by joining; joining on an invitation made out to an address); Android `AdminInvitationTest`, `InvitationQrTest`, `ConnectLinkTest`, `AdminPanelTest`; page `link.test.mjs`, `join.test.mjs`
 
 As an administrator I make an invitation for one Google address, so that only
 that person can join on the link and only once.
@@ -91,7 +91,7 @@ Acceptance:
 
 - Status: done
 - ADR: 0026, 0027
-- Tests: rules `running.test.mjs`, `leaving.test.mjs` (a member taken off the roster); Android `MembershipTest`, `GroupLineTest`; page `membership.test.mjs`, `group-lines.test.mjs`
+- Tests: rules `running.test.mjs`, `leaving.test.mjs` (a member taken off the roster); Android `MembershipTest`, `GroupLineTest`, `AdminPanelTest`; page `membership.test.mjs`, `group-lines.test.mjs`
 
 As an administrator I take a member off the roster, so that they no longer see
 the group nor are seen in it.
@@ -109,7 +109,7 @@ Acceptance:
 
 - Status: done
 - ADR: 0027
-- Tests: rules `running.test.mjs`; Android `MembershipTest`; page `membership.test.mjs`
+- Tests: rules `running.test.mjs`; Android `MembershipTest`, `AdminPanelTest`; page `membership.test.mjs`
 
 As an administrator I make another member an administrator, or step down
 myself, so that the group is never left to one person.
@@ -127,7 +127,7 @@ Acceptance:
 
 - Status: done
 - ADR: 0027
-- Tests: rules `access.test.mjs` (devices); Android `GroupLineTest`, `PhoneStatusTest`; page `group-lines.test.mjs`, `phones.test.mjs`
+- Tests: rules `access.test.mjs` (devices); Android `GroupLineTest`, `PhoneStatusTest`, `AdminPanelTest`; page `group-lines.test.mjs`, `phones.test.mjs`
 
 As an administrator I see the roster with each member's devices: their names,
 when each last wrote, in which mode and whether it is charging, so that I
@@ -147,7 +147,7 @@ Acceptance:
 
 - Status: done
 - ADR: 0011
-- Tests: rules `searches.test.mjs`; Android `SearchesTest`, `MapScreenTest`; page `searches.test.mjs`
+- Tests: rules `searches.test.mjs`; Android `SearchesTest`, `MapScreenTest`, `AdminPanelTest`, `MyPhonesScreenTest`; page `searches.test.mjs`
 - Not covered: the red ring on the map
 
 As an administrator I open a search for one device for a time I choose, so
@@ -168,7 +168,7 @@ Acceptance:
 - Status: partly — a device that is asleep hears the call only when it next
   wakes on its own; waking it needs a push
 - ADR: 0026, 0028
-- Tests: rules `sirens.test.mjs`; Android `SirensTest`; page `sirens.test.mjs`
+- Tests: rules `sirens.test.mjs`; Android `SirensTest`, `AdminPanelTest`, `MyPhonesScreenTest`, `MapScreenTest`; page `sirens.test.mjs`
 - Not covered: the sound itself and its length, on a device
 
 As an administrator, or as the device's owner, I make the device sound like an
@@ -186,7 +186,7 @@ Acceptance:
 
 - Status: partly — as ADM-08, the device acts when it next wakes
 - ADR: 0014, 0026, 0029
-- Tests: rules `resets.test.mjs`; Android `ResetsTest`; page `resets.test.mjs`
+- Tests: rules `resets.test.mjs`; Android `ResetsTest`, `AdminPanelTest`, `MyPhonesScreenTest`; page `resets.test.mjs`
 - Not covered: that the device forgets its place, on a device
 
 As an administrator, or as the device's owner, I reset the place of a device

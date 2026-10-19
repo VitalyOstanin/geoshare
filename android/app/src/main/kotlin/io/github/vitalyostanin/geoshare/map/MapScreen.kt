@@ -53,6 +53,12 @@ fun MapScreen(
     /** The groups this device is in, for the chip that switches between them. */
     groups: GroupSwitch,
     modifier: Modifier = Modifier,
+    /**
+     * What a test draws where the map goes. The map is a MapLibre view that
+     * fetches its tiles over the network, and a test of what stands around it
+     * needs neither; null, as the application leaves it, draws the map itself.
+     */
+    mapStandIn: (@Composable (Modifier) -> Unit)? = null,
 ) {
     val now by currentTime()
     // The devices the group is looking for right now, worked out against the
@@ -84,6 +90,7 @@ fun MapScreen(
         actions = actions,
         groups = groups,
         outOfReach = outOfReach,
+        mapStandIn = mapStandIn,
     )
 
     MapBackHandlers(scene)

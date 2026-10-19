@@ -54,6 +54,8 @@ internal class MapScene(
     val groups: GroupSwitch,
     /** How many members' positions this device is being refused, if any. */
     val outOfReach: Int,
+    /** What a test draws in place of the map; null for the map itself. */
+    val mapStandIn: (@Composable (Modifier) -> Unit)? = null,
 ) {
     /** Everybody in the order the strip shows them. */
     val members = orderedForNavigation(positions, ownMemberId)
@@ -212,32 +214,37 @@ private fun BoxScope.MapSurface(scene: MapScene) {
     // map asks for this text while it is drawing, with a count it works out
     // itself from the members standing together.
     val resources = LocalContext.current.resources
+    val standIn = scene.mapStandIn
 
-    MemberMap(
-        positions = scene.positions,
-        names = scene.names,
-        faces = scene.faces,
-        ownMemberId = scene.ownMemberId,
-        now = scene.now,
-        soughtPhones = scene.soughtPhones,
-        // The tiles follow the screen they are looked at on: a white
-        // map under a dark card at night is a lamp in the face, which
-        // is the reason the page turns its own canvas over.
-        dark = MaterialTheme.colorScheme.surface.luminance() < HALF_LIT,
-        groupLabel = { count: Int ->
-            resources.getQuantityString(R.plurals.map_group_count, count, count)
-        },
-        focus = state.focus,
-        selected = state.openedPositionId,
-        followMode = follow.mode,
-        followTarget = follow.target?.positionId,
-        onPausedChange = { follow.paused = it },
-        topCover = state.topCover,
-        onSelect = scene::select,
-        onSelectGroup = state::openGroup,
-        onDismiss = state::closeCard,
-        modifier = Modifier.fillMaxSize(),
-    )
+    if (standIn != null) {
+        standIn(Modifier.fillMaxSize())
+    } else {
+        MemberMap(
+            positions = scene.positions,
+            names = scene.names,
+            faces = scene.faces,
+            ownMemberId = scene.ownMemberId,
+            now = scene.now,
+            soughtPhones = scene.soughtPhones,
+            // The tiles follow the screen they are looked at on: a white
+            // map under a dark card at night is a lamp in the face, which
+            // is the reason the page turns its own canvas over.
+            dark = MaterialTheme.colorScheme.surface.luminance() < HALF_LIT,
+            groupLabel = { count: Int ->
+                resources.getQuantityString(R.plurals.map_group_count, count, count)
+            },
+            focus = state.focus,
+            selected = state.openedPositionId,
+            followMode = follow.mode,
+            followTarget = follow.target?.positionId,
+            onPausedChange = { follow.paused = it },
+            topCover = state.topCover,
+            onSelect = scene::select,
+            onSelectGroup = state::openGroup,
+            onDismiss = state::closeCard,
+            modifier = Modifier.fillMaxSize(),
+        )
+    }
 
     scene.removed?.let { RemovedScreen(removed = it, switcher = scene.switcher) }
 

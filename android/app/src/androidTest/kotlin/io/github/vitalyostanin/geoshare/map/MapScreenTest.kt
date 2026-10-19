@@ -1,19 +1,24 @@
 package io.github.vitalyostanin.geoshare.map
 
+import androidx.compose.foundation.layout.Box
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.test.assertCountEquals
 import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithContentDescription
+import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import io.github.vitalyostanin.geoshare.R
+import io.github.vitalyostanin.geoshare.membership.Roster
+import kotlinx.coroutines.flow.flowOf
 import org.junit.Assert.assertEquals
 import org.junit.Rule
 import org.junit.Test
@@ -25,13 +30,14 @@ import java.time.Instant
  * The parts of the map screen a person presses, drawn on a device with no
  * database and no map behind them.
  *
- * The screen as a whole is not drawn here: its middle is a MapLibre view that
- * fetches tiles over the network, and the screen reads the group out of the
- * database itself. What sits around the map is drawn out of plain values,
- * though, and that is what these tests hold: the strip of members under the
- * map, the follow button over it and the card a member's position opens. The
- * positions are made up, in the same invented area the unit tests use. Texts
- * are looked up in the resources so that the tests hold in either language.
+ * What sits around the map is drawn out of plain values, and that is what
+ * these tests hold: the strip of members under the map, the follow button over
+ * it and the card a member's position opens, each on its own, and the screen
+ * as a whole with a plain box in place of the map. The map itself is a
+ * MapLibre view that fetches tiles over the network, which none of this needs.
+ * The positions are made up, in the same invented area the unit tests use.
+ * Texts are looked up in the resources so that the tests hold in either
+ * language.
  */
 @RunWith(AndroidJUnit4::class)
 class MapScreenTest {
@@ -326,6 +332,102 @@ class MapScreenTest {
         composeRule.onAllNodesWithText(text(R.string.search_found)).assertCountEquals(0)
     }
 
+    /**
+     * Draws the whole map screen for Anna, in a group of three with nothing
+     * behind it, and a plain box where the map goes.
+     */
+    private fun showScreen(
+        searches: Map<String, Search> = emptyMap(),
+        actions: SettingsActions = quietActions(),
+    ) {
+        val settings = quietSettings().copy(roster = Roster(members = listOf(ANNA, BORIS, CLARA)))
+
+        composeRule.setContent {
+            MapScreen(
+                positions = listOf(at(ANNA_PHONE), at(BORIS_PHONE), at(CLARA_PHONE)),
+                outOfReach = 0,
+                profiles = PROFILES,
+                watchers = emptyList(),
+                ownMemberId = ANNA,
+                ownPhoneId = ANNA_PHONE,
+                ownDisplayName = "Anna",
+                ownPictureUrl = null,
+                searches = searches,
+                settings = settings,
+                actions = actions,
+                labels = Labels(),
+                onLabel = { _, _, _ -> },
+                groups = GroupSwitch(
+                    choices = emptyList(),
+                    selected = "project-a",
+                    onSelect = {},
+                    onJoin = {},
+                    onLeave = { false },
+                ),
+                mapStandIn = { modifier -> Box(modifier.testTag(MAP_STAND_IN)) },
+            )
+        }
+    }
+
+    // MEM-14: the screen in one piece: the round buttons over the map and the strip under it.
+    @Test
+    fun screenDrawsTheButtonsOverTheMapAndTheStripUnderIt() {
+        showScreen()
+
+        composeRule.onNodeWithTag(MAP_STAND_IN).assertExists()
+        composeRule.onNodeWithContentDescription(text(R.string.map_follow_none)).assertExists()
+        composeRule.onNodeWithContentDescription(text(R.string.help_open)).assertExists()
+        composeRule.onNodeWithContentDescription(text(R.string.map_members)).assertExists()
+        composeRule.onNodeWithText("Boris", substring = true).assertExists()
+        composeRule.onNodeWithText("Clara", substring = true).assertExists()
+    }
+
+    // MEM-15: following one member with nobody chosen yet sends the screen to its strip to
+    // ask for one, which takes the follow button and the strip together.
+    @Test
+    fun followingOneWithNobodyChosenAsksOnTheStrip() {
+        showScreen()
+
+        composeRule.onNodeWithText(text(R.string.map_follow_awaiting_banner)).assertDoesNotExist()
+        composeRule.onNodeWithContentDescription(text(R.string.map_follow_none)).performClick()
+        composeRule.onNodeWithText(text(R.string.map_follow_menu_one_title)).performClick()
+        composeRule.waitForIdle()
+
+        composeRule.onNodeWithText(text(R.string.map_follow_awaiting_banner)).assertExists()
+    }
+
+    // ADM-07: a search for one of this member's own devices is told over the map, with who
+    // opened it.
+    @Test
+    fun aSearchForOwnDeviceIsToldOverTheMap() {
+        showScreen(searches = mapOf(ANNA_PHONE to searchOn(ANNA_PHONE, openedBy = BORIS)))
+
+        composeRule.onNodeWithText(text(R.string.sought_banner_note, "Boris")).assertExists()
+        composeRule.onNodeWithText(text(R.string.sought_found)).assertExists()
+    }
+
+    // ADM-08: the siren sounding on this device is told over the map, with who called it and
+    // the button that stops it.
+    @Test
+    fun aSirenOnThisDeviceIsToldOverTheMap() {
+        val siren = Siren(
+            phoneId = ANNA_PHONE,
+            calledBy = BORIS,
+            calledAt = Instant.now(),
+            heardAt = Instant.now(),
+            stoppedBy = null,
+            stoppedAt = null,
+        )
+        showScreen(
+            actions = quietActions().copy(
+                sirenOf = { phoneId -> flowOf(siren.takeIf { phoneId == ANNA_PHONE }) },
+            ),
+        )
+
+        composeRule.onNodeWithText(text(R.string.siren_notification_title, "Boris")).assertExists()
+        composeRule.onNodeWithText(text(R.string.siren_off)).assertExists()
+    }
+
     /** A fresh position of [positionId], in the invented area the unit tests use. */
     private fun at(positionId: String, deviceName: String? = null) = MemberPosition(
         positionId = positionId,
@@ -339,18 +441,20 @@ class MapScreenTest {
         batteryPercent = 80,
     )
 
-    private fun searchOn(phoneId: String) = Search(
+    private fun searchOn(phoneId: String, openedBy: String = ANNA) = Search(
         phoneId = phoneId,
         memberId = phoneId.substringBefore('.'),
         phoneName = null,
-        openedBy = ANNA,
-        renewedBy = ANNA,
+        openedBy = openedBy,
+        renewedBy = openedBy,
         startedAt = now.minus(Duration.ofHours(1)),
         endsAt = now.plus(Duration.ofHours(5)),
     )
 
     private companion object {
         const val ANNA = "member-a"
+        const val BORIS = "member-b"
+        const val CLARA = "member-c"
         const val ANNA_PHONE = "member-a.dev-1"
         const val BORIS_PHONE = "member-b.dev-1"
         const val CLARA_PHONE = "member-c.dev-1"
@@ -364,5 +468,15 @@ class MapScreenTest {
                 CLARA_PHONE to "Clara",
                 DAN_PHONE to "Dan",
             )
+
+        /** What the others call themselves; Anna is "you" on her own screen. */
+        val PROFILES =
+            mapOf(
+                BORIS to MemberProfile(BORIS, "Boris", pictureUrl = null),
+                CLARA to MemberProfile(CLARA, "Clara", pictureUrl = null),
+            )
+
+        /** What the box drawn in place of the map is found by. */
+        const val MAP_STAND_IN = "map-stand-in"
     }
 }

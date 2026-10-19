@@ -134,6 +134,7 @@ class AdminPanelTest {
         composeRule.onNodeWithText(text(id)).performClick()
     }
 
+    // ADM-06: the panel lists every member, and an administrator gets the controls over the others.
     @Test
     fun administratorSeesEveryMemberAndTheControlsOverTheOthers() {
         show()
@@ -147,6 +148,7 @@ class AdminPanelTest {
         composeRule.onAllNodesWithText(text(R.string.group_make_admin)).assertCountEquals(2)
     }
 
+    // ADM-05: an ordinary member is offered no removal, promotion or renaming of the group.
     @Test
     fun ordinaryMemberSeesNoRenameRemovalOrPromotion() {
         show(viewer = MATE, ownPhoneId = "$MATE.dev-1")
@@ -158,6 +160,7 @@ class AdminPanelTest {
         composeRule.onAllNodesWithText(text(R.string.group_stop_running)).assertCountEquals(0)
     }
 
+    // ADM-06: a device is described by its last write, or as not in touch yet.
     @Test
     fun aDeviceInTouchReadsDifferentlyFromOneNotInTouchYet() {
         show()
@@ -174,6 +177,7 @@ class AdminPanelTest {
             .assertDoesNotExist()
     }
 
+    // ADM-06: the device the panel is open on is marked as this one and has no siren.
     @Test
     fun theDeviceThePanelIsOpenOnIsMarkedAndNeverRung() {
         show()
@@ -195,6 +199,7 @@ class AdminPanelTest {
         assertEquals(1, calls.closed)
     }
 
+    // ADM-02: the typed group name is handed on, and the dialog closes once it is written.
     @Test
     fun renameDialogPassesTheTypedNameOnAndClosesOnceWritten() {
         val calls = Calls()
@@ -209,6 +214,7 @@ class AdminPanelTest {
         composeRule.onNodeWithText(text(R.string.group_name_label)).assertDoesNotExist()
     }
 
+    // ADM-02: a refused rename keeps the dialog open and says so.
     @Test
     fun renameDialogStaysOpenAndSaysSoWhenTheWriteIsRefused() {
         val calls = Calls()
@@ -223,6 +229,7 @@ class AdminPanelTest {
         composeRule.onNodeWithText(text(R.string.group_refused)).assertExists()
     }
 
+    // ADM-02: cancelling the rename writes nothing.
     @Test
     fun renameDialogCanBeCancelledWithoutWriting() {
         val calls = Calls()
@@ -235,6 +242,7 @@ class AdminPanelTest {
         composeRule.onNodeWithText(text(R.string.group_name_label)).assertDoesNotExist()
     }
 
+    // ADM-04: taking a member off asks by name and removes the one asked about.
     @Test
     fun removalAsksByNameAndRemovesTheMemberThatWasAskedAbout() {
         val calls = Calls()
@@ -251,6 +259,7 @@ class AdminPanelTest {
             .assertDoesNotExist()
     }
 
+    // ADM-04: declining the question removes nobody.
     @Test
     fun removalCanBeCancelledAndRemovesNobody() {
         val calls = Calls()
@@ -265,6 +274,7 @@ class AdminPanelTest {
             .assertDoesNotExist()
     }
 
+    // ADM-05: making a member an administrator is done at once, without a question.
     @Test
     fun makingAMemberAdministratorNeedsNoQuestion() {
         val calls = Calls()
@@ -275,6 +285,7 @@ class AdminPanelTest {
         assertEquals(listOf(MATE to true), calls.running)
     }
 
+    // ADM-05: stepping down asks first and is done on confirmation.
     @Test
     fun givingUpOneSOwnRoleAsksFirstAndThenDoesIt() {
         val calls = Calls()
@@ -294,6 +305,7 @@ class AdminPanelTest {
         assertEquals(listOf(MATE to false), calls.running)
     }
 
+    // ADM-05: stepping down can be declined, and the role stays.
     @Test
     fun givingUpOneSOwnRoleCanBeDeclined() {
         val calls = Calls()
@@ -311,6 +323,7 @@ class AdminPanelTest {
         composeRule.onNodeWithText(text(R.string.group_give_up_title)).assertDoesNotExist()
     }
 
+    // ADM-08: the siren dialog names the device and rings it on confirmation.
     @Test
     fun sirenDialogNamesTheDeviceAndRingsItOnConfirmation() {
         val calls = Calls()
@@ -328,6 +341,7 @@ class AdminPanelTest {
             .assertDoesNotExist()
     }
 
+    // ADM-08: cancelling the siren dialog rings nothing.
     @Test
     fun sirenDialogCanBeCancelledAndRingsNothing() {
         val calls = Calls()
@@ -340,6 +354,7 @@ class AdminPanelTest {
         composeRule.onNodeWithText(text(R.string.siren_note)).assertDoesNotExist()
     }
 
+    // ADM-08: a siren write that goes unanswered keeps the dialog open.
     @Test
     fun sirenDialogStaysOpenWhenTheWriteGoesUnanswered() {
         val calls = Calls()
@@ -353,6 +368,7 @@ class AdminPanelTest {
         composeRule.onNodeWithText(text(R.string.write_unanswered)).assertExists()
     }
 
+    // ADM-08: the caller sees on the device's row that the call was stopped.
     @Test
     fun aCallThatWasStoppedIsToldOnTheDeviceSRow() {
         show(
@@ -375,6 +391,7 @@ class AdminPanelTest {
             .assertExists()
     }
 
+    // ADM-09: the reset dialog asks about the chosen device and hands it on.
     @Test
     fun resetDialogAsksForTheChosenDeviceAndPassesItOn() {
         val calls = Calls()
@@ -387,6 +404,7 @@ class AdminPanelTest {
         assertEquals(listOf("$MATE.dev-1"), calls.resets)
     }
 
+    // ADM-09: cancelling the reset dialog resets nothing.
     @Test
     fun resetDialogCanBeCancelled() {
         val calls = Calls()
@@ -399,6 +417,7 @@ class AdminPanelTest {
         composeRule.onNodeWithText(text(R.string.reset_confirm_note)).assertDoesNotExist()
     }
 
+    // ADM-07: the search dialog opens on the default length and hands it on.
     @Test
     fun searchDialogOpensWithTheDefaultLengthAndPassesItOn() {
         val calls = Calls()
@@ -416,6 +435,7 @@ class AdminPanelTest {
         )
     }
 
+    // ADM-07: the length picked for a search is the one handed on.
     @Test
     fun searchDialogPassesOnTheLengthThatWasPicked() {
         val calls = Calls()
@@ -431,6 +451,7 @@ class AdminPanelTest {
         )
     }
 
+    // ADM-07: cancelling the search dialog opens no search.
     @Test
     fun searchDialogCanBeCancelledAndOpensNothing() {
         val calls = Calls()
@@ -443,6 +464,7 @@ class AdminPanelTest {
         composeRule.onNodeWithText(text(R.string.search_note)).assertDoesNotExist()
     }
 
+    // ADM-07: a search is not offered on the viewer's own devices.
     @Test
     fun nobodyOffersASearchOnTheViewerSOwnDevices() {
         show()
@@ -453,6 +475,7 @@ class AdminPanelTest {
             .assertCountEquals(2)
     }
 
+    // ADM-07: a standing search is summarised and can be ended as found.
     @Test
     fun aStandingSearchIsSummarisedAndCanBeEndedAsFound() {
         val calls = Calls()
@@ -465,6 +488,7 @@ class AdminPanelTest {
         assertEquals(listOf("$MATE.dev-1"), calls.searchesEnded)
     }
 
+    // ADM-07: a standing search is renewed before it ends, through its own dialog.
     @Test
     fun aStandingSearchCanBeRenewedThroughItsOwnDialog() {
         val calls = Calls()
@@ -479,6 +503,7 @@ class AdminPanelTest {
         assertTrue(calls.searched.isEmpty())
     }
 
+    // ADM-03: an invitation is made out to an address, and only with one.
     @Test
     fun invitationDialogIsConfirmedOnlyWithAnAddressAndHandsItOn() {
         val calls = Calls()
@@ -496,6 +521,7 @@ class AdminPanelTest {
             .assertDoesNotExist()
     }
 
+    // ADM-03: cancelling the invitation dialog makes no invitation.
     @Test
     fun invitationDialogCanBeCancelled() {
         val calls = Calls()

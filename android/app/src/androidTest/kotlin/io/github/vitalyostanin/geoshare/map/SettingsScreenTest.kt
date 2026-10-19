@@ -85,6 +85,7 @@ class SettingsScreenTest {
         assertTrue("the accuracy screen was not opened", opened == 1)
     }
 
+    // MEM-20: a download waiting for roaming is told on the settings row.
     @Test
     fun accuracyRowSaysWhatIsWrongInPlaceOfItsUsualNote() {
         show(
@@ -170,7 +171,7 @@ class SettingsScreenTest {
 }
 
 /** A device that shares nothing, hears nothing and sits in no group. */
-private fun quietSettings() = SettingsState(
+internal fun quietSettings() = SettingsState(
     sharing = false,
     permissionNotice = null,
     theme = ThemeChoice.System,
@@ -194,7 +195,7 @@ private fun quietSettings() = SettingsState(
 )
 
 /** Actions that do nothing and answer the way a database that is not there would. */
-private fun quietActions() = SettingsActions(
+internal fun quietActions() = SettingsActions(
     onSharingChange = {},
     onJumpsFilteredChange = {},
     onSourceUseChange = { _, _ -> },

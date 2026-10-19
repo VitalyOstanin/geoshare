@@ -39,7 +39,7 @@ page in a browser. Joining comes first; leaving and signing out come last.
 
 - Status: done
 - ADR: 0001, 0002, 0015, 0019, 0025
-- Tests: rules `membership.test.mjs` (joining a group; a code is spent by joining); Android `ConnectFlowTest`, `ConnectLinkTest`, `SettingsFetchTest`, `ProjectSettingsTest`, `PendingInvitationTest`, `WayInPasteTest`; page `join.test.mjs`
+- Tests: rules `membership.test.mjs` (joining a group; a code is spent by joining); Android `ConnectFlowTest`, `ConnectLinkTest`, `SettingsFetchTest`, `ProjectSettingsTest`, `PendingInvitationTest`, `WayInPasteTest`, `ConnectScreenTest`; page `join.test.mjs`
 - Not covered: sign-in in the browser, by hand
 
 As a person given an invitation link I open it on my device, sign in with the
@@ -184,7 +184,7 @@ Acceptance:
 
 - Status: done
 - ADR: 0007, 0026
-- Tests: rules `access.test.mjs` (devices; grants)
+- Tests: rules `access.test.mjs` (devices; grants); Android `MyPhonesScreenTest`
 - Not covered: forgetting a device, end to end
 
 As a member I see the list of my devices in the group and forget one I no
@@ -363,7 +363,7 @@ Acceptance:
 
 - Status: done
 - ADR: 0022, 0039
-- Tests: Android `DownloadPolicyTest`
+- Tests: Android `DownloadPolicyTest`, `SettingsScreenTest`
 
 As a member I choose whether the application downloads its own files over
 Wi-Fi, the mobile network at home and in roaming, so that a trip abroad does

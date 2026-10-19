@@ -46,6 +46,7 @@ class ConnectScreenTest {
         }
     }
 
+    // MEM-01: the link shows the group and who invited, each marked as from the link.
     @Test
     fun anInvitationShowsTheSiteAndMarksWhatTheLinkSays() {
         show(
@@ -65,6 +66,7 @@ class ConnectScreenTest {
         assertEquals("one mark for each caption the link carries", 3, marks.size)
     }
 
+    // MEM-01: a link without an invitation shows the site and marks nothing.
     @Test
     fun anOwnLinkShowsTheSiteWithNothingMarked() {
         show(invitation = null)

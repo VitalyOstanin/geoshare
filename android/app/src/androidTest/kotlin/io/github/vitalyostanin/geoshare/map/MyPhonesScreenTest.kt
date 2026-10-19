@@ -116,6 +116,7 @@ class MyPhonesScreenTest {
         composeRule.onNodeWithText(text(id)).performClick()
     }
 
+    // MEM-09: the list names every device of the member.
     @Test
     fun everyDeviceIsListedUnderItsName() {
         show()
@@ -126,6 +127,7 @@ class MyPhonesScreenTest {
         composeRule.onNodeWithText(text(R.string.my_phones_title)).assertExists()
     }
 
+    // MEM-09: a member with no device is told so in place of a list.
     @Test
     fun noDeviceIsSaidSoInPlaceOfAList() {
         show(phones = emptyList())
@@ -133,6 +135,7 @@ class MyPhonesScreenTest {
         composeRule.onNodeWithText(text(R.string.my_phones_none)).assertExists()
     }
 
+    // MEM-09: the list marks this device and tells one in touch from one not yet in touch.
     @Test
     fun rowsTellThisDeviceOneInTouchAndOneNotInTouchYet() {
         show()
@@ -159,6 +162,7 @@ class MyPhonesScreenTest {
         composeRule.onNodeWithText(text(R.string.my_phones_group, "Home")).assertDoesNotExist()
     }
 
+    // MEM-09: this device cannot be rung or forgotten from itself, the others can.
     @Test
     fun thisDeviceHasNeitherASirenNorABinAndTheOthersHaveBoth() {
         show()
@@ -174,6 +178,7 @@ class MyPhonesScreenTest {
             .assertCountEquals(2)
     }
 
+    // ADM-07: a search is offered only to the one who may look for devices.
     @Test
     fun searchButtonsAreOfferedOnlyToTheMemberWhoMayLook() {
         show(mayLookFor = false)
@@ -183,6 +188,7 @@ class MyPhonesScreenTest {
             .assertCountEquals(0)
     }
 
+    // ADM-07: whoever may look is offered a search on every device, this one too.
     @Test
     fun aMemberWhoMayLookIsOfferedASearchOnEveryDeviceThisOneToo() {
         show(mayLookFor = true)
@@ -211,6 +217,7 @@ class MyPhonesScreenTest {
         composeRule.onNodeWithText(text(R.string.help_title_screen)).assertExists()
     }
 
+    // ADM-08: the siren dialog names the device and rings it on confirmation.
     @Test
     fun sirenDialogNamesTheDeviceAndRingsItOnConfirmation() {
         val calls = Calls()
@@ -227,6 +234,7 @@ class MyPhonesScreenTest {
         composeRule.onNodeWithText(text(R.string.siren_note)).assertDoesNotExist()
     }
 
+    // ADM-08: the siren rings the device of the row that was pressed.
     @Test
     fun sirenDialogRingsTheDeviceOfTheRowThatWasPressed() {
         val calls = Calls()
@@ -238,6 +246,7 @@ class MyPhonesScreenTest {
         assertEquals(listOf(inTouch.phoneId), calls.rung)
     }
 
+    // ADM-08: cancelling the siren dialog rings nothing.
     @Test
     fun sirenDialogCanBeCancelledAndRingsNothing() {
         val calls = Calls()
@@ -250,6 +259,7 @@ class MyPhonesScreenTest {
         composeRule.onNodeWithText(text(R.string.siren_note)).assertDoesNotExist()
     }
 
+    // ADM-08: a refused siren write keeps the dialog open.
     @Test
     fun sirenDialogStaysOpenWhenTheWriteIsRefused() {
         val calls = Calls()
@@ -263,6 +273,7 @@ class MyPhonesScreenTest {
         composeRule.onNodeWithText(text(R.string.group_refused)).assertExists()
     }
 
+    // ADM-09: the reset dialog asks about the device and hands it on.
     @Test
     fun resetDialogAsksAboutTheDeviceAndPassesItOn() {
         val calls = Calls()
@@ -276,6 +287,7 @@ class MyPhonesScreenTest {
         composeRule.onNodeWithText(text(R.string.reset_confirm_note)).assertDoesNotExist()
     }
 
+    // ADM-09: cancelling the reset dialog resets nothing.
     @Test
     fun resetDialogCanBeCancelled() {
         val calls = Calls()
@@ -288,6 +300,7 @@ class MyPhonesScreenTest {
         composeRule.onNodeWithText(text(R.string.reset_confirm_note)).assertDoesNotExist()
     }
 
+    // MEM-09: forgetting a device asks by name and is done on confirmation.
     @Test
     fun removalAsksByNameAndForgetsTheDeviceOnConfirmation() {
         val calls = Calls()
@@ -303,6 +316,7 @@ class MyPhonesScreenTest {
             .assertDoesNotExist()
     }
 
+    // MEM-09: declining the question forgets nothing.
     @Test
     fun removalCanBeCancelledAndForgetsNothing() {
         val calls = Calls()
@@ -317,6 +331,7 @@ class MyPhonesScreenTest {
             .assertDoesNotExist()
     }
 
+    // MEM-09: a refused forgetting keeps the dialog open and says so.
     @Test
     fun removalStaysOpenAndSaysSoWhenTheDatabaseRefuses() {
         val calls = Calls()
@@ -330,6 +345,7 @@ class MyPhonesScreenTest {
         composeRule.onNodeWithText(text(R.string.phone_remove_refused)).assertExists()
     }
 
+    // MEM-09: forgetting a device names the groups it leaves only when there are several.
     @Test
     fun removalNamesTheGroupsOnlyWhenThereAreSeveral() {
         show(groupNames = listOf("Home", "Work"))
@@ -341,6 +357,7 @@ class MyPhonesScreenTest {
             .assertExists()
     }
 
+    // MEM-09: with one group the question says nothing of groups.
     @Test
     fun removalSaysNothingOfGroupsWhenThereIsOne() {
         show(groupNames = listOf("Home"))
@@ -352,6 +369,7 @@ class MyPhonesScreenTest {
             .assertDoesNotExist()
     }
 
+    // ADM-07: the search dialog opens on the chosen device with the default length.
     @Test
     fun searchDialogOpensOnTheChosenDeviceWithTheDefaultLength() {
         val calls = Calls()
@@ -371,6 +389,7 @@ class MyPhonesScreenTest {
         )
     }
 
+    // ADM-07: the length picked for a search is the one handed on.
     @Test
     fun searchDialogPassesOnTheLengthThatWasPicked() {
         val calls = Calls()
@@ -386,6 +405,7 @@ class MyPhonesScreenTest {
         )
     }
 
+    // ADM-07: cancelling the search dialog opens no search.
     @Test
     fun searchDialogCanBeCancelledAndOpensNothing() {
         val calls = Calls()
@@ -398,6 +418,7 @@ class MyPhonesScreenTest {
         composeRule.onNodeWithText(text(R.string.search_note)).assertDoesNotExist()
     }
 
+    // ADM-07: a standing search is told on its row and ended from the same button.
     @Test
     fun aStandingSearchIsToldOnItsRowAndEndedFromTheSameButton() {
         val calls = Calls()
