@@ -77,12 +77,12 @@ fun AdminPanel(
     /** Asks a device to forget its place; answers how the write came out. */
     onAskReset: suspend (phoneId: String) -> WriteOutcome,
     /** Whether an invitation made here still stands, followed for as long as asked. */
-    invitationStanding: (code: String) -> Flow<Boolean?>,
+    invitationLive: (code: String) -> Flow<Boolean?>,
     onClose: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val lines = groupOverview(roster, profiles, grants, ownMemberId, labels, seenAt)
-    val standing = remember(searches, now) { standingSearches(searches, now) }
+    val liveSearches = remember(searches, now) { standingSearches(searches, now) }
     // Read once and used both at the top of the panel and in the invitation
     // dialog's own title: what the invitation names is the same group this
     // screen is already showing, under the same caption.
@@ -90,18 +90,18 @@ fun AdminPanel(
     val state = rememberAdminPanelState()
     val scope = rememberCoroutineScope()
     val live = rememberAdminLive(lines, ownPhoneId, sirenOf, resetOf)
-    val invite = AdminInvite(invitation, invitationStanding, site, trouble)
+    val invitationSection = AdminInvitationState(invitation, invitationLive, site, trouble)
     val shown =
         AdminShown(
             roster = roster,
             profiles = profiles,
             lines = lines,
-            standing = standing,
+            liveSearches = liveSearches,
             caption = caption,
             ownMemberId = ownMemberId,
             ownPhoneId = ownPhoneId,
             now = now,
-            invite = invite,
+            invitationSection = invitationSection,
             live = live,
         )
     val writes = AdminWrites(onRenameGroup, onSearch, onCallSiren, onAskReset)

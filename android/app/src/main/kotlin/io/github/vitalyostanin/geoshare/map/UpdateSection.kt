@@ -205,6 +205,8 @@ private fun AskedNetwork(
  * Downloads [release] and hands the file to the installer, reporting
  * progress through [onState]; the returned state is the one to rest in.
  * Cancelling the calling coroutine stops the download and deletes the part.
+ * [onState] runs on the calling coroutine's thread and not after a cancel,
+ * so "Cancel" may set its own state right after cancelling the job.
  */
 private suspend fun download(
     context: Context,
@@ -340,7 +342,8 @@ private fun NoteLine(note: UpdateNote) {
 private fun releaseDetails(release: LatestRelease): String {
     val size = megabytes(release.apk.size)
     val published = release.publishedAt ?: return stringResource(R.string.update_size_only, size)
-    val day = DateTimeFormatter.ofPattern("d MMMM", appLocale())
+    val locale = appLocale()
+    val day = DateTimeFormatter.ofPattern(dayPattern(locale, monthInFull = true), locale)
         .format(published.atZone(ZoneId.systemDefault()))
 
     return stringResource(R.string.update_details, size, day)

@@ -50,4 +50,13 @@ class GroupCaptionTest {
 
         assertEquals("a".repeat(GROUP_NAME_LIMIT), groupNameText(typed))
     }
+
+    // An emoji across the limit must go whole: its first half alone is not
+    // text, and the document would get a replacement character in its place.
+    @Test
+    fun `a name is not cut between the halves of an emoji`() {
+        val typed = "a".repeat(GROUP_NAME_LIMIT - 1) + "\uD83D\uDE00"
+
+        assertEquals("a".repeat(GROUP_NAME_LIMIT - 1), groupNameText(typed))
+    }
 }

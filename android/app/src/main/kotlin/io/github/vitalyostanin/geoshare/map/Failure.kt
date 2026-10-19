@@ -3,6 +3,7 @@ package io.github.vitalyostanin.geoshare.map
 import com.google.firebase.FirebaseException
 import com.google.firebase.firestore.FirebaseFirestoreException
 import io.github.vitalyostanin.geoshare.log.AppLog
+import kotlinx.coroutines.CancellationException
 import java.io.IOException
 
 /** What a failed call to the database or the sign-in amounts to. */
@@ -55,4 +56,24 @@ fun logFailure(tag: String, what: String, error: Throwable) {
     } else {
         AppLog.w(tag, what, error)
     }
+}
+
+/**
+ * [block]'s value, or the exception it threw, for the caller to answer with
+ * `getOrElse` or `onFailure`.
+ *
+ * Unlike `runCatching`, a cancellation is thrown on rather than kept: it is the
+ * coroutine being told to stop, not a call that failed, and holding it would
+ * leave the coroutine running after its screen or service is gone. Only an
+ * [Exception] is kept; an [Error] is a fault no caller here can answer.
+ *
+ * Inline, so [block] may suspend and return from the function it is written
+ * in, as the body of a `try` could.
+ */
+inline fun <T> runCatchingFailure(block: () -> T): Result<T> = try {
+    Result.success(block())
+} catch (cancellation: CancellationException) {
+    throw cancellation
+} catch (failure: Exception) {
+    Result.failure(failure)
 }

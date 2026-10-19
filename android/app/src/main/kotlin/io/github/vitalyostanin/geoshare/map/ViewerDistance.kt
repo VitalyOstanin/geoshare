@@ -12,7 +12,7 @@ import java.time.Instant
  * A place that has gone grey is no place to measure from: the viewer has had
  * half an hour to walk off, and a distance from where they were is read as a
  * distance from where they are. A marker left behind by a device that is still
- * online is the same place gone grey, only without the colour, and so is one
+ * in touch is the same place gone grey, only without the colour, and so is one
  * inside a place a false signal is known to put devices at.
  */
 fun ownPlace(positions: List<MemberPosition>, ownMemberId: String, now: Instant): MemberPosition? =

@@ -4,8 +4,8 @@ import com.google.firebase.firestore.FieldValue
 import com.google.firebase.firestore.SetOptions
 import io.github.vitalyostanin.geoshare.log.AppLog
 import io.github.vitalyostanin.geoshare.map.logFailure
+import io.github.vitalyostanin.geoshare.map.runCatchingFailure
 import io.github.vitalyostanin.geoshare.project.GroupConnection
-import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.tasks.await
 
 private const val TAG = "geoshare.device"
@@ -30,13 +30,11 @@ suspend fun leavePreviousId(
 ) {
     val previous = device.previousId ?: return
 
-    try {
+    runCatchingFailure {
         forgetPhone(memberId, previous, connection)
         device.forgetPrevious(previous)
         AppLog.i(TAG, "the documents of the previous id are taken back")
-    } catch (cancellation: CancellationException) {
-        throw cancellation
-    } catch (error: Exception) {
+    }.onFailure { error ->
         logFailure(TAG, "could not take back the documents of the previous id", error)
     }
 }

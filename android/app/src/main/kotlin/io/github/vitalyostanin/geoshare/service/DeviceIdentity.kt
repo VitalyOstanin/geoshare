@@ -4,6 +4,7 @@ import android.annotation.SuppressLint
 import android.content.Context
 import android.os.Build
 import android.provider.Settings
+import io.github.vitalyostanin.geoshare.cutToLimit
 import java.util.UUID
 
 private const val FILE = "device"
@@ -75,7 +76,7 @@ class DeviceIdentity(context: Context) {
      * enough to tell two devices of one member apart until naming them is worth
      * a screen of its own.
      */
-    val name: String get() = Build.MODEL.orEmpty().take(NAME_LIMIT)
+    val name: String get() = cutToLimit(Build.MODEL.orEmpty(), NAME_LIMIT)
 }
 
 /**

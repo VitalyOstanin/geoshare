@@ -14,6 +14,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import io.github.vitalyostanin.geoshare.R
+import io.github.vitalyostanin.geoshare.cutToLimit
 import io.github.vitalyostanin.geoshare.membership.ADDRESS_LIMIT
 import io.github.vitalyostanin.geoshare.membership.looksLikeAnAddress
 
@@ -69,7 +70,7 @@ internal fun RenameGroupDialog(
             Column {
                 OutlinedTextField(
                     value = text,
-                    onValueChange = { onTextChange(it.take(GROUP_NAME_LIMIT)) },
+                    onValueChange = { onTextChange(cutToLimit(it, GROUP_NAME_LIMIT)) },
                     singleLine = true,
                 )
 
@@ -114,7 +115,7 @@ internal fun InvitationDialog(
             Column {
                 OutlinedTextField(
                     value = email,
-                    onValueChange = { onEmailChange(it.take(ADDRESS_LIMIT)) },
+                    onValueChange = { onEmailChange(cutToLimit(it, ADDRESS_LIMIT)) },
                     label = { Text(text = stringResource(R.string.group_invite_address)) },
                     singleLine = true,
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),

@@ -39,7 +39,6 @@ import io.github.vitalyostanin.geoshare.project.GroupConnection
 import io.github.vitalyostanin.geoshare.service.grantsOf
 import io.github.vitalyostanin.geoshare.service.permissionsOf
 import io.github.vitalyostanin.geoshare.service.readBoolean
-import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.tasks.await
 import java.time.Instant
@@ -82,7 +81,7 @@ class FirstShareAsked(context: Context) {
  * or never answered without that write.
  */
 private suspend fun nothingShared(memberId: String, connection: GroupConnection): Boolean? {
-    try {
+    runCatchingFailure {
         repeat(GRANT_READS) {
             val grant = grantsOf(connection).document(memberId).get(Source.SERVER).await()
 
@@ -91,9 +90,7 @@ private suspend fun nothingShared(memberId: String, connection: GroupConnection)
             }
             delay(GRANT_READ_PAUSE_MS)
         }
-    } catch (cancellation: CancellationException) {
-        throw cancellation
-    } catch (error: Exception) {
+    }.onFailure { error ->
         logFailure(TAG, "could not read whom the place is shown to", error)
     }
 

@@ -227,5 +227,5 @@ private fun quietActions() = SettingsActions(
     resetOf = { flowOf(null) },
     onAskReset = { WriteOutcome.UNANSWERED },
     onForgetPhone = { false },
-    invitationStanding = { flowOf(null) },
+    invitationLive = { flowOf(null) },
 )

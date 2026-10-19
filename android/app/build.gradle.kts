@@ -42,8 +42,22 @@ val toolVersions: Map<String, String> =
         }
         .toMap()
 
-val appVersionName: String = providers.gradleProperty("appVersionName").get()
-val appVersionCode: Int = providers.gradleProperty("appVersionCode").get().toInt()
+// The release workflow derives the code from the name and refuses a name that is
+// not major.minor.patch with minor and patch below 100; a code that is not a
+// whole number would otherwise fail with a bare NumberFormatException that does
+// not name the property.
+val appVersionName: String =
+    providers.gradleProperty("appVersionName").get().also {
+        require(Regex("""^\d+\.\d{1,2}\.\d{1,2}$""").matches(it)) {
+            "appVersionName must be major.minor.patch with minor and patch below 100, not '$it'"
+        }
+    }
+val appVersionCode: Int =
+    providers.gradleProperty("appVersionCode").get().let {
+        requireNotNull(it.toIntOrNull()) {
+            "appVersionCode must be a whole number, not '$it'"
+        }
+    }
 // A fork sets an address of its own, and one that is not an https address
 // ending in a slash would build an app that opens the wrong page, or fail in
 // the generated BuildConfig with the cause out of sight.
@@ -71,6 +85,12 @@ val issuePageUrl: String =
     providers.gradleProperty("issuePageUrl").get().also {
         require(Regex("""^https://[^"\\\s?#]+$""").matches(it)) {
             "issuePageUrl must be an https address without a query, not '$it'"
+        }
+    }
+val latestReleaseUrl: String =
+    providers.gradleProperty("latestReleaseUrl").get().also {
+        require(Regex("""^https://[^"\\\s?#]+$""").matches(it)) {
+            "latestReleaseUrl must be an https address without a query, not '$it'"
         }
     }
 val websiteUrl: String =
@@ -108,6 +128,7 @@ android {
         buildConfigField("String", "SETUP_PAGE_URL", "\"$setupPageUrl\"")
         buildConfigField("String", "TILE_URL", "\"$tileUrl\"")
         buildConfigField("String", "ISSUE_PAGE_URL", "\"$issuePageUrl\"")
+        buildConfigField("String", "LATEST_RELEASE_URL", "\"$latestReleaseUrl\"")
         buildConfigField("String", "WEBSITE_URL", "\"$websiteUrl\"")
         buildConfigField("String", "ORBITS_URL", "\"$orbitsUrl\"")
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
@@ -178,6 +199,12 @@ aboutLibraries {
     // Nothing is fetched while building: the plugin reads licence texts off
     // the network with no timeout, and a connection that never answers held a
     // build for good. The texts come from config/licenses in this module.
+    //
+    // NOTICE files of Apache-2.0 libraries (clause 4(d)) are not listed: the
+    // release APK of 0.3.0 holds only two, META-INF/NOTICE.md of Jakarta Inject
+    // and okhttp3's publicsuffix NOTICE, and neither carries attribution beyond
+    // the licence already shown. Look at the release APK again when a
+    // dependency is added.
     offlineMode = true
 
     collect {

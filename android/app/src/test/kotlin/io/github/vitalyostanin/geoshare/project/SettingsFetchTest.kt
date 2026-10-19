@@ -1,5 +1,7 @@
 package io.github.vitalyostanin.geoshare.project
 
+import io.github.vitalyostanin.geoshare.net.FetchTransport
+import io.github.vitalyostanin.geoshare.net.RawResponse
 import kotlinx.coroutines.runBlocking
 import org.junit.Assert.assertEquals
 import org.junit.Test

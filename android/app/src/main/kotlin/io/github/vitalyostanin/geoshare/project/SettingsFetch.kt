@@ -1,13 +1,13 @@
 package io.github.vitalyostanin.geoshare.project
 
 import io.github.vitalyostanin.geoshare.log.AppLog
+import io.github.vitalyostanin.geoshare.net.FetchTransport
+import io.github.vitalyostanin.geoshare.net.httpGet
+import io.github.vitalyostanin.geoshare.net.isSuccess
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
-import java.io.ByteArrayOutputStream
 import java.io.IOException
-import java.io.InputStream
 import java.net.HttpURLConnection
-import java.net.URL
 
 /** How long a GET for `geoshare.json` may take before it counts as [SettingsFetch.Offline]. */
 private const val TIMEOUT_MS = 10_000
@@ -19,8 +19,6 @@ private const val TIMEOUT_MS = 10_000
  */
 private const val MAX_BODY_BYTES = 64 * 1024
 
-private const val SUCCESS_RANGE_START = 200
-private const val SUCCESS_RANGE_END_EXCLUSIVE = 300
 private const val TOO_MANY_REQUESTS = 429
 private const val SERVER_ERROR_START = 500
 private const val SERVER_ERROR_END_EXCLUSIVE = 600
@@ -49,18 +47,12 @@ sealed interface SettingsFetch {
     data object NotAProject : SettingsFetch
 }
 
-/** A GET's raw answer, before it is read as [ProjectSettings]. */
-internal data class RawResponse(val status: Int, val body: String)
-
-/** A GET of [url], throwing [IOException] for anything that keeps the body from being read. */
-internal typealias FetchTransport = (url: String) -> RawResponse
-
 /**
  * Downloads a group's `geoshare.json` from the site [link] names and reads it
  * into the settings [Connections] starts Firebase with, over an
  * [HttpURLConnection] GET run on [Dispatchers.IO].
  */
-suspend fun fetchSettings(link: ConnectLink): SettingsFetch = fetchSettings(link, ::httpGet)
+suspend fun fetchSettings(link: ConnectLink): SettingsFetch = fetchSettings(link, ::getSettingsFile)
 
 /**
  * [fetchSettings] with [transport] exposed so a test can fake the site's
@@ -81,7 +73,7 @@ internal suspend fun fetchSettings(link: ConnectLink, transport: FetchTransport)
             return@withContext SettingsFetch.Offline
         }
 
-        if (response.status !in SUCCESS_RANGE_START until SUCCESS_RANGE_END_EXCLUSIVE) {
+        if (!isSuccess(response.status)) {
             AppLog.w(TAG, "the site answered ${response.status}, not the settings")
 
             // An overloaded host says nothing about whether the project exists.
@@ -111,41 +103,5 @@ private fun Int.isTransient(): Boolean =
  * ([ConnectLink.settingsUrl] builds nothing else), and the file is served
  * no-cache since a group's site can be asked to change it at any time.
  */
-private fun httpGet(url: String): RawResponse {
-    val connection = URL(url).openConnection() as HttpURLConnection
-
-    connection.connectTimeout = TIMEOUT_MS
-    connection.readTimeout = TIMEOUT_MS
-    connection.setRequestProperty("Cache-Control", "no-cache")
-
-    return try {
-        val status = connection.responseCode
-        val stream = if (status in SUCCESS_RANGE_START until SUCCESS_RANGE_END_EXCLUSIVE) {
-            connection.inputStream
-        } else {
-            connection.errorStream
-        }
-        val body = stream?.use { it.readUpTo(MAX_BODY_BYTES) } ?: ByteArray(0)
-
-        RawResponse(status, body.toString(Charsets.UTF_8))
-    } finally {
-        connection.disconnect()
-    }
-}
-
-/** [InputStream.readBytes] has no cap of its own; an untrusted site is not read past [limit]. */
-private fun InputStream.readUpTo(limit: Int): ByteArray {
-    val chunk = ByteArray(DEFAULT_BUFFER_SIZE)
-    val read = ByteArrayOutputStream()
-    var total = 0
-
-    while (total < limit) {
-        val count = read(chunk, 0, minOf(chunk.size, limit - total))
-
-        if (count < 0) break
-        read.write(chunk, 0, count)
-        total += count
-    }
-
-    return read.toByteArray()
-}
+private fun getSettingsFile(url: String) =
+    httpGet(url, mapOf("Cache-Control" to "no-cache"), MAX_BODY_BYTES, TIMEOUT_MS)

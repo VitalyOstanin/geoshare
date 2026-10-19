@@ -93,7 +93,7 @@ private fun AccountCircle(
             Box(contentAlignment = Alignment.Center) {
                 Text(
                     text =
-                    displayName?.take(1)?.uppercase()
+                    accountInitial(displayName)
                         ?: stringResource(R.string.map_account_nameless),
                     style = MaterialTheme.typography.titleMedium,
                     color = MaterialTheme.colorScheme.onPrimaryContainer,

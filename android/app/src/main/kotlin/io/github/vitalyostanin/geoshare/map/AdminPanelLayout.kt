@@ -54,7 +54,7 @@ internal fun AdminPanelBody(
             AdminMembers(shown, state, scope, onSetRunning, onEndSearch, onStopSiren)
 
             AdminSearchSummaries(
-                standing = shown.standing,
+                liveSearches = shown.liveSearches,
                 lines = shown.lines,
                 profiles = shown.profiles,
                 ownMemberId = shown.ownMemberId,
@@ -67,11 +67,11 @@ internal fun AdminPanelBody(
             val ownName = shown.profiles[shown.ownMemberId]?.displayName
 
             AdminInvitationSection(
-                invitation = shown.invite.invitation,
-                invitationStanding = shown.invite.standing,
-                link = InvitationLink(shown.invite.site, ownName, shown.roster.name),
+                invitation = shown.invitationSection.invitation,
+                invitationLive = shown.invitationSection.stillValid,
+                link = InvitationLink(shown.invitationSection.site, ownName, shown.roster.name),
                 now = shown.now,
-                trouble = shown.invite.trouble,
+                trouble = shown.invitationSection.trouble,
                 onOpenInvitation = state::openInvitation,
             )
         }
@@ -94,7 +94,7 @@ private fun AdminMembers(
         AdminMemberRow(
             line = line,
             now = shown.now,
-            searches = shown.standing,
+            searches = shown.liveSearches,
             ownPhoneId = shown.ownPhoneId,
             onMakeAdmin = { onSetRunning(line.memberId, true) },
             onStopRunning = {

@@ -1,5 +1,6 @@
 package io.github.vitalyostanin.geoshare.map
 
+import com.google.firebase.firestore.DocumentReference
 import com.google.firebase.firestore.DocumentSnapshot
 import com.google.firebase.firestore.ListenerRegistration
 import io.github.vitalyostanin.geoshare.log.AppLog
@@ -114,68 +115,56 @@ fun memberGrants(
 
     fun publish() = trySend(combinedGrants(known, phones))
 
-    fun follow(memberId: String) {
-        subscriptions[memberId] =
-            grants.document(memberId).addSnapshotListener { snapshot, error ->
-                if (error != null) {
-                    AppLog.i(TAG, "the grant of $memberId is out of reach: ${error.code}")
-                    known.remove(memberId)
-                    publish()
-
-                    refusals.retryLater(memberId) {
-                        subscriptions.remove(memberId)?.remove()
-                        follow(memberId)
-                    }
-
-                    return@addSnapshotListener
-                }
-
-                // A member who has not written a grant yet — a device that has
-                // not been opened since the split — has no document, and that
-                // is not a complaint either.
-                if (snapshot?.exists() != true) {
-                    known.remove(memberId)
-                } else {
-                    known[memberId] = grantOf(snapshot)
-                }
-
-                publish()
-            }
-    }
-
-    // What the devices say about themselves, followed apart from the grant: an
-    // administrator reads these without a permission, and a device of an
-    // older build has not written them at all.
-    fun followPhones(memberId: String) {
-        val key = "phones:$memberId"
-
+    // One document of one member, kept in `into` for as long as it is readable.
+    // Both documents of a member are followed the same way: a refusal drops what
+    // was held and asks again on a timer, a missing document is an absence.
+    fun <T : Any> followDocument(
+        key: String,
+        memberId: String,
+        document: DocumentReference,
+        into: MutableMap<String, T>,
+        read: (DocumentSnapshot) -> T,
+    ) {
         subscriptions[key] =
-            phoneDocuments.document(memberId).addSnapshotListener { snapshot, error ->
+            document.addSnapshotListener { snapshot, error ->
                 if (error != null) {
-                    phones.remove(memberId)
+                    AppLog.i(TAG, "the document $key is out of reach: ${error.code}")
+                    into.remove(memberId)
                     publish()
 
                     refusals.retryLater(key) {
                         subscriptions.remove(key)?.remove()
-                        followPhones(memberId)
+                        followDocument(key, memberId, document, into, read)
                     }
 
                     return@addSnapshotListener
                 }
 
+                // A member who has not written a document yet — a device that
+                // has not been opened since the split — has none, and that is
+                // not a complaint either.
                 if (snapshot?.exists() != true) {
-                    phones.remove(memberId)
+                    into.remove(memberId)
                 } else {
-                    phones[memberId] = phonesFrom(snapshot.data)
+                    into[memberId] = read(snapshot)
                 }
 
                 publish()
             }
     }
 
-    memberIds.forEach {
-        follow(it)
-        followPhones(it)
+    memberIds.forEach { memberId ->
+        followDocument(memberId, memberId, grants.document(memberId), known, ::grantOf)
+
+        // What the devices say about themselves, followed apart from the grant:
+        // an administrator reads these without a permission, and a device of an
+        // older build has not written them at all.
+        followDocument(
+            "phones:$memberId",
+            memberId,
+            phoneDocuments.document(memberId),
+            phones,
+        ) { phonesFrom(it.data) }
     }
 
     launch { retryNow.collect { refusals.retryNow() } }

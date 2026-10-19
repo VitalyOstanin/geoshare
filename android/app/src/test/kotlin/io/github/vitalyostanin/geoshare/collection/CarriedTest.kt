@@ -353,6 +353,30 @@ class CarriedTest {
         assertFalse(hurriedWhilePutDown(null, moving, untouched))
     }
 
+    // Both rules read the anchor on the same terms, so on every input where the
+    // device is no longer taken to be lying untouched they must fall silent
+    // together, whatever the answer says about the place or the speed.
+    @Test
+    fun `both rules fall silent together when the anchor no longer stands`() {
+        val lying = fix(61.11864, 5.38881, noon.plusSeconds(60), width = 15.0, speedMps = 33.3)
+        val earlier = fix(61.11864, 5.38881, noon.minusSeconds(60), width = 15.0, speedMps = 33.3)
+        val cases = listOf(
+            Triple(null, lying, untouched),
+            Triple(putDown, lying, Carrying(stirred = true)),
+            Triple(putDown, lying, Carrying(stirred = false, steps = 20)),
+            Triple(putDown, lying, Carrying(stirred = false, told = false)),
+            Triple(putDown, earlier, untouched),
+        )
+
+        assertTrue(driftedWhilePutDown(putDown, lying, untouched))
+        assertTrue(hurriedWhilePutDown(putDown, lying, untouched))
+
+        for ((anchor, next, carrying) in cases) {
+            assertFalse(driftedWhilePutDown(anchor, next, carrying))
+            assertFalse(hurriedWhilePutDown(anchor, next, carrying))
+        }
+    }
+
     private fun fix(
         latitude: Double,
         longitude: Double,

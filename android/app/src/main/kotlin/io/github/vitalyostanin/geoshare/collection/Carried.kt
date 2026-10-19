@@ -174,6 +174,30 @@ fun putDownAt(
 }
 
 /**
+ * The anchor, if it still stands as a claim that nobody has touched the device.
+ *
+ * The one place the terms are written down for both rules that read the anchor,
+ * [driftedWhilePutDown] and [hurriedWhilePutDown]: no anchor, a stir, enough
+ * steps to have gone anywhere, or a fix taken before the device settled, and
+ * there is nothing to judge an answer against.
+ */
+private fun stillPutDown(putDown: PutDown?, next: Fix, carrying: Carrying): PutDown? {
+    if (putDown == null || !carrying.told || carrying.stirred) {
+        return null
+    }
+
+    if ((carrying.steps ?: 0) >= CARRIED_STEPS) {
+        return null
+    }
+
+    if (next.takenAt.isBefore(putDown.since)) {
+        return null
+    }
+
+    return putDown
+}
+
+/**
  * Whether an answer has walked away from a device nobody has touched.
  *
  * The anchor holds only while the sensors go on saying nothing: a stir, or
@@ -183,21 +207,11 @@ fun putDownAt(
  * about a different part of the day.
  */
 fun driftedWhilePutDown(putDown: PutDown?, next: Fix, carrying: Carrying): Boolean {
-    if (putDown == null || !carrying.told || carrying.stirred) {
-        return false
-    }
+    val anchor = stillPutDown(putDown, next, carrying) ?: return false
 
-    if ((carrying.steps ?: 0) >= CARRIED_STEPS) {
-        return false
-    }
+    val doubt = (anchor.at.accuracyMetres ?: 0.0) + (next.accuracyMetres ?: 0.0)
 
-    if (next.takenAt.isBefore(putDown.since)) {
-        return false
-    }
-
-    val doubt = (putDown.at.accuracyMetres ?: 0.0) + (next.accuracyMetres ?: 0.0)
-
-    return distanceMetres(putDown.at, next) > maxOf(PUT_DOWN_DRIFT_METRES, doubt)
+    return distanceMetres(anchor.at, next) > maxOf(PUT_DOWN_DRIFT_METRES, doubt)
 }
 
 /**
@@ -216,17 +230,7 @@ fun driftedWhilePutDown(putDown: PutDown?, next: Fix, carrying: Carrying): Boole
  * speed there is nothing to judge.
  */
 fun hurriedWhilePutDown(putDown: PutDown?, next: Fix, carrying: Carrying): Boolean {
-    if (putDown == null || !carrying.told || carrying.stirred) {
-        return false
-    }
-
-    if ((carrying.steps ?: 0) >= CARRIED_STEPS) {
-        return false
-    }
-
-    if (next.takenAt.isBefore(putDown.since)) {
-        return false
-    }
+    stillPutDown(putDown, next, carrying) ?: return false
 
     return (next.reported?.speedMps ?: 0.0) > PUT_DOWN_SPEED_MPS
 }

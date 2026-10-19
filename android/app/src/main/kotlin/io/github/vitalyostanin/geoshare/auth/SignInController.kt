@@ -10,6 +10,7 @@ import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.FirebaseAuthException
 import com.google.firebase.auth.OAuthProvider
 import io.github.vitalyostanin.geoshare.log.AppLog
+import io.github.vitalyostanin.geoshare.map.runCatchingFailure
 import io.github.vitalyostanin.geoshare.service.STAND_IN_PASSWORD
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.delay
@@ -113,11 +114,9 @@ class SignInController(
     suspend fun signInAsStandIn(email: String) {
         current.value = AuthState.SigningIn
 
-        try {
+        runCatchingFailure {
             auth.signInWithEmailAndPassword(email, STAND_IN_PASSWORD).await()
-        } catch (cancellation: CancellationException) {
-            throw cancellation
-        } catch (error: Exception) {
+        }.onFailure { error ->
             AppLog.w(TAG, "the stand-in sign-in as $email failed", error)
             current.value = AuthState.SignedOut(classifySignInFailure(error))
         }

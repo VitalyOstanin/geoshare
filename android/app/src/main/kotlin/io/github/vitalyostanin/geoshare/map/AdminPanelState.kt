@@ -15,7 +15,7 @@ import kotlinx.coroutines.launch
 import java.time.Instant
 
 /**
- * What the admin panel holds between its redraws: which dialog is open and what
+ * What the administrator's panel holds between its redraws: which dialog is open and what
  * has been typed into it, and the questions put about one device.
  *
  * Kept apart from the panel so that the panel itself only lays out, and so that
@@ -147,13 +147,13 @@ internal class AdminShown(
     val profiles: Map<String, MemberProfile>,
     val lines: List<GroupLine>,
     /** The searches standing at [now], by the device each is looking for. */
-    val standing: Map<String, Search>,
+    val liveSearches: Map<String, Search>,
     val caption: String,
     val ownMemberId: String,
     /** This device's own `{uid}.{deviceId}`: the one device nobody here rings. */
     val ownPhoneId: String?,
     val now: Instant,
-    val invite: AdminInvite,
+    val invitationSection: AdminInvitationState,
     val live: AdminLive,
 )
 
@@ -171,11 +171,11 @@ internal class AdminWrites(
 )
 
 /** What the invitation section needs: the invitation just made and the link it is built against. */
-internal class AdminInvite(
+internal class AdminInvitationState(
     /** The invitation just made, held until the screen is left. */
     val invitation: MadeInvitation?,
     /** Whether an invitation made here still stands, followed for as long as asked. */
-    val standing: (code: String) -> Flow<Boolean?>,
+    val stillValid: (code: String) -> Flow<Boolean?>,
     /** This device's Hosting site, which the invitation link is built against. */
     val site: String?,
     /** Whether the last write to the group was refused. */

@@ -51,6 +51,7 @@ import io.github.vitalyostanin.geoshare.map.UnansweredException
 import io.github.vitalyostanin.geoshare.map.WriteOutcome
 import io.github.vitalyostanin.geoshare.map.logFailure
 import io.github.vitalyostanin.geoshare.map.rememberGroupChoices
+import io.github.vitalyostanin.geoshare.map.runCatchingFailure
 import io.github.vitalyostanin.geoshare.map.withinAnswerWait
 import io.github.vitalyostanin.geoshare.permission.PermissionStep
 import io.github.vitalyostanin.geoshare.permission.batteryExemptionRequest
@@ -95,7 +96,6 @@ import io.github.vitalyostanin.geoshare.update.EXTRA_OPEN_UPDATE
 import io.github.vitalyostanin.geoshare.update.UpdateBoard
 import io.github.vitalyostanin.geoshare.update.UpdateStore
 import io.github.vitalyostanin.geoshare.update.checkForUpdateIfDue
-import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.async
 import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.launch
@@ -786,21 +786,18 @@ class MainActivity : AppCompatActivity() {
     // pressed by somebody who is waiting to see something happen, and a
     // refusal that only reaches the log looks exactly like a write that did
     // nothing.
-    internal suspend fun withGroup(done: String, write: suspend () -> Unit): Boolean {
-        try {
+    internal suspend fun withGroup(done: String, write: suspend () -> Unit): Boolean =
+        runCatchingFailure {
             write()
 
             AppLog.i(TAG, done)
-        } catch (cancellation: CancellationException) {
-            throw cancellation
-        } catch (refusal: Exception) {
+
+            true
+        }.getOrElse { refusal ->
             logFailure(TAG, "the group was left as it was: $done", refusal)
 
-            return false
+            false
         }
-
-        return true
-    }
 
     internal fun openStartupScreen() {
         val screen = startupScreen(this)
@@ -896,18 +893,18 @@ class MainActivity : AppCompatActivity() {
      * unanswered — in which case Firestore still holds it and sends it later.
      */
     internal suspend fun writeOutcome(failure: String, write: suspend () -> Unit): WriteOutcome =
-        try {
+        runCatchingFailure {
             withinAnswerWait { write() }
             WriteOutcome.DONE
-        } catch (cancellation: CancellationException) {
-            throw cancellation
-        } catch (late: UnansweredException) {
-            AppLog.w(TAG, "$failure: the database did not answer", late)
-            WriteOutcome.UNANSWERED
-        } catch (refusal: Exception) {
-            logFailure(TAG, failure, refusal)
+        }.getOrElse { refusal ->
+            if (refusal is UnansweredException) {
+                AppLog.w(TAG, "$failure: the database did not answer", refusal)
+                WriteOutcome.UNANSWERED
+            } else {
+                logFailure(TAG, failure, refusal)
 
-            WriteOutcome.REFUSED
+                WriteOutcome.REFUSED
+            }
         }
 
     internal companion object {

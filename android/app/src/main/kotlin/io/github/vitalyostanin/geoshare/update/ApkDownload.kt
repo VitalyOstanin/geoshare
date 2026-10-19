@@ -1,6 +1,9 @@
 package io.github.vitalyostanin.geoshare.update
 
+import io.github.vitalyostanin.geoshare.log.AppLog
+import io.github.vitalyostanin.geoshare.net.isSuccess
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.withContext
 import java.io.File
@@ -8,9 +11,14 @@ import java.io.IOException
 import java.io.InputStream
 import java.net.HttpURLConnection
 import java.net.URL
+import kotlin.coroutines.ContinuationInterceptor
+import kotlin.coroutines.CoroutineContext
+import kotlin.coroutines.EmptyCoroutineContext
 
 /** The subdirectory of the cache directory the downloaded APK is kept in. */
 const val UPDATE_DIRECTORY = "update"
+
+private const val TAG = "geoshare.apk-download"
 
 private const val CONNECT_TIMEOUT_MS = 15_000
 
@@ -18,8 +26,6 @@ private const val CONNECT_TIMEOUT_MS = 15_000
 private const val READ_TIMEOUT_MS = 30_000
 
 private const val BUFFER_BYTES = 64 * 1024
-private const val SUCCESS_RANGE_START = 200
-private const val SUCCESS_RANGE_END_EXCLUSIVE = 300
 
 /** How a download of the release APK ended. */
 sealed interface ApkDownload {
@@ -39,7 +45,10 @@ fun updateDirectory(cacheDir: File): File = File(cacheDir, UPDATE_DIRECTORY)
 /**
  * Downloads [release]'s APK into [directory] and holds it against the size
  * and SHA-256 GitHub announced, hashing while it writes. [onProgress] gets
- * the bytes received so far and the announced size after every chunk. Files
+ * the bytes received so far and the announced size after every chunk, on
+ * the caller's dispatcher rather than the IO thread, and never once the
+ * caller has cancelled: a cancel and the state it sets on the main thread
+ * cannot be overwritten by a report that was already on its way. Files
  * of earlier updates in [directory] are removed first, so it never holds
  * more than one APK. If [directory] already holds this release's file with
  * the announced size and SHA-256, it is returned without touching the
@@ -63,6 +72,24 @@ internal suspend fun downloadApk(
     directory: File,
     onProgress: (received: Long, total: Long) -> Unit,
     open: (url: String) -> InputStream,
+): ApkDownload = downloadApk(
+    release,
+    directory,
+    onProgress,
+    open,
+    // Only the dispatcher, not the job: the report stays a child of the IO
+    // block, so a cancel that comes while it waits for its turn on the
+    // caller's thread drops it instead of letting it run late.
+    caller = currentCoroutineContext()[ContinuationInterceptor] ?: EmptyCoroutineContext,
+)
+
+/** The work of [downloadApk], reporting progress on [caller]'s dispatcher. */
+private suspend fun downloadApk(
+    release: LatestRelease,
+    directory: File,
+    onProgress: (received: Long, total: Long) -> Unit,
+    open: (url: String) -> InputStream,
+    caller: CoroutineContext,
 ): ApkDownload = withContext(Dispatchers.IO) {
     val target = File(directory, updateFileName(release.version))
 
@@ -81,7 +108,7 @@ internal suspend fun downloadApk(
         val verdict = open(release.apk.url).use { stream ->
             writeVerified(stream, target, release.apk) { received ->
                 ensureActive()
-                onProgress(received, release.apk.size)
+                withContext(caller) { onProgress(received, release.apk.size) }
             }
         }
 
@@ -89,9 +116,15 @@ internal suspend fun downloadApk(
             kept = true
             ApkDownload.Done(target)
         } else {
+            AppLog.w(TAG, "the downloaded file is not the announced one: $verdict")
             ApkDownload.Corrupt
         }
     } catch (dropped: IOException) {
+        // The message carries a status or a socket error, never the link.
+        AppLog.w(
+            TAG,
+            "the download failed: ${dropped.javaClass.simpleName}: ${dropped.message}",
+        )
         ApkDownload.Failed
     } finally {
         // Also reached by cancellation, which is how a half-written file is
@@ -173,7 +206,7 @@ private fun openApk(url: String): InputStream {
 
     val status = connection.responseCode
 
-    if (status !in SUCCESS_RANGE_START until SUCCESS_RANGE_END_EXCLUSIVE) {
+    if (!isSuccess(status)) {
         connection.disconnect()
         throw IOException("HTTP $status")
     }

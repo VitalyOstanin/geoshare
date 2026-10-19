@@ -9,6 +9,7 @@ import io.github.vitalyostanin.geoshare.collection.spread
 import io.github.vitalyostanin.geoshare.log.AppLog
 import io.github.vitalyostanin.geoshare.map.PublishedProfile
 import io.github.vitalyostanin.geoshare.map.logFailure
+import io.github.vitalyostanin.geoshare.map.runCatchingFailure
 import io.github.vitalyostanin.geoshare.membership.INVITATION_LASTS
 import io.github.vitalyostanin.geoshare.membership.Invitation
 import io.github.vitalyostanin.geoshare.membership.Presence
@@ -196,13 +197,11 @@ suspend fun foundGroup(
  * which the screens treat as a free project: the offer stays, and the rules
  * answer for it.
  */
-suspend fun readProjectMark(connection: GroupConnection): ProjectMark = try {
+suspend fun readProjectMark(connection: GroupConnection): ProjectMark = runCatchingFailure {
     val snapshot = projectGroupDocument(connection.store).get().await()
 
     projectMarkOf(snapshot.exists(), snapshot.get(ProjectField.GROUP))
-} catch (cancelled: CancellationException) {
-    throw cancelled
-} catch (failure: Exception) {
+}.getOrElse { failure ->
     logFailure(TAG, "could not read the mark of ${connection.projectId}", failure)
     ProjectMark.Unknown
 }
@@ -247,7 +246,7 @@ data class MadeInvitation(
  * the administrator read it back yet: the screen then says nothing rather
  * than guess.
  */
-fun invitationStanding(code: String, connection: GroupConnection): Flow<Boolean?> =
+fun invitationLive(code: String, connection: GroupConnection): Flow<Boolean?> =
     invitationsOf(connection)
         .document(code)
         .liveSnapshots()

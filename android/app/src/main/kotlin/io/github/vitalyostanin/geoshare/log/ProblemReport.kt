@@ -1,6 +1,7 @@
 package io.github.vitalyostanin.geoshare.log
 
 import io.github.vitalyostanin.geoshare.BuildConfig
+import io.github.vitalyostanin.geoshare.cutToLimit
 import io.github.vitalyostanin.geoshare.project.percentEncoded
 
 /** The longest address the issue page is handed; browsers and servers refuse much past this. */
@@ -24,7 +25,7 @@ data class IssueDraft(val url: String, val tail: String, val leftOut: Boolean)
  */
 fun issueTitle(description: String): String =
     description.lineSequence().map { it.trim() }.firstOrNull { it.isNotEmpty() }
-        ?.take(TITLE_LIMIT)
+        ?.let { cutToLimit(it, TITLE_LIMIT) }
         ?: DEFAULT_TITLE
 
 /**
@@ -45,7 +46,7 @@ fun buildIssue(
     scrubbedLog: String,
     limit: Int = ISSUE_URL_LIMIT,
 ): IssueDraft {
-    val written = description.trim().take(DESCRIPTION_LIMIT)
+    val written = cutToLimit(description.trim(), DESCRIPTION_LIMIT)
     val all = scrubbedLog.trimEnd().lines().filter { it.isNotEmpty() }
 
     // Encoding never makes a character shorter, so lines that alone are

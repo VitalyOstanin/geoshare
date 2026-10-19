@@ -333,7 +333,7 @@
     <string name="first_share_title">Кому показывать, где вы?</string>
     <string name="first_share_span">Срок</string>
     <string name="first_share_go">Показывать</string>
-    <string name="first_share_later">Позже</string>
+    <string name="first_share_later">Не сейчас</string>
     <string name="map_share_back">%1$s не видит, где вы</string>
     <string name="map_share_back_go">Показать</string>
     <!-- A permission given earlier, counting down: %1$s is a time of day. -->

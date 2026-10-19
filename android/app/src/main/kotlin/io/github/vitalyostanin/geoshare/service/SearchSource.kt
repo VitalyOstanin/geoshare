@@ -9,10 +9,10 @@ import io.github.vitalyostanin.geoshare.log.AppLog
 import io.github.vitalyostanin.geoshare.map.Search
 import io.github.vitalyostanin.geoshare.map.idTail
 import io.github.vitalyostanin.geoshare.map.logFailure
+import io.github.vitalyostanin.geoshare.map.runCatchingFailure
 import io.github.vitalyostanin.geoshare.map.searchOf
 import io.github.vitalyostanin.geoshare.project.GroupConnection
 import io.github.vitalyostanin.geoshare.trimText
-import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.tasks.await
@@ -146,19 +146,18 @@ suspend fun endSearch(phoneId: String, connection: GroupConnection) {
  * Null where the member has published no name, or it could not be read:
  * the caller says so in its own words, which this file cannot read.
  */
-suspend fun memberDisplayName(memberId: String, connection: GroupConnection): String? = try {
-    membersOf(connection)
-        .document(memberId)
-        .get()
-        .await()
-        .getString(ProfileField.DISPLAY_NAME)
-        ?.takeIf { it.isNotBlank() }
-} catch (cancellation: CancellationException) {
-    throw cancellation
-} catch (refusal: Exception) {
-    logFailure(TAG, "could not read the name of $memberId", refusal)
-    null
-}
+suspend fun memberDisplayName(memberId: String, connection: GroupConnection): String? =
+    runCatchingFailure {
+        membersOf(connection)
+            .document(memberId)
+            .get()
+            .await()
+            .getString(ProfileField.DISPLAY_NAME)
+            ?.takeIf { it.isNotBlank() }
+    }.getOrElse { refusal ->
+        logFailure(TAG, "could not read the name of $memberId", refusal)
+        null
+    }
 
 /** What a member without a published name is called in a notification. */
 fun unnamedMember(context: Context, memberId: String): String =

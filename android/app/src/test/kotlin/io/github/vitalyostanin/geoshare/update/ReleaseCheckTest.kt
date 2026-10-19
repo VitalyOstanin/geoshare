@@ -1,6 +1,7 @@
 package io.github.vitalyostanin.geoshare.update
 
-import io.github.vitalyostanin.geoshare.project.RawResponse
+import io.github.vitalyostanin.geoshare.BuildConfig
+import io.github.vitalyostanin.geoshare.net.RawResponse
 import kotlinx.coroutines.runBlocking
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
@@ -37,7 +38,7 @@ class ReleaseCheckTest {
             RawResponse(200, RELEASE_JSON)
         }
 
-        assertEquals("https://api.github.com/repos/VitalyOstanin/geoshare/releases/latest", asked)
+        assertEquals(BuildConfig.LATEST_RELEASE_URL, asked)
     }
 
     @Test

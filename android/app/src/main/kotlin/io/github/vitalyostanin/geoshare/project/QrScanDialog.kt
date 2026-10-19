@@ -14,7 +14,6 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.camera.core.CameraSelector
 import androidx.camera.core.ImageAnalysis
-import androidx.camera.core.ImageProxy
 import androidx.camera.core.Preview
 import androidx.camera.lifecycle.ProcessCameraProvider
 import androidx.camera.lifecycle.awaitInstance
@@ -312,13 +311,6 @@ private fun cameraOf(provider: ProcessCameraProvider): CameraSelector =
     } else {
         CameraSelector.DEFAULT_FRONT_CAMERA
     }
-
-/** [ImageProxy] closed after [block], whatever it ends with. */
-private inline fun <T> ImageProxy.use(block: (ImageProxy) -> T): T = try {
-    block(this)
-} finally {
-    close()
-}
 
 /** The square to aim with, the window darkened around it; green once a link is read. */
 @Composable

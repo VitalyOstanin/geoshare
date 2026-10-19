@@ -15,7 +15,6 @@ import coil3.request.SuccessResult
 import coil3.request.allowHardware
 import coil3.toBitmap
 import io.github.vitalyostanin.geoshare.log.AppLog
-import kotlinx.coroutines.CancellationException
 
 private const val TAG = "geoshare.faces"
 
@@ -96,13 +95,11 @@ private suspend fun loadFace(context: Context, url: String): Bitmap? {
             .allowHardware(false)
             .build()
 
-    return try {
+    return runCatchingFailure {
         val result = SingletonImageLoader.get(context).execute(request)
 
         (result as? SuccessResult)?.image?.toBitmap(side, side)
-    } catch (cancellation: CancellationException) {
-        throw cancellation
-    } catch (error: Exception) {
+    }.getOrElse { error ->
         AppLog.w(TAG, "could not load the picture at $url", error)
 
         null

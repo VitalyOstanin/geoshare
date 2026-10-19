@@ -3,6 +3,7 @@ package io.github.vitalyostanin.geoshare
 import io.github.vitalyostanin.geoshare.log.AppLog
 import io.github.vitalyostanin.geoshare.map.PublishedProfile
 import io.github.vitalyostanin.geoshare.map.logFailure
+import io.github.vitalyostanin.geoshare.map.runCatchingFailure
 import io.github.vitalyostanin.geoshare.membership.Leave
 import io.github.vitalyostanin.geoshare.project.Connections
 import io.github.vitalyostanin.geoshare.project.GroupConnection
@@ -10,7 +11,6 @@ import io.github.vitalyostanin.geoshare.project.PendingInvitationStore
 import io.github.vitalyostanin.geoshare.service.LeavingHere
 import io.github.vitalyostanin.geoshare.service.forgetPhone
 import io.github.vitalyostanin.geoshare.service.leaveGroup
-import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.withTimeoutOrNull
 
 // Leaving a group, removing a device and signing out, each in every group it
@@ -25,14 +25,13 @@ private fun signedIn(): List<Pair<GroupConnection, String>> =
     }
 
 /** Whether [write] was answered in [MainActivity.SIGN_OUT_WAIT_MS]; a refusal is logged. */
-private suspend fun answered(what: String, write: suspend () -> Unit): Boolean = try {
-    withTimeoutOrNull(MainActivity.SIGN_OUT_WAIT_MS) { write() } != null
-} catch (cancellation: CancellationException) {
-    throw cancellation
-} catch (refusal: Exception) {
-    logFailure(MainActivity.TAG, "could not $what", refusal)
-    false
-}
+private suspend fun answered(what: String, write: suspend () -> Unit): Boolean =
+    runCatchingFailure {
+        withTimeoutOrNull(MainActivity.SIGN_OUT_WAIT_MS) { write() } != null
+    }.getOrElse { refusal ->
+        logFailure(MainActivity.TAG, "could not $what", refusal)
+        false
+    }
 
 /**
  * Takes this device out of [connection]'s group and drops the group from it,

@@ -139,8 +139,16 @@ object Connections {
         AppLog.i(TAG, "now in the group $group of $projectId")
     }
 
-    /** Shows the group of [projectId]; nothing else changes. */
-    fun select(context: Context, projectId: String) = publish(context, kept.selecting(projectId))
+    /**
+     * Shows the group of [projectId]; nothing else changes.
+     *
+     * Called from taps on the main thread, so the choice is written
+     * asynchronously: losing it to a process cut short leaves the device
+     * showing another group it still has at the next start, and nothing is
+     * written beside it that has to land together.
+     */
+    fun select(context: Context, projectId: String) =
+        publish(context, kept.selecting(projectId), durable = false)
 
     /**
      * Forgets the group of [projectId]; its session is the caller's to sign
@@ -225,8 +233,19 @@ object Connections {
         }
     }
 
-    private fun publish(context: Context, list: ConnectionList) {
-        if (!files(context).edit().putString(KEY_LIST, list.toJson()).commit()) {
+    /**
+     * Keeps [list] for the next start and shows it. A [durable] write is
+     * committed, so it has reached disk by the time this returns — for the
+     * changes that go with other state kept beside the list; the rest are
+     * applied, which updates the preferences in memory at once and writes the
+     * file in the background.
+     */
+    private fun publish(context: Context, list: ConnectionList, durable: Boolean = true) {
+        val edit = files(context).edit().putString(KEY_LIST, list.toJson())
+
+        if (!durable) {
+            edit.apply()
+        } else if (!edit.commit()) {
             // The device goes on with the list it has in memory; the next start
             // reads whatever the file still holds.
             AppLog.e(TAG, "the groups could not be written down")

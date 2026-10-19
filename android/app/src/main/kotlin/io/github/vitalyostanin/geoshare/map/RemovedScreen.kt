@@ -31,6 +31,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import io.github.vitalyostanin.geoshare.R
+import io.github.vitalyostanin.geoshare.cutToLimit
 import io.github.vitalyostanin.geoshare.membership.ProjectMark
 import io.github.vitalyostanin.geoshare.membership.isTaken
 import io.github.vitalyostanin.geoshare.project.RefusedJoin
@@ -115,7 +116,7 @@ fun NoGroupScreen(
             if (!taken) {
                 OutlinedTextField(
                     value = groupName,
-                    onValueChange = { groupName = it.take(GROUP_NAME_LIMIT) },
+                    onValueChange = { groupName = cutToLimit(it, GROUP_NAME_LIMIT) },
                     label = { Text(text = stringResource(R.string.group_name_optional_label)) },
                     singleLine = true,
                     modifier = Modifier.fillMaxWidth(),

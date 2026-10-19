@@ -405,7 +405,7 @@ private fun AdminOverSettings(
         onStopSiren = actions.onStopSiren,
         resetOf = actions.resetOf,
         onAskReset = actions.onAskReset,
-        invitationStanding = actions.invitationStanding,
+        invitationLive = actions.invitationLive,
         onClose = onClose,
     )
 }

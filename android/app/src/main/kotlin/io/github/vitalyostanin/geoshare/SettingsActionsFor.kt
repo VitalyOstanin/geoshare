@@ -11,6 +11,7 @@ import io.github.vitalyostanin.geoshare.download.DownloadSetting
 import io.github.vitalyostanin.geoshare.map.SettingsActions
 import io.github.vitalyostanin.geoshare.map.logFailure
 import io.github.vitalyostanin.geoshare.map.publishSharing
+import io.github.vitalyostanin.geoshare.map.runCatchingFailure
 import io.github.vitalyostanin.geoshare.map.withShare
 import io.github.vitalyostanin.geoshare.map.withinAnswerWait
 import io.github.vitalyostanin.geoshare.map.writePhoneName
@@ -28,7 +29,7 @@ import io.github.vitalyostanin.geoshare.service.deviceIdOf
 import io.github.vitalyostanin.geoshare.service.endSearch
 import io.github.vitalyostanin.geoshare.service.forgetAidingData
 import io.github.vitalyostanin.geoshare.service.foundGroup
-import io.github.vitalyostanin.geoshare.service.invitationStanding
+import io.github.vitalyostanin.geoshare.service.invitationLive
 import io.github.vitalyostanin.geoshare.service.joinGroup
 import io.github.vitalyostanin.geoshare.service.makeInvitation
 import io.github.vitalyostanin.geoshare.service.openSearch
@@ -41,7 +42,6 @@ import io.github.vitalyostanin.geoshare.service.renameGroup
 import io.github.vitalyostanin.geoshare.service.renewSearch
 import io.github.vitalyostanin.geoshare.service.setRunning
 import io.github.vitalyostanin.geoshare.service.stopSiren
-import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.launch
 import java.time.Instant
 
@@ -335,7 +335,7 @@ internal fun settingsActions(
         }
     },
     sirenOf = { phoneId -> phoneSiren(phoneId, connection) },
-    invitationStanding = { code -> invitationStanding(code, connection) },
+    invitationLive = { code -> invitationLive(code, connection) },
     onCallSiren = { phoneId ->
         activity.writeOutcome("a siren could not be called") {
             callSiren(phoneId, current.memberId, connection = connection)
@@ -348,13 +348,11 @@ internal fun settingsActions(
         }
     },
     onStopSiren = { phoneId ->
-        try {
+        runCatchingFailure {
             withinAnswerWait {
                 stopSiren(phoneId, current.memberId, connection = connection)
             }
-        } catch (cancellation: CancellationException) {
-            throw cancellation
-        } catch (refusal: Exception) {
+        }.onFailure { refusal ->
             logFailure(MainActivity.TAG, "a siren could not be stopped", refusal)
         }
     },
@@ -362,11 +360,9 @@ internal fun settingsActions(
     // device is the same one in all of them.
     onForgetPhone = { phoneId -> forgetDeviceEverywhere(deviceIdOf(phoneId)) },
     onEndSearch = { phoneId ->
-        try {
+        runCatchingFailure {
             withinAnswerWait { endSearch(phoneId, connection = connection) }
-        } catch (cancellation: CancellationException) {
-            throw cancellation
-        } catch (refusal: Exception) {
+        }.onFailure { refusal ->
             logFailure(MainActivity.TAG, "a search could not be ended", refusal)
         }
     },

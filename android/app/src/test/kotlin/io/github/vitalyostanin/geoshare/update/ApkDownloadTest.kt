@@ -1,9 +1,11 @@
 package io.github.vitalyostanin.geoshare.update
 
 import kotlinx.coroutines.CompletableDeferred
+import kotlinx.coroutines.CoroutineStart
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
 import kotlinx.coroutines.cancelAndJoin
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -16,8 +18,13 @@ import java.io.File
 import java.io.IOException
 import java.io.InputStream
 import java.security.MessageDigest
+import java.util.concurrent.CountDownLatch
+import java.util.concurrent.TimeUnit
 
 private val BODY = ByteArray(200_000) { (it % 251).toByte() }
+
+/** How long the race test waits for a progress report to reach its write. */
+private const val RACE_WAIT_MS = 500L
 
 private fun release(size: Long = BODY.size.toLong(), digest: ByteArray = BODY): LatestRelease =
     LatestRelease(
@@ -158,6 +165,40 @@ class ApkDownloadTest {
             job.cancelAndJoin()
         }
 
+        assertEquals(0, folder.root.listFiles().orEmpty().size)
+    }
+
+    // DEV-13: the settings write the update block from onProgress and, on
+    // "Cancel", cancel the download and write the cancelled state on the
+    // same thread. A report already past ensureActive on the IO thread used
+    // to land after that and leave the block downloading for good.
+    @Test
+    fun `progress reported after cancelling does not overwrite what the caller set`() {
+        val reached = CountDownLatch(1)
+        val resume = CountDownLatch(1)
+        var shown = "idle"
+        val progress = { _: Long, _: Long ->
+            reached.countDown()
+            resume.await()
+            shown = "downloading"
+        }
+
+        runBlocking {
+            val job = launch(start = CoroutineStart.UNDISPATCHED) {
+                downloadApk(release(), folder.root, progress) { ByteArrayInputStream(BODY) }
+            }
+
+            // With progress on the IO thread the report is now parked just
+            // before its write; on the caller's thread it cannot run before
+            // this block lets go of the thread, so the wait only times out.
+            reached.await(RACE_WAIT_MS, TimeUnit.MILLISECONDS)
+            job.cancel()
+            shown = "cancelled"
+            resume.countDown()
+            job.join()
+        }
+
+        assertEquals("cancelled", shown)
         assertEquals(0, folder.root.listFiles().orEmpty().size)
     }
 }

@@ -66,13 +66,15 @@ fun forgetAidingData(context: Context): AidingErasure {
             .onFailure { failure -> AppLog.w(TAG, "the receiver threw the command out", failure) }
             .getOrDefault(false)
 
-    if (taken) {
+    return if (taken) {
         AppLog.i(TAG, "the receiver has thrown its aiding data away")
+
+        AidingErasure.Erased
     } else {
         AppLog.w(TAG, "the receiver would not throw its aiding data away")
-    }
 
-    return if (taken) AidingErasure.Erased else AidingErasure.Refused
+        AidingErasure.Refused
+    }
 }
 
 /**

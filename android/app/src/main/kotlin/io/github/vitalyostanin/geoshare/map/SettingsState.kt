@@ -182,5 +182,5 @@ data class SettingsActions(
     /** Takes one of the member's own devices out of the group; answers whether it went. */
     val onForgetPhone: suspend (phoneId: String) -> Boolean,
     /** Whether an invitation made here still stands, as the database has it; null while unknown. */
-    val invitationStanding: (code: String) -> Flow<Boolean?>,
+    val invitationLive: (code: String) -> Flow<Boolean?>,
 )

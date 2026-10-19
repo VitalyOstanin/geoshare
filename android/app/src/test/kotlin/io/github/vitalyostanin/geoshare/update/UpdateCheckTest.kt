@@ -1,5 +1,8 @@
 package io.github.vitalyostanin.geoshare.update
 
+import kotlinx.coroutines.CompletableDeferred
+import kotlinx.coroutines.CoroutineStart
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
@@ -206,5 +209,41 @@ class UpdateCheckTest {
 
         assertEquals(listOf("0.2.0", "0.2.0"), shown)
         assertEquals("0.2.0", record.notifiedVersion)
+    }
+
+    // DEV-13: the screen and the sharing service start their checks on their
+    // own; two of them started while a check is due must still ask GitHub once.
+    @Test
+    fun `two checks started together ask and announce once`() {
+        val record = FakeRecord()
+        val answer = CompletableDeferred<ReleaseCheck>()
+        var asked = 0
+
+        runBlocking {
+            val checks = List(2) {
+                launch(start = CoroutineStart.UNDISPATCHED) {
+                    checkForUpdate(
+                        record = record,
+                        current = "0.1.0",
+                        now = NOW,
+                        fetch = {
+                            asked++
+                            answer.await()
+                        },
+                        notify = {
+                            shown += it
+                            true
+                        },
+                    )
+                }
+            }
+
+            answer.complete(ReleaseCheck.Found(release("0.2.0")))
+            checks.forEach { it.join() }
+        }
+
+        assertEquals(1, asked)
+        assertEquals(listOf("0.2.0"), shown)
+        assertEquals(NOW, record.lastCheck)
     }
 }

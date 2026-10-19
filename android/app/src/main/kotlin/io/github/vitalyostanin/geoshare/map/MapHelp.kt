@@ -22,7 +22,7 @@ import io.github.vitalyostanin.geoshare.collection.reasonsExplained
  * line saying what it means. The modes and the reasons name these three
  * differently, so each caller maps its own record onto this one.
  */
-private data class HelpEntry(
+private data class HelpTableEntry(
     @param:StringRes val name: Int,
     @param:StringRes val subtitle: Int,
     @param:StringRes val meaning: Int,
@@ -37,7 +37,7 @@ private data class HelpEntry(
 private fun HelpDialog(
     @StringRes titleRes: Int,
     @StringRes introRes: Int,
-    entries: List<HelpEntry>,
+    entries: List<HelpTableEntry>,
     onClose: () -> Unit,
 ) {
     AlertDialog(
@@ -95,7 +95,7 @@ internal fun ModeHelp(onClose: () -> Unit) {
     HelpDialog(
         titleRes = R.string.mode_help_title,
         introRes = R.string.mode_help_intro,
-        entries = modesExplained().map { HelpEntry(it.name, it.whenItHappens, it.whatItDoes) },
+        entries = modesExplained().map { HelpTableEntry(it.name, it.whenItHappens, it.whatItDoes) },
         onClose = onClose,
     )
 }
@@ -113,7 +113,7 @@ internal fun ReasonHelp(onClose: () -> Unit) {
     HelpDialog(
         titleRes = R.string.reason_help_title,
         introRes = R.string.reason_help_intro,
-        entries = reasonsExplained().map { HelpEntry(it.name, it.sign, it.means) },
+        entries = reasonsExplained().map { HelpTableEntry(it.name, it.sign, it.means) },
         onClose = onClose,
     )
 }

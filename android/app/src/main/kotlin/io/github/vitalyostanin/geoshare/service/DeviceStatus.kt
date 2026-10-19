@@ -11,7 +11,7 @@ import io.github.vitalyostanin.geoshare.collection.CollectionMode
 import io.github.vitalyostanin.geoshare.collection.IDLE_REPEAT
 import io.github.vitalyostanin.geoshare.log.AppLog
 import io.github.vitalyostanin.geoshare.map.logFailure
-import kotlinx.coroutines.CancellationException
+import io.github.vitalyostanin.geoshare.map.runCatchingFailure
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
@@ -60,6 +60,12 @@ internal class DeviceStatus(
      */
     private var powerSettling: Job? = null
 
+    /**
+     * Whether [power] is registered: unregistering one that is not throws, and
+     * a second stop (the service winding down twice) must not.
+     */
+    private var hearing = false
+
     private val power =
         object : BroadcastReceiver() {
             override fun onReceive(context: Context, intent: Intent) {
@@ -95,11 +101,7 @@ internal class DeviceStatus(
         val cable = charging()
 
         scope.launch {
-            try {
-                writer.tellStatus(mode, percent, cable)
-            } catch (cancellation: CancellationException) {
-                throw cancellation
-            } catch (error: Exception) {
+            runCatchingFailure { writer.tellStatus(mode, percent, cable) }.onFailure { error ->
                 logFailure(TAG, "could not say how the device is", error)
             }
         }
@@ -119,6 +121,10 @@ internal class DeviceStatus(
 
     /** Listens for the cable going in or coming out, which is said at once. */
     fun hearTheCable() {
+        if (hearing) {
+            return
+        }
+
         ContextCompat.registerReceiver(
             context,
             power,
@@ -129,11 +135,17 @@ internal class DeviceStatus(
             // Only the system sends these, and nothing else may reach in.
             ContextCompat.RECEIVER_NOT_EXPORTED,
         )
+        hearing = true
     }
 
     /** Stops listening for the cable; nothing if it was not being listened for. */
     fun stopHearingTheCable() {
-        runCatching { context.unregisterReceiver(power) }
+        if (!hearing) {
+            return
+        }
+
+        hearing = false
+        context.unregisterReceiver(power)
     }
 
     fun batteryPercent(): Int = context.getSystemService<BatteryManager>()

@@ -10,10 +10,10 @@ import io.github.vitalyostanin.geoshare.R
 import io.github.vitalyostanin.geoshare.log.AppLog
 import io.github.vitalyostanin.geoshare.map.clockFormat
 import io.github.vitalyostanin.geoshare.map.logFailure
+import io.github.vitalyostanin.geoshare.map.runCatchingFailure
 import io.github.vitalyostanin.geoshare.map.shouldForget
 import io.github.vitalyostanin.geoshare.permission.devicePermissions
 import io.github.vitalyostanin.geoshare.project.GroupConnection
-import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.withTimeoutOrNull
 import java.time.Duration
 import java.time.Instant
@@ -126,11 +126,7 @@ suspend fun answerResets(
 
         done.keep(connection.projectId, asked.askedAt, name, now)
 
-        try {
-            resetDone(phoneId, connection)
-        } catch (cancellation: CancellationException) {
-            throw cancellation
-        } catch (refusal: Exception) {
+        runCatchingFailure { resetDone(phoneId, connection) }.onFailure { refusal ->
             logFailure(TAG, "could not say the place was forgotten", refusal)
         }
 

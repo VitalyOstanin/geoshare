@@ -16,10 +16,66 @@ import java.util.Locale
  * of the first time the file was loaded: the language is switched inside the
  * app without restarting the process, and a formatter held in a top-level
  * value kept the months in the language the process started with.
+ *
+ * The order of the day and the month is the language's own as well: "Oct 20"
+ * in American English, "20 окт." in Russian. It is taken from the language's
+ * date pattern with the year cut out, so that it matches the time of day next
+ * to it, which comes from the same source.
  */
-private const val DAY = "d MMM"
+internal fun dayPattern(locale: Locale, monthInFull: Boolean): String {
+    val full =
+        DateTimeFormatterBuilder.getLocalizedDateTimePattern(
+            if (monthInFull) FormatStyle.LONG else FormatStyle.MEDIUM,
+            null,
+            IsoChronology.INSTANCE,
+            locale,
+        )
 
-private const val DAY_LONG = "d MMMM,"
+    return withoutYear(full).ifEmpty { if (monthInFull) "d MMMM" else "d MMM" }
+}
+
+/**
+ * [pattern] without its year field and the text that only tied the year to its
+ * neighbours: the " 'г'." after the year in Russian, the ", " before it in
+ * American English, the "年" after it in Chinese. A separator between two other
+ * fields stays.
+ */
+internal fun withoutYear(pattern: String): String {
+    // Only ASCII letters name fields; any other letter, "年" among them, is text.
+    fun isPatternLetter(c: Char) = c in 'a'..'z' || c in 'A'..'Z'
+
+    val tokens = mutableListOf<String>()
+    var i = 0
+
+    while (i < pattern.length) {
+        val c = pattern[i]
+        var j = i + 1
+
+        if (c == '\'') {
+            while (j < pattern.length && pattern[j] != '\'') j++
+            j = minOf(j + 1, pattern.length)
+        } else if (isPatternLetter(c)) {
+            while (j < pattern.length && pattern[j] == c) j++
+        }
+        tokens.add(pattern.substring(i, j))
+        i = j
+    }
+
+    fun isField(token: String) = isPatternLetter(token[0])
+
+    val year = tokens.indexOfFirst { it[0] == 'y' || it[0] == 'u' || it[0] == 'Y' }
+    if (year < 0) return pattern
+
+    var from = year
+    var to = year + 1
+
+    while (to < tokens.size && !isField(tokens[to])) to++
+    if (to == tokens.size) {
+        while (from > 0 && !isField(tokens[from - 1])) from--
+    }
+
+    return (tokens.subList(0, from) + tokens.subList(to, tokens.size)).joinToString("").trim()
+}
 
 /**
  * A time of day the way the language writes one, on the clock the system
@@ -161,7 +217,7 @@ internal fun dateAndClockPattern(
  * year is left out: nothing here reaches one.
  */
 internal fun endsAtText(at: ZonedDateTime, locale: Locale, twentyFourHour: Boolean): String =
-    dayAndClock(DAY, locale, twentyFourHour).format(at)
+    dayAndClock(dayPattern(locale, false), locale, twentyFourHour).format(at)
 
 /** The same end, read in the app's current language. */
 @Composable
@@ -172,7 +228,7 @@ internal fun invitationEndsText(
     at: ZonedDateTime,
     locale: Locale,
     twentyFourHour: Boolean,
-): String = dayAndClock(DAY_LONG, locale, twentyFourHour).format(at)
+): String = dayAndClock("${dayPattern(locale, true)},", locale, twentyFourHour).format(at)
 
 /** The same end, read in the app's current language. */
 @Composable

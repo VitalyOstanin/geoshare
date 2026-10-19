@@ -3,7 +3,16 @@ package io.github.vitalyostanin.geoshare.map
 import com.google.firebase.firestore.FirebaseFirestoreException
 import com.google.firebase.firestore.FirebaseFirestoreException.Code
 import io.github.vitalyostanin.geoshare.log.AppLog
+import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.CoroutineStart
+import kotlinx.coroutines.awaitCancellation
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.runBlocking
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
+import org.junit.Assert.assertSame
+import org.junit.Assert.assertThrows
+import org.junit.Assert.assertTrue
 import org.junit.Test
 import java.io.IOException
 
@@ -48,6 +57,57 @@ class FailureTest {
             logFailure("test", "a fault", IllegalStateException("no state"))
         } finally {
             AppLog.toSystemLog = wasToSystemLog
+        }
+    }
+
+    @Test
+    fun `a call that succeeds gives its value`() {
+        assertEquals(7, runCatchingFailure { 7 }.getOrElse { 0 })
+    }
+
+    @Test
+    fun `an ordinary exception goes to the caller's answer`() {
+        val refusal = FirebaseFirestoreException("denied", Code.PERMISSION_DENIED)
+
+        val answered = runCatchingFailure<Int> { throw refusal }.exceptionOrNull()
+
+        assertSame(refusal, answered)
+    }
+
+    @Test
+    fun `a cancellation thrown in the block is thrown on`() {
+        val cancellation = CancellationException("the screen went away")
+
+        val thrown =
+            assertThrows(CancellationException::class.java) {
+                runCatchingFailure { throw cancellation }.getOrElse { }
+            }
+
+        assertSame(cancellation, thrown)
+    }
+
+    @Test
+    fun `a coroutine cancelled while waiting stops without the answer running`() = runBlocking {
+        var answered = false
+        var after = false
+
+        val job =
+            launch(start = CoroutineStart.UNDISPATCHED) {
+                runCatchingFailure { awaitCancellation() }.onFailure { answered = true }
+                after = true
+            }
+        job.cancel()
+        job.join()
+
+        assertTrue(job.isCancelled)
+        assertFalse(answered)
+        assertFalse(after)
+    }
+
+    @Test
+    fun `an error is not kept`() {
+        assertThrows(StackOverflowError::class.java) {
+            runCatchingFailure { throw StackOverflowError() }
         }
     }
 }

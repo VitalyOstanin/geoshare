@@ -17,10 +17,21 @@ class DateTextsTest {
         val english = endsAtText(moment, Locale.US, false)
         val russian = endsAtText(moment, Locale.forLanguageTag("ru"), true)
 
-        assertTrue(english.startsWith("12 Oct 2:30"))
+        assertTrue(english.startsWith("Oct 12 2:30"))
         assertNotEquals(english, russian)
         assertTrue(russian.startsWith("12 окт"))
         assertTrue(russian.endsWith("14:30"))
+    }
+
+    @Test
+    fun `the day comes before or after the month as the language writes it`() {
+        assertEquals("MMM d", dayPattern(Locale.US, false))
+        assertEquals("MMMM d", dayPattern(Locale.US, true))
+        assertEquals("d MMM", dayPattern(Locale.forLanguageTag("ru"), false))
+        assertEquals("d MMMM", dayPattern(Locale.forLanguageTag("ru"), true))
+        assertEquals("d MMM", withoutYear("d MMM y 'г'."))
+        assertEquals("MMM d", withoutYear("MMM d, y"))
+        assertEquals("M月d日", withoutYear("y年M月d日"))
     }
 
     // A screen that wrote some times in the language's own way and others
@@ -41,7 +52,7 @@ class DateTextsTest {
         val russian = invitationEndsText(moment, Locale.forLanguageTag("ru"), true)
 
         assertEquals("12 октября, 14:30", russian)
-        assertTrue(invitationEndsText(moment, Locale.US, false).startsWith("12 October, 2:30"))
+        assertTrue(invitationEndsText(moment, Locale.US, false).startsWith("October 12, 2:30"))
     }
 
     // The card of a member wrote these in the language the process started

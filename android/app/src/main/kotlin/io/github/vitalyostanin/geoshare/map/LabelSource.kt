@@ -12,7 +12,6 @@ import io.github.vitalyostanin.geoshare.service.labelsOf
 import io.github.vitalyostanin.geoshare.service.liveSnapshots
 import io.github.vitalyostanin.geoshare.service.phonesOf
 import io.github.vitalyostanin.geoshare.service.readString
-import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.onEach
@@ -137,14 +136,13 @@ suspend fun writePhoneName(
         .await()
 }
 
-private suspend fun trying(failure: String, write: suspend () -> Unit): Boolean = try {
-    write()
+private suspend fun trying(failure: String, write: suspend () -> Unit): Boolean =
+    runCatchingFailure {
+        write()
 
-    true
-} catch (cancellation: CancellationException) {
-    throw cancellation
-} catch (error: Exception) {
-    logFailure(TAG, failure, error)
+        true
+    }.getOrElse { error ->
+        logFailure(TAG, failure, error)
 
-    false
-}
+        false
+    }

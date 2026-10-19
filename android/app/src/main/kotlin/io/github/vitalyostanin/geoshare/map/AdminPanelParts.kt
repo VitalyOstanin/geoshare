@@ -61,14 +61,14 @@ internal fun AdminHeader(
  */
 @Composable
 internal fun AdminSearchSummaries(
-    standing: Map<String, Search>,
+    liveSearches: Map<String, Search>,
     lines: List<GroupLine>,
     profiles: Map<String, MemberProfile>,
     ownMemberId: String,
     onRenew: (PhoneLine, String) -> Unit,
     onEndSearch: (phoneId: String) -> Unit,
 ) {
-    for (search in standing.values) {
+    for (search in liveSearches.values) {
         val phone = phoneLine(search, lines)
         val soughtName =
             lines.firstOrNull { it.memberId == search.memberId }?.displayName
@@ -113,7 +113,7 @@ internal class InvitationLink(val site: String?, val inviter: String?, val group
 @Composable
 internal fun AdminInvitationSection(
     invitation: MadeInvitation?,
-    invitationStanding: (code: String) -> Flow<Boolean?>,
+    invitationLive: (code: String) -> Flow<Boolean?>,
     link: InvitationLink,
     now: Instant,
     trouble: Boolean,
@@ -124,13 +124,13 @@ internal fun AdminInvitationSection(
     val invitationLeft by
         key(invitation?.code) {
             remember {
-                invitation?.let { invitationStanding(it.code) } ?: flowOf(null)
+                invitation?.let { invitationLive(it.code) } ?: flowOf(null)
             }.collectAsStateWithLifecycle(initialValue = null)
         }
 
     AdminInvitation(
         invitation = invitation,
-        standing = invitationLeft,
+        stillValid = invitationLeft,
         now = now,
         link =
         invitation?.let {

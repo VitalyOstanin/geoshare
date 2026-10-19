@@ -23,6 +23,7 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import io.github.vitalyostanin.geoshare.R
+import io.github.vitalyostanin.geoshare.cutToLimit
 import io.github.vitalyostanin.geoshare.membership.Invitation
 import io.github.vitalyostanin.geoshare.membership.ProjectMark
 import io.github.vitalyostanin.geoshare.membership.Roster
@@ -240,7 +241,7 @@ private fun FoundGroupOffer(onFoundGroup: (String?) -> Unit) {
     // own and is shown by its founder's instead (ADR-0016).
     OutlinedTextField(
         value = groupName,
-        onValueChange = { groupName = it.take(GROUP_NAME_LIMIT) },
+        onValueChange = { groupName = cutToLimit(it, GROUP_NAME_LIMIT) },
         label = { Text(text = stringResource(R.string.group_name_optional_label)) },
         singleLine = true,
         modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 4.dp),

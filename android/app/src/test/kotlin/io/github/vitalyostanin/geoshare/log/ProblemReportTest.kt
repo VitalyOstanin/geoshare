@@ -78,4 +78,18 @@ class ProblemReportTest {
 
         assertTrue(draft.url.length <= ISSUE_URL_LIMIT)
     }
+
+    // The cut falling inside an emoji used to leave its first half, which the
+    // address carries as a replacement character.
+    @Test
+    fun `the title and the description are not cut between the halves of an emoji`() {
+        val emoji = "\uD83D\uDE00"
+
+        assertEquals("a".repeat(99), issueTitle("a".repeat(99) + emoji))
+
+        val draft = buildIssue("a".repeat(599) + emoji, "1.2.3", 34, "first")
+
+        assertFalse(draft.url.contains("%EF%BF%BD"))
+        assertTrue(bodyOf(draft.url).startsWith("a".repeat(599) + "\n\nApp version"))
+    }
 }

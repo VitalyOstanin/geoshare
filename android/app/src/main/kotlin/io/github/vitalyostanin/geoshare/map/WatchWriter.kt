@@ -7,7 +7,6 @@ import io.github.vitalyostanin.geoshare.project.GroupConnection
 import io.github.vitalyostanin.geoshare.service.WatchField
 import io.github.vitalyostanin.geoshare.service.positionId
 import io.github.vitalyostanin.geoshare.service.watchOf
-import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.tasks.await
 
@@ -40,7 +39,7 @@ class WatchWriter(
         while (true) {
             var next = WATCH_REFRESH
 
-            try {
+            runCatchingFailure {
                 // The moment of the claim by the server's clock, not an end by
                 // this device's: whoever reads it adds the same few minutes, so
                 // a device whose clock is wrong cannot hold the group longer,
@@ -53,9 +52,7 @@ class WatchWriter(
                         ),
                     )
                     .await()
-            } catch (cancellation: CancellationException) {
-                throw cancellation
-            } catch (error: Exception) {
+            }.onFailure { error ->
                 // The old claim is still out there and has minutes left on it,
                 // so a failed write is worth a line and another try soon, not
                 // a message on screen.
@@ -84,11 +81,7 @@ class WatchWriter(
             return
         }
 
-        try {
-            document.delete().await()
-        } catch (cancellation: CancellationException) {
-            throw cancellation
-        } catch (error: Exception) {
+        runCatchingFailure { document.delete().await() }.onFailure { error ->
             logFailure(TAG, "could not say that we stopped looking", error)
         }
     }

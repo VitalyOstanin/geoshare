@@ -109,7 +109,7 @@ class AdminPanelTest {
                     calls.resets.add(it)
                     writeOutcome
                 },
-                invitationStanding = { flowOf(null) },
+                invitationLive = { flowOf(null) },
                 onClose = { calls.closed++ },
             )
         }

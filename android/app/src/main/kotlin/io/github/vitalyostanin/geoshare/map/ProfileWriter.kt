@@ -11,7 +11,6 @@ import io.github.vitalyostanin.geoshare.service.ProfileField
 import io.github.vitalyostanin.geoshare.service.grantsOf
 import io.github.vitalyostanin.geoshare.service.membersOf
 import io.github.vitalyostanin.geoshare.trimText
-import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.tasks.await
 import java.time.Instant
 import java.util.Date
@@ -54,7 +53,7 @@ suspend fun publishProfile(
             ProfileField.UPDATED_AT to FieldValue.serverTimestamp(),
         )
 
-    try {
+    return runCatchingFailure {
         membersOf(connection)
             .document(memberId)
             // Merged rather than replaced, so that a field added here later is
@@ -64,15 +63,13 @@ suspend fun publishProfile(
 
         AppLog.i(TAG, "the profile of $memberId is now published")
 
-        return true
-    } catch (cancellation: CancellationException) {
-        throw cancellation
-    } catch (error: Exception) {
+        true
+    }.getOrElse { error ->
         // The markers fall back to the id, which is what they showed before
         // profiles existed, so this is worth a line rather than a message.
         logFailure(TAG, "could not publish the profile", error)
 
-        return false
+        false
     }
 }
 
@@ -91,27 +88,23 @@ suspend fun publishDevice(
     memberId: String,
     deviceId: String,
     connection: GroupConnection,
-): Boolean {
-    try {
-        grantsOf(connection)
-            .document(memberId)
-            // Merged rather than replaced: the permissions live in this
-            // document too, and they are not this write's business.
-            .set(mapOf(GrantField.DEVICES to FieldValue.arrayUnion(deviceId)), SetOptions.merge())
-            .await()
+): Boolean = runCatchingFailure {
+    grantsOf(connection)
+        .document(memberId)
+        // Merged rather than replaced: the permissions live in this
+        // document too, and they are not this write's business.
+        .set(mapOf(GrantField.DEVICES to FieldValue.arrayUnion(deviceId)), SetOptions.merge())
+        .await()
 
-        AppLog.i(TAG, "the device of $memberId is now on the list its readers follow")
+    AppLog.i(TAG, "the device of $memberId is now on the list its readers follow")
 
-        return true
-    } catch (cancellation: CancellationException) {
-        throw cancellation
-    } catch (error: Exception) {
-        // Nothing on this device stops working: it goes on writing its own
-        // position, and it is the readers who will not find the document.
-        logFailure(TAG, "could not publish the device", error)
+    true
+}.getOrElse { error ->
+    // Nothing on this device stops working: it goes on writing its own
+    // position, and it is the readers who will not find the document.
+    logFailure(TAG, "could not publish the device", error)
 
-        return false
-    }
+    false
 }
 
 /**
@@ -123,14 +116,12 @@ suspend fun publishDevice(
  * timer still brings the marker, only later.
  */
 private suspend fun announceSharing(memberId: String, connection: GroupConnection) {
-    try {
+    runCatchingFailure {
         membersOf(connection)
             .document(memberId)
             .update(ProfileField.UPDATED_AT, FieldValue.serverTimestamp())
             .await()
-    } catch (cancellation: CancellationException) {
-        throw cancellation
-    } catch (error: Exception) {
+    }.onFailure { error ->
         logFailure(TAG, "could not say that the permissions changed", error)
     }
 }
@@ -150,7 +141,7 @@ suspend fun publishSharing(
 ): Boolean {
     val written = sharedWith.mapValues { (_, until) -> Timestamp(Date.from(until)) }
 
-    try {
+    return runCatchingFailure {
         grantsOf(connection)
             .document(memberId)
             // The field named rather than merged: a plain merge joins the two
@@ -166,12 +157,10 @@ suspend fun publishSharing(
         AppLog.i(TAG, "the permissions of $memberId are now published")
         announceSharing(memberId, connection)
 
-        return true
-    } catch (cancellation: CancellationException) {
-        throw cancellation
-    } catch (error: Exception) {
+        true
+    }.getOrElse { error ->
         logFailure(TAG, "could not publish the permissions", error)
 
-        return false
+        false
     }
 }

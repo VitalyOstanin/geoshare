@@ -30,6 +30,23 @@ class MarkerIconTest {
     }
 
     @Test
+    fun `the account initial skips leading spaces`() {
+        assertEquals("А", accountInitial(" аня"))
+    }
+
+    @Test
+    fun `the account initial keeps a name opening with an emoji whole`() {
+        assertEquals("\uD83D\uDE00", accountInitial("\uD83D\uDE00 Аня"))
+    }
+
+    @Test
+    fun `an account without a usable name has no initial`() {
+        assertEquals(null, accountInitial(null))
+        assertEquals(null, accountInitial(""))
+        assertEquals(null, accountInitial("  "))
+    }
+
+    @Test
     fun `an id whose hash has no positive counterpart still lands in the list`() {
         // "polygenelubricants" is the standard example of a string whose hash
         // is the smallest negative integer there is; dropping the sign first

@@ -9,6 +9,7 @@ import io.github.vitalyostanin.geoshare.download.DownloadSetting
 import io.github.vitalyostanin.geoshare.download.RoamingQuestion
 import io.github.vitalyostanin.geoshare.download.mayDownloadNow
 import io.github.vitalyostanin.geoshare.log.AppLog
+import io.github.vitalyostanin.geoshare.net.isSuccess
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.distinctUntilChanged
@@ -80,7 +81,7 @@ fun orbitsDue(kept: LocalDate?, today: LocalDate): Boolean =
 suspend fun keepTheOrbits(context: Context, onRead: (Orbits) -> Unit) {
     val directory = File(context.filesDir, DIRECTORY).apply { mkdirs() }
 
-    keptFile(directory)?.let { read(it) }?.let(onRead)
+    keptFile(directory)?.let { withContext(Dispatchers.IO) { readKept(it) } }?.let(onRead)
 
     val setting = DownloadSetting(context)
     val hourly = flow {
@@ -149,7 +150,7 @@ private fun download(url: String, target: File) {
     connection.readTimeout = TIMEOUT_MS
 
     try {
-        if (connection.responseCode != HttpURLConnection.HTTP_OK) {
+        if (!isSuccess(connection.responseCode)) {
             throw IOException("HTTP ${connection.responseCode}")
         }
 
@@ -179,13 +180,38 @@ private fun download(url: String, target: File) {
     }
 }
 
-private suspend fun read(file: File): Orbits? = withContext(Dispatchers.IO) {
-    try {
-        GZIPInputStream(file.inputStream()).bufferedReader().useLines { orbitsOf(it) }
-    } catch (broken: IOException) {
-        AppLog.w(TAG, "orbits: ${file.name} unreadable", broken)
-        null
+/**
+ * Reads the file kept from an earlier run, deleting it when it gives no orbits.
+ *
+ * Without the deletion a file cut short or emptied on disk would be read again
+ * at every start and, being dated, would keep the next download from looking
+ * due until the day after. Once it is gone, the hourly check finds nothing kept
+ * and fetches yesterday's file as on the first run.
+ */
+internal fun readKept(file: File): Orbits? {
+    val orbits = readOrbits(file)
+
+    if (orbits == null || orbits.size == 0) {
+        AppLog.w(TAG, "orbits: kept ${file.name} holds no orbits, deleted")
+        file.delete()
+        return null
     }
+
+    return orbits
+}
+
+private suspend fun read(file: File): Orbits? = withContext(Dispatchers.IO) { readOrbits(file) }
+
+// IOException covers all that reading a damaged file throws: a missing or
+// foreign header and a cut-off end come as ZipException and EOFException, a
+// broken deflate stream as a ZipException, and the reader replaces bytes that
+// are not text instead of throwing. The lines themselves are parsed without
+// throwing, so nothing else gets out to the coroutine the service launched.
+private fun readOrbits(file: File): Orbits? = try {
+    GZIPInputStream(file.inputStream()).bufferedReader().useLines { orbitsOf(it) }
+} catch (broken: IOException) {
+    AppLog.w(TAG, "orbits: ${file.name} unreadable", broken)
+    null
 }
 
 private fun keptFile(directory: File): File? =

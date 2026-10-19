@@ -147,6 +147,16 @@ fun memberInitial(name: String): String {
 }
 
 /**
+ * The letter on the account button, or null when the account has no usable
+ * name.
+ *
+ * Taken as a member's initial is, so a name opening with an emoji or a space
+ * does not leave half a pair or a blank circle; an empty name is the same as
+ * none, and the button then says so in words.
+ */
+fun accountInitial(name: String?): String? = name?.let { memberInitial(it) }?.ifEmpty { null }
+
+/**
  * How many of a group's faces are drawn, the rest being left to the counter.
  *
  * The web page repeats this, so that a group of five is the same marker

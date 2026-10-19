@@ -70,7 +70,7 @@ internal fun invitationLinkText(
 internal fun AdminInvitation(
     invitation: MadeInvitation?,
     /** Whether the invitation still stands, as the database has it; null while unknown. */
-    standing: Boolean?,
+    stillValid: Boolean?,
     /** The clock the invitation is held against: one that has run out admits nobody. */
     now: Instant,
     link: String?,
@@ -81,8 +81,8 @@ internal fun AdminInvitation(
 
     // Used or run out, the link is taken away: one that admits nobody would
     // only be handed on to somebody who then cannot get in.
-    if (invitation != null && (standing == false || !now.isBefore(invitation.expiresAt))) {
-        InvitationOver(invitation, used = standing == false, onOpenInvitation = onOpenInvitation)
+    if (invitation != null && (stillValid == false || !now.isBefore(invitation.expiresAt))) {
+        InvitationOver(invitation, used = stillValid == false, onOpenInvitation = onOpenInvitation)
     } else if (invitation != null && link != null) {
         Text(
             text =

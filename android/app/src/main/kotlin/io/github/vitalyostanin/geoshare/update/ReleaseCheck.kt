@@ -1,17 +1,18 @@
 package io.github.vitalyostanin.geoshare.update
 
-import io.github.vitalyostanin.geoshare.project.FetchTransport
-import io.github.vitalyostanin.geoshare.project.RawResponse
+import io.github.vitalyostanin.geoshare.BuildConfig
+import io.github.vitalyostanin.geoshare.log.AppLog
+import io.github.vitalyostanin.geoshare.net.FetchTransport
+import io.github.vitalyostanin.geoshare.net.httpGet
+import io.github.vitalyostanin.geoshare.net.isSuccess
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
-import java.io.ByteArrayOutputStream
 import java.io.IOException
-import java.io.InputStream
 import java.net.HttpURLConnection
-import java.net.URL
 
-private const val LATEST_RELEASE_URL =
-    "https://api.github.com/repos/VitalyOstanin/geoshare/releases/latest"
+private val LATEST_RELEASE_URL: String = BuildConfig.LATEST_RELEASE_URL
+
+private const val TAG = "geoshare.release-check"
 
 private const val TIMEOUT_MS = 10_000
 
@@ -22,8 +23,6 @@ private const val TIMEOUT_MS = 10_000
 private const val MAX_BODY_BYTES = 1024 * 1024
 
 private const val NOT_FOUND = 404
-private const val SUCCESS_RANGE_START = 200
-private const val SUCCESS_RANGE_END_EXCLUSIVE = 300
 
 /** What asking GitHub for the latest release produced. */
 sealed interface ReleaseCheck {
@@ -48,7 +47,7 @@ sealed interface ReleaseCheck {
  * Asks GitHub for the latest release over an [HttpURLConnection] GET run on
  * [Dispatchers.IO]. Network trouble is a result, not an exception.
  */
-suspend fun fetchLatestRelease(): ReleaseCheck = fetchLatestRelease(::httpGet)
+suspend fun fetchLatestRelease(): ReleaseCheck = fetchLatestRelease(::getLatestRelease)
 
 /** [fetchLatestRelease] with [transport] exposed so a test can fake GitHub's answer. */
 internal suspend fun fetchLatestRelease(transport: FetchTransport): ReleaseCheck =
@@ -56,12 +55,20 @@ internal suspend fun fetchLatestRelease(transport: FetchTransport): ReleaseCheck
         val response = try {
             transport(LATEST_RELEASE_URL)
         } catch (offline: IOException) {
+            AppLog.w(
+                TAG,
+                "the latest release could not be requested: " +
+                    "${offline.javaClass.simpleName}: ${offline.message}",
+            )
+
             return@withContext ReleaseCheck.Unavailable
         }
 
         if (response.status == NOT_FOUND) return@withContext ReleaseCheck.NothingToInstall
 
-        if (response.status !in SUCCESS_RANGE_START until SUCCESS_RANGE_END_EXCLUSIVE) {
+        if (!isSuccess(response.status)) {
+            AppLog.w(TAG, "GitHub answered ${response.status}, not the latest release")
+
             return@withContext ReleaseCheck.Unavailable
         }
 
@@ -70,41 +77,5 @@ internal suspend fun fetchLatestRelease(transport: FetchTransport): ReleaseCheck
             ?: ReleaseCheck.NothingToInstall
     }
 
-private fun httpGet(url: String): RawResponse {
-    val connection = URL(url).openConnection() as HttpURLConnection
-
-    connection.connectTimeout = TIMEOUT_MS
-    connection.readTimeout = TIMEOUT_MS
-    connection.setRequestProperty("Accept", "application/vnd.github+json")
-
-    return try {
-        val status = connection.responseCode
-        val stream = if (status in SUCCESS_RANGE_START until SUCCESS_RANGE_END_EXCLUSIVE) {
-            connection.inputStream
-        } else {
-            connection.errorStream
-        }
-        val body = stream?.use { it.readUpTo(MAX_BODY_BYTES) } ?: ByteArray(0)
-
-        RawResponse(status, body.toString(Charsets.UTF_8))
-    } finally {
-        connection.disconnect()
-    }
-}
-
-/** [InputStream.readBytes] has no cap of its own; GitHub's answer is not read past [limit]. */
-private fun InputStream.readUpTo(limit: Int): ByteArray {
-    val chunk = ByteArray(DEFAULT_BUFFER_SIZE)
-    val read = ByteArrayOutputStream()
-    var total = 0
-
-    while (total < limit) {
-        val count = read(chunk, 0, minOf(chunk.size, limit - total))
-
-        if (count < 0) break
-        read.write(chunk, 0, count)
-        total += count
-    }
-
-    return read.toByteArray()
-}
+private fun getLatestRelease(url: String) =
+    httpGet(url, mapOf("Accept" to "application/vnd.github+json"), MAX_BODY_BYTES, TIMEOUT_MS)

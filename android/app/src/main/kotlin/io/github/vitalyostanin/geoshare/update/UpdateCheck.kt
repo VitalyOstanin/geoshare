@@ -2,7 +2,18 @@ package io.github.vitalyostanin.geoshare.update
 
 import android.content.Context
 import io.github.vitalyostanin.geoshare.BuildConfig
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import java.time.Instant
+
+/**
+ * One check at a time for the whole process. The screen and the sharing
+ * service start their checks on their own, and both read the time of the last
+ * check before the request and write it after; without the lock two checks
+ * started while one is due would both pass and both ask GitHub. Under the lock
+ * the second one sees the time the first one wrote and asks nothing.
+ */
+private val checkLock = Mutex()
 
 /**
  * Asks GitHub for a newer release if the last check is old enough, and tells
@@ -55,9 +66,9 @@ internal suspend fun checkNow(
     current: String,
     now: Instant,
     fetch: suspend () -> ReleaseCheck,
-): ManualCheck {
+): ManualCheck = checkLock.withLock {
     val release = when (val result = fetch()) {
-        ReleaseCheck.Unavailable -> return ManualCheck.Failed
+        ReleaseCheck.Unavailable -> return@withLock ManualCheck.Failed
         ReleaseCheck.NothingToInstall -> null
         is ReleaseCheck.Found -> result.release
     }
@@ -66,7 +77,7 @@ internal suspend fun checkNow(
     record.lastCheck = now
     record.found = newer
 
-    return if (newer == null) ManualCheck.UpToDate else ManualCheck.Newer(newer)
+    if (newer == null) ManualCheck.UpToDate else ManualCheck.Newer(newer)
 }
 
 /**
@@ -79,6 +90,8 @@ internal suspend fun checkNow(
  * release is remembered when it is newer than [current] and forgotten
  * otherwise (the member updated, or the release was withdrawn), and the
  * version is recorded as announced only when [notify] reports it was shown.
+ * Whether the check is due is read under [checkLock], so a check that waited
+ * for another one sees its answer instead of asking again.
  */
 internal suspend fun checkForUpdate(
     record: UpdateRecord,
@@ -86,11 +99,11 @@ internal suspend fun checkForUpdate(
     now: Instant,
     fetch: suspend () -> ReleaseCheck,
     notify: (version: String) -> Boolean,
-) {
-    if (!record.autoCheck || !isCheckDue(record.lastCheck, now)) return
+): Unit = checkLock.withLock {
+    if (!record.autoCheck || !isCheckDue(record.lastCheck, now)) return@withLock
 
     val release = when (val result = fetch()) {
-        ReleaseCheck.Unavailable -> return
+        ReleaseCheck.Unavailable -> return@withLock
         ReleaseCheck.NothingToInstall -> null
         is ReleaseCheck.Found -> result.release
     }

@@ -7,6 +7,7 @@ import androidx.core.app.ServiceCompat
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.LifecycleService
 import androidx.lifecycle.lifecycleScope
+import com.google.firebase.firestore.FirebaseFirestoreException
 import io.github.vitalyostanin.geoshare.collection.Accuracy
 import io.github.vitalyostanin.geoshare.collection.Asked
 import io.github.vitalyostanin.geoshare.collection.CircleLimits
@@ -40,10 +41,10 @@ import io.github.vitalyostanin.geoshare.collection.sameAnswer
 import io.github.vitalyostanin.geoshare.collection.whomToAsk
 import io.github.vitalyostanin.geoshare.log.AppLog
 import io.github.vitalyostanin.geoshare.map.logFailure
+import io.github.vitalyostanin.geoshare.map.runCatchingFailure
 import io.github.vitalyostanin.geoshare.map.stands
 import io.github.vitalyostanin.geoshare.project.Connections
 import io.github.vitalyostanin.geoshare.update.checkForUpdateIfDue
-import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -388,11 +389,9 @@ class SharingService : LifecycleService() {
         // the deletion, which costs a line in the log.
         for (link in links.value) {
             lifecycleScope.launch {
-                try {
+                runCatchingFailure {
                     endSearch(link.phoneId, link.connection)
-                } catch (cancellation: CancellationException) {
-                    throw cancellation
-                } catch (refusal: Exception) {
+                }.onFailure { refusal ->
                     logFailure(
                         TAG,
                         "could not end the search in $link from its own notification",
@@ -415,11 +414,9 @@ class SharingService : LifecycleService() {
         // in the log.
         for (link in links.value) {
             lifecycleScope.launch {
-                try {
+                runCatchingFailure {
                     stopSiren(link.phoneId, link.memberId, link.connection)
-                } catch (cancellation: CancellationException) {
-                    throw cancellation
-                } catch (refusal: Exception) {
+                }.onFailure { refusal ->
                     logFailure(TAG, "could not say the siren was stopped in $link", refusal)
                 }
             }
@@ -807,12 +804,17 @@ class SharingService : LifecycleService() {
     private suspend fun tellThemAnswersAreBeingLeftOut(writer: EveryGroup, reason: String) {
         val news = leftOut.note(reason, Instant.now()) ?: return
 
-        try {
+        runCatchingFailure {
             writer.noteLeftOut(news.count, news.reason, news.since)
-        } catch (cancellation: CancellationException) {
-            throw cancellation
-        } catch (error: Exception) {
-            AppLog.i(TAG, "nowhere to say answers are being left out yet: ${error.message}")
+        }.onFailure { error ->
+            val notThereYet =
+                (error as? FirebaseFirestoreException)?.code ==
+                    FirebaseFirestoreException.Code.NOT_FOUND
+            if (notThereYet) {
+                AppLog.i(TAG, "nowhere to say answers are being left out yet")
+            } else {
+                AppLog.w(TAG, "could not say answers are being left out", error)
+            }
         }
     }
 
@@ -1030,15 +1032,12 @@ class SharingService : LifecycleService() {
      * One position, asked for now; a provider that will not answer is not a
      * reason to stop collecting, and the next round asks again.
      */
-    private suspend fun positionNow(priority: Int, asked: Asked): Fix? = try {
-        currentPosition(this, priority, asked)
-    } catch (cancellation: CancellationException) {
-        throw cancellation
-    } catch (error: Exception) {
-        AppLog.w(TAG, "the provider gave no position", error)
+    private suspend fun positionNow(priority: Int, asked: Asked): Fix? =
+        runCatchingFailure { currentPosition(this, priority, asked) }.getOrElse { error ->
+            AppLog.w(TAG, "the provider gave no position", error)
 
-        null
-    }
+            null
+        }
 
     /**
      * Adds a written position to what the device remembers about itself.
@@ -1103,7 +1102,7 @@ class SharingService : LifecycleService() {
         // and what says whether it is the satellites' measurement under
         // another name is the receiver's own last answer, read from the store.
         whence: FoundBy,
-    ): Boolean = try {
+    ): Boolean = runCatchingFailure {
         val into =
             writer.write(
                 written.fix,
@@ -1127,9 +1126,7 @@ class SharingService : LifecycleService() {
         )
 
         true
-    } catch (cancellation: CancellationException) {
-        throw cancellation
-    } catch (error: Exception) {
+    }.getOrElse { error ->
         logFailure(TAG, "could not write the position", error)
 
         false

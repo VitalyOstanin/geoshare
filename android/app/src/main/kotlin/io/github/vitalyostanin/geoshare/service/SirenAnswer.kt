@@ -9,10 +9,10 @@ import io.github.vitalyostanin.geoshare.log.AppLog
 import io.github.vitalyostanin.geoshare.map.SIREN_SECONDS
 import io.github.vitalyostanin.geoshare.map.Siren
 import io.github.vitalyostanin.geoshare.map.logFailure
+import io.github.vitalyostanin.geoshare.map.runCatchingFailure
 import io.github.vitalyostanin.geoshare.map.shouldSound
 import io.github.vitalyostanin.geoshare.permission.devicePermissions
 import io.github.vitalyostanin.geoshare.project.GroupConnection
-import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
@@ -94,11 +94,7 @@ class SirenAnswer(private val context: Context, private val scope: CoroutineScop
             // On its own: a write waits for the server, and a device without a
             // network still sounds.
             scope.launch {
-                try {
-                    heardSiren(phoneId, connection)
-                } catch (cancellation: CancellationException) {
-                    throw cancellation
-                } catch (refusal: Exception) {
+                runCatchingFailure { heardSiren(phoneId, connection) }.onFailure { refusal ->
                     logFailure(TAG, "could not say the siren was heard", refusal)
                 }
             }
