@@ -15,6 +15,7 @@ that might not fit.
 - [Before you start](#before-you-start)
 - [Building and checking](#building-and-checking)
 - [Changes](#changes)
+- [What changes together](#what-changes-together)
 - [Reporting a problem](#reporting-a-problem)
 
 ## Before you start
@@ -50,13 +51,36 @@ affect; `tools/check.sh --all` runs every one.
 - Fixes and small improvements can come straight as a pull request; larger
   or architectural ones start with an issue, as said at the top.
 - One change per pull request, with tests for what it fixes or adds.
-- A change a user would notice gets a line in [CHANGELOG.md](CHANGELOG.md)
-  under the unreleased version.
+- A change a user would notice gets a line under the unreleased version in
+  both changelogs, as [below](#what-changes-together) says.
 - Text on the screen comes in English and Russian.
 - A commit's subject starts with the part it changes, capitalised and
   followed by a colon: `Android:`, `Page:`, `Setup page:`, `Rules:`,
   `Tools:`, `Docs:`, `Release:`. A change across several parts goes without
   one. The rest of the subject says what changed for whoever uses that part.
+
+## What changes together
+
+What the application does for each role is written down in
+[docs/stories/](docs/stories/README.md), and why it does it that way in
+[docs/ADR/](docs/ADR/README.md). A change of behaviour changes, in the same
+commit:
+
+| № | What                                 | When                                                                                                                                                             |
+|---|--------------------------------------|------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| 1 | the story                            | its status, its acceptance lines, its `Tests` and `Not covered`; a new behaviour gets a new story with a new id                                                  |
+| 2 | the tests that hold it               | the rules' tests first, since the rules decide who may do what; a test written for a story names the story's id in a comment above it                            |
+| 3 | an ADR                               | when the change is a decision somebody would otherwise have to reconstruct from the code; an accepted ADR's body is never rewritten, a new one supersedes it     |
+| 4 | the table of records against stories | at the end of `docs/stories/README.md`                                                                                                                           |
+| 5 | the wording                          | a new field, type or on-screen word takes its name from [GLOSSARY.md](GLOSSARY.md), or adds the word there                                                       |
+| 6 | `README.md` and `README.ru.md`       | what the project does, how to get it and how to set a group up must not read differently in the two; the screenshots are shared, each language keeps its wording |
+| 7 | `CHANGELOG.md` and `CHANGELOG.ru.md` | the application shows a member the section in their language, so an entry in one is an entry in the other                                                        |
+
+`web/tests/stories.test.mjs` checks that every record and test a story names
+exists and that the table matches the stories. It does not check that the
+acceptance lines are true; the tests named do. It fails on a change that
+leaves the table or a story out of step, which is the usual sign that a row
+above was skipped.
 
 ## Reporting a problem
 
