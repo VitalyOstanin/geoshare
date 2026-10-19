@@ -268,7 +268,7 @@ private fun AdminPhoneButtons(
 
         if (mayLookFor) {
             SearchButton(
-                standing = search != null,
+                searching = search != null,
                 enabled = !LocalLink.current.lost,
                 onClick = if (search != null) onEndSearch else onSearch,
             )

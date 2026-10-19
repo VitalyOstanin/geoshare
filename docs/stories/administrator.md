@@ -147,7 +147,7 @@ Acceptance:
 
 - Status: done
 - ADR: 0011
-- Tests: rules `searches.test.mjs`; Android `SearchesTest`; page `searches.test.mjs`
+- Tests: rules `searches.test.mjs`; Android `SearchesTest`, `MapScreenTest`; page `searches.test.mjs`
 - Not covered: the red ring on the map
 
 As an administrator I open a search for one device for a time I choose, so

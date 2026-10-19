@@ -49,7 +49,10 @@ function storiesOf(file) {
 
 const stories = ROLES.flatMap(storiesOf);
 const records = readdirSync(new URL('docs/ADR/', ROOT)).filter((name) => /^\d{4}-/.test(name));
-const androidTests = filesUnder('android/app/src/test/');
+const androidTests = [
+    ...filesUnder('android/app/src/test/'),
+    ...filesUnder('android/app/src/androidTest/'),
+];
 const webTests = filesUnder('web/tests/');
 const ruleTests = filesUnder('firebase/tests/rules/');
 

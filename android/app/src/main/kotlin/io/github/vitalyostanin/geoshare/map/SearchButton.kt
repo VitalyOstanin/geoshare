@@ -38,7 +38,7 @@ private const val BLINK_DIMMEST = 0.25f
  */
 @Composable
 fun SearchButton(
-    standing: Boolean,
+    searching: Boolean,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
     /** Off while the database is silent, for a standing search: ending it writes at once. */
@@ -46,7 +46,7 @@ fun SearchButton(
 ) {
     val icon = painterResource(R.drawable.ic_search_alarm)
 
-    if (standing) {
+    if (searching) {
         val blinking = rememberInfiniteTransition(label = "search")
         val shown by blinking.animateFloat(
             initialValue = 1f,

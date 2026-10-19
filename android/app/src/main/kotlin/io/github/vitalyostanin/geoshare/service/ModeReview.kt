@@ -58,7 +58,7 @@ internal class ModeReview(
     private val decide: (
         untils: List<Instant>,
         moving: Moving,
-        standing: Boolean,
+        insideGeofence: Boolean,
         ownMap: Boolean,
     ) -> CollectionMode,
 ) {
@@ -116,8 +116,8 @@ internal class ModeReview(
             standingStill(context, fenceCentre),
             MapOnScreen.state,
             reviews,
-        ) { untils, moving, standing, ownMap, _ ->
-            decide(untils, moving, standing, ownMap)
+        ) { untils, moving, insideGeofence, ownMap, _ ->
+            decide(untils, moving, insideGeofence, ownMap)
         }.distinctUntilChanged()
     }
 }

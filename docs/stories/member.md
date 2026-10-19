@@ -266,7 +266,7 @@ Acceptance:
 
 - Status: done
 - ADR: 0006, 0007, 0010
-- Tests: Android `PositionAgeTest`, `AccuracyRingTest`, `MemberClustersTest`, `MemberOrderTest`, `GroupLineTest`; page `age.test.mjs`, `clusters.test.mjs`, `members.test.mjs`
+- Tests: Android `PositionAgeTest`, `AccuracyRingTest`, `MemberClustersTest`, `MemberOrderTest`, `GroupLineTest`, `MapScreenTest`; page `age.test.mjs`, `clusters.test.mjs`, `members.test.mjs`
 
 As a member I see on a map where the members who share with me are, how old
 each place is and how accurate, so that I know whether to trust it.
@@ -283,7 +283,7 @@ Acceptance:
 
 - Status: done
 - ADR: —
-- Tests: Android `FollowingTest`; page `following.test.mjs`
+- Tests: Android `FollowingTest`, `MapScreenTest`; page `following.test.mjs`
 
 As a member I keep the map centred on one member as they move, so that I do
 not have to pan by hand.
@@ -299,7 +299,7 @@ Acceptance:
 
 - Status: done
 - ADR: 0030
-- Tests: rules `access.test.mjs` (labels); Android `LabelsTest`; page `labels.test.mjs`
+- Tests: rules `access.test.mjs` (labels); Android `LabelsTest`, `MapScreenTest`; page `labels.test.mjs`
 
 As a member I call a device "new device" rather than its model, and a person
 "grandma" rather than the name on her account, for myself alone, so that the

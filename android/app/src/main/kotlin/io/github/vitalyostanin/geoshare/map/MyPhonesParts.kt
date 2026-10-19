@@ -167,7 +167,7 @@ private fun MyPhoneButtons(state: MyPhoneState, actions: MyPhoneActions) {
         // open a search on any device of theirs, this one among them.
         if (actions.mayLookFor) {
             SearchButton(
-                standing = state.search != null,
+                searching = state.search != null,
                 enabled = !LocalLink.current.lost,
                 onClick = {
                     if (state.search !=

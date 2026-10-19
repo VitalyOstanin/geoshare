@@ -58,7 +58,8 @@ Acceptance:
 
 - Status: done
 - ADR: 0010
-- Tests: Android `GeofenceTest`, `StillnessTest`, `MovementTest`, `ModeSelectionTest`
+- Tests: Android `GeofenceTest`, `StillnessTest`, `MovementTest`, `ModeSelectionTest`,
+  `FixSieveTest`
 - Not covered: battery, measured on a device
 
 As a member I let my device stay quiet while I do not move, so that a day at
@@ -75,7 +76,7 @@ Acceptance:
 
 - Status: done
 - ADR: 0002, 0020
-- Tests: Android `SourcesTest`, `AskingTest`, `ProviderNoteTest`
+- Tests: Android `SourcesTest`, `AskingTest`, `ProviderNoteTest`, `FixSieveTest`
 - Not covered: sign-in on a device without Play services, by hand
 
 As a member with a device or tablet that has no Google Play services I still

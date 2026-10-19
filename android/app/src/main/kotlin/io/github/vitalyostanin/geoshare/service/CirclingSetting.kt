@@ -43,27 +43,27 @@ private fun limitsOf(snapshot: DocumentSnapshot?): CircleLimits {
  * whole set is then weighed as it stands.
  */
 internal fun limitsOf(fields: Map<String, Any?>): CircleLimits {
-    val standing = CircleLimits()
+    val defaults = CircleLimits()
     val number = { field: String -> numberIn(fields, field) }
     val asked =
         CircleLimits(
-            answers = number(CirclingField.ANSWERS)?.toInt() ?: standing.answers,
-            within = number(CirclingField.WITHIN_SECONDS)?.let(::asDuration) ?: standing.within,
-            roundness = number(CirclingField.ROUNDNESS) ?: standing.roundness,
-            widestMetres = number(CirclingField.WIDEST_METRES) ?: standing.widestMetres,
-            tightestMetres = number(CirclingField.TIGHTEST_METRES) ?: standing.tightestMetres,
-            steadiness = number(CirclingField.STEADINESS) ?: standing.steadiness,
-            turnedDegrees = number(CirclingField.TURNED_DEGREES) ?: standing.turnedDegrees,
-            slowestMps = number(CirclingField.SLOWEST_MPS) ?: standing.slowestMps,
+            answers = number(CirclingField.ANSWERS)?.toInt() ?: defaults.answers,
+            within = number(CirclingField.WITHIN_SECONDS)?.let(::asDuration) ?: defaults.within,
+            roundness = number(CirclingField.ROUNDNESS) ?: defaults.roundness,
+            widestMetres = number(CirclingField.WIDEST_METRES) ?: defaults.widestMetres,
+            tightestMetres = number(CirclingField.TIGHTEST_METRES) ?: defaults.tightestMetres,
+            steadiness = number(CirclingField.STEADINESS) ?: defaults.steadiness,
+            turnedDegrees = number(CirclingField.TURNED_DEGREES) ?: defaults.turnedDegrees,
+            slowestMps = number(CirclingField.SLOWEST_MPS) ?: defaults.slowestMps,
         )
 
     if (!circleLimitsStand(asked)) {
         AppLog.w(TAG, "the circling setting does not stand as limits and was left out")
 
-        return standing
+        return defaults
     }
 
-    if (asked != standing) {
+    if (asked != defaults) {
         AppLog.i(TAG, "the group has narrowed what counts as going round in circles")
     }
 

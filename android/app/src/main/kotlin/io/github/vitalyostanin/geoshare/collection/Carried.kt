@@ -7,22 +7,17 @@ import java.util.Locale
 // Whether the device was carried anywhere, asked of the one part of it a false
 // signal cannot reach.
 //
-// Every rule that compares one answer with another is arguing with a
-// transmitter about geometry, and a transmitter that draws its road slowly
-// enough wins that argument: a field measurement showed the answers creeping
-// about thirty metres apiece while the device lay indoors, and no speed, width
-// or shape catches a creep. The accelerometer is not on that signal. It
-// answers a smaller question than the receiver does — was this thing picked
-// up and taken somewhere — and answers it about the device rather than about
-// the sky.
+// A transmitter that draws its road slowly enough defeats every rule that
+// compares one answer with another: a field measurement showed the answers
+// creeping about thirty metres apiece while the device lay indoors, and no
+// speed, width or shape catches a creep. The accelerometer is not on that
+// signal; it answers about the device rather than about the sky.
 //
-// The other half of the same idea is already here in [movedWhileStanding],
-// which weighs a fix against the position written before it. That catches a
-// leap and lets a creep through, because the position written before it crept
-// along with the lie: every pair of answers is a metre or two apart, and the
-// place they walk away from is nowhere in the comparison. So the place is kept
-// instead — where the device was standing when it was last put down — and the
-// answers are weighed against that, for as long as nothing has touched it.
+// [movedWhileStanding] weighs a fix against the position written before it,
+// so it catches a leap but not a creep: the previous position crept along with
+// the lie. Here the place is kept instead, where the device was standing when
+// it was last put down, and answers are weighed against that for as long as
+// nothing has touched it.
 
 /**
  * How many steps a device may count while still standing where it was put.
@@ -72,9 +67,8 @@ val PUT_DOWN_AFTER: Duration = Duration.ofMinutes(2)
  * magnitude below the lie and above anything a device on a table has ever been
  * seen to claim.
  *
- * What the rule it belongs to has over the ordinary speed rule is that it
- * needs no second position: the claim is inside a single answer, so it is
- * caught on the first false fix rather than on the one after it.
+ * Unlike the ordinary speed rule it needs no second position: the claim is
+ * inside a single answer, so the first false fix is caught.
  */
 const val PUT_DOWN_SPEED_MPS: Double = 3.0
 
@@ -217,17 +211,12 @@ fun driftedWhilePutDown(putDown: PutDown?, next: Fix, carrying: Carrying): Boole
 /**
  * Whether an answer says the device is moving while nobody has touched it.
  *
- * The other way of reading the same anchor as [driftedWhilePutDown]: there the
- * question is where the answer puts the device, here it is what the answer says
- * the device is doing. A receiver drawing a false road has to draw a speed
- * along it, and it draws one whether or not the place it draws happens to be
- * near where the device is lying — so this speaks on a lie that has not yet
- * gone anywhere, which the distance rule cannot.
- *
- * It falls silent on the same terms as the distance rule, and for the same
- * reason: a stir, or enough steps to have gone anywhere, and the device is one
- * that may honestly be travelling. Where the provider said nothing about a
- * speed there is nothing to judge.
+ * The other reading of the anchor used by [driftedWhilePutDown]: that one asks
+ * where the answer puts the device, this one what it says the device is doing.
+ * A receiver drawing a false road has to draw a speed along it even while the
+ * drawn place is still near the device, so this catches a lie that has not yet
+ * gone anywhere. It falls silent on the same terms as the distance rule, and
+ * also where the provider reported no speed.
  */
 fun hurriedWhilePutDown(putDown: PutDown?, next: Fix, carrying: Carrying): Boolean {
     stillPutDown(putDown, next, carrying) ?: return false
@@ -299,12 +288,11 @@ const val PINNED_MOVE_METRES: Double = 60.0
 /**
  * How narrow the answers have to be for their standing still to mean anything.
  *
- * Fifty metres. A place worked out from the towers does not move while its
- * owner walks a few streets, and there is nothing wrong with that — the tower
- * has not moved. So the rule speaks only where the receiver claims to have
- * measured the position off the sky and claims to know it to within a few
- * tens of metres: an answer that narrow, standing still through three hundred
- * metres of walking, is an answer about somewhere the device is not.
+ * Fifty metres. A place worked out from the towers honestly does not move
+ * while its owner walks a few streets, so the rule speaks only for answers
+ * measured off the sky and known to within a few tens of metres: one that
+ * narrow, standing still through three hundred metres of walking, is about
+ * somewhere the device is not.
  */
 const val PINNED_WIDTH_METRES: Double = 50.0
 
@@ -322,25 +310,16 @@ data class Walk(val since: Instant, val steps: Long)
  * The stretch of walking the device is in the middle of, or nothing where it is
  * not walking.
  *
- * Every reading of the counter that added nothing, and every gap longer than
- * [WALKING_BREAK], starts the stretch again: what comes out is the walking
- * that has been going on without a rest.
+ * A reading that added nothing, or a gap longer than [WALKING_BREAK], starts
+ * the stretch again. The count then runs from the reading before the rest and
+ * the moment from the reading that ended it: the steps in that batch were taken
+ * after the rest, but when exactly is not known any closer than the batch
+ * itself, so the rule waits for a position taken after it.
  *
- * Where a stretch starts again, the count runs from the reading before it and
- * the moment from the reading that ended the rest. The two come from different
- * readings on purpose: the steps in the batch that ended the rest belong to
- * the new stretch, since they were taken after the rest, while the moment they
- * were taken at is not known any closer than the batch that carried them — so
- * the later of the two is used, and the rule waits for a position taken after
- * that.
- *
- * A count lower than the one before it is a counter that started again with a
- * reboot. Nothing says when the steps in that reading were taken, so the
- * stretch starts after them.
- *
- * A stretch whose last reading is more than [WALKING_BREAK] before [now] is
- * over: the counter reports in batches while the device walks and falls
- * silent once it stops, so the rest shows only as the time since.
+ * A count lower than the one before it is a counter restarted by a reboot; the
+ * stretch starts after that reading. A stretch whose last reading is more than
+ * [WALKING_BREAK] before [now] is over, since the counter falls silent once the
+ * device stops.
  */
 fun walkingNow(stirs: List<Stir>, now: Instant): Walk? {
     // The moment of each reading that carries a count, with the count.
@@ -375,12 +354,11 @@ fun walkingNow(stirs: List<Stir>, now: Instant): Walk? {
 /**
  * Whether the position has stayed put while the device was carried somewhere.
  *
- * The other half of [driftedWhilePutDown], and the harder half: there the
- * device was still and the answer moved, here the device moved and the answer
- * is still. A receiver held on a false position reports it steadily however
- * far its owner walks, and nothing about the run of answers gives that away —
- * they agree with one another perfectly. What disagrees is the step counter,
- * which no transmitter reaches.
+ * The converse of [driftedWhilePutDown]: there the device was still and the
+ * answer moved, here the device moved and the answer is still. A receiver held
+ * on a false position reports it steadily however far its owner walks, and the
+ * answers agree with one another; only the step counter, which no transmitter
+ * reaches, disagrees.
  *
  * [from] is the position the device gave when this stretch of walking began.
  * Both it and [next] have to be narrow claims measured off the sky, for which
@@ -413,12 +391,11 @@ fun pinnedWhileWalking(walk: Walk?, from: Fix?, next: Fix, told: Boolean = true)
  * One line about an answer that arrived while the device was being walked
  * somewhere, for the log kept apart.
  *
- * Written for every such answer and not only for the ones [pinnedWhileWalking]
- * accuses: a log that holds only the accusations reads the same whether the
- * rule found nothing wrong or was never asked, and [PINNED_STEPS] cannot be
- * measured off silence. So the line says what the rule had to go on — how far
- * the walk had got, how the answer was arrived at, and how far it stands from
- * where the walk began — and leaves out where that was.
+ * Written for every such answer, not only the accused ones: a log of accusations
+ * alone reads the same whether the rule found nothing wrong or was never asked,
+ * and [PINNED_STEPS] cannot be measured off silence. The line carries how far
+ * the walk had got, how the answer was arrived at and how far it stands from
+ * where the walk began, but not where that was.
  *
  * [from] is the answer the walk is measured from; without it this answer is
  * the one the walk will be measured from, or, if it did not come off the sky,

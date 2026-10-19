@@ -23,9 +23,9 @@ class ShareBackTest {
 
     @Test
     fun `a member with a permission standing is not offered it`() {
-        val standing = mapOf("oona" to now.plus(Duration.ofHours(1)))
+        val granted = mapOf("oona" to now.plus(Duration.ofHours(1)))
 
-        assertFalse(offersShareBack("oona", "me", standing, now))
+        assertFalse(offersShareBack("oona", "me", granted, now))
     }
 
     @Test
