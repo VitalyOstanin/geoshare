@@ -8,10 +8,15 @@
 import { realpathSync } from 'node:fs';
 import { createRequire } from 'node:module';
 
-// The linter is fetched by npx beside @eslint/js (tools/js-lint.sh), not
-// installed under this directory, so the set is found next to the running
-// eslint rather than by a bare import from here.
-const js = createRequire(realpathSync(process.argv[1]))('@eslint/js');
+// The linter is fetched by npx beside @eslint/js and the two plugins
+// (tools/js-lint.sh), not installed under this directory, so they are found
+// next to the running eslint rather than by a bare import from here.
+const besideEslint = createRequire(realpathSync(process.argv[1]));
+const js = besideEslint('@eslint/js');
+// Published as an ES module only, so require() hands back its namespace.
+const stylisticModule = besideEslint('@stylistic/eslint-plugin');
+const stylistic = stylisticModule.default ?? stylisticModule;
+const { importX, createNodeResolver } = besideEslint('eslint-plugin-import-x');
 
 export default [
     js.configs.recommended,
@@ -27,12 +32,15 @@ export default [
             ecmaVersion: 2024,
             sourceType: 'module',
         },
+        plugins: { '@stylistic': stylistic },
         rules: {
-            quotes: ['error', 'single', { avoidEscape: true }],
-            semi: ['error', 'always'],
-            'comma-dangle': ['error', 'always-multiline'],
-            indent: ['error', 4, { SwitchCase: 1 }],
-            'max-len': ['error', { code: 100, ignoreUrls: true, ignoreStrings: true }],
+            // The formatting rules left ESLint itself in 8.53 for this plugin,
+            // which keeps their names and options.
+            '@stylistic/quotes': ['error', 'single', { avoidEscape: true }],
+            '@stylistic/semi': ['error', 'always'],
+            '@stylistic/comma-dangle': ['error', 'always-multiline'],
+            '@stylistic/indent': ['error', 4, { SwitchCase: 1 }],
+            '@stylistic/max-len': ['error', { code: 100, ignoreUrls: true, ignoreStrings: true }],
             'no-unused-vars': ['error', { argsIgnorePattern: '^unused' }],
             eqeqeq: ['error', 'always'],
             'prefer-const': 'error',
@@ -46,6 +54,22 @@ export default [
                 selector: 'Literal[raw=/^[0-9]{5}/]',
                 message: 'Write a number of five digits or more with separators, as 15_000.',
             }],
+        },
+    },
+    {
+        // The page is split into modules that import from one another, and a
+        // path that names no file or a name the module does not export only
+        // shows once a browser loads them. Circles are left alone: the page's
+        // parts import app.js back for its state and handlers, which the
+        // modules reach only once everything is loaded.
+        files: ['web/**/*.js', 'web/**/*.mjs', 'firebase/**/*.mjs'],
+        plugins: { 'import-x': importX },
+        settings: { 'import-x/resolver-next': [createNodeResolver()] },
+        rules: {
+            // The rules tests import packages installed by their own run, not
+            // by the lint, so only paths of the repository are checked.
+            'import-x/no-unresolved': ['error', { ignore: ['^@firebase/', '^firebase/'] }],
+            'import-x/named': 'error',
         },
     },
     {
