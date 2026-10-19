@@ -1,16 +1,12 @@
 package io.github.vitalyostanin.geoshare
 
-import android.Manifest
 import android.content.Intent
 import android.content.res.Configuration
 import android.graphics.drawable.ColorDrawable
-import android.net.Uri
 import android.os.Bundle
-import android.provider.Settings
 import android.view.MotionEvent
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
-import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.app.AppCompatDelegate
 import androidx.compose.foundation.isSystemInDarkTheme
@@ -29,14 +25,10 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.toArgb
-import androidx.compose.ui.window.Dialog
-import androidx.compose.ui.window.DialogProperties
 import androidx.core.os.LocaleListCompat
 import androidx.core.view.WindowCompat
-import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.lifecycleScope
-import androidx.lifecycle.repeatOnLifecycle
 import com.google.firebase.FirebaseApp
 import io.github.vitalyostanin.geoshare.auth.AuthState
 import io.github.vitalyostanin.geoshare.auth.SignInController
@@ -54,27 +46,15 @@ import io.github.vitalyostanin.geoshare.map.rememberGroupChoices
 import io.github.vitalyostanin.geoshare.map.runCatchingFailure
 import io.github.vitalyostanin.geoshare.map.withinAnswerWait
 import io.github.vitalyostanin.geoshare.permission.PermissionStep
-import io.github.vitalyostanin.geoshare.permission.batteryExemptionRequest
-import io.github.vitalyostanin.geoshare.permission.batteryExemptionWanted
 import io.github.vitalyostanin.geoshare.permission.batteryUnrestricted
-import io.github.vitalyostanin.geoshare.permission.devicePermissions
-import io.github.vitalyostanin.geoshare.permission.movementGranted
-import io.github.vitalyostanin.geoshare.permission.movementPermissionWanted
-import io.github.vitalyostanin.geoshare.permission.nextPermissionStep
-import io.github.vitalyostanin.geoshare.permission.permissionOf
 import io.github.vitalyostanin.geoshare.permission.startupScreen
 import io.github.vitalyostanin.geoshare.project.ConnectFlow
-import io.github.vitalyostanin.geoshare.project.ConnectScreen
 import io.github.vitalyostanin.geoshare.project.ConnectState
 import io.github.vitalyostanin.geoshare.project.Connections
 import io.github.vitalyostanin.geoshare.project.GroupConnection
 import io.github.vitalyostanin.geoshare.project.GroupNames
-import io.github.vitalyostanin.geoshare.project.INHERITED
-import io.github.vitalyostanin.geoshare.project.PendingInvitationStore
 import io.github.vitalyostanin.geoshare.project.RemovedHere
 import io.github.vitalyostanin.geoshare.project.SignInStarted
-import io.github.vitalyostanin.geoshare.project.fetchSettings
-import io.github.vitalyostanin.geoshare.project.pendingInvitationFor
 import io.github.vitalyostanin.geoshare.service.AidingDoubtSetting
 import io.github.vitalyostanin.geoshare.service.BackgroundWorkSetting
 import io.github.vitalyostanin.geoshare.service.DeviceIdentity
@@ -90,14 +70,11 @@ import io.github.vitalyostanin.geoshare.service.darkWanted
 import io.github.vitalyostanin.geoshare.service.dndAccessGranted
 import io.github.vitalyostanin.geoshare.service.languageChosen
 import io.github.vitalyostanin.geoshare.service.languageTag
-import io.github.vitalyostanin.geoshare.service.refusalToStart
-import io.github.vitalyostanin.geoshare.service.startConditions
 import io.github.vitalyostanin.geoshare.update.EXTRA_OPEN_UPDATE
 import io.github.vitalyostanin.geoshare.update.UpdateBoard
 import io.github.vitalyostanin.geoshare.update.UpdateStore
 import io.github.vitalyostanin.geoshare.update.checkForUpdateIfDue
 import kotlinx.coroutines.async
-import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.launch
 
 /**
@@ -119,14 +96,14 @@ class MainActivity : AppCompatActivity() {
     internal val signIn: SignInController
         get() = signInOf(checkNotNull(Connections.selected.value) { "no group is shown" })
 
-    private lateinit var sharing: SharingSetting
+    internal lateinit var sharing: SharingSetting
 
     /**
      * What a connection link is doing, whether or not this device already
      * has a project — a link can arrive either way. Created before the
      * placeholder below is decided, since it is what would move this device
-     * past it. [ConnectState.Done] is acted on by [acceptConnection], which
-     * is set watching for it as soon as this is created.
+     * past it. [ConnectState.Done] is acted on by [listenForLinks], which
+     * creates this and sets watching for it straight away.
      */
     internal lateinit var connectFlow: ConnectFlow
 
@@ -163,35 +140,11 @@ class MainActivity : AppCompatActivity() {
     private var sharingOn by mutableStateOf(false)
 
     /**
-     * The steps the system has already been asked about. A second request for
-     * the same one is answered without showing anything, so asking twice would
-     * look to the member like a button that does nothing.
+     * The permissions sharing waits for, and the screens of the system the
+     * settings rows open. Made here, while the activity is being built, as
+     * the requests it registers have to be.
      */
-    private val asked = mutableSetOf<PermissionStep>()
-
-    private val askPermission =
-        registerForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) {
-            continueSharingSetup()
-        }
-
-    /**
-     * The one request the service can do without.
-     *
-     * Its own launcher rather than the one above, because the answer leads
-     * somewhere else: the three the service needs are asked again until they
-     * are granted, while this one is asked once and then left alone.
-     */
-    private val askMovement =
-        registerForActivityResult(ActivityResultContracts.RequestPermission()) {
-            askBatteryExemptionOnce()
-        }
-
-    // The answer arrives as a closed dialog rather than as a result: the
-    // system tells nobody what was pressed, and the state is read back.
-    private val askBattery =
-        registerForActivityResult(ActivityResultContracts.StartActivityForResult()) {
-            batteryFree = batteryUnrestricted(this)
-        }
+    internal val sharingSetup = SharingSetup(this)
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -240,41 +193,6 @@ class MainActivity : AppCompatActivity() {
         paintWindow(darkWanted(appearance.choice, systemIsDark()))
 
         setContent { GroupsScreen() }
-    }
-
-    /** Follows the links this activity is handed, the first one included. */
-    private fun listenForLinks(savedInstanceState: Bundle?) {
-        // Independent of the project check in onCreate: a link is worth
-        // acting on whether or not this device already has one, and singleTask
-        // means this is the only place onCreate ever sees one — a later
-        // arrival comes through onNewIntent instead.
-        connectFlow = ConnectFlow(
-            scope = lifecycleScope,
-            fetch = ::fetchSettings,
-            connected = { Connections.all.value.map { it.settings } },
-        )
-        // A recreated activity (a rotation) still carries the link it was
-        // opened with, which has already been acted on.
-        if (savedInstanceState == null) {
-            connectFlow.linkArrived(intent.dataString)
-        }
-
-        // Reacts to Done wherever it is reached — the placeholder screen for
-        // a device with no project yet, or the dialog offered over the map
-        // for one switching to another — since accepting a link always ends
-        // the same way. Only while started: accepting ends in recreate(), which
-        // an activity already stopped would run against a window nobody sees,
-        // and a Done reached meanwhile is handled on return, the state being
-        // held by the flow.
-        lifecycleScope.launch {
-            repeatOnLifecycle(Lifecycle.State.STARTED) {
-                connectFlow.state.collect { state ->
-                    if (state is ConnectState.Done) {
-                        acceptConnection(state)
-                    }
-                }
-            }
-        }
     }
 
     /** All there is to show before the device is in any group: connecting to one. */
@@ -351,7 +269,7 @@ class MainActivity : AppCompatActivity() {
                 // neither has anything of its own to show above the map.
                 val connectState by connectFlow.state.collectAsStateWithLifecycle()
 
-                ConnectFlowDialog(connectState)
+                ConnectFlowDialog(connectFlow, connectState)
 
                 val connection = shown
 
@@ -414,27 +332,6 @@ class MainActivity : AppCompatActivity() {
                 onSignIn = { signInAgain(it) },
                 onShown = onShown,
             )
-        }
-    }
-
-    /**
-     * The link that arrived on a device already in a group, offering an
-     * invitation or naming another project, over the map. NotConnected and
-     * Done have nothing of their own to show there.
-     */
-    @Composable
-    private fun ConnectFlowDialog(connectState: ConnectState) {
-        if (connectState !is ConnectState.NotConnected &&
-            connectState !is ConnectState.Done
-        ) {
-            Dialog(
-                onDismissRequest = connectFlow::cancel,
-                properties = DialogProperties(usePlatformDefaultWidth = false),
-            ) {
-                Surface(modifier = Modifier.fillMaxSize()) {
-                    ConnectFlowScreen(connectFlow, connectState)
-                }
-            }
         }
     }
 
@@ -525,48 +422,6 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    /**
-     * What [ConnectState.Done] leads to: the group's project joins the list
-     * and is shown, and a group invitation carried alongside it is kept for
-     * the sign-in that follows to spend.
-     *
-     * Nothing is restarted and nothing signed out: every group has a Firebase
-     * instance of its own (ADR-0026), so the groups this device was already
-     * in go on as they were. A link back to a project already listed shows
-     * that group rather than starting it again, and its session stays — the
-     * account is the same, and the invitation is spent straight away.
-     *
-     * The first group a device connects to is the one exception to staying on
-     * the screen: the activity was built without a group to show, so it is
-     * built again.
-     */
-    private fun acceptConnection(done: ConnectState.Done) {
-        val first = !Connections.connected
-        val projectId = done.settings.projectId
-
-        PendingInvitationStore.save(this, projectId, pendingInvitationFor(done))
-        GroupNames.note(this, projectId, done.invitation?.groupName)
-
-        if (Connections.of(projectId) == null) {
-            // Whoever comes in is the one chosen on the sign-in page next,
-            // not an account left over from the group's last time here.
-            Connections.dropLingeringSession(this, projectId)
-
-            // The invitation's group from the start: the inherited one is not
-            // there in a project of its own, and the service would write into
-            // it, refused, until the invitation is spent.
-            Connections.connect(this, done.settings, done.invitation?.groupId ?: INHERITED)
-        } else {
-            Connections.select(this, projectId)
-        }
-
-        connectFlow.cancel()
-
-        if (first) {
-            recreate()
-        }
-    }
-
     /** Shows [projectId]'s group and opens its sign-in page once more. */
     private fun signInAgain(projectId: String) {
         val connection = Connections.of(projectId) ?: return
@@ -618,52 +473,7 @@ class MainActivity : AppCompatActivity() {
             return
         }
 
-        continueSharingSetup()
-    }
-
-    /**
-     * Asks for the next permission, or starts the service when none is left.
-     *
-     * Called again after every answer, so the three requests arrive one after
-     * another rather than all at once.
-     */
-    internal fun continueSharingSetup() {
-        if (!sharing.enabled) {
-            return
-        }
-
-        val step = nextPermissionStep(devicePermissions(this))
-
-        if (step == null) {
-            permissionNotice = null
-            startSharingService()
-
-            // Movement first and the battery after it, one dialog at a time:
-            // the second is launched from the answer to the first.
-            askMovementOnce()
-
-            return
-        }
-
-        if (step in asked) {
-            AppLog.i(TAG, "waiting for $step to be granted in the settings")
-            permissionNotice = step
-
-            return
-        }
-
-        asked += step
-        askPermission.launch(arrayOf(permissionOf(step)))
-    }
-
-    private fun startSharingService() {
-        val refusal = refusalToStart(startConditions(this, fromBackground = false))
-
-        if (refusal == null) {
-            SharingService.start(this)
-        } else {
-            AppLog.i(TAG, "not starting the service: $refusal")
-        }
+        sharingSetup.continueSetup()
     }
 
     /**
@@ -711,70 +521,6 @@ class MainActivity : AppCompatActivity() {
         resources.configuration.uiMode and Configuration.UI_MODE_NIGHT_MASK ==
             Configuration.UI_MODE_NIGHT_YES
 
-    /**
-     * Asks once for the device to say when its owner is on the move.
-     *
-     * Refusing costs the Moving mode and nothing else, so a member who says no
-     * is not asked again and is not told anything is wrong. When there is
-     * nothing to ask, the battery request follows straight away — otherwise it
-     * follows the answer.
-     */
-    private fun askMovementOnce() {
-        val wanted =
-            movementPermissionWanted(
-                sharing = sharing.enabled,
-                granted = movementGranted(this),
-                askedBefore = backgroundWork.movementAsked,
-            )
-
-        if (!wanted) {
-            askBatteryExemptionOnce()
-
-            return
-        }
-
-        backgroundWork.movementAsked = true
-        askMovement.launch(Manifest.permission.ACTIVITY_RECOGNITION)
-    }
-
-    /**
-     * Asks once, and only once, for the device to stop restricting us.
-     *
-     * Made where the permissions end rather than at startup: a member who has
-     * just allowed the position is being asked about the same thing, and a
-     * member who shares nothing has nothing to be interrupted.
-     */
-    private fun askBatteryExemptionOnce() {
-        val wanted =
-            batteryExemptionWanted(
-                sharing = sharing.enabled,
-                unrestricted = batteryFree,
-                askedBefore = backgroundWork.batteryAsked,
-            )
-
-        if (!wanted) {
-            return
-        }
-
-        backgroundWork.batteryAsked = true
-        askBatteryExemption()
-    }
-
-    internal fun askSirenThroughSilence() {
-        startActivity(Intent(Settings.ACTION_NOTIFICATION_POLICY_ACCESS_SETTINGS))
-    }
-
-    internal fun askBatteryExemption() {
-        askBattery.launch(batteryExemptionRequest(this))
-    }
-
-    /**
-     * Opens the manufacturer's own startup list.
-     *
-     * The row that calls this is shown only when such a screen was found, so
-     * the absent case is a device whose screen went away between the two, and
-     * the application settings are the nearest thing left.
-     */
     // A write to the group, and what happens when the rules refuse it. They
     // refuse for reasons the screen could not have ruled out: founding a group
     // that already exists, a code that has run out, a member somebody else
@@ -799,37 +545,10 @@ class MainActivity : AppCompatActivity() {
             false
         }
 
-    internal fun openStartupScreen() {
-        val screen = startupScreen(this)
-
-        if (screen == null) {
-            openApplicationSettings()
-
-            return
-        }
-
-        startActivity(screen)
-    }
-
-    internal fun openApplicationSettings() {
-        startActivity(
-            Intent(
-                Settings.ACTION_APPLICATION_DETAILS_SETTINGS,
-                Uri.fromParts("package", packageName, null),
-            ),
-        )
-    }
-
-    // singleTask (AndroidManifest.xml) routes a second connection link here
-    // instead of into a second instance of this activity, whether the first
-    // one is in the foreground or was merely still on the back stack.
     override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)
         setIntent(intent)
-        if (intent.getBooleanExtra(EXTRA_OPEN_UPDATE, false)) {
-            UpdateBoard.openRequested = true
-        }
-        connectFlow.linkArrived(intent.dataString)
+        followIntent(intent)
     }
 
     // The session is watched only while the screen is up: nothing else in the
@@ -863,7 +582,7 @@ class MainActivity : AppCompatActivity() {
         // changes, and nothing tells the application about it.
         batteryFree = batteryUnrestricted(this)
         sirenLoud = dndAccessGranted(this)
-        continueSharingSetup()
+        sharingSetup.continueSetup()
     }
 
     override fun onStop() {
@@ -913,16 +632,4 @@ class MainActivity : AppCompatActivity() {
         /** How long signing out or leaving waits for each group to answer. */
         const val SIGN_OUT_WAIT_MS = 5_000L
     }
-}
-
-/** The connecting screen, driven by [flow]: offered on its own and over the map alike. */
-@Composable
-private fun ConnectFlowScreen(flow: ConnectFlow, state: ConnectState) {
-    ConnectScreen(
-        state = state,
-        onPasteLink = flow::pasteLink,
-        onCancel = flow::cancel,
-        onRetry = flow::retry,
-        onConnect = flow::connect,
-    )
 }

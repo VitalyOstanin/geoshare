@@ -371,7 +371,7 @@ private fun SignedInEffects(
     // the device handed to somebody else — would share
     // nothing until the screen was next opened.
     LaunchedEffect(current.memberId) {
-        activity.continueSharingSetup()
+        activity.sharingSetup.continueSetup()
     }
 
     if (!outside) {

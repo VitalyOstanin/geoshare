@@ -195,11 +195,11 @@ internal fun settingsActions(
             )
         }
     },
-    onOpenSettings = activity::openApplicationSettings,
-    onAllowBattery = activity::askBatteryExemption,
+    onOpenSettings = activity.sharingSetup::openApplicationSettings,
+    onAllowBattery = activity.sharingSetup::askBatteryExemption,
     // Read back in onStart, as the battery row is.
-    onAllowSirenThroughSilence = activity::askSirenThroughSilence,
-    onOpenStartup = activity::openStartupScreen,
+    onAllowSirenThroughSilence = activity.sharingSetup::askSirenThroughSilence,
+    onOpenStartup = activity.sharingSetup::openStartupScreen,
     onStartupSetChange = { set ->
         onStartupSet(set)
         activity.backgroundWork.startupSet = set
