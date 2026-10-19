@@ -207,9 +207,9 @@ class SharingService : LifecycleService() {
 
     /** The mode collected in, and again whenever it changes. */
     private val modeReview by lazy {
-        ModeReview(this, lifecycleScope, links, fenceCentre) { untils, moving, inside, ownMap ->
+        ModeReview(this, lifecycleScope, links, fenceCentre) { watchEnds, moving, inside, ownMap ->
             carried.hear(moving, Instant.now())
-            currentMode(untils, moving.going, inside, ownMap)
+            currentMode(watchEnds, moving.going, inside, ownMap)
         }
     }
 
@@ -628,13 +628,13 @@ class SharingService : LifecycleService() {
         }
 
     private fun currentMode(
-        untils: List<Instant>,
+        watchEnds: List<Instant>,
         moving: Boolean,
         insideGeofence: Boolean,
         ownMap: Boolean,
     ): CollectionMode = chooseMode(
         CollectionState(
-            watchersUntil = untils,
+            watchersUntil = watchEnds,
             now = Instant.now(),
             localTime = LocalTime.now(),
             insideGeofence = insideGeofence,

@@ -162,7 +162,7 @@ private fun theSameAnswer(fix: Fix, satellites: Fix?): Boolean {
 }
 
 /** The word the log uses for it; the clients have their own, translated. */
-val FoundBy.said: String
+val FoundBy.logWording: String
     get() = when (this) {
         FoundBy.Satellites -> "the satellites"
         FoundBy.Assistance -> "an assistance service"

@@ -201,7 +201,7 @@ enum class JumpReason {
  * The shape of the run is asked about next, and it is asked of the answers
  * the device was given rather than of the ones it wrote down: while the speed
  * rule is still refusing a false road, the answers it refuses are the ones
- * that show the shape. [lately] is empty wherever there is no run to look at.
+ * that show the shape. [recentAnswers] is empty wherever there is no run to look at.
  *
  * The other radios are asked before any of that, and before the anchor, for
  * the same reason the false places are: their answer needs nothing earlier to
@@ -241,7 +241,7 @@ fun whyAJump(
     stillSince: Instant? = null,
     networkSays: Fix? = null,
     now: Instant = next.takenAt,
-    lately: List<Fix> = emptyList(),
+    recentAnswers: List<Fix> = emptyList(),
     falsePlaces: List<FalsePlace> = emptyList(),
     circleLimits: CircleLimits = CircleLimits(),
     repeatLimits: RepeatLimits = RepeatLimits(),
@@ -282,11 +282,11 @@ fun whyAJump(
         return JumpReason.OffOrbit
     }
 
-    if (goingInCircles(lately, circleLimits)) {
+    if (goingInCircles(recentAnswers, circleLimits)) {
         return JumpReason.Circling
     }
 
-    if (goingRoundAgain(lately, repeatLimits)) {
+    if (goingRoundAgain(recentAnswers, repeatLimits)) {
         return JumpReason.Repeating
     }
 

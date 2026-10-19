@@ -163,18 +163,18 @@ data class Circle(
 /**
  * The circle the last answers are drawing, or nothing when they are not.
  *
- * [lately] is every answer the satellites gave, newest last, whether or not it
+ * [recentAnswers] is every answer the satellites gave, newest last, whether or not it
  * was written out. That it is not filtered by the other rules is the point:
  * while the speed rule is still refusing the false road, the answers it
  * refuses are the ones that show the shape, and a filtered run would show the
  * device the shape only once the anchor had already been lost to it.
  */
-fun circleDrawn(lately: List<Fix>, limits: CircleLimits = CircleLimits()): Circle? {
-    if (lately.size < limits.answers) {
+fun circleDrawn(recentAnswers: List<Fix>, limits: CircleLimits = CircleLimits()): Circle? {
+    if (recentAnswers.size < limits.answers) {
         return null
     }
 
-    val run = lately.takeLast(limits.answers)
+    val run = recentAnswers.takeLast(limits.answers)
 
     if (apart(run.first(), run.last()) > limits.within) {
         return null
@@ -214,8 +214,8 @@ fun circleDrawn(lately: List<Fix>, limits: CircleLimits = CircleLimits()): Circl
 }
 
 /** Whether the answers are going round in a circle rather than anywhere. */
-fun goingInCircles(lately: List<Fix>, limits: CircleLimits = CircleLimits()): Boolean =
-    circleDrawn(lately, limits) != null
+fun goingInCircles(recentAnswers: List<Fix>, limits: CircleLimits = CircleLimits()): Boolean =
+    circleDrawn(recentAnswers, limits) != null
 
 /**
  * How far back the run of answers reaches.

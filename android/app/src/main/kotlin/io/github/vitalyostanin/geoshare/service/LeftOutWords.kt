@@ -28,7 +28,7 @@ import java.util.Locale
 internal data class LeftOutEvidence(
     val radio: RadioWatch,
     val restsOn: Map<Constellation, Counted>,
-    val lately: List<Fix>,
+    val recentAnswers: List<Fix>,
     val circleLimits: CircleLimits,
     val falsePlaces: List<FalsePlace>,
     val networkSaid: Fix?,
@@ -159,7 +159,7 @@ private fun theSkyItCameFrom(evidence: LeftOutEvidence): String {
  * says a fix was left out.
  */
 private fun theRouteRepeated(evidence: LeftOutEvidence): String {
-    val round = routeRepeated(evidence.lately) ?: return "a route traced again"
+    val round = routeRepeated(evidence.recentAnswers) ?: return "a route traced again"
 
     return String.format(
         Locale.ROOT,
@@ -176,7 +176,8 @@ private fun theRouteRepeated(evidence: LeftOutEvidence): String {
  */
 private fun theCircleDrawn(evidence: LeftOutEvidence): String {
     val circle =
-        circleDrawn(evidence.lately, evidence.circleLimits) ?: return "a circle at a steady speed"
+        circleDrawn(evidence.recentAnswers, evidence.circleLimits)
+            ?: return "a circle at a steady speed"
 
     return String.format(
         Locale.ROOT,

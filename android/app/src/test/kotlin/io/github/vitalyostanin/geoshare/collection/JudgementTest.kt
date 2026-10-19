@@ -106,7 +106,7 @@ class JudgementTest {
                 grounds(lastFix = null, now = next.takenAt).copy(satellites = satellites),
             )
 
-        assertEquals(foundBy(next, satellites), judged.whence)
+        assertEquals(foundBy(next, satellites), judged.foundBy)
     }
 
     private fun grounds(lastFix: Fix?, now: Instant) = Grounds(

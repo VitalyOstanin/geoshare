@@ -20,9 +20,9 @@ import io.github.vitalyostanin.geoshare.collection.fenceMoves
 import io.github.vitalyostanin.geoshare.collection.foundBy
 import io.github.vitalyostanin.geoshare.collection.judge
 import io.github.vitalyostanin.geoshare.collection.knows
+import io.github.vitalyostanin.geoshare.collection.logWording
 import io.github.vitalyostanin.geoshare.collection.otherRadiosAreDue
 import io.github.vitalyostanin.geoshare.collection.remembering
-import io.github.vitalyostanin.geoshare.collection.said
 import io.github.vitalyostanin.geoshare.log.AppLog
 import io.github.vitalyostanin.geoshare.map.logFailure
 import io.github.vitalyostanin.geoshare.map.runCatchingFailure
@@ -107,14 +107,14 @@ internal class FixSieve(
     private var restsOn: Map<Constellation, Counted> = emptyMap()
 
     /**
-     * The answers the satellites have given lately, newest last.
+     * The answers the satellites have given recentAnswers, newest last.
      *
      * Every one of them, whether or not it was written out: what the shape of
      * the run gives away is exactly what a pair of answers hides, and the
      * answers a rule has already refused are the ones that draw the shape
      * while the anchor still stands where the device really is.
      */
-    private var lately: List<Fix> = emptyList()
+    private var recentAnswers: List<Fix> = emptyList()
 
     /** The run of answers left out since the last position was written. */
     private val leftOut = LeftOutRun()
@@ -222,9 +222,9 @@ internal class FixSieve(
                         FixVerdict(judged.jump, judged.agreed, judged.home, trusted),
                     )
 
-                    carried.noticeAnAnswerThatWillNotFollow(fix, judged.whence, Instant.now())
+                    carried.noticeAnAnswerThatWillNotFollow(fix, judged.foundBy, Instant.now())
 
-                    used = sources.uses(judged.whence)
+                    used = sources.uses(judged.foundBy)
 
                     jumpRun = jumpRun.after(fix, judged.leftOutAsJump(jumpsOn), used)
 
@@ -251,7 +251,7 @@ internal class FixSieve(
             Outcome.LeftOutBySource -> {
                 AppLog.i(
                     TAG,
-                    "left out a position found by ${judged.whence.said}: " +
+                    "left out a position found by ${judged.foundBy.logWording}: " +
                         "this device was told not to take that source into account",
                 )
 
@@ -259,7 +259,7 @@ internal class FixSieve(
                 // switched off" answers none of what a member opens the card
                 // for.
                 tellThemAnswersAreBeingLeftOut(
-                    "$LEFT_OUT_BY_SOURCE:${choiceFor(judged.whence)?.name.orEmpty()}",
+                    "$LEFT_OUT_BY_SOURCE:${choiceFor(judged.foundBy)?.name.orEmpty()}",
                 )
 
                 false
@@ -286,7 +286,7 @@ internal class FixSieve(
     fun leftOutEvidence(): LeftOutEvidence = LeftOutEvidence(
         radio = radio,
         restsOn = restsOn,
-        lately = lately,
+        recentAnswers = recentAnswers,
         circleLimits = circleLimits,
         falsePlaces = falsePlaces,
         networkSaid = opinion.said,
@@ -318,7 +318,7 @@ internal class FixSieve(
                 satellites = satellites(),
                 networkSays = opinion.said,
                 now = Instant.now(),
-                lately = lately,
+                recentAnswers = recentAnswers,
                 falsePlaces = falsePlaces,
                 circleLimits = circleLimits,
                 restsOn = restsOn,
@@ -358,7 +358,7 @@ internal class FixSieve(
             return false
         }
 
-        if (!writeQuietly(written, mode, judged.whence)) {
+        if (!writeQuietly(written, mode, judged.foundBy)) {
             return false
         }
 
@@ -438,7 +438,7 @@ internal class FixSieve(
      */
     private fun rememberTheShapeOfIt(fix: Fix, trusted: Boolean) {
         if (belongsInTheShape(fix, trusted)) {
-            lately = lately.andThen(fix)
+            recentAnswers = recentAnswers.andThen(fix)
         }
     }
 
@@ -571,7 +571,7 @@ internal class FixSieve(
         mode: CollectionMode,
         // Worked out by the caller: the fused answer carries no note of its
         // own, so the receiver's last answer decides how it was found.
-        whence: FoundBy,
+        foundBy: FoundBy,
     ): Boolean = runCatchingFailure {
         val into =
             writer.write(
@@ -579,14 +579,14 @@ internal class FixSieve(
                 mode,
                 batteryPercent(),
                 written.charging,
-                whence,
+                foundBy,
                 written.settling,
             )
         AppLog.i(
             TAG,
             // The groups are named, so the line is not read as about one that just refused.
             "wrote a position in ${into.joinToString()} taken at ${written.fix.takenAt}, " +
-                "found by ${whence.said}" +
+                "found by ${foundBy.logWording}" +
                 // Logged here, not left to the document: a boot's log cannot
                 // be read back from it, and the first minutes are read most.
                 if (written.settling) ", with the receiver still settling" else "",

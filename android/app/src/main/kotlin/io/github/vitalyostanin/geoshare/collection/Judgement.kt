@@ -5,7 +5,7 @@ import java.time.Instant
 /** What is made of a fix before it is written or left out. */
 data class Judgement(
     /** How the device arrived at the answer. */
-    val whence: FoundBy,
+    val foundBy: FoundBy,
     /** Whether the receiver had not settled when the fix was taken. */
     val settling: Boolean,
     /** Why the fix reads as a jump, or nothing where it does not. */
@@ -41,7 +41,7 @@ data class Grounds(
     /** What the towers and the Wi-Fi around the device last said. */
     val networkSays: Fix?,
     val now: Instant,
-    val lately: List<Fix> = emptyList(),
+    val recentAnswers: List<Fix> = emptyList(),
     val falsePlaces: List<FalsePlace> = emptyList(),
     val circleLimits: CircleLimits = CircleLimits(),
     /** The satellites the receiver rests on, read off the epoch the fix came out of. */
@@ -70,7 +70,7 @@ fun judge(fix: Fix, trusted: Boolean, grounds: Grounds): Judgement {
     // and what the written document says about itself. The receiver's own
     // last answer is what makes it possible at all — the fused answer
     // being weighed carries no note of its own on these devices.
-    val whence = foundBy(fix, grounds.satellites)
+    val found = foundBy(fix, grounds.satellites)
 
     // Whether the receiver has had time to settle since the device was
     // switched on, read off the same epoch as the rules below. Never asked
@@ -88,7 +88,7 @@ fun judge(fix: Fix, trusted: Boolean, grounds: Grounds): Judgement {
                 grounds.standingSince,
                 grounds.networkSays,
                 grounds.now,
-                grounds.lately,
+                grounds.recentAnswers,
                 grounds.falsePlaces,
                 grounds.circleLimits,
                 restsOn = grounds.restsOn,
@@ -119,5 +119,5 @@ fun judge(fix: Fix, trusted: Boolean, grounds: Grounds): Judgement {
     // is — so this cannot be arranged by feeding the device a signal.
     val home = jump != null && !agreed && comingHome(grounds.trail, grounds.lastFix, fix)
 
-    return Judgement(whence, settling, jump, agreed, home)
+    return Judgement(found, settling, jump, agreed, home)
 }

@@ -218,7 +218,7 @@ class RepeatsTest {
         assertNull(whyAJump(falseRoute[falseRoute.size - 2], landed))
         assertEquals(
             JumpReason.Repeating,
-            whyAJump(falseRoute[falseRoute.size - 2], landed, lately = falseRoute),
+            whyAJump(falseRoute[falseRoute.size - 2], landed, recentAnswers = falseRoute),
         )
     }
 

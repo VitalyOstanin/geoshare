@@ -62,8 +62,8 @@ enum class SourceChoice(val covers: List<FoundBy>) {
 }
 
 /** The switch an answer falls under, or nothing where it falls under none. */
-fun choiceFor(whence: FoundBy): SourceChoice? =
-    SourceChoice.entries.firstOrNull { whence in it.covers }
+fun choiceFor(foundBy: FoundBy): SourceChoice? =
+    SourceChoice.entries.firstOrNull { foundBy in it.covers }
 
 /**
  * Whether a position from this source is one this device takes into account.
@@ -73,5 +73,5 @@ fun choiceFor(whence: FoundBy): SourceChoice? =
  * is simply a name that matches nothing, which leaves the position counted
  * rather than silently dropped.
  */
-fun usesWhatWasFoundBy(whence: FoundBy, leftOut: Set<String>): Boolean =
-    choiceFor(whence)?.name !in leftOut
+fun usesWhatWasFoundBy(foundBy: FoundBy, leftOut: Set<String>): Boolean =
+    choiceFor(foundBy)?.name !in leftOut

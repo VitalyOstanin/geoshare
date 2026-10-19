@@ -401,15 +401,15 @@ fun pinnedWhileWalking(walk: Walk?, from: Fix?, next: Fix, told: Boolean = true)
  * the one the walk will be measured from, or, if it did not come off the sky,
  * one that is not measured at all.
  */
-fun walkNote(walk: Walk, whence: FoundBy, from: Fix?, next: Fix): String {
+fun walkNote(walk: Walk, foundBy: FoundBy, from: Fix?, next: Fix): String {
     val width = next.accuracyMetres ?: 0.0
-    val head = "walking ${walk.steps} steps; an answer by $whence, ±%.0f m".format(
+    val head = "walking ${walk.steps} steps; an answer by $foundBy, ±%.0f m".format(
         Locale.ROOT,
         width,
     )
 
     return when {
-        whence != FoundBy.Satellites -> "$head, not measured against the walk"
+        foundBy != FoundBy.Satellites -> "$head, not measured against the walk"
 
         from == null -> "$head, the walk is measured from it"
 

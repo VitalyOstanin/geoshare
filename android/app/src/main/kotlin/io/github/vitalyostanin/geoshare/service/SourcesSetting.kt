@@ -36,7 +36,7 @@ class SourcesSetting(context: Context) {
         set(value) = store.edit().putStringSet(KEY_LEFT_OUT, value.toSet()).apply()
 
     /** Whether a position from this source is one to take into account. */
-    fun uses(whence: FoundBy): Boolean = usesWhatWasFoundBy(whence, leftOut)
+    fun uses(foundBy: FoundBy): Boolean = usesWhatWasFoundBy(foundBy, leftOut)
 
     /**
      * The switches as they stand, and again whenever one is flipped.

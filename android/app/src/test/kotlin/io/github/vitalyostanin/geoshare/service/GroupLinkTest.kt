@@ -60,9 +60,9 @@ class GroupLinkTest {
     fun `until the grant arrives every viewer counts`() = runBlocking {
         every { ownSharedWith(any(), any()) } returns flow { awaitCancellation() }
 
-        val untils = withTimeout(WAIT) { link().watching().first { it.size == 2 } }
+        val watchEnds = withTimeout(WAIT) { link().watching().first { it.size == 2 } }
 
-        assertEquals(listOf(owner.until, stranger.until), untils)
+        assertEquals(listOf(owner.until, stranger.until), watchEnds)
     }
 
     // Nothing arrives from the database at the moment a search runs out, so

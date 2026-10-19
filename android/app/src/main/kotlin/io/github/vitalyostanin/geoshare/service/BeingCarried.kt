@@ -50,7 +50,7 @@ class BeingCarried(private val sensorsTell: Boolean) {
         private set
 
     /**
-     * What the device's own motion sensors have reported lately, oldest first.
+     * What the device's own motion sensors have reported recentAnswers, oldest first.
      *
      * Kept as moments rather than as a flag because they arrive late: the step
      * counter is read in batches, and a batch landing a minute after the fact
@@ -160,15 +160,15 @@ class BeingCarried(private val sensorsTell: Boolean) {
      * answer and no other, because only such an answer claims to know where
      * the device is closely enough for standing still to mean anything.
      */
-    fun noticeAnAnswerThatWillNotFollow(fix: Fix, whence: FoundBy, now: Instant) {
+    fun noticeAnAnswerThatWillNotFollow(fix: Fix, foundBy: FoundBy, now: Instant) {
         val walk = walkingNow(stirsHeard, now) ?: return
 
         if (walk.steps == 0L) {
             return
         }
 
-        if (whence != FoundBy.Satellites) {
-            AppLog.keep(TAG, walkNote(walk, whence, null, fix))
+        if (foundBy != FoundBy.Satellites) {
+            AppLog.keep(TAG, walkNote(walk, foundBy, null, fix))
 
             return
         }
@@ -176,14 +176,14 @@ class BeingCarried(private val sensorsTell: Boolean) {
         if (walkStarted != walk.since || walkedFrom == null) {
             walkStarted = walk.since
             walkedFrom = fix
-            AppLog.keep(TAG, walkNote(walk, whence, null, fix))
+            AppLog.keep(TAG, walkNote(walk, foundBy, null, fix))
 
             return
         }
 
         val from = walkedFrom ?: return
 
-        AppLog.keep(TAG, walkNote(walk, whence, from, fix))
+        AppLog.keep(TAG, walkNote(walk, foundBy, from, fix))
 
         if (!pinnedWhileWalking(walk, from, fix, sensorsTell)) {
             return

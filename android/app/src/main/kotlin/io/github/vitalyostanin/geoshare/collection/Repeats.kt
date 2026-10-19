@@ -100,24 +100,24 @@ data class RepeatLimits(
 /**
  * The route the answers are going round again, or nothing where they are not.
  *
- * [lately] is every answer the satellites gave, newest last, whether or not it
+ * [recentAnswers] is every answer the satellites gave, newest last, whether or not it
  * was written out — the answers a rule has already refused are the ones that
  * draw the route, and they are refused for as long as the anchor still stands
  * where the device really is.
  */
-fun routeRepeated(lately: List<Fix>, limits: RepeatLimits = RepeatLimits()): Repeated? {
-    if (lately.size < limits.pairsNeeded * 2) {
+fun routeRepeated(recentAnswers: List<Fix>, limits: RepeatLimits = RepeatLimits()): Repeated? {
+    if (recentAnswers.size < limits.pairsNeeded * 2) {
         return null
     }
 
     // The moments are worked out once for every period tried, and kept as
     // plain nanoseconds: this runs on each answer, over up to two hundred
     // of them and sixty-four periods.
-    val at = Moments(sinceFirst(lately).map { it.toNanos() }.toLongArray())
+    val at = Moments(sinceFirst(recentAnswers).map { it.toNanos() }.toLongArray())
     var best: Repeated? = null
 
-    for (period in periodsWorthTrying(lately, limits)) {
-        val lined = linedUpAcross(lately, at, period, limits) ?: continue
+    for (period in periodsWorthTrying(recentAnswers, limits)) {
+        val lined = linedUpAcross(recentAnswers, at, period, limits) ?: continue
 
         if (best == null || lined.apartMetres < best.apartMetres) {
             best = lined
@@ -128,8 +128,8 @@ fun routeRepeated(lately: List<Fix>, limits: RepeatLimits = RepeatLimits()): Rep
 }
 
 /** Whether the answers are going round a route again rather than going anywhere. */
-fun goingRoundAgain(lately: List<Fix>, limits: RepeatLimits = RepeatLimits()): Boolean =
-    routeRepeated(lately, limits) != null
+fun goingRoundAgain(recentAnswers: List<Fix>, limits: RepeatLimits = RepeatLimits()): Boolean =
+    routeRepeated(recentAnswers, limits) != null
 
 /**
  * The periods worth weighing: those between two answers that fell in the same
@@ -140,18 +140,18 @@ fun goingRoundAgain(lately: List<Fix>, limits: RepeatLimits = RepeatLimits()): B
  * second between a minute and ten instead would be five hundred and forty
  * passes over the run for nothing.
  */
-private fun periodsWorthTrying(lately: List<Fix>, limits: RepeatLimits): List<Duration> {
+private fun periodsWorthTrying(recentAnswers: List<Fix>, limits: RepeatLimits): List<Duration> {
     val found = mutableListOf<Pair<Double, Duration>>()
 
-    for (later in lately.indices) {
+    for (later in recentAnswers.indices) {
         for (earlier in 0 until later) {
-            val gap = apart(lately[earlier], lately[later])
+            val gap = apart(recentAnswers[earlier], recentAnswers[later])
 
             if (gap < limits.shortest || gap > limits.longest) {
                 continue
             }
 
-            val metres = distanceMetres(lately[earlier], lately[later])
+            val metres = distanceMetres(recentAnswers[earlier], recentAnswers[later])
 
             if (metres <= REPEAT_CLOSE_METRES) {
                 found += metres to gap
@@ -167,7 +167,7 @@ private fun periodsWorthTrying(lately: List<Fix>, limits: RepeatLimits): List<Du
  * does not line up at all.
  */
 private fun linedUpAcross(
-    lately: List<Fix>,
+    recentAnswers: List<Fix>,
     at: Moments,
     period: Duration,
     limits: RepeatLimits,
@@ -176,7 +176,7 @@ private fun linedUpAcross(
     val nearEnough = REPEAT_NEAR_ENOUGH.toNanos()
     val apart = mutableListOf<Double>()
 
-    for (answer in lately.indices) {
+    for (answer in recentAnswers.indices) {
         val then = at.nanos[answer] - periodNanos
         val before = at.nearestTo(then) ?: continue
 
@@ -184,7 +184,7 @@ private fun linedUpAcross(
             continue
         }
 
-        apart += distanceMetres(lately[before], lately[answer])
+        apart += distanceMetres(recentAnswers[before], recentAnswers[answer])
     }
 
     if (apart.size < limits.pairsNeeded) {
@@ -197,7 +197,7 @@ private fun linedUpAcross(
         return null
     }
 
-    val reach = reachOfTheRound(lately, at, periodNanos)
+    val reach = reachOfTheRound(recentAnswers, at, periodNanos)
 
     if (reach < limits.reachMetres) {
         return null
@@ -267,9 +267,9 @@ private class Moments(val nanos: LongArray) {
  * Not the road covered, which a standing device produces by jittering, and not
  * the radius, which asks the route to be a circle.
  */
-private fun reachOfTheRound(lately: List<Fix>, at: Moments, periodNanos: Long): Double {
+private fun reachOfTheRound(recentAnswers: List<Fix>, at: Moments, periodNanos: Long): Double {
     val since = at.nanos.last() - periodNanos
-    val round = lately.filterIndexed { index, _ -> at.nanos[index] >= since }
+    val round = recentAnswers.filterIndexed { index, _ -> at.nanos[index] >= since }
     var furthest = 0.0
 
     for (one in round.indices) {

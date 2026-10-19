@@ -56,7 +56,7 @@ internal class ModeReview(
     private val fenceCentre: Flow<Fix?>,
     /** The mode for the viewers' claims, the movement, the geofence and the device's own map. */
     private val decide: (
-        untils: List<Instant>,
+        watchEnds: List<Instant>,
         moving: Moving,
         insideGeofence: Boolean,
         ownMap: Boolean,
@@ -116,8 +116,8 @@ internal class ModeReview(
             standingStill(context, fenceCentre),
             MapOnScreen.state,
             reviews,
-        ) { untils, moving, insideGeofence, ownMap, _ ->
-            decide(untils, moving, insideGeofence, ownMap)
+        ) { watchEnds, moving, insideGeofence, ownMap, _ ->
+            decide(watchEnds, moving, insideGeofence, ownMap)
         }.distinctUntilChanged()
     }
 }
