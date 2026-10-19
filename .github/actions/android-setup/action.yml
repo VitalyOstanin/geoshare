@@ -1,0 +1,20 @@
+name: Setup the JDK and the Android SDK
+description: >-
+  Installs the JDK and the Android SDK packages the build needs. The calling
+  job has already checked out the repository and exported tools/versions.env
+  to GITHUB_ENV, which the steps here read.
+
+runs:
+  using: composite
+  steps:
+    - name: Setup Java
+      uses: actions/setup-java@b843ebf9b913146b38da2eaa7aeddf76074ae1ad # v6.1.0
+      with:
+        distribution: temurin
+        java-version: ${{ env.JDK_VERSION }}
+
+    - name: Setup the Android SDK
+      uses: android-actions/setup-android@be39fa834029ff78f1a44aa3bb0819b8fc2bd8fd # v4.0.4
+      with:
+        log-accepted-android-sdk-licenses: false
+        packages: 'platforms;${{ env.ANDROID_PLATFORM }} build-tools;${{ env.ANDROID_BUILD_TOOLS }}'

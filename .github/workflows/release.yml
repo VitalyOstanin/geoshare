@@ -107,17 +107,8 @@ jobs:
           echo "APP_VERSION_NAME=${version}" >> "$GITHUB_ENV"
           echo "APP_VERSION_CODE=${code}" >> "$GITHUB_ENV"
 
-      - name: Setup Java
-        uses: actions/setup-java@b843ebf9b913146b38da2eaa7aeddf76074ae1ad # v6.1.0
-        with:
-          distribution: temurin
-          java-version: ${{ env.JDK_VERSION }}
-
-      - name: Setup the Android SDK
-        uses: android-actions/setup-android@be39fa834029ff78f1a44aa3bb0819b8fc2bd8fd # v4.0.4
-        with:
-          log-accepted-android-sdk-licenses: false
-          packages: 'platforms;${{ env.ANDROID_PLATFORM }} build-tools;${{ env.ANDROID_BUILD_TOOLS }}'
+      - name: Setup Java and the Android SDK
+        uses: ./.github/actions/android-setup
 
       - name: Put apksigner on the path
         run: echo "${ANDROID_HOME}/build-tools/${ANDROID_BUILD_TOOLS}" >> "$GITHUB_PATH"
