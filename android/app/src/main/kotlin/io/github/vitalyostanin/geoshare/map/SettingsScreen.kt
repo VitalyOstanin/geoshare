@@ -3,6 +3,7 @@ package io.github.vitalyostanin.geoshare.map
 import android.content.ActivityNotFoundException
 import android.content.Intent
 import android.net.Uri
+import androidx.annotation.StringRes
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -887,54 +888,25 @@ private fun BackgroundWorkSection(
         modifier = Modifier.padding(start = 16.dp, top = 8.dp, end = 16.dp),
     )
 
-    Row(
-        modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 4.dp),
-        horizontalArrangement = Arrangement.spacedBy(12.dp),
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        Text(text = stringResource(R.string.background_battery), modifier = Modifier.weight(1f))
-
-        if (batteryUnrestricted) {
-            Text(
-                text = stringResource(R.string.background_battery_lifted),
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
-        } else {
-            TextButton(onClick = onAllowBattery) {
-                Text(text = stringResource(R.string.background_battery_allow))
-            }
-        }
-    }
+    PermissionRow(
+        titleRes = R.string.background_battery,
+        noteRes = null,
+        granted = batteryUnrestricted,
+        grantedRes = R.string.background_battery_lifted,
+        allowRes = R.string.background_battery_allow,
+        onAllow = onAllowBattery,
+    )
 
     // Optional, and said so: without it the siren is still heard through
     // every "Do Not Disturb" setting but total silence.
-    Row(
-        modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 4.dp),
-        horizontalArrangement = Arrangement.spacedBy(12.dp),
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        Column(modifier = Modifier.weight(1f)) {
-            Text(text = stringResource(R.string.siren_silence_title))
-            Text(
-                text = stringResource(R.string.siren_silence_note),
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
-        }
-
-        if (sirenThroughSilence) {
-            Text(
-                text = stringResource(R.string.siren_silence_granted),
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
-        } else {
-            TextButton(onClick = onAllowSirenThroughSilence) {
-                Text(text = stringResource(R.string.siren_silence_allow))
-            }
-        }
-    }
+    PermissionRow(
+        titleRes = R.string.siren_silence_title,
+        noteRes = R.string.siren_silence_note,
+        granted = sirenThroughSilence,
+        grantedRes = R.string.siren_silence_granted,
+        allowRes = R.string.siren_silence_allow,
+        onAllow = onAllowSirenThroughSilence,
+    )
 
     if (startupScreen) {
         StartupSection(
@@ -942,6 +914,50 @@ private fun BackgroundWorkSection(
             onOpenStartup = onOpenStartup,
             onStartupSetChange = onStartupSetChange,
         )
+    }
+}
+
+/**
+ * A permission the member can grant from the system: the title (with an
+ * optional note under it), then either a muted line saying it is already
+ * granted or a button that takes them to where it is granted.
+ */
+@Composable
+private fun PermissionRow(
+    @StringRes titleRes: Int,
+    @StringRes noteRes: Int?,
+    granted: Boolean,
+    @StringRes grantedRes: Int,
+    @StringRes allowRes: Int,
+    onAllow: () -> Unit,
+) {
+    Row(
+        modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 4.dp),
+        horizontalArrangement = Arrangement.spacedBy(12.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Column(modifier = Modifier.weight(1f)) {
+            Text(text = stringResource(titleRes))
+            if (noteRes != null) {
+                Text(
+                    text = stringResource(noteRes),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
+        }
+
+        if (granted) {
+            Text(
+                text = stringResource(grantedRes),
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        } else {
+            TextButton(onClick = onAllow) {
+                Text(text = stringResource(allowRes))
+            }
+        }
     }
 }
 
@@ -1006,12 +1022,19 @@ private fun StartupSection(
 }
 
 /**
- * The theme, as one row of the list rather than a row of buttons: the screen
- * is a list of "what" and "how it stands", and the answer is read far more
- * often than it is changed.
+ * One setting answered by picking a value from a short list: the label, and
+ * the current value as a button that opens the menu of the others. The theme
+ * and the language are both this row, and differ only in the values and in
+ * how a value is named.
  */
 @Composable
-private fun AppearanceRow(theme: ThemeChoice, onThemeChange: (ThemeChoice) -> Unit) {
+private fun <T> ChoiceRow(
+    @StringRes titleRes: Int,
+    current: T,
+    choices: List<T>,
+    label: (T) -> Int,
+    onChange: (T) -> Unit,
+) {
     var open by remember { mutableStateOf(false) }
 
     Row(
@@ -1019,22 +1042,22 @@ private fun AppearanceRow(theme: ThemeChoice, onThemeChange: (ThemeChoice) -> Un
         horizontalArrangement = Arrangement.spacedBy(12.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        Text(text = stringResource(R.string.appearance_title), modifier = Modifier.weight(1f))
+        Text(text = stringResource(titleRes), modifier = Modifier.weight(1f))
 
         // Anchored to the button, as on the reader rows: a menu declared
         // beside it opens at the start of the row instead, over the label.
         Box {
             TextButton(onClick = { open = true }) {
-                Text(text = stringResource(themeLabel(theme)))
+                Text(text = stringResource(label(current)))
             }
 
             DropdownMenu(expanded = open, onDismissRequest = { open = false }) {
-                for (choice in ThemeChoice.entries) {
+                for (choice in choices) {
                     DropdownMenuItem(
-                        text = { Text(text = stringResource(themeLabel(choice))) },
+                        text = { Text(text = stringResource(label(choice))) },
                         onClick = {
                             open = false
-                            onThemeChange(choice)
+                            onChange(choice)
                         },
                     )
                 }
@@ -1042,6 +1065,15 @@ private fun AppearanceRow(theme: ThemeChoice, onThemeChange: (ThemeChoice) -> Un
         }
     }
 }
+
+/**
+ * The theme, as one row of the list rather than a row of buttons: the screen
+ * is a list of "what" and "how it stands", and the answer is read far more
+ * often than it is changed.
+ */
+@Composable
+private fun AppearanceRow(theme: ThemeChoice, onThemeChange: (ThemeChoice) -> Unit) =
+    ChoiceRow(R.string.appearance_title, theme, ThemeChoice.entries, ::themeLabel, onThemeChange)
 
 /**
  * The language the application is read in.
@@ -1052,35 +1084,14 @@ private fun AppearanceRow(theme: ThemeChoice, onThemeChange: (ThemeChoice) -> Un
  * either place changes the other.
  */
 @Composable
-private fun LanguageRow(language: LanguageChoice, onLanguageChange: (LanguageChoice) -> Unit) {
-    var open by remember { mutableStateOf(false) }
-
-    Row(
-        modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 4.dp),
-        horizontalArrangement = Arrangement.spacedBy(12.dp),
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        Text(text = stringResource(R.string.language_title), modifier = Modifier.weight(1f))
-
-        Box {
-            TextButton(onClick = { open = true }) {
-                Text(text = stringResource(languageLabel(language)))
-            }
-
-            DropdownMenu(expanded = open, onDismissRequest = { open = false }) {
-                for (choice in LanguageChoice.entries) {
-                    DropdownMenuItem(
-                        text = { Text(text = stringResource(languageLabel(choice))) },
-                        onClick = {
-                            open = false
-                            onLanguageChange(choice)
-                        },
-                    )
-                }
-            }
-        }
-    }
-}
+private fun LanguageRow(language: LanguageChoice, onLanguageChange: (LanguageChoice) -> Unit) =
+    ChoiceRow(
+        R.string.language_title,
+        language,
+        LanguageChoice.entries,
+        ::languageLabel,
+        onLanguageChange,
+    )
 
 private fun languageLabel(choice: LanguageChoice): Int = when (choice) {
     LanguageChoice.Russian -> R.string.language_russian
