@@ -59,34 +59,40 @@ publishing run the Firebase command line on the machine itself, and need
 (the `engines` of both manifests, as in the test container, and what the
 Firebase SDK in them requires); the build scripts do not need it.
 
-| #  | Command                      | What it does                                                                |
-|----|------------------------------|-----------------------------------------------------------------------------|
-| 1  | `tools/build.sh`             | builds the Android application                                              |
-| 2  | `tools/test.sh`              | runs the Android unit tests                                                 |
-| 3  | `tools/lint.sh`              | formatting, length of functions (detekt) and Android lint                   |
-| 4  | `tools/rules.sh`             | security rules tests against the Firestore emulator                         |
-| 5  | `tools/web-test.sh`          | the tests of the page's own logic; `--watch` reruns them as files are saved |
-| 6  | `tools/js-lint.sh`           | ESLint over the page and the emulator scripts                               |
-| 7  | `tools/md-lint.sh`           | markdownlint over the documents                                             |
-| 8  | `tools/serve-web.sh`         | the page at 127.0.0.1:5000, with the headers and the policy Hosting sends   |
-| 9  | `tools/sign-release.sh`      | signs the release build with the release key                                |
-| 10 | `tools/check.sh`             | the checks a change needs, `--all` for every one; CI runs it                |
-| 11 | `tools/run-services.sh`      | stand-in Firestore and sign-in, filled with stand-in data                   |
-| 12 | `tools/run-emulator.sh`      | a headless Android emulator; with the line above, a stand without a project |
-| 13 | `tools/coverage.sh`          | how much of the code the tests reach; fails under the floors CI checks too  |
-| 14 | `tools/test-instrumented.sh` | smoke tests on the emulator: start-up, settings, licences, connecting       |
-| 15 | `tools/shell-lint.sh`        | ShellCheck over every shell script, at the version in `versions.env`        |
-| 16 | `tools/page-stand.sh`        | the page against stand-in sign-in and Firestore, `--showcase` to fill them  |
-| 17 | `tools/landing-shots.sh`     | the application's screenshots for the landing page, full size, in `shots/`  |
-| 18 | `tools/landing-steps.sh`     | the setup page's first two steps for the landing page, into `shots/`        |
-| 19 | `tools/landing-hero.sh`      | the header picture of the README and the landing page, into `shots/`        |
-| 20 | `tools/landing-images.sh`    | the landing page's pictures, three widths each, from `shots/`               |
-| 21 | `tools/landing-compare.py`   | the new pictures beside the committed ones, on one page, before committing  |
+| #  | Command                       | What it does                                                                |
+|----|-------------------------------|-----------------------------------------------------------------------------|
+| 1  | `tools/build.sh`              | builds the Android application                                              |
+| 2  | `tools/test.sh`               | runs the Android unit tests                                                 |
+| 3  | `tools/lint.sh`               | formatting, length of functions (detekt) and Android lint                   |
+| 4  | `tools/rules.sh`              | security rules tests against the Firestore emulator                         |
+| 5  | `tools/web-test.sh`           | the tests of the page's own logic; `--watch` reruns them as files are saved |
+| 6  | `tools/js-lint.sh`            | ESLint over the page and the emulator scripts                               |
+| 7  | `tools/md-lint.sh`            | markdownlint over the documents, and their mermaid diagrams drawn           |
+| 8  | `tools/serve-web.sh`          | the page at 127.0.0.1:5000, with the headers and the policy Hosting sends   |
+| 9  | `tools/sign-release.sh`       | signs the release build with the release key                                |
+| 10 | `tools/check.sh`              | the checks a change needs, `--all` for every one; CI runs it                |
+| 11 | `tools/run-services.sh`       | stand-in Firestore and sign-in, filled with stand-in data                   |
+| 12 | `tools/run-emulator.sh`       | a headless Android emulator; with the line above, a stand without a project |
+| 13 | `tools/coverage.sh`           | how much of the code the tests reach; fails under the floors CI checks too  |
+| 14 | `tools/test-instrumented.sh`  | smoke tests on the emulator: start-up, settings, licences, connecting       |
+| 15 | `tools/shell-lint.sh`         | ShellCheck over every shell script, at the version in `versions.env`        |
+| 16 | `tools/page-stand.sh`         | the page against stand-in sign-in and Firestore, `--showcase` to fill them  |
+| 17 | `tools/landing-shots.sh`      | the application's screenshots for the landing page, full size, in `shots/`  |
+| 18 | `tools/landing-steps.sh`      | the setup page's first two steps for the landing page, into `shots/`        |
+| 19 | `tools/landing-hero.sh`       | the header picture of the README and the landing page, into `shots/`        |
+| 20 | `tools/landing-images.sh`     | the landing page's pictures, three widths each, from `shots/`               |
+| 21 | `tools/landing-compare.py`    | the new pictures beside the committed ones, on one page, before committing  |
+| 22 | `tools/gradle.sh`             | any Gradle task in the SDK container: `tools/gradle.sh assembleDebug`       |
+| 23 | `tools/mermaid-check.sh`      | draws the mermaid diagrams of the documents (or of the files named)         |
+| 24 | `tools/check-npm-licenses.sh` | fails on an npm lock-file package whose licence is not on the allowed list  |
 
 The rest of `tools/` — `coverage-floor.sh`, `project.sh`, `web-config.sh`,
 `setup-site.sh`, `read-cost.sh`, `device-log.sh`, `device-sky.sh`,
-`siren-sound.sh`, `signing.sh`, `vendor-web.sh` — says what it does and how to
-call it at the top of each file.
+`siren-sound.sh`, `signing.sh`, `vendor-web.sh`, `release-notes.sh` — says what
+it does and how to call it at the top of each file. `lib.sh` and `screens.sh`
+are sourced by the other scripts and never run on their own; `tools/hero/` and
+`tools/siren-sound/` hold the parts that `landing-hero.sh` and `siren-sound.sh`
+call.
 
 The page serves Firebase, MapLibre GL JS and the QR encoder itself, from
 `web/public/lib/vendor/<package>-<version>/` (ADR-0035). Their versions are
@@ -140,6 +146,7 @@ The scripts read these from the environment; none has to be set.
 | 33 | `GEOSHARE_PROJECT`        | `seed.mjs`, `showcase-seed.mjs` | project the seed writes; debug builds read only `demo-geoshare`   | `demo-geoshare`                 |
 | 34 | `GEOSHARE_GROUP`          | `seed.mjs`, `showcase-seed.mjs` | id of the group the seed creates                                  | `family`                        |
 | 35 | `SHOWCASE_FIRST_SHARE`    | `showcase-seed.mjs`             | `1`: one member's grant left empty, as `landing-shots.sh` asks    | unset: grants full              |
+| 36 | `MERMAID_ROOT`            | `mermaid-check.sh`              | another tree to check, to try the check on a failing document     | the repository root             |
 
 The names of the podman resources — `POD_NAME`, `SERVICES_NAME`,
 `EMULATOR_NAME`, `STAND_NAME`, `SDK_IMAGE`, `EMULATOR_IMAGE`, `FIREBASE_IMAGE`,
@@ -224,6 +231,19 @@ the machine.
    beside it must load, and the setup page at
    `https://geoshare-setup.web.app/` must open and offer to sign in with
    Google.
+
+   These two steps are manual on purpose. `pages.yml` publishes the landing
+   page to GitHub Pages with the repository's own token; the setup site is
+   Firebase Hosting in the `geoshare-setup` project, and no workflow holds a
+   credential for it. Deploying from `release.yml` would need, in the
+   `release` environment, a service account key with the Firebase Hosting
+   Admin role for that project and the web OAuth client id of the setup page
+   (it is not kept in the repository). The key would sit beside the release
+   key, in the hands of a job that runs code from the tag, to save two
+   commands. Do the steps after the release is published and approved (step
+   6), never before: a site deployed ahead of the package offers new groups
+   rules the published application does not know yet. Do not skip them: a
+   group created in between gets the rules of the previous release.
 
 ### Checking a release
 

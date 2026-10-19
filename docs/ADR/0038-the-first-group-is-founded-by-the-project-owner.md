@@ -3,6 +3,12 @@
 - Status: Accepted
 - Date: 2026-10-17
 
+## Contents
+
+- [Context](#context)
+- [Decision](#decision)
+- [Consequences](#consequences)
+
 ## Context
 
 ADR-0036 limits a project to one group, so that a stranger who reaches the

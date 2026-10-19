@@ -3,6 +3,12 @@
 - Status: Accepted
 - Date: 2026-10-05
 
+## Contents
+
+- [Context](#context)
+- [Decision](#decision)
+- [Consequences](#consequences)
+
 ## Context
 
 ADR-0003 made a script the way a group's project is set up, and turned down

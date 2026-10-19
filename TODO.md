@@ -6,8 +6,6 @@
 - [A choice of map background](#a-choice-of-map-background)
 - [A way to exchange positions other than Firebase](#a-way-to-exchange-positions-other-than-firebase)
 - [Which members the panel keeps in reach](#which-members-the-panel-keeps-in-reach)
-- [Russian, alongside English](#russian-alongside-english)
-- [Light and dark, and a say in it](#light-and-dark-and-a-say-in-it)
 - [Zooming with one thumb](#zooming-with-one-thumb)
 - [A control that fits everybody on screen](#a-control-that-fits-everybody-on-screen)
 - [The battery level on the member buttons](#the-battery-level-on-the-member-buttons)
@@ -16,9 +14,8 @@
 - [A say in where the position comes from](#a-say-in-where-the-position-comes-from)
 - [Sideways, and not only upright](#sideways-and-not-only-upright)
 - [Taking a position somewhere else](#taking-a-position-somewhere-else)
-- [Naming the phones: what is left](#naming-the-phones-what-is-left)
-- [What a stranger would have to do to use this](#what-a-stranger-would-have-to-do-to-use-this)
-- [An administrator's panel for the family](#an-administrators-panel-for-the-family)
+- [Telling a member whose storage they are in](#telling-a-member-whose-storage-they-are-in)
+- [The project's usage on the administrator's screen](#the-projects-usage-on-the-administrators-screen)
 - [The phones fetch their own updates](#the-phones-fetch-their-own-updates)
 - [The screen says the satellites are being spoofed](#the-screen-says-the-satellites-are-being-spoofed)
 - [Turning one member's position on for the rest, in an emergency](#turning-one-members-position-on-for-the-rest-in-an-emergency)
@@ -118,20 +115,6 @@ everyone else behind the button.
 Other rules worth weighing against pinning: most recently looked at, closest
 first, or whoever is moving. The pinned set is per phone, so it is a local
 setting rather than something the group shares.
-
-## Russian, alongside English
-
-Every string on screen is English. Both phones are used in Russian, so the
-interface should be too: a Russian resource file beside the default one, with
-the plural forms Russian needs — the age of a position is counted in minutes,
-hours and days, and Russian distinguishes more cases than one and many.
-
-## Light and dark, and a say in it
-
-The theme follows whatever the material defaults give. It should follow the
-phone by default and be overridable in the settings: light, dark, or as the
-phone says. The map background matters here too — a bright map at night is
-worse than no map, and osmdroid can be asked to draw its tiles inverted.
 
 ## Zooming with one thumb
 
@@ -237,300 +220,30 @@ position — a long press on the coordinates in the card or on the marker — wi
 to Google Maps and one to Yandex Maps, each opening that very point, so that
 the person on the other end needs no app of ours and no typing.
 
-## Naming the phones: what is left
+## Telling a member whose storage they are in
 
-Both readings of "names people choose" are built: the owner names their own
-phone for the whole group (the devices document), and every reader may name
-anybody's phone for themselves (the labels document), which comes first. Two
-phones still sharing a name — two of one model nobody named — are numbered in
-the order of their ids, "(1)" and "(2)", alike on every screen.
+Every group runs in a Firebase project that belongs to one account, the project
+owner's, who reads the whole database from the console without the rules
+applying, edits the rules and can delete the project. Inside the group that is
+the arrangement people want in a household; among people who met on a trip it
+means one of them can read the others' history. Nothing levels the two, so the
+thing to build is saying so: the application knows which account owns the
+project, and a person joining should be told whose storage they are about to be
+in before they agree to be looked at. Today the invitation page does not name
+the project owner, nor does any screen a member sees (GST-01 says so
+outright).
 
-Left: the position document still carries `deviceName`, the model as the
-manufacturer wrote it in `Build.MODEL`, and the devices document carries it
-too. It goes from the position as a duplicate: the names take the model from
-the devices document, and nobody who reads a position is kept from the model
-by its going — the devices document is open to every reader of the positions.
-Old builds read it, so it goes once every phone runs a build that names phones
-from the devices document alone.
+## The project's usage on the administrator's screen
 
-## What a stranger would have to do to use this
+The group panel exists (ADM-06, ADR-0027), and so does clearing a stuck place
+from it (ADM-09, ADR-0029). What is missing is the figure the household cares
+about: how much of the free tier the project has left. Everything is built to
+stay inside it, but no screen says how close that comes to the daily
+allowance, and the first sign of going over would be devices failing to write
+at all. Today only the project owner can see it, from the command line
+(`tools/project.sh show --usage`, OWN-05).
 
-Everything is one household's: the group is the constant `family` in both
-clients, the project keys arrive as files kept out of the repository, and the
-roster is an array in the group document that no client may write, so it is
-edited by hand in the Firebase console. Somebody who installs a published build
-has no way to say where their positions go, who they are shared with, or how a
-second phone joins them.
-
-Three separate questions sit behind that.
-
-**Whose storage.** Either each household runs its own Firebase project, or
-everybody writes into one project the author pays for. Their own project keeps
-the positions and the bill with the person they belong to, and it is what a
-free tier can carry at all; it costs a setup the application has to walk
-somebody through — creating the project, deploying the rules, handing the
-configuration over — and it moves the start of Firebase out of the build and
-into a screen, because the configuration is no longer known when the build is
-made. One shared project needs no code at all and is the worse of the two:
-other people's positions land in an account that is mine, the free tier runs
-out, and the bill that follows has a card behind it.
-
-Settled: each household runs its own project. The application therefore may
-not assume it knows its project when it is built.
-
-**Making that first run bearable.** Creating a project, turning on sign-in and
-the database, deploying the rules and copying the configuration out is a dozen
-steps in a console that fights back. A script the person runs once on a
-computer can do all of it through the Firebase command line — the project, the
-rules, registering the application and reading its configuration back are all
-commands, as this project's own setup showed — and finish by printing the
-configuration as a code the phone reads. It costs a script to write and keep
-working, and it asks for a computer and a terminal, which not everybody who
-would install this has. Worth having as the offered path, with the manual steps
-written down as the fallback.
-
-**Who is above whom.** The person who creates the project owns it: they read
-the whole database from the console without the rules applying, edit the rules,
-see every account that signed in, and can delete the whole thing. Nobody else
-can, and the only way to level that is inviting a second owner into the project
-itself, which is the console work this is meant to avoid. Inside the
-application the imbalance is removable: a list of the group's administrators in
-the group document, and a rule letting those on it change the roster, puts
-inviting and removing in more than one pair of hands. Worth deciding alongside
-the invitation code, since both write to the same document.
-
-Standing above the users is not itself unusual — the large map applications
-have the same shape, and their server sees everything their users hand it. What
-differs is who stands there. Theirs is a company, a stranger to everybody and
-equally far from each of them; ours is one of the members, who is also being
-looked at by the rest. In a household that is the arrangement people want: the
-project belongs to the parent. Among people who met on a trip it means one of
-them reads the others' history from a console. So the thing to build is not an
-attempt to level the two, it is telling members whose storage they are in:
-the application knows which account owns the project, and saying so is what
-lets somebody join on terms they understand.
-
-**The signing fingerprint, which the setup cannot skip.** Signing in with a
-Google account only works if the project has been told the fingerprint of the
-build doing the asking; ours was told the debug one when sign-in was built. A
-household running its own project therefore has to register the application in
-it with the fingerprint of the published build before anybody can sign in at
-all. The fingerprint is the same for every installation of a given release, so
-it can simply be printed in the instructions, but the step remains, and it
-belongs in whatever script or walkthrough does the first run.
-
-**How a group is joined.** Settled: an invitation code carried in the
-application. The first member creates the group and hands out a code; the
-person invited enters it and adds themselves to the roster. It is the form that
-works for somebody who will never open a console, and it is what makes removing
-somebody possible at all.
-
-Established against the emulator: the rules alone can allow all of it, and no
-cloud function is needed. A group is created by its founder alone on both
-lists; a code is a document named by the code itself, which nobody may read and
-the rules read for everybody; the person joining writes the code into a
-document of their own, and the rule weighing their addition to the roster reads
-it from there, allows the caller's own id and nothing else, and refuses a code
-that was never made or has run out. An administrator adds and removes members
-and hands the group on, while the administrators stay a non-empty subset of the
-members. The document model carries the shapes, and the rules tests cover
-twenty-three cases of it.
-
-What the rules cannot do is spend a code. Adding oneself and marking the
-invitation used are two writes, and nothing makes the second follow the first,
-so a code lets in everybody holding it until it runs out. That is why an
-invitation carries an expiry rather than a count, and why removing a member is
-part of the same piece of work rather than a later one.
-
-Built on top of it: the screens, in the application and on the page alike.
-Somebody with no group is offered both ways in at once, because neither client
-can tell a group that has not been made from a group it is not on — both read
-as a refusal. A member sees the roster; the one running the group hands out
-invitations and takes members off; a group nobody runs says so instead of
-offering controls whose every write would be refused.
-
-A group is named after the account that made it, and the rules allow no other
-name: a name of the founder's choosing would let one account fill the database
-with groups nobody is in, a document apiece and each of them free to make. So
-the name is not something a client knows when it is built, and both remember
-which group they are in — the phone beside its sharing switch, the page in its
-browser storage — falling back to `family`, the household that started before
-any of this. An invitation is therefore one string, `group.code`: the rule
-weighing somebody's addition to a roster weighs a write to a path, and the path
-has to be known before the write is made.
-
-Left on top of that: naming administrators on a screen, which is the section
-below, and the first write that fills in the `admins` of a group made before
-the list existed.
-
-What joins is a member, meaning an account, not a phone: the code is spent by
-the person who enters it, and whatever devices they sign in on come with them.
-That raises a question the single-household build never had to answer. One
-account signed in on two phones writes into one position document, and the last
-write wins, so the two take turns overwriting each other. Either that is
-declared acceptable — the phone in somebody's pocket is one phone, and the
-spare in a drawer writes nothing — or a position is kept per device under its
-member, which changes the document model, the subscriptions and what a marker
-means when one person is in two places.
-
-What two phones on one account do today, in full:
-
-- The position document is overwritten by whichever phone wrote last, and the
-  marker jumps between two places while looking freshly written both times, so
-  nothing on screen explains the jump.
-- Neither phone knows what the other wrote: the write filter compares a fix
-  against the last one this phone wrote, not against what the database holds,
-  so both write on their own schedule and the group pays twice the writes.
-- The viewing marker is one document as well. Closing the map on one phone
-  deletes it for both, and the other members drop out of their fast mode until
-  the phone still looking pushes the marker forward again, up to a minute later.
-- The profile is written once per phone, since each remembers separately what
-  it has had accepted. The content is identical, so this one is harmless.
-
-Wanted instead: every device of a member drawn on the map. The case is an
-ordinary one — a parent hands their old phone to a child for the afternoon and
-goes out with the new one, and both are worth seeing at once. That means a
-position per device rather than per member: a device identity that survives a
-restart, a document under the member for each one, markers that carry the
-device as well as the person, and a viewing marker that one device cannot
-withdraw on another's behalf. The card and the panel then have to say which
-device they are showing, and a member with one phone must not end up reading
-its name anywhere. Worth weighing against the simpler answer for that same
-case: give the child their own account on the old phone, which the group
-already supports.
-
-When: straight after the beta, before anything else is built on top. This is a
-change to the shape of the documents, and the longer the clients, the rules and
-the page keep assuming one position per member, the more there is to unpick —
-every subscription, every marker and every card reads that assumption today.
-
-**More than one group at a time.** A person is in a family and also in, say, a
-group of people on a walking trip. Those are different groups with different
-members, and both want the same position. With a project per household the
-groups do not merely sit side by side — they sit in different projects
-entirely, so the phone would hold several configurations, sign in against each
-of them, and write the same fix once per group. The battery cost multiplies by
-the number of groups, and so does the number of places a position is stored.
-Several groups inside one project is the cheaper shape, but then somebody's
-project holds people who have nothing to do with them.
-
-**Why any of this is hard: the free tier.** The awkwardness above is not in the
-idea of sharing a position, it is in having no storage of our own. A service
-with a global store, the way the large map applications have, would know each
-person once: a position is written once, and permission is granted person to
-person — this one may see me, that one may not — with a group being no more
-than a name for a list. Because storage has to be somebody's free Firebase
-project instead, identity is scoped to the project, and permission has to be
-granted per group and per member both, once in every project a person belongs
-to. That is the constraint to keep in view when weighing the item above about
-exchanging positions without Firebase: what a store of our own would buy is
-exactly this.
-
-**Who may see a position.** Settled: a member names the readers one by one, and
-each permission may carry an expiry. Everyone in the group is not the same as
-everyone who may watch — a group of people on a trip is not a household — and a
-permission that runs out on its own is what lets somebody be visible for the
-walk and not for the week after it.
-
-That decision costs more than the switch it replaces, and the costs are worth
-stating before it is built:
-
-- The permission has to live where a rule can read it without paying for a
-  second document. Inside the position document is that place: a field mapping
-  a reader to when their permission ends, with the absence of an end meaning
-  indefinite. A separate permissions document would be a `get` on every read,
-  and reads are the quota that runs out first.
-- Subscribing to the whole positions collection stops working. A collection
-  listener is refused outright when a single document in it is out of reach,
-  so both clients have to subscribe per member instead, walking the roster.
-  That is one listener per member rather than one for the group.
-- An expiry that passes turns a working listener into a permission error rather
-  than into an empty result, and both clients have to read that as "no longer
-  shared" rather than as a failure to report.
-- Both clients need the screen where the permissions are given, which is a list
-  of members, a switch each and a choice of how long.
-
-None of this is worth building before the two phones work. It is worth deciding
-before the storage is designed any further, since the first question decides
-whether a client may assume it knows its project at build time.
-
-**The whole path, built end to end.** Settled: somebody who does not write
-software is to get from an empty phone to a household sharing positions
-without a console and without being handed a file. Joining a group by
-invitation is built already; what is missing is everything before it, and it
-has to work as one path rather than as parts that each work on their own:
-
-- Making the project, turning on sign-in and the database, deploying the rules
-  and registering the build's fingerprint. The offered path is the script that
-  drives the Firebase command line; the manual steps stay written down for
-  somebody who cannot run it.
-- Handing the configuration to the phone. The configuration is no longer known
-  when the build is made, so the application starts Firebase from what it was
-  given rather than from a file compiled into it, and there is a screen where
-  that is entered — as a code carried across from the script rather than typed
-  field by field.
-- The same for the page, which today is configured by a file written at deploy
-  time.
-- Saying whose storage a member is in. The application knows which account owns
-  the project, and somebody joining is told before they agree to be looked at.
-- The first member founding the group, then inviting the rest, which is the
-  part that works today.
-
-What it costs: Firebase is started later than it is now, so everything reading
-the database has to cope with "not configured yet" as an ordinary state rather
-than as a failure; and the walkthrough becomes something to keep working as
-the Firebase console and its command line change under it.
-
-## An administrator's panel for the family
-
-The member who owns the Firebase project is already unlike the others: the
-project is theirs, the quota is theirs, and the rules are written by them. That
-position could carry a screen the other members do not have — on the page and
-in the application both — showing every device in the group and what the
-project knows about it.
-
-The first thing that screen is needed for is a position that has stuck. The jump
-filter anchors on the last believed fix, and where the anchor itself is wrong
-the phone can refuse every honest answer that follows. On the phone this is
-settled by the button that forgets the last place, but the phone is not always
-the one to ask: a child's phone is in a pocket somewhere, and the member holding
-it should not have to be talked through a settings screen. The administrator
-should be able to clear the anchor of any device in the group from where they
-are.
-
-What it costs, so that the decision is made with the price in view:
-
-- A command has to reach a phone that is not being used. Today nothing travels
-  towards the phone except what the collection service already reads, so the
-  command is a document the service watches, the administrator writes and the
-  phone clears once it has acted. Waking a phone that is not listening is the
-  same unsolved problem as the push item above.
-- The rules have to say who may write such a command, and the answer is not "the
-  project owner" by default: ownership is a billing fact, not a permission
-  Firestore knows about. The administrator has to be named in the data like
-  anybody else.
-- A command that reaches into another person's phone is a different thing from
-  sharing a position with them, and it should look like one: the phone says in
-  its log what was asked and by whom, and the screen where the member sees it
-  is not hidden behind a developer setting.
-
-Settled: this is to be built rather than weighed further. What it starts from
-is the part that needs nothing new travelling towards a phone — the group seen
-whole from one screen: every member, every device they have listed, when each
-last wrote, and who runs the group. The commands that reach into another
-phone come after that, because they wait on waking a phone that is not
-listening, which is its own unsolved item above.
-
-### The tier, the limits and what the project has spent
-
-The same screen is where the household should be able to see what the free
-tier has left. Everything here is built to stay inside it — a position every
-few minutes, three fields a minute while a phone is being lied to, no
-functions, no storage — but nothing in the application says how close that
-comes to the daily allowance, and the first sign of going over would be phones
-failing to write at all.
-
-What such a screen shows: which tier the project is on, the daily allowance of
+What a screen shows: which tier the project is on, the daily allowance of
 document reads, writes and deletes against what has been used today, and the
 same for the stored size. Whose it is: the member who owns the project, since
 the numbers are a billing fact.
@@ -539,14 +252,14 @@ What it costs:
 
 - The numbers are not in Firestore, so the client cannot read them the way it
   reads everything else. They come from the Cloud Monitoring API of the
-  project, which needs a credential the phones do not have and should not be
+  project, which needs a credential the devices do not have and should not be
   given.
 - A credential that reads billing figures is worth more than anything else the
   application holds, so it cannot ride in a build. Either the owner signs in on
   that screen with the account that owns the project, or something outside the
-  phones reads the numbers on a schedule and writes them into the group where
+  devices reads the numbers on a schedule and writes them into the group where
   the rules can share them with the household.
-- The second way needs something that runs without a phone — a function, a
+- The second way needs something that runs without a device — a function, a
   scheduled job — which is exactly what the free tier does not include. That
   makes the first way the one to start with, and it means the screen works only
   for the owner.

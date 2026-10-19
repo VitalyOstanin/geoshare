@@ -3,6 +3,12 @@
 - Status: Accepted, supplemented by 0038
 - Date: 2026-10-13
 
+## Contents
+
+- [Context](#context)
+- [Decision](#decision)
+- [Consequences](#consequences)
+
 ## Context
 
 ADR-0005 gives every group a Firebase project of its own: the data and the

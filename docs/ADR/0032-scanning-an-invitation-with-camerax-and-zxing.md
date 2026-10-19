@@ -3,6 +3,12 @@
 - Status: Accepted
 - Date: 2026-10-05
 
+## Contents
+
+- [Context](#context)
+- [Decision](#decision)
+- [Consequences](#consequences)
+
 ## Context
 
 An administrator shows an invitation as a QR code on their own screen

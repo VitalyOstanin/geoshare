@@ -4,6 +4,12 @@
 - Date: 2026-10-02
 - Supersedes: the point of ADR-0023 that only GPS and Galileo are read
 
+## Contents
+
+- [Context](#context)
+- [Decision](#decision)
+- [Consequences](#consequences)
+
 ## Context
 
 ADR-0023 left GLONASS out: its orbits are not ellipses but a position, a

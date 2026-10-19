@@ -3,6 +3,12 @@
 - Status: Accepted
 - Date: 2026-10-03
 
+## Contents
+
+- [Context](#context)
+- [Decision](#decision)
+- [Consequences](#consequences)
+
 ## Context
 
 A group is a Firebase project of its own (ADR-0005), and a device learned its
