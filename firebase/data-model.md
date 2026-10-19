@@ -149,6 +149,27 @@ what the rules do when nobody is named: `admins` is read through a default of
 nothing, and nothing is what may change the roster. Naming its owner in
 `owner` hands it to them.
 
+Handing such a group to its administrators, from the console, in the group
+document (`groups/{groupId}`):
+
+1. Open the group document and look at `members`: only accounts on the roster
+   can be named below, and nobody can be added to it by this step.
+2. Create the field `admins`, type array, and put in it the account ids of the
+   members who are to run the group. An administrator has to be on the roster
+   (`administering()` refuses a write whose `admins` is not within `members`),
+   and `admins` stays a subset of `members` from then on.
+3. Alternatively, or as well, create the field `owner`, type string, with the
+   account id of the member who is to count as the group's founder. `founderOf()`
+   reads it in place of the document id, and `isGroupAdmin()` lets that
+   account run the group without being listed in `admins`, as long as it is on
+   the roster. No write from a client touches `owner`, so it stays what the
+   console put there.
+4. Check from the device of a named account: its standing is
+   Administrator rather than Unrun, and a roster edit goes through. Until
+   `admins` has an entry or `owner` names a member, the rules read it as an
+   empty array and refuse every roster write, which the screens show as an
+   unrun group.
+
 ## invitations/{code}
 
 | Field       | Type      | Meaning                                  |

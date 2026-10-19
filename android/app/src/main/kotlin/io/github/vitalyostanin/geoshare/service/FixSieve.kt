@@ -569,10 +569,8 @@ internal class FixSieve(
     private suspend fun writeQuietly(
         written: Written,
         mode: CollectionMode,
-        // How the device arrived at this, worked out by the caller: on these
-        // devices the fused answer being written carries no note of its own,
-        // and what says whether it is the satellites' measurement under
-        // another name is the receiver's own last answer, read from the store.
+        // Worked out by the caller: the fused answer carries no note of its
+        // own, so the receiver's last answer decides how it was found.
         whence: FoundBy,
     ): Boolean = runCatchingFailure {
         val into =
@@ -586,14 +584,11 @@ internal class FixSieve(
             )
         AppLog.i(
             TAG,
-            // The groups are named: one that refused the write has just said
-            // so, and a bare "wrote" after it would read as that one too.
+            // The groups are named, so the line is not read as about one that just refused.
             "wrote a position in ${into.joinToString()} taken at ${written.fix.takenAt}, " +
                 "found by ${whence.said}" +
-                // Said in the line about the write rather than left to the
-                // document: what a device wrote is the one thing a log of a
-                // boot cannot be read back from, and the first minutes after
-                // a boot are exactly when somebody is reading it.
+                // Logged here, not left to the document: a boot's log cannot
+                // be read back from it, and the first minutes are read most.
                 if (written.settling) ", with the receiver still settling" else "",
         )
 
