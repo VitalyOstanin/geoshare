@@ -92,18 +92,12 @@ jobs:
         run: tools/release-notes.sh "${GITHUB_REF_NAME#v}" > "${RUNNER_TEMP}/notes.md"
 
       - name: The version code, from the version
-        # Android refuses to install a lower code over a higher one, so the
-        # code is worked out from the version rather than raised by hand:
-        # 0.1.0 is 100, 1.2.3 is 10203. Each part past the first stays below
-        # a hundred for that to hold.
+        # Worked out by tools/version-code.sh, which a local release build
+        # reads too, so the package checked before tagging carries the code
+        # that is published here.
         run: |
           version=$(sed -n 's/^appVersionName=//p' android/gradle.properties)
-          if ! [[ "${version}" =~ ^([0-9]+)\.([0-9]{1,2})\.([0-9]{1,2})$ ]]; then
-            echo "::error::appVersionName ${version} is not major.minor.patch with minor and patch below 100"
-            exit 1
-          fi
-          # Base ten throughout: a part written "08" is not read as octal.
-          code=$(( 10#${BASH_REMATCH[1]} * 10000 + 10#${BASH_REMATCH[2]} * 100 + 10#${BASH_REMATCH[3]} ))
+          code=$(tools/version-code.sh)
           echo "APP_VERSION_NAME=${version}" >> "$GITHUB_ENV"
           echo "APP_VERSION_CODE=${code}" >> "$GITHUB_ENV"
 

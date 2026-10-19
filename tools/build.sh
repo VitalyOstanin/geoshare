@@ -16,4 +16,11 @@ case "${VARIANT}" in
     *) echo "error: unknown VARIANT '${VARIANT}', expected debug or release" >&2; exit 1 ;;
 esac
 
-exec "$(dirname "${BASH_SOURCE[0]}")/gradle.sh" "${task}"
+tools_dir="$(dirname "${BASH_SOURCE[0]}")"
+args=("${task}")
+if [[ "${VARIANT}" == release ]]; then
+    # The code the release workflow publishes with, not the default of 1.
+    args+=("-PappVersionCode=$("${tools_dir}/version-code.sh")")
+fi
+
+exec "${tools_dir}/gradle.sh" "${args[@]}"

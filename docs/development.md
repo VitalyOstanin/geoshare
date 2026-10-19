@@ -85,6 +85,7 @@ Firebase SDK in them requires); the build scripts do not need it.
 | 22 | `tools/gradle.sh`             | any Gradle task in the SDK container: `tools/gradle.sh assembleDebug`       |
 | 23 | `tools/mermaid-check.sh`      | draws the mermaid diagrams of the documents (or of the files named)         |
 | 24 | `tools/check-npm-licenses.sh` | fails on an npm lock-file package whose licence is not on the allowed list  |
+| 25 | `tools/version-code.sh`       | the release's version code, worked out from `appVersionName`                |
 
 The rest of `tools/` — `coverage-floor.sh`, `project.sh`, `web-config.sh`,
 `setup-site.sh`, `read-cost.sh`, `device-log.sh`, `device-sky.sh`,
