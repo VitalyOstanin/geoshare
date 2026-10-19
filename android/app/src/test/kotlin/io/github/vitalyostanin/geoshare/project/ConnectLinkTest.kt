@@ -21,6 +21,13 @@ private const val EMOJI = "\uD83D\uDE00"
  */
 private const val SHARED_CASES = "../../web/tests/fixtures/connect-links.json"
 
+/**
+ * Texts made up by `web/tests/connect-link-cases.mjs` from a fixed seed, each
+ * with what the join page's `invitationTyped` answers; `join.test.mjs` keeps
+ * the file in step with the page.
+ */
+private const val GENERATED_CASES = "../../web/tests/fixtures/connect-links-generated.json"
+
 private val PIECES = listOf(
     "a", "b", "Z", "7", "Я", "ж", "é", " ", "  ", "\t", "&", "#", "%", "=", "+", "?", "/", "…",
     "%41", EMOJI,
@@ -348,6 +355,73 @@ class ConnectLinkTest {
         }
     }
 
+    // ConnectLink.parse reads whatever was pasted or scanned, so it must answer
+    // with a link or null whatever that was. Links damaged on the way (cut
+    // short, a character swapped, a stray escape or a second # put in) are the
+    // likeliest text to find a way through it.
+    @Test
+    fun `parse answers any text with a link or null`() {
+        val random = Random(671L)
+        val valid = ConnectLink.invitationLink(
+            SITE,
+            "Kx9aQ2",
+            "7FK3M9QA",
+            "Ivan",
+            "Imaginary group",
+            "ivan.petrov@example.com",
+        )
+        val inserts = listOf("#", "?", "&", "=", "%", "+", "%zz", "%E0%A4%A", "%00", EMOJI)
+
+        fun mutated(): String {
+            var text = valid
+
+            repeat(1 + random.nextInt(4)) {
+                val at = random.nextInt(text.length + 1)
+
+                text = when (random.nextInt(5)) {
+                    0 -> text.substring(0, at)
+
+                    1 -> text.substring(0, at) + inserts[random.nextInt(inserts.size)] +
+                        text.substring(at)
+
+                    2 -> text.substring(0, at) + PIECES[random.nextInt(PIECES.size)] +
+                        text.substring(minOf(at + 1, text.length))
+
+                    3 -> text.substring(0, at) + "\uD83D" + text.substring(at)
+
+                    else -> text.substring(0, at) + "%".repeat(1 + random.nextInt(3)) +
+                        text.substring(at)
+                }
+            }
+
+            return text
+        }
+
+        repeat(600) { case ->
+            val text = when (case % 5) {
+                0 -> randomAwkward(random)
+                1 -> mutated()
+                2 -> "${randomAwkward(random)} ${mutated()} ${randomAwkward(random)}"
+                3 -> valid.substring(0, random.nextInt(valid.length + 1))
+                else -> valid + randomAwkward(random).repeat(200)
+            }
+            val parsed = try {
+                ConnectLink.parse(text)
+            } catch (thrown: Exception) {
+                throw AssertionError("case $case threw on: $text", thrown)
+            }
+
+            if (parsed != null) {
+                assertTrue(
+                    "case $case: $text",
+                    Regex("[a-z][a-z0-9-]*").matches(parsed.site) &&
+                        parsed.invitation?.groupId?.isNotBlank() != false &&
+                        parsed.invitation?.code?.isNotBlank() != false,
+                )
+            }
+        }
+    }
+
     @Test
     fun `every case the join page shares is read as the file says`() {
         val cases = JSONObject(File(SHARED_CASES).readText()).getJSONArray("cases")
@@ -370,6 +444,45 @@ class ConnectLinkTest {
                 expected,
                 ConnectLink.parse(case.getString("text")),
             )
+        }
+    }
+
+    // MEM-01, GST-03: the page and the application read the same pasted text
+    // the same way. The hand-written cases above cover what someone thought
+    // of; these cover blanks, plus signs, broken escapes and repeated keys in
+    // combinations nobody picked. The page answers null for the owner's link
+    // and an empty string for a missing caption, so the application's answer
+    // is put the page's way before the two are compared.
+    @Test
+    fun `every generated text is read as the join page reads it`() {
+        val file = JSONObject(File(GENERATED_CASES).readText())
+        val cases = file.getJSONArray("cases")
+
+        assertEquals("$GENERATED_CASES count", file.getInt("count"), cases.length())
+        assertTrue("$GENERATED_CASES holds no cases", cases.length() > 0)
+
+        for (index in 0 until cases.length()) {
+            val case = cases.getJSONObject(index)
+            val text = case.getString("text")
+            val expected = if (case.isNull("expected")) null else case.getJSONObject("expected")
+            // The older "group.code" form, which only the page reads, has no site.
+            val page = expected?.takeUnless { it.isNull("site") }?.let { typed ->
+                listOf("site", "groupId", "code", "by", "name", "to").map(typed::getString)
+            }
+            val application = ConnectLink.parse(text)?.let { link ->
+                link.invitation?.let {
+                    listOf(
+                        link.site,
+                        it.groupId,
+                        it.code,
+                        it.inviter.orEmpty(),
+                        it.groupName.orEmpty(),
+                        it.invitedAddress.orEmpty(),
+                    )
+                }
+            }
+
+            assertEquals("case $index: $text", page, application)
         }
     }
 

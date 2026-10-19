@@ -104,14 +104,35 @@ const BLANK = /^[\t-\r\u001C-\u001F\p{Z}]*$/u;
  * or null when it holds a percent sign that is not followed by two hex digits,
  * which URLDecoder refuses and ConnectLink drops the field for. URLSearchParams
  * would keep such a value as it stands.
+ *
+ * The decoding is written out the way URLDecoder does it rather than left to
+ * URLSearchParams: a run of escapes becomes UTF-8 with a broken sequence read
+ * as U+FFFD, and every other character stays as typed. Node's URLSearchParams
+ * turns a typed non-ASCII character into U+FFFD as well once the same value
+ * holds a broken sequence, so a pasted U+FEFF in front of "%E0%A4" stopped
+ * being an edge trimText strips. A byte order mark the escapes spell out is
+ * kept, as URLDecoder keeps it, for trimText to strip at an edge.
  */
 function decodeField(value) {
     if (/%(?![0-9a-fA-F]{2})/u.test(value)) {
         return null;
     }
 
-    return new URLSearchParams(`x=${value}`).get('x');
+    return value.replace(ESCAPED_OR_PLUS, (found) => {
+        if (found === '+') {
+            return ' ';
+        }
+
+        const bytes = found.slice(1).split('%').map((hex) => Number.parseInt(hex, 16));
+
+        return UTF8.decode(new Uint8Array(bytes));
+    });
 }
+
+/** A plus, or a run of percent escapes that URLDecoder decodes as one byte sequence. */
+const ESCAPED_OR_PLUS = /\+|(?:%[0-9a-fA-F]{2})+/gu;
+
+const UTF8 = new TextDecoder('utf-8', { ignoreBOM: true });
 
 /**
  * The fields of a query or a fragment, read as ConnectLink.fieldsOf reads

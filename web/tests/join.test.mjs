@@ -18,6 +18,14 @@ import {
     siteFromHost,
 } from '../public/lib/join.js';
 import { cutToLimit } from '../public/lib/text.js';
+
+import {
+    GENERATED_COUNT,
+    GENERATED_FILE,
+    GENERATED_SEED,
+    generatedFixture,
+    seeded,
+} from './connect-link-cases.mjs';
 import { JOIN_EN } from '../public/lib/words/join-en.js';
 
 const HOST = 'imaginary-group.web.app';
@@ -338,19 +346,6 @@ const PIECES = [
     '%41', EMOJI,
 ];
 
-function seeded(seed) {
-    let state = seed;
-
-    return () => {
-        state = (state + 0x6d2b79f5) | 0;
-        let t = Math.imul(state ^ (state >>> 15), 1 | state);
-
-        t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
-
-        return ((t ^ (t >>> 14)) >>> 0) / 4_294_967_296;
-    };
-}
-
 function randomCaption(next) {
     const kind = Math.floor(next() * 8);
 
@@ -429,6 +424,71 @@ test('any captions and address read back as parseInvitation would keep them', ()
     }
 });
 
+// invitationTyped reads whatever a person pasted, so it has to answer with an
+// invitation or null whatever that was; a link damaged on the way (cut short,
+// a character swapped, a stray escape or a second # put in) is the likeliest
+// kind of text to find a way through it.
+test('invitationTyped answers any text with an invitation or null', () => {
+    const next = seeded(671);
+    const pick = (list) => list[Math.floor(next() * list.length)];
+    const valid = invitationLink({
+        site: 'imaginary-group', groupId: 'Kx9aQ2', code: '7FK3M9QA',
+        by: 'Ivan', name: 'Imaginary group', email: 'ivan.petrov@example.com',
+    });
+    const inserts = ['#', '?', '&', '=', '%', '+', '%zz', '%E0%A4%A', '%00', EMOJI];
+
+    const mutated = () => {
+        let text = valid;
+
+        for (let step = 0; step < 1 + Math.floor(next() * 4); step++) {
+            const at = Math.floor(next() * (text.length + 1));
+
+            text = pick([
+                () => text.slice(0, at),
+                () => text.slice(0, at) + pick(inserts) + text.slice(at),
+                () => text.slice(0, at) + pick(PIECES) + text.slice(at + 1),
+                () => text.slice(0, at) + '\uD83D' + text.slice(at),
+                () => text.slice(0, at) + '%'.repeat(1 + Math.floor(next() * 3)) + text.slice(at),
+            ])();
+        }
+
+        return text;
+    };
+
+    const awkward = () => {
+        let text = '';
+
+        for (let count = Math.floor(next() * 40); count > 0; count--) {
+            text += pick(PIECES);
+        }
+
+        return text;
+    };
+
+    for (let index = 0; index < 600; index++) {
+        const text = [
+            awkward,
+            mutated,
+            () => `${awkward()} ${mutated()} ${awkward()}`,
+            () => valid.slice(0, Math.floor(next() * (valid.length + 1))),
+            () => `${valid}${awkward().repeat(200)}`,
+        ][index % 5]();
+        let typed;
+
+        assert.doesNotThrow(() => {
+            typed = invitationTyped(text);
+        }, `case ${index}: ${JSON.stringify(text)}`);
+
+        if (typed !== null) {
+            assert.ok(
+                typed.site === null || /^[a-z][a-z0-9-]*$/u.test(typed.site),
+                `case ${index}: ${JSON.stringify(text)}`,
+            );
+            assert.ok(typed.groupId !== '' && typed.code !== '', `case ${index}`);
+        }
+    }
+});
+
 test('an emoji on the sixtieth position is dropped whole or kept whole', () => {
     const readBack = (by) => parseInvitation(new URL(invitationLink({
         site: 's', groupId: 'g', code: 'c', by, name: null, email: 'ivan.petrov@example.com',
@@ -467,3 +527,17 @@ for (const { name, text, expected } of CONNECT_LINKS.cases) {
         });
     });
 }
+
+// MEM-01, GST-03: the generated cases ConnectLinkTest compares the application
+// with. The file has to be what the generator makes of the current join.js,
+// or the application would be held to answers the page no longer gives; after
+// a deliberate change here, run tests/connect-link-cases.mjs to write it again.
+test('the generated link cases are what invitationTyped answers today', () => {
+    const written = readFileSync(GENERATED_FILE, 'utf8');
+    const header = JSON.parse(written);
+
+    assert.equal(header.seed, GENERATED_SEED);
+    assert.equal(header.count, GENERATED_COUNT);
+    assert.equal(header.cases.length, GENERATED_COUNT);
+    assert.equal(written, generatedFixture());
+});
