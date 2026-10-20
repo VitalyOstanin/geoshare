@@ -23,7 +23,7 @@ import { showFace } from './faces.js';
 import { isGrey } from './false-places.js';
 import { clusterMembers, facesShown } from './clusters.js';
 import { FOLLOW_NONE, catchUpTo, followAfterCatchingUp } from './following.js';
-import { markerTapped, openMember, selectedPositionId, shownPositionIds } from './selection.js';
+import { markerTapped, memberTapCloses, openMember, selectedPositionId, shownPositionIds } from './selection.js';
 import { HIGHEST, markerOrder } from './stacking.js';
 import { accuracyRing } from './width.js';
 import { RADIANS_IN_A_DEGREE } from './units.js';
@@ -946,6 +946,22 @@ export function centreOnce(view, positions, ownMemberId) {
 
     view.centred = true;
     view.map.jumpTo({ center: [start.longitude, start.latitude], zoom: START_ZOOM });
+}
+
+/**
+ * What tapping a member in the strip does: opens their card, or closes it when
+ * it is their card that is open, as a second tap on their marker would.
+ */
+export function memberTapped(view, position) {
+    if (memberTapCloses(view.selection, position.positionId)) {
+        closeCards(view);
+        view.onCardChange();
+        redrawSelection(view);
+
+        return;
+    }
+
+    lookAt(view, position);
 }
 
 /** Takes the map to one member and opens their detail, the way tapping a place does. */

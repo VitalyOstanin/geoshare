@@ -40,6 +40,18 @@ export function markerTapped(selection, key, positionIds) {
 }
 
 /**
+ * Whether tapping a member in the strip closes their card instead of opening
+ * it: it does when that very member's card is the one open, the same as a
+ * second tap on their marker.
+ *
+ * @param selection what is open now
+ * @param positionId the member whose entry was tapped
+ */
+export function memberTapCloses(selection, positionId) {
+    return selection !== null && selection.positionId === positionId;
+}
+
+/**
  * Opens one member's card directly, by naming the member rather than the
  * marker.
  *

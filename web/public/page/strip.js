@@ -4,7 +4,7 @@ import { ageText, positionAge } from '../lib/age.js';
 import { showFace } from '../lib/faces.js';
 import { FOLLOW_ALL, FOLLOW_NONE, FOLLOW_ONE } from '../lib/following.js';
 import { followCardDevice } from './card-actions.js';
-import { centreOnce, lookAt, showMembers, shownPositions } from '../lib/map.js';
+import { centreOnce, memberTapped, showMembers, shownPositions } from '../lib/map.js';
 import { batteryText } from '../lib/map-card.js';
 import { awaitingFollowTarget, followMode, followPaused, followTarget } from '../lib/map-follow.js';
 import { accountInitial, memberName, orderedForNavigation, pinColour } from '../lib/members.js';
@@ -414,7 +414,7 @@ function newMemberEntry(positionId) {
         const position = state.positions.find((one) => one.positionId === positionId);
 
         if (position) {
-            lookAt(state.view, position);
+            memberTapped(state.view, position);
         }
     });
 

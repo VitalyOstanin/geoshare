@@ -4,6 +4,7 @@ import { test } from 'node:test';
 import {
     listShown,
     markerTapped,
+    memberTapCloses,
     openMember,
     selectedPositionId,
     shownPositionIds,
@@ -31,6 +32,22 @@ test('tapping a different marker replaces the selection instead of closing it', 
     const selection = { key: 'a', positionId: 'a' };
 
     assert.deepEqual(markerTapped(selection, 'b', ['b']), { key: 'b', positionId: 'b' });
+});
+
+test('tapping the strip entry of the member whose card is open closes it', () => {
+    assert.equal(memberTapCloses({ key: 'a', positionId: 'a' }, 'a'), true);
+});
+
+test('tapping another member in the strip opens their card instead', () => {
+    assert.equal(memberTapCloses({ key: 'a', positionId: 'a' }, 'b'), false);
+});
+
+test('tapping a member in the strip over the list of a marker opens their card', () => {
+    assert.equal(memberTapCloses({ key: 'a,b', positionId: null }, 'a'), false);
+});
+
+test('tapping a member in the strip with nothing open opens their card', () => {
+    assert.equal(memberTapCloses(null, 'a'), false);
 });
 
 test('opening a member by name sets both the marker key and the member', () => {
