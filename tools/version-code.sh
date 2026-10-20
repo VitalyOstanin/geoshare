@@ -9,7 +9,8 @@
 # package checked before tagging carries the code that will be published.
 set -euo pipefail
 
-readonly PROPERTIES="$(dirname "${BASH_SOURCE[0]}")/../android/gradle.properties"
+PROPERTIES="$(dirname "${BASH_SOURCE[0]}")/../android/gradle.properties"
+readonly PROPERTIES
 
 version=$(sed -n 's/^appVersionName=//p' "${PROPERTIES}")
 if ! [[ "${version}" =~ ^([0-9]+)\.([0-9]{1,2})\.([0-9]{1,2})$ ]]; then
