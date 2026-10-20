@@ -1,6 +1,6 @@
 # ADR-0041: A place saved long ago is not written as the current one
 
-- Status: Accepted
+- Status: Superseded by ADR-0042
 - Date: 2026-10-20
 
 ## Context

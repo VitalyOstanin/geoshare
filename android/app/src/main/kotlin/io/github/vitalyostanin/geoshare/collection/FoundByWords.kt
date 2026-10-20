@@ -69,7 +69,7 @@ fun leftOutReasonLabel(reason: String?): Int = when (reason) {
     JumpReason.OffOrbit.name -> R.string.left_out_off_orbit
     JumpReason.Repeating.name -> R.string.left_out_repeating
     JumpReason.Settling.name -> R.string.left_out_settling
-    JumpReason.Saved.name -> R.string.left_out_saved
+    JumpReason.PastTime.name -> R.string.left_out_past_time
     else -> switchedOffLabel(reason)
 }
 

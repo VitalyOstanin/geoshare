@@ -31,7 +31,7 @@ const HELP_ORDER = [
     'TimeApart',
     'OffOrbit',
     'Settling',
-    'Saved',
+    'PastTime',
     'Source',
 ];
 

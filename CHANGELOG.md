@@ -35,10 +35,12 @@ and the versions follow [Semantic Versioning](https://semver.org/).
 
 ### Fixed
 
-- A device no longer writes a place its provider saved long ago as where it
-  is now: an answer more than ten minutes older than the device's clock is
-  left out, and the card names the reason "A place saved long ago"
-  (ADR-0041). An old phone had shown its group a place from a year before.
+- A device no longer writes an answer whose own time is more than ten
+  minutes behind the device's clock: it is left out, even through the
+  fallback to the towers and with the jump filter off, and the card names
+  the reason "A time long past" (ADR-0042). A phone lying at home had shown
+  its group a place 290 kilometres away, from a false signal replaying a
+  recording made a year before.
 - On the page, a second tap on a member in the strip under the map closes
   their card, the way a second tap on their marker does, instead of doing
   nothing.

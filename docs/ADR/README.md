@@ -48,4 +48,5 @@ date is the decision's.
 | 0038 | [The first group of a project is founded by its owner](0038-the-first-group-is-founded-by-the-project-owner.md)        | Accepted                                     | 2026-10-17 |
 | 0039 | [An update asks before it comes down over a network switched off](0039-an-update-asks-over-a-network-switched-off.md)  | Accepted                                     | 2026-10-17 |
 | 0040 | [A map nobody touches stops claiming that somebody is looking](0040-an-untouched-map-stops-claiming-a-look.md)         | Accepted                                     | 2026-10-18 |
-| 0041 | [A place saved long ago is not written as the current one](0041-a-place-saved-long-ago-is-not-written.md)              | Accepted                                     | 2026-10-20 |
+| 0041 | [A place saved long ago is not written as the current one](0041-a-place-saved-long-ago-is-not-written.md)              | Superseded by 0042                           | 2026-10-20 |
+| 0042 | [An answer whose time is long past is not written](0042-an-answer-whose-time-is-long-past-is-not-written.md)           | Accepted                                     | 2026-10-20 |

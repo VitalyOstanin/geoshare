@@ -101,7 +101,7 @@
     <string name="left_out_off_orbit">Satellites off their orbits</string>
     <string name="left_out_repeating">The track repeats itself</string>
     <string name="left_out_settling">The receiver has not settled</string>
-    <string name="left_out_saved">A place saved long ago</string>
+    <string name="left_out_past_time">A time long past</string>
     <string name="left_out_by_source">The source is switched off</string>
     <string name="left_out_by_source_named">Source switched off: %1$s</string>
     <string name="map_detail_position">Position</string>
@@ -160,8 +160,8 @@
 
     <string name="reason_help_sign_width">The device named the radius it is somewhere inside, and the radius is over half a kilometre.</string>
     <string name="reason_help_means_width">Such an answer names a district rather than a place. It is what the towers give while the device is indoors.</string>
-    <string name="reason_help_sign_saved">The point carries a moment more than ten minutes behind the device\'s own clock.</string>
-    <string name="reason_help_means_saved">The device handed over a place saved long ago instead of the current one, so it is not written.</string>
+    <string name="reason_help_sign_past_time">The answer carries a time more than ten minutes behind the device\'s own clock.</string>
+    <string name="reason_help_means_past_time">A false signal replaying a recording, or a place the device saved earlier: either way the answer is not about now, so it is not written.</string>
     <string name="reason_help_sign_speed">Reaching this place from the last one in the time between them would have taken over 200 km/h.</string>
     <string name="reason_help_means_speed">One of the two is false. A spoof throws the marker far off rather than easing it along.</string>
     <string name="reason_help_sign_contradiction">Two different positions arrived carrying the same moment.</string>

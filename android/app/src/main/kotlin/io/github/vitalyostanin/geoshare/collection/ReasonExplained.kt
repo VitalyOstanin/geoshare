@@ -35,10 +35,10 @@ fun reasonsExplained(): List<ReasonExplained> = listOf(
         R.string.reason_help_means_width,
     ),
     ReasonExplained(
-        JumpReason.Saved.name,
-        R.string.left_out_saved,
-        R.string.reason_help_sign_saved,
-        R.string.reason_help_means_saved,
+        JumpReason.PastTime.name,
+        R.string.left_out_past_time,
+        R.string.reason_help_sign_past_time,
+        R.string.reason_help_means_past_time,
     ),
     ReasonExplained(
         JumpReason.Speed.name,

@@ -19,12 +19,12 @@ data class Judgement(
      * Whether the fix is left out as a jump: one that none of the ways out of
      * a jump applies to, while the member keeps jumps out at all.
      *
-     * A place saved long ago is left out whatever the member chose: the
-     * switch is about answers that may be true, and this one says where the
-     * device was on another day.
+     * An answer whose time is long past is left out whatever the member
+     * chose: the switch is about answers that may be true, and this one is
+     * not about now.
      */
     fun leftOutAsJump(jumpsFiltered: Boolean): Boolean =
-        jump != null && (jumpsFiltered || jump == JumpReason.Saved) && !agreed && !home
+        jump != null && (jumpsFiltered || jump == JumpReason.PastTime) && !agreed && !home
 }
 
 /**
@@ -67,7 +67,7 @@ data class Grounds(
  * measured against the rules written for them: the towers answer in
  * kilometres, and the width rule would throw away the one source the spoofer
  * cannot reach. The one rule asked of it all the same is the age of the
- * answer: see [savedLongAgo].
+ * answer: see [timeLongPast].
  */
 fun judge(fix: Fix, trusted: Boolean, grounds: Grounds): Judgement {
     // How the device arrived at this answer, worked out before anything is
@@ -83,15 +83,14 @@ fun judge(fix: Fix, trusted: Boolean, grounds: Grounds): Judgement {
     // and such an answer rests on none.
     val settling = !trusted && stillSettling(fix.sinceBoot, grounds.restsOn)
 
-    // A place the provider saved long ago is asked about first and of every
-    // answer, the towers' included: whichever way of knowing saved it hands
-    // it over, and no rule below can see it, since it may well land where
-    // the device has been.
-    val saved = savedLongAgo(fix, grounds.now)
+    // A time long past is asked about first and of every answer, the
+    // towers' included: a replayed recording has reached the device through
+    // them too, and no rule below can see it by where it lands.
+    val pastTime = timeLongPast(fix, grounds.now)
 
     val jump =
-        if (saved) {
-            JumpReason.Saved
+        if (pastTime) {
+            JumpReason.PastTime
         } else if (trusted) {
             null
         } else {
@@ -122,12 +121,12 @@ fun judge(fix: Fix, trusted: Boolean, grounds: Grounds): Judgement {
     // towers or the Wi-Fi around the device have to name the same place,
     // and past the width only an answer as narrow as the Wi-Fi's will do.
     //
-    // Neither way out applies to a saved place: both ask whether the place
-    // is right, and a saved place is often right about where the device
-    // was — what is wrong with it is when.
+    // Neither way out applies to an answer whose time is long past: both
+    // ask whether the place is right, and such an answer may well name a
+    // place the device has been — what is wrong with it is when.
     val agreed =
         jump != null &&
-            !saved &&
+            !pastTime &&
             agreementStands(jump, grounds.candidate, fix, grounds.networkSays, grounds.now)
 
     // The other way out of an anchor that has gone wrong, and the only one
@@ -136,7 +135,7 @@ fun judge(fix: Fix, trusted: Boolean, grounds: Grounds): Judgement {
     // are positions that were written, and while a spoofer runs, nothing
     // is — so this cannot be arranged by feeding the device a signal.
     val home =
-        jump != null && !saved && !agreed && comingHome(grounds.trail, grounds.lastFix, fix)
+        jump != null && !pastTime && !agreed && comingHome(grounds.trail, grounds.lastFix, fix)
 
     return Judgement(found, settling, jump, agreed, home)
 }

@@ -69,7 +69,7 @@ internal fun caughtBy(jump: JumpReason, fix: Fix, evidence: LeftOutEvidence): St
 
     JumpReason.OffOrbit -> "by the published orbits: ${evidence.radio.orbitsSaying() ?: "no epoch"}"
 
-    JumpReason.Saved -> "by the time it carries: a place saved at ${fix.takenAt}"
+    JumpReason.PastTime -> "by the time it carries: ${fix.takenAt}"
 }
 
 /**
