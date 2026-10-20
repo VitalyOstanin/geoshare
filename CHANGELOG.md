@@ -32,6 +32,11 @@ and the versions follow [Semantic Versioning](https://semver.org/).
   beside the cross in its corner, drawn like the cross, instead of the words
   "More details" and "Fewer details" beside the name. It points the way the
   card moves: up to open the details, down to fold them away.
+- The title of each screen in setting up a group is one step smaller, the
+  size of a title on the map page, and the corners of its QR code and of the
+  group's address are rounded the same as other fields.
+- In the app, the title of the card shown when there is no group, or after
+  being removed from one, is the size of the other cards' titles.
 
 ### Fixed
 
@@ -47,6 +52,9 @@ and the versions follow [Semantic Versioning](https://semver.org/).
 - On the page, a member picked in the list or the panel of a page that had
   paused is no longer shown at the place it last knew them: when their
   fresh position comes in a moment later, the map goes on to it.
+- In setting up a group in the dark theme, the tick of a finished step and
+  the mark of a failed one are drawn dark on their pale circles instead of
+  white, which could hardly be seen.
 
 ## [0.3.0] - 2026-10-18
 

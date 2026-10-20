@@ -22,6 +22,10 @@
     /* A charge that is growing: the one reassuring thing on a card, and the
        only colour on the page that carries a meaning of its own. */
     --charging: #2e7d32;
+    /* What is written on a circle filled with either of the two: white by
+       day, and at night, when both turn pale, a dark shade of the same hue. */
+    --on-error: #ffffff;
+    --on-charging: #ffffff;
     /* An answer wider than a hundred metres: ochre rather than red, because a
        wide answer is not a fault — it is a claim about a block instead of
        about a doorway, and the colour is there to be noticed rather than
@@ -50,6 +54,9 @@
     --radius-pill: 999px;
     --shadow-low: 0 1px 4px rgba(0, 0, 0, 0.3);
     --shadow-high: 0 4px 16px rgba(0, 0, 0, 0.3);
+    /* The label of the member whose card is open: closer and darker than a
+       window's shadow, so the label stands off the neighbour it lies over. */
+    --shadow-open: 0 2px 8px rgba(0, 0, 0, 0.45);
     /* Colours that read the same in both themes, so the dark theme does not
        override them: the dimming behind a dialog, the wash under a pointer
        over a close cross, the white edge that keeps a pin visible over any
@@ -70,6 +77,8 @@
     --night-edge: rgba(160, 160, 170, 0.35);
     --night-error: #ef9a9a;
     --night-charging: #81c784;
+    --night-on-error: #3b0a0a;
+    --night-on-charging: #0f2a12;
     --night-wide: #d99149;
     --night-off-fill: #3a3a42;
     --night-on-off: #8d8d96;
@@ -110,6 +119,8 @@
         --edge: var(--night-edge);
         --error: var(--night-error);
         --charging: var(--night-charging);
+        --on-error: var(--night-on-error);
+        --on-charging: var(--night-on-charging);
         --wide: var(--night-wide);
         --off-fill: var(--night-off-fill);
         --on-off: var(--night-on-off);
@@ -127,6 +138,8 @@
     --edge: var(--night-edge);
     --error: var(--night-error);
     --charging: var(--night-charging);
+    --on-error: var(--night-on-error);
+    --on-charging: var(--night-on-charging);
     --wide: var(--night-wide);
     --off-fill: var(--night-off-fill);
     --on-off: var(--night-on-off);

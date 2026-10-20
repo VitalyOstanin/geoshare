@@ -27,9 +27,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import io.github.vitalyostanin.geoshare.R
 import io.github.vitalyostanin.geoshare.cutToLimit
 import io.github.vitalyostanin.geoshare.membership.ProjectMark
@@ -98,8 +96,7 @@ fun NoGroupScreen(
                 stringResource(
                     if (taken) R.string.group_taken_title else R.string.group_none_title,
                 ),
-                fontSize = 18.sp,
-                fontWeight = FontWeight.Medium,
+                style = MaterialTheme.typography.titleMedium,
                 modifier = Modifier.padding(bottom = 8.dp),
             )
 
@@ -216,8 +213,7 @@ fun RemovedNotice(removed: RemovedGroup, modifier: Modifier = Modifier) {
 
         Text(
             text = title,
-            fontSize = 18.sp,
-            fontWeight = FontWeight.Medium,
+            style = MaterialTheme.typography.titleMedium,
             modifier = Modifier.padding(bottom = 8.dp),
         )
 

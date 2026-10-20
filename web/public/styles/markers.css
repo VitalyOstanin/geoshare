@@ -34,7 +34,7 @@
 .member-label.open {
     box-shadow:
         0 0 0 2px var(--frame),
-        0 2px 8px rgba(0, 0, 0, 0.45);
+        var(--shadow-open);
 }
 
 /* The pin: a head with a point under it, and a face inside the head. The

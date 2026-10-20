@@ -1,5 +1,6 @@
-// The words of a search, read off the panel at night: the red they are
-// written in against what they are written on, by the WCAG formula.
+// Colours read off what they are drawn on, by the WCAG formula: the words of
+// a search on the panel at night, and the sign in a circle of the setup
+// steps.
 import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 import { test } from 'node:test';
@@ -92,4 +93,33 @@ test('the night red of the words is the same whether the system or the viewer ch
         tokenIn(search, ':root:not([data-theme="light"])', '--alarm-text'),
         tokenIn(search, NIGHT, '--alarm-text'),
     );
+});
+
+test('the sign in a finished or failed step keeps its contrast on its circle by day and by night', async () => {
+    const [base, setup] = await Promise.all([read('base.css'), read('setup.css')]);
+
+    for (const [status, fill, sign] of [
+        ['done', 'charging', 'on-charging'],
+        ['failed', 'error', 'on-error'],
+    ]) {
+        const rule = `.line.${status} .mark { background: var(--${fill}); color: var(--${sign}); }`;
+
+        assert.ok(setup.includes(rule), `setup.css has no ${rule}`);
+
+        for (const [when, circle, mark] of [
+            ['day', tokenIn(base, DAY, `--${fill}`), tokenIn(base, DAY, `--${sign}`)],
+            ['night', tokenIn(base, DAY, `--night-${fill}`), tokenIn(base, DAY, `--night-${sign}`)],
+        ]) {
+            const ratio = contrast(channels(mark).slice(0, 3), channels(circle).slice(0, 3));
+
+            assert.ok(
+                ratio >= 4.5,
+                `${status} by ${when}: ${mark} on ${circle} is ${ratio.toFixed(2)}:1`,
+            );
+        }
+
+        for (const opening of [':root:not([data-theme="light"])', NIGHT]) {
+            assert.equal(tokenIn(base, opening, `--${sign}`), `var(--night-${sign})`);
+        }
+    }
 });
