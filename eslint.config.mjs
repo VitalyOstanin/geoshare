@@ -68,8 +68,13 @@ export default [
         settings: { 'import-x/resolver-next': [createNodeResolver()] },
         rules: {
             // The rules tests import packages installed by their own run, not
-            // by the lint, so only paths of the repository are checked.
-            'import-x/no-unresolved': ['error', { ignore: ['^@firebase/', '^firebase/'] }],
+            // by the lint, so only paths of the repository are checked. The
+            // page's firebase-config.js is written per project and never
+            // committed, so a fresh checkout has nothing to resolve it to.
+            'import-x/no-unresolved': [
+                'error',
+                { ignore: ['^@firebase/', '^firebase/', '/firebase-config\\.js$'] },
+            ],
             'import-x/named': 'error',
         },
     },
