@@ -1,5 +1,6 @@
 package io.github.vitalyostanin.geoshare.collection
 
+import java.time.Duration
 import java.time.Instant
 
 // Telling a move from a jump.
@@ -165,7 +166,44 @@ enum class JumpReason {
      * satellites broadcast, not the file. See OrbitCheck.kt.
      */
     OffOrbit,
+
+    /**
+     * The answer carries a moment far behind the device's own clock.
+     *
+     * The provider handed over a place it had saved long ago as though it were
+     * the one it had just worked out: an old device was seen writing a place a
+     * year old as where it was. Nothing about such an answer is
+     * a lie a transmitter told, and nothing about where it lands gives it away
+     * — it may well be a place the device has been. What gives it away is the
+     * time it carries. See [savedLongAgo].
+     */
+    Saved,
 }
+
+/**
+ * How far behind the device's own clock an answer may be stamped and still be
+ * about where the device is now.
+ *
+ * Ten minutes. An answer that sat on the device for seconds or a few minutes
+ * before it was handed over — a provider waking late, a batch delivered at
+ * once — is still about this outing and passes. A place the provider saved on
+ * some earlier day is hours or months behind and does not. Kept apart from
+ * [CLOCK_TOLERANCE], which is about two clocks disagreeing over one moment
+ * rather than about how old the moment is.
+ */
+val SAVED_PLACE_AGE: Duration = Duration.ofMinutes(10)
+
+/**
+ * Whether the answer is a place the provider saved long ago rather than one it
+ * has just worked out.
+ *
+ * Asked of every answer, those from the towers and the Wi-Fi included: a saved
+ * place is handed over by whichever way of knowing saved it. Only a moment
+ * behind [now] counts. A moment ahead of it is a clock that runs fast or a
+ * device clock that runs slow, and neither says the place is old.
+ */
+fun savedLongAgo(fix: Fix, now: Instant): Boolean =
+    Duration.between(fix.takenAt, now) > SAVED_PLACE_AGE
 
 /**
  * Why a fix is a jump rather than a move, or nothing when it is a move.

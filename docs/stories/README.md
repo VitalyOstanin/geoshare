@@ -106,6 +106,7 @@ Each story names its records in `ADR`; the same links the other way round:
 | 38 | [0038](../ADR/0038-the-first-group-is-founded-by-the-project-owner.md) | The first group of a project is founded by its owner                   | OWN-04, OWN-09, ADM-01                                         |
 | 39 | [0039](../ADR/0039-an-update-asks-over-a-network-switched-off.md)      | An update asks before it comes down over a network switched off        | MEM-20, DEV-13                                                 |
 | 40 | [0040](../ADR/0040-an-untouched-map-stops-claiming-a-look.md)          | A map nobody touches stops claiming that somebody is looking           | DEV-02                                                         |
+| 41 | [0041](../ADR/0041-a-place-saved-long-ago-is-not-written.md)           | A place saved long ago is not written as the current one               | DEV-07                                                         |
 
 Stories that rest on no record: OWN-07, OWN-10, ADM-10, ADM-11, MEM-06, MEM-11,
 MEM-12, MEM-15, MEM-22, DEV-05, DEV-06, DEV-12, DEV-14.

@@ -124,8 +124,8 @@ Acceptance:
 
 - Status: partly — the check against the motion sensors only records, it does
   not refuse yet
-- ADR: 0014, 0021, 0023, 0024
-- Tests: rules `positions.test.mjs` (answers left out); Android `JumpsTest`, `OrbitCheckTest`, `OrbitsTest`, `SkyTest`, `SlantTest`, `DriftTest`, `MovementTest`, `FalsePlacesTest`, `LeftOutRunTest`
+- ADR: 0014, 0021, 0023, 0024, 0041
+- Tests: rules `positions.test.mjs` (answers left out); Android `JumpsTest`, `OrbitCheckTest`, `OrbitsTest`, `SkyTest`, `SlantTest`, `DriftTest`, `MovementTest`, `FalsePlacesTest`, `LeftOutRunTest`, `JudgementTest`
 
 As a member near a place where satellite signals are spoofed I let the device
 leave out answers that cannot be true, so that the group does not see me
@@ -137,7 +137,10 @@ Acceptance:
   orbits, mark the epoch false; two in a row leave the fix out;
 - a place that moved while the device stood still is refused;
 - a recorded false place marks positions taken there;
-- the jump filter is a setting, off by default;
+- an answer stamped more than ten minutes behind the device's clock is a
+  place saved long ago and is left out, whichever way of knowing gave it;
+- the jump filter is a setting, off by default; a place saved long ago is
+  left out with it off too;
 - every answer left out is counted with its reason.
 
 ## DEV-08 Notice being taken off the roster

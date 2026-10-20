@@ -91,6 +91,7 @@
     <string name="left_out_off_orbit">Спутники не на своих орбитах</string>
     <string name="left_out_repeating">Трек повторяется</string>
     <string name="left_out_settling">Приёмник не устоялся</string>
+    <string name="left_out_saved">Давно сохранённое место</string>
     <string name="left_out_by_source">Источник выключен</string>
     <string name="left_out_by_source_named">Источник выключен: %1$s</string>
     <string name="map_detail_position">Координаты</string>
@@ -146,6 +147,8 @@
 
     <string name="reason_help_sign_width">Устройство само назвало радиус, в котором оно где-то находится, и радиус больше полукилометра.</string>
     <string name="reason_help_means_width">Такая точка показывает не место, а район целиком. Чаще всего так отвечают вышки, когда устройство в помещении.</string>
+    <string name="reason_help_sign_saved">Точка несёт момент, отстающий от часов устройства больше чем на десять минут.</string>
+    <string name="reason_help_means_saved">Устройство отдало место, сохранённое давно, а не текущее, поэтому оно не записано.</string>
     <string name="reason_help_sign_speed">Чтобы попасть из прошлой точки в эту за прошедшее время, пришлось бы ехать быстрее 200 км/ч.</string>
     <string name="reason_help_means_speed">Одна из двух точек ложная. Подмена почти всегда бросает метку далеко в сторону, а не сдвигает её понемногу.</string>
     <string name="reason_help_sign_contradiction">На один и тот же момент времени пришли две разные позиции.</string>

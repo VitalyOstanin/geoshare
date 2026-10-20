@@ -19,6 +19,7 @@ const WRITTEN = [
     'OneBand',
     'OneTransmitter',
     'Repeating',
+    'Saved',
     'Settling',
     'Source',
     'Speed',

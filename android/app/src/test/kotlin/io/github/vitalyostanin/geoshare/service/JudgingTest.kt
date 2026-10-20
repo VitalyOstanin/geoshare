@@ -64,6 +64,13 @@ class JudgingTest {
     }
 
     @Test
+    fun `a place saved long ago is left out even when the member keeps jumps in`() {
+        val judged = judgement(jump = JumpReason.Saved)
+
+        assertEquals(Outcome.LeftOutAsJump, outcomeOf(judged, jumpsFiltered = false, used = true))
+    }
+
+    @Test
     fun `a jump the fix before agrees with goes on`() {
         val judged = judgement(jump = JumpReason.Width, agreed = true)
 

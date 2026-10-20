@@ -94,6 +94,85 @@ class JudgementTest {
         assertFalse(judged.leftOutAsJump(jumpsFiltered = true))
     }
 
+    // DEV-07. An old device handed over a place it had saved more than a year
+    // before as its first answer of the day; nothing about where it landed
+    // gave it away, only the time it carried.
+    @Test
+    fun `a place stamped a year behind the device's clock is left out as saved`() {
+        val next = fixAt(61.03270, 4.40310, 34, accuracy = 12.0)
+        val now = next.takenAt.plus(Duration.ofDays(406))
+
+        val judged = judge(next, trusted = false, grounds(lastFix = ANCHOR, now = now))
+
+        assertEquals(JumpReason.Saved, judged.jump)
+        assertTrue(judged.leftOutAsJump(jumpsFiltered = true))
+    }
+
+    // DEV-07. A saved place is handed over by whichever way of knowing saved
+    // it, the towers included.
+    @Test
+    fun `a saved place from the towers is left out all the same`() {
+        val next = fixAt(61.03270, 4.40310, 34, accuracy = 1_500.0)
+        val now = next.takenAt.plus(Duration.ofDays(406))
+
+        val judged = judge(next, trusted = true, grounds(lastFix = ANCHOR, now = now))
+
+        assertEquals(JumpReason.Saved, judged.jump)
+        assertTrue(judged.leftOutAsJump(jumpsFiltered = true))
+    }
+
+    // DEV-07. An answer that waited a few minutes to be handed over is still
+    // about this outing.
+    @Test
+    fun `an answer nine minutes behind the clock is not a saved place`() {
+        val next = fixAt(61.03270, 4.40310, 34, accuracy = 12.0)
+        val now = next.takenAt.plus(Duration.ofMinutes(9))
+
+        val judged = judge(next, trusted = false, grounds(lastFix = ANCHOR, now = now))
+
+        assertNull(judged.jump)
+    }
+
+    // DEV-07. A moment ahead of the device's clock says the clocks disagree,
+    // not that the place is old.
+    @Test
+    fun `an answer stamped ahead of the clock is not a saved place`() {
+        val next = fixAt(61.03270, 4.40310, 34, accuracy = 12.0)
+        val now = next.takenAt.minus(Duration.ofDays(406))
+
+        val judged = judge(next, trusted = true, grounds(lastFix = ANCHOR, now = now))
+
+        assertNull(judged.jump)
+    }
+
+    // DEV-07. Both ways out ask whether the place is right, and a saved place
+    // is often right about where the device was: what is wrong is when.
+    @Test
+    fun `a saved place is let through neither by agreement nor by coming home`() {
+        val home = { minute: Long -> fixAt(61.03268, 4.40300, minute * 60) }
+        val faraway = fixAt(61.428, 5.420, 61 * 60)
+        val next = home(62)
+        val now = next.takenAt.plus(Duration.ofDays(406))
+        val candidate = fixAt(61.03269, 4.40302, 62 * 60 - 17, accuracy = 15.0)
+        val wifi = fixAt(61.03271, 4.40298, 62 * 60 - 4, accuracy = 60.0)
+
+        val judged =
+            judge(
+                next,
+                trusted = false,
+                grounds(lastFix = faraway, now = now).copy(
+                    candidate = candidate,
+                    networkSays = wifi,
+                    trail = Trail(listOf(home(0), home(30), home(60))),
+                ),
+            )
+
+        assertEquals(JumpReason.Saved, judged.jump)
+        assertFalse(judged.agreed)
+        assertFalse(judged.home)
+        assertTrue(judged.leftOutAsJump(jumpsFiltered = true))
+    }
+
     @Test
     fun `how the fix was found is read beside the receiver's own last answer`() {
         val next = fixAt(61.03270, 4.40310, 34, accuracy = 12.0)

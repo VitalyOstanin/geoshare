@@ -57,6 +57,7 @@ test('every reason a device writes is named by the dictionary', () => {
         OffOrbit: 'leftOutOffOrbit',
         Repeating: 'leftOutRepeating',
         Settling: 'leftOutSettling',
+        Saved: 'leftOutSaved',
         Source: 'leftOutBySource',
     };
 

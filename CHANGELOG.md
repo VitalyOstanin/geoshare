@@ -35,6 +35,13 @@ and the versions follow [Semantic Versioning](https://semver.org/).
 
 ### Fixed
 
+- A device no longer writes a place its provider saved long ago as where it
+  is now: an answer more than ten minutes older than the device's clock is
+  left out, and the card names the reason "A place saved long ago"
+  (ADR-0041). An old phone had shown its group a place from a year before.
+- On the page, a second tap on a member in the strip under the map closes
+  their card, the way a second tap on their marker does, instead of doing
+  nothing.
 - On the page, a member picked in the list or the panel of a page that had
   paused is no longer shown at the place it last knew them: when their
   fresh position comes in a moment later, the map goes on to it.

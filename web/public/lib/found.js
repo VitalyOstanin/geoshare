@@ -61,6 +61,7 @@ const LEFT_OUT_WORDS = {
     OffOrbit: WORDS.leftOutOffOrbit,
     Repeating: WORDS.leftOutRepeating,
     Settling: WORDS.leftOutSettling,
+    Saved: WORDS.leftOutSaved,
     Source: WORDS.leftOutBySource,
 };
 

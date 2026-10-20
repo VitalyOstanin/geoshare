@@ -126,6 +126,7 @@ export const EN = {
     leftOutOffOrbit: 'Satellites off their orbits',
     leftOutRepeating: 'The track repeats itself',
     leftOutSettling: 'The receiver has not settled',
+    leftOutSaved: 'A place saved long ago',
     leftOutBySource: 'The source is switched off',
     leftOutBySourceNamed: (source) => `Source switched off: ${source}`,
 
@@ -203,6 +204,10 @@ export const EN = {
     reasonMeansSettling: 'In those minutes the receiver reports places the device has never been. '
         + 'Answers of that window are held to tighter limits: wider than a hundred metres, or '
         + 'faster than 5 m/s, and they are rejected.',
+    reasonSignSaved: 'The point carries a moment more than ten minutes behind the device\'s own '
+        + 'clock.',
+    reasonMeansSaved: 'The device handed over a place saved long ago instead of the current '
+        + 'one, so it is not written.',
     reasonSignSource: 'You switched this source of a position off in the settings.',
     reasonMeansSource: 'Nothing is wrong with the answer: it is collected and logged, but it '
         + 'moves no marker and reaches nobody. That is what the switch is for.',
