@@ -40,6 +40,9 @@ and the versions follow [Semantic Versioning](https://semver.org/).
 
 ### Fixed
 
+- A size change the browser puts off to the next frame no longer opens
+  the "Unexpected error" banner over the map: the browser reports it as
+  an error event with no error in it, while nothing on the page failed.
 - A device no longer writes an answer whose own time is more than ten
   minutes behind the device's clock: it is left out, even through the
   fallback to the towers and with the jump filter off, and the card names

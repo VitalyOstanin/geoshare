@@ -164,6 +164,21 @@ function show(words, details) {
     document.body.append(banner);
 }
 
+/**
+ * Whether an error event is a failure to show. A script or a stylesheet that
+ * failed to load raises one with no error in it, and the page shows its own
+ * word for those. A ResizeObserver whose callback changed a size again in the
+ * same frame makes the browser put the rest off to the next frame and say so
+ * in one, with no error and no file: nothing failed, and the sizes arrive.
+ */
+export function worthReporting(event) {
+    if (event.error) {
+        return true;
+    }
+
+    return Boolean(event.message) && !event.message.startsWith('ResizeObserver loop');
+}
+
 /** Listens for what nothing else caught, for as long as the page is open. */
 function catchUnexpected(target = globalThis) {
     const language = spokenLanguage();
@@ -177,9 +192,7 @@ function catchUnexpected(target = globalThis) {
         report(faultOf({ kind: 'rejection', reason: event.reason }));
     });
     target.addEventListener('error', (event) => {
-        // A script or a stylesheet that failed to load raises an error event
-        // with no error in it; the page shows its own word for those.
-        if (event.error === undefined && !event.message) {
+        if (!worthReporting(event)) {
             return;
         }
         const place = event.filename ? `${event.filename}:${event.lineno}` : null;

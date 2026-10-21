@@ -3,7 +3,7 @@ import { readFileSync } from 'node:fs';
 import { test } from 'node:test';
 
 import { browserOf, faultOf, keepPrivate, scrubbed, stackPlaceOf } from '../public/lib/fault.js';
-import { NEW_ISSUE, detailsText, issueAddress } from '../public/lib/unexpected.js';
+import { NEW_ISSUE, detailsText, issueAddress, worthReporting } from '../public/lib/unexpected.js';
 import { PAGE_VERSION } from '../public/lib/version.js';
 
 const ROOT = new URL('../../', import.meta.url);
@@ -44,6 +44,20 @@ test('a rejection with no error in it still says something', () => {
 
     assert.equal(fault.message, 'no reason given');
     assert.equal(fault.place, null);
+});
+
+test('a ResizeObserver put off to the next frame and a file that failed to load show no banner', () => {
+    const resize = 'ResizeObserver loop completed with undelivered notifications.';
+
+    assert.equal(worthReporting({ error: null, message: resize }), false);
+    assert.equal(worthReporting({ error: undefined, message: '' }), false);
+    assert.equal(worthReporting({ error: null, message: '' }), false);
+});
+
+test('a thrown error, or a message without one, still shows the banner', () => {
+    assert.equal(worthReporting({ error: new TypeError('x is undefined'), message: 'x is undefined' }), true);
+    assert.equal(worthReporting({ error: null, message: 'Script error.' }), true);
+    assert.equal(worthReporting({ error: new Error('ResizeObserver loop'), message: '' }), true);
 });
 
 test('the browser and system are named from the user agent', () => {
