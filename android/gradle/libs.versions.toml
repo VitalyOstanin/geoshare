@@ -19,7 +19,7 @@ lifecycle = "2.11.0"
 # activity-result check refuses to build, and this lifts it.
 fragment = "1.9.1"
 coroutines = "1.11.0"
-firebaseBom = "35.0.2"
+firebaseBom = "35.1.0"
 playServicesLocation = "21.4.0"
 # The map background. Takes the same style document the page does and draws
 # OpenStreetMap tiles from it, so the application needs no map key and no
