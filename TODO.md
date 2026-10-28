@@ -27,6 +27,7 @@
 - [Short messages between the members of a group](#short-messages-between-the-members-of-a-group)
 - [A browser extension over the page's code](#a-browser-extension-over-the-pages-code)
 - [Geofence and movement on Huawei devices without Google services](#geofence-and-movement-on-huawei-devices-without-google-services)
+- [Old times and wide answers marked on the cards](#old-times-and-wide-answers-marked-on-the-cards)
 
 ## Home screen shortcuts to one member
 
@@ -623,3 +624,30 @@ battery matters. The price: an application registered in AppGallery Connect,
 its configuration file and signing fingerprint, and a closed-source library in
 the build — which sits poorly with a project anyone is meant to build and
 check from source, so it would have to stay optional.
+
+## Old times and wide answers marked on the cards
+
+Asked for by the project owner: on a member's card, the "in touch" time and
+the time of the position stand out once they are more than 20 minutes old, and
+the accuracy once it is wider than 200 metres. Not in a red of its own, but in
+whatever colour the cards already give a warning, on the page and on the
+Android screen alike.
+
+What is there already, and has to be reconciled with it:
+
+- **Accuracy.** Both clients already write an accuracy of 100 metres or more
+  in ochre, `--wide` on the page (`web/public/lib/width.js`,
+  `WIDTH_WORTH_NOTICING_METRES`) and `WIDE_DAY` / `WIDE_NIGHT` on Android
+  (`PositionWidth.kt`, `MemberButtons.kt`).
+  The colour fits the request; the threshold does not, and the two clients
+  must keep one number between them, whichever it is.
+- **Times.** Nothing on a card marks an age by colour yet. A marker goes grey
+  once its position is half an hour old (`STALE_AFTER_MS` in
+  `web/public/lib/age.js`, `STALE_AFTER` in `Freshness.kt`). A card mark at
+  20 minutes would come before the grey and say something different: the
+  device is late, not yet lost. Its colour would be the ochre of a wide
+  answer, the one the cards use for "worth noticing, not a fault"; `--error`
+  is for refusals.
+- **Night.** Whatever colour is chosen needs its contrast on the card checked
+  by day and by night, as the tests in `web/tests/alarm-contrast.test.mjs` do
+  for the other colours.
