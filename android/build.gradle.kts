@@ -10,8 +10,8 @@ buildscript {
             add("classpath", "org.bouncycastle:bcprov-jdk18on:1.86")
             add("classpath", "org.bouncycastle:bcpkix-jdk18on:1.86")
             add("classpath", "org.bouncycastle:bcutil-jdk18on:1.86")
-            add("classpath", "com.fasterxml.jackson.core:jackson-core:2.22.3")
-            add("classpath", "com.fasterxml.jackson.core:jackson-databind:2.22.3")
+            add("classpath", "com.fasterxml.jackson.core:jackson-core:2.22.4")
+            add("classpath", "com.fasterxml.jackson.core:jackson-databind:2.22.4")
             add("classpath", "org.bitbucket.b_c:jose4j:0.9.7")
             add("classpath", "org.jdom:jdom2:2.0.6.1")
             add("classpath", "org.apache.commons:commons-lang3:3.21.0")
@@ -37,8 +37,8 @@ val toolFloors =
         "org.bouncycastle:bcprov-jdk18on" to "1.86",
         "org.bouncycastle:bcpkix-jdk18on" to "1.86",
         "org.bouncycastle:bcutil-jdk18on" to "1.86",
-        "com.fasterxml.jackson.core:jackson-core" to "2.22.3",
-        "com.fasterxml.jackson.core:jackson-databind" to "2.22.3",
+        "com.fasterxml.jackson.core:jackson-core" to "2.22.4",
+        "com.fasterxml.jackson.core:jackson-databind" to "2.22.4",
         "org.bitbucket.b_c:jose4j" to "0.9.7",
         "org.jdom:jdom2" to "2.0.6.1",
         "org.apache.commons:commons-lang3" to "3.21.0",
