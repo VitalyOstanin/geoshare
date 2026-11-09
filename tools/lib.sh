@@ -47,11 +47,18 @@ readonly EMULATOR_VARIANT="${EMULATOR_VARIANT:-google_apis}"
 # The SDK image plus a system image, which is what an emulator needs and a
 # build does not. The image without Play services carries its variant in the
 # tag, so the two live side by side and switching does not rebuild either.
+#
+# The tag also carries a digest of the files the image is built from: its
+# packages and entry point change without any version moving, and an image
+# that already exists is never rebuilt.
+emulator_digest="$(cat "${REPO_ROOT}/tools/Containerfile.emulator" \
+    "${REPO_ROOT}/tools/emulator-entrypoint.sh" | sha256sum | cut -c1-12)"
 if [[ "${EMULATOR_VARIANT}" == "google_apis" ]]; then
-    readonly EMULATOR_IMAGE="${EMULATOR_IMAGE:-localhost/geoshare-emulator:${ANDROID_EMULATOR_API}}"
+    readonly EMULATOR_IMAGE="${EMULATOR_IMAGE:-localhost/geoshare-emulator:${ANDROID_EMULATOR_API}-${emulator_digest}}"
 else
-    readonly EMULATOR_IMAGE="${EMULATOR_IMAGE:-localhost/geoshare-emulator:${ANDROID_EMULATOR_API}-${EMULATOR_VARIANT}}"
+    readonly EMULATOR_IMAGE="${EMULATOR_IMAGE:-localhost/geoshare-emulator:${ANDROID_EMULATOR_API}-${EMULATOR_VARIANT}-${emulator_digest}}"
 fi
+unset emulator_digest
 
 # The containers the two halves of a try-out run in: the emulator itself, and
 # the stand-in database and sign-in it talks to.

@@ -35,7 +35,17 @@ RUN mkdir -p /avd \
     && echo no | avdmanager create avd -n phone -k "${API_IMAGE}" -d pixel_6 \
     && chmod -R 777 /avd
 
-# swiftshader_indirect renders on the CPU: there is no GPU to pass through, and
-# the host must not be asked for one.
-CMD ["emulator", "-avd", "phone", "-no-window", "-no-audio", "-no-boot-anim", \
-     "-gpu", "swiftshader_indirect", "-no-snapshot"]
+# Rendering on the host GPU: the Mesa drivers, and weston with Xwayland for the
+# X display -gpu host insists on even without a window (emulator-entrypoint.sh
+# explains why). Without a render node passed in, none of this is used.
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends \
+        libegl1 libegl-mesa0 libgles2 libgl1-mesa-dri libglx-mesa0 \
+        mesa-vulkan-drivers libvulkan1 weston xwayland \
+    && rm -rf /var/lib/apt/lists/*
+
+COPY emulator-entrypoint.sh /usr/local/bin/emulator-entrypoint
+
+# The renderer is chosen at start: the GPU when a render node is usable,
+# swiftshader_indirect on the CPU otherwise.
+CMD ["emulator-entrypoint"]

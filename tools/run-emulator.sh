@@ -49,8 +49,21 @@ echo "==> starting ${EMULATOR_NAME}"
 # The proxy is left out and has to be said out loud: podman hands the host's
 # HTTPS_PROXY to every container unless told not to, and a proxy on the host
 # loopback is nothing at all from inside a pod.
+#
+# /dev/dri lets the emulator render on the host GPU; the image falls back to
+# rendering on the CPU when the node is missing or not accessible, which on
+# most hosts means the user is not in the render group. EMULATOR_GPU forces
+# one or the other: host, or swiftshader_indirect.
+gpu_args=()
+if [[ -d /dev/dri ]]; then
+    gpu_args+=(--device /dev/dri)
+fi
+if [[ -n "${EMULATOR_GPU:-}" ]]; then
+    gpu_args+=(-e "EMULATOR_GPU=${EMULATOR_GPU}")
+fi
 podman run -d --rm --name "${EMULATOR_NAME}" --pod "${POD_NAME}" --http-proxy=false \
-    --group-add keep-groups --device /dev/kvm "${EMULATOR_IMAGE}" > /dev/null
+    --group-add keep-groups --device /dev/kvm "${gpu_args[@]}" \
+    "${EMULATOR_IMAGE}" > /dev/null
 
 # Started before anything asks adb a question: a client that finds no server
 # forks one of its own, and that one listens on the loopback alone, leaving the
@@ -65,6 +78,7 @@ deadline=$((SECONDS + BOOT_TIMEOUT))
 while (( SECONDS < deadline )); do
     if [[ "$(adb_cmd -e shell getprop sys.boot_completed 2>/dev/null | tr -d '\r')" == "1" ]]; then
         echo "==> booted after $((SECONDS))s"
+        podman logs "${EMULATOR_NAME}" 2>&1 | grep -m1 '^emulator-entrypoint: -gpu' || true
         adb_cmd devices
         echo "==> adb from the host: export ADB_SERVER_SOCKET=${ADB_SERVER_SOCKET}"
         exit 0
