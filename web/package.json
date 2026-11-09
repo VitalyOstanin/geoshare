@@ -12,7 +12,7 @@
         "coverage": "node -e \"require('fs').mkdirSync('build', { recursive: true })\" && node --test --test-concurrency=4 --test-timeout=30000 --experimental-test-coverage --test-coverage-include='public/**' --test-coverage-exclude='public/lib/vendor/**' --test-coverage-lines=94 --test-coverage-branches=94 --test-reporter=spec --test-reporter-destination=stdout --test-reporter=lcov --test-reporter-destination=build/lcov.info tests/*.test.mjs && node tests/coverage-reach.mjs build/lcov.info"
     },
     "devDependencies": {
-        "firebase": "13.0.0",
+        "firebase": "13.1.0",
         "maplibre-gl": "6.15.0",
         "qr": "0.7.2"
     },

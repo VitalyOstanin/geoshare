@@ -28,6 +28,10 @@ and the versions follow [Semantic Versioning](https://semver.org/).
 
 ### Changed
 
+- The application is built with Firebase BoM 35.1.0 and takes Guava
+  33.7.2, out of the unbounded allocation when a Guava collection is
+  deserialised (GHSA-xxph-c9ww-hj94); the group's page runs on Firebase
+  13.1.0.
 - On the page, a member's card opens and closes its details with a chevron
   beside the cross in its corner, drawn like the cross, instead of the words
   "More details" and "Fewer details" beside the name. It points the way the

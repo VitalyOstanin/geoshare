@@ -1,21 +1,23 @@
 // Libraries the build tools bring with them, raised past their known
 // vulnerabilities: the Android Gradle plugin (Bouncy Castle, jose4j, JDOM,
-// HttpClient, Commons Lang) and the CycloneDX plugin (Jackson) pin older ones
-// than have been fixed. None of them ends up in the application; they run on
-// the machine that builds it. Each is a floor rather than a pin, so a plugin
-// asking for a newer one still gets it.
+// HttpClient, Commons Lang, Guava) and the CycloneDX plugin (Jackson) pin
+// older ones than have been fixed. They run on the machine that builds the
+// application, and of them only Guava ends up in it as well, through
+// Firestore. Each is a floor rather than a pin, so a plugin asking for a newer
+// one still gets it.
 buildscript {
     dependencies {
         constraints {
             add("classpath", "org.bouncycastle:bcprov-jdk18on:1.86")
             add("classpath", "org.bouncycastle:bcpkix-jdk18on:1.86")
             add("classpath", "org.bouncycastle:bcutil-jdk18on:1.86")
-            add("classpath", "com.fasterxml.jackson.core:jackson-core:2.22.3")
-            add("classpath", "com.fasterxml.jackson.core:jackson-databind:2.22.3")
+            add("classpath", "com.fasterxml.jackson.core:jackson-core:2.22.4")
+            add("classpath", "com.fasterxml.jackson.core:jackson-databind:2.22.4")
             add("classpath", "org.bitbucket.b_c:jose4j:0.9.7")
             add("classpath", "org.jdom:jdom2:2.0.6.1")
             add("classpath", "org.apache.commons:commons-lang3:3.21.0")
             add("classpath", "org.apache.httpcomponents:httpclient:4.5.14")
+            add("classpath", "com.google.guava:guava:33.7.2-jre")
         }
     }
 }
@@ -37,14 +39,17 @@ val toolFloors =
         "org.bouncycastle:bcprov-jdk18on" to "1.86",
         "org.bouncycastle:bcpkix-jdk18on" to "1.86",
         "org.bouncycastle:bcutil-jdk18on" to "1.86",
-        "com.fasterxml.jackson.core:jackson-core" to "2.22.3",
-        "com.fasterxml.jackson.core:jackson-databind" to "2.22.3",
+        "com.fasterxml.jackson.core:jackson-core" to "2.22.4",
+        "com.fasterxml.jackson.core:jackson-databind" to "2.22.4",
         "org.bitbucket.b_c:jose4j" to "0.9.7",
         "org.jdom:jdom2" to "2.0.6.1",
         "org.apache.commons:commons-lang3" to "3.21.0",
         "org.apache.httpcomponents:httpclient" to "4.5.14",
         "ch.qos.logback:logback-core" to "1.5.38",
         "ch.qos.logback:logback-classic" to "1.5.38",
+        // Unlike the others, it reaches the application too: Firestore's gRPC
+        // brings an older one.
+        "com.google.guava:guava" to "33.7.2",
     )
 
 // Read out here because inside the blocks below `libs` would be looked up on
@@ -69,9 +74,13 @@ allprojects {
     // Local copies, so that the rule holds no reference to this script.
     val floors = toolFloors
     // Dotted release numbers part by part; a version with anything but
-    // numbers in it is left as it is.
+    // numbers in it is left as it is, except for the flavour Guava names after
+    // a dash, 33.6.0-android or 33.7.1-jre, which is kept when raised.
+    val flavourOf = { version: String ->
+        listOf("-android", "-jre").firstOrNull { version.endsWith(it) } ?: ""
+    }
     val olderThan = { version: String, than: String ->
-        val have = version.split('.').map { it.toIntOrNull() }
+        val have = version.removeSuffix(flavourOf(version)).split('.').map { it.toIntOrNull() }
         val want = than.split('.').map { it.toInt() }
         val parts = maxOf(have.size, want.size)
         val pairs = (0 until parts).map { (have.getOrElse(it) { 0 }) to want.getOrElse(it) { 0 } }
@@ -83,7 +92,11 @@ allprojects {
             val floor = floors["${requested.group}:${requested.name}"]
             val asked = requested.version
             if (floor != null && asked != null && olderThan(asked, floor)) {
-                useVersion(floor)
+                // Guava before 22 had no flavour, as the 18.0 Android lint asks
+                // for; the -jre one is what it went on as.
+                val guava = requested.group == "com.google.guava"
+                val flavour = flavourOf(asked).ifEmpty { if (guava) "-jre" else "" }
+                useVersion(floor + flavour)
                 because("$asked has known vulnerabilities fixed by $floor")
             }
         }

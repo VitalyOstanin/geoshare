@@ -3,7 +3,7 @@
 // `store.js`, whose `store`, `currentGroup` and `RETRY_AFTER_MS` this imports
 // rather than keeping its own copies.
 
-import { doc, onSnapshot } from './vendor/firebase-13.0.0/firebase-firestore.js';
+import { doc, onSnapshot } from './vendor/firebase-13.1.0/firebase-firestore.js';
 import { currentGroup, refusals, store } from './store.js';
 import { positionOf } from './position-data.js';
 
