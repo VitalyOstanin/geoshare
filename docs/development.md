@@ -148,7 +148,7 @@ The scripts read these from the environment; none has to be set.
 | 34 | `GEOSHARE_GROUP`          | `seed.mjs`, `showcase-seed.mjs` | id of the group the seed creates                                  | `family`                        |
 | 35 | `SHOWCASE_FIRST_SHARE`    | `showcase-seed.mjs`             | `1`: one member's grant left empty, as `landing-shots.sh` asks    | unset: grants full              |
 | 36 | `MERMAID_ROOT`            | `mermaid-check.sh`              | another tree to check, to try the check on a failing document     | the repository root             |
-| 37 | `EMULATOR_GPU`            | `run-emulator.sh`               | renderer: `host` (the GPU, via `/dev/dri`) or `swiftshader_indirect` | `host` when a render node opens |
+| 37 | `EMULATOR_GPU`            | `run-emulator.sh`               | renderer: `host` (GPU via `/dev/dri`) or `swiftshader_indirect`   | `host` if a render node opens   |
 
 The names of the podman resources — `POD_NAME`, `SERVICES_NAME`,
 `EMULATOR_NAME`, `STAND_NAME`, `SDK_IMAGE`, `EMULATOR_IMAGE`, `FIREBASE_IMAGE`,
