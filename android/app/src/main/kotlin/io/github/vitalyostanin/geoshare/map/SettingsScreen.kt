@@ -42,8 +42,11 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import io.github.vitalyostanin.geoshare.BuildConfig
 import io.github.vitalyostanin.geoshare.R
+import io.github.vitalyostanin.geoshare.canChangeAccount
+import io.github.vitalyostanin.geoshare.canStopSharing
 import io.github.vitalyostanin.geoshare.collection.Constellation
 import io.github.vitalyostanin.geoshare.collection.SourceChoice
 import io.github.vitalyostanin.geoshare.collection.constellationLabel
@@ -51,6 +54,7 @@ import io.github.vitalyostanin.geoshare.collection.inOrder
 import io.github.vitalyostanin.geoshare.collection.sourceChoiceLabel
 import io.github.vitalyostanin.geoshare.download.DownloadNetwork
 import io.github.vitalyostanin.geoshare.download.DownloadState
+import io.github.vitalyostanin.geoshare.managed.ManagedConfiguration
 import io.github.vitalyostanin.geoshare.permission.PermissionStep
 import io.github.vitalyostanin.geoshare.service.AidingErasure
 import io.github.vitalyostanin.geoshare.service.LanguageChoice
@@ -68,21 +72,42 @@ internal fun SwitchRow(
     checked: Boolean,
     onCheckedChange: (Boolean) -> Unit,
     verticalPadding: Dp = 4.dp,
+    enabled: Boolean = true,
     label: @Composable RowScope.() -> Unit,
 ) {
     Row(
         modifier =
         Modifier
             .fillMaxWidth()
-            .toggleable(value = checked, role = Role.Switch, onValueChange = onCheckedChange)
+            .toggleable(
+                value = checked,
+                enabled = enabled,
+                role = Role.Switch,
+                onValueChange = onCheckedChange,
+            )
             .padding(horizontal = 16.dp, vertical = verticalPadding),
         horizontalArrangement = Arrangement.spacedBy(12.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         label()
 
-        Switch(checked = checked, onCheckedChange = null)
+        Switch(checked = checked, onCheckedChange = null, enabled = enabled)
     }
+}
+
+/**
+ * Says under a control that is shown but disabled why it is: the device's
+ * controlling application holds it. Left visible rather than hidden, so the
+ * member sees the setting exists and is not left looking for what is missing.
+ */
+@Composable
+internal fun ManagedNote(modifier: Modifier = Modifier) {
+    Text(
+        text = stringResource(R.string.managed_by_controller),
+        style = MaterialTheme.typography.bodySmall,
+        color = MaterialTheme.colorScheme.onSurfaceVariant,
+        modifier = modifier.padding(horizontal = 16.dp),
+    )
 }
 
 /**
@@ -249,7 +274,10 @@ fun SettingsScreen(
         }
     }
 
-    if (signingOut) {
+    val managed by ManagedConfiguration.state.collectAsStateWithLifecycle()
+
+    // Closed by a lock that arrives while it is open, like the entry that opens it.
+    if (signingOut && canChangeAccount(managed)) {
         SignOutDialog(
             caption = groupCaption,
             severalGroups = severalGroups,
@@ -342,11 +370,19 @@ private fun SettingsLowerSections(
 
     HorizontalDivider()
 
+    val managed by ManagedConfiguration.state.collectAsStateWithLifecycle()
+    val accountFree = canChangeAccount(managed)
+
     TextButton(
         onClick = onSignOut,
+        enabled = accountFree,
         modifier = Modifier.padding(horizontal = 8.dp),
     ) {
         Text(text = stringResource(R.string.sign_out_action))
+    }
+
+    if (!accountFree) {
+        ManagedNote()
     }
 
     HorizontalDivider()
@@ -578,12 +614,20 @@ fun AccuracyScreen(
 /** The switch that shares the position, and the way to the permission the system stopped asking for. */
 @Composable
 private fun SharingSection(settings: SettingsState, actions: SettingsActions) {
+    val managed by ManagedConfiguration.state.collectAsStateWithLifecycle()
+    val locked = !canStopSharing(managed)
+
     SwitchRow(
         checked = settings.sharing,
         onCheckedChange = actions.onSharingChange,
         verticalPadding = 12.dp,
+        enabled = !locked,
     ) {
         Text(text = stringResource(R.string.sharing_action), modifier = Modifier.weight(1f))
+    }
+
+    if (locked) {
+        ManagedNote()
     }
 
     // Shown once the system has stopped asking: from there on the

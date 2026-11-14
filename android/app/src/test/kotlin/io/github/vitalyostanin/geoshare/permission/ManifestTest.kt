@@ -34,17 +34,22 @@ class ManifestTest {
     }
 
     // Anything exported can be started by any other application on the device.
-    // The launcher screen is meant to be; the service that holds the position
-    // and the receiver that starts it after a restart are not.
+    // The launcher screen is meant to be, and so is the control service a
+    // device policy controller binds to, which refuses every caller whose
+    // signing certificate the managed configuration does not list (ADR-0043,
+    // DEV-15); the service that holds the position and the receivers are not.
     @Test
-    fun `only the screen that starts the application is open to other applications`() {
-        val exported = EXPORTED.findAll(manifest).map { it.groupValues[1] to it.groupValues[2] }
+    fun `only the launcher screen and the control service are open to other applications`() {
+        val exported = EXPORTED.findAll(manifest).map { it.groupValues[2] to it.groupValues[3] }
 
         assertEquals(
             mapOf(
-                "activity" to "true",
-                "service" to "false",
-                "receiver" to "false",
+                ".control.SharingControlService" to "true",
+                "androidx.appcompat.app.AppLocalesMetadataHolderService" to "false",
+                ".MainActivity" to "true",
+                ".service.SharingService" to "false",
+                ".download.DownloadAnswerReceiver" to "false",
+                ".service.BootReceiver" to "false",
             ),
             exported.toMap(),
         )
@@ -66,7 +71,7 @@ class ManifestTest {
 
         val EXPORTED =
             Regex(
-                "<(activity|service|receiver)\\s[^>]*?android:exported=\"(true|false)\"",
+                "<(activity|service|receiver)\\s[^>]*?android:name=\"([^\"]+)\"[^>]*?android:exported=\"(true|false)\"",
                 RegexOption.DOT_MATCHES_ALL,
             )
 

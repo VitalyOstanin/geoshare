@@ -15,7 +15,10 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import io.github.vitalyostanin.geoshare.R
+import io.github.vitalyostanin.geoshare.canLeaveGroup
+import io.github.vitalyostanin.geoshare.managed.ManagedConfiguration
 import io.github.vitalyostanin.geoshare.membership.Leave
 import kotlinx.coroutines.launch
 
@@ -35,6 +38,10 @@ fun LeaveGroupDialog(ask: LeaveAsk, onLeave: suspend () -> Boolean, onDismiss: (
     val scope = rememberCoroutineScope()
     var busy by remember { mutableStateOf(false) }
     var trouble by remember { mutableStateOf(false) }
+    // The entries that open this dialog are disabled under the lock, but one
+    // already open when the lock arrives must not go through.
+    val managed by ManagedConfiguration.state.collectAsStateWithLifecycle()
+    val mayLeave = canLeaveGroup(managed)
 
     AlertDialog(
         onDismissRequest = onDismiss,
@@ -55,7 +62,7 @@ fun LeaveGroupDialog(ask: LeaveAsk, onLeave: suspend () -> Boolean, onDismiss: (
                         }
                     }
                 },
-                enabled = !busy,
+                enabled = !busy && mayLeave,
             ) {
                 Text(
                     text =

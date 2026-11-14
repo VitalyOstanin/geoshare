@@ -42,6 +42,8 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import io.github.vitalyostanin.geoshare.R
+import io.github.vitalyostanin.geoshare.canLeaveGroup
+import io.github.vitalyostanin.geoshare.managed.ManagedConfiguration
 import io.github.vitalyostanin.geoshare.membership.Leave
 import io.github.vitalyostanin.geoshare.membership.Presence
 import io.github.vitalyostanin.geoshare.membership.Roster
@@ -458,6 +460,8 @@ private fun groupDetails(choice: GroupChoice, current: Boolean): List<String> = 
 @Composable
 private fun GroupMenu(caption: String, onLeave: () -> Unit) {
     var menuOpen by remember { mutableStateOf(false) }
+    val managed by ManagedConfiguration.state.collectAsStateWithLifecycle()
+    val mayLeave = canLeaveGroup(managed)
 
     Box {
         val more = stringResource(R.string.group_switcher_more, caption)
@@ -474,8 +478,20 @@ private fun GroupMenu(caption: String, onLeave: () -> Unit) {
                 text = {
                     // Named: near the bottom of the sheet the menu opens
                     // upwards, over the row above it.
-                    Text(text = stringResource(R.string.group_leave_named, caption))
+                    Column {
+                        Text(text = stringResource(R.string.group_leave_named, caption))
+
+                        // Shown disabled rather than dropped: the member sees
+                        // that leaving exists and who holds it.
+                        if (!mayLeave) {
+                            Text(
+                                text = stringResource(R.string.managed_by_controller),
+                                style = MaterialTheme.typography.bodySmall,
+                            )
+                        }
+                    }
                 },
+                enabled = mayLeave,
                 onClick = {
                     menuOpen = false
                     onLeave()

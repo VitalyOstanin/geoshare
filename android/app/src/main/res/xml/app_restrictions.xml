@@ -1,0 +1,75 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- The managed configuration a device policy controller (a device owner or MDM app) can set
+     from its console (developer.android.com/work/managed-configurations). The keys are the ones
+     managed/ManagedSettings.kt reads; renaming one here without it there leaves a console
+     setting that does nothing. -->
+<restrictions xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <restriction
+        android:key="trusted_controllers"
+        android:title="@string/managed_trusted_controllers_title"
+        android:description="@string/managed_trusted_controllers_description"
+        android:restrictionType="bundle_array">
+        <restriction
+            android:key="trusted_controller"
+            android:title="@string/managed_trusted_controller_title"
+            android:restrictionType="bundle">
+            <restriction
+                android:key="package_name"
+                android:title="@string/managed_controller_package_title"
+                android:description="@string/managed_controller_package_description"
+                android:restrictionType="string" />
+            <restriction
+                android:key="cert_sha256"
+                android:title="@string/managed_controller_cert_title"
+                android:description="@string/managed_controller_cert_description"
+                android:restrictionType="string" />
+        </restriction>
+    </restriction>
+
+    <restriction
+        android:key="connect_link"
+        android:title="@string/managed_connect_link_title"
+        android:description="@string/managed_connect_link_description"
+        android:restrictionType="string" />
+
+    <restriction
+        android:key="expected_account"
+        android:title="@string/managed_expected_account_title"
+        android:description="@string/managed_expected_account_description"
+        android:restrictionType="string" />
+
+    <restriction
+        android:key="sharing_enabled"
+        android:title="@string/managed_sharing_enabled_title"
+        android:description="@string/managed_sharing_enabled_description"
+        android:restrictionType="bool" />
+
+    <restriction
+        android:key="lock_sharing"
+        android:title="@string/managed_lock_sharing_title"
+        android:description="@string/managed_lock_sharing_description"
+        android:restrictionType="bool"
+        android:defaultValue="false" />
+
+    <restriction
+        android:key="lock_group"
+        android:title="@string/managed_lock_group_title"
+        android:description="@string/managed_lock_group_description"
+        android:restrictionType="bool"
+        android:defaultValue="false" />
+
+    <restriction
+        android:key="lock_account"
+        android:title="@string/managed_lock_account_title"
+        android:description="@string/managed_lock_account_description"
+        android:restrictionType="bool"
+        android:defaultValue="false" />
+
+    <restriction
+        android:key="position_interval_minutes"
+        android:title="@string/managed_position_interval_minutes_title"
+        android:description="@string/managed_position_interval_minutes_description"
+        android:restrictionType="integer" />
+
+</restrictions>

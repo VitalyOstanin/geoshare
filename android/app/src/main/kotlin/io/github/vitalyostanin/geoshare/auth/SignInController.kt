@@ -10,6 +10,7 @@ import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.FirebaseAuthException
 import com.google.firebase.auth.OAuthProvider
 import io.github.vitalyostanin.geoshare.log.AppLog
+import io.github.vitalyostanin.geoshare.managed.ManagedConfiguration
 import io.github.vitalyostanin.geoshare.map.runCatchingFailure
 import io.github.vitalyostanin.geoshare.service.STAND_IN_PASSWORD
 import kotlinx.coroutines.CancellationException
@@ -146,6 +147,15 @@ class SignInController(
                     // Google session, and a member with more than one account
                     // never gets to choose which of them this device shares as.
                     .addCustomParameter("prompt", "select_account")
+                    .apply {
+                        // The account a device policy controller expects, so
+                        // that Google's page offers it first; the member
+                        // still chooses, and a different one is pointed out
+                        // after the sign-in.
+                        ManagedConfiguration.current.expectedAccount?.let {
+                            addCustomParameter("login_hint", it)
+                        }
+                    }
                     .build()
 
             // The browser can outlive this activity: the system is free to

@@ -37,13 +37,13 @@ private val ORDINARY_SILENCE: Duration = Duration.ofMinutes(10)
  */
 enum class CollectionMode(
     val accuracy: Accuracy,
-    val interval: Duration,
+    private val baseInterval: Duration,
     /** Batch window: fixes pile up in the chip and arrive together. */
-    val maxUpdateDelay: Duration,
+    private val baseMaxUpdateDelay: Duration,
     /** Below this a fix is jitter rather than movement, in this mode. */
     val writeDistance: Double,
     /** However still the device is, in this mode it says so this often. */
-    val writeSilence: Duration,
+    private val baseWriteSilence: Duration,
 ) {
     /**
      * Inside the geofence around the last position: nothing is requested.
@@ -105,6 +105,42 @@ enum class CollectionMode(
     ;
 
     /**
+     * How often the chip is asked, under the ceiling [PaceCeiling] holds.
+     *
+     * The three values a ceiling touches are computed from the mode's own
+     * (`base*`) values on every read, rather than the modes being copied for a
+     * ceiling: the policy has a dozen readers (the request, the write filter,
+     * the second opinion, the rescue deadline), and each of them asks the mode
+     * what it wants. Keeping the names and moving the ceiling behind them
+     * leaves every one of them as it was, and with no ceiling the values are
+     * the base ones untouched.
+     */
+    val interval: Duration
+        get() = PaceCeiling.current.let { ceiling ->
+            if (ceiling == null) baseInterval else minOf(baseInterval, ceiling)
+        }
+
+    /**
+     * The batch window, shortened so that a round of asking plus the window
+     * still fits in the ceiling: a position that arrives late is as late as one
+     * that was asked for late.
+     */
+    val maxUpdateDelay: Duration
+        get() = PaceCeiling.current.let { ceiling ->
+            if (ceiling == null) {
+                baseMaxUpdateDelay
+            } else {
+                minOf(baseMaxUpdateDelay, maxOf(Duration.ZERO, ceiling - interval))
+            }
+        }
+
+    /** How long a still device keeps quiet, never longer than the ceiling. */
+    val writeSilence: Duration
+        get() = PaceCeiling.current.let { ceiling ->
+            if (ceiling == null) baseWriteSilence else minOf(baseWriteSilence, ceiling)
+        }
+
+    /**
      * The longest a device in this mode can go between two positions.
      *
      * A round of asking plus the window the answers wait in. A mode that asks
@@ -112,4 +148,20 @@ enum class CollectionMode(
      */
     fun asksAgainWithin(): Duration? =
         if (accuracy == Accuracy.None) null else interval + maxUpdateDelay
+}
+
+/**
+ * The longest a device may go between two positions while nobody watches, when
+ * something outside the application has set one; null when nothing has.
+ *
+ * It is a ceiling laid over the policy, never a replacement of it: it only
+ * ever makes a mode faster, so Viewing, which is faster than any ceiling that
+ * can be set, keeps its thirty seconds, and a mode that asks for nothing is
+ * asked about by [chooseMode] instead. Held in one place so that the readers of
+ * [CollectionMode] need not be told about it one by one. The service sets it
+ * from the managed configuration and nothing else writes it.
+ */
+object PaceCeiling {
+    @Volatile
+    var current: Duration? = null
 }

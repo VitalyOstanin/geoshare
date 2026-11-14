@@ -20,6 +20,7 @@
     <string name="sign_in_unfinished_go">Sign in</string>
 
     <string name="sign_out_action">Sign out</string>
+    <string name="managed_by_controller">Managed by the device\'s controlling app</string>
     <string name="sign_out_choose_title">Sign out of the account</string>
     <string name="sign_out_here">Only in the group “%1$s”</string>
     <string name="sign_out_here_note">The device leaves this group. Your other groups stay as they are, and your location keeps going to them.</string>
@@ -618,6 +619,8 @@
     <string name="connect_wrong_account_text">You are signed in as %1$s. Sign out and sign in with the right account — the invitation is kept until the next sign-in.</string>
     <string name="connect_wrong_account_switch">Switch account</string>
     <string name="connect_wrong_account_later">Not now</string>
+    <string name="expected_account_title">This device is set up for %1$s.</string>
+    <string name="expected_account_text">You are signed in as %1$s. Sign out and sign in with the account the device is set up for.</string>
     <string name="reset_hint">Reset the place</string>
     <string name="reset_confirm_title">Reset the place on %1$s?</string>
     <string name="reset_confirm_note">The device forgets its last place and takes the next one, however far it is from the old one. It helps when a marker on the map is stuck and does not move.</string>
@@ -674,4 +677,27 @@
     <string name="update_cancel">Cancel</string>
     <string name="update_damaged">The update file is damaged; download it again</string>
     <string name="update_failed">Could not download the update</string>
+
+    <!-- Managed configuration: the labels a device policy controller's console shows. -->
+    <string name="managed_trusted_controllers_title">Trusted applications</string>
+    <string name="managed_trusted_controllers_description">Applications allowed to steer this app, each named by package and signing certificate</string>
+    <string name="managed_trusted_controller_title">Trusted application</string>
+    <string name="managed_controller_package_title">Package name</string>
+    <string name="managed_controller_package_description">The package name of the application, for example com.example.controller</string>
+    <string name="managed_controller_cert_title">Certificate SHA-256</string>
+    <string name="managed_controller_cert_description">SHA-256 of the signing certificate, 64 hex digits; colons are allowed</string>
+    <string name="managed_connect_link_title">Connection link</string>
+    <string name="managed_connect_link_description">Link that points the app at its group\'s project</string>
+    <string name="managed_expected_account_title">Expected account</string>
+    <string name="managed_expected_account_description">The account the app is meant to be signed in with</string>
+    <string name="managed_sharing_enabled_title">Sharing</string>
+    <string name="managed_sharing_enabled_description">Turn position sharing on or off; leave unset to let the member decide</string>
+    <string name="managed_lock_sharing_title">Lock sharing</string>
+    <string name="managed_lock_sharing_description">The member cannot change the sharing switch</string>
+    <string name="managed_lock_group_title">Lock group</string>
+    <string name="managed_lock_group_description">The member cannot change or leave the current group</string>
+    <string name="managed_lock_account_title">Lock account</string>
+    <string name="managed_lock_account_description">The member cannot sign out or switch accounts</string>
+    <string name="managed_position_interval_minutes_title">Position interval, minutes</string>
+    <string name="managed_position_interval_minutes_description">When set, the device collects and writes its position at least this often while nobody has the map open (1 to 20 minutes); the member cannot change it.</string>
 </resources>

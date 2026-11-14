@@ -20,6 +20,7 @@
     <string name="sign_in_unfinished_go">Войти</string>
 
     <string name="sign_out_action">Выйти</string>
+    <string name="managed_by_controller">Управляется приложением устройства</string>
     <string name="sign_out_choose_title">Выйти из аккаунта</string>
     <string name="sign_out_here">Только в группе «%1$s»</string>
     <string name="sign_out_here_note">Устройство пропадёт из этой группы. В остальных группах всё останется как есть, место туда передаётся дальше.</string>
@@ -542,6 +543,8 @@
     <string name="connect_wrong_account_text">Вы вошли как %1$s. Выйдите и войдите нужным аккаунтом — приглашение сохранится до следующего входа.</string>
     <string name="connect_wrong_account_switch">Сменить аккаунт</string>
     <string name="connect_wrong_account_later">Не сейчас</string>
+    <string name="expected_account_title">Это устройство настроено на %1$s.</string>
+    <string name="expected_account_text">Вы вошли как %1$s. Выйдите и войдите в тот аккаунт, на который настроено устройство.</string>
     <string name="reset_hint">Сбросить место</string>
     <string name="reset_confirm_title">Сбросить место на устройстве %1$s?</string>
     <string name="reset_confirm_note">Устройство забудет последнее место и примет следующее, даже если оно далеко от прежнего. Помогает, когда метка на карте застряла и не двигается.</string>
@@ -596,4 +599,27 @@
     <string name="update_cancel">Отмена</string>
     <string name="update_damaged">Файл обновления повреждён, скачайте заново</string>
     <string name="update_failed">Не удалось скачать обновление</string>
+
+    <!-- Managed configuration: the labels a device policy controller's console shows. -->
+    <string name="managed_trusted_controllers_title">Доверенные приложения</string>
+    <string name="managed_trusted_controllers_description">Приложения, которым разрешено управлять этим приложением; каждое задаётся пакетом и сертификатом подписи</string>
+    <string name="managed_trusted_controller_title">Доверенное приложение</string>
+    <string name="managed_controller_package_title">Имя пакета</string>
+    <string name="managed_controller_package_description">Имя пакета приложения, например com.example.controller</string>
+    <string name="managed_controller_cert_title">SHA-256 сертификата</string>
+    <string name="managed_controller_cert_description">SHA-256 сертификата подписи, 64 шестнадцатеричные цифры; двоеточия допускаются</string>
+    <string name="managed_connect_link_title">Ссылка подключения</string>
+    <string name="managed_connect_link_description">Ссылка, которая направляет приложение к проекту его группы</string>
+    <string name="managed_expected_account_title">Ожидаемая учётная запись</string>
+    <string name="managed_expected_account_description">Учётная запись, под которой в приложении должен быть выполнен вход</string>
+    <string name="managed_sharing_enabled_title">Передача места</string>
+    <string name="managed_sharing_enabled_description">Включить или выключить передачу места; если не задано, решает участник</string>
+    <string name="managed_lock_sharing_title">Заблокировать передачу</string>
+    <string name="managed_lock_sharing_description">Участник не может менять переключатель передачи места</string>
+    <string name="managed_lock_group_title">Заблокировать группу</string>
+    <string name="managed_lock_group_description">Участник не может сменить текущую группу или выйти из неё</string>
+    <string name="managed_lock_account_title">Заблокировать учётную запись</string>
+    <string name="managed_lock_account_description">Участник не может выйти из учётной записи или сменить её</string>
+    <string name="managed_position_interval_minutes_title">Интервал позиции, минуты</string>
+    <string name="managed_position_interval_minutes_description">Если задано, устройство определяет и записывает позицию не реже этого, пока карту никто не открыл (от 1 до 20 минут); участник изменить это не может.</string>
 </resources>

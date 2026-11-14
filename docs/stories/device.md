@@ -20,6 +20,7 @@ on its own for the others to see a true place at a fair cost of battery.
 - [DEV-12 Wake when somebody needs it](#dev-12-wake-when-somebody-needs-it)
 - [DEV-13 Update itself](#dev-13-update-itself)
 - [DEV-14 Use the location services of Huawei devices](#dev-14-use-the-location-services-of-huawei-devices)
+- [DEV-15 Follow the device policy controller of a managed device](#dev-15-follow-the-device-policy-controller-of-a-managed-device)
 
 ## DEV-01 Write the place without being asked
 
@@ -93,7 +94,7 @@ Acceptance:
 
 - Status: done
 - ADR: —
-- Tests: Android `PermissionStepTest`, `BackgroundWorkTest`, `MovementPermissionTest`, `ManifestTest`
+- Tests: Android `PermissionStepTest`, `BackgroundWorkTest`, `MovementPermissionTest`, `ManifestTest`, `ManagedLocksTest`
 
 As a member I am led through the location, background, activity and battery
 permissions step by step, so that the service is not killed and I know why
@@ -272,3 +273,34 @@ still is as cheap there as on other devices.
 Acceptance:
 
 - to be agreed.
+
+## DEV-15 Follow the device policy controller of a managed device
+
+- Status: done
+- ADR: 0043
+- Tests: Android `ManagedSettingsTest`, `TrustedControllersTest`, `SharingControlProtocolTest`, `ManagedSharingTest`, `ManagedLinkOfferTest`, `ExpectedAccountTest`, `CollectionModeTest`, `ModeSelectionTest`, `ManifestTest`, `ManagedLocksTest`
+- Not covered: the control service answering a real bound caller, and the locked controls on the screen, are checked on a managed device by hand
+
+As a device set up with a device policy controller (a device owner or MDM
+app) I take the settings it gives and answer the applications it trusts, so
+that sharing stays the way the person who set the device up wants it.
+
+Acceptance:
+
+- a device without a managed configuration behaves exactly as before;
+- the configuration is read when the application starts and again whenever
+  the platform says it changed;
+- `sharing_enabled`, when set, outranks the member's switch, the start after a
+  restart included, and switching it on or off starts or stops the service;
+- `connect_link` opens the usual connection flow for a group not connected
+  yet, once; the Google sign-in is still answered by a person;
+- `expected_account` is offered to the Google sign-in page as a hint, and a
+  different signed-in address is pointed out;
+- `position_interval_minutes` (1 to 20) makes every mode ask and write at least
+  that often, Idle gives way to Standby, and nothing is slowed down;
+- `lock_sharing`, `lock_group` and `lock_account` leave the switch and the
+  notification's stop, leaving a group, and signing out or changing the account
+  unavailable, each saying "Managed by the device's controlling app";
+- the control service starts, stops and reports sharing only for a caller
+  whose package and signing certificate are both on `trusted_controllers`, and
+  refuses any other caller without saying why.

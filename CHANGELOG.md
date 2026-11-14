@@ -26,6 +26,19 @@ and the versions follow [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Added
+
+- A managed device can be configured by its device policy controller (a
+  device owner or MDM app): the connection link of a group, the account the
+  member is expected to sign in with, whether the device shares, the longest
+  it goes between two positions while nobody watches, and locks on
+  the sharing switch, on leaving a group and on signing out (ADR-0043).
+  Locked controls say "Managed by the device's controlling app". A device
+  without such a configuration works as before.
+- Applications the configuration names, each with the SHA-256 of its
+  signing certificate, can start and stop sharing and ask its state through
+  a control service; any other caller is refused (ADR-0043).
+
 ### Changed
 
 - The application is built with Firebase BoM 35.1.0 and takes Guava

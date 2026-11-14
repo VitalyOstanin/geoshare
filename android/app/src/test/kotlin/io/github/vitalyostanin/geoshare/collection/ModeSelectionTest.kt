@@ -2,6 +2,7 @@ package io.github.vitalyostanin.geoshare.collection
 
 import org.junit.Assert.assertEquals
 import org.junit.Test
+import java.time.Duration
 import java.time.Instant
 import java.time.LocalTime
 
@@ -15,6 +16,7 @@ class ModeSelectionTest {
         moving: Boolean = false,
         batteryPercent: Int = 80,
         ownMapOpen: Boolean = false,
+        ceiling: Duration? = null,
     ) = CollectionState(
         watchersUntil = watchersUntil,
         now = now,
@@ -23,6 +25,7 @@ class ModeSelectionTest {
         moving = moving,
         batteryPercent = batteryPercent,
         ownMapOpen = ownMapOpen,
+        ceiling = ceiling,
     )
 
     @Test
@@ -133,5 +136,34 @@ class ModeSelectionTest {
     @Test
     fun `a closed map on this device changes nothing`() {
         assertEquals(CollectionMode.Standby, chooseMode(state(ownMapOpen = false)))
+    }
+
+    // A ceiling on the time between positions cannot be met by a mode that asks
+    // for nothing, so inside the geofence the device keeps collecting.
+    @Test
+    fun `a ceiling takes the device out of idle inside the geofence`() {
+        val ceiling = Duration.ofMinutes(10)
+
+        assertEquals(
+            CollectionMode.Standby,
+            chooseMode(state(insideGeofence = true, ceiling = ceiling)),
+        )
+        assertEquals(CollectionMode.Idle, chooseMode(state(insideGeofence = true)))
+    }
+
+    @Test
+    fun `a ceiling leaves a watched device in viewing`() {
+        val watch = listOf(now.plusSeconds(60))
+
+        assertEquals(
+            CollectionMode.Viewing,
+            chooseMode(
+                state(
+                    watchersUntil = watch,
+                    insideGeofence = true,
+                    ceiling = Duration.ofMinutes(1),
+                ),
+            ),
+        )
     }
 }

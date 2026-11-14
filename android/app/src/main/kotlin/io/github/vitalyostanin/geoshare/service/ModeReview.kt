@@ -4,7 +4,9 @@ import android.content.Context
 import io.github.vitalyostanin.geoshare.collection.CollectionMode
 import io.github.vitalyostanin.geoshare.collection.Fix
 import io.github.vitalyostanin.geoshare.collection.Moving
+import io.github.vitalyostanin.geoshare.collection.PaceCeiling
 import io.github.vitalyostanin.geoshare.collection.watchedInAnyGroup
+import io.github.vitalyostanin.geoshare.managed.ManagedConfiguration
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.delay
@@ -16,6 +18,8 @@ import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.flowOf
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.onCompletion
 import kotlinx.coroutines.flow.shareIn
 import java.time.Duration
 import java.time.Instant
@@ -110,14 +114,28 @@ internal class ModeReview(
                 }
             }
 
-        return combine(
-            looking,
-            movement(context),
-            standingStill(context, fenceCentre),
-            MapOnScreen.state,
-            reviews,
-        ) { watchEnds, moving, insideGeofence, ownMap, _ ->
-            decide(watchEnds, moving, insideGeofence, ownMap)
-        }.distinctUntilChanged()
+        // The ceiling the device's controller has set on the time between
+        // positions, if any. A change starts the review over rather than being
+        // one more input: the mode may keep its name while its interval does
+        // not, and the repeats dropped below would then keep the old request
+        // running. Restarted, the first answer is delivered whatever it is.
+        val ceilings =
+            ManagedConfiguration.state
+                .map { it.positionIntervalMinutes }
+                .distinctUntilChanged()
+
+        return ceilings.flatMapLatest { minutes ->
+            PaceCeiling.current = minutes?.let { Duration.ofMinutes(it.toLong()) }
+
+            combine(
+                looking,
+                movement(context),
+                standingStill(context, fenceCentre),
+                MapOnScreen.state,
+                reviews,
+            ) { watchEnds, moving, insideGeofence, ownMap, _ ->
+                decide(watchEnds, moving, insideGeofence, ownMap)
+            }.distinctUntilChanged()
+        }.onCompletion { PaceCeiling.current = null }
     }
 }

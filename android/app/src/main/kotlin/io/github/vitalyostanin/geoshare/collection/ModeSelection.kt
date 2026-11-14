@@ -1,5 +1,6 @@
 package io.github.vitalyostanin.geoshare.collection
 
+import java.time.Duration
 import java.time.Instant
 import java.time.LocalTime
 
@@ -21,6 +22,11 @@ data class CollectionState(
      * never counted.
      */
     val ownMapOpen: Boolean,
+    /**
+     * The longest the device may go between two positions, when something has
+     * set one. With it, a device inside its geofence is not left silent.
+     */
+    val ceiling: Duration? = null,
 )
 
 /** Below this the device stops trying to be useful and starts trying to last. */
@@ -45,7 +51,16 @@ fun chooseMode(state: CollectionState): CollectionMode {
         // question they are asking of their own map is the same question.
         watched || state.ownMapOpen -> CollectionMode.Viewing
 
-        state.insideGeofence -> CollectionMode.Idle
+        // Idle asks for nothing and writes nothing, which a ceiling on the
+        // time between positions cannot allow; Standby is the slowest mode
+        // that still collects, and the ceiling is laid over it.
+        state.insideGeofence -> if (state.ceiling ==
+            null
+        ) {
+            CollectionMode.Idle
+        } else {
+            CollectionMode.Standby
+        }
 
         state.batteryPercent < LOW_BATTERY_PERCENT -> CollectionMode.Night
 

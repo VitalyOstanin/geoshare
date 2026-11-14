@@ -22,8 +22,11 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import io.github.vitalyostanin.geoshare.R
+import io.github.vitalyostanin.geoshare.canLeaveGroup
 import io.github.vitalyostanin.geoshare.cutToLimit
+import io.github.vitalyostanin.geoshare.managed.ManagedConfiguration
 import io.github.vitalyostanin.geoshare.membership.Invitation
 import io.github.vitalyostanin.geoshare.membership.ProjectMark
 import io.github.vitalyostanin.geoshare.membership.Roster
@@ -332,14 +335,26 @@ private fun TheGroup(
     }
 
     if (onLeaveGroup != null) {
+        val managed by ManagedConfiguration.state.collectAsStateWithLifecycle()
+        val mayLeave = canLeaveGroup(managed)
+
         TextButton(
             onClick = onLeaveGroup,
+            enabled = mayLeave,
             modifier = Modifier.padding(start = 8.dp),
         ) {
             Text(
                 text = stringResource(R.string.group_leave),
-                color = MaterialTheme.colorScheme.error,
+                color = if (mayLeave) {
+                    MaterialTheme.colorScheme.error
+                } else {
+                    MaterialTheme.colorScheme.onSurfaceVariant
+                },
             )
+        }
+
+        if (!mayLeave) {
+            ManagedNote()
         }
     }
 }

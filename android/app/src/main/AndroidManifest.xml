@@ -78,6 +78,27 @@
         android:localeConfig="@xml/locale_config"
         android:theme="@style/Theme.Geoshare">
 
+        <!-- What a device policy controller (a device owner or MDM app) may set from its
+             console: the schema it lists in the settings it offers for this application
+             (developer.android.com/work/managed-configurations). The values arrive through
+             RestrictionsManager and are read by managed/ManagedSettings.kt. -->
+        <meta-data
+            android:name="android.content.APP_RESTRICTIONS"
+            android:resource="@xml/app_restrictions" />
+
+        <!-- Lets the application of a device policy controller start, stop and ask
+             after sharing. Exported, since it is bound from another application; the
+             service refuses every caller whose uid has no package on the managed
+             configuration's trusted list with a matching signing certificate (see
+             control/SharingControlService.kt), so being reachable is not being usable. -->
+        <service
+            android:name=".control.SharingControlService"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="io.github.vitalyostanin.geoshare.action.CONTROL_SHARING" />
+            </intent-filter>
+        </service>
+
         <!-- Started by the Firebase libraries themselves at process start,
              before anything of ours has run, and off a google-services.json
              this build no longer carries: one build serves every family, so

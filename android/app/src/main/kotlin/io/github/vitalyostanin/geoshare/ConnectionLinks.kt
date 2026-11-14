@@ -11,12 +11,14 @@ import androidx.compose.ui.window.DialogProperties
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
+import io.github.vitalyostanin.geoshare.managed.ManagedConfiguration
 import io.github.vitalyostanin.geoshare.project.ConnectFlow
 import io.github.vitalyostanin.geoshare.project.ConnectScreen
 import io.github.vitalyostanin.geoshare.project.ConnectState
 import io.github.vitalyostanin.geoshare.project.Connections
 import io.github.vitalyostanin.geoshare.project.GroupNames
 import io.github.vitalyostanin.geoshare.project.INHERITED
+import io.github.vitalyostanin.geoshare.project.ManagedLinkOffers
 import io.github.vitalyostanin.geoshare.project.PendingInvitationStore
 import io.github.vitalyostanin.geoshare.project.fetchSettings
 import io.github.vitalyostanin.geoshare.project.pendingInvitationFor
@@ -62,6 +64,35 @@ internal fun MainActivity.listenForLinks(savedInstanceState: Bundle?) {
             }
         }
     }
+
+    // The link a device policy controller left in the managed configuration
+    // goes the way an opened one does, when the screen comes up and whenever
+    // the configuration is read again while it is shown. Nobody is signed in
+    // by it: the flow ends at the same confirmation, and Google's page is
+    // still the member's to answer.
+    lifecycleScope.launch {
+        repeatOnLifecycle(Lifecycle.State.STARTED) {
+            ManagedConfiguration.state.collect { managed ->
+                offerManagedLink(managed.connectLink)
+            }
+        }
+    }
+}
+
+/**
+ * Hands the configured link to the flow if it names a group not connected
+ * yet and has not been offered in this process. Left alone while the flow is
+ * busy with something else, so a link the member is reading is not replaced
+ * under them; the link stays unoffered and is tried at the next change.
+ */
+private fun MainActivity.offerManagedLink(configured: String?) {
+    if (connectFlow.state.value !is ConnectState.NotConnected) {
+        return
+    }
+
+    val sites = Connections.all.value.map { it.settings.site }
+
+    ManagedLinkOffers.next(configured, sites)?.let(connectFlow::linkArrived)
 }
 
 /**

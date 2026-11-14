@@ -7,11 +7,13 @@ import androidx.core.app.ServiceCompat
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.LifecycleService
 import androidx.lifecycle.lifecycleScope
+import io.github.vitalyostanin.geoshare.canStopSharing
 import io.github.vitalyostanin.geoshare.collection.Accuracy
 import io.github.vitalyostanin.geoshare.collection.Asked
 import io.github.vitalyostanin.geoshare.collection.CollectionMode
 import io.github.vitalyostanin.geoshare.collection.CollectionState
 import io.github.vitalyostanin.geoshare.collection.Fix
+import io.github.vitalyostanin.geoshare.collection.PaceCeiling
 import io.github.vitalyostanin.geoshare.collection.chooseMode
 import io.github.vitalyostanin.geoshare.collection.orbitReference
 import io.github.vitalyostanin.geoshare.collection.rescueAccuracy
@@ -19,6 +21,7 @@ import io.github.vitalyostanin.geoshare.collection.rescueAfter
 import io.github.vitalyostanin.geoshare.collection.sameAnswer
 import io.github.vitalyostanin.geoshare.collection.whomToAsk
 import io.github.vitalyostanin.geoshare.log.AppLog
+import io.github.vitalyostanin.geoshare.managed.ManagedConfiguration
 import io.github.vitalyostanin.geoshare.map.logFailure
 import io.github.vitalyostanin.geoshare.map.runCatchingFailure
 import io.github.vitalyostanin.geoshare.project.Connections
@@ -215,6 +218,7 @@ class SharingService : LifecycleService() {
 
     override fun onCreate() {
         super.onCreate()
+        running = true
 
         // The platform can restart a foreground service on its own after a
         // process death, past every gate `startConditions` puts in front of
@@ -230,6 +234,9 @@ class SharingService : LifecycleService() {
         usable = true
         lifecycleScope.launch { groups.follow() }
         radio.start()
+        lifecycleScope.launch {
+            keepNotificationInStep(this@SharingService) { sharingNotification(inAppLanguage()) }
+        }
 
         // Read off the main thread, and applied before anything that reads or
         // appends to them is let go: the collection waits on [restored] and
@@ -266,7 +273,11 @@ class SharingService : LifecycleService() {
             return START_NOT_STICKY
         }
 
-        if (intent?.action == ACTION_STOP) {
+        if (intent?.action == ACTION_STOP && !canStopSharing(ManagedConfiguration.current)) {
+            // A stale notification can still deliver the action after the lock
+            // came on; the controller stops the service through stopService.
+            AppLog.i(TAG, "ignoring the request to stop: sharing is locked")
+        } else if (intent?.action == ACTION_STOP) {
             AppLog.i(TAG, "stopping on request")
             // The notification and the switch on the settings screen are the
             // same statement, and stopping through one of them has to turn the
@@ -347,6 +358,7 @@ class SharingService : LifecycleService() {
     }
 
     override fun onDestroy() {
+        running = false
         if (usable) {
             radio.stop()
             groups.unlinkAll()
@@ -641,6 +653,7 @@ class SharingService : LifecycleService() {
             moving = moving,
             batteryPercent = status.batteryPercent(),
             ownMapOpen = ownMap,
+            ceiling = PaceCeiling.current,
         ),
     )
 
@@ -665,6 +678,11 @@ class SharingService : LifecycleService() {
     }
 
     companion object {
+        /** Whether an instance exists now; read by the control service's status reply. */
+        @Volatile
+        var running = false
+            private set
+
         /** How long a freshly started service waits for the account to be restored. */
         private val SESSION_WAIT: Duration = Duration.ofMinutes(1)
 

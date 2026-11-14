@@ -12,11 +12,14 @@ import androidx.compose.runtime.setValue
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.lifecycleScope
 import io.github.vitalyostanin.geoshare.auth.AuthState
+import io.github.vitalyostanin.geoshare.auth.differsFromExpectedAccount
+import io.github.vitalyostanin.geoshare.canChangeAccount
 import io.github.vitalyostanin.geoshare.collection.Constellation
 import io.github.vitalyostanin.geoshare.collection.Watcher
 import io.github.vitalyostanin.geoshare.download.DownloadSetting
 import io.github.vitalyostanin.geoshare.download.DownloadState
 import io.github.vitalyostanin.geoshare.log.AppLog
+import io.github.vitalyostanin.geoshare.managed.ManagedConfiguration
 import io.github.vitalyostanin.geoshare.map.FirstShareQuestion
 import io.github.vitalyostanin.geoshare.map.GroupChoice
 import io.github.vitalyostanin.geoshare.map.GroupSwitch
@@ -452,6 +455,10 @@ private fun PendingInvitationAnswer(
         answers.groupTrouble = !joined && answers.refusedJoin == null
     }
 
+    ExpectedAccountNotice(activity, current)
+
+    val managed by ManagedConfiguration.state.collectAsStateWithLifecycle()
+
     wrongAccount?.let { pending ->
         WrongAccountDialog(
             invitedAddress = pending.invitedAddress.orEmpty(),
@@ -465,6 +472,33 @@ private fun PendingInvitationAnswer(
                 wrongAccount = null
                 activity.signIn.signOut()
             },
+            switchAllowed = canChangeAccount(managed),
+        )
+    }
+}
+
+/**
+ * Points out that the account signed in is not the one a device policy
+ * controller expects, once per sign-in. Only pointed out: the member may carry
+ * on, and signing out is the same step the invitation's dialog offers.
+ */
+@Composable
+private fun ExpectedAccountNotice(activity: MainActivity, current: AuthState.SignedIn) {
+    val managed by ManagedConfiguration.state.collectAsStateWithLifecycle()
+    var pointedOut by remember(current.memberId) { mutableStateOf(false) }
+    val expected = managed.expectedAccount
+
+    if (!pointedOut && differsFromExpectedAccount(expected, current.email)) {
+        WrongAccountDialog(
+            invitedAddress = "",
+            signedInAddress = ConnectLink.shortenedAddress(current.email.orEmpty()),
+            onLater = { pointedOut = true },
+            onSwitchAccount = {
+                pointedOut = true
+                activity.signIn.signOut()
+            },
+            expectedAddress = ConnectLink.shortenedAddress(expected.orEmpty()),
+            switchAllowed = canChangeAccount(managed),
         )
     }
 }
