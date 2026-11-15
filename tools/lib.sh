@@ -92,17 +92,29 @@ ensure_pod() {
 
 # Called by both --stop paths. A pod outlives the containers in it, and an
 # empty one left behind holds the published port against the next run.
+#
+# Empty is judged by what the pod actually holds, not by the names these
+# scripts give their own containers: POD_NAME may name a pod somebody else
+# runs, and whatever else is in it is not ours to stop. Only the infra
+# container may remain. The removal is not forced either, so a container that
+# turns up in between makes podman refuse rather than kill it — an unforced
+# removal still takes stopped containers with it, which is why the check
+# comes first.
 remove_pod_if_idle() {
     if ! podman pod exists "${POD_NAME}"; then
         return 0
     fi
 
-    if podman container exists "${EMULATOR_NAME}" \
-        || podman container exists "${SERVICES_NAME}"; then
+    local kinds
+    if ! kinds="$(podman ps -a --filter "pod=${POD_NAME}" --format '{{.IsInfra}}')"; then
+        return 0
+    fi
+    if grep -qx false <<< "${kinds}"; then
+        echo "==> pod ${POD_NAME} still holds other containers, left in place"
         return 0
     fi
 
-    podman pod rm -f "${POD_NAME}" > /dev/null 2>&1 || true
+    podman pod rm "${POD_NAME}" > /dev/null 2>&1 || true
 }
 
 # A proxy listening on the host loopback is unreachable from a container on
