@@ -54,3 +54,19 @@ export function deleteResult({ projectId, now }) {
         restorableUntil: until.toISOString().replace(/\.\d+Z$/, 'Z'),
     };
 }
+
+// The result of `add-account`. The password is never part of a result.
+export function accountResult({ projectId, email, uid }) {
+    return { projectId, email, uid, created: true };
+}
+
+// The result of `set-password`: the devices signed in with the account have
+// to sign in again, which the flag says to a program as the message does to
+// a person.
+export function passwordResult({ projectId, email, uid }) {
+    return { projectId, email, uid, passwordChanged: true, signInAgain: true };
+}
+
+export function emailSignInResult({ projectId }) {
+    return { projectId, emailSignIn: true };
+}

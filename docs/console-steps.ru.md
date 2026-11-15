@@ -39,3 +39,27 @@ redirect URIs нажмите Add URI и вставьте `https://<site>.web.app
 **Не трогать:** тариф Blaze, оплату и Firebase AI Logic. Проект работает на
 бесплатном тарифе, а с включённым AI Logic его квоту сможет расходовать кто
 угодно.
+
+**Только для устройства без аккаунта Google: вход по паролю.**
+Устройство, на котором не должно быть аккаунта Google, входит по адресу и
+паролю, которые для него заводит владелец проекта
+([ADR-0046](ADR/0046-a-device-signs-in-with-a-password.md)). Если такого
+устройства в группе нет, шаг пропустите. Провайдер включается один раз: в
+`https://console.firebase.google.com/project/<project-id>/authentication/providers`
+нажмите Add new provider, Email/Password, Enable («Email link» не включайте),
+Save — или выполните `tools/project.sh enable-email-sign-in <project-id>`.
+Затем положите пароль в файл, который можете читать только вы, и заведите
+аккаунт:
+
+```sh
+install -m 600 /dev/null ~/.config/geoshare/device-password
+# впишите пароль в этот файл редактором, одной строкой
+tools/project.sh add-account <project-id> --email you+device@gmail.com \
+    --password-file ~/.config/geoshare/device-password
+```
+
+Адрес с `+что-то` приходит в ваш же почтовый ящик, а для Firebase это
+отдельный адрес. Аккаунт заводится сразу подтверждённым, поэтому
+администратор может выписать на него приглашение. Чтобы сменить пароль,
+впишите новый в тот же файл и выполните `tools/project.sh set-password` с теми
+же параметрами; устройство после этого попросит войти заново.

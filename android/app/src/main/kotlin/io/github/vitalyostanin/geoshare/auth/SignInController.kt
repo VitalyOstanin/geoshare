@@ -119,7 +119,26 @@ class SignInController(
             auth.signInWithEmailAndPassword(email, STAND_IN_PASSWORD).await()
         }.onFailure { error ->
             AppLog.w(TAG, "the stand-in sign-in as $email failed", error)
-            current.value = AuthState.SignedOut(classifySignInFailure(error))
+            current.value = AuthState.SignedOut(classifySignInFailure(error, byPassword = true))
+        }
+    }
+
+    /**
+     * Signs in with an email and a password, for a device that has no Google
+     * account.
+     *
+     * The account is created by the project's owner; there is no registration
+     * here. The password is never logged. A success is told by the listener.
+     */
+    suspend fun signInWithEmail(email: String, password: String) {
+        current.value = AuthState.SigningIn
+        val address = email.trim()
+
+        runCatchingFailure {
+            auth.signInWithEmailAndPassword(address, password).await()
+        }.onFailure { error ->
+            AppLog.w(TAG, "the email sign-in as $address failed: ${error::class.simpleName}")
+            current.value = AuthState.SignedOut(classifySignInFailure(error, byPassword = true))
         }
     }
 

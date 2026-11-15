@@ -6,6 +6,14 @@
     <string name="sign_in_explanation">Войдите в тот аккаунт Google, под которым вы делитесь геопозицией с группой.</string>
     <string name="sign_in_action">Войти через Google</string>
     <string name="sign_in_running">Входим…</string>
+    <string name="sign_in_email_action">Войти по почте</string>
+    <string name="sign_in_email_address">Адрес почты</string>
+    <string name="sign_in_email_password">Пароль</string>
+    <string name="sign_in_email_submit">Войти</string>
+    <string name="sign_in_email_back">Назад</string>
+    <string name="sign_in_email_note">Аккаунт по почте заводит владелец проекта. За новым паролем тоже обращайтесь к нему.</string>
+    <string name="sign_in_failed_wrong_credentials">Адрес или пароль не подошли.</string>
+    <string name="sign_in_failed_too_many_attempts">Слишком много попыток. Подождите и попробуйте снова.</string>
     <string name="link_lost">Нет связи с базой с %1$s</string>
     <string name="link_known_at">Показано то, что было известно на %1$s. Метки серые.</string>
     <string name="link_known_never">База ещё не ответила ни разу. Метки серые.</string>
@@ -13,7 +21,7 @@
     <string name="link_lost_action">Нет связи с базой: до устройства это не дойдёт. Повторите, когда связь вернётся.</string>
     <string name="write_unanswered">База не ответила за 15 секунд. Запись уйдёт, когда связь вернётся; отменить её нельзя.</string>
     <string name="sign_in_failed_offline">Нет связи. Для входа сеть нужна хотя бы на минуту.</string>
-    <string name="sign_in_failed_misconfigured">Проект этой группы ещё не настроен на вход через Google.</string>
+    <string name="sign_in_failed_misconfigured">Проект этой группы ещё не настроен на этот способ входа.</string>
     <string name="sign_in_unfinished">Вход не завершён. Если страница входа показала ошибку, войдите ещё раз. Повторяется — сделайте браузером по умолчанию Chrome.</string>
     <string name="sign_in_removed_elsewhere">Это устройство удалили из группы с другого вашего устройства. Чтобы снова делиться местом, войдите ещё раз.</string>
     <string name="sign_in_unfinished_group">Вход в «%1$s» не завершён. Если страница входа показала ошибку, войдите ещё раз; повторяется — сделайте браузером по умолчанию Chrome.</string>

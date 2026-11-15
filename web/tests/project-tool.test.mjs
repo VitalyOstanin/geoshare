@@ -12,8 +12,15 @@ import {
     certificateHashes,
     chosenSite,
     consoleLink,
+    createdUid,
+    emailSignInOn,
+    errorCode,
     googleSignInOn,
     listedShaHashes,
+    lookupUid,
+    passwordFrom,
+    permissionsProblem,
+    refusalText,
     storedToken,
 } from '../../tools/project/firebase.mjs';
 import {
@@ -24,8 +31,11 @@ import {
     stamp,
 } from '../../tools/project/quota.mjs';
 import {
+    accountResult,
     createResult,
     deleteResult,
+    emailSignInResult,
+    passwordResult,
     showResult,
     updateResult,
 } from '../../tools/project/results.mjs';
@@ -173,4 +183,71 @@ test('earlier days get a table of their own, held against the daily limits', () 
     assert.equal(lines.length, 9);
     assert.equal(lines[6], '');
     assert.match(lines[8], /25000 50%\s+2000 10%\s+0 0%$/);
+});
+
+test('a password file is accepted at 600 or 400 and refused at any other mode', () => {
+    assert.equal(permissionsProblem(0o100600, 'pw'), '');
+    assert.equal(permissionsProblem(0o100400, 'pw'), '');
+    assert.match(permissionsProblem(0o100644, 'pw'), /permissions 644; it must be 600 or 400/);
+    assert.match(permissionsProblem(0o100700, 'pw'), /permissions 700/);
+});
+
+test('the password is the first line, without its line break', () => {
+    assert.equal(passwordFrom('secret1\n'), 'secret1');
+    assert.equal(passwordFrom('secret1\r\nsecond'), 'secret1');
+    assert.equal(passwordFrom('abc def'), 'abc def');
+});
+
+test('a password under 6 characters is refused, with its length and not its text', () => {
+    assert.throws(() => passwordFrom('abcde\n'), /too short: it has 5 characters/);
+    assert.throws(() => passwordFrom(''), /it has 0 characters/);
+    assert.doesNotThrow(() => passwordFrom('abcdef'));
+});
+
+test('email sign-in is on only when the field says so', () => {
+    assert.equal(emailSignInOn('{"signIn":{"email":{"enabled":true}}}'), true);
+    assert.equal(emailSignInOn('{"signIn":{"email":{"passwordRequired":true}}}'), false);
+    assert.equal(emailSignInOn('{"signIn":{}}'), false);
+    assert.equal(emailSignInOn('{}'), false);
+});
+
+test('the refusal code is the part of the message before its hint', () => {
+    assert.equal(errorCode('{"error":{"code":400,"message":"EMAIL_EXISTS"}}'), 'EMAIL_EXISTS');
+    assert.equal(
+        errorCode('{"error":{"message":"WEAK_PASSWORD : at least 6 characters"}}'),
+        'WEAK_PASSWORD',
+    );
+    assert.equal(errorCode('{"users":[]}'), '');
+    assert.equal(errorCode('not json'), '');
+});
+
+test('a lookup of an address nobody has comes back empty, one that exists gives its uid', () => {
+    assert.equal(lookupUid('{"kind":"identitytoolkit#GetAccountInfoResponse"}'), '');
+    assert.equal(lookupUid('{"users":[{"localId":"uid-1","email":"a@b.c"}]}'), 'uid-1');
+    assert.equal(createdUid('{"localId":"uid-2","email":"a@b.c"}'), 'uid-2');
+    assert.throws(() => createdUid('{}'), /names no uid/);
+});
+
+test('each refusal is told in plain words, the existing address with the way out', () => {
+    const base = { project: 'demo-project', email: 'name+kid@example.org', status: '400' };
+
+    const text = (code) => refusalText({ ...base, code });
+
+    assert.match(text('EMAIL_EXISTS'), /already has an account.*set-password demo-project/);
+    assert.match(text('WEAK_PASSWORD'), /too weak/);
+    assert.match(text('INVALID_EMAIL'), /name\+kid@example\.org is not an address/);
+    assert.match(text('OPERATION_NOT_ALLOWED'), /refused.*OPERATION_NOT_ALLOWED/);
+    assert.match(text(''), /HTTP 400/);
+});
+
+test('account results name the account and never carry a password', () => {
+    const given = { projectId: 'demo-project', email: 'a@example.org', uid: 'uid-1' };
+
+    assert.deepEqual(accountResult(given), { ...given, created: true });
+    assert.deepEqual(passwordResult(given), { ...given, passwordChanged: true, signInAgain: true });
+    assert.deepEqual(emailSignInResult({ projectId: 'demo-project' }), {
+        projectId: 'demo-project',
+        emailSignIn: true,
+    });
+    assert.ok(!JSON.stringify(passwordResult(given)).includes('password":'));
 });

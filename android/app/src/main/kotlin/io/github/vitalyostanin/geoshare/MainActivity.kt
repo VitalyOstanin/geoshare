@@ -417,6 +417,10 @@ class MainActivity : AppCompatActivity() {
                 onSignInAsStandIn = { account ->
                     lifecycleScope.launch { signIn.signInAsStandIn(account) }
                 },
+                onSignInWithEmail = { email, password ->
+                    RemovedHere.forget(this@MainActivity, connection.projectId)
+                    lifecycleScope.launch { signIn.signInWithEmail(email, password) }
+                },
                 modifier = Modifier.weight(1f),
             )
         }

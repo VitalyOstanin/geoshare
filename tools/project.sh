@@ -7,6 +7,9 @@
 #   tools/project.sh show <project-id> [--wait] [--usage] [--days <n>] [--json]
 #   tools/project.sh update <project-id> [--json]
 #   tools/project.sh delete <project-id> --yes [--json]
+#   tools/project.sh enable-email-sign-in <project-id> [--json]
+#   tools/project.sh add-account <project-id> --email <address> --password-file <file> [--json]
+#   tools/project.sh set-password <project-id> --email <address> --password-file <file> [--json]
 #   any of them with [--account <google-address>]
 #
 # The project is named on every run, so one machine looks after several
@@ -42,6 +45,17 @@
 # along with everything else it skips. `delete` asks Google to shut the
 # project down: it is unusable at once and gone for good after 30 days, and
 # can be restored until then. It does nothing without --yes.
+#
+# A device without a Google account signs in with an email address and a
+# password instead: `enable-email-sign-in` turns that provider on (the
+# console's Authentication, Sign-in method, Email/Password), `add-account`
+# makes the account and `set-password` changes the password of one that is
+# there; the last two stop when the provider is off. They ask the same
+# Identity Toolkit API the Admin SDK does, with the firebase command line's
+# own sign-in. The password is read from the first line of --password-file,
+# which must have permissions 600 or 400 and at least 6 characters; it goes
+# to the API through a pipe and is never printed or put in a command line.
+# An address like name+kid@gmail.com is an ordinary address.
 #
 # --json is for a program or an agent running this rather than somebody at a
 # terminal. Every command keeps its running commentary, but on standard error
@@ -143,7 +157,7 @@ project_js() {
 }
 
 usage() {
-    sed -n '5,10p' "${BASH_SOURCE[0]}" | sed 's/^# //' >&2
+    sed -n '5,13p' "${BASH_SOURCE[0]}" | sed 's/^# //' >&2
     exit 2
 }
 
@@ -945,6 +959,135 @@ EOF
     fi
 }
 
+# Sends a request to Identity Toolkit with the remembered token and the body on
+# standard input, which is where a password reaches it: from a pipe, never from
+# a command line. Leaves the HTTP status in identity_status and the answer in
+# identity_body, since a refusal is an answer to read rather than a failure.
+identity_send() {
+    local method="$1" url="$2"
+    local token response
+
+    token="$(firebase_access_token)"
+    response="$(curl -s -w $'\n%{http_code}' -X "${method}" -H @<(bearer "${token}") \
+        -H "Content-Type: application/json" --data-binary @- "${url}")"
+    identity_status="${response##*$'\n'}"
+    identity_body="${response%$'\n'*}"
+}
+
+# Stops with Identity Toolkit's refusal in plain words, unless the request went
+# through.
+identity_require_ok() {
+    local project="$1" email="$2"
+
+    [[ "${identity_status}" == "200" ]] && return
+
+    project_js refusal --status "${identity_status}" --project "${project}" \
+        --email "${email}" <<< "${identity_body}" >&2
+    exit 1
+}
+
+# The project's own Identity Toolkit address: the API version, the project, and
+# what is asked of it.
+identity_url() {
+    echo "https://identitytoolkit.googleapis.com/$1/projects/$2$3"
+}
+
+# Whether sign-in with an email address and a password is on in the project.
+email_sign_in_enabled() {
+    local project="$1" body
+
+    body="$(api_get "$(identity_url admin/v2 "${project}" /config)")" || {
+        echo "reading the sign-in configuration of ${project} failed" >&2
+        exit 1
+    }
+    [[ "$(project_js email-on <<< "${body}")" == "true" ]]
+}
+
+# Stops unless the provider is on: an account made while it is off cannot sign
+# in, and nothing on the device would say why.
+require_email_sign_in() {
+    local project="$1"
+
+    if ! email_sign_in_enabled "${project}"; then
+        echo "sign-in with email and password is off in ${project}; turn it on with" \
+            "\`tools/project.sh enable-email-sign-in ${project}\` or in the console:" \
+            "Authentication, Sign-in method, Email/Password" >&2
+        exit 1
+    fi
+}
+
+enable_email_sign_in() {
+    local project="$1"
+
+    echo "==> sign-in with email and password"
+    identity_send PATCH "$(identity_url admin/v2 "${project}" \
+        "/config?updateMask=signIn.email.enabled,signIn.email.passwordRequired")" \
+        <<< '{"signIn":{"email":{"enabled":true,"passwordRequired":true}}}'
+    identity_require_ok "${project}" ""
+    echo "    on in ${project}"
+
+    if (( json_mode )); then
+        project_js email-sign-in-result --project "${project}" >&3
+    fi
+}
+
+add_account() {
+    local project="$1" email="$2" file="$3"
+    local uid
+
+    require_email_sign_in "${project}"
+
+    echo "==> account ${email}"
+    identity_send POST "$(identity_url v1 "${project}" /accounts)" \
+        < <(project_js account-body --email "${email}" --file "${file}")
+    identity_require_ok "${project}" "${email}"
+    uid="$(project_js created-uid <<< "${identity_body}")"
+
+    cat <<EOF
+    made, uid ${uid}
+
+A device signs in with ${email} and the password in ${file}.
+EOF
+
+    if (( json_mode )); then
+        project_js account-result --project "${project}" --email "${email}" \
+            --uid "${uid}" >&3
+    fi
+}
+
+set_password() {
+    local project="$1" email="$2" file="$3"
+    local uid
+
+    require_email_sign_in "${project}"
+
+    echo "==> account ${email}"
+    identity_send POST "$(identity_url v1 "${project}" /accounts:lookup)" \
+        < <(project_js lookup-body --email "${email}")
+    identity_require_ok "${project}" "${email}"
+    uid="$(project_js lookup-uid <<< "${identity_body}")"
+
+    if [[ -z "${uid}" ]]; then
+        echo "${project} has no account with the address ${email}; \`add-account\` makes one" >&2
+        exit 1
+    fi
+
+    identity_send POST "$(identity_url v1 "${project}" /accounts:update)" \
+        < <(project_js update-body --uid "${uid}" --file "${file}")
+    identity_require_ok "${project}" "${email}"
+
+    cat <<EOF
+    password changed, uid ${uid}
+
+Devices signed in with ${email} have to sign in again with the new password.
+EOF
+
+    if (( json_mode )); then
+        project_js password-result --project "${project}" --email "${email}" \
+            --uid "${uid}" >&3
+    fi
+}
+
 # The free plan's limits the project's usage is held against. Firestore's are
 # from https://firebase.google.com/docs/firestore/quotas and are not published
 # as metrics; Hosting's are, and are read alongside its usage instead.
@@ -990,6 +1133,8 @@ with_usage=0
 confirmed=0
 account=""
 account_args=()
+email=""
+password_file=""
 
 while [[ $# -gt 0 ]]; do
     case "$1" in
@@ -1002,6 +1147,8 @@ while [[ $# -gt 0 ]]; do
         --days) days="$2"; with_usage=1; shift 2 ;;
         --usage) with_usage=1; shift ;;
         --yes) confirmed=1; shift ;;
+        --email) email="$2"; shift 2 ;;
+        --password-file) password_file="$2"; shift 2 ;;
         --account) account="$2"; account_args=(--account "$2"); shift 2 ;;
         *) usage ;;
     esac
@@ -1023,5 +1170,19 @@ case "${command}" in
     show) require_login; require_access "${project}"; show "${project}" "${wait_google}" "${with_usage}" ;;
     update) require_login; require_access "${project}"; update "${project}" ;;
     delete) require_login; require_access "${project}"; delete_project "${project}" ;;
+    enable-email-sign-in) require_login; require_access "${project}"; enable_email_sign_in "${project}" ;;
+    add-account|set-password)
+        # Refused before anything is asked of Google: a missing option, a
+        # password file others can read, or a password too short.
+        [[ -n "${email}" && -n "${password_file}" ]] || usage
+        project_js check-password --file "${password_file}" || exit 1
+        require_login; require_access "${project}"
+
+        if [[ "${command}" == "add-account" ]]; then
+            add_account "${project}" "${email}" "${password_file}"
+        else
+            set_password "${project}" "${email}" "${password_file}"
+        fi
+        ;;
     *) usage ;;
 esac

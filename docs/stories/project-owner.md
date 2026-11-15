@@ -15,6 +15,7 @@ but the stories here are about the project, not about the group.
 - [OWN-07 Remove the project](#own-07-remove-the-project)
 - [OWN-09 Set up the project from a page in the browser](#own-09-set-up-the-project-from-a-page-in-the-browser)
 - [OWN-10 Use the published build without building one](#own-10-use-the-published-build-without-building-one)
+- [OWN-11 Make an account for a device without a Google account](#own-11-make-an-account-for-a-device-without-a-google-account)
 
 ## OWN-01 Make the group's project from one script
 
@@ -183,3 +184,22 @@ Acceptance:
 
 - a signed release APK is published on GitHub Releases;
 - "Download the application" on the page leads there (ADR-0018).
+
+## OWN-11 Make an account for a device without a Google account
+
+- Status: done
+- ADR: 0046
+- Tests: page `project-tool.test.mjs` (reading the answers of the Identity Toolkit API, the password file's checks)
+- Not covered: the calls themselves are made by hand against a project
+
+As a project owner I make an account with an address and a password for a
+device that must not carry a Google account, and change its password later,
+so that the device joins the group like any other.
+
+Acceptance:
+
+- `tools/project.sh add-account` makes the account already verified, and
+  `tools/project.sh set-password` changes its password;
+- the password is read from a file of mode 600 or 400 and never printed;
+- both stop and say how to turn the provider on while Email/Password is off,
+  and `tools/project.sh enable-email-sign-in` turns it on.

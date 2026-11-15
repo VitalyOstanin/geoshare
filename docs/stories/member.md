@@ -13,6 +13,7 @@ page in a browser. Joining comes first; leaving and signing out come last.
   - [MEM-05 Sign out of one group or of all of them](#mem-05-sign-out-of-one-group-or-of-all-of-them)
   - [MEM-06 Sign in again after a sign-in that did not finish](#mem-06-sign-in-again-after-a-sign-in-that-did-not-finish)
   - [MEM-07 Look at the group from the page](#mem-07-look-at-the-group-from-the-page)
+  - [MEM-23 Sign in with an address and a password](#mem-23-sign-in-with-an-address-and-a-password)
 - [My devices](#my-devices)
   - [MEM-08 Add another device of mine](#mem-08-add-another-device-of-mine)
   - [MEM-09 See and forget my devices](#mem-09-see-and-forget-my-devices)
@@ -162,6 +163,28 @@ Acceptance:
 - the page shows the members, their places, searches and sirens as the device
   does;
 - the page does not publish a position, and grants are given from the device.
+
+### MEM-23 Sign in with an address and a password
+
+- Status: done
+- ADR: 0046
+- Tests: rules `membership.test.mjs` (an account that signs in with a password); Android `SignInFailureTest`
+- Not covered: the form on the sign-in screen, by hand
+
+As a person on a device that must not carry a Google account I sign in with
+the address and the password the project owner made for me, so that the
+device joins the group without Google.
+
+Acceptance:
+
+- "Sign in with email" on the sign-in screen opens an address and a password,
+  the address filled in from the device policy controller's expected account
+  when it gives one;
+- a wrong address or password, and too many attempts, are each said under the
+  form, which stays open with the address kept;
+- an invitation made out to the account's address lets it join, as with
+  Google;
+- there is no registration and no password reset in the application.
 
 ## My devices
 

@@ -6,7 +6,7 @@ import { describe, it } from 'node:test';
 import { assertFails, assertSucceeds } from '@firebase/rules-unit-testing';
 import { collection, deleteDoc, doc, getDoc, getDocs, arrayUnion, setDoc, updateDoc, writeBatch } from 'firebase/firestore';
 
-import { setUpRules, GROUP, ALICE, BOB, STRANGER, STRANGER_EMAIL, FOREVER, testEnv, grantOf, someGrant, CODE, OTHER_CODE, groupDoc, projectGroupDoc, foundGroup, invitationOf, claimOf, inTenMinutes, plantAnAdministrator, plantAnInvitation, plantAnAddressedInvitation, signedInAs } from './helpers.mjs';
+import { setUpRules, GROUP, ALICE, BOB, STRANGER, STRANGER_EMAIL, FOREVER, testEnv, grantOf, someGrant, positionOf, positionFrom, CODE, OTHER_CODE, groupDoc, projectGroupDoc, foundGroup, invitationOf, claimOf, inTenMinutes, plantAnAdministrator, plantAnInvitation, plantAnAddressedInvitation, signedInAs } from './helpers.mjs';
 
 setUpRules();
 
@@ -614,6 +614,60 @@ describe('joining on an invitation made out to an address', () => {
 
         await assertSucceeds(setDoc(claimOf(db, STRANGER), { code: CODE }));
         await assertFails(join(db));
+    });
+});
+
+// A password account, made by the project owner already verified: it carries no
+// Google sign-in, only an address and the flag saying the address is confirmed.
+// The rules never ask how the account signed in, so it is a member like any
+// other once the invitation lets it in.
+describe('an account that signs in with a password', () => {
+    const passwordAccount = (email, verified = true) =>
+        testEnv
+            .authenticatedContext(STRANGER, {
+                email,
+                email_verified: verified,
+                firebase: { sign_in_provider: 'password' },
+            })
+            .firestore();
+
+    it('joins on an invitation made out to its address and then reads as a member', async () => {
+        await plantAnAdministrator();
+        await plantAnAddressedInvitation('owner+kid@gmail.com');
+        await testEnv.withSecurityRulesDisabled(async (context) => {
+            await setDoc(grantOf(context.firestore(), BOB), someGrant({ [STRANGER]: FOREVER }));
+        });
+
+        const db = passwordAccount('Owner+Kid@gmail.com');
+
+        await assertSucceeds(setDoc(claimOf(db, STRANGER), { code: CODE }));
+        await assertSucceeds(spending(db, arrayUnion(STRANGER)));
+
+        await assertSucceeds(getDoc(groupDoc(db)));
+        await assertSucceeds(getDoc(positionOf(db, BOB)));
+        await assertSucceeds(setDoc(positionOf(db, STRANGER), positionFrom(STRANGER)));
+    });
+
+    it('is refused on that invitation while its address is not confirmed', async () => {
+        await plantAnAdministrator();
+        await plantAnAddressedInvitation('owner+kid@gmail.com');
+
+        const db = passwordAccount('Owner+Kid@gmail.com', false);
+
+        await assertSucceeds(setDoc(claimOf(db, STRANGER), { code: CODE }));
+        await assertFails(spending(db, arrayUnion(STRANGER)));
+    });
+
+    // The part after the plus is part of the address: the rules compare whole
+    // addresses, so the plain one is somebody else.
+    it('is refused on an invitation made out to the address without the suffix', async () => {
+        await plantAnAdministrator();
+        await plantAnAddressedInvitation('owner@gmail.com');
+
+        const db = passwordAccount('owner+kid@gmail.com');
+
+        await assertSucceeds(setDoc(claimOf(db, STRANGER), { code: CODE }));
+        await assertFails(spending(db, arrayUnion(STRANGER)));
     });
 });
 

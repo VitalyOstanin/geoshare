@@ -53,3 +53,4 @@ date is the decision's.
 | 0043 | [A device policy controller configures sharing](0043-a-device-policy-controller-configures-sharing.md)                 | Accepted, supplemented by 0045               | 2026-11-14 |
 | 0044 | [A debug build signs in a stand-in account from the shell](0044-stand-in-sign-in-from-the-shell.md)                    | Accepted                                     | 2026-11-15 |
 | 0045 | [Every control request reads the managed configuration afresh](0045-control-requests-read-the-configuration-afresh.md) | Accepted                                     | 2026-11-15 |
+| 0046 | [A device without a Google account signs in with a password](0046-a-device-signs-in-with-a-password.md)                | Accepted                                     | 2026-11-15 |

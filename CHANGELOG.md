@@ -40,6 +40,13 @@ and the versions follow [Semantic Versioning](https://semver.org/).
   a control service; any other caller is refused (ADR-0043). Each request
   is judged against the configuration as it stands at that moment, so a
   controller added while the application runs is let in at once (ADR-0045).
+- A device that must not carry a Google account signs in with an address
+  and a password: "Sign in with email" on the sign-in screen (ADR-0046).
+  There is no registration in the application; the project owner makes the
+  account, already verified, with `tools/project.sh add-account`, changes
+  its password with `tools/project.sh set-password`, and turns the
+  Email/Password provider on with `tools/project.sh enable-email-sign-in`
+  in a project that needs it. The rules do not change.
 
 ### Changed
 

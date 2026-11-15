@@ -8,18 +8,31 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.text.KeyboardActions
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import io.github.vitalyostanin.geoshare.R
+import io.github.vitalyostanin.geoshare.managed.ManagedConfiguration
 import io.github.vitalyostanin.geoshare.service.STAND_IN_ACCOUNTS
 import io.github.vitalyostanin.geoshare.service.StandInServices
 
@@ -34,6 +47,7 @@ fun SignInScreen(
     state: AuthState,
     onSignIn: () -> Unit,
     onSignInAsStandIn: (String) -> Unit,
+    onSignInWithEmail: (email: String, password: String) -> Unit,
     modifier: Modifier = Modifier,
     /** The device was signed out because another device of the member removed it. */
     removedElsewhere: Boolean = false,
@@ -67,6 +81,7 @@ fun SignInScreen(
                     removedElsewhere = removedElsewhere,
                     onSignIn = onSignIn,
                     onSignInAsStandIn = onSignInAsStandIn,
+                    onSignInWithEmail = onSignInWithEmail,
                 )
 
             // The caller shows the map instead of this screen; the branch is
@@ -82,15 +97,36 @@ private fun SignedOut(
     removedElsewhere: Boolean,
     onSignIn: () -> Unit,
     onSignInAsStandIn: (String) -> Unit,
+    onSignInWithEmail: (email: String, password: String) -> Unit,
 ) {
-    Text(
-        text = stringResource(R.string.sign_in_explanation),
-        style = MaterialTheme.typography.bodyLarge,
-        textAlign = TextAlign.Center,
-    )
+    // Kept across a rotation and across a failed attempt: after a wrong
+    // password the form stays where it was, with the address still in it.
+    var emailForm by rememberSaveable { mutableStateOf(false) }
 
-    Button(onClick = onSignIn) {
-        Text(text = stringResource(R.string.sign_in_action))
+    // About the Google account; the form carries its own note instead.
+    if (!emailForm) {
+        Text(
+            text = stringResource(R.string.sign_in_explanation),
+            style = MaterialTheme.typography.bodyLarge,
+            textAlign = TextAlign.Center,
+        )
+    }
+
+    if (emailForm) {
+        EmailForm(
+            onSubmit = onSignInWithEmail,
+            onBack = { emailForm = false },
+        )
+    } else {
+        Button(onClick = onSignIn) {
+            Text(text = stringResource(R.string.sign_in_action))
+        }
+
+        // Second to Google: for a group whose member has no Google account
+        // to share under, such as a device set up and managed for somebody.
+        OutlinedButton(onClick = { emailForm = true }) {
+            Text(text = stringResource(R.string.sign_in_email_action))
+        }
     }
 
     // Only while this build talks to the emulators, where there is no Google
@@ -128,7 +164,11 @@ private fun SignedOut(
                 textAlign = TextAlign.Center,
             )
 
-        SignInFailure.Offline, SignInFailure.Misconfigured ->
+        SignInFailure.Offline,
+        SignInFailure.Misconfigured,
+        SignInFailure.WrongCredentials,
+        SignInFailure.TooManyAttempts,
+        ->
             Text(
                 text = stringResource(failureMessage(failure)),
                 style = MaterialTheme.typography.bodyMedium,
@@ -140,5 +180,59 @@ private fun SignedOut(
 
 private fun failureMessage(failure: SignInFailure): Int = when (failure) {
     SignInFailure.Offline -> R.string.sign_in_failed_offline
+    SignInFailure.WrongCredentials -> R.string.sign_in_failed_wrong_credentials
+    SignInFailure.TooManyAttempts -> R.string.sign_in_failed_too_many_attempts
     else -> R.string.sign_in_failed_misconfigured
+}
+
+/**
+ * The address and password of an account made for the member by the project
+ * owner. There is no way to make one here, nor to get a password back, and
+ * the note under the form says whom to ask.
+ */
+@Composable
+private fun EmailForm(onSubmit: (email: String, password: String) -> Unit, onBack: () -> Unit) {
+    // The address is kept across a rotation and offered from the managed
+    // configuration when there is one; the password is not kept anywhere.
+    var email by rememberSaveable {
+        mutableStateOf(ManagedConfiguration.current.expectedAccount.orEmpty())
+    }
+    var password by remember { mutableStateOf("") }
+    val ready = email.isNotBlank() && password.isNotEmpty()
+    val submit = { if (ready) onSubmit(email.trim(), password) }
+
+    OutlinedTextField(
+        value = email,
+        onValueChange = { email = it },
+        label = { Text(text = stringResource(R.string.sign_in_email_address)) },
+        singleLine = true,
+        keyboardOptions =
+        KeyboardOptions(keyboardType = KeyboardType.Email, imeAction = ImeAction.Next),
+    )
+
+    OutlinedTextField(
+        value = password,
+        onValueChange = { password = it },
+        label = { Text(text = stringResource(R.string.sign_in_email_password)) },
+        singleLine = true,
+        visualTransformation = PasswordVisualTransformation(),
+        keyboardOptions =
+        KeyboardOptions(keyboardType = KeyboardType.Password, imeAction = ImeAction.Done),
+        keyboardActions = KeyboardActions(onDone = { submit() }),
+    )
+
+    Button(onClick = { submit() }, enabled = ready) {
+        Text(text = stringResource(R.string.sign_in_email_submit))
+    }
+
+    OutlinedButton(onClick = onBack) {
+        Text(text = stringResource(R.string.sign_in_email_back))
+    }
+
+    Text(
+        text = stringResource(R.string.sign_in_email_note),
+        style = MaterialTheme.typography.bodySmall,
+        color = MaterialTheme.colorScheme.onSurfaceVariant,
+        textAlign = TextAlign.Center,
+    )
 }

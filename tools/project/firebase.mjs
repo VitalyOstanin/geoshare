@@ -97,3 +97,91 @@ export function consoleLink(url, who) {
 
     return link.toString();
 }
+
+// The shortest password Identity Toolkit takes.
+const MIN_PASSWORD_LENGTH = 6;
+
+// Why a password file's permissions are refused, or '' when they are fine:
+// the password is a secret kept in a file, and a file other users can read
+// is not one. `mode` is the file's st_mode; only the permission bits count.
+export function permissionsProblem(mode, file) {
+    const bits = mode & 0o777;
+
+    if (bits === 0o600 || bits === 0o400) {
+        return '';
+    }
+
+    return `${file} holds a password and has permissions ${bits.toString(8)}; `
+        + `it must be 600 or 400 (chmod 600 ${file})`;
+}
+
+// The password out of the file's text: its first line, without the line
+// break. Throws with the reason when it is too short to be accepted, so the
+// refusal comes before any request is made.
+export function passwordFrom(text) {
+    const password = text.split(/\r?\n/)[0];
+
+    if (password.length < MIN_PASSWORD_LENGTH) {
+        throw new Error(`the password is too short: it has ${password.length} characters, `
+            + `at least ${MIN_PASSWORD_LENGTH} are needed (first line of the file, `
+            + 'without the line break)');
+    }
+
+    return password;
+}
+
+// Whether sign-in with an email address and a password is on, out of the
+// Identity Toolkit admin API's configuration of the project. JSON leaves out
+// a false boolean, so a provider that is off comes back without the field.
+export function emailSignInOn(body) {
+    return JSON.parse(body).signIn?.email?.enabled === true;
+}
+
+// The code Identity Toolkit gives for a refusal (EMAIL_EXISTS, WEAK_PASSWORD,
+// INVALID_EMAIL, ...), out of error.message, which is the code optionally
+// followed by " : " and a hint. Empty when the answer is no error body at all.
+export function errorCode(body) {
+    let message;
+
+    try {
+        message = JSON.parse(body).error?.message;
+    } catch {
+        return '';
+    }
+
+    return typeof message === 'string' ? message.split(' : ')[0].trim() : '';
+}
+
+// The uid of the account with the address looked up, or '' when there is none:
+// a lookup of an address nobody has answers without a users list at all.
+export function lookupUid(body) {
+    return JSON.parse(body).users?.[0]?.localId ?? '';
+}
+
+// The uid of the account that was just made, out of accounts:create's answer.
+export function createdUid(body) {
+    const uid = JSON.parse(body).localId;
+
+    if (!uid) {
+        throw new Error('the answer names no uid');
+    }
+
+    return uid;
+}
+
+// What to tell whoever ran a command that Identity Toolkit refused: the
+// code's own plain words, with the way out where there is one.
+export function refusalText({ code, status, project, email }) {
+    switch (code) {
+        case 'EMAIL_EXISTS':
+            return `${email} already has an account in ${project}; to change its password run `
+                + `\`tools/project.sh set-password ${project} --email ${email} `
+                + '--password-file <file>`';
+        case 'WEAK_PASSWORD':
+            return 'Firebase refuses the password as too weak; use a longer one';
+        case 'INVALID_EMAIL':
+            return `${email} is not an address Firebase accepts`;
+        default:
+            return `Identity Toolkit refused the request: ${code || `HTTP ${status}`}`;
+    }
+}

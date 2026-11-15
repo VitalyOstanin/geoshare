@@ -37,3 +37,26 @@ allow it. Members see the same screen once, the first time they sign in.
 
 **Leave alone:** the Blaze plan, billing, and Firebase AI Logic. The project
 works on the free plan, and with AI Logic on, anybody could spend its quota.
+
+**Only for a device without a Google account: sign-in with a password.**
+A device that must not carry a Google account signs in with an address and a
+password the project owner makes for it
+([ADR-0046](ADR/0046-a-device-signs-in-with-a-password.md)). Skip this unless
+the group has such a device. Turn the provider on once: in
+`https://console.firebase.google.com/project/<project-id>/authentication/providers`
+press Add new provider, Email/Password, Enable (leave "Email link" off),
+Save — or run `tools/project.sh enable-email-sign-in <project-id>`. Then put
+the password in a file only you can read and make the account:
+
+```sh
+install -m 600 /dev/null ~/.config/geoshare/device-password
+# write the password into that file with an editor, on one line
+tools/project.sh add-account <project-id> --email you+device@gmail.com \
+    --password-file ~/.config/geoshare/device-password
+```
+
+An address with `+something` reaches your own mailbox, and to Firebase it is
+an address of its own. The account is made already verified, so an
+administrator can make an invitation out to it. To change the password later,
+write the new one into the file and run `tools/project.sh set-password` with
+the same options; the device then asks to sign in again.

@@ -122,6 +122,12 @@ tools/project.sh delete <project-id> --yes [--json]
   30 days, and restorable by its owner until then. Without `--yes` it only
   says what it would remove.
 
+A device that must not carry a Google account signs in with an address and a
+password instead. The project owner turns that provider on and makes the
+account with `tools/project.sh enable-email-sign-in`, `add-account` and
+`set-password`; the step by step is at the end of
+[the console steps](console-steps.md).
+
 ## Reading the result with --json
 
 With `--json` everything meant for a person goes to standard error, and

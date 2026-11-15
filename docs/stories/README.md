@@ -111,6 +111,7 @@ Each story names its records in `ADR`; the same links the other way round:
 | 43 | [0043](../ADR/0043-a-device-policy-controller-configures-sharing.md)    | A device policy controller configures sharing                          | DEV-15                                                         |
 | 44 | [0044](../ADR/0044-stand-in-sign-in-from-the-shell.md)                  | A debug build signs in a stand-in account from the shell               | — (development only)                                           |
 | 45 | [0045](../ADR/0045-control-requests-read-the-configuration-afresh.md)   | Every control request reads the managed configuration afresh           | DEV-15                                                         |
+| 46 | [0046](../ADR/0046-a-device-signs-in-with-a-password.md)                | A device without a Google account signs in with a password             | OWN-11, MEM-23                                                 |
 
 Stories that rest on no record: OWN-07, OWN-10, ADM-10, ADM-11, MEM-06, MEM-11,
 MEM-12, MEM-15, MEM-22, DEV-05, DEV-06, DEV-12, DEV-14.

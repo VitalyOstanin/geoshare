@@ -118,6 +118,23 @@ class SignInControllerTest {
         assertEquals(AuthState.SignedOut(SignInFailure.Offline), controller.state.value)
     }
 
+    @Test
+    fun `an email sign-in trims the address and a refusal says why`() = runBlocking {
+        val controller = started()
+        val failed =
+            mockk<Task<AuthResult>> {
+                every { isComplete } returns true
+                every { isCanceled } returns false
+                every { exception } returns FirebaseAuthException("ERROR_WRONG_PASSWORD", "no")
+            }
+        every { auth.signInWithEmailAndPassword(any(), any()) } returns failed
+
+        controller.signInWithEmail("  anna@example.org ", "secret")
+
+        verify { auth.signInWithEmailAndPassword("anna@example.org", "secret") }
+        assertEquals(AuthState.SignedOut(SignInFailure.WrongCredentials), controller.state.value)
+    }
+
     @After
     fun forgetTheStatics() {
         unmockkStatic(OAuthProvider::class, LocalBroadcastManager::class)
