@@ -13,7 +13,7 @@ export const JOIN_RU = {
     joinInvitedNoGroup: (by) => `${by} приглашает вас в группу`,
     joinInvitedBare: 'Приглашение в группу',
     joinInvitedFor: (address) =>
-        `Приглашение выдано на адрес ${address}: входите в приложении этим аккаунтом Google.`,
+        `Приглашение выдано на адрес ${address}: входите в приложение с этим адресом.`,
 
     joinOpen: 'Открыть в приложении',
     joinDownload: 'Скачать приложение',

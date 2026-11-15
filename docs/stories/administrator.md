@@ -8,7 +8,7 @@ administrator does too; the stories here are what only an administrator does.
 
 - [ADM-01 Found the group](#adm-01-found-the-group)
 - [ADM-02 Rename the group](#adm-02-rename-the-group)
-- [ADM-03 Invite a person by their Google address](#adm-03-invite-a-person-by-their-google-address)
+- [ADM-03 Invite a person by the address they sign in with](#adm-03-invite-a-person-by-the-address-they-sign-in-with)
 - [ADM-04 Take a member off the roster](#adm-04-take-a-member-off-the-roster)
 - [ADM-05 Make a member an administrator, or stop being one](#adm-05-make-a-member-an-administrator-or-stop-being-one)
 - [ADM-06 See who is in the group and whether their devices are alive](#adm-06-see-who-is-in-the-group-and-whether-their-devices-are-alive)
@@ -64,14 +64,16 @@ Acceptance:
 - only an administrator may change the name;
 - every device and page of the group shows the new name without restarting.
 
-## ADM-03 Invite a person by their Google address
+## ADM-03 Invite a person by the address they sign in with
 
 - Status: done
-- ADR: 0015, 0017, 0018, 0019, 0025
+- ADR: 0015, 0017, 0018, 0019, 0025, 0046
 - Tests: rules `membership.test.mjs` (invitations; a code is spent by joining; joining on an invitation made out to an address); Android `AdminInvitationTest`, `InvitationQrTest`, `ConnectLinkTest`, `AdminPanelTest`; page `link.test.mjs`, `join.test.mjs`
 
-As an administrator I make an invitation for one Google address, so that only
-that person can join on the link and only once.
+As an administrator I make an invitation for the one address a person signs
+in with, their Google address or that of an account the project owner made
+for a device (ADR-0046), so that only that person can join on the link and
+only once.
 
 Acceptance:
 

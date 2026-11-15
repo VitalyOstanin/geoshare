@@ -17,7 +17,7 @@ export const JOIN_EN = {
     joinInvitedNoGroup: (by) => `${by} invited you to a group`,
     joinInvitedBare: 'Invitation to a group',
     joinInvitedFor: (address) =>
-        `The invitation is for ${address}: sign in to the app with this Google account.`,
+        `The invitation is for ${address}: sign in to the app with this address.`,
 
     // What the two buttons do.
     joinOpen: 'Open in the app',

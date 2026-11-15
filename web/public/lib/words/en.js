@@ -303,7 +303,7 @@ export const EN = {
     groupMakeInvitation: 'Invite a new member to the group',
     groupMakeAnotherInvitation: 'Make another invitation',
     groupInviteTitle: (name) => `Invite to “${name}”`,
-    groupInviteEmailLabel: "Member's Google address",
+    groupInviteEmailLabel: 'Address the member signs in to the app with',
     groupInviteNote: 'Only whoever signs into the application with this address will be able '
         + 'to join. The invitation lasts a day.',
     groupInviteCreate: 'Create',

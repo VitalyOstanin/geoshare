@@ -311,7 +311,7 @@ export const RU = {
     groupMakeInvitation: 'Пригласить нового участника в группу',
     groupMakeAnotherInvitation: 'Создать другое приглашение',
     groupInviteTitle: (name) => `Пригласить в группу «${name}»`,
-    groupInviteEmailLabel: 'Адрес Google участника',
+    groupInviteEmailLabel: 'Адрес, с которым участник входит в приложение',
     groupInviteNote: 'Вступить сможет только тот, кто войдёт в приложение с этим адресом. '
         + 'Приглашение действует сутки.',
     groupInviteCreate: 'Создать',
