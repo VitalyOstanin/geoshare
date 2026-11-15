@@ -122,25 +122,35 @@ class SharingControlService : Service() {
         )
     }
 
+    /**
+     * Judged against the managed configuration as it stands at this request, read afresh rather
+     * than taken from what the application last heard: the platform tells a running process of a
+     * new configuration by a broadcast that may come after the controller's first request, or
+     * not at all, and a controller that has just been added would then be refused. The read is
+     * published as well, so the screens follow it.
+     */
     private fun callerIsTrusted(uid: Int): Boolean {
-        val list = ManagedConfiguration.current.trustedControllers
-        if (list.isEmpty()) return false
-
         val names = packageManager.getPackagesForUid(uid)?.toList().orEmpty()
-        val trusted = Protocol.callerTrusted(
-            list,
+        val trust = Protocol.trustOf(
+            ManagedConfiguration.refresh(this),
             names.associateWith { certificateDigests(this, it) },
         )
-        if (!trusted) {
-            // Written with the package named, so a controller whose digest is wrong in the
-            // configuration can be seen to be the one asking.
-            AppLog.w(TAG, "control refused for uid $uid, packages ${names.ifEmpty { "none" }}")
+        if (trust != Protocol.Trust.Trusted && refusals.shouldWrite("$uid $trust")) {
+            // Written with the reason and the package named, so a controller whose digest is
+            // wrong in the configuration can be seen to be the one asking.
+            AppLog.w(
+                TAG,
+                "control refused for uid $uid, packages ${names.ifEmpty { "none" }}: $trust",
+            )
         }
-        return trusted
+        return trust == Protocol.Trust.Trusted
     }
 
     private companion object {
         const val TAG = "SharingControl"
+
+        /** Shared by every instance: the service is created anew for each binding. */
+        val refusals = RefusalLog()
 
         fun bundleOf(fields: Map<String, Any>): Bundle = Bundle().apply {
             for ((key, value) in fields) {

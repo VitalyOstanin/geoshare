@@ -50,5 +50,6 @@ date is the decision's.
 | 0040 | [A map nobody touches stops claiming that somebody is looking](0040-an-untouched-map-stops-claiming-a-look.md)         | Accepted                                     | 2026-10-18 |
 | 0041 | [A place saved long ago is not written as the current one](0041-a-place-saved-long-ago-is-not-written.md)              | Superseded by 0042                           | 2026-10-20 |
 | 0042 | [An answer whose time is long past is not written](0042-an-answer-whose-time-is-long-past-is-not-written.md)           | Accepted                                     | 2026-10-20 |
-| 0043 | [A device policy controller configures sharing](0043-a-device-policy-controller-configures-sharing.md)                 | Accepted                                     | 2026-11-14 |
+| 0043 | [A device policy controller configures sharing](0043-a-device-policy-controller-configures-sharing.md)                 | Accepted, supplemented by 0045               | 2026-11-14 |
 | 0044 | [A debug build signs in a stand-in account from the shell](0044-stand-in-sign-in-from-the-shell.md)                    | Accepted                                     | 2026-11-15 |
+| 0045 | [Every control request reads the managed configuration afresh](0045-control-requests-read-the-configuration-afresh.md) | Accepted                                     | 2026-11-15 |

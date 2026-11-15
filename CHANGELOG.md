@@ -37,7 +37,9 @@ and the versions follow [Semantic Versioning](https://semver.org/).
   without such a configuration works as before.
 - Applications the configuration names, each with the SHA-256 of its
   signing certificate, can start and stop sharing and ask its state through
-  a control service; any other caller is refused (ADR-0043).
+  a control service; any other caller is refused (ADR-0043). Each request
+  is judged against the configuration as it stands at that moment, so a
+  controller added while the application runs is let in at once (ADR-0045).
 
 ### Changed
 

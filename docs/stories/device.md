@@ -277,8 +277,8 @@ Acceptance:
 ## DEV-15 Follow the device policy controller of a managed device
 
 - Status: done
-- ADR: 0043
-- Tests: Android `ManagedSettingsTest`, `TrustedControllersTest`, `SharingControlProtocolTest`, `ManagedSharingTest`, `ManagedLinkOfferTest`, `ExpectedAccountTest`, `CollectionModeTest`, `ModeSelectionTest`, `ManifestTest`, `ManagedLocksTest`
+- ADR: 0043, 0045
+- Tests: Android `ManagedSettingsTest`, `TrustedControllersTest`, `SharingControlProtocolTest`, `ControlTrustTest`, `ManagedSharingTest`, `ManagedLinkOfferTest`, `ExpectedAccountTest`, `CollectionModeTest`, `ModeSelectionTest`, `ManifestTest`, `ManagedLocksTest`
 - Not covered: the control service answering a real bound caller, and the locked controls on the screen, are checked on a managed device by hand
 
 As a device set up with a device policy controller (a device owner or MDM

@@ -18,18 +18,23 @@ object ManagedConfiguration {
     val current: ManagedSettings get() = settings.value
 
     /**
-     * Reads the application restrictions and publishes them. A device with no controller yields
-     * an empty bundle, hence [ManagedSettings.NONE]; a read that fails keeps what was there
-     * rather than dropping the controller's locks for a moment.
+     * Reads the application restrictions, publishes them and returns them. A device with no
+     * controller yields an empty bundle, hence [ManagedSettings.NONE]; a read that fails returns
+     * null and keeps what was published rather than dropping the controller's locks for a moment.
      */
-    fun refresh(context: Context) {
+    fun refresh(context: Context): ManagedSettings? = refreshWith {
         val manager = context.getSystemService(Context.RESTRICTIONS_SERVICE) as? RestrictionsManager
-            ?: return
+        manager?.let { ManagedSettings.fromBundle(it.applicationRestrictions) }
+    }
+
+    /** [refresh] with the reading handed in, so that a JVM test needs no system service. */
+    internal fun refreshWith(read: () -> ManagedSettings?): ManagedSettings? {
         val read = try {
-            ManagedSettings.fromBundle(manager.applicationRestrictions)
+            read()
         } catch (e: RuntimeException) {
-            return
-        }
+            null
+        } ?: return null
         settings.value = read
+        return read
     }
 }

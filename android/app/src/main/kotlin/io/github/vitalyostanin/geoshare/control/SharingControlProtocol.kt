@@ -1,5 +1,6 @@
 package io.github.vitalyostanin.geoshare.control
 
+import io.github.vitalyostanin.geoshare.managed.ManagedSettings
 import io.github.vitalyostanin.geoshare.managed.TrustedController
 import io.github.vitalyostanin.geoshare.managed.trusts
 import io.github.vitalyostanin.geoshare.service.StartRefusal
@@ -178,4 +179,37 @@ object SharingControlProtocol {
         list: List<TrustedController>,
         packages: Map<String, List<String>>,
     ): Boolean = packages.any { (name, digests) -> digests.any { trusts(list, name, it) } }
+
+    /** Whether a caller is let in, and when not, why — for the log, never for the caller. */
+    enum class Trust {
+        Trusted,
+
+        /** The managed configuration could not be read at the moment of the request. */
+        Unreadable,
+
+        /** The configuration names no controller at all. */
+        NoControllers,
+
+        /** None of the caller's packages is on the list. */
+        PackageNotListed,
+
+        /** A package of the caller is on the list, but with another certificate. */
+        CertificateMismatch,
+    }
+
+    /**
+     * [callerTrusted] against [settings] as read for this very request, with the reason when the
+     * answer is no. Null settings are a configuration that could not be read, and that refuses:
+     * an older copy might still name a controller the device policy controller has since removed.
+     */
+    fun trustOf(settings: ManagedSettings?, packages: Map<String, List<String>>): Trust {
+        val list = settings?.trustedControllers ?: return Trust.Unreadable
+        val listedByName = packages.keys.any { name -> list.any { it.packageName == name } }
+        return when {
+            list.isEmpty() -> Trust.NoControllers
+            callerTrusted(list, packages) -> Trust.Trusted
+            listedByName -> Trust.CertificateMismatch
+            else -> Trust.PackageNotListed
+        }
+    }
 }

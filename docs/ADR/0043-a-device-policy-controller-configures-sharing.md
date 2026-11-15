@@ -1,6 +1,6 @@
 # ADR-0043: A device policy controller configures sharing
 
-- Status: Accepted
+- Status: Accepted, supplemented by 0045
 - Date: 2026-11-14
 
 ## Context
