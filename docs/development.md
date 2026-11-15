@@ -101,6 +101,21 @@ pinned in `web/package.json`, where Dependabot raises them; the page's tests
 then fail until `tools/vendor-web.sh` has copied the new versions in and
 `lib/vendor` is committed with the bump.
 
+On the emulator the debug build talks to the stand-in services by itself, and
+the sign-in screen offers the stand-in accounts as buttons. A run with nobody
+to press them signs one in from the shell (ADR-0044); without `email` it is
+`parent@geoshare.test`, who is on the stand-in group's roster:
+
+```sh
+adb shell am broadcast --include-stopped-packages \
+    -a io.github.vitalyostanin.geoshare.debug.STAND_IN_SIGN_IN \
+    -n io.github.vitalyostanin.geoshare/.service.StandInSignInReceiver \
+    --es email parent@geoshare.test
+```
+
+`STAND_IN_SIGN_OUT` signs out the same way. The answer is the broadcast's
+result: `-1` and the account's uid, or `0` and the reason.
+
 `VARIANT=release tools/build.sh` makes the unsigned release package;
 `tools/sign-release.sh` signs it where the key is kept and refuses a key whose
 fingerprints are not the ones in

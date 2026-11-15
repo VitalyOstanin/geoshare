@@ -109,6 +109,7 @@ Each story names its records in `ADR`; the same links the other way round:
 | 41 | [0041](../ADR/0041-a-place-saved-long-ago-is-not-written.md)            | A place saved long ago is not written as the current one               | — (superseded by 0042)                                         |
 | 42 | [0042](../ADR/0042-an-answer-whose-time-is-long-past-is-not-written.md) | An answer whose time is long past is not written                       | DEV-07                                                         |
 | 43 | [0043](../ADR/0043-a-device-policy-controller-configures-sharing.md)    | A device policy controller configures sharing                          | DEV-15                                                         |
+| 44 | [0044](../ADR/0044-stand-in-sign-in-from-the-shell.md)                  | A debug build signs in a stand-in account from the shell               | — (development only)                                           |
 
 Stories that rest on no record: OWN-07, OWN-10, ADM-10, ADM-11, MEM-06, MEM-11,
 MEM-12, MEM-15, MEM-22, DEV-05, DEV-06, DEV-12, DEV-14.
