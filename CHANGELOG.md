@@ -46,7 +46,9 @@ and the versions follow [Semantic Versioning](https://semver.org/).
   account, already verified, with `tools/project.sh add-account`, changes
   its password with `tools/project.sh set-password`, and turns the
   Email/Password provider on with `tools/project.sh enable-email-sign-in`
-  in a project that needs it. The rules do not change.
+  in a project that needs it. `tools/project.sh set-name`, or `--name` on
+  `add-account`, gives such an account the name the members see. The rules
+  do not change.
 
 ### Changed
 

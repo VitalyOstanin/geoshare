@@ -46,6 +46,8 @@
   командой `tools/project.sh add-account`, меняет пароль командой
   `tools/project.sh set-password` и включает провайдер Email/Password
   командой `tools/project.sh enable-email-sign-in` в проекте, где он нужен.
+  Имя, которое видят участники, задаётся командой
+  `tools/project.sh set-name` или параметром `--name` у `add-account`.
   Правила не меняются.
 
 ### Изменено

@@ -60,3 +60,8 @@ an address of its own. The account is made already verified, so an
 administrator can make an invitation out to it. To change the password later,
 write the new one into the file and run `tools/project.sh set-password` with
 the same options; the device then asks to sign in again.
+
+The members see such an account by its shortened address until it has a
+name: add `--name "<name>"` to `add-account`, or give it one later with
+`tools/project.sh set-name <project-id> --email <address> --name "<name>"`.
+The device publishes the name when it next signs in.

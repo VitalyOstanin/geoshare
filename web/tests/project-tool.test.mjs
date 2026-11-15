@@ -18,6 +18,7 @@ import {
     googleSignInOn,
     listedShaHashes,
     lookupUid,
+    nameProblem,
     passwordFrom,
     permissionsProblem,
     refusalText,
@@ -35,6 +36,7 @@ import {
     createResult,
     deleteResult,
     emailSignInResult,
+    nameResult,
     passwordResult,
     showResult,
     updateResult,
@@ -250,4 +252,26 @@ test('account results name the account and never carry a password', () => {
         emailSignIn: true,
     });
     assert.ok(!JSON.stringify(passwordResult(given)).includes('password":'));
+});
+
+test('a name is refused when it is empty or longer than the rules take', () => {
+    assert.equal(nameProblem('  Лена '), null);
+    assert.equal(nameProblem('   '), 'the name is empty');
+    assert.equal(nameProblem(undefined), 'the name is empty');
+    assert.equal(nameProblem('я'.repeat(100)), null);
+    assert.equal(
+        nameProblem('я'.repeat(101)),
+        'the name has 101 characters, at most 100 are taken',
+    );
+});
+
+test('set-name reports the name it gave', () => {
+    const given = { projectId: 'p', email: 'a+kid@example.org', uid: 'u1', name: 'Лена' };
+
+    assert.deepEqual(nameResult(given), {
+        projectId: 'p',
+        email: 'a+kid@example.org',
+        uid: 'u1',
+        displayName: 'Лена',
+    });
 });

@@ -185,3 +185,26 @@ export function refusalText({ code, status, project, email }) {
             return `Identity Toolkit refused the request: ${code || `HTTP ${status}`}`;
     }
 }
+
+// The longest name the rules take for a member's profile; the device writes
+// the account's name there, so a longer one would cost the device its profile.
+export const LONGEST_NAME = 100;
+
+/**
+ * The name an account goes by, trimmed, or a refusal: an empty one would leave
+ * the member shown by their address again, and one past what the rules take
+ * would never reach the other members.
+ */
+export function nameProblem(name) {
+    const trimmed = typeof name === 'string' ? name.trim() : '';
+
+    if (trimmed === '') {
+        return 'the name is empty';
+    }
+
+    if (trimmed.length > LONGEST_NAME) {
+        return `the name has ${trimmed.length} characters, at most ${LONGEST_NAME} are taken`;
+    }
+
+    return null;
+}

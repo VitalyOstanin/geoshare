@@ -8,8 +8,9 @@
 #   tools/project.sh update <project-id> [--json]
 #   tools/project.sh delete <project-id> --yes [--json]
 #   tools/project.sh enable-email-sign-in <project-id> [--json]
-#   tools/project.sh add-account <project-id> --email <address> --password-file <file> [--json]
+#   tools/project.sh add-account <project-id> --email <address> --password-file <file> [--name <name>] [--json]
 #   tools/project.sh set-password <project-id> --email <address> --password-file <file> [--json]
+#   tools/project.sh set-name <project-id> --email <address> --name <name> [--json]
 #   any of them with [--account <google-address>]
 #
 # The project is named on every run, so one machine looks after several
@@ -50,7 +51,10 @@
 # password instead: `enable-email-sign-in` turns that provider on (the
 # console's Authentication, Sign-in method, Email/Password), `add-account`
 # makes the account and `set-password` changes the password of one that is
-# there; the last two stop when the provider is off. They ask the same
+# there; the last two stop when the provider is off. `set-name`, or --name on
+# `add-account`, gives the account the name the members see: the device
+# writes the account's name into its profile, and an account without one is
+# shown by its shortened address. They ask the same
 # Identity Toolkit API the Admin SDK does, with the firebase command line's
 # own sign-in. The password is read from the first line of --password-file,
 # which must have permissions 600 or 400 and at least 6 characters; it goes
@@ -157,7 +161,7 @@ project_js() {
 }
 
 usage() {
-    sed -n '5,13p' "${BASH_SOURCE[0]}" | sed 's/^# //' >&2
+    sed -n '5,14p' "${BASH_SOURCE[0]}" | sed 's/^# //' >&2
     exit 2
 }
 
@@ -1039,7 +1043,7 @@ add_account() {
 
     echo "==> account ${email}"
     identity_send POST "$(identity_url v1 "${project}" /accounts)" \
-        < <(project_js account-body --email "${email}" --file "${file}")
+        < <(project_js account-body --email "${email}" --file "${file}" --name "${name}")
     identity_require_ok "${project}" "${email}"
     uid="$(project_js created-uid <<< "${identity_body}")"
 
@@ -1088,6 +1092,38 @@ EOF
     fi
 }
 
+# Gives an account the name the members see. The device takes it from the
+# account when it signs in and writes it into its profile in the group; a
+# device signed in already keeps the name it published until then.
+set_name() {
+    local project="$1" email="$2" display="$3"
+    local uid
+
+    echo "==> account ${email}"
+    identity_send POST "$(identity_url v1 "${project}" /accounts:lookup)" \
+        < <(project_js lookup-body --email "${email}")
+    identity_require_ok "${project}" "${email}"
+    uid="$(project_js lookup-uid <<< "${identity_body}")"
+
+    if [[ -z "${uid}" ]]; then
+        echo "${project} has no account with the address ${email}; \`add-account\` makes one" >&2
+        exit 1
+    fi
+
+    identity_send POST "$(identity_url v1 "${project}" /accounts:update)" \
+        < <(project_js name-body --uid "${uid}" --name "${display}")
+    identity_require_ok "${project}" "${email}"
+
+    echo "    named \"${display}\", uid ${uid}"
+    echo
+    echo "A device signed in with ${email} publishes the name when it next signs in."
+
+    if (( json_mode )); then
+        project_js name-result --project "${project}" --email "${email}" \
+            --uid "${uid}" --name "${display}" >&3
+    fi
+}
+
 # The free plan's limits the project's usage is held against. Firestore's are
 # from https://firebase.google.com/docs/firestore/quotas and are not published
 # as metrics; Hosting's are, and are read alongside its usage instead.
@@ -1123,7 +1159,6 @@ project="$2"
 shift 2
 
 location="${DEFAULT_LOCATION}"
-name="geoshare"
 sha_from=""
 sha_given=()
 json_mode=0
@@ -1135,6 +1170,7 @@ account=""
 account_args=()
 email=""
 password_file=""
+name=""
 
 while [[ $# -gt 0 ]]; do
     case "$1" in
@@ -1166,7 +1202,7 @@ if (( json_mode )); then
 fi
 
 case "${command}" in
-    create) require_login; create "${project}" "${location}" "${name}" "${sha_from}" ;;
+    create) require_login; create "${project}" "${location}" "${name:-geoshare}" "${sha_from}" ;;
     show) require_login; require_access "${project}"; show "${project}" "${wait_google}" "${with_usage}" ;;
     update) require_login; require_access "${project}"; update "${project}" ;;
     delete) require_login; require_access "${project}"; delete_project "${project}" ;;
@@ -1176,6 +1212,7 @@ case "${command}" in
         # password file others can read, or a password too short.
         [[ -n "${email}" && -n "${password_file}" ]] || usage
         project_js check-password --file "${password_file}" || exit 1
+        [[ -z "${name}" ]] || project_js check-name --name "${name}" || exit 1
         require_login; require_access "${project}"
 
         if [[ "${command}" == "add-account" ]]; then
@@ -1183,6 +1220,12 @@ case "${command}" in
         else
             set_password "${project}" "${email}" "${password_file}"
         fi
+        ;;
+    set-name)
+        [[ -n "${email}" && -n "${name}" ]] || usage
+        project_js check-name --name "${name}" || exit 1
+        require_login; require_access "${project}"
+        set_name "${project}" "${email}" "${name}"
         ;;
     *) usage ;;
 esac

@@ -70,3 +70,8 @@ export function passwordResult({ projectId, email, uid }) {
 export function emailSignInResult({ projectId }) {
     return { projectId, emailSignIn: true };
 }
+
+// The result of `set-name`.
+export function nameResult({ projectId, email, uid, name }) {
+    return { projectId, email, uid, displayName: name };
+}

@@ -201,5 +201,7 @@ Acceptance:
 - `tools/project.sh add-account` makes the account already verified, and
   `tools/project.sh set-password` changes its password;
 - the password is read from a file of mode 600 or 400 and never printed;
+- `--name` on `add-account`, or `tools/project.sh set-name`, gives the
+  account the name the members see instead of its shortened address;
 - both stop and say how to turn the provider on while Email/Password is off,
   and `tools/project.sh enable-email-sign-in` turns it on.

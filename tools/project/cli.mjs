@@ -22,6 +22,7 @@ import {
     googleSignInOn,
     listedShaHashes,
     lookupUid,
+    nameProblem,
     passwordFrom,
     permissionsProblem,
     refusalText,
@@ -32,6 +33,7 @@ import {
     createResult,
     deleteResult,
     emailSignInResult,
+    nameResult,
     passwordResult,
     showResult,
     updateResult,
@@ -96,11 +98,22 @@ const tasks = {
     // Refuses a password file before any request is made.
     'check-password': ({ file }) => void passwordOf(file),
     // JSON bodies for curl --data-binary @-, the only place a password goes.
-    'account-body': ({ email, file }) => console.log(JSON.stringify({
+    'account-body': ({ email, file, name }) => console.log(JSON.stringify({
         email,
         password: passwordOf(file),
         emailVerified: true,
+        ...(name ? { displayName: name.trim() } : {}),
     })),
+    // Refuses a name before any request is made.
+    'check-name': ({ name }) => {
+        const problem = nameProblem(name);
+
+        if (problem) {
+            throw new Error(problem);
+        }
+    },
+    'name-body': ({ uid, name }) =>
+        console.log(JSON.stringify({ localId: uid, displayName: name.trim() })),
     'lookup-body': ({ email }) => console.log(JSON.stringify({ email: [email] })),
     'update-body': ({ uid, file }) =>
         console.log(JSON.stringify({ localId: uid, password: passwordOf(file) })),
@@ -117,6 +130,9 @@ const tasks = {
         console.log(JSON.stringify(accountResult({ projectId: project, email, uid }))),
     'password-result': ({ project, email, uid }) =>
         console.log(JSON.stringify(passwordResult({ projectId: project, email, uid }))),
+    'name-result': ({ project, email, uid, name }) => console.log(JSON.stringify(
+        nameResult({ projectId: project, email, uid, name: name.trim() }),
+    )),
     'email-sign-in-result': ({ project }) =>
         console.log(JSON.stringify(emailSignInResult({ projectId: project }))),
 
@@ -133,6 +149,7 @@ const { positionals, values } = parseArgs({
         email: { type: 'string' },
         file: { type: 'string' },
         google: { type: 'string' },
+        name: { type: 'string' },
         owner: { type: 'string' },
         project: { type: 'string' },
         site: { type: 'string' },
