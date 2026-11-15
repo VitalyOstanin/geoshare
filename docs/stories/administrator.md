@@ -14,7 +14,7 @@ administrator does too; the stories here are what only an administrator does.
 - [ADM-06 See who is in the group and whether their devices are alive](#adm-06-see-who-is-in-the-group-and-whether-their-devices-are-alive)
 - [ADM-07 Open a search for a lost device](#adm-07-open-a-search-for-a-lost-device)
 - [ADM-08 Make a lost device sound](#adm-08-make-a-lost-device-sound)
-- [ADM-09 Reset the place of a stuck device](#adm-09-reset-the-place-of-a-stuck-device)
+- [ADM-09 Reset the position of a stuck device](#adm-09-reset-the-position-of-a-stuck-device)
 - [ADM-10 Record the places where receivers are lied to](#adm-10-record-the-places-where-receivers-are-lied-to)
 - [ADM-11 Start an update of the application on a member's device](#adm-11-start-an-update-of-the-application-on-a-members-device)
 - [ADM-12 Not see a member's place without their permission](#adm-12-not-see-a-members-place-without-their-permission)
@@ -184,7 +184,7 @@ Acceptance:
 - the caller sees whether the device is waiting, sounding or stopped;
 - the owner can stop it on the device, and the caller from outside.
 
-## ADM-09 Reset the place of a stuck device
+## ADM-09 Reset the position of a stuck device
 
 - Status: partly — as ADM-08, the device acts when it next wakes
 - ADR: 0014, 0026, 0029

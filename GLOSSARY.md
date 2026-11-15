@@ -328,7 +328,10 @@ nobody else. Never deleted, only called again.
 **Reset** — `groups/{groupId}/resets/{uid}.{deviceId}`. Fields: `askedBy`,
 `askedAt`, `doneAt`. A request that the device forget the last place it
 believed — the anchor a *jump* is measured from — pressed from somebody else's
-screen. The same writers and readers as a siren; the device adds `doneAt`.
+screen. On screen it is "Reset the position" ("Сбросить позицию"): the anchor is
+the last position the device wrote, and the card around the button speaks of
+positions, so a second word for the same thing would read as another one. The
+position document itself stays until the next one replaces it. The same writers and readers as a siren; the device adds `doneAt`.
 Never deleted, only asked again.
 
 ### How they relate

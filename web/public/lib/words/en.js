@@ -348,7 +348,7 @@ export const EN = {
     helpSearch: 'Open a search for the device: the whole group sees it on the map, even those it was never shared with',
     helpSearchStanding: 'A search for the device is on. Press it once it is found',
     helpRemove: 'Remove the device: it disappears from the map and the lists of everybody',
-    helpReset: 'Reset the place: the device forgets its last place and takes the next one, when its marker is stuck',
+    helpReset: 'Reset the position: the device forgets its last position and takes the next one, when its marker is stuck',
     helpFollowNone: 'The map stays where it is',
     helpFollowOne: 'The map keeps the chosen member in the middle',
     helpFollowAll: 'Everybody in view',
@@ -373,15 +373,15 @@ export const EN = {
     sirenSounding: (phone, seconds) => `siren on ${phone} · ${seconds} s · the device answered`,
     sirenNoAnswer: (phone) => `${phone} did not answer the siren`,
     sirenStopped: (phone) => `siren on ${phone} stopped`,
-    resetHint: 'Reset the place',
-    resetTitle: (phone) => `Reset the place on ${phone}?`,
+    resetHint: 'Reset the position',
+    resetTitle: (phone) => `Reset the position on ${phone}?`,
     resetNote:
-        'The device forgets its last place and takes the next one, however far it is from the old one. ' +
+        'The device forgets its last position and takes the next one, however far it is from the old one. ' +
         'It helps when a marker on the map is stuck and does not move.',
     resetGo: 'Reset',
-    resetWaiting: (time) => `place reset at ${time} · waiting for the device`,
-    resetDone: (time) => `place reset at ${time} · the device took it`,
-    resetNoAnswer: 'the device did not answer the place reset',
+    resetWaiting: (time) => `position reset at ${time} · waiting for the device`,
+    resetDone: (time) => `position reset at ${time} · the device took it`,
+    resetNoAnswer: 'the device did not answer the position reset',
     groupUnrun: 'Nobody runs this group, so its members are set from the Firebase console.',
     // Shown until a group is given a name of its own (ADR-0016).
     groupUnnamed: (name) => `${name}'s group`,
