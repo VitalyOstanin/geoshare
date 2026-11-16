@@ -97,7 +97,7 @@ jobs:
 
       - name: Scan the target branch
         id: scan-old
-        uses: google/osv-scanner-action/osv-scanner-action@b1d267aea5211fa648d9d442fa64b90dbdcbdd36 # v2.7.0
+        uses: google/osv-scanner-action/osv-scanner-action@32d3cd482bdadfb38b186c0ad1b031902d55d932 # v2.7.1
         env:
           GOTOOLCHAIN: auto
         # The scanner exits non-zero both on vulnerabilities, which the reporter
@@ -116,7 +116,7 @@ jobs:
 
       - name: Scan the pull request
         id: scan-new
-        uses: google/osv-scanner-action/osv-scanner-action@b1d267aea5211fa648d9d442fa64b90dbdcbdd36 # v2.7.0
+        uses: google/osv-scanner-action/osv-scanner-action@32d3cd482bdadfb38b186c0ad1b031902d55d932 # v2.7.1
         env:
           GOTOOLCHAIN: auto
         continue-on-error: true
@@ -152,7 +152,7 @@ jobs:
           exit "${status}"
 
       - name: Report the new vulnerabilities
-        uses: google/osv-scanner-action/osv-reporter-action@b1d267aea5211fa648d9d442fa64b90dbdcbdd36 # v2.7.0
+        uses: google/osv-scanner-action/osv-reporter-action@32d3cd482bdadfb38b186c0ad1b031902d55d932 # v2.7.1
         with:
           scan-args: |-
             --output=results.sarif
@@ -195,7 +195,7 @@ jobs:
 
       - name: Scan
         id: scan
-        uses: google/osv-scanner-action/osv-scanner-action@b1d267aea5211fa648d9d442fa64b90dbdcbdd36 # v2.7.0
+        uses: google/osv-scanner-action/osv-scanner-action@32d3cd482bdadfb38b186c0ad1b031902d55d932 # v2.7.1
         env:
           GOTOOLCHAIN: auto
         continue-on-error: true
@@ -218,7 +218,7 @@ jobs:
           fi
 
       - name: Report the vulnerabilities
-        uses: google/osv-scanner-action/osv-reporter-action@b1d267aea5211fa648d9d442fa64b90dbdcbdd36 # v2.7.0
+        uses: google/osv-scanner-action/osv-reporter-action@32d3cd482bdadfb38b186c0ad1b031902d55d932 # v2.7.1
         with:
           scan-args: |-
             --output=results.sarif
