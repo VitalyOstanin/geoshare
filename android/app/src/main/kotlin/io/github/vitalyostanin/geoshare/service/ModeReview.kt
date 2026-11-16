@@ -11,6 +11,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
@@ -19,6 +20,7 @@ import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.merge
 import kotlinx.coroutines.flow.onCompletion
 import kotlinx.coroutines.flow.shareIn
 import java.time.Duration
@@ -66,6 +68,19 @@ internal class ModeReview(
         ownMap: Boolean,
     ) -> CollectionMode,
 ) {
+    private val nudges = MutableStateFlow(0)
+
+    /**
+     * Reconsiders the mode now rather than at the next tick of the timer.
+     *
+     * The timer is a delay, and a delay does not run while the processor sleeps;
+     * the alarm that wakes the service calls this so that the night ending is
+     * noticed when the device wakes rather than a minute after.
+     */
+    fun reviewNow() {
+        nudges.value++
+    }
+
     /**
      * The mode as it stands, and again whenever it changes.
      *
@@ -76,13 +91,14 @@ internal class ModeReview(
      */
     @OptIn(ExperimentalCoroutinesApi::class)
     fun modes(): Flow<CollectionMode> {
-        val reviews =
+        val ticks =
             flow {
                 while (true) {
                     emit(Unit)
                     delay(MODE_REVIEW.toMillis())
                 }
             }
+        val reviews = merge(ticks, nudges.map { })
 
         // Every group the device is linked to, each saying when its watching
         // runs out; a group joined or left while the service runs is followed

@@ -32,8 +32,8 @@ data class CollectionState(
 /** Below this the device stops trying to be useful and starts trying to last. */
 const val LOW_BATTERY_PERCENT: Int = 15
 
-private val NIGHT_START: LocalTime = LocalTime.of(23, 0)
-private val NIGHT_END: LocalTime = LocalTime.of(7, 0)
+internal val NIGHT_START: LocalTime = LocalTime.of(23, 0)
+internal val NIGHT_END: LocalTime = LocalTime.of(7, 0)
 
 /**
  * The whole policy, as one function of its inputs.

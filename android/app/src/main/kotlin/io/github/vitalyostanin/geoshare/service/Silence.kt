@@ -4,7 +4,9 @@ import io.github.vitalyostanin.geoshare.collection.CollectionMode
 import io.github.vitalyostanin.geoshare.collection.Fix
 import io.github.vitalyostanin.geoshare.collection.IDLE_REPEAT
 import io.github.vitalyostanin.geoshare.log.AppLog
+import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.withTimeoutOrNull
 import java.time.Duration
 import java.time.Instant
 
@@ -36,6 +38,20 @@ internal class Silence {
      * device was there.
      */
     var wroteAt: Instant? = null
+
+    /** Tells a waiting [rescue] to look at the clock now rather than when its delay ends. */
+    private val looks = Channel<Unit>(Channel.CONFLATED)
+
+    /**
+     * Makes [rescue] measure the silence again at once.
+     *
+     * Its delay counts time the processor is awake, so after a night in deep
+     * sleep it still has most of its wait to go; the alarm that woke the device
+     * calls this instead of waiting it out.
+     */
+    fun lookNow() {
+        looks.trySend(Unit)
+    }
 
     /**
      * Repeats the last position while the mode asks for nothing.
@@ -92,7 +108,7 @@ internal class Silence {
             val quiet = Duration.between(heardAt, Instant.now())
 
             if (quiet < silence) {
-                delay((silence - quiet).toMillis())
+                withTimeoutOrNull((silence - quiet).toMillis()) { looks.receive() }
 
                 continue
             }

@@ -58,9 +58,9 @@ Acceptance:
 ## DEV-03 Spend little while standing still
 
 - Status: done
-- ADR: 0010
+- ADR: 0010, 0047
 - Tests: Android `GeofenceTest`, `StillnessTest`, `MovementTest`, `ModeSelectionTest`,
-  `FixSieveTest`
+  `FixSieveTest`, `WakeScheduleTest`
 - Not covered: battery, measured on a device
 
 As a member I let my device stay quiet while I do not move, so that a day at
@@ -71,7 +71,9 @@ Acceptance:
 - moving is learnt from the system's activity transitions;
 - standing still inside a 150 m geofence keeps the receiver off;
 - an idle device rewrites the same point about every 25 minutes so that it
-  does not go grey, and `takenAt` keeps when it was measured.
+  does not go grey, and `takenAt` keeps when it was measured;
+- a device in deep sleep is woken by an alarm when its silence reaches the
+  rescue or the night begins or ends, no sooner than nine minutes apart.
 
 ## DEV-04 Work without Google Play services
 

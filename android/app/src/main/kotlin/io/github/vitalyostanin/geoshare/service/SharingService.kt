@@ -3,6 +3,7 @@ package io.github.vitalyostanin.geoshare.service
 import android.content.Context
 import android.content.Intent
 import android.content.pm.ServiceInfo
+import android.os.PowerManager
 import androidx.core.app.ServiceCompat
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.LifecycleService
@@ -15,6 +16,7 @@ import io.github.vitalyostanin.geoshare.collection.CollectionState
 import io.github.vitalyostanin.geoshare.collection.Fix
 import io.github.vitalyostanin.geoshare.collection.PaceCeiling
 import io.github.vitalyostanin.geoshare.collection.chooseMode
+import io.github.vitalyostanin.geoshare.collection.nextWake
 import io.github.vitalyostanin.geoshare.collection.orbitReference
 import io.github.vitalyostanin.geoshare.collection.rescueAccuracy
 import io.github.vitalyostanin.geoshare.collection.rescueAfter
@@ -197,6 +199,16 @@ class SharingService : LifecycleService() {
     /** How long the provider and the writes have been quiet. */
     private val silence = Silence()
 
+    /** Wakes the service when a delay would not, see [armWake]. */
+    private val wakeAlarm by lazy { WakeAlarm(this) }
+
+    /** Keeps the processor awake for the short work an alarm brings. */
+    private val wakeLock by lazy {
+        getSystemService(PowerManager::class.java)
+            ?.newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, "geoshare:wake")
+            ?.apply { setReferenceCounted(false) }
+    }
+
     /**
      * The place the fence is drawn around: the last position written that was
      * far enough from the previous one to be somewhere else.
@@ -288,6 +300,10 @@ class SharingService : LifecycleService() {
             stopSelf()
 
             return START_NOT_STICKY
+        }
+
+        if (intent?.action == ACTION_WAKE) {
+            wakeUp()
         }
 
         if (intent?.action == ACTION_FOUND) {
@@ -390,6 +406,33 @@ class SharingService : LifecycleService() {
     }
 
     /**
+     * Sets the alarm for the next moment the timers would have acted, if the
+     * processor were awake to run them; see [nextWake].
+     *
+     * Called wherever the inputs of that moment change: a mode beginning, a
+     * position heard, a rescue made.
+     */
+    private fun armWake(mode: CollectionMode) {
+        wakeAlarm.set(nextWake(Instant.now(), silence.heardAt, mode, LocalTime.now()))
+    }
+
+    /**
+     * What the alarm asks for: the mode looked at again and the silence
+     * measured again, by the same paths that would have done it unprompted.
+     *
+     * The lock is only long enough for those to start; the request the rescue
+     * makes has its own time to answer, and the lock is let go by its timeout
+     * rather than by waiting for it.
+     */
+    private fun wakeUp() {
+        AppLog.i(TAG, "woken by the alarm in mode $lastMode")
+        wakeLock?.acquire(WAKE_LOCK_HELD.toMillis())
+        modeReview.reviewNow()
+        silence.lookNow()
+        armWake(lastMode)
+    }
+
+    /**
      * Takes down everything [startCollecting] set up: the collection, the
      * cable receiver and whatever it was showing or sounding. What listens to
      * each group is taken down by [GroupLinks], group by group.
@@ -397,6 +440,8 @@ class SharingService : LifecycleService() {
     private fun stopCollecting() {
         collection?.cancel()
         collection = null
+        wakeAlarm.cancel()
+        wakeLock?.letGo()
         status.stopHearingTheCable()
         // [keepSearchNotification] is cancelled along with [collection] and
         // leaves nothing to take its own notification down; the device may
@@ -447,6 +492,7 @@ class SharingService : LifecycleService() {
     private suspend fun collectIn(mode: CollectionMode) {
         AppLog.i(TAG, "collecting in mode $mode")
         lastMode = mode
+        armWake(mode)
         // A mode beginning is news about the device as well as a reason to ask
         // for a position, and the first of them is the service starting.
         status.tell()
@@ -492,6 +538,11 @@ class SharingService : LifecycleService() {
 
             positionUpdates(this@SharingService, spec, asked).collect { fix ->
                 silence.heardAt = Instant.now()
+                // The fast mode is held awake by the screen, and an alarm per
+                // fix at its pace would only be set to be replaced.
+                if (mode != CollectionMode.Viewing) {
+                    armWake(mode)
+                }
 
                 if (sameAnswer(first, fix)) {
                     return@collect
@@ -558,8 +609,14 @@ class SharingService : LifecycleService() {
             silent,
             mode,
             ask = { positionNow(priority, asked) },
-            write = { fix -> sieve.writeIfWorth(fix, mode, always = true) },
-            foundNothing = { opinion.noteWhatItKnows() },
+            write = { fix ->
+                sieve.writeIfWorth(fix, mode, always = true)
+                armWake(mode)
+            },
+            foundNothing = {
+                opinion.noteWhatItKnows()
+                armWake(mode)
+            },
         )
     }
 
@@ -688,6 +745,12 @@ class SharingService : LifecycleService() {
 
         /** How often the daily update check looks whether its day is up. */
         private val UPDATE_LOOK_INTERVAL: Duration = Duration.ofHours(1)
+
+        /** The alarm set by [armWake] goes off. */
+        const val ACTION_WAKE = "io.github.vitalyostanin.geoshare.WAKE"
+
+        /** The longest the processor is held awake for one alarm. */
+        private val WAKE_LOCK_HELD: Duration = Duration.ofSeconds(60)
 
         const val ACTION_STOP = "io.github.vitalyostanin.geoshare.STOP"
 

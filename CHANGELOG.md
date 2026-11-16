@@ -49,6 +49,10 @@ and the versions follow [Semantic Versioning](https://semver.org/).
   in a project that needs it. `tools/project.sh set-name`, or `--name` on
   `add-account`, gives such an account the name the members see. The rules
   do not change.
+- A device in deep sleep is woken by an alarm when the provider has been
+  silent long enough for a rescue and when the night begins or ends
+  (ADR-0047). A device left still overnight used to keep its night mode and
+  its old position until something else woke it in the morning.
 
 ### Changed
 
