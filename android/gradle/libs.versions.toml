@@ -5,7 +5,7 @@
 # added, not from an example. Check before bumping rather than after.
 
 [versions]
-agp = "9.5.0"
+agp = "9.5.1"
 kotlin = "2.4.21"
 composeBom = "2026.09.00"
 coreKtx = "1.19.1"
@@ -19,7 +19,7 @@ lifecycle = "2.11.0"
 # activity-result check refuses to build, and this lifts it.
 fragment = "1.9.1"
 coroutines = "1.11.0"
-firebaseBom = "35.1.0"
+firebaseBom = "35.2.0"
 playServicesLocation = "21.4.0"
 # The map background. Takes the same style document the page does and draws
 # OpenStreetMap tiles from it, so the application needs no map key and no
@@ -47,7 +47,7 @@ androidxTestRunner = "1.7.0"
 androidxTestJunit = "1.3.0"
 # Stand-ins for the platform classes the JVM tests cannot build for real:
 # a Location or a GnssStatus off the stub jar answers every call with 0.
-mockk = "1.14.11"
+mockk = "1.14.12"
 # The real implementation of the classes org.json.* names, in place of the
 # Android stub jar the unit test classpath otherwise resolves them to: that
 # one is built with `unitTests.isReturnDefaultValues`, under which every
@@ -55,7 +55,7 @@ mockk = "1.14.11"
 orgJson = "20260814"
 # The software bill of materials attached to every release: the libraries the
 # release build carries, in a machine-readable list.
-cyclonedx = "3.5.1"
+cyclonedx = "3.6.1"
 ktlintPlugin = "14.2.0"
 # The ktlint the plugin runs, rather than whichever one it defaults to: the
 # rules change between releases and the check has to fail the same way

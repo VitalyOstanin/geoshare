@@ -8,16 +8,16 @@
 buildscript {
     dependencies {
         constraints {
-            add("classpath", "org.bouncycastle:bcprov-jdk18on:1.86")
-            add("classpath", "org.bouncycastle:bcpkix-jdk18on:1.86")
-            add("classpath", "org.bouncycastle:bcutil-jdk18on:1.86")
-            add("classpath", "com.fasterxml.jackson.core:jackson-core:2.22.4")
-            add("classpath", "com.fasterxml.jackson.core:jackson-databind:2.22.4")
+            add("classpath", "org.bouncycastle:bcprov-jdk18on:1.87")
+            add("classpath", "org.bouncycastle:bcpkix-jdk18on:1.87")
+            add("classpath", "org.bouncycastle:bcutil-jdk18on:1.87")
+            add("classpath", "com.fasterxml.jackson.core:jackson-core:2.23.0")
+            add("classpath", "com.fasterxml.jackson.core:jackson-databind:2.23.0")
             add("classpath", "org.bitbucket.b_c:jose4j:0.9.7")
             add("classpath", "org.jdom:jdom2:2.0.6.1")
-            add("classpath", "org.apache.commons:commons-lang3:3.21.0")
+            add("classpath", "org.apache.commons:commons-lang3:3.22.0")
             add("classpath", "org.apache.httpcomponents:httpclient:4.5.14")
-            add("classpath", "com.google.guava:guava:33.7.2-jre")
+            add("classpath", "com.google.guava:guava:33.8.0-jre")
         }
     }
 }
@@ -36,14 +36,14 @@ plugins {
 // read before anything in this file is.
 val toolFloors =
     mapOf(
-        "org.bouncycastle:bcprov-jdk18on" to "1.86",
-        "org.bouncycastle:bcpkix-jdk18on" to "1.86",
-        "org.bouncycastle:bcutil-jdk18on" to "1.86",
-        "com.fasterxml.jackson.core:jackson-core" to "2.22.4",
-        "com.fasterxml.jackson.core:jackson-databind" to "2.22.4",
+        "org.bouncycastle:bcprov-jdk18on" to "1.87",
+        "org.bouncycastle:bcpkix-jdk18on" to "1.87",
+        "org.bouncycastle:bcutil-jdk18on" to "1.87",
+        "com.fasterxml.jackson.core:jackson-core" to "2.23.0",
+        "com.fasterxml.jackson.core:jackson-databind" to "2.23.0",
         "org.bitbucket.b_c:jose4j" to "0.9.7",
         "org.jdom:jdom2" to "2.0.6.1",
-        "org.apache.commons:commons-lang3" to "3.21.0",
+        "org.apache.commons:commons-lang3" to "3.22.0",
         "org.apache.httpcomponents:httpclient" to "4.5.14",
         "ch.qos.logback:logback-core" to "1.5.38",
         "ch.qos.logback:logback-classic" to "1.5.38",
